@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="heart-shape">
+      <path d="M256 408C249 402 241 396 234 390C161 335 112 292 112 219C112 164 155 124 209 124C239 124 269 138 288 168C307 138 337 124 367 124C421 124 464 164 464 219C464 292 415 335 342 390C335 396 327 402 320 408L288 432L256 408Z"/>
+    </clipPath>
+    <linearGradient id="glow" x1="157" y1="132" x2="379" y2="403" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.82"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g clip-path="url(#heart-shape)">
+    <rect x="112" y="124" width="352" height="44" fill="#9F0000"/>
+    <rect x="112" y="168" width="352" height="44" fill="#B94F00"/>
+    <rect x="112" y="212" width="352" height="44" fill="#B89A00"/>
+    <rect x="112" y="256" width="352" height="44" fill="#004F16"/>
+    <rect x="112" y="300" width="352" height="44" fill="#002B9E"/>
+    <rect x="112" y="344" width="352" height="44" fill="#430054"/>
+    <path d="M120 355L464 128V410H120V355Z" fill="#FF005E" fill-opacity="0.12"/>
+    <path d="M112 213L361 124H464V246L112 370V213Z" fill="#FFFFFF" fill-opacity="0.03"/>
+    <path d="M169 124L464 281V410H311L112 195V124H169Z" fill="#00A6FF" fill-opacity="0.05"/>
+  </g>
+
+  <path d="M256 408C249 402 241 396 234 390C161 335 112 292 112 219C112 164 155 124 209 124C239 124 269 138 288 168C307 138 337 124 367 124C421 124 464 164 464 219C464 292 415 335 342 390C335 396 327 402 320 408L288 432L256 408Z" fill="url(#glow)"/>
+  <path d="M256 408C249 402 241 396 234 390C161 335 112 292 112 219C112 164 155 124 209 124C239 124 269 138 288 168C307 138 337 124 367 124C421 124 464 164 464 219C464 292 415 335 342 390C335 396 327 402 320 408L288 432L256 408Z" stroke="#E066A2" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M176 173C186 154 206 143 227 143" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" opacity="0.65"/>
+</svg>

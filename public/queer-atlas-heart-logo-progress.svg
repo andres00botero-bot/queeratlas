@@ -1,0 +1,28 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="heartClip">
+      <path d="M256 448L231 425C137 340 76 283 76 204C76 138 126 88 192 88C229 88 264 105 286 136C308 105 343 88 380 88C446 88 496 138 496 204C496 283 435 340 341 425L316 448L286 474L256 448Z"/>
+    </clipPath>
+    <filter id="shadow" x="52" y="80" width="452" height="410" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="4" flood-color="#FFFFFF" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <g clip-path="url(#heartClip)">
+      <rect x="76" y="88" width="420" height="360" fill="#111111"/>
+      <rect x="76" y="88" width="70" height="200" fill="#FF003C"/>
+      <rect x="146" y="88" width="70" height="200" fill="#FF6A00"/>
+      <rect x="216" y="88" width="70" height="200" fill="#FFE100"/>
+      <rect x="286" y="88" width="70" height="200" fill="#1FA64A"/>
+      <rect x="356" y="88" width="70" height="200" fill="#315CFF"/>
+      <rect x="426" y="88" width="70" height="200" fill="#7A11C8"/>
+
+      <path d="M76 448L256 268L436 448H76Z" fill="#000000"/>
+      <path d="M114 448L256 306L398 448H114Z" fill="#7B4F28"/>
+      <path d="M152 448L256 344L360 448H152Z" fill="#7DCEFF"/>
+      <path d="M190 448L256 382L322 448H190Z" fill="#E28BB8"/>
+      <path d="M224 448L256 416L288 448H224Z" fill="#FFFFFF"/>
+    </g>
+  </g>
+</svg>

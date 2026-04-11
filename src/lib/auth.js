@@ -1,0 +1,132 @@
+"use client";
+
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
+
+const AuthContext = createContext(null);
+const ALLOWED_POST_LOGIN_PREFIXES = ["/", "/community", "/contribute", "/search"];
+
+function getMemberName(user) {
+  if (!user) return "Explorer";
+
+  return (
+    user.user_metadata?.full_name ||
+    user.user_metadata?.name ||
+    user.email?.split("@")[0] ||
+    "Explorer"
+  );
+}
+
+function consumePostLoginTarget() {
+  if (typeof window === "undefined") return "";
+
+  const raw = (localStorage.getItem("qa_post_login_target") || "").trim();
+  if (!raw) return "";
+  localStorage.removeItem("qa_post_login_target");
+
+  if (
+    raw === "/favorites" ||
+    raw === "/favorites/" ||
+    raw.startsWith("/favorites?")
+  ) {
+    return "/";
+  }
+
+  const allowed = ALLOWED_POST_LOGIN_PREFIXES.some(
+    (prefix) => raw === prefix || raw.startsWith(`${prefix}?`)
+  );
+
+  return allowed ? raw : "/";
+}
+
+export function AuthProvider({ children }) {
+  const [session, setSession] = useState(null);
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [memberProfile, setMemberProfile] = useState(() => getMemberProfile());
+
+  useEffect(() => {
+    let mounted = true;
+
+    const hydrate = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+
+      setSession(data.session || null);
+      setUser(data.session?.user || null);
+      setIsLoading(false);
+
+      if (data.session?.user) {
+        const target = consumePostLoginTarget();
+        if (target) {
+          const current = `${window.location.pathname}${window.location.search}`;
+          if (current !== target) {
+            window.location.replace(target);
+          }
+        }
+      }
+    };
+
+    hydrate();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      setSession(nextSession || null);
+      setUser(nextSession?.user || null);
+      setIsLoading(false);
+
+      if (nextSession?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        const target = consumePostLoginTarget();
+        if (target) {
+          const current = `${window.location.pathname}${window.location.search}`;
+          if (current !== target) {
+            window.location.replace(target);
+          }
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const value = useMemo(() => {
+    const computedMemberName = memberProfile.displayName || getMemberName(user);
+
+    return {
+      session,
+      user,
+      isLoading,
+      isMember: Boolean(user),
+      memberName: computedMemberName,
+      memberProfile,
+      updateMemberProfile: (nextProfile) => {
+        saveMemberProfile(nextProfile);
+        setMemberProfile(getMemberProfile());
+      },
+      signInWithGoogle: () =>
+        supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: window.location.origin },
+        }),
+      signInWithEmail: (email) =>
+        supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin },
+        }),
+      signOut: () => supabase.auth.signOut(),
+    };
+  }, [isLoading, memberProfile, session, user]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider.");
+  }
+  return context;
+}
