@@ -11,7 +11,7 @@ export default function CitiesPage() {
   const [query, setQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const countrySectionRefs = useRef({});
-  const { places } = usePlaces();
+  const { places, isLoading } = usePlaces();
 
   const scrollToCountrySection = (country) => {
     if (!country || country === "All") return;
@@ -174,7 +174,27 @@ export default function CitiesPage() {
         </section>
 
         <div className="relative space-y-8">
-          {visibleCountries.length === 0 && (
+          {isLoading && (
+            <section className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+              <p className="mb-4 text-xs uppercase tracking-[0.2em] text-white/45">Loading city signal</p>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={`city-skeleton-${index}`}
+                    className="animate-pulse rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5"
+                    aria-hidden="true"
+                  >
+                    <div className="h-3 w-20 rounded-full bg-white/14" />
+                    <div className="mt-3 h-6 w-32 rounded-full bg-white/12" />
+                    <div className="mt-5 h-3 w-full rounded-full bg-white/8" />
+                    <div className="mt-2 h-3 w-5/6 rounded-full bg-white/8" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {!isLoading && visibleCountries.length === 0 && (
             <section className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-10 text-center shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
               <EmptyState
                 title="No cities match this filter yet."
@@ -193,7 +213,7 @@ export default function CitiesPage() {
             </section>
           )}
 
-          {visibleCountries.map((country) => (
+          {!isLoading && visibleCountries.map((country) => (
             <section
               key={country}
               ref={(node) => {

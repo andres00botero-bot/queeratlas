@@ -37,6 +37,22 @@ function mapGlobalEventRow(row) {
   };
 }
 
+function EventSkeletonCard({ tone = "orange" }) {
+  const toneStyle =
+    tone === "cyan"
+      ? "border-cyan-200/14 bg-[linear-gradient(180deg,rgba(34,211,238,0.10),rgba(12,12,12,0.94))]"
+      : "border-orange-200/14 bg-[linear-gradient(180deg,rgba(251,146,60,0.12),rgba(12,12,12,0.94))]";
+
+  return (
+    <div className={`animate-pulse rounded-2xl border p-4 ${toneStyle}`} aria-hidden="true">
+      <div className="h-3 w-40 rounded-full bg-white/14" />
+      <div className="mt-3 h-5 w-3/4 rounded-full bg-white/12" />
+      <div className="mt-4 h-3 w-full rounded-full bg-white/8" />
+      <div className="mt-2 h-3 w-5/6 rounded-full bg-white/8" />
+    </div>
+  );
+}
+
 export default function EventsPage() {
   const router = useRouter();
 
@@ -404,8 +420,10 @@ export default function EventsPage() {
 
                 <div className="mt-5 space-y-3">
                   {isLoading && (
-                    <div className="rounded-2xl border border-white/8 px-4 py-8 text-sm text-white/55">
-                      Loading upcoming events...
+                    <div className="space-y-3 rounded-2xl border border-orange-200/14 bg-orange-200/[0.03] p-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-orange-100/62">Loading upcoming signal</p>
+                      <EventSkeletonCard tone="orange" />
+                      <EventSkeletonCard tone="orange" />
                     </div>
                   )}
                   {upcomingEvents.map((event) => (
@@ -593,6 +611,13 @@ export default function EventsPage() {
               </div>
 
               <div className="mt-6 max-h-[900px] space-y-6 overflow-y-auto pr-1">
+                {isLoading && (
+                  <div className="space-y-3">
+                    <EventSkeletonCard tone="cyan" />
+                    <EventSkeletonCard tone="cyan" />
+                    <EventSkeletonCard tone="cyan" />
+                  </div>
+                )}
                 {sortedCities.map((city) => {
                   const cityEvents = eventsByCity[city];
 
@@ -826,7 +851,12 @@ export default function EventsPage() {
             )}
 
             <div className="mt-6 space-y-3">
-              {globalEvents.length === 0 ? (
+              {isLoading ? (
+                <div className="space-y-3">
+                  <EventSkeletonCard tone="cyan" />
+                  <EventSkeletonCard tone="cyan" />
+                </div>
+              ) : globalEvents.length === 0 ? (
                 <EmptyState
                   title="No off-grid events yet."
                   description="Add cruises, ski weekends, and destination events here."

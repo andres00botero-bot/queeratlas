@@ -57,6 +57,30 @@ function mapPlanRow(row) {
   };
 }
 
+function FavoritesOpeningSkeleton() {
+  return (
+    <div className="w-full max-w-xl rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-6">
+      <div className="animate-pulse space-y-3" aria-hidden="true">
+        <div className="h-4 w-32 rounded-full bg-white/14" />
+        <div className="h-8 w-56 rounded-full bg-white/12" />
+        <div className="h-3 w-full rounded-full bg-white/8" />
+        <div className="h-3 w-5/6 rounded-full bg-white/8" />
+      </div>
+    </div>
+  );
+}
+
+function FavoritesCardSkeleton() {
+  return (
+    <div className="animate-pulse rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5" aria-hidden="true">
+      <div className="h-3 w-24 rounded-full bg-white/14" />
+      <div className="mt-3 h-5 w-2/3 rounded-full bg-white/12" />
+      <div className="mt-4 h-3 w-full rounded-full bg-white/8" />
+      <div className="mt-2 h-3 w-4/5 rounded-full bg-white/8" />
+    </div>
+  );
+}
+
 export default function FavoritesPage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -530,7 +554,7 @@ export default function FavoritesPage() {
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
-        <p className="text-sm text-gray-400">Opening your atlas...</p>
+        <FavoritesOpeningSkeleton />
       </main>
     );
   }
@@ -559,7 +583,9 @@ export default function FavoritesPage() {
               discovery becomes direction.
             </p>
             {isAtlasLoading && (
-              <p className="mt-4 text-xs text-white/55">Refreshing atlas data...</p>
+              <div className="mt-4 max-w-sm animate-pulse" aria-hidden="true">
+                <div className="h-3 w-40 rounded-full bg-white/12" />
+              </div>
             )}
             {atlasLoadError && (
               <div className="mt-4 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
@@ -993,7 +1019,11 @@ export default function FavoritesPage() {
           )}
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {plans.length > 0 ? (
+            {isAtlasLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <FavoritesCardSkeleton key={`plan-skeleton-${index}`} />
+              ))
+            ) : plans.length > 0 ? (
               plans.map((plan) => (
                 <article
                   key={plan.id}
@@ -1090,7 +1120,11 @@ export default function FavoritesPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {savedPlaces.length > 0 ? (
+            {isAtlasLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <FavoritesCardSkeleton key={`place-skeleton-${index}`} />
+              ))
+            ) : savedPlaces.length > 0 ? (
               savedPlaces.map((place) => (
                 <div
                   key={place.id}
@@ -1163,7 +1197,11 @@ export default function FavoritesPage() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {savedEvents.length > 0 ? (
+            {isAtlasLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <FavoritesCardSkeleton key={`event-skeleton-${index}`} />
+              ))
+            ) : savedEvents.length > 0 ? (
               savedEvents.map((event) => (
                 <div
                   key={event.id}

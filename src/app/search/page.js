@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { usePlaces } from "@/lib/usePlaces";
 import { mergeSeedEvents } from "@/lib/seedContent";
 import { buildAtlasSearchResults } from "@/lib/search";
+import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
 import { getEntityQuality, getQualityMap, getQualityStatus } from "@/lib/quality";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
@@ -17,6 +18,23 @@ const QUALITY_FILTERS = ["all", "verified", "needs_refresh", "unverified"];
 
 function normalizeValue(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function SearchResultSkeleton({ tone = "rose" }) {
+  const toneClass =
+    tone === "violet"
+      ? "border-violet-200/14 bg-[linear-gradient(180deg,rgba(167,139,250,0.10),rgba(10,10,10,0.94))]"
+      : tone === "cyan"
+        ? "border-cyan-200/14 bg-[linear-gradient(180deg,rgba(34,211,238,0.10),rgba(10,10,10,0.94))]"
+        : "border-rose-200/14 bg-[linear-gradient(180deg,rgba(244,114,182,0.10),rgba(10,10,10,0.94))]";
+
+  return (
+    <div className={`animate-pulse rounded-2xl border p-4 ${toneClass}`} aria-hidden="true">
+      <div className="h-4 w-2/3 rounded-full bg-white/14" />
+      <div className="mt-3 h-3 w-1/2 rounded-full bg-white/10" />
+      <div className="mt-4 h-3 w-full rounded-full bg-white/8" />
+    </div>
+  );
 }
 
 export default function SearchPage() {
@@ -73,26 +91,28 @@ export default function SearchPage() {
   );
 
   const cityOptions = useMemo(() => {
-    const cityValues = results.all
-      .map((item) => {
-        if (item.type === "city") return item.name;
-        return item.city || "";
-      })
+    const configCities = Object.values(cityConfig)
+      .map((city) => city.title?.replace(/^Queer\s+/i, "").trim())
       .filter(Boolean);
+    const placeCities = places.map((item) => item.city || "").filter(Boolean);
+    const eventCities = events.map((item) => item.city || "").filter(Boolean);
 
-    return ["all", ...new Set(cityValues)].sort((a, b) => a.localeCompare(b));
-  }, [results.all]);
+    return ["all", ...new Set([...configCities, ...placeCities, ...eventCities])].sort((a, b) =>
+      a.localeCompare(b)
+    );
+  }, [events, places]);
 
   const vibeOptions = useMemo(() => {
-    const vibes = [
-      ...results.places.map((item) => item.vibe || item.type || ""),
-      ...results.cities.map((item) => item.vibe || ""),
-    ]
+    const configVibes = Object.values(cityConfig).map((city) => city.vibe || "").filter(Boolean);
+    const placeVibes = places.map((item) => item.vibe || item.type || "").filter(Boolean);
+    const eventVibes = events.map((item) => item.vibe || "").filter(Boolean);
+
+    const vibes = [...configVibes, ...placeVibes, ...eventVibes]
       .map((item) => String(item || "").trim())
       .filter(Boolean);
 
     return ["all", ...new Set(vibes)].sort((a, b) => a.localeCompare(b));
-  }, [results.cities, results.places]);
+  }, [events, places]);
 
   const filteredAll = useMemo(() => {
     const list = results.all.filter((item) => {
@@ -269,7 +289,9 @@ export default function SearchPage() {
             {filteredResults.all.length} matches | {filteredResults.cities.length} cities | {filteredResults.places.length} places | {filteredResults.events.length} events
           </p>
           {isLoading && (
-            <p className="mt-2 text-xs text-white/55">Loading search index...</p>
+            <div className="mt-3 max-w-sm animate-pulse" aria-hidden="true">
+              <div className="h-3 w-44 rounded-full bg-white/12" />
+            </div>
           )}
           {loadError && (
             <div className="mt-2 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
@@ -290,6 +312,20 @@ export default function SearchPage() {
               title="Start with a city, venue name, event title, or vibe keyword."
               description="Search across cities, places, and events in one move."
             />
+          </section>
+        )}
+
+        {query.trim() && isLoading && (
+          <section className="mb-6 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-5">
+            <p className="mb-4 text-xs uppercase tracking-[0.18em] text-white/45">Scanning atlas signal</p>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <SearchResultSkeleton tone="cyan" />
+              <SearchResultSkeleton tone="rose" />
+              <SearchResultSkeleton tone="violet" />
+              <SearchResultSkeleton tone="rose" />
+              <SearchResultSkeleton tone="violet" />
+              <SearchResultSkeleton tone="cyan" />
+            </div>
           </section>
         )}
 
@@ -376,7 +412,7 @@ export default function SearchPage() {
                       </button>
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <p className="text-xs uppercase tracking-[0.16em] text-white/45">{place.city} · {place.type}</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-white/45">{place.city} | {place.type}</p>
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] ${
                         qualityStatus.label === "Verified"
                           ? "border-emerald-200/24 bg-emerald-200/12 text-emerald-100"
@@ -441,7 +477,7 @@ export default function SearchPage() {
                       </button>
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <p className="text-xs uppercase tracking-[0.16em] text-white/45">{event.city} · Event</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-white/45">{event.city} | Event</p>
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] ${
                         qualityStatus.label === "Verified"
                           ? "border-emerald-200/24 bg-emerald-200/12 text-emerald-100"

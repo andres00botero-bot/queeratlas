@@ -293,12 +293,12 @@ export default function Home() {
 
   const bottomLaneCards = [
     {
-      title: "Now",
-      subtitle: "Happening now",
-      description: "See where queer energy is building right now.",
-      icon: "Now",
-      accent: "from-amber-300 via-yellow-200 to-orange-300",
-      glow: "shadow-[0_24px_80px_rgba(250,204,21,0.16)]",
+      title: "Queer World News",
+      subtitle: "Live + editorial signal",
+      description: "Now, rising spots, rights & safety, nightlife changes, major events, and culture tips in one flow.",
+      icon: "News",
+      accent: "from-cyan-300 via-sky-300 to-amber-300",
+      glow: "shadow-[0_24px_80px_rgba(56,189,248,0.16)]",
       onClick: () => router.push("/now"),
     },
     {
@@ -528,10 +528,10 @@ export default function Home() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.24em] text-amber-200/70">
-                      Live pulse
+                      Queer world news
                     </p>
                     <h2 className="mt-2 text-2xl font-semibold text-white">
-                      Next up
+                      Live now
                     </h2>
                   </div>
 
@@ -539,7 +539,7 @@ export default function Home() {
                     onClick={() => router.push("/now")}
                     className="rounded-full border border-orange-200/20 bg-orange-200/8 px-4 py-2 text-xs text-orange-100 transition hover:border-orange-200/40 hover:bg-orange-200/14"
                   >
-                    Open now
+                    Open news
                   </button>
                 </div>
 

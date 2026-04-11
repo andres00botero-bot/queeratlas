@@ -119,6 +119,40 @@ function qualityPillClass(tone) {
   return "border-white/16 bg-white/7 text-white/70";
 }
 
+function SectionSkeleton({ tone = "violet", rows = 3 }) {
+  const toneMap = {
+    violet: {
+      outer: "border-violet-200/14 bg-[linear-gradient(180deg,rgba(109,40,217,0.14),rgba(10,10,10,0.86))]",
+      glow: "bg-violet-300/12",
+    },
+    amber: {
+      outer: "border-amber-200/14 bg-[linear-gradient(180deg,rgba(217,119,6,0.12),rgba(10,10,10,0.86))]",
+      glow: "bg-amber-300/12",
+    },
+  };
+
+  const selectedTone = toneMap[tone] || toneMap.violet;
+
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div
+          key={`skeleton-${tone}-${index}`}
+          className={`relative overflow-hidden rounded-[22px] border p-4 ${selectedTone.outer} animate-pulse`}
+        >
+          <div className={`pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full blur-3xl ${selectedTone.glow}`} />
+          <div className="h-4 w-44 rounded-full bg-white/14" />
+          <div className="mt-3 h-3 w-28 rounded-full bg-white/10" />
+          <div className="mt-4 space-y-2">
+            <div className="h-3 w-full rounded-full bg-white/8" />
+            <div className="h-3 w-5/6 rounded-full bg-white/8" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CityPage() {
   const { city } = useParams();
   const pathname = usePathname();
@@ -971,8 +1005,9 @@ export default function CityPage() {
             </div>
           )}
           {eventsLoading && (
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/65">
-              Loading city events...
+            <div className="mb-4 rounded-2xl border border-violet-200/10 bg-violet-200/[0.03] p-4">
+              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">Loading events</p>
+              <SectionSkeleton tone="violet" rows={2} />
             </div>
           )}
 
@@ -1152,8 +1187,9 @@ export default function CityPage() {
             Quick Guide
           </h2>
           {placesLoading && (
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/65">
-              Loading places...
+            <div className="mb-4 rounded-2xl border border-amber-200/10 bg-amber-200/[0.03] p-4">
+              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-amber-100/60">Loading guide signal</p>
+              <SectionSkeleton tone="amber" rows={2} />
             </div>
           )}
           {placesLoadError && (
@@ -1234,7 +1270,7 @@ export default function CityPage() {
           </div>
         </div>
 
-        {!hasAnyPlaces && (
+        {!placesLoading && !hasAnyPlaces && (
           <div className="mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
             <h3 className="mt-2 text-lg font-semibold text-white">No verified places yet</h3>
