@@ -114,33 +114,43 @@ export default function EventsPage() {
       entity: event,
       map: qualityMap,
     });
-    const sourceInput = window.prompt(
-      "Update source (URL or name)",
-      existing?.source || event.link || ""
+    const actionInput = window.prompt(
+      "Verify event info:\n1 = Still correct\n2 = Something is wrong\n3 = Closed or moved\n\nEnter 1, 2, or 3",
+      "1"
     );
-    if (sourceInput === null) return;
+    if (actionInput === null) return;
 
-    const defaultChecked = existing?.lastChecked || new Date().toISOString().slice(0, 10);
-    const checkedInput = window.prompt(
-      "Update last checked date (YYYY-MM-DD)",
-      defaultChecked
-    );
-    if (checkedInput === null) return;
+    const action = String(actionInput).trim();
+    if (!["1", "2", "3"].includes(action)) {
+      window.alert("Please enter 1, 2, or 3.");
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const fallbackSource = (existing?.source || event.link || "").trim();
+    const sourceByAction =
+      action === "1"
+        ? fallbackSource || "Community verified"
+        : action === "2"
+          ? fallbackSource || "Community flagged: needs review"
+          : fallbackSource || "Community flagged: closed or moved";
+    const verified = action === "1";
+    const lastChecked = action === "1" ? today : "";
 
     upsertQuality({
       targetType: "event",
       targetId: event.id,
-      source: sourceInput,
-      lastChecked: checkedInput || new Date().toISOString().slice(0, 10),
-      verified: Boolean(sourceInput.trim() && (checkedInput || defaultChecked)),
+      source: sourceByAction,
+      lastChecked,
+      verified,
     });
 
     if (event.isGlobal) {
       const { error } = await supabase
         .from("global_events")
         .update({
-          source: sourceInput.trim() || null,
-          last_checked: (checkedInput || defaultChecked || "").trim() || null,
+          source: sourceByAction || null,
+          last_checked: lastChecked || null,
         })
         .eq("id", event.id);
 
@@ -151,8 +161,8 @@ export default function EventsPage() {
           String(item.id) === String(event.id)
             ? {
                 ...item,
-                source: sourceInput.trim(),
-                lastChecked: (checkedInput || defaultChecked || "").trim(),
+                source: sourceByAction,
+                lastChecked,
               }
             : item
         )));

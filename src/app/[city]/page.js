@@ -792,28 +792,50 @@ export default function CityPage() {
       map: qualityMap,
     });
 
-    const sourceInput = window.prompt(
-      "Update source (URL or name)",
-      existing?.source || fallbackSource || ""
+    const actionInput = window.prompt(
+      "Verify this info:\n1 = Still correct\n2 = Something is wrong\n3 = Closed or moved\n\nEnter 1, 2, or 3",
+      "1"
     );
-    if (sourceInput === null) return;
+    if (actionInput === null) return;
 
-    const defaultChecked = existing?.lastChecked || new Date().toISOString().slice(0, 10);
-    const checkedInput = window.prompt(
-      "Update last checked date (YYYY-MM-DD)",
-      defaultChecked
-    );
-    if (checkedInput === null) return;
+    const action = String(actionInput).trim();
+    if (!["1", "2", "3"].includes(action)) {
+      showToast("Please enter 1, 2, or 3.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    const knownSource = (existing?.source || fallbackSource || "").trim();
+    const sourceByAction =
+      action === "1"
+        ? knownSource || "Community verified"
+        : action === "2"
+          ? knownSource || "Community flagged: needs review"
+          : knownSource || "Community flagged: closed or moved";
+    const verified = action === "1";
+    const lastChecked = action === "1" ? today : "";
 
     upsertQuality({
       targetType,
       targetId,
-      source: sourceInput,
-      lastChecked: checkedInput || defaultChecked,
-      verified: Boolean(sourceInput.trim() && (checkedInput || defaultChecked)),
+      source: sourceByAction,
+      lastChecked,
+      verified,
     });
 
     setQualityTick((value) => value + 1);
+
+    if (action === "1") {
+      showToast("Marked as verified.", { tone: "ok", duration: 2100 });
+      return;
+    }
+
+    if (action === "2") {
+      showToast("Marked for review.", { tone: "info", duration: 2200 });
+      return;
+    }
+
+    showToast("Marked as closed or moved (needs review).", { tone: "warn", duration: 2400 });
   };
 
   return (
