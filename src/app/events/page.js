@@ -36,6 +36,12 @@ function formatCityLabel(value) {
     .join(" ");
 }
 
+function normalizeCityKey(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "other";
+  return raw.replace(/[\s-]+/g, "_");
+}
+
 function mapGlobalEventRow(row) {
   return {
     id: String(row.id),
@@ -261,19 +267,25 @@ export default function EventsPage() {
 
   const eventsByCity = useMemo(() => (
     filteredEvents.reduce((acc, event) => {
-      const city = event.city || "Other";
+      const cityKey = normalizeCityKey(event.city || "Other");
+      const cityLabel = formatCityLabel(event.city || "Other");
 
-      if (!acc[city]) {
-        acc[city] = [];
+      if (!acc[cityKey]) {
+        acc[cityKey] = {
+          label: cityLabel,
+          events: [],
+        };
       }
 
-      acc[city].push(event);
+      acc[cityKey].events.push(event);
       return acc;
     }, {})
   ), [filteredEvents]);
 
   const sortedCities = useMemo(() => (
-    Object.keys(eventsByCity).sort((a, b) => formatCityLabel(a).localeCompare(formatCityLabel(b)))
+    Object.keys(eventsByCity).sort((a, b) => (
+      (eventsByCity[a]?.label || formatCityLabel(a)).localeCompare(eventsByCity[b]?.label || formatCityLabel(b))
+    ))
   ), [eventsByCity]);
 
   const year = currentDate.getFullYear();
@@ -510,13 +522,18 @@ export default function EventsPage() {
           </section>
 
           <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="overflow-hidden rounded-[34px] border border-fuchsia-300/14 bg-[linear-gradient(180deg,rgba(19,19,19,0.96),rgba(9,9,9,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative overflow-hidden rounded-[34px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_14%_10%,rgba(236,72,153,0.18),transparent_36%),radial-gradient(circle_at_85%_12%,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_50%_85%,rgba(249,115,22,0.12),transparent_40%),linear-gradient(180deg,rgba(19,19,19,0.96),rgba(9,9,9,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
+              <div className="pointer-events-none absolute -left-14 -top-14 h-56 w-56 rounded-full bg-fuchsia-500/14 blur-3xl" />
+              <div className="pointer-events-none absolute -right-12 top-16 h-52 w-52 rounded-full bg-blue-500/14 blur-3xl" />
+              <div className="pointer-events-none absolute bottom-[-96px] left-1/3 h-56 w-56 rounded-full bg-orange-400/10 blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-8 top-24 h-px bg-gradient-to-r from-transparent via-fuchsia-200/28 to-transparent" />
+
+              <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-100/58">
                     Calendar
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">
+                  <h2 className="mt-2 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-2xl font-semibold tracking-[-0.03em] text-transparent">
                     {monthName} {year}
                   </h2>
                 </div>
@@ -524,26 +541,26 @@ export default function EventsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
-                    className="rounded-full border border-white/12 bg-white/7 px-4 py-2 text-sm text-white/75 transition hover:border-white/18 hover:bg-white/10 hover:text-white"
+                    className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-4 py-2 text-sm text-fuchsia-100/85 transition hover:border-fuchsia-200/35 hover:bg-fuchsia-200/16 hover:text-white"
                   >
                     Prev
                   </button>
                   <button
                     onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
-                    className="rounded-full border border-white/12 bg-white/7 px-4 py-2 text-sm text-white/75 transition hover:border-white/18 hover:bg-white/10 hover:text-white"
+                    className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100/85 transition hover:border-cyan-200/35 hover:bg-cyan-200/16 hover:text-white"
                   >
                     Next
                   </button>
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="relative mt-6 flex flex-wrap gap-3">
                 <button
                   onClick={() => setSelectedDate("")}
                     className={`rounded-full border px-4 py-2 text-sm transition ${
                     !selectedDate
-                      ? "border-fuchsia-300/32 bg-fuchsia-300/14 text-fuchsia-100"
-                      : "border-white/12 bg-white/6 text-white/68 hover:border-white/18 hover:text-white"
+                      ? "border-fuchsia-300/38 bg-fuchsia-300/16 text-fuchsia-100"
+                      : "border-white/14 bg-white/8 text-white/72 hover:border-white/22 hover:text-white"
                   }`}
                 >
                   All dates
@@ -558,7 +575,7 @@ export default function EventsPage() {
 
               <div className="mt-8 grid grid-cols-7 gap-2 text-[11px] uppercase tracking-[0.2em] text-white/35">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day} className="px-1 py-2">
+                  <div key={day} className="rounded-xl border border-white/6 bg-white/[0.03] px-2 py-2 text-center">
                     {day}
                   </div>
                 ))}
@@ -581,8 +598,8 @@ export default function EventsPage() {
                       onClick={() => setSelectedDate(dateStr)}
                       className={`h-24 rounded-2xl border p-3 text-left transition ${
                         isSelected
-                          ? "border-fuchsia-300/28 bg-[linear-gradient(180deg,rgba(236,72,153,0.18),rgba(91,33,182,0.28))] shadow-[0_18px_45px_rgba(217,70,239,0.16)]"
-                          : "border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] hover:border-white/16 hover:bg-white/7"
+                          ? "border-fuchsia-300/34 bg-[linear-gradient(180deg,rgba(236,72,153,0.22),rgba(91,33,182,0.30))] shadow-[0_20px_48px_rgba(217,70,239,0.20)]"
+                          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] hover:border-white/18 hover:bg-white/8"
                       }`}
                     >
                       <p className="text-sm font-medium text-white">{day}</p>
@@ -608,13 +625,17 @@ export default function EventsPage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-[34px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(8,8,8,1))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="relative overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_86%_10%,rgba(34,211,238,0.14),transparent_32%),radial-gradient(circle_at_18%_20%,rgba(168,85,247,0.10),transparent_35%),linear-gradient(180deg,rgba(18,18,18,0.96),rgba(8,8,8,1))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
+              <div className="pointer-events-none absolute -right-10 top-24 h-48 w-48 rounded-full bg-cyan-500/12 blur-3xl" />
+              <div className="pointer-events-none absolute -left-12 bottom-12 h-52 w-52 rounded-full bg-violet-500/10 blur-3xl" />
+              <div className="pointer-events-none absolute inset-x-8 top-20 h-px bg-gradient-to-r from-transparent via-cyan-200/24 to-transparent" />
+
+              <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/58">
                     Event list
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">
+                  <h2 className="mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-2xl font-semibold tracking-[-0.03em] text-transparent">
                     {selectedDate ? `Events on ${formatDateLabel(selectedDate)}` : "All events"}
                   </h2>
                 </div>
@@ -632,15 +653,17 @@ export default function EventsPage() {
                     <EventSkeletonCard tone="cyan" />
                   </div>
                 )}
-                {sortedCities.map((city) => {
-                  const cityEvents = eventsByCity[city];
+                {sortedCities.map((cityKey) => {
+                  const cityGroup = eventsByCity[cityKey];
+                  const cityEvents = cityGroup?.events || [];
+                  const cityLabel = cityGroup?.label || formatCityLabel(cityKey);
 
                   if (!cityEvents || cityEvents.length === 0) return null;
 
                   return (
-                    <section key={city}>
+                    <section key={cityKey}>
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <h3 className="text-lg font-semibold text-white">{formatCityLabel(city)}</h3>
+                        <h3 className="text-lg font-semibold text-white">{cityLabel}</h3>
                         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-white/42">
                           {cityEvents.length} live
                         </span>
