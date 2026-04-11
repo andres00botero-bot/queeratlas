@@ -125,6 +125,11 @@ body {
     filter 220ms cubic-bezier(0.2, 0.9, 0.24, 1);
 }
 
+.qa-cinematic-hover:focus-visible {
+  outline: 2px solid rgba(196, 181, 253, 0.95);
+  outline-offset: 2px;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .qa-cinematic-hover:hover {
     transform: translateY(-2px);

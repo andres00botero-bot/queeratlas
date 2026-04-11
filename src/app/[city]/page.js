@@ -839,6 +839,8 @@ export default function CityPage() {
                 ? "bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
                 : "bg-gradient-to-r from-emerald-300 to-teal-200 text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)]"
             }`}
+            aria-pressed={addMode}
+            aria-label={addMode ? "Cancel add place form" : "Open add place form"}
           >
             {addMode ? "Cancel adding" : "+ Add place"}
           </button>
@@ -863,6 +865,8 @@ export default function CityPage() {
                 ? "bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
                 : "bg-gradient-to-r from-violet-300 to-fuchsia-200 text-black shadow-[0_14px_40px_rgba(192,132,252,0.16)]"
             }`}
+            aria-pressed={addEventMode}
+            aria-label={addEventMode ? "Cancel add event form" : "Open add event form"}
           >
             {addEventMode ? "Cancel event" : "+ Add event"}
           </button>
@@ -979,6 +983,7 @@ export default function CityPage() {
                 onClick={() => openEvent(featuredEvent)}
                 role="button"
                 tabIndex={0}
+                aria-label={`Open event details for ${featuredEvent.name}`}
                 onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
                 onMouseLeave={() => setHoveredEventId(null)}
                 onKeyDown={(keyEvent) => {
@@ -1020,7 +1025,9 @@ export default function CityPage() {
                     targetId: featuredEvent.id,
                     entity: featuredEvent,
                     map: qualityMap,
-                  })).tone)}`}>
+                  })).tone)}`}
+                    aria-label={`Update quality status for event ${featuredEvent.name}`}
+                  >
                     {getQualityStatus(getEntityQuality({
                       targetType: "event",
                       targetId: featuredEvent.id,
@@ -1050,6 +1057,7 @@ export default function CityPage() {
                   onClick={() => openEvent(event)}
                   role="button"
                   tabIndex={0}
+                  aria-label={`Open event details for ${event.name}`}
                   onMouseEnter={() => setHoveredEventId(String(event.id))}
                   onMouseLeave={() => setHoveredEventId(null)}
                   onKeyDown={(keyEvent) => {
@@ -1088,6 +1096,7 @@ export default function CityPage() {
                         )
                       }
                       className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
+                      aria-label={`Update quality status for event ${event.name}`}
                     >
                       {qualityStatus.label}
                     </button>
@@ -1294,6 +1303,7 @@ export default function CityPage() {
                     onClick={() => openPlace(place)}
                     role="button"
                     tabIndex={0}
+                    aria-label={`Open place details for ${place.name}`}
                     onMouseEnter={() => setHoveredPlaceId(String(place.id))}
                     onMouseLeave={() => setHoveredPlaceId(null)}
                     onKeyDown={(keyEvent) => {
@@ -1344,6 +1354,8 @@ export default function CityPage() {
                               ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
                               : "border-white/14 bg-white/5 text-white/65 hover:border-pink-300/25 hover:text-pink-100"
                           }`}
+                          aria-label={favorites.includes(String(place.id)) ? `Remove ${place.name} from favorites` : `Save ${place.name} to favorites`}
+                          aria-pressed={favorites.includes(String(place.id))}
                         >
                           {favorites.includes(String(place.id)) ? "Saved" : "Save"}
                         </button>
@@ -1381,6 +1393,7 @@ export default function CityPage() {
                             )
                           }
                           className={`rounded-full border px-2 py-0.5 transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
+                          aria-label={`Update quality status for place ${place.name}`}
                         >
                           {qualityStatus.label}
                         </button>
@@ -1473,6 +1486,7 @@ export default function CityPage() {
                 })
               }
               className="qa-cinematic-hover rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+              aria-label={`Report place ${selectedPlace.name}`}
             >
               Report place
             </button>
@@ -1483,6 +1497,8 @@ export default function CityPage() {
                   ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
                   : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
               }`}
+              aria-label={favorites.includes(String(selectedPlace.id)) ? `Remove ${selectedPlace.name} from favorites` : `Save ${selectedPlace.name} to favorites`}
+              aria-pressed={favorites.includes(String(selectedPlace.id))}
             >
               {favorites.includes(String(selectedPlace.id)) ? "Saved" : "Save place"}
             </button>
@@ -1501,17 +1517,20 @@ export default function CityPage() {
             <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/45">Add your review</p>
             <div className="mb-2 flex">
               {[1, 2, 3, 4, 5].map((star) => (
-                <span
+                <button
                   key={star}
+                  type="button"
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(null)}
                   onClick={() => setRating(star)}
-                  className={`cursor-pointer text-2xl ${
+                  aria-label={`Set rating to ${star} star${star > 1 ? "s" : ""}`}
+                  aria-pressed={rating === star}
+                  className={`cursor-pointer rounded px-0.5 text-2xl ${
                     (hoverRating || rating) >= star ? "text-yellow-400" : "text-gray-600"
                   }`}
                 >
                   ★
-                </span>
+                </button>
               ))}
             </div>
 
@@ -1606,6 +1625,8 @@ export default function CityPage() {
                   ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
                   : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
               }`}
+              aria-label={favorites.includes(`event-${selectedEvent.id}`) ? `Remove ${selectedEvent.name} from favorites` : `Save ${selectedEvent.name} to favorites`}
+              aria-pressed={favorites.includes(`event-${selectedEvent.id}`)}
             >
               {favorites.includes(`event-${selectedEvent.id}`) ? "Saved" : "Save event"}
             </button>
@@ -1642,6 +1663,7 @@ export default function CityPage() {
                 })
               }
               className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+              aria-label={`Report event ${selectedEvent.name}`}
             >
               Report event
             </button>

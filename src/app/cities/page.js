@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cityConfig } from "@/lib/cities";
 import { usePlaces } from "@/lib/usePlaces";
@@ -10,7 +10,21 @@ export default function CitiesPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
+  const countrySectionRefs = useRef({});
   const { places } = usePlaces();
+
+  const scrollToCountrySection = (country) => {
+    if (!country || country === "All") return;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        countrySectionRefs.current[country]?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    });
+  };
 
   const countries = useMemo(() => {
     return ["All", ...new Set(Object.values(cityConfig).map((city) => city.country || "Other"))].sort();
@@ -140,7 +154,10 @@ export default function CitiesPage() {
                   return (
                     <button
                       key={country}
-                      onClick={() => setSelectedCountry(country)}
+                      onClick={() => {
+                        setSelectedCountry(country);
+                        scrollToCountrySection(country);
+                      }}
                       className={`rounded-full border px-4 py-2 text-sm transition ${
                         active
                           ? "border-fuchsia-300/28 bg-fuchsia-300/12 text-white shadow-[0_10px_30px_rgba(217,70,239,0.10)]"
@@ -179,6 +196,13 @@ export default function CitiesPage() {
           {visibleCountries.map((country) => (
             <section
               key={country}
+              ref={(node) => {
+                if (node) {
+                  countrySectionRefs.current[country] = node;
+                } else {
+                  delete countrySectionRefs.current[country];
+                }
+              }}
               className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]"
             >
               <div className="mb-6 flex items-center gap-4">
