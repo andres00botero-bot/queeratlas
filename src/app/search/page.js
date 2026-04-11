@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { usePlaces } from "@/lib/usePlaces";
@@ -21,9 +21,7 @@ function normalizeValue(value) {
 
 export default function SearchPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialQuery = searchParams.get("q") || "";
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useState("");
   const [events, setEvents] = useState([]);
   const [typeFilter, setTypeFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
@@ -59,6 +57,13 @@ export default function SearchPage() {
       fetchEvents();
     });
   }, [fetchEvents]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get("q") || "";
+    setQuery(q);
+  }, []);
 
   const qualityMap = getQualityMap();
 
