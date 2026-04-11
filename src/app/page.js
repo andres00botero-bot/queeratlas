@@ -41,6 +41,7 @@ export default function Home() {
   const [emailInput, setEmailInput] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
+  const [isIntroVisible, setIsIntroVisible] = useState(false);
   const { isMember, memberName, memberProfile, isLoading: isAuthLoading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
 
   const getResultKey = (item) => (
@@ -190,6 +191,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsIntroVisible(true);
+    }, 80);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const interval = window.setInterval(() => {
       setNow(new Date());
     }, 60000);
@@ -275,6 +284,9 @@ export default function Home() {
   const cityCount = new Set(places.map((place) => place.city).filter(Boolean)).size;
   const eventCount = events.length;
   const placeCount = places.length;
+  const introClass = (visibleClass = "") =>
+    `transition-all duration-700 ease-out ${isIntroVisible ? `translate-y-0 opacity-100 ${visibleClass}` : "translate-y-3 opacity-0"}`.trim();
+  const introStyle = (delay = 0) => ({ transitionDelay: `${delay}ms` });
 
   const topLaneCards = [
     {
@@ -350,7 +362,7 @@ export default function Home() {
         <div className="pointer-events-none absolute bottom-20 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-amber-400/5 blur-3xl" />
 
         <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className={`mb-8 flex flex-wrap items-center justify-between gap-4 ${introClass()}`} style={introStyle(0)}>
             <div className="rounded-full border border-fuchsia-200/15 bg-[linear-gradient(90deg,rgba(244,114,182,0.12),rgba(56,189,248,0.1))] px-4 py-2 text-xs uppercase tracking-[0.28em] text-white/78 backdrop-blur">
               Global queer discovery
             </div>
@@ -401,7 +413,7 @@ export default function Home() {
           </div>
 
           <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
-            <section className="pt-1 xl:pt-6">
+            <section className={`pt-1 xl:pt-6 ${introClass()}`} style={introStyle(90)}>
               <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.14),rgba(16,185,129,0.12))] px-4 py-2 text-xs text-white/78 backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" />
                 Experience-first queer atlas
@@ -415,7 +427,7 @@ export default function Home() {
                   height={96}
                   className="h-16 w-16 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
                 />
-                <h1 className="max-w-5xl text-5xl font-bold leading-[0.92] tracking-[-0.05em] text-white sm:text-6xl xl:text-7xl">
+                <h1 className="max-w-5xl text-4xl font-bold leading-[0.94] tracking-[-0.05em] text-white sm:text-6xl xl:text-7xl">
                   QUEER ATLAS
                 </h1>
               </div>
@@ -513,6 +525,11 @@ export default function Home() {
                   )}
                 </div>
               </div>
+              <div className={`mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/55 ${introClass()}`} style={introStyle(220)}>
+                <span className="rounded-full border border-cyan-200/18 bg-cyan-200/8 px-3 py-1">Updated daily</span>
+                <span className="rounded-full border border-emerald-200/18 bg-emerald-200/8 px-3 py-1">Community-powered</span>
+                <span className="rounded-full border border-fuchsia-200/18 bg-fuchsia-200/8 px-3 py-1">Member-safe by design</span>
+              </div>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-3xl border border-cyan-200/15 bg-[linear-gradient(180deg,rgba(56,189,248,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
@@ -530,7 +547,7 @@ export default function Home() {
               </div>
             </section>
 
-            <aside className="grid gap-4">
+            <aside className={`grid gap-4 ${introClass()}`} style={introStyle(170)}>
               <div className="overflow-hidden rounded-[32px] border border-orange-200/16 bg-[linear-gradient(155deg,rgba(58,26,16,0.56),rgba(24,24,24,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -586,7 +603,7 @@ export default function Home() {
             </aside>
           </div>
 
-          <section className="mt-12">
+          <section className={`mt-12 ${introClass()}`} style={introStyle(260)}>
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-white/40">
@@ -599,12 +616,13 @@ export default function Home() {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              {topLaneCards.map((item) => (
+              {topLaneCards.map((item, index) => (
                 <button
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow}`}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow} ${introClass()}`}
+                  style={introStyle(310 + (index * 55))}
                 >
                   <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br ${item.accent}`} />
                   <div className="absolute inset-[1px] rounded-[29px] bg-[#0b0b0b]/96" />
@@ -632,12 +650,13 @@ export default function Home() {
             </div>
 
             <div className="mt-4 grid gap-4 lg:grid-cols-3">
-              {bottomLaneCards.map((item) => (
+              {bottomLaneCards.map((item, index) => (
                 <button
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow}`}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow} ${introClass()}`}
+                  style={introStyle(430 + (index * 55))}
                 >
                   <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br ${item.accent}`} />
                   <div className="absolute inset-[1px] rounded-[29px] bg-[#0b0b0b]/96" />
@@ -665,7 +684,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="mt-12">
+          <section className={`mt-12 ${introClass()}`} style={introStyle(560)}>
             <div className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.32)]">
               <p className="text-xs uppercase tracking-[0.28em] text-white/40">
                 City gravity
@@ -680,6 +699,7 @@ export default function Home() {
                     key={city.city}
                     onClick={() => router.push(`/${city.city.toLowerCase()}`)}
                     className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-4 text-left transition hover:border-white/16 hover:bg-white/6"
+                    style={introStyle(610 + (index * 45))}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/8 bg-white/6 text-sm font-semibold text-white/75">
