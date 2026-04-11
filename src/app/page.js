@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
 import { buildAtlasSearchResults } from "@/lib/search";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { ArrowUpRight, Search } from "lucide-react";
 
 function formatDate(value) {
@@ -25,9 +26,24 @@ function getResultMeta(result) {
   return `${result.city || "City"} | Event`;
 }
 
+function parseNewsTimestamp(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function compareNewsRecency(a, b) {
+  const byCreatedAt =
+    parseNewsTimestamp(b.createdAt || b.created_at) - parseNewsTimestamp(a.createdAt || a.created_at);
+  if (byCreatedAt !== 0) return byCreatedAt;
+
+  const byDate = parseNewsTimestamp(b.date) - parseNewsTimestamp(a.date);
+  if (byDate !== 0) return byDate;
+
+  return String(b.id || "").localeCompare(String(a.id || ""));
+}
+
 export default function Home() {
   const router = useRouter();
-  const [now, setNow] = useState(() => new Date());
   const [events, setEvents] = useState([]);
   const [places, setPlaces] = useState([]);
   const [query, setQuery] = useState("");
@@ -37,6 +53,7 @@ export default function Home() {
   const [dataError, setDataError] = useState("");
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
+  const [worldNews, setWorldNews] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [emailInput, setEmailInput] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
@@ -142,6 +159,48 @@ export default function Home() {
     return { error };
   };
 
+  const fetchWorldNews = async () => {
+    const { data, error } = await supabase
+      .from("qa_world_news")
+      .select("*")
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      const localNews = readLocalJson("qa_world_news_admin", []);
+      const withLocalCategory = (localNews || []).map((item) => ({
+        ...item,
+        categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
+      }));
+      const fallback = [...withLocalCategory, ...EDITORIAL_PULSE_ITEMS].sort(compareNewsRecency);
+      setWorldNews(fallback);
+      return { error: null };
+    }
+
+    const withCategoryLabel = (data || []).map((item) => ({
+      ...item,
+      createdAt: item.created_at || "",
+      categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
+    }));
+
+    const localNews = readLocalJson("qa_world_news_admin", []);
+    const withLocalCategory = (localNews || []).map((item) => ({
+      ...item,
+      categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
+    }));
+
+    const merged = [...withCategoryLabel, ...withLocalCategory, ...EDITORIAL_PULSE_ITEMS].reduce((acc, item) => {
+      const key = String(item.id || `${item.title}-${item.date}`);
+      if (!acc.some((existing) => String(existing.id || `${existing.title}-${existing.date}`) === key)) {
+        acc.push(item);
+      }
+      return acc;
+    }, []);
+
+    setWorldNews(merged.sort(compareNewsRecency));
+    return { error: null };
+  };
+
   const toggleFavorite = (id) => {
     const key = String(id);
     let updated;
@@ -168,8 +227,8 @@ export default function Home() {
   const loadHomeData = useCallback(async () => {
     setIsDataLoading(true);
     setDataError("");
-    const [eventsRes, placesRes] = await Promise.all([fetchEvents(), fetchPlaces()]);
-    if (eventsRes?.error || placesRes?.error) {
+    const [eventsRes, placesRes, worldNewsRes] = await Promise.all([fetchEvents(), fetchPlaces(), fetchWorldNews()]);
+    if (eventsRes?.error || placesRes?.error || worldNewsRes?.error) {
       setDataError("Some live data could not load. Showing available signal.");
     }
     setIsDataLoading(false);
@@ -196,14 +255,6 @@ export default function Home() {
     }, 80);
 
     return () => window.clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setNow(new Date());
-    }, 60000);
-
-    return () => window.clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -255,9 +306,8 @@ export default function Home() {
     return () => clearTimeout(timeout);
   }, [events, places, query]);
 
-  const upcomingEvents = events
-    .filter((event) => event.date && new Date(`${event.date}T23:59:59`) >= now)
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+  const homeNewsItems = [...worldNews]
+    .sort(compareNewsRecency)
     .slice(0, 3);
 
   const topCities = Object.values(
@@ -568,34 +618,34 @@ export default function Home() {
                 </div>
 
                 <div className="mt-3 space-y-2.5">
-                  {upcomingEvents.map((event) => (
+                  {homeNewsItems.map((item) => (
                     <button
-                      key={event.id}
-                      onClick={() => router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`)}
+                      key={item.id}
+                      onClick={() => router.push("/now")}
                       className="w-full rounded-2xl border border-orange-200/14 bg-[linear-gradient(180deg,rgba(70,33,16,0.72),rgba(31,18,29,0.86),rgba(15,15,15,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-orange-200/35"
                     >
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <p className="rounded-full border border-orange-200/15 bg-orange-200/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-orange-100/85">
-                          {[event.city || "City", formatDate(event.date)].join(" | ")}
+                          {[item.city || "Global", formatDate(item.date)].join(" | ")}
                         </p>
                         <span className="rounded-full border border-orange-200/18 bg-orange-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-orange-100">
-                          upcoming
+                          {item.categoryLabel || "news"}
                         </span>
                       </div>
-                      <p className="mt-2 text-[15px] font-semibold text-white">{event.name}</p>
+                      <p className="mt-2 text-[15px] font-semibold text-white">{item.title || "Queer world update"}</p>
                       <p className="mt-1.5 line-clamp-1 text-xs leading-5 text-white/45">
-                        {event.description || "Live community momentum with time-sensitive queer signal."}
+                        {item.summary || "Fresh global queer signal from the atlas feed."}
                       </p>
                       <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/38">
-                        Open event
+                        Open news
                         <ArrowUpRight size={12} />
                       </span>
                     </button>
                   ))}
 
-                  {!isDataLoading && upcomingEvents.length === 0 && (
+                  {!isDataLoading && homeNewsItems.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-white/10 px-4 py-8 text-sm text-white/45">
-                      No live event signal yet.
+                      No world news signal yet.
                     </div>
                   )}
                 </div>

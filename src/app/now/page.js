@@ -22,6 +22,22 @@ function isThisWeek(value, now) {
   return date >= now && date <= end;
 }
 
+function parseNewsTimestamp(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function compareNewsRecency(a, b) {
+  const byCreatedAt =
+    parseNewsTimestamp(b.createdAt || b.created_at) - parseNewsTimestamp(a.createdAt || a.created_at);
+  if (byCreatedAt !== 0) return byCreatedAt;
+
+  const byDate = parseNewsTimestamp(b.date) - parseNewsTimestamp(a.date);
+  if (byDate !== 0) return byDate;
+
+  return String(b.id || "").localeCompare(String(a.id || ""));
+}
+
 const ADMIN_NEWS_KEY = "qa_world_news_admin";
 const HIDDEN_NEWS_KEY = "qa_world_news_hidden";
 const RANKING_OVERRIDES_KEY = "qa_atlas_ranking_overrides";
@@ -76,6 +92,7 @@ function mapNewsRowToItem(row) {
     summary: row.summary,
     whyItMatters: row.why_it_matters,
     sourceName: row.source_name || "Atlas admin",
+    createdAt: row.created_at || "",
   };
 }
 
@@ -334,7 +351,7 @@ export default function NowPage() {
 
     return combined
       .filter((item) => !hiddenNewsIds.includes(String(item.id)))
-      .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+      .sort(compareNewsRecency)
       .slice(0, 12);
   }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
   const displayedNewsItems = worldNewsItems.slice(0, 8);
@@ -423,6 +440,7 @@ export default function NowPage() {
       summary: adminForm.summary,
       whyItMatters: adminForm.whyItMatters,
       sourceName: `${memberName || "Admin"} | Atlas admin`,
+      createdAt: new Date().toISOString(),
     };
 
     const { error } = await supabase.from(NEWS_TABLE).insert({
