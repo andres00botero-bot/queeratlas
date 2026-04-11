@@ -25,6 +25,10 @@ function isThisWeek(value, now) {
 const ADMIN_NEWS_KEY = "qa_world_news_admin";
 const HIDDEN_NEWS_KEY = "qa_world_news_hidden";
 const RANKING_OVERRIDES_KEY = "qa_atlas_ranking_overrides";
+const OWNER_EMAIL_KEY = "qa_owner_email";
+const NEWS_TABLE = "qa_world_news";
+const NEWS_HIDDEN_TABLE = "qa_world_news_hidden";
+const RANKING_TABLE = "qa_atlas_rankings";
 const ATLAS_DESTINATION_RANKINGS = {
   2026: [
     { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
@@ -62,6 +66,39 @@ const ATLAS_DESTINATION_RANKINGS = {
   ],
 };
 
+function mapNewsRowToItem(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    city: row.city || "Global",
+    category: row.category || "culture_tip",
+    date: row.date,
+    summary: row.summary,
+    whyItMatters: row.why_it_matters,
+    sourceName: row.source_name || "Atlas admin",
+  };
+}
+
+function groupRankingRows(rows) {
+  return rows.reduce((acc, row) => {
+    const year = String(row.year);
+    if (!acc[year]) acc[year] = [];
+    acc[year].push({
+      city: row.city || "",
+      country: row.country || "",
+      signal: row.signal || "",
+    });
+    return acc;
+  }, {});
+}
+
+function isMissingTableError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
+}
+
 function PulseSkeletonCard({ tone = "orange" }) {
   const toneClass =
     tone === "emerald"
@@ -89,6 +126,7 @@ export default function NowPage() {
   const [events, setEvents] = useState([]);
   const [selectedCity, setSelectedCity] = useState("all");
   const [loadError, setLoadError] = useState("");
+  const [syncWarning, setSyncWarning] = useState("");
   const [expandedSoonEventId, setExpandedSoonEventId] = useState(null);
   const [expandedNewsId, setExpandedNewsId] = useState(null);
   const [expandedPullPlaceId, setExpandedPullPlaceId] = useState(null);
@@ -136,14 +174,53 @@ export default function NowPage() {
   }, [loadPulseData]);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      setAdminNews(readLocalJson(ADMIN_NEWS_KEY, []));
-      setHiddenNewsIds((readLocalJson(HIDDEN_NEWS_KEY, []) || []).map((id) => String(id)));
-      setRankingOverrides(readLocalJson(RANKING_OVERRIDES_KEY, {}));
-      const storedOwner = String(readLocalJson("qa_owner_email", "") || "").toLowerCase();
+    queueMicrotask(async () => {
+      const localNews = readLocalJson(ADMIN_NEWS_KEY, []);
+      const localHidden = (readLocalJson(HIDDEN_NEWS_KEY, []) || []).map((id) => String(id));
+      const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
+
+      setAdminNews(localNews);
+      setHiddenNewsIds(localHidden);
+      setRankingOverrides(localRankings);
+
+      const storedOwner = String(readLocalJson(OWNER_EMAIL_KEY, "") || "").toLowerCase();
       if (storedOwner) {
         setOwnerEmail(storedOwner);
       }
+
+      const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
+        supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
+        supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
+        supabase.from(RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
+      ]);
+
+      const hasMissingTables =
+        isMissingTableError(newsResponse.error) ||
+        isMissingTableError(hiddenResponse.error) ||
+        isMissingTableError(rankingResponse.error);
+
+      if (hasMissingTables) {
+        setSyncWarning("Off-grid sync is unavailable right now.");
+        return;
+      }
+
+      if (newsResponse.error || hiddenResponse.error || rankingResponse.error) {
+        setSyncWarning("Cloud sync failed. Using local backup.");
+        return;
+      }
+
+      const remoteNews = (newsResponse.data || []).map(mapNewsRowToItem);
+      const remoteHidden = (hiddenResponse.data || []).map((row) => String(row.feed_id));
+      const remoteRankings = groupRankingRows(rankingResponse.data || []);
+
+      setAdminNews(remoteNews);
+      setHiddenNewsIds(remoteHidden);
+      setRankingOverrides(remoteRankings);
+      setSyncWarning("");
+
+      writeLocalJson(ADMIN_NEWS_KEY, remoteNews);
+      writeLocalJson(HIDDEN_NEWS_KEY, remoteHidden);
+      writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
     });
   }, []);
 
@@ -154,7 +231,7 @@ export default function NowPage() {
     if (ownerEmail) return;
 
     setOwnerEmail(email);
-    writeLocalJson("qa_owner_email", email);
+    writeLocalJson(OWNER_EMAIL_KEY, email);
   }, [ownerEmail, user?.email]);
 
   const cityOptions = [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))]
@@ -268,7 +345,9 @@ export default function NowPage() {
     );
   };
 
-  const saveRankingDraft = () => {
+  const saveRankingDraft = async () => {
+    if (!isAdmin) return;
+
     const next = {
       ...rankingOverrides,
       [selectedRankingYear]: rankingDraft.map((item) => ({
@@ -277,22 +356,62 @@ export default function NowPage() {
         signal: (item.signal || "").trim(),
       })),
     };
+    const year = Number(selectedRankingYear);
+    const rows = next[selectedRankingYear].map((item, index) => ({
+      year,
+      rank: index + 1,
+      city: item.city,
+      country: item.country,
+      signal: item.signal,
+      updated_by_email: currentEmail || null,
+    }));
+
+    const { error: deleteError } = await supabase.from(RANKING_TABLE).delete().eq("year", year);
+    if (deleteError && !isMissingTableError(deleteError)) {
+      setSyncWarning("Cloud sync failed. Using local backup.");
+    } else {
+      const { error: insertError } = rows.length
+        ? await supabase.from(RANKING_TABLE).insert(rows)
+        : { error: null };
+
+      if (insertError && !isMissingTableError(insertError)) {
+        setSyncWarning("Cloud sync failed. Using local backup.");
+      } else if (insertError && isMissingTableError(insertError)) {
+        setSyncWarning("Off-grid sync is unavailable right now.");
+      } else {
+        setSyncWarning("");
+      }
+    }
+
     setRankingOverrides(next);
     writeLocalJson(RANKING_OVERRIDES_KEY, next);
     setIsRankingEditorOpen(false);
   };
 
-  const resetRankingYear = () => {
+  const resetRankingYear = async () => {
+    if (!isAdmin) return;
+
     const next = { ...rankingOverrides };
     delete next[selectedRankingYear];
+
+    const { error } = await supabase.from(RANKING_TABLE).delete().eq("year", Number(selectedRankingYear));
+    if (error && !isMissingTableError(error)) {
+      setSyncWarning("Cloud sync failed. Using local backup.");
+    } else if (error && isMissingTableError(error)) {
+      setSyncWarning("Off-grid sync is unavailable right now.");
+    } else {
+      setSyncWarning("");
+    }
+
     setRankingOverrides(next);
     writeLocalJson(RANKING_OVERRIDES_KEY, next);
     setIsRankingEditorOpen(false);
   };
   const rankingRenderItems = isRankingEditorOpen ? rankingDraft : rankingItems;
 
-  const publishAdminNews = (event) => {
+  const publishAdminNews = async (event) => {
     event.preventDefault();
+    if (!isAdmin) return;
     if (!adminForm.title || !adminForm.summary || !adminForm.whyItMatters) return;
 
     const item = {
@@ -305,6 +424,26 @@ export default function NowPage() {
       whyItMatters: adminForm.whyItMatters,
       sourceName: `${memberName || "Admin"} | Atlas admin`,
     };
+
+    const { error } = await supabase.from(NEWS_TABLE).insert({
+      id: item.id,
+      title: item.title,
+      city: item.city,
+      category: item.category,
+      date: item.date,
+      summary: item.summary,
+      why_it_matters: item.whyItMatters,
+      source_name: item.sourceName,
+      created_by_email: currentEmail || null,
+    });
+
+    if (error && !isMissingTableError(error)) {
+      setSyncWarning("Cloud sync failed. Using local backup.");
+    } else if (error && isMissingTableError(error)) {
+      setSyncWarning("Off-grid sync is unavailable right now.");
+    } else {
+      setSyncWarning("");
+    }
 
     const next = [item, ...adminNews];
     setAdminNews(next);
@@ -320,8 +459,35 @@ export default function NowPage() {
     setShowAdminForm(false);
   };
 
-  const deleteFeedItem = (itemId) => {
+  const deleteFeedItem = async (itemId) => {
+    if (!isAdmin) return;
     const key = String(itemId);
+
+    const { error: deleteNewsError } = await supabase.from(NEWS_TABLE).delete().eq("id", key);
+    if (deleteNewsError && !isMissingTableError(deleteNewsError)) {
+      setSyncWarning("Cloud sync failed. Using local backup.");
+    }
+
+    const { error: hideError } = await supabase
+      .from(NEWS_HIDDEN_TABLE)
+      .upsert(
+        {
+          feed_id: key,
+          hidden_by_email: currentEmail || null,
+        },
+        { onConflict: "feed_id" }
+      );
+
+    if (hideError && !isMissingTableError(hideError)) {
+      setSyncWarning("Cloud sync failed. Using local backup.");
+    } else if (
+      (deleteNewsError && isMissingTableError(deleteNewsError)) ||
+      (hideError && isMissingTableError(hideError))
+    ) {
+      setSyncWarning("Off-grid sync is unavailable right now.");
+    } else if (!deleteNewsError && !hideError) {
+      setSyncWarning("");
+    }
 
     setAdminNews((current) => {
       const next = current.filter((item) => String(item.id) !== key);
@@ -415,6 +581,11 @@ export default function NowPage() {
               >
                 Retry
               </button>
+            </div>
+          )}
+          {syncWarning && (
+            <div className="mt-3 inline-flex items-center rounded-xl border border-yellow-300/25 bg-yellow-300/10 px-3 py-2 text-xs text-yellow-100">
+              {syncWarning}
             </div>
           )}
         </div>
