@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
 import { buildAtlasSearchResults } from "@/lib/search";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
-import { Search } from "lucide-react";
+import { ArrowUpRight, Search } from "lucide-react";
 
 function formatDate(value) {
   if (!value) return "Date TBA";
@@ -17,6 +17,12 @@ function formatDate(value) {
     day: "numeric",
     month: "short",
   });
+}
+
+function getResultMeta(result) {
+  if (result.type === "city") return `City | ${result.country || "Global"}`;
+  if (result.type === "place") return `${result.city || "City"} | Place`;
+  return `${result.city || "City"} | Event`;
 }
 
 export default function Home() {
@@ -243,7 +249,7 @@ export default function Home() {
   const upcomingEvents = events
     .filter((event) => event.date && new Date(`${event.date}T23:59:59`) >= now)
     .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .slice(0, 4);
+    .slice(0, 3);
 
   const topCities = Object.values(
     places.reduce((acc, place) => {
@@ -264,7 +270,7 @@ export default function Home() {
     }, {})
   )
     .sort((a, b) => b.reviews - a.reviews)
-    .slice(0, 4);
+    .slice(0, 3);
 
   const cityCount = new Set(places.map((place) => place.city).filter(Boolean)).size;
   const eventCount = events.length;
@@ -344,43 +350,40 @@ export default function Home() {
         <div className="pointer-events-none absolute bottom-20 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-amber-400/5 blur-3xl" />
 
         <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8">
-          <div className="mb-10 flex items-center justify-between gap-4">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.28em] text-white/70 backdrop-blur">
               Global queer discovery
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {isMember && (
                 <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/72 backdrop-blur sm:block">
-                  {memberName}{memberProfile?.pronouns ? ` · ${memberProfile.pronouns}` : ""}
+                  {memberName}{memberProfile?.pronouns ? ` | ${memberProfile.pronouns}` : ""}
                 </div>
               )}
 
-              <button
-                onClick={() => {
-                  if (isMember) {
-                    router.push("/community");
-                    return;
-                  }
-
-                  openSignup();
-                }}
-                className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-                  isMember
-                    ? "border border-emerald-300/25 bg-emerald-300/10 text-emerald-100 backdrop-blur hover:border-emerald-200/35"
-                    : "bg-gradient-to-r from-rose-300 via-fuchsia-300 to-orange-200 text-black shadow-[0_18px_50px_rgba(244,114,182,0.20)] hover:scale-[1.01] hover:opacity-95"
-                }`}
-              >
-                {isMember ? "Member access" : "Join Queer Atlas"}
-              </button>
-
-              {isMember && (
+              {!isMember ? (
                 <button
-                  onClick={() => router.push("/favorites")}
-                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/72 backdrop-blur transition hover:border-white/16 hover:text-white"
+                  onClick={() => openSignup()}
+                  className="rounded-full bg-gradient-to-r from-rose-300 via-fuchsia-300 to-orange-200 px-5 py-2 text-sm font-semibold text-black shadow-[0_18px_50px_rgba(244,114,182,0.20)] transition hover:scale-[1.01] hover:opacity-95"
                 >
-                  Your Atlas
+                  Join Queer Atlas
                 </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => router.push("/favorites")}
+                    className="rounded-full border border-fuchsia-200/28 bg-[linear-gradient(90deg,rgba(244,114,182,0.18),rgba(251,146,60,0.16))] px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/45"
+                  >
+                    Your Atlas
+                  </button>
+                  <button
+                    onClick={() => router.push("/community")}
+                    className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/72 backdrop-blur transition hover:border-white/16 hover:text-white sm:inline-flex"
+                  >
+                    Community
+                  </button>
+                </>
               )}
 
               {isMember && (
@@ -397,8 +400,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid items-start gap-10 xl:grid-cols-[1.1fr_0.9fr]">
-            <section className="pt-2">
+          <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
+            <section className="pt-1 xl:pt-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/70 backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" />
                 Experience-first queer atlas
@@ -417,7 +420,7 @@ export default function Home() {
                 </h1>
               </div>
 
-              <p className="mt-6 max-w-2xl text-base leading-8 text-white/66 sm:text-lg">
+              <p className="mt-5 max-w-2xl text-base leading-7 text-white/68 sm:text-lg">
                 Find the city. Feel the signal. The global queer database for discovery,
                 vibe, community, and culture.
               </p>
@@ -437,7 +440,7 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="mt-8 w-full max-w-3xl">
+              <div className="mt-7 w-full max-w-3xl">
                 <div className="relative">
                   <Search
                     className="absolute left-5 top-1/2 -translate-y-1/2 text-white/35"
@@ -462,7 +465,7 @@ export default function Home() {
                   </button>
 
                   {showResults && results.length > 0 && (
-                    <div className="absolute top-full z-50 mt-3 w-full overflow-hidden rounded-3xl border border-white/10 bg-[#111111]/95 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur">
+                    <div className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-3xl border border-white/10 bg-[#111111]/95 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur">
                       {results.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}
@@ -470,17 +473,16 @@ export default function Home() {
                             setShowResults(false);
                             openResult(result);
                           }}
-                          className="cursor-pointer border-b border-white/6 px-5 py-4 transition last:border-b-0 hover:bg-white/5"
+                          className="cursor-pointer border-b border-white/6 px-5 py-4 transition last:border-b-0 hover:bg-white/6"
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <p className="font-medium text-white">{result.name}</p>
+                              <span className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-white/55">
+                                {result.type}
+                              </span>
+                              <p className="mt-2 font-medium text-white">{result.name}</p>
                               <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">
-                                {result.type === "city"
-                                  ? `City · ${result.country || "Global"}`
-                                  : result.type === "place"
-                                    ? `${result.city || "City"} · Place`
-                                    : `${result.city || "City"} · Event`}
+                                {getResultMeta(result)}
                               </p>
                             </div>
 
@@ -504,10 +506,15 @@ export default function Home() {
                       ))}
                     </div>
                   )}
+                  {showResults && query.trim().length > 0 && results.length === 0 && (
+                    <div className="absolute top-full z-50 mt-3 w-full rounded-3xl border border-white/10 bg-[#111111]/95 px-5 py-4 text-sm text-white/60 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur">
+                      No instant matches yet. Press Explore for full search.
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              <div className="mt-7 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-3xl border border-white/8 bg-white/5 p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{cityCount}</p>
@@ -524,41 +531,48 @@ export default function Home() {
             </section>
 
             <aside className="grid gap-4">
-              <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(155deg,rgba(24,24,24,0.94),rgba(10,10,10,0.98))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
+              <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(155deg,rgba(24,24,24,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.24em] text-amber-200/70">
                       Queer world news
                     </p>
-                    <h2 className="mt-2 text-2xl font-semibold text-white">
+                    <h2 className="mt-2 text-xl font-semibold text-white">
                       Live now
                     </h2>
                   </div>
 
                   <button
                     onClick={() => router.push("/now")}
-                    className="rounded-full border border-orange-200/20 bg-orange-200/8 px-4 py-2 text-xs text-orange-100 transition hover:border-orange-200/40 hover:bg-orange-200/14"
+                    className="rounded-full border border-orange-200/20 bg-orange-200/8 px-3 py-1.5 text-[11px] text-orange-100 transition hover:border-orange-200/40 hover:bg-orange-200/14"
                   >
                     Open news
                   </button>
                 </div>
 
-                <div className="mt-5 space-y-3">
+                <div className="mt-3 space-y-2.5">
                   {upcomingEvents.map((event) => (
                     <button
                       key={event.id}
                       onClick={() => router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`)}
-                      className="w-full rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(70,33,16,0.65),rgba(15,15,15,0.94))] p-4 text-left transition hover:border-orange-200/30 hover:-translate-y-[1px]"
+                      className="w-full rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(70,33,16,0.72),rgba(15,15,15,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-orange-200/35"
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs uppercase tracking-[0.18em] text-orange-100/75">
-                          {event.city || "City"} · {formatDate(event.date)}
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <p className="rounded-full border border-orange-200/15 bg-orange-200/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-orange-100/85">
+                          {[event.city || "City", formatDate(event.date)].join(" | ")}
                         </p>
-                        <span className="rounded-full bg-orange-200/10 px-3 py-1 text-[11px] text-orange-100">
+                        <span className="rounded-full border border-orange-200/18 bg-orange-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-orange-100">
                           upcoming
                         </span>
                       </div>
-                      <p className="mt-3 text-base font-semibold text-white">{event.name}</p>
+                      <p className="mt-2 text-[15px] font-semibold text-white">{event.name}</p>
+                      <p className="mt-1.5 line-clamp-1 text-xs leading-5 text-white/45">
+                        {event.description || "Live community momentum with time-sensitive queer signal."}
+                      </p>
+                      <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/38">
+                        Open event
+                        <ArrowUpRight size={12} />
+                      </span>
                     </button>
                   ))}
 
@@ -571,42 +585,6 @@ export default function Home() {
               </div>
             </aside>
           </div>
-
-          {isMember && (
-            <section className="mt-10 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.32)]">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-white/40">
-                    Member spaces
-                  </p>
-                  <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                    Continue inside the atlas
-                  </h2>
-                </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => router.push("/favorites")}
-                    className="rounded-full border border-rose-200/12 bg-rose-200/[0.06] px-4 py-2 text-sm text-white/78 transition hover:border-rose-200/20 hover:text-white"
-                  >
-                    Your Atlas
-                  </button>
-                  <button
-                    onClick={() => router.push("/community")}
-                    className="rounded-full border border-emerald-200/12 bg-emerald-200/[0.05] px-4 py-2 text-sm text-white/78 transition hover:border-emerald-200/20 hover:text-white"
-                  >
-                    Community
-                  </button>
-                  <button
-                    onClick={() => router.push("/contribute")}
-                    className="rounded-full border border-violet-200/12 bg-violet-200/[0.05] px-4 py-2 text-sm text-white/78 transition hover:border-violet-200/20 hover:text-white"
-                  >
-                    Contribute
-                  </button>
-                </div>
-              </div>
-            </section>
-          )}
 
           <section className="mt-12">
             <div className="mb-5 flex items-end justify-between gap-4">
@@ -626,7 +604,7 @@ export default function Home() {
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow}`}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow}`}
                 >
                   <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br ${item.accent}`} />
                   <div className="absolute inset-[1px] rounded-[29px] bg-[#0b0b0b]/96" />
@@ -638,10 +616,16 @@ export default function Home() {
                     <h3 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">
                       {item.title}
                     </h3>
-                    <p className="mt-3 max-w-xl text-sm leading-6 text-white/62">
+                    <p className="mt-3 max-w-xl text-sm leading-6 text-white/64">
                       {item.description}
                     </p>
-                    <div className={`mt-8 h-1.5 w-24 rounded-full bg-gradient-to-r ${item.accent}`} />
+                    <div className="mt-6 flex items-center justify-between">
+                      <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r ${item.accent}`} />
+                      <span className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-white/46 transition group-hover:text-white/72">
+                        Open
+                        <ArrowUpRight size={12} />
+                      </span>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -653,7 +637,7 @@ export default function Home() {
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow}`}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow}`}
                 >
                   <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br ${item.accent}`} />
                   <div className="absolute inset-[1px] rounded-[29px] bg-[#0b0b0b]/96" />
@@ -665,10 +649,16 @@ export default function Home() {
                     <h3 className="mt-3 text-2xl font-semibold text-white">
                       {item.title}
                     </h3>
-                    <p className="mt-3 max-w-sm text-sm leading-6 text-white/62">
+                    <p className="mt-3 max-w-sm text-sm leading-6 text-white/64">
                       {item.description}
                     </p>
-                    <div className={`mt-8 h-1.5 w-24 rounded-full bg-gradient-to-r ${item.accent}`} />
+                    <div className="mt-6 flex items-center justify-between">
+                      <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r ${item.accent}`} />
+                      <span className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-white/46 transition group-hover:text-white/72">
+                        Open
+                        <ArrowUpRight size={12} />
+                      </span>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -680,33 +670,40 @@ export default function Home() {
               <p className="text-xs uppercase tracking-[0.28em] text-white/40">
                 City gravity
               </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">
                 Where signal is strongest
               </h2>
 
-              <div className="mt-6 space-y-3">
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
                 {topCities.map((city, index) => (
                   <button
                     key={city.city}
                     onClick={() => router.push(`/${city.city.toLowerCase()}`)}
-                    className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-white/4 px-4 py-4 text-left transition hover:border-white/16 hover:bg-white/6"
+                    className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-4 text-left transition hover:border-white/16 hover:bg-white/6"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/6 text-sm font-semibold text-white/75">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/8 bg-white/6 text-sm font-semibold text-white/75">
                         {index + 1}
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-white">{city.city}</p>
                         <p className="mt-1 text-xs text-white/42">
-                          {city.count} places · {city.reviews} reviews
+                          {city.count} places | {city.reviews} reviews
                         </p>
                       </div>
                     </div>
-                    <span className="text-xs uppercase tracking-[0.18em] text-white/35">
-                      open
-                    </span>
+                    <span className="mt-3 inline-flex text-xs uppercase tracking-[0.16em] text-white/35">open city</span>
                   </button>
                 ))}
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => router.push("/cities")}
+                  className="rounded-full border border-white/12 bg-white/5 px-4 py-2 text-xs text-white/65 transition hover:border-white/20 hover:text-white"
+                >
+                  Explore all cities
+                </button>
               </div>
             </div>
           </section>
