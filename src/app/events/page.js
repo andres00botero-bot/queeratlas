@@ -22,6 +22,20 @@ function formatDateLabel(value) {
   });
 }
 
+function formatCityLabel(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "City";
+  if (raw.toLowerCase() === "global") return "Global";
+
+  return raw
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
 function mapGlobalEventRow(row) {
   return {
     id: String(row.id),
@@ -259,7 +273,7 @@ export default function EventsPage() {
   ), [filteredEvents]);
 
   const sortedCities = useMemo(() => (
-    Object.keys(eventsByCity).sort((a, b) => a.localeCompare(b))
+    Object.keys(eventsByCity).sort((a, b) => formatCityLabel(a).localeCompare(formatCityLabel(b)))
   ), [eventsByCity]);
 
   const year = currentDate.getFullYear();
@@ -452,7 +466,7 @@ export default function EventsPage() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs uppercase tracking-[0.18em] text-orange-100/72">
-                          {event.city || "City"} · {formatDateLabel(event.date)}
+                          {formatCityLabel(event.city)} | {formatDateLabel(event.date)}
                         </p>
                         <button
                           onClick={(clickEvent) => refreshQuality(event, clickEvent)}
@@ -626,7 +640,7 @@ export default function EventsPage() {
                   return (
                     <section key={city}>
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <h3 className="text-lg font-semibold text-white">{city}</h3>
+                        <h3 className="text-lg font-semibold text-white">{formatCityLabel(city)}</h3>
                         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-white/42">
                           {cityEvents.length} live
                         </span>
