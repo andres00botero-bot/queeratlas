@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
@@ -21,7 +21,6 @@ function formatDate(value) {
 
 export default function Home() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [now, setNow] = useState(() => new Date());
   const [events, setEvents] = useState([]);
   const [places, setPlaces] = useState([]);
@@ -193,13 +192,15 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (searchParams.get("join") === "true") {
-      queueMicrotask(() => {
-        openSignup();
-        window.history.replaceState({}, "", "/");
-      });
-    }
-  }, [searchParams]);
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("join") !== "true") return;
+
+    queueMicrotask(() => {
+      openSignup();
+      window.history.replaceState({}, "", "/");
+    });
+  }, []);
 
   useEffect(() => {
     if (isAuthLoading || !isMember) return;
