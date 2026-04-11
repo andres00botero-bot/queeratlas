@@ -351,7 +351,7 @@ export default function Home() {
 
         <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.28em] text-white/70 backdrop-blur">
+            <div className="rounded-full border border-fuchsia-200/15 bg-[linear-gradient(90deg,rgba(244,114,182,0.12),rgba(56,189,248,0.1))] px-4 py-2 text-xs uppercase tracking-[0.28em] text-white/78 backdrop-blur">
               Global queer discovery
             </div>
 
@@ -402,7 +402,7 @@ export default function Home() {
 
           <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
             <section className="pt-1 xl:pt-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/70 backdrop-blur">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.14),rgba(16,185,129,0.12))] px-4 py-2 text-xs text-white/78 backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" />
                 Experience-first queer atlas
               </div>
@@ -452,7 +452,7 @@ export default function Home() {
                     onChange={(event) => setQuery(event.target.value)}
                     onFocus={() => setShowResults(true)}
                     placeholder="Search cities, places, events"
-                    className="w-full rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-14 py-5 text-base text-white outline-none backdrop-blur focus:border-fuchsia-300/40 focus:ring-2 focus:ring-fuchsia-300/15"
+                    className="w-full rounded-[28px] border border-fuchsia-200/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-14 py-5 text-base text-white outline-none backdrop-blur focus:border-fuchsia-300/45 focus:ring-2 focus:ring-fuchsia-300/20"
                   />
 
                   <button
@@ -515,15 +515,15 @@ export default function Home() {
               </div>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-3xl border border-white/8 bg-white/5 p-4 backdrop-blur">
+                <div className="rounded-3xl border border-cyan-200/15 bg-[linear-gradient(180deg,rgba(56,189,248,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{cityCount}</p>
                 </div>
-                <div className="rounded-3xl border border-white/8 bg-white/5 p-4 backdrop-blur">
+                <div className="rounded-3xl border border-emerald-200/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Places</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{placeCount}</p>
                 </div>
-                <div className="rounded-3xl border border-white/8 bg-white/5 p-4 backdrop-blur">
+                <div className="rounded-3xl border border-amber-200/20 bg-[linear-gradient(180deg,rgba(251,191,36,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Events</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{eventCount}</p>
                 </div>
@@ -531,7 +531,7 @@ export default function Home() {
             </section>
 
             <aside className="grid gap-4">
-              <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(155deg,rgba(24,24,24,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
+              <div className="overflow-hidden rounded-[32px] border border-orange-200/16 bg-[linear-gradient(155deg,rgba(58,26,16,0.56),rgba(24,24,24,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.24em] text-amber-200/70">
@@ -555,7 +555,7 @@ export default function Home() {
                     <button
                       key={event.id}
                       onClick={() => router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`)}
-                      className="w-full rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(70,33,16,0.72),rgba(15,15,15,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-orange-200/35"
+                      className="w-full rounded-2xl border border-orange-200/14 bg-[linear-gradient(180deg,rgba(70,33,16,0.72),rgba(31,18,29,0.86),rgba(15,15,15,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-orange-200/35"
                     >
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <p className="rounded-full border border-orange-200/15 bg-orange-200/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-orange-100/85">
