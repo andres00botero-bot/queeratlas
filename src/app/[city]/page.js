@@ -15,6 +15,7 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
+import DateInput from "@/components/ui/DateInput";
 
 const TYPES = [
   { value: "club", label: "Clubs", color: "#ef4444" },
@@ -90,6 +91,22 @@ function formatDate(value) {
   });
 }
 
+function isEventVisibleOnCityPage(value) {
+  if (!value) return false;
+
+  const dateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+
+  if (dateOnlyMatch) {
+    const [year, month, day] = String(value).split("-").map(Number);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+    return endOfDay.getTime() >= Date.now();
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return true;
+  return parsed.getTime() >= Date.now();
+}
+
 function qualityPillClass(tone) {
   if (tone === "verified") {
     return "border-emerald-200/24 bg-emerald-200/12 text-emerald-100";
@@ -145,12 +162,47 @@ export default function CityPage() {
   const [eventsLoadError, setEventsLoadError] = useState("");
   const [mapError, setMapError] = useState("");
   const [, setQualityTick] = useState(0);
+  const [hoveredPlaceId, setHoveredPlaceId] = useState(null);
+  const [hoveredEventId, setHoveredEventId] = useState(null);
+  const [isMapInteracting, setIsMapInteracting] = useState(false);
   const { isMember } = useAuth();
 
   const mapContainerRef = useRef(null);
   const mapWrapperRef = useRef(null);
+  const eventsSectionRef = useRef(null);
+  const guideSectionRef = useRef(null);
+  const placesSectionRef = useRef(null);
+  const addEventFormRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
+  const placeMarkersRef = useRef(new Map());
+  const eventMarkersRef = useRef(new Map());
+  const isMapInteractingRef = useRef(false);
+
+  const openEventContribution = useCallback(() => {
+    setAddEventMode(true);
+    setAddMode(false);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        addEventFormRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    });
+  }, []);
+
+  const scrollToSection = useCallback((ref) => {
+    ref?.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
+  useEffect(() => {
+    isMapInteractingRef.current = isMapInteracting;
+  }, [isMapInteracting]);
 
   const cityPlaces = useMemo(
     () => {
@@ -172,6 +224,7 @@ export default function CityPage() {
       const blocked = getBlockedItems();
       return eventsData.filter((event) => (
         event.city?.toLowerCase() === city.toLowerCase()
+        && isEventVisibleOnCityPage(event.date)
         && !blocked.some(
           (item) =>
             item.targetType === "event" &&
@@ -220,6 +273,10 @@ export default function CityPage() {
       items: cityPlaces.filter((place) => place.type === item.value),
     })),
     [cityPlaces]
+  );
+  const visiblePlaceGroups = useMemo(
+    () => groupedPlaces.filter((group) => group.items.length > 0),
+    [groupedPlaces]
   );
 
   const sortedEvents = useMemo(
@@ -357,6 +414,11 @@ export default function CityPage() {
   }, []);
 
   useEffect(() => {
+    setHoveredPlaceId(null);
+    setHoveredEventId(null);
+  }, [city]);
+
+  useEffect(() => {
     queueMicrotask(() => {
       if (contributeMode === "place") {
         setAddMode(true);
@@ -404,6 +466,24 @@ export default function CityPage() {
       });
     });
 
+    const beginInteraction = () => {
+      isMapInteractingRef.current = true;
+      setIsMapInteracting(true);
+    };
+    const endInteraction = () => {
+      isMapInteractingRef.current = false;
+      setIsMapInteracting(false);
+    };
+
+    mapRef.current.on("dragstart", beginInteraction);
+    mapRef.current.on("dragend", endInteraction);
+    mapRef.current.on("zoomstart", beginInteraction);
+    mapRef.current.on("zoomend", endInteraction);
+    mapRef.current.on("rotatestart", beginInteraction);
+    mapRef.current.on("rotateend", endInteraction);
+    mapRef.current.on("pitchstart", beginInteraction);
+    mapRef.current.on("pitchend", endInteraction);
+
     const handleResize = () => mapRef.current?.resize();
     window.addEventListener("resize", handleResize);
 
@@ -412,6 +492,14 @@ export default function CityPage() {
     });
 
     return () => {
+      mapRef.current?.off("dragstart", beginInteraction);
+      mapRef.current?.off("dragend", endInteraction);
+      mapRef.current?.off("zoomstart", beginInteraction);
+      mapRef.current?.off("zoomend", endInteraction);
+      mapRef.current?.off("rotatestart", beginInteraction);
+      mapRef.current?.off("rotateend", endInteraction);
+      mapRef.current?.off("pitchstart", beginInteraction);
+      mapRef.current?.off("pitchend", endInteraction);
       window.removeEventListener("resize", handleResize);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
@@ -425,6 +513,8 @@ export default function CityPage() {
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
+    placeMarkersRef.current = new Map();
+    eventMarkersRef.current = new Map();
 
     cityPlaces.forEach((place) => {
       if (place.lat == null || place.lng == null) return;
@@ -437,8 +527,16 @@ export default function CityPage() {
       marker.getElement().addEventListener("click", () => {
         router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null }));
       });
+      marker.getElement().addEventListener("mouseenter", () => {
+        if (isMapInteractingRef.current) return;
+        setHoveredPlaceId(String(place.id));
+      });
+      marker.getElement().addEventListener("mouseleave", () => {
+        setHoveredPlaceId(null);
+      });
 
       markersRef.current.push(marker);
+      placeMarkersRef.current.set(String(place.id), marker);
     });
 
     cityEvents.forEach((event) => {
@@ -458,10 +556,38 @@ export default function CityPage() {
       marker.getElement().addEventListener("click", () => {
         router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id }));
       });
+      marker.getElement().addEventListener("mouseenter", () => {
+        if (isMapInteractingRef.current) return;
+        setHoveredEventId(String(event.id));
+      });
+      marker.getElement().addEventListener("mouseleave", () => {
+        setHoveredEventId(null);
+      });
 
       markersRef.current.push(marker);
+      eventMarkersRef.current.set(String(event.id), marker);
     });
   }, [buildSelectionUrl, cityPlaces, cityEvents, router]);
+
+  useEffect(() => {
+    placeMarkersRef.current.forEach((marker, id) => {
+      const active = !isMapInteracting && hoveredPlaceId && String(id) === String(hoveredPlaceId);
+      const el = marker.getElement();
+      el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
+      el.style.boxShadow = active ? "0 0 0 4px rgba(255,255,255,0.22), 0 0 22px rgba(255,255,255,0.35)" : "none";
+      el.style.filter = active ? "saturate(1.2)" : "saturate(1)";
+      el.style.zIndex = active ? "30" : "10";
+    });
+
+    eventMarkersRef.current.forEach((marker, id) => {
+      const active = !isMapInteracting && hoveredEventId && String(id) === String(hoveredEventId);
+      const el = marker.getElement();
+      el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
+      el.style.boxShadow = active ? "0 0 0 4px rgba(139,92,246,0.24), 0 0 22px rgba(139,92,246,0.45)" : "none";
+      el.style.filter = active ? "brightness(1.15)" : "brightness(1)";
+      el.style.zIndex = active ? "32" : "12";
+    });
+  }, [hoveredEventId, hoveredPlaceId, isMapInteracting]);
 
   useEffect(() => {
     if (!selectedPlace) {
@@ -659,8 +785,8 @@ export default function CityPage() {
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
       <ActionToast toast={toast} />
-      <div className="flex-1 overflow-y-auto px-6 py-8">
-        <div className="relative mb-6 overflow-hidden rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_88%_10%,rgba(45,212,191,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(135deg,rgba(24,24,24,0.96),rgba(10,10,10,0.99),rgba(25,22,20,0.97))] p-7 shadow-[0_30px_110px_rgba(0,0,0,0.42)]">
+      <div className="flex-1 overflow-y-auto px-6 py-8 pb-24 lg:pb-8">
+        <div className="animate-cinematic-in relative mb-6 overflow-hidden rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_88%_10%,rgba(45,212,191,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(135deg,rgba(24,24,24,0.96),rgba(10,10,10,0.99),rgba(25,22,20,0.97))] p-7 shadow-[0_30px_110px_rgba(0,0,0,0.42)]">
           <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-fuchsia-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-4 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="mb-2 flex items-center gap-4">
@@ -696,7 +822,7 @@ export default function CityPage() {
           )}
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="animate-cinematic-in mb-4 flex flex-wrap gap-2" style={{ animationDelay: "70ms" }}>
           <button
             onClick={() => {
               if (!isMember) {
@@ -725,8 +851,12 @@ export default function CityPage() {
                 return;
               }
 
-              setAddEventMode((current) => !current);
-              setAddMode(false);
+              if (addEventMode) {
+                setAddEventMode(false);
+                return;
+              }
+
+              openEventContribution();
             }}
             className={`rounded-full px-5 py-2.5 text-sm font-medium transition ${
               addEventMode
@@ -758,19 +888,19 @@ export default function CityPage() {
         )}
 
         {addEventMode && (
-          <div className="mb-6 space-y-3 rounded-[28px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(28,19,56,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(139,92,246,0.08)]">
+          <div ref={addEventFormRef} className="mb-6 space-y-3 rounded-[28px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(28,19,56,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(139,92,246,0.08)]">
             <input value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="Event name" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <textarea value={eventDescription} onChange={(event) => setEventDescription(event.target.value)} placeholder="Description (what is this event?)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={eventLink} onChange={(event) => setEventLink(event.target.value)} placeholder="Event link (Instagram, RA, etc)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+            <DateInput value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" tone="violet" />
             <button onClick={handleAddEvent} className="w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 font-semibold text-black">
               Save event
             </button>
           </div>
         )}
 
-        <div ref={mapWrapperRef} className="mb-8">
+        <div ref={mapWrapperRef} className="animate-cinematic-in mb-8" style={{ animationDelay: "120ms" }}>
           <div className="relative h-[460px] w-full overflow-hidden rounded-[30px] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.30)]">
             <div ref={mapContainerRef} className="h-full w-full" />
             {mapError && (
@@ -791,7 +921,37 @@ export default function CityPage() {
           </div>
         </div>
 
-        <div className="mb-10 rounded-[30px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,18,56,0.90),rgba(10,10,10,0.98))] p-6 shadow-[0_20px_60px_rgba(139,92,246,0.08)]">
+        <div className="animate-cinematic-in mb-8 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_16px_50px_rgba(0,0,0,0.22)]" style={{ animationDelay: "170ms" }}>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">Quick Navigation</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={() => scrollToSection(eventsSectionRef)}
+              className="qa-cinematic-hover rounded-2xl border border-violet-200/16 bg-violet-200/[0.06] px-4 py-3 text-left text-sm text-violet-100 hover:border-violet-200/32"
+            >
+              <p className="text-[10px] uppercase tracking-[0.16em] text-violet-100/75">Jump To</p>
+              <p className="mt-1 font-semibold">Events</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection(guideSectionRef)}
+              className="qa-cinematic-hover rounded-2xl border border-amber-200/16 bg-amber-200/[0.06] px-4 py-3 text-left text-sm text-amber-100 hover:border-amber-200/32"
+            >
+              <p className="text-[10px] uppercase tracking-[0.16em] text-amber-100/75">Jump To</p>
+              <p className="mt-1 font-semibold">Quick Guide</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection(placesSectionRef)}
+              className="qa-cinematic-hover rounded-2xl border border-rose-200/16 bg-rose-200/[0.06] px-4 py-3 text-left text-sm text-rose-100 hover:border-rose-200/32"
+            >
+              <p className="text-[10px] uppercase tracking-[0.16em] text-rose-100/75">Jump To</p>
+              <p className="mt-1 font-semibold">Venues</p>
+            </button>
+          </div>
+        </div>
+
+        <div ref={eventsSectionRef} className="animate-cinematic-in mb-10 rounded-[30px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,18,56,0.90),rgba(10,10,10,0.98))] p-6 shadow-[0_20px_60px_rgba(139,92,246,0.08)]" style={{ animationDelay: "210ms" }}>
           <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-violet-300/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-wide text-violet-200 backdrop-blur">
             Events
           </h2>
@@ -819,13 +979,19 @@ export default function CityPage() {
                 onClick={() => openEvent(featuredEvent)}
                 role="button"
                 tabIndex={0}
+                onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
+                onMouseLeave={() => setHoveredEventId(null)}
                 onKeyDown={(keyEvent) => {
                   if (keyEvent.key === "Enter" || keyEvent.key === " ") {
                     keyEvent.preventDefault();
                     openEvent(featuredEvent);
                   }
                 }}
-                className={`animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                  String(hoveredEventId) === String(featuredEvent.id)
+                    ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
+                    : ""
+                } ${
                   isFocusMode && String(selectedEvent?.id) !== String(featuredEvent.id)
                     ? "opacity-55 saturate-75"
                     : ""
@@ -884,18 +1050,24 @@ export default function CityPage() {
                   onClick={() => openEvent(event)}
                   role="button"
                   tabIndex={0}
+                  onMouseEnter={() => setHoveredEventId(String(event.id))}
+                  onMouseLeave={() => setHoveredEventId(null)}
                   onKeyDown={(keyEvent) => {
                     if (keyEvent.key === "Enter" || keyEvent.key === " ") {
                       keyEvent.preventDefault();
                       openEvent(event);
                     }
                   }}
-                  className={`animate-rise-in mb-3 cursor-pointer rounded-[22px] border p-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                  className={`qa-cinematic-hover animate-rise-in mb-3 cursor-pointer rounded-[22px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
                     String(selectedEvent?.id) === String(event.id)
                       ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
                       : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${
                         isFocusMode ? "opacity-55 saturate-75" : ""
                       }`
+                  } ${
+                    String(hoveredEventId) === String(event.id)
+                      ? "border-violet-200/45 shadow-[0_18px_48px_rgba(139,92,246,0.18)]"
+                      : ""
                   }`}
                 >
                   <div className="mb-1 flex items-center justify-between">
@@ -925,24 +1097,48 @@ export default function CityPage() {
             })()
           ))}
           {!eventsLoading && !featuredEvent && remainingEvents.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-white/12 px-4 py-8 text-center text-sm text-white/50">
-              <p>No events published in this city yet.</p>
-              {isMember && (
+            <div className="rounded-[26px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.20),rgba(18,18,18,0.96))] px-5 py-8 text-center">
+              <p className="text-xs uppercase tracking-[0.2em] text-violet-200/70">Event signal</p>
+              <h3 className="mt-2 text-lg font-semibold text-white">This city is quiet right now</h3>
+              <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
+                No upcoming events are live yet. You can spark the pulse by adding one, or jump into the guide and plan your night route first.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 <button
-                  onClick={() => {
-                    setAddEventMode(true);
-                    setAddMode(false);
-                  }}
-                  className="mt-4 rounded-full border border-violet-200/24 bg-violet-200/10 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-200/40"
+                  type="button"
+                  onClick={() => scrollToSection(guideSectionRef)}
+                  className="qa-cinematic-hover rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/80 hover:border-white/30 hover:text-white"
                 >
-                  Add first event
+                  Open quick guide
                 </button>
-              )}
+                {isMember ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openEventContribution();
+                    }}
+                    className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
+                  >
+                    Add first event
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      writeLocalValue("qa_redirect", pathname);
+                      router.push("/?join=true");
+                    }}
+                    className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
+                  >
+                    Become member to add
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        <div className="mb-10 rounded-[30px] border border-amber-200/10 bg-[linear-gradient(180deg,rgba(36,28,15,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_20px_60px_rgba(251,191,36,0.06)]">
+        <div ref={guideSectionRef} className="animate-cinematic-in mb-10 rounded-[30px] border border-amber-200/10 bg-[linear-gradient(180deg,rgba(36,28,15,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_20px_60px_rgba(251,191,36,0.06)]" style={{ animationDelay: "250ms" }}>
           <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-amber-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-wide text-amber-100 backdrop-blur">
             Quick Guide
           </h2>
@@ -962,68 +1158,128 @@ export default function CityPage() {
               </button>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
-            {config.guide.map((item, index) => (
-              <div
-                key={`${item.title}-${index}`}
-                className={`rounded-[22px] border p-4 transition hover:-translate-y-[1px] ${
-                  index === 0
-                    ? "col-span-2 border-amber-200/20 bg-[linear-gradient(135deg,rgba(180,83,9,0.20),rgba(251,191,36,0.08),rgba(12,12,12,0.98))] shadow-[0_14px_34px_rgba(251,191,36,0.10)]"
-                    : index % 3 === 1
-                      ? "border-cyan-200/14 bg-[linear-gradient(180deg,rgba(14,48,64,0.36),rgba(12,12,12,0.98))] hover:border-cyan-200/24"
-                      : index % 3 === 2
-                        ? "border-violet-200/14 bg-[linear-gradient(180deg,rgba(47,28,78,0.34),rgba(12,12,12,0.98))] hover:border-violet-200/24"
-                        : "border-emerald-200/14 bg-[linear-gradient(180deg,rgba(16,70,52,0.34),rgba(12,12,12,0.98))] hover:border-emerald-200/24"
-                }`}
-              >
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs uppercase ${
-                  index === 0
-                    ? "border-amber-200/40 bg-amber-200/14 text-amber-100"
-                    : "border-white/12 bg-white/5 text-white/72"
-                }`}>
-                  {item.title.slice(0, 1)}
+          <div className="grid gap-4 md:grid-cols-2">
+            {config.guide.map((item, index) => {
+              const guideTone =
+                index % 4 === 0
+                  ? {
+                      card: "border-amber-200/20 bg-[linear-gradient(135deg,rgba(180,83,9,0.20),rgba(251,191,36,0.08),rgba(12,12,12,0.98))] hover:border-amber-200/34",
+                      strip: "from-amber-300/90 via-orange-300/60 to-transparent",
+                      type: "text-amber-100 border-amber-200/30 bg-amber-200/12",
+                      vibe: "Night pulse",
+                    }
+                  : index % 4 === 1
+                    ? {
+                        card: "border-cyan-200/18 bg-[linear-gradient(180deg,rgba(14,48,64,0.36),rgba(12,12,12,0.98))] hover:border-cyan-200/30",
+                        strip: "from-cyan-300/90 via-sky-300/60 to-transparent",
+                        type: "text-cyan-100 border-cyan-200/30 bg-cyan-200/12",
+                        vibe: "Local rhythm",
+                      }
+                    : index % 4 === 2
+                      ? {
+                          card: "border-violet-200/18 bg-[linear-gradient(180deg,rgba(47,28,78,0.34),rgba(12,12,12,0.98))] hover:border-violet-200/30",
+                          strip: "from-violet-300/90 via-fuchsia-300/60 to-transparent",
+                          type: "text-violet-100 border-violet-200/30 bg-violet-200/12",
+                          vibe: "After-dark flow",
+                        }
+                      : {
+                          card: "border-emerald-200/18 bg-[linear-gradient(180deg,rgba(16,70,52,0.34),rgba(12,12,12,0.98))] hover:border-emerald-200/30",
+                          strip: "from-emerald-300/90 via-teal-300/60 to-transparent",
+                          type: "text-emerald-100 border-emerald-200/30 bg-emerald-200/12",
+                          vibe: "Soft start",
+                        };
+              return (
+                <div
+                  key={`${item.title}-${index}`}
+                  className={`qa-cinematic-hover rounded-[24px] border p-5 ${guideTone.card} ${index === 0 ? "md:col-span-2" : ""}`}
+                >
+                  <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${guideTone.strip}`} />
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <h3 className={`${index === 0 ? "text-xl md:text-2xl" : "text-lg"} font-semibold leading-tight tracking-[-0.01em] text-white`}>
+                        {item.title}
+                      </h3>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${guideTone.type}`}>
+                          Guide
+                        </span>
+                        <span className="rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
+                          {guideTone.vibe}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/8 bg-black/24 p-4">
+                    <p className={`${index === 0 ? "text-sm leading-7" : "text-sm leading-6"} text-white/68`}>
+                      {item.text}
+                    </p>
+                  </div>
+
+                  {item.extra && (
+                    <p className="mt-4 text-xs uppercase tracking-[0.14em] text-white/42">{item.extra}</p>
+                  )}
                 </div>
-                <h3 className={`mt-2 font-semibold ${index === 0 ? "text-base text-amber-50" : "text-sm"}`}>{item.title}</h3>
-                <p className={`mt-2 text-xs text-gray-300 ${index === 0 ? "leading-7" : "leading-6"}`}>{item.text}</p>
-                {item.extra && (
-                  <p className={`mt-2 text-xs uppercase tracking-[0.14em] ${index === 0 ? "text-amber-100/65" : "text-white/36"}`}>{item.extra}</p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {!hasAnyPlaces && (
-          <div className="mb-10 rounded-[30px] border border-dashed border-white/12 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-8 text-center">
-            <p className="text-sm text-white/55">No places published in this city yet.</p>
-            {isMember && (
+          <div className="mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
+            <h3 className="mt-2 text-lg font-semibold text-white">No verified places yet</h3>
+            <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
+              First drops define the scene. Add the places people actually trust, and help shape this city&apos;s queer map from day one.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
               <button
-                onClick={() => {
-                  setAddMode(true);
-                  setAddEventMode(false);
-                }}
-                className="mt-4 rounded-full border border-emerald-200/20 bg-emerald-200/10 px-4 py-2 text-xs text-emerald-100 transition hover:border-emerald-200/35"
+                type="button"
+                onClick={() => scrollToSection(guideSectionRef)}
+                className="qa-cinematic-hover rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/80 hover:border-white/30 hover:text-white"
               >
-                Add first place
+                Read quick guide
               </button>
-            )}
+              {isMember ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddMode(true);
+                    setAddEventMode(false);
+                  }}
+                  className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
+                >
+                  Add first place
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    writeLocalValue("qa_redirect", pathname);
+                    router.push("/?join=true");
+                  }}
+                  className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
+                >
+                  Become member to add
+                </button>
+              )}
+            </div>
           </div>
         )}
 
-        {groupedPlaces.map((group) => {
-          if (group.items.length === 0) return null;
-
+        {visiblePlaceGroups.map((group, groupIndex) => {
           return (
-            <div key={group.value} className="mb-10 rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
-              <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-white/8 bg-[#050505]/92 px-2 py-3 text-lg tracking-wide text-white/82 backdrop-blur">
+            <div ref={groupIndex === 0 ? placesSectionRef : null} key={group.value} className="animate-cinematic-in mb-10 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-7 shadow-[0_20px_60px_rgba(0,0,0,0.25)]" style={{ animationDelay: `${300 + groupIndex * 40}ms` }}>
+              <h2 className="sticky top-0 z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 text-lg tracking-wide text-white/82 backdrop-blur">
                 {group.label}
               </h2>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 {group.items.map((place, index) => (
                   (() => {
                     const style = TYPE_STYLES[place.type] || TYPE_STYLES.bar;
                     const isSelected = String(selectedPlace?.id) === String(place.id);
+                    const isHovered = String(hoveredPlaceId) === String(place.id);
                     const quality = getEntityQuality({
                       targetType: "place",
                       targetId: place.id,
@@ -1038,6 +1294,8 @@ export default function CityPage() {
                     onClick={() => openPlace(place)}
                     role="button"
                     tabIndex={0}
+                    onMouseEnter={() => setHoveredPlaceId(String(place.id))}
+                    onMouseLeave={() => setHoveredPlaceId(null)}
                     onKeyDown={(keyEvent) => {
                       if (keyEvent.key === "Enter" || keyEvent.key === " ") {
                         keyEvent.preventDefault();
@@ -1045,7 +1303,7 @@ export default function CityPage() {
                       }
                     }}
                     style={{ animationDelay: `${Math.min(index * 45, 280)}ms` }}
-                    className={`animate-rise-in cursor-pointer rounded-[24px] border p-5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
+                    className={`qa-cinematic-hover animate-rise-in cursor-pointer rounded-[26px] border p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
                       index === 0 ? "md:col-span-2" : ""
                     } ${
                       isFocusMode && !isSelected ? "opacity-60 saturate-75" : ""
@@ -1053,54 +1311,67 @@ export default function CityPage() {
                       isSelected
                         ? style.selected
                         : `${style.card} hover:border-white/16`
+                    } ${
+                      isHovered
+                        ? "border-white/30 shadow-[0_20px_58px_rgba(255,255,255,0.12)]"
+                        : ""
                     }`}
                   >
-                    <div className={`mb-4 h-px w-20 bg-gradient-to-r ${style.line}`} />
-                    <div className="mb-2 flex items-start justify-between">
-                      <div>
-                        <h3 className={`${index === 0 ? "text-base" : "text-sm"} font-semibold leading-tight`}>{place.name}</h3>
-                        {place.vibe && (
-                          <div className={`mt-1 text-xs ${style.label}`}>
-                            {(TYPE_LABELS[place.type] || "Place")} / {place.vibe}
-                          </div>
-                        )}
+                    <div className={`mb-5 h-1.5 w-28 rounded-full bg-gradient-to-r ${style.line}`} />
+                    <div className="mb-4 flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <h3 className={`${index === 0 ? "text-xl md:text-2xl" : "text-lg"} font-semibold leading-tight tracking-[-0.01em] text-white`}>{place.name}</h3>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full border border-white/16 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${style.label}`}>
+                            {TYPE_LABELS[place.type] || "Place"}
+                          </span>
+                          {place.vibe && (
+                            <span className="rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
+                              {place.vibe}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex shrink-0 flex-col items-end gap-2">
                         <button
                           onClick={(event) => {
                             event.stopPropagation();
                             toggleFavorite(place.id);
                           }}
-                          className={`text-sm ${
+                          className={`rounded-full border px-3 py-1 text-xs transition ${
                             favorites.includes(String(place.id))
-                              ? "text-pink-500"
-                              : "text-gray-400 hover:text-pink-400"
+                              ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
+                              : "border-white/14 bg-white/5 text-white/65 hover:border-pink-300/25 hover:text-pink-100"
                           }`}
                         >
                           {favorites.includes(String(place.id)) ? "Saved" : "Save"}
                         </button>
 
-                        <div className="text-xs text-gray-400">
-                          Rating {place.avgRating?.toFixed(1) || "-"}
-                        </div>
+                        <span className={`rounded-full border border-white/14 bg-black/35 px-3 py-1 text-xs font-semibold ${style.label}`}>
+                          ★ {place.avgRating?.toFixed(1) || "-"}
+                        </span>
                       </div>
                     </div>
 
                     {place.description && (
-                      <p className={`mb-3 ${index === 0 ? "line-clamp-3" : "line-clamp-2"} text-xs leading-snug text-gray-400`}>
-                        {place.description}
-                      </p>
+                      <div className="mb-4 rounded-2xl border border-white/8 bg-black/24 p-4">
+                        <p className={`${index === 0 ? "line-clamp-4 text-sm leading-7" : "line-clamp-3 text-sm leading-6"} text-white/68`}>
+                          {place.description}
+                        </p>
+                      </div>
                     )}
 
                     {place.hours && (
-                      <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-cyan-200/72">
+                      <p className="mb-4 text-[11px] uppercase tracking-[0.14em] text-cyan-200/72">
                         {place.hours}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>{place.reviewCount || 0} reviews</span>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                        {place.reviewCount || 0} reviews
+                      </span>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={(clickEvent) =>
@@ -1126,10 +1397,22 @@ export default function CityPage() {
         })}
       </div>
 
+      {(selectedPlace || selectedEvent) && (
+        <button
+          type="button"
+          aria-label="Close details panel"
+          onClick={() => {
+            if (selectedPlace) closePlace();
+            if (selectedEvent) closeEvent();
+          }}
+          className="fixed inset-0 z-30 bg-black/55 backdrop-blur-[1px] lg:hidden"
+        />
+      )}
+
       {selectedPlace && (
-        <div className="relative w-[420px] overflow-y-auto border-l border-white/10 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-8 shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
-          <button className="rounded-full border border-white/12 bg-white/7 px-4 py-2 text-sm text-white/75 transition hover:border-white/20 hover:text-white" onClick={closePlace}>
+          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#0e0e0e]/88 px-4 py-2 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closePlace}>
             Close
           </button>
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -1189,13 +1472,13 @@ export default function CityPage() {
                   title: selectedPlace.name,
                 })
               }
-              className="rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/35 hover:bg-rose-200/12"
+              className="qa-cinematic-hover rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
             >
               Report place
             </button>
             <button
               onClick={() => toggleFavorite(selectedPlace.id)}
-              className={`rounded-full border px-4 py-2 text-xs transition ${
+              className={`qa-cinematic-hover rounded-full border px-4 py-2 text-xs ${
                 favorites.includes(String(selectedPlace.id))
                   ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
                   : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
@@ -1253,7 +1536,7 @@ export default function CityPage() {
                 const updated = await getReviews(selectedPlace.id);
                 setReviews(updated);
               }}
-              className="w-full rounded-2xl bg-white py-3 font-semibold text-black"
+              className="qa-cinematic-hover w-full rounded-2xl bg-white py-3 font-semibold text-black"
             >
               Submit review
             </button>
@@ -1262,9 +1545,9 @@ export default function CityPage() {
       )}
 
       {selectedEvent && (
-        <div className="relative w-[420px] overflow-y-auto border-l border-white/10 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-8 shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
-          <button className="rounded-full border border-white/12 bg-white/7 px-4 py-2 text-sm text-white/75 transition hover:border-white/20 hover:text-white" onClick={closeEvent}>
+          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#111021]/88 px-4 py-2 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closeEvent}>
             Close
           </button>
 
@@ -1318,7 +1601,7 @@ export default function CityPage() {
           <div className="space-y-2">
             <button
               onClick={() => toggleFavorite(`event-${selectedEvent.id}`)}
-              className={`w-full rounded-2xl border px-4 py-3 text-sm transition ${
+              className={`qa-cinematic-hover w-full rounded-2xl border px-4 py-3 text-sm ${
                 favorites.includes(`event-${selectedEvent.id}`)
                   ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
                   : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
@@ -1331,7 +1614,7 @@ export default function CityPage() {
                 href={selectedEvent.link}
                 target="_blank"
                 rel="noreferrer"
-                className="block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
+                className="qa-cinematic-hover block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
               >
                 Open event link
               </a>
@@ -1346,7 +1629,7 @@ export default function CityPage() {
                   zoom: 14,
                 });
               }}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 py-3"
+              className="qa-cinematic-hover w-full rounded-2xl border border-white/10 bg-white/5 py-3"
             >
               Show on map
             </button>
@@ -1358,7 +1641,7 @@ export default function CityPage() {
                   title: selectedEvent.name,
                 })
               }
-              className="w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 transition hover:border-rose-200/35 hover:bg-rose-200/12"
+              className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
             >
               Report event
             </button>

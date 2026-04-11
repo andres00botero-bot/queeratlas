@@ -11,6 +11,7 @@ import { getMemberProfile } from "@/lib/memberProfile";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
+import DateInput from "@/components/ui/DateInput";
 
 function timeAgo(value) {
   if (!value) return "Recently";
@@ -39,6 +40,22 @@ function formatSavedTime(value) {
 }
 
 const PLAN_STORAGE_KEY = "qa_trip_plans";
+const FAVORITES_STORAGE_KEY = "qa_favorites";
+const ADDED_STORAGE_KEY = "qa_added";
+
+function mapPlanRow(row) {
+  return {
+    id: row.client_id || String(row.id),
+    title: row.title || "",
+    city: row.city || "",
+    date: row.date || null,
+    placeIds: Array.isArray(row.place_ids) ? row.place_ids : [],
+    eventIds: Array.isArray(row.event_ids) ? row.event_ids : [],
+    stops: Array.isArray(row.stops) ? row.stops : [],
+    note: row.note || "",
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -70,11 +87,89 @@ export default function FavoritesPage() {
   const {
     isMember,
     isLoading: isAuthLoading,
+    user,
     memberName: authMemberName,
     memberProfile,
     updateMemberProfile,
   } = useAuth();
   const { toast, showToast } = useActionToast();
+  const [syncWarning, setSyncWarning] = useState("");
+
+  const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
+    const [favoritesRes, plansRes] = await Promise.all([
+      supabase
+        .from("member_favorites")
+        .select("favorite_id, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("member_plans")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    if (favoritesRes.error || plansRes.error) {
+      setSyncWarning("Cloud sync unavailable. Using local data.");
+      setFavorites((localFavorites || []).map((item) => String(item)));
+      setAdded(
+        (localFavorites || []).map((id) => ({
+          id: String(id),
+          date: new Date().toISOString(),
+        }))
+      );
+      setPlans(localPlans || []);
+      return;
+    }
+
+    const remoteFavorites = (favoritesRes.data || []).map((row) => String(row.favorite_id));
+    const remoteAdded = (favoritesRes.data || []).map((row) => ({
+      id: String(row.favorite_id),
+      date: row.created_at,
+    }));
+    const remotePlans = (plansRes.data || []).map(mapPlanRow);
+
+    const localFavsNormalized = (localFavorites || []).map((id) => String(id));
+    const missingFavorites = localFavsNormalized.filter((id) => !remoteFavorites.includes(id));
+
+    if (missingFavorites.length > 0) {
+      await supabase.from("member_favorites").insert(
+        missingFavorites.map((id) => ({
+          user_id: userId,
+          favorite_id: id,
+        }))
+      );
+    }
+
+    if ((localPlans || []).length > 0 && remotePlans.length === 0) {
+      await supabase.from("member_plans").insert(
+        localPlans.map((plan) => ({
+          user_id: userId,
+          client_id: String(plan.id || `plan-${Date.now()}`),
+          title: plan.title || "",
+          city: plan.city || "",
+          date: plan.date || null,
+          place_ids: (plan.placeIds || []).map(String),
+          event_ids: (plan.eventIds || []).map(String),
+          stops: Array.isArray(plan.stops) ? plan.stops : [],
+          note: plan.note || "",
+        }))
+      );
+    }
+
+    const mergedFavorites = [...new Set([...remoteFavorites, ...localFavsNormalized])];
+    setFavorites(mergedFavorites);
+    setAdded(
+      remoteAdded.length > 0
+        ? remoteAdded
+        : mergedFavorites.map((id) => ({ id, date: new Date().toISOString() }))
+    );
+    setPlans(remotePlans.length > 0 ? remotePlans : localPlans || []);
+
+    writeLocalJson(FAVORITES_STORAGE_KEY, mergedFavorites);
+    writeLocalJson(ADDED_STORAGE_KEY, remoteAdded);
+    writeLocalJson(PLAN_STORAGE_KEY, remotePlans.length > 0 ? remotePlans : localPlans || []);
+  }, []);
 
   const loadAtlasData = useCallback(async () => {
     setIsAtlasLoading(true);
@@ -114,6 +209,7 @@ export default function FavoritesPage() {
     if (isAuthLoading) return;
 
     queueMicrotask(async () => {
+      setSyncWarning("");
       if (!isMember) {
         localStorage.removeItem("qa_redirect");
         writeLocalValue("qa_post_login_target", "/");
@@ -126,10 +222,17 @@ export default function FavoritesPage() {
         localStorage.getItem("qa_member_name") ||
         localStorage.getItem("qa_name") ||
         "";
-      const storedFavorites = readLocalJson("qa_favorites", []);
-      const storedAdded = readLocalJson("qa_added", []);
+      const storedFavorites = readLocalJson(FAVORITES_STORAGE_KEY, []);
       const storedPlans = readLocalJson(PLAN_STORAGE_KEY, []);
-      const storedProfile = getMemberProfile();
+      const storedProfile =
+        memberProfile && (
+          memberProfile.displayName ||
+          memberProfile.pronouns ||
+          memberProfile.homeCity ||
+          memberProfile.residentCountry
+        )
+          ? memberProfile
+          : getMemberProfile();
 
       setMemberName(authMemberName || fallbackName);
       setProfileForm({
@@ -138,14 +241,18 @@ export default function FavoritesPage() {
         homeCity: storedProfile.homeCity || "",
         residentCountry: storedProfile.residentCountry || "",
       });
-      setFavorites((storedFavorites || []).map((item) => String(item)));
-      setAdded(storedAdded);
-      setPlans(storedPlans);
+      if (user?.id) {
+        await loadMemberCollections(user.id, storedFavorites, storedPlans);
+      } else {
+        setFavorites((storedFavorites || []).map((item) => String(item)));
+        setAdded(readLocalJson(ADDED_STORAGE_KEY, []));
+        setPlans(storedPlans);
+      }
 
       await loadAtlasData();
       setIsReady(true);
     });
-  }, [authMemberName, isAuthLoading, isMember, loadAtlasData, router]);
+  }, [authMemberName, isAuthLoading, isMember, loadAtlasData, loadMemberCollections, memberProfile, router, user?.id]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -246,11 +353,15 @@ export default function FavoritesPage() {
     };
   }, [authMemberName, memberName, memberProfile?.displayName]);
 
-  const saveProfile = (event) => {
+  const saveProfile = async (event) => {
     event.preventDefault();
-    updateMemberProfile(profileForm);
+    const result = await updateMemberProfile(profileForm);
     setMemberName(profileForm.displayName || authMemberName || "Explorer");
-    showToast("Profile updated.", { tone: "ok", duration: 2200 });
+    if (result?.ok) {
+      showToast("Profile updated.", { tone: "ok", duration: 2200 });
+    } else {
+      showToast("Profile saved locally. Cloud sync unavailable.", { tone: "info", duration: 2400 });
+    }
     setIsEditingProfile(false);
   };
 
@@ -298,7 +409,7 @@ export default function FavoritesPage() {
     }));
   };
 
-  const createPlan = (event) => {
+  const createPlan = async (event) => {
     event.preventDefault();
     if (!activePlannerCity || !plannerForm.title) return;
     if (plannerForm.placeIds.length === 0 && plannerForm.eventIds.length === 0) return;
@@ -324,20 +435,44 @@ export default function FavoritesPage() {
       }),
     ].filter(Boolean);
 
-    setPlans((current) => [
-      {
-        id: `plan-${Date.now()}`,
-        title: plannerForm.title,
-        city: activePlannerCity,
-        date: plannerForm.date || null,
-        placeIds: plannerForm.placeIds,
-        eventIds: plannerForm.eventIds,
-        stops,
-        note: plannerForm.note,
-        createdAt: new Date().toISOString(),
-      },
-      ...current,
-    ]);
+    const draftPlan = {
+      id: `plan-${Date.now()}`,
+      title: plannerForm.title,
+      city: activePlannerCity,
+      date: plannerForm.date || null,
+      placeIds: plannerForm.placeIds.map(String),
+      eventIds: plannerForm.eventIds.map(String),
+      stops,
+      note: plannerForm.note,
+      createdAt: new Date().toISOString(),
+    };
+
+    let savedPlan = draftPlan;
+    if (user?.id) {
+      const { data, error } = await supabase
+        .from("member_plans")
+        .insert([{
+          user_id: user.id,
+          client_id: draftPlan.id,
+          title: draftPlan.title,
+          city: draftPlan.city,
+          date: draftPlan.date,
+          place_ids: draftPlan.placeIds,
+          event_ids: draftPlan.eventIds,
+          stops: draftPlan.stops,
+          note: draftPlan.note,
+        }])
+        .select("*")
+        .single();
+
+      if (error || !data) {
+        setSyncWarning("Plan synced locally only. Cloud save unavailable.");
+      } else {
+        savedPlan = mapPlanRow(data);
+      }
+    }
+
+    setPlans((current) => [savedPlan, ...current]);
 
     setPlannerForm({
       title: "",
@@ -351,11 +486,45 @@ export default function FavoritesPage() {
     showToast("Plan saved.", { tone: "ok", duration: 2200 });
   };
 
-  const removeFavorite = (favoriteId, label = "Item") => {
+  const removeFavorite = async (favoriteId, label = "Item") => {
     const updated = favorites.filter((entry) => String(entry) !== String(favoriteId));
     setFavorites(updated);
-    writeLocalJson("qa_favorites", updated);
+    writeLocalJson(FAVORITES_STORAGE_KEY, updated);
+    writeLocalJson(
+      ADDED_STORAGE_KEY,
+      added.filter((item) => String(item.id) !== String(favoriteId))
+    );
+    setAdded((current) => current.filter((item) => String(item.id) !== String(favoriteId)));
+
+    if (user?.id) {
+      const { error } = await supabase
+        .from("member_favorites")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("favorite_id", String(favoriteId));
+
+      if (error) {
+        setSyncWarning("Favorite removed locally. Cloud sync unavailable.");
+      }
+    }
+
     showToast(`${label} removed from favorites.`, { tone: "info", duration: 2200 });
+  };
+
+  const removePlan = async (planId) => {
+    setPlans((current) => current.filter((entry) => String(entry.id) !== String(planId)));
+
+    if (user?.id) {
+      const { error } = await supabase
+        .from("member_plans")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("client_id", String(planId));
+
+      if (error) {
+        setSyncWarning("Plan removed locally. Cloud sync unavailable.");
+      }
+    }
   };
 
   if (!isReady || !isMember) {
@@ -402,6 +571,11 @@ export default function FavoritesPage() {
                 >
                   Retry
                 </button>
+              </div>
+            )}
+            {syncWarning && (
+              <div className="mt-3 inline-flex rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+                {syncWarning}
               </div>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
@@ -722,13 +896,13 @@ export default function FavoritesPage() {
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="date"
+                  <DateInput
                     value={plannerForm.date}
                     onChange={(event) =>
                       setPlannerForm((current) => ({ ...current, date: event.target.value }))
                     }
                     className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+                    tone="cyan"
                   />
                 </div>
               </div>
@@ -841,9 +1015,7 @@ export default function FavoritesPage() {
                       <span className="block text-xs text-white/38">{timeAgo(plan.createdAt)}</span>
                       <button
                         type="button"
-                        onClick={() =>
-                          setPlans((current) => current.filter((entry) => entry.id !== plan.id))
-                        }
+                        onClick={() => removePlan(plan.id)}
                         className="mt-2 text-[11px] text-rose-100/70 transition hover:text-rose-100"
                       >
                         Remove

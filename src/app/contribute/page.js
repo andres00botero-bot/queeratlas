@@ -12,6 +12,7 @@ import { upsertQuality } from "@/lib/quality";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import ActionToast from "@/components/ui/ActionToast";
+import DateInput from "@/components/ui/DateInput";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -538,11 +539,11 @@ export default function ContributePage() {
                 <Field value={placeForm.address} onChange={(event) => setPlaceForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field value={placeForm.source} onChange={(event) => setPlaceForm((current) => ({ ...current, source: event.target.value }))} placeholder="Source URL or name (optional)" />
-                  <input
-                    type="date"
+                  <DateInput
                     value={placeForm.lastChecked}
                     onChange={(event) => setPlaceForm((current) => ({ ...current, lastChecked: event.target.value }))}
                     className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+                    tone="emerald"
                   />
                 </div>
                 <Field value={placeForm.description} onChange={(event) => setPlaceForm((current) => ({ ...current, description: event.target.value }))} placeholder="Description" area />
@@ -563,20 +564,20 @@ export default function ContributePage() {
                 <Field value={eventForm.name} onChange={(event) => setEventForm((current) => ({ ...current, name: event.target.value }))} placeholder="Event name" />
                 <Field value={eventForm.city} onChange={(event) => setEventForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
                 <Field value={eventForm.address} onChange={(event) => setEventForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
-                <input
-                  type="date"
+                <DateInput
                   value={eventForm.date}
                   onChange={(event) => setEventForm((current) => ({ ...current, date: event.target.value }))}
                   className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+                  tone="violet"
                 />
                 <Field value={eventForm.link} onChange={(event) => setEventForm((current) => ({ ...current, link: event.target.value }))} placeholder="Event link (optional)" />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field value={eventForm.source} onChange={(event) => setEventForm((current) => ({ ...current, source: event.target.value }))} placeholder="Source URL or name (optional)" />
-                  <input
-                    type="date"
+                  <DateInput
                     value={eventForm.lastChecked}
                     onChange={(event) => setEventForm((current) => ({ ...current, lastChecked: event.target.value }))}
                     className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+                    tone="violet"
                   />
                 </div>
                 <Field value={eventForm.description} onChange={(event) => setEventForm((current) => ({ ...current, description: event.target.value }))} placeholder="Description" area />

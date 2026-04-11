@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import { addReport, getBlockedItems } from "@/lib/moderation";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
@@ -51,6 +52,75 @@ function readStored(key, fallback) {
   return readLocalJson(key, fallback);
 }
 
+function mapStoryRow(row) {
+  return {
+    id: String(row.id),
+    title: row.title || "",
+    city: row.city || "",
+    author: row.author || "Member",
+    category: row.category || "Experience",
+    excerpt: row.excerpt || "",
+    body: row.body || "",
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapGuideRow(row) {
+  return {
+    id: String(row.id),
+    title: row.title || "",
+    city: row.city || "Multi-city",
+    author: row.author || "Member",
+    focus: row.focus || "Community",
+    summary: row.summary || "",
+    content: row.content || "",
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapTopicRow(row) {
+  return {
+    id: String(row.id),
+    name: row.name || "",
+    mood: row.mood || "Fresh",
+    description: row.description || "",
+    author: row.author || "Member",
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapIdeaRow(row) {
+  return {
+    id: String(row.id),
+    text: row.text || "",
+    votes: Number(row.votes || 0),
+    author: row.author || "Member",
+    createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapMessages(rows, topics) {
+  const base = {};
+  topics.forEach((topic) => {
+    base[String(topic.id)] = [];
+  });
+
+  (rows || []).forEach((row) => {
+    const topicKey = String(row.topic_id || "");
+    if (!topicKey) return;
+    if (!base[topicKey]) base[topicKey] = [];
+
+    base[topicKey].push({
+      id: String(row.id),
+      author: row.author || "Member",
+      text: row.text || "",
+      createdAt: row.created_at || new Date().toISOString(),
+    });
+  });
+
+  return base;
+}
+
 function timeAgo(value) {
   const diffHours = Math.round((new Date() - new Date(value)) / 3600000);
   if (diffHours < 1) return "Just now";
@@ -86,7 +156,45 @@ export default function CommunityPage() {
   const [messageForm, setMessageForm] = useState({ text: "" });
   const [topicForm, setTopicForm] = useState({ name: "", mood: "Fresh", description: "" });
   const [ideaForm, setIdeaForm] = useState({ author: memberName || "", text: "" });
+  const [syncError, setSyncError] = useState("");
   const { toast, showToast } = useActionToast();
+
+  const loadCommunityData = useCallback(async () => {
+    setSyncError("");
+    const [storiesRes, guidesRes, topicsRes, messagesRes, ideasRes] = await Promise.all([
+      supabase.from("community_stories").select("*").order("created_at", { ascending: false }),
+      supabase.from("community_guides").select("*").order("created_at", { ascending: false }),
+      supabase.from("community_topics").select("*").order("created_at", { ascending: false }),
+      supabase.from("community_messages").select("*").order("created_at", { ascending: true }),
+      supabase.from("community_ideas").select("*").order("created_at", { ascending: false }),
+    ]);
+
+    const hasError = Boolean(
+      storiesRes.error || guidesRes.error || topicsRes.error || messagesRes.error || ideasRes.error
+    );
+
+    if (hasError) {
+      setStories(readStored(KEYS.stories, baseStories));
+      setGuides(readStored(KEYS.guides, baseGuides));
+      setTopics(readStored(KEYS.topics, baseTopics));
+      setMessages(readStored(KEYS.messages, baseMessages));
+      setIdeas(readStored(KEYS.ideas, baseIdeas));
+      setSyncError("Community sync fallback active. Local data is shown.");
+      return;
+    }
+
+    const nextStories = (storiesRes.data || []).length > 0 ? (storiesRes.data || []).map(mapStoryRow) : baseStories;
+    const nextGuides = (guidesRes.data || []).length > 0 ? (guidesRes.data || []).map(mapGuideRow) : baseGuides;
+    const nextTopics = (topicsRes.data || []).length > 0 ? (topicsRes.data || []).map(mapTopicRow) : baseTopics;
+    const nextIdeas = (ideasRes.data || []).length > 0 ? (ideasRes.data || []).map(mapIdeaRow) : baseIdeas;
+    const nextMessages = mapMessages(messagesRes.data || [], nextTopics);
+
+    setStories(nextStories);
+    setGuides(nextGuides);
+    setTopics(nextTopics);
+    setMessages(Object.keys(nextMessages).length > 0 ? nextMessages : baseMessages);
+    setIdeas(nextIdeas);
+  }, []);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -101,23 +209,14 @@ export default function CommunityPage() {
       return;
     }
 
-    queueMicrotask(() => {
-      setStories(readStored(KEYS.stories, baseStories));
-      setGuides(readStored(KEYS.guides, baseGuides));
-      setTopics(readStored(KEYS.topics, baseTopics));
-      setMessages(readStored(KEYS.messages, baseMessages));
-      setIdeas(readStored(KEYS.ideas, baseIdeas));
-    });
-    queueMicrotask(() => {
+    queueMicrotask(async () => {
+      await loadCommunityData();
       setIsReady(true);
     });
-  }, [isAuthLoading, isMember, router]);
+  }, [isAuthLoading, isMember, loadCommunityData, router]);
 
   useEffect(() => {
-    if (!isReady || !isMember) {
-      return;
-    }
-
+    if (!isReady || !isMember) return;
     writeLocalJson(KEYS.stories, stories);
     writeLocalJson(KEYS.guides, guides);
     writeLocalJson(KEYS.topics, topics);
@@ -160,74 +259,159 @@ export default function CommunityPage() {
     .sort((a, b) => b.replies - a.replies)[0];
   const topCities = [...new Set(sortedStories.map((story) => story.city).filter(Boolean))].slice(0, 3);
 
-  const publishStory = (event) => {
+  const publishStory = async (event) => {
     event.preventDefault();
     if (!storyForm.title || !storyForm.city || !storyForm.author || !storyForm.body) {
       showToast("Story not published. Fill all required fields.", { tone: "warn", duration: 2400 });
       return;
     }
-    const item = { id: `s-${Date.now()}`, ...storyForm, excerpt: storyForm.excerpt || storyForm.body.slice(0, 120), createdAt: new Date().toISOString() };
+    const fallbackItem = { id: `s-${Date.now()}`, ...storyForm, excerpt: storyForm.excerpt || storyForm.body.slice(0, 120), createdAt: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from("community_stories")
+      .insert([{
+        title: storyForm.title,
+        city: storyForm.city,
+        author: storyForm.author,
+        category: storyForm.category || "Experience",
+        excerpt: storyForm.excerpt || storyForm.body.slice(0, 120),
+        body: storyForm.body,
+      }])
+      .select("*")
+      .single();
+
+    const item = error || !data ? fallbackItem : mapStoryRow(data);
     setStories((current) => [item, ...current]);
     setStoryForm({ title: "", city: "", category: "Experience", author: memberName || "", excerpt: "", body: "" });
     setShowStoryForm(false);
-    showToast("Story published.", { tone: "ok", duration: 2400 });
+    showToast(error ? "Story saved locally. Supabase sync unavailable." : "Story published.", { tone: error ? "info" : "ok", duration: 2400 });
   };
 
-  const publishGuide = (event) => {
+  const publishGuide = async (event) => {
     event.preventDefault();
     if (!guideForm.title || !guideForm.author || !guideForm.content) {
       showToast("Guide not published. Fill required fields.", { tone: "warn", duration: 2400 });
       return;
     }
-    const item = { id: `g-${Date.now()}`, ...guideForm, city: guideForm.city || "Multi-city", focus: guideForm.focus || "Community", summary: guideForm.summary || guideForm.content.slice(0, 120), createdAt: new Date().toISOString() };
+    const fallbackItem = { id: `g-${Date.now()}`, ...guideForm, city: guideForm.city || "Multi-city", focus: guideForm.focus || "Community", summary: guideForm.summary || guideForm.content.slice(0, 120), createdAt: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from("community_guides")
+      .insert([{
+        title: guideForm.title,
+        city: guideForm.city || "Multi-city",
+        author: guideForm.author,
+        focus: guideForm.focus || "Community",
+        summary: guideForm.summary || guideForm.content.slice(0, 120),
+        content: guideForm.content,
+      }])
+      .select("*")
+      .single();
+
+    const item = error || !data ? fallbackItem : mapGuideRow(data);
     setGuides((current) => [item, ...current]);
     setGuideId(item.id);
     setGuideForm({ title: "", city: "", focus: "", author: memberName || "", summary: "", content: "" });
     setShowGuideForm(false);
-    showToast("Guide published.", { tone: "ok", duration: 2400 });
+    showToast(error ? "Guide saved locally. Supabase sync unavailable." : "Guide published.", { tone: error ? "info" : "ok", duration: 2400 });
   };
 
-  const sendMessage = (event) => {
+  const sendMessage = async (event) => {
     event.preventDefault();
     if (!activeTopic || !messageForm.text.trim()) {
       showToast("Write a message before sending.", { tone: "warn", duration: 2200 });
       return;
     }
-    const item = { id: `m-${Date.now()}`, author: memberName || "Member", text: messageForm.text.trim(), createdAt: new Date().toISOString() };
+    const fallbackItem = { id: `m-${Date.now()}`, author: memberName || "Member", text: messageForm.text.trim(), createdAt: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from("community_messages")
+      .insert([{
+        topic_id: activeTopic.id,
+        author: memberName || "Member",
+        text: messageForm.text.trim(),
+      }])
+      .select("*")
+      .single();
+
+    const item = error || !data
+      ? fallbackItem
+      : {
+          id: String(data.id),
+          author: data.author || "Member",
+          text: data.text || "",
+          createdAt: data.created_at || new Date().toISOString(),
+        };
     setMessages((current) => ({ ...current, [activeTopic.id]: [...(current[activeTopic.id] || []), item] }));
     setMessageForm({ text: "" });
-    showToast("Message sent.", { tone: "ok", duration: 1800 });
+    showToast(error ? "Message saved locally. Supabase sync unavailable." : "Message sent.", { tone: error ? "info" : "ok", duration: 1800 });
   };
 
-  const createTopic = (event) => {
+  const createTopic = async (event) => {
     event.preventDefault();
     if (!topicForm.name || !topicForm.description) {
       showToast("Topic not created. Add title and description.", { tone: "warn", duration: 2400 });
       return;
     }
-    const item = { id: `t-${Date.now()}`, ...topicForm, author: memberName || "Member" };
+    const fallbackItem = { id: `t-${Date.now()}`, ...topicForm, author: memberName || "Member", createdAt: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from("community_topics")
+      .insert([{
+        name: topicForm.name,
+        mood: topicForm.mood || "Fresh",
+        description: topicForm.description,
+        author: memberName || "Member",
+      }])
+      .select("*")
+      .single();
+
+    const item = error || !data ? fallbackItem : mapTopicRow(data);
     setTopics((current) => [item, ...current]);
     setMessages((current) => ({ ...current, [item.id]: [] }));
     setTopicId(item.id);
     setTopicForm({ name: "", mood: "Fresh", description: "" });
-    showToast("Topic created.", { tone: "ok", duration: 2200 });
+    showToast(error ? "Topic saved locally. Supabase sync unavailable." : "Topic created.", { tone: error ? "info" : "ok", duration: 2200 });
   };
 
-  const publishIdea = (event) => {
+  const publishIdea = async (event) => {
     event.preventDefault();
     if (!ideaForm.author || !ideaForm.text) {
       showToast("Idea not shared. Add name and idea text.", { tone: "warn", duration: 2400 });
       return;
     }
-    const item = { id: `i-${Date.now()}`, text: ideaForm.text, author: ideaForm.author, votes: 1, createdAt: new Date().toISOString() };
+    const fallbackItem = { id: `i-${Date.now()}`, text: ideaForm.text, author: ideaForm.author, votes: 1, createdAt: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from("community_ideas")
+      .insert([{
+        text: ideaForm.text,
+        author: ideaForm.author,
+        votes: 1,
+      }])
+      .select("*")
+      .single();
+
+    const item = error || !data ? fallbackItem : mapIdeaRow(data);
     setIdeas((current) => [item, ...current]);
     setIdeaForm({ author: memberName || "", text: "" });
     setShowIdeaForm(false);
-    showToast("Idea shared.", { tone: "ok", duration: 2200 });
+    showToast(error ? "Idea saved locally. Supabase sync unavailable." : "Idea shared.", { tone: error ? "info" : "ok", duration: 2200 });
   };
 
-  const upvoteIdea = (ideaId) => {
-    setIdeas((current) => current.map((idea) => (idea.id === ideaId ? { ...idea, votes: idea.votes + 1 } : idea)));
+  const upvoteIdea = async (ideaId) => {
+    let nextVotes = null;
+    setIdeas((current) => current.map((idea) => {
+      if (idea.id !== ideaId) return idea;
+      nextVotes = Number(idea.votes || 0) + 1;
+      return { ...idea, votes: nextVotes };
+    }));
+
+    if (nextVotes === null) return;
+
+    const { error } = await supabase
+      .from("community_ideas")
+      .update({ votes: nextVotes })
+      .eq("id", ideaId);
+
+    if (error) {
+      showToast("Vote saved locally. Supabase sync unavailable.", { tone: "info", duration: 2200 });
+    }
   };
 
   const reportContent = ({ targetType, targetId, title }) => {
@@ -264,6 +448,11 @@ export default function CommunityPage() {
               </Link>
               .
             </p>
+            {syncError && (
+              <p className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+                {syncError}
+              </p>
+            )}
             <div className="mt-5 flex flex-wrap gap-2">
               {topCities.map((city) => (
                 <span key={city} className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white shadow-[0_0_24px_rgba(255,255,255,0.06)] backdrop-blur">{city}</span>

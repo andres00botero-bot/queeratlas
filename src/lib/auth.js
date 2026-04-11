@@ -46,6 +46,28 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [memberProfile, setMemberProfile] = useState(() => getMemberProfile());
 
+  const loadRemoteMemberProfile = async (userId) => {
+    if (!userId) return getMemberProfile();
+
+    const { data, error } = await supabase
+      .from("member_profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error || !data) {
+      return getMemberProfile();
+    }
+
+    return {
+      displayName: data.display_name || "",
+      pronouns: data.pronouns || "",
+      homeCity: data.home_city || "",
+      residentCountry: data.resident_country || "",
+      updatedAt: data.updated_at || "",
+    };
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -55,6 +77,15 @@ export function AuthProvider({ children }) {
 
       setSession(data.session || null);
       setUser(data.session?.user || null);
+      if (data.session?.user?.id) {
+        const profile = await loadRemoteMemberProfile(data.session.user.id);
+        if (mounted) {
+          saveMemberProfile(profile);
+          setMemberProfile(profile);
+        }
+      } else {
+        setMemberProfile(getMemberProfile());
+      }
       setIsLoading(false);
 
       if (data.session?.user) {
@@ -73,6 +104,15 @@ export function AuthProvider({ children }) {
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession || null);
       setUser(nextSession?.user || null);
+      if (nextSession?.user?.id) {
+        queueMicrotask(async () => {
+          const profile = await loadRemoteMemberProfile(nextSession.user.id);
+          saveMemberProfile(profile);
+          setMemberProfile(profile);
+        });
+      } else {
+        setMemberProfile(getMemberProfile());
+      }
       setIsLoading(false);
 
       if (nextSession?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
@@ -102,9 +142,34 @@ export function AuthProvider({ children }) {
       isMember: Boolean(user),
       memberName: computedMemberName,
       memberProfile,
-      updateMemberProfile: (nextProfile) => {
+      updateMemberProfile: async (nextProfile) => {
         saveMemberProfile(nextProfile);
-        setMemberProfile(getMemberProfile());
+        const localProfile = getMemberProfile();
+        setMemberProfile(localProfile);
+
+        if (!user?.id) return { ok: false };
+
+        const { error } = await supabase
+          .from("member_profiles")
+          .upsert(
+            {
+              user_id: user.id,
+              display_name: localProfile.displayName || null,
+              pronouns: localProfile.pronouns || null,
+              home_city: localProfile.homeCity || null,
+              resident_country: localProfile.residentCountry || null,
+            },
+            { onConflict: "user_id" }
+          );
+
+        if (error) {
+          return { ok: false, error };
+        }
+
+        const remoteProfile = await loadRemoteMemberProfile(user.id);
+        saveMemberProfile(remoteProfile);
+        setMemberProfile(remoteProfile);
+        return { ok: true };
       },
       signInWithGoogle: () =>
         supabase.auth.signInWithOAuth({

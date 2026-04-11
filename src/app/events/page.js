@@ -8,6 +8,7 @@ import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from
 import { mergeSeedEvents } from "@/lib/seedContent";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import EmptyState from "@/components/ui/EmptyState";
+import DateInput from "@/components/ui/DateInput";
 
 const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
 
@@ -768,12 +769,12 @@ export default function EventsPage() {
                   placeholder="Event name *"
                   required
                 />
-                <input
-                  type="date"
+                <DateInput
                   value={globalForm.date}
                   onChange={(event) => setGlobalForm((current) => ({ ...current, date: event.target.value }))}
                   className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
                   required
+                  tone="cyan"
                 />
                 <input
                   value={globalForm.location}
@@ -801,11 +802,11 @@ export default function EventsPage() {
                     className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30"
                     placeholder="Source URL or name (optional)"
                   />
-                  <input
-                    type="date"
+                  <DateInput
                     value={globalForm.lastChecked}
                     onChange={(event) => setGlobalForm((current) => ({ ...current, lastChecked: event.target.value }))}
                     className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
+                    tone="cyan"
                   />
                 </div>
                 <button
