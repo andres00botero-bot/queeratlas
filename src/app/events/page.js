@@ -9,7 +9,7 @@ import { mergeSeedEvents } from "@/lib/seedContent";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import EmptyState from "@/components/ui/EmptyState";
 
-const GLOBAL_EVENTS_KEY = "qa_global_events";
+const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
 
 function formatDateLabel(value) {
   if (!value) return "Date TBA";
@@ -21,9 +21,19 @@ function formatDateLabel(value) {
   });
 }
 
-function getInitialGlobalEvents() {
-  const stored = readLocalJson(GLOBAL_EVENTS_KEY, []);
-  return Array.isArray(stored) ? stored : [];
+function mapGlobalEventRow(row) {
+  return {
+    id: String(row.id),
+    name: row.name || "",
+    date: row.date || "",
+    location: row.location || "",
+    description: row.description || "",
+    link: row.link || "",
+    source: row.source || "",
+    lastChecked: row.last_checked || "",
+    city: "Global",
+    isGlobal: true,
+  };
 }
 
 export default function EventsPage() {
@@ -31,7 +41,7 @@ export default function EventsPage() {
 
   const [events, setEvents] = useState([]);
   const [, setQualityTick] = useState(0);
-  const [globalEvents, setGlobalEvents] = useState(getInitialGlobalEvents);
+  const [globalEvents, setGlobalEvents] = useState([]);
   const [showGlobalForm, setShowGlobalForm] = useState(false);
   const [globalForm, setGlobalForm] = useState({
     name: "",
@@ -46,6 +56,8 @@ export default function EventsPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [globalError, setGlobalError] = useState("");
+  const [isSavingGlobal, setIsSavingGlobal] = useState(false);
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -56,7 +68,7 @@ export default function EventsPage() {
   ), []);
 
   const qualityMap = getQualityMap();
-  const refreshQuality = (event, clickEvent) => {
+  const refreshQuality = async (event, clickEvent) => {
     clickEvent?.stopPropagation();
 
     const existing = getEntityQuality({
@@ -86,34 +98,120 @@ export default function EventsPage() {
       verified: Boolean(sourceInput.trim() && (checkedInput || defaultChecked)),
     });
 
+    if (event.isGlobal) {
+      const { error } = await supabase
+        .from("global_events")
+        .update({
+          source: sourceInput.trim() || null,
+          last_checked: (checkedInput || defaultChecked || "").trim() || null,
+        })
+        .eq("id", event.id);
+
+      if (error) {
+        setGlobalError("Could not update quality metadata in Supabase.");
+      } else {
+        setGlobalEvents((current) => current.map((item) => (
+          String(item.id) === String(event.id)
+            ? {
+                ...item,
+                source: sourceInput.trim(),
+                lastChecked: (checkedInput || defaultChecked || "").trim(),
+              }
+            : item
+        )));
+      }
+    }
+
     setQualityTick((value) => value + 1);
   };
 
   const fetchEvents = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError("");
     const { data, error } = await supabase
       .from("events")
       .select("*")
       .order("date", { ascending: true });
 
-    if (error) {
+    return {
+      data: mergeSeedEvents(data || []),
+      error,
+    };
+  }, []);
+
+  const fetchGlobalEvents = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("global_events")
+      .select("*")
+      .order("date", { ascending: true })
+      .order("created_at", { ascending: false });
+
+    return {
+      data: (data || []).map(mapGlobalEventRow),
+      error,
+    };
+  }, []);
+
+  const migrateLegacyGlobalEvents = useCallback(async () => {
+    const legacy = readLocalJson(LEGACY_GLOBAL_EVENTS_KEY, []);
+    if (!Array.isArray(legacy) || legacy.length === 0) return;
+
+    const payload = legacy
+      .filter((item) => item?.name && item?.date && item?.location)
+      .map((item) => ({
+        name: item.name,
+        date: item.date,
+        location: item.location,
+        description: item.description || null,
+        link: item.link || null,
+        source: item.source || null,
+        last_checked: item.lastChecked || null,
+      }));
+
+    if (payload.length === 0) {
+      writeLocalJson(LEGACY_GLOBAL_EVENTS_KEY, []);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("global_events")
+      .insert(payload);
+
+    if (error) return;
+
+    writeLocalJson(LEGACY_GLOBAL_EVENTS_KEY, []);
+    const refreshed = await fetchGlobalEvents();
+    if (!refreshed.error) {
+      setGlobalEvents(refreshed.data);
+    }
+  }, [fetchGlobalEvents]);
+
+  const loadAllEvents = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError("");
+    setGlobalError("");
+
+    const [eventsRes, globalRes] = await Promise.all([fetchEvents(), fetchGlobalEvents()]);
+
+    setEvents(eventsRes.data || []);
+    if (eventsRes.error) {
       setLoadError("Could not load events right now.");
     }
 
-    setEvents(mergeSeedEvents(data || []));
+    if (globalRes.error) {
+      setGlobalEvents([]);
+      setGlobalError("Off-grid sync is unavailable right now.");
+    } else {
+      setGlobalEvents(globalRes.data || []);
+      await migrateLegacyGlobalEvents();
+    }
+
     setIsLoading(false);
-  }, []);
+  }, [fetchEvents, fetchGlobalEvents, migrateLegacyGlobalEvents]);
 
   useEffect(() => {
     queueMicrotask(() => {
-      fetchEvents();
+      loadAllEvents();
     });
-  }, [fetchEvents]);
-
-  useEffect(() => {
-    writeLocalJson(GLOBAL_EVENTS_KEY, globalEvents);
-  }, [globalEvents]);
+  }, [loadAllEvents]);
 
   const calendarEvents = useMemo(() => {
     const offGrid = globalEvents.map((event) => ({
@@ -180,18 +278,34 @@ export default function EventsPage() {
     return eventDate.getFullYear() === year && eventDate.getMonth() === month;
   }).length;
 
-  const addGlobalEvent = (submitEvent) => {
+  const addGlobalEvent = async (submitEvent) => {
     submitEvent.preventDefault();
     if (!globalForm.name || !globalForm.date || !globalForm.location) return;
-    const createdId = `global-${Date.now()}`;
+    setIsSavingGlobal(true);
+    setGlobalError("");
 
-    setGlobalEvents((current) => [
-      {
-        id: createdId,
-        ...globalForm,
-      },
-      ...current,
-    ]);
+    const { data, error } = await supabase
+      .from("global_events")
+      .insert([{
+        name: globalForm.name,
+        date: globalForm.date,
+        location: globalForm.location,
+        description: globalForm.description || null,
+        link: globalForm.link || null,
+        source: globalForm.source || null,
+        last_checked: globalForm.lastChecked || null,
+      }])
+      .select("*")
+      .single();
+
+    if (error || !data) {
+      setGlobalError("Could not save off-grid event to Supabase yet.");
+      setIsSavingGlobal(false);
+      return;
+    }
+
+    const createdId = String(data.id);
+    setGlobalEvents((current) => [mapGlobalEventRow(data), ...current]);
 
     upsertQuality({
       targetType: "event",
@@ -211,6 +325,7 @@ export default function EventsPage() {
       lastChecked: "",
     });
     setShowGlobalForm(false);
+    setIsSavingGlobal(false);
   };
 
   const openEvent = (event) => {
@@ -349,7 +464,7 @@ export default function EventsPage() {
                     <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
                       <p>{loadError}</p>
                       <button
-                        onClick={fetchEvents}
+                        onClick={loadAllEvents}
                         className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
                       >
                         Retry
@@ -695,11 +810,18 @@ export default function EventsPage() {
                 </div>
                 <button
                   type="submit"
+                  disabled={isSavingGlobal}
                   className="rounded-2xl bg-gradient-to-r from-cyan-300 via-teal-300 to-emerald-300 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 md:col-span-2"
                 >
-                  Save to calendar
+                  {isSavingGlobal ? "Saving..." : "Save to calendar"}
                 </button>
               </form>
+            )}
+
+            {globalError && (
+              <div className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
+                {globalError}
+              </div>
             )}
 
             <div className="mt-6 space-y-3">
