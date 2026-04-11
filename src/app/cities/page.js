@@ -1,19 +1,112 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { cityConfig } from "@/lib/cities";
 import { usePlaces } from "@/lib/usePlaces";
 import EmptyState from "@/components/ui/EmptyState";
+
+const COUNTRY_TONES = [
+  {
+    section: "border-fuchsia-300/14 bg-[radial-gradient(circle_at_12%_14%,rgba(244,114,182,0.14),transparent_26%),radial-gradient(circle_at_86%_18%,rgba(59,130,246,0.11),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
+    chip: "border-fuchsia-200/18 bg-fuchsia-200/[0.08] text-fuchsia-100/78",
+    divider: "from-fuchsia-300/22",
+    card: "bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(96,165,250,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
+    hover: "hover:border-fuchsia-200/24 hover:shadow-[0_24px_75px_rgba(217,70,239,0.18),0_18px_45px_rgba(14,165,233,0.12)]",
+    pill: "border-fuchsia-200/16 bg-fuchsia-200/[0.08] text-fuchsia-100/76",
+  },
+  {
+    section: "border-amber-300/14 bg-[radial-gradient(circle_at_10%_16%,rgba(251,191,36,0.16),transparent_24%),radial-gradient(circle_at_84%_14%,rgba(45,212,191,0.10),transparent_28%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
+    chip: "border-amber-200/18 bg-amber-200/[0.08] text-amber-100/78",
+    divider: "from-amber-300/22",
+    card: "bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(45,212,191,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
+    hover: "hover:border-amber-200/24 hover:shadow-[0_24px_75px_rgba(251,191,36,0.16),0_18px_45px_rgba(45,212,191,0.10)]",
+    pill: "border-amber-200/16 bg-amber-200/[0.08] text-amber-100/76",
+  },
+  {
+    section: "border-cyan-300/14 bg-[radial-gradient(circle_at_16%_14%,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(168,85,247,0.12),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
+    chip: "border-cyan-200/18 bg-cyan-200/[0.08] text-cyan-100/80",
+    divider: "from-cyan-300/24",
+    card: "bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(168,85,247,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
+    hover: "hover:border-cyan-200/24 hover:shadow-[0_24px_75px_rgba(34,211,238,0.15),0_18px_45px_rgba(168,85,247,0.12)]",
+    pill: "border-cyan-200/16 bg-cyan-200/[0.08] text-cyan-100/76",
+  },
+  {
+    section: "border-emerald-300/14 bg-[radial-gradient(circle_at_12%_16%,rgba(52,211,153,0.14),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
+    chip: "border-emerald-200/18 bg-emerald-200/[0.08] text-emerald-100/80",
+    divider: "from-emerald-300/24",
+    card: "bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(59,130,246,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
+    hover: "hover:border-emerald-200/24 hover:shadow-[0_24px_75px_rgba(52,211,153,0.16),0_18px_45px_rgba(59,130,246,0.10)]",
+    pill: "border-emerald-200/16 bg-emerald-200/[0.08] text-emerald-100/76",
+  },
+];
+
+function getCountryTone(country) {
+  const value = String(country || "other");
+  let hash = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) % 100000;
+  }
+
+  return COUNTRY_TONES[Math.abs(hash) % COUNTRY_TONES.length];
+}
+
+const MAPBOX_COUNTRY_ALIASES = {
+  "United States": ["United States", "United States of America", "USA"],
+  "United Kingdom": ["United Kingdom", "UK", "Great Britain"],
+  "Czech Republic": ["Czech Republic", "Czechia"],
+  Netherlands: ["Netherlands", "The Netherlands"],
+};
+
+function normalizeCountry(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function getCountryMapboxNames(country) {
+  const aliases = MAPBOX_COUNTRY_ALIASES[country] || [];
+  return [country, ...aliases];
+}
+
+function getSupportedMapboxNames(countries) {
+  const unique = new Set();
+  countries.forEach((country) => {
+    getCountryMapboxNames(country).forEach((name) => unique.add(name));
+  });
+  return Array.from(unique);
+}
+
+function resolveMapboxCountryToAppCountry(mapboxName, countries) {
+  const normalized = normalizeCountry(mapboxName);
+  if (!normalized) return null;
+
+  for (const country of countries) {
+    const normalizedAliases = getCountryMapboxNames(country).map((name) => normalizeCountry(name));
+    if (normalizedAliases.includes(normalized)) {
+      return country;
+    }
+  }
+
+  return null;
+}
 
 export default function CitiesPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
+  const [mapError, setMapError] = useState("");
   const countrySectionRefs = useRef({});
+  const countryMapContainerRef = useRef(null);
+  const countryMapRef = useRef(null);
   const { places, isLoading } = usePlaces();
 
-  const scrollToCountrySection = (country) => {
+  const scrollToCountrySection = useCallback((country) => {
     if (!country || country === "All") return;
 
     requestAnimationFrame(() => {
@@ -24,11 +117,136 @@ export default function CitiesPage() {
         });
       });
     });
-  };
+  }, []);
 
   const countries = useMemo(() => {
     return ["All", ...new Set(Object.values(cityConfig).map((city) => city.country || "Other"))].sort();
   }, []);
+  const availableCountries = useMemo(() => countries.filter((country) => country !== "All"), [countries]);
+
+  const updateCountryMapStyles = useCallback((selected) => {
+    const map = countryMapRef.current;
+    if (!map || !map.getLayer("qa-countries-fill")) return;
+
+    const supportedNames = getSupportedMapboxNames(availableCountries);
+    const selectedNames = selected === "All" ? [] : getCountryMapboxNames(selected);
+    const countryNameExpression = ["coalesce", ["get", "name_en"], ["get", "name"], ["get", "name_long"], ""];
+
+    map.setPaintProperty("qa-countries-fill", "fill-color", [
+      "case",
+      ["in", countryNameExpression, ["literal", selectedNames]],
+      "#fb7185",
+      ["in", countryNameExpression, ["literal", supportedNames]],
+      "#22d3ee",
+      "#111111",
+    ]);
+
+    map.setPaintProperty("qa-countries-fill", "fill-opacity", [
+      "case",
+      ["in", countryNameExpression, ["literal", selectedNames]],
+      0.48,
+      ["in", countryNameExpression, ["literal", supportedNames]],
+      0.2,
+      0.08,
+    ]);
+  }, [availableCountries]);
+
+  useEffect(() => {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+    if (!countryMapContainerRef.current || countryMapRef.current) return;
+    if (!token) {
+      setMapError("Mapbox token missing. Add NEXT_PUBLIC_MAPBOX_TOKEN to enable world map filter.");
+      return;
+    }
+
+    mapboxgl.accessToken = token;
+
+    const map = new mapboxgl.Map({
+      container: countryMapContainerRef.current,
+      style: "mapbox://styles/mapbox/dark-v11",
+      projection: "mercator",
+      center: [8, 20],
+      zoom: 0.85,
+      minZoom: 0.7,
+      maxZoom: 3.3,
+      renderWorldCopies: false,
+      maxBounds: [
+        [-180, -85],
+        [180, 85],
+      ],
+      attributionControl: false,
+    });
+
+    countryMapRef.current = map;
+
+    map.on("load", () => {
+      if (!map.getSource("qa-country-boundaries")) {
+        map.addSource("qa-country-boundaries", {
+          type: "vector",
+          url: "mapbox://mapbox.country-boundaries-v1",
+        });
+      }
+
+      map.addLayer({
+        id: "qa-countries-fill",
+        type: "fill",
+        source: "qa-country-boundaries",
+        "source-layer": "country_boundaries",
+        paint: {
+          "fill-color": "#111111",
+          "fill-opacity": 0.12,
+        },
+      });
+
+      map.addLayer({
+        id: "qa-countries-line",
+        type: "line",
+        source: "qa-country-boundaries",
+        "source-layer": "country_boundaries",
+        paint: {
+          "line-color": "rgba(255,255,255,0.24)",
+          "line-width": 0.45,
+        },
+      });
+
+      updateCountryMapStyles(selectedCountry);
+    });
+
+    map.on("mouseenter", "qa-countries-fill", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    map.on("mouseleave", "qa-countries-fill", () => {
+      map.getCanvas().style.cursor = "";
+    });
+
+    map.on("click", "qa-countries-fill", (event) => {
+      const feature = event.features?.[0];
+      const rawCountry = feature?.properties?.name_en || feature?.properties?.name || feature?.properties?.name_long;
+      const matchedCountry = resolveMapboxCountryToAppCountry(rawCountry, availableCountries);
+
+      if (!matchedCountry) {
+        return;
+      }
+
+      setSelectedCountry(matchedCountry);
+      scrollToCountrySection(matchedCountry);
+    });
+
+    map.on("error", () => {
+      setMapError("Could not load world map right now.");
+    });
+
+    return () => {
+      map.remove();
+      countryMapRef.current = null;
+    };
+  }, [availableCountries, scrollToCountrySection, selectedCountry, updateCountryMapStyles]);
+
+  useEffect(() => {
+    updateCountryMapStyles(selectedCountry);
+  }, [selectedCountry, updateCountryMapStyles]);
 
   const allCities = useMemo(() => {
     return Object.entries(cityConfig).map(([key, city]) => {
@@ -130,6 +348,26 @@ export default function CitiesPage() {
         </section>
 
         <section className="relative mb-8 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+          <div className="mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">
+                Interactive country filter
+              </p>
+              <button
+                onClick={() => setSelectedCountry("All")}
+                className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70 transition hover:border-white/24 hover:text-white"
+              >
+                Show all
+              </button>
+            </div>
+            <div ref={countryMapContainerRef} className="h-[320px] w-full" />
+            {mapError && (
+              <p className="border-t border-white/10 px-4 py-3 text-sm text-amber-100/85">
+                {mapError}
+              </p>
+            )}
+          </div>
+
           <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-white/38">
@@ -214,88 +452,94 @@ export default function CitiesPage() {
           )}
 
           {!isLoading && visibleCountries.map((country) => (
-            <section
-              key={country}
-              ref={(node) => {
-                if (node) {
-                  countrySectionRefs.current[country] = node;
-                } else {
-                  delete countrySectionRefs.current[country];
-                }
-              }}
-              className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]"
-            >
-              <div className="mb-6 flex items-center gap-4">
-                <div className="rounded-full border border-cyan-200/10 bg-cyan-200/[0.06] px-4 py-2 text-xs uppercase tracking-[0.24em] text-cyan-100/65">
-                  {country}
-                </div>
-                <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                <div className="text-xs text-white/35">
-                  {groupedCities[country].length} cities
-                </div>
-              </div>
+            (() => {
+              const tone = getCountryTone(country);
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {groupedCities[country].map((city) => (
-                  <button
-                    key={city.key}
-                    onClick={() => router.push(`/${city.key}`)}
-                    className="group overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.06),transparent_22%),linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5 text-left transition duration-300 hover:-translate-y-[2px] hover:border-fuchsia-200/18 hover:shadow-[0_20px_60px_rgba(0,0,0,0.28)]"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-white/36">
-                          {city.country}
-                        </p>
-                        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">
-                          {city.title}
-                        </h2>
-                      </div>
-
-                      <div className="rounded-full border border-fuchsia-200/10 bg-fuchsia-200/[0.06] px-3 py-1 text-xs text-white/60">
-                        {city.placeCount} places
-                      </div>
+              return (
+                <section
+                  key={country}
+                  ref={(node) => {
+                    if (node) {
+                      countrySectionRefs.current[country] = node;
+                    } else {
+                      delete countrySectionRefs.current[country];
+                    }
+                  }}
+                  className={`rounded-[32px] border p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)] ${tone.section}`}
+                >
+                  <div className="mb-6 flex items-center gap-4">
+                    <div className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.24em] ${tone.chip}`}>
+                      {country}
                     </div>
-
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      <div className="rounded-2xl border border-amber-200/10 bg-amber-200/[0.05] p-3">
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                          Avg rating
-                        </p>
-                        <p className="mt-2 text-lg font-semibold text-white">
-                          {city.avgRating ? city.avgRating.toFixed(1) : "-"}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-cyan-200/10 bg-cyan-200/[0.05] p-3">
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/36">
-                          Reviews
-                        </p>
-                        <p className="mt-2 text-lg font-semibold text-white">
-                          {city.reviewCount}
-                        </p>
-                      </div>
+                    <div className={`h-px flex-1 bg-gradient-to-r ${tone.divider} to-transparent`} />
+                    <div className="text-xs text-white/38">
+                      {groupedCities[country].length} cities
                     </div>
+                  </div>
 
-                    <div className="mt-4 rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-4">
-                      <p className="text-xs uppercase tracking-[0.16em] text-white/34">
-                        Signal
-                      </p>
-                      <p className="mt-2 text-sm capitalize text-white/62">
-                        {String(city.vibe || "mixed").replaceAll("_", " ")} atmosphere
-                      </p>
-                      <p className="mt-2 text-sm text-white/45">
-                        {city.topPlace
-                          ? `Top place: ${city.topPlace}`
-                          : "This city is ready for more local signal."}
-                      </p>
-                    </div>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {groupedCities[country].map((city) => (
+                      <button
+                        key={city.key}
+                        onClick={() => router.push(`/${city.key}`)}
+                        className={`group overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[2px] ${tone.card} ${tone.hover}`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-white/34">
+                              {city.country}
+                            </p>
+                            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white drop-shadow-[0_4px_22px_rgba(255,255,255,0.07)]">
+                              {city.title}
+                            </h2>
+                          </div>
 
-                    <div className="mt-5 h-1.5 w-24 rounded-full bg-gradient-to-r from-amber-200 via-fuchsia-300 to-cyan-300 opacity-80 transition-all duration-300 group-hover:w-36" />
-                  </button>
-                ))}
-              </div>
-            </section>
+                          <div className={`rounded-full border px-3 py-1 text-xs ${tone.pill}`}>
+                            {city.placeCount} places
+                          </div>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-2 gap-3">
+                          <div className="rounded-2xl border border-amber-200/12 bg-amber-200/[0.06] p-3">
+                            <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                              Avg rating
+                            </p>
+                            <p className="mt-2 text-lg font-semibold text-white/96">
+                              {city.avgRating ? city.avgRating.toFixed(1) : "-"}
+                            </p>
+                          </div>
+
+                          <div className="rounded-2xl border border-cyan-200/12 bg-cyan-200/[0.06] p-3">
+                            <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                              Reviews
+                            </p>
+                            <p className="mt-2 text-lg font-semibold text-white/96">
+                              {city.reviewCount}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4">
+                          <p className="text-xs uppercase tracking-[0.16em] text-white/36">
+                            Signal
+                          </p>
+                          <p className="mt-2 text-sm capitalize text-white/68">
+                            {String(city.vibe || "mixed").replaceAll("_", " ")} atmosphere
+                          </p>
+                          <p className="mt-2 text-sm text-white/52">
+                            {city.topPlace
+                              ? `Top place: ${city.topPlace}`
+                              : "This city is ready for more local signal."}
+                          </p>
+                        </div>
+
+                        <div className="mt-5 h-1.5 w-24 rounded-full bg-gradient-to-r from-amber-200 via-fuchsia-300 to-cyan-300 opacity-85 transition-all duration-300 group-hover:w-36" />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              );
+            })()
           ))}
         </div>
       </div>
