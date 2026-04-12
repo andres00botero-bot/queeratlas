@@ -13,9 +13,6 @@ export const metadata = {
   description:
     "Global queer discovery atlas for venues, events, guides, and member community signal.",
   applicationName: "Queer Atlas",
-  alternates: {
-    canonical: "/",
-  },
   manifest: "/manifest.webmanifest",
   category: "travel",
   robots: {
