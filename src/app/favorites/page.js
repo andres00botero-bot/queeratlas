@@ -12,6 +12,7 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
+import PageOpeningState from "@/components/ui/PageOpeningState";
 
 function timeAgo(value) {
   if (!value) return "Recently";
@@ -55,19 +56,6 @@ function mapPlanRow(row) {
     note: row.note || "",
     createdAt: row.created_at || new Date().toISOString(),
   };
-}
-
-function FavoritesOpeningSkeleton() {
-  return (
-    <div className="w-full max-w-xl rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-6">
-      <div className="animate-pulse space-y-3" aria-hidden="true">
-        <div className="h-4 w-32 rounded-full bg-white/14" />
-        <div className="h-8 w-56 rounded-full bg-white/12" />
-        <div className="h-3 w-full rounded-full bg-white/8" />
-        <div className="h-3 w-5/6 rounded-full bg-white/8" />
-      </div>
-    </div>
-  );
 }
 
 function FavoritesCardSkeleton() {
@@ -575,7 +563,11 @@ export default function FavoritesPage() {
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
-        <FavoritesOpeningSkeleton />
+        <PageOpeningState
+          title="Opening your atlas..."
+          subtitle="Loading favorites, plans, and member profile signal."
+          tone="amber"
+        />
       </main>
     );
   }

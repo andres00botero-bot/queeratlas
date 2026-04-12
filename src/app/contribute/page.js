@@ -7,6 +7,7 @@ import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
+import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
 import {
   blockItem,
   getBlockedItems,
@@ -17,11 +18,12 @@ import {
   syncModerationFromCloud,
   unblockItem,
 } from "@/lib/moderation";
-import { upsertQuality } from "@/lib/quality";
+import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
+import PageOpeningState from "@/components/ui/PageOpeningState";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -82,6 +84,13 @@ function isMissingTableError(error) {
   return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
 }
 
+function formatCityLabel(city) {
+  return String(city || "")
+    .replace(/_/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export default function ContributePage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -103,6 +112,12 @@ export default function ContributePage() {
   const { toast, showToast } = useActionToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [moderationSyncNotice, setModerationSyncNotice] = useState("");
+  const [qaSnapshot, setQaSnapshot] = useState({
+    places: [],
+    events: [],
+    loading: false,
+    error: "",
+  });
   const [placeForm, setPlaceForm] = useState({
     name: "",
     city: "",
@@ -202,10 +217,59 @@ export default function ContributePage() {
     writeLocalJson(STORAGE_KEY, requests);
   }, [isReady, isMember, requests]);
 
+  useEffect(() => {
+    if (!isMember || !isAdmin) {
+      setQaSnapshot({ places: [], events: [], loading: false, error: "" });
+      return;
+    }
+
+    let active = true;
+
+    queueMicrotask(async () => {
+      setQaSnapshot((current) => ({ ...current, loading: true, error: "" }));
+      const [{ data: placesData, error: placesError }, { data: eventsData, error: eventsError }] =
+        await Promise.all([
+          supabase
+            .from("places_with_stats")
+            .select("id, name, city, type, vibe, description, hours, lat, lng, source, lastChecked, verified"),
+          supabase
+            .from("events")
+            .select("id, name, city, description, date, link, lat, lng, source, lastChecked, verified"),
+        ]);
+
+      if (!active) return;
+
+      if (placesError || eventsError) {
+        setQaSnapshot({
+          places: [],
+          events: [],
+          loading: false,
+          error: "Could not load complete QA snapshot from Supabase.",
+        });
+        return;
+      }
+
+      setQaSnapshot({
+        places: mergeSeedPlaces(placesData || []),
+        events: mergeSeedEvents(eventsData || []),
+        loading: false,
+        error: "",
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isAdmin, isMember]);
+
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
-        <p className="text-sm text-gray-400">Opening contribution hub...</p>
+        <PageOpeningState
+          title="Opening contribution hub..."
+          subtitle="Syncing moderation, requests, and atlas contribution tools."
+          tone="emerald"
+        />
       </main>
     );
   }
@@ -480,6 +544,93 @@ export default function ContributePage() {
       : reportFilter === "resolved"
         ? resolvedReports
         : openReports;
+  const qaFindings = (() => {
+    if (!isAdmin) return { places: [], events: [], stale: [], cityCounts: [], totals: { places: 0, events: 0, stale: 0 } };
+
+    const qualityMap = getQualityMap();
+
+    const placeIssues = qaSnapshot.places
+      .map((place) => {
+        const issues = [];
+        if (!String(place.description || "").trim()) issues.push("Missing description");
+        if (String(place.description || "").trim().length < 140) issues.push("Description is short");
+        if (!String(place.vibe || "").trim()) issues.push("Missing vibe");
+        if (!String(place.hours || "").trim()) issues.push("Missing opening hours");
+        if (!Number.isFinite(Number(place.lat)) || !Number.isFinite(Number(place.lng))) issues.push("Missing coordinates");
+        return {
+          id: String(place.id),
+          city: place.city || "",
+          name: place.name || "Unnamed place",
+          type: place.type || "place",
+          issues,
+        };
+      })
+      .filter((item) => item.issues.length > 0);
+
+    const eventIssues = qaSnapshot.events
+      .map((event) => {
+        const issues = [];
+        if (!String(event.description || "").trim()) issues.push("Missing description");
+        if (String(event.description || "").trim().length < 120) issues.push("Description is short");
+        if (!String(event.date || "").trim()) issues.push("Missing date");
+        if (!String(event.link || "").trim()) issues.push("No official link");
+        if (!Number.isFinite(Number(event.lat)) || !Number.isFinite(Number(event.lng))) issues.push("Missing coordinates");
+        return {
+          id: String(event.id),
+          city: event.city || "",
+          name: event.name || "Unnamed event",
+          type: "event",
+          issues,
+        };
+      })
+      .filter((item) => item.issues.length > 0);
+
+    const staleItems = [
+      ...qaSnapshot.places.map((item) => ({ ...item, entityType: "place" })),
+      ...qaSnapshot.events.map((item) => ({ ...item, entityType: "event" })),
+    ]
+      .map((entity) => {
+        const quality = getEntityQuality({
+          targetType: entity.entityType,
+          targetId: entity.id,
+          entity,
+          map: qualityMap,
+        });
+        const status = getQualityStatus(quality);
+        if (!status.stale) return null;
+        return {
+          id: `${entity.entityType}-${entity.id}`,
+          city: entity.city || "",
+          name: entity.name || "Untitled",
+          entityType: entity.entityType,
+          label: status.label,
+        };
+      })
+      .filter(Boolean);
+
+    const cityAccumulator = {};
+    [...placeIssues, ...eventIssues, ...staleItems].forEach((item) => {
+      const cityKey = String(item.city || "global").toLowerCase();
+      cityAccumulator[cityKey] = (cityAccumulator[cityKey] || 0) + 1;
+    });
+
+    const cityCounts = Object.entries(cityAccumulator)
+      .map(([city, count]) => ({ city, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+
+    return {
+      places: placeIssues.slice(0, 10),
+      events: eventIssues.slice(0, 10),
+      stale: staleItems.slice(0, 10),
+      cityCounts,
+      totals: {
+        places: placeIssues.length,
+        events: eventIssues.length,
+        stale: staleItems.length,
+      },
+    };
+  })();
 
   return (
     <main className="min-h-screen bg-black text-white px-6 py-8">
@@ -762,6 +913,133 @@ export default function ContributePage() {
             ))}
           </div>
         </section>
+
+        {isAdmin && (
+          <section className="mt-6 rounded-[28px] border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(10,34,45,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(56,189,248,0.08)]">
+            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">Admin Content QA</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Atlas quality snapshot</h2>
+                <p className="mt-2 text-sm text-white/65">
+                  Fast check of missing signal and stale entries before publishing updates.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-cyan-100">
+                  Places: {qaFindings.totals.places}
+                </span>
+                <span className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-violet-100">
+                  Events: {qaFindings.totals.events}
+                </span>
+                <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-amber-100">
+                  Needs refresh: {qaFindings.totals.stale}
+                </span>
+              </div>
+            </div>
+
+            {qaSnapshot.loading ? (
+              <div className="rounded-2xl border border-dashed border-white/12 px-5 py-8 text-sm text-white/60">
+                Loading QA snapshot...
+              </div>
+            ) : qaSnapshot.error ? (
+              <div className="rounded-2xl border border-amber-300/22 bg-amber-300/10 px-5 py-4 text-sm text-amber-100">
+                {qaSnapshot.error}
+              </div>
+            ) : (
+              <>
+                {qaFindings.cityCounts.length > 0 && (
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    {qaFindings.cityCounts.map((item) => (
+                      <button
+                        key={item.city}
+                        onClick={() => router.push(item.city ? `/${item.city}` : "/cities")}
+                        className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-xs text-white/80 transition hover:border-cyan-200/30 hover:text-cyan-100"
+                      >
+                        {formatCityLabel(item.city)}: {item.count}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid gap-3 lg:grid-cols-3">
+                  <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/80">Place issues</p>
+                    <div className="mt-3 space-y-2">
+                      {qaFindings.places.length === 0 && (
+                        <p className="text-sm text-white/55">No place issues detected.</p>
+                      )}
+                      {qaFindings.places.map((item) => (
+                        <button
+                          key={`qa-place-${item.id}`}
+                          onClick={() =>
+                            router.push(item.city ? `/${item.city}?placeId=${item.id}` : "/cities")
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-cyan-200/30"
+                        >
+                          <p className="text-sm font-semibold text-white">{item.name}</p>
+                          <p className="mt-1 text-xs text-white/60">
+                            {formatCityLabel(item.city)} · {item.type}
+                          </p>
+                          <p className="mt-2 text-xs text-amber-100/90">{item.issues.join(" · ")}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+
+                  <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-violet-100/80">Event issues</p>
+                    <div className="mt-3 space-y-2">
+                      {qaFindings.events.length === 0 && (
+                        <p className="text-sm text-white/55">No event issues detected.</p>
+                      )}
+                      {qaFindings.events.map((item) => (
+                        <button
+                          key={`qa-event-${item.id}`}
+                          onClick={() => router.push("/events")}
+                          className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-violet-200/30"
+                        >
+                          <p className="text-sm font-semibold text-white">{item.name}</p>
+                          <p className="mt-1 text-xs text-white/60">{formatCityLabel(item.city)}</p>
+                          <p className="mt-2 text-xs text-amber-100/90">{item.issues.join(" · ")}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+
+                  <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-amber-100/90">Needs refresh</p>
+                    <div className="mt-3 space-y-2">
+                      {qaFindings.stale.length === 0 && (
+                        <p className="text-sm text-white/55">No stale items right now.</p>
+                      )}
+                      {qaFindings.stale.map((item) => (
+                        <button
+                          key={`qa-stale-${item.id}`}
+                          onClick={() =>
+                            router.push(
+                              item.entityType === "event"
+                                ? "/events"
+                                : item.city
+                                  ? `/${item.city}`
+                                  : "/cities"
+                            )
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-amber-200/30"
+                        >
+                          <p className="text-sm font-semibold text-white">{item.name}</p>
+                          <p className="mt-1 text-xs text-white/60">
+                            {formatCityLabel(item.city)} · {item.entityType}
+                          </p>
+                          <p className="mt-2 text-xs text-amber-100/90">{item.label}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+                </div>
+              </>
+            )}
+          </section>
+        )}
 
         <section className="mt-6 rounded-[28px] border border-rose-300/15 bg-[linear-gradient(180deg,rgba(44,18,27,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(244,114,182,0.08)]">
           <div className="mb-5 flex items-center justify-between gap-3">

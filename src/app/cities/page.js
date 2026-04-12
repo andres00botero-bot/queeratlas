@@ -502,19 +502,20 @@ export default function CitiesPage() {
                       <button
                         key={city.key}
                         onClick={() => router.push(`/${city.key}`)}
-                        className={`group overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[2px] ${tone.card} ${tone.hover}`}
+                        className={`group relative overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[4px] active:translate-y-0 ${tone.card} ${tone.hover}`}
                       >
+                        <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/8 opacity-0 blur-3xl transition duration-300 group-hover:opacity-100" />
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-xs uppercase tracking-[0.18em] text-white/34">
                               {city.country}
                             </p>
-                            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white drop-shadow-[0_4px_22px_rgba(255,255,255,0.07)]">
+                            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white drop-shadow-[0_4px_22px_rgba(255,255,255,0.07)] transition group-hover:translate-x-[2px]">
                               {city.title}
                             </h2>
                           </div>
 
-                          <div className={`rounded-full border px-3 py-1 text-xs ${tone.pill}`}>
+                          <div className={`rounded-full border px-3 py-1 text-xs transition group-hover:scale-[1.03] ${tone.pill}`}>
                             {city.placeCount} places
                           </div>
                         </div>
@@ -553,7 +554,12 @@ export default function CitiesPage() {
                           </p>
                         </div>
 
-                        <div className="mt-5 h-1.5 w-24 rounded-full bg-gradient-to-r from-amber-200 via-fuchsia-300 to-cyan-300 opacity-85 transition-all duration-300 group-hover:w-36" />
+                        <div className="mt-5 flex items-center justify-between">
+                          <div className="h-1.5 w-24 rounded-full bg-gradient-to-r from-amber-200 via-fuchsia-300 to-cyan-300 opacity-85 transition-all duration-300 group-hover:w-36" />
+                          <span className="text-[11px] uppercase tracking-[0.18em] text-white/40 transition group-hover:text-white/72">
+                            Open
+                          </span>
+                        </div>
                       </button>
                     ))}
                   </div>

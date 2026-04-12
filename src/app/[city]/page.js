@@ -1186,9 +1186,9 @@ export default function CityPage() {
           {!eventsLoading && !featuredEvent && remainingEvents.length === 0 && (
             <div className="rounded-[26px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.20),rgba(18,18,18,0.96))] px-5 py-8 text-center">
               <p className="text-xs uppercase tracking-[0.2em] text-violet-200/70">Event signal</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">This city is quiet right now</h3>
+              <h3 className="mt-2 text-lg font-semibold text-white">No live pulse yet</h3>
               <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-                No upcoming events are live yet. You can spark the pulse by adding one, or jump into the guide and plan your night route first.
+                No upcoming events are published yet. Start the first drop for this city, or scan the guide lane and build your route before posting.
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 <button
@@ -1196,7 +1196,7 @@ export default function CityPage() {
                   onClick={() => scrollToSection(guideSectionRef)}
                   className="qa-cinematic-hover rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/80 hover:border-white/30 hover:text-white"
                 >
-                  Open quick guide
+                  Open guide lane
                 </button>
                 {isMember ? (
                   <button
@@ -1206,7 +1206,7 @@ export default function CityPage() {
                     }}
                     className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
                   >
-                    Add first event
+                    Publish first event
                   </button>
                 ) : (
                   <button
@@ -1217,7 +1217,7 @@ export default function CityPage() {
                     }}
                     className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
                   >
-                    Become member to add
+                    Join to publish
                   </button>
                 )}
               </div>
@@ -1316,18 +1316,18 @@ export default function CityPage() {
         {!placesLoading && !hasAnyPlaces && (
           <div className="mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
-            <h3 className="mt-2 text-lg font-semibold text-white">No verified places yet</h3>
+            <h3 className="mt-2 text-lg font-semibold text-white">No venues dropped yet</h3>
             <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-              First drops define the scene. Add the places people actually trust, and help shape this city&apos;s queer map from day one.
+              First drops define the culture. Add the rooms people truly trust and shape this city&apos;s map from day one.
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => scrollToSection(guideSectionRef)}
                 className="qa-cinematic-hover rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/80 hover:border-white/30 hover:text-white"
-              >
-                Read quick guide
-              </button>
+                >
+                  Read guide lane
+                </button>
               {isMember ? (
                 <button
                   type="button"
@@ -1337,7 +1337,7 @@ export default function CityPage() {
                   }}
                   className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
                 >
-                  Add first place
+                  Publish first venue
                 </button>
               ) : (
                 <button
@@ -1348,7 +1348,7 @@ export default function CityPage() {
                   }}
                   className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
                 >
-                  Become member to add
+                  Join to publish
                 </button>
               )}
             </div>
@@ -1502,9 +1502,9 @@ export default function CityPage() {
       )}
 
       {selectedPlace && (
-        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-8 shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
-          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#0e0e0e]/88 px-4 py-2 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closePlace}>
+          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#0e0e0e]/88 px-4 py-2.5 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closePlace}>
             Close
           </button>
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -1564,14 +1564,14 @@ export default function CityPage() {
                   title: selectedPlace.name,
                 })
               }
-              className="qa-cinematic-hover rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+              className="qa-cinematic-hover rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
               aria-label={`Report place ${selectedPlace.name}`}
             >
               Report place
             </button>
             <button
               onClick={() => toggleFavorite(selectedPlace.id)}
-              className={`qa-cinematic-hover rounded-full border px-4 py-2 text-xs ${
+              className={`qa-cinematic-hover rounded-full border px-4 py-2.5 text-xs ${
                 favorites.includes(String(selectedPlace.id))
                   ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
                   : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
@@ -1700,9 +1700,9 @@ export default function CityPage() {
       )}
 
       {selectedEvent && (
-        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-8 shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
-          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#111021]/88 px-4 py-2 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closeEvent}>
+          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#111021]/88 px-4 py-2.5 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closeEvent}>
             Close
           </button>
 
@@ -1714,16 +1714,40 @@ export default function CityPage() {
               <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">
                 Community event
               </span>
+              {selectedEvent.date && (
+                <span className="rounded-full border border-violet-200/24 bg-violet-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-violet-100">
+                  {formatDate(selectedEvent.date)}
+                </span>
+              )}
             </div>
             <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedEvent.name}</h2>
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
-            {selectedEvent.date && (
-              <p className="mb-2 text-sm text-purple-300">{formatDate(selectedEvent.date)}</p>
-            )}
             {selectedEvent.description && (
               <div className="mb-1">
-                <p className="mb-1 text-xs text-gray-500">About event</p>
+                <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About event</p>
                 <p className="text-sm leading-relaxed text-gray-300">{selectedEvent.description}</p>
+              </div>
+            )}
+            {(selectedEvent.link || selectedEventQuality?.lastChecked || selectedEventQuality?.source) && (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {selectedEvent.link && (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Link</p>
+                    <p className="mt-1 text-xs text-white/78">Official event link available</p>
+                  </div>
+                )}
+                {selectedEventQuality?.lastChecked && (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Last checked</p>
+                    <p className="mt-1 text-xs text-white/78">{formatDate(selectedEventQuality.lastChecked)}</p>
+                  </div>
+                )}
+                {selectedEventQuality?.source && (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:col-span-2">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Source note</p>
+                    <p className="mt-1 text-xs text-white/78 line-clamp-2">{selectedEventQuality.source}</p>
+                  </div>
+                )}
               </div>
             )}
             {selectedEventQuality && (
@@ -1739,16 +1763,6 @@ export default function CityPage() {
                 >
                   {getQualityStatus(selectedEventQuality).label}
                 </button>
-                {selectedEventQuality.lastChecked && (
-                  <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
-                    Checked {formatDate(selectedEventQuality.lastChecked)}
-                  </span>
-                )}
-                {selectedEventQuality.source && (
-                  <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
-                    Source set
-                  </span>
-                )}
               </div>
             )}
           </div>

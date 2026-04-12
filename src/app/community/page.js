@@ -14,6 +14,7 @@ import {
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import ActionToast from "@/components/ui/ActionToast";
+import PageOpeningState from "@/components/ui/PageOpeningState";
 
 const KEYS = {
   stories: "qa_community_stories",
@@ -149,19 +150,6 @@ function Field({ value, onChange, placeholder, area = false }) {
   return <input value={value} onChange={onChange} placeholder={placeholder} className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50" />;
 }
 
-function CommunityOpeningSkeleton() {
-  return (
-    <div className="w-full max-w-xl rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-6">
-      <div className="animate-pulse space-y-3" aria-hidden="true">
-        <div className="h-4 w-40 rounded-full bg-white/14" />
-        <div className="h-8 w-64 rounded-full bg-white/12" />
-        <div className="h-3 w-full rounded-full bg-white/8" />
-        <div className="h-3 w-4/5 rounded-full bg-white/8" />
-      </div>
-    </div>
-  );
-}
-
 export default function CommunityPage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
@@ -276,7 +264,11 @@ export default function CommunityPage() {
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
-        <CommunityOpeningSkeleton />
+        <PageOpeningState
+          title="Opening community..."
+          subtitle="Loading stories, guides, and live member flow."
+          tone="violet"
+        />
       </main>
     );
   }

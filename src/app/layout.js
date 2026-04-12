@@ -1,5 +1,6 @@
 import "./globals.css"; // 
 import { AuthProvider } from "@/lib/auth";
+import { Analytics } from "@vercel/analytics/react";
 
 const baseUrl = "https://queeratlas.app";
 
@@ -86,6 +87,7 @@ export default function RootLayout({ children }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <AuthProvider>{children}</AuthProvider>
+      <Analytics />
     </body>
     </html>
   );
