@@ -486,6 +486,17 @@ export default function Home() {
                 Find the city. Feel the signal. The global queer database for discovery,
                 vibe, community, and culture.
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link href="/gay-guide" className="rounded-full border border-fuchsia-200/22 bg-fuchsia-200/10 px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/40">
+                  Gay Guide
+                </Link>
+                <Link href="/queer-guide" className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/40">
+                  Queer Guide
+                </Link>
+                <Link href="/hbtq-guide" className="rounded-full border border-amber-200/22 bg-amber-200/10 px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-200/40">
+                  HBTQ Guide
+                </Link>
+              </div>
               {isDataLoading && (
                 <p className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
               )}
