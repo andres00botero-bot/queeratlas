@@ -157,23 +157,44 @@ export default function CitiesPage() {
     if (!countryMapContainerRef.current || countryMapRef.current) return;
     if (!mapboxToken) return;
 
+    const hasWebGlSupport =
+      typeof mapboxgl.supported === "function"
+        ? mapboxgl.supported({ failIfMajorPerformanceCaveat: false })
+        : true;
+
+    if (!hasWebGlSupport) {
+      queueMicrotask(() => {
+        setMapError("World map is unavailable in this browser or device (WebGL not supported).");
+      });
+      return;
+    }
+
     mapboxgl.accessToken = mapboxToken;
 
-    const map = new mapboxgl.Map({
-      container: countryMapContainerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
-      projection: "mercator",
-      center: [8, 20],
-      zoom: 0.85,
-      minZoom: 0.7,
-      maxZoom: 3.3,
-      renderWorldCopies: false,
-      maxBounds: [
-        [-180, -85],
-        [180, 85],
-      ],
-      attributionControl: false,
-    });
+    let map;
+    try {
+      map = new mapboxgl.Map({
+        container: countryMapContainerRef.current,
+        style: "mapbox://styles/mapbox/dark-v11",
+        projection: "mercator",
+        center: [8, 20],
+        zoom: 0.85,
+        minZoom: 0.7,
+        maxZoom: 3.3,
+        renderWorldCopies: false,
+        maxBounds: [
+          [-180, -85],
+          [180, 85],
+        ],
+        attributionControl: false,
+      });
+    } catch (error) {
+      console.warn("Map initialization skipped:", error);
+      queueMicrotask(() => {
+        setMapError("Could not start world map on this device right now.");
+      });
+      return;
+    }
 
     countryMapRef.current = map;
 
