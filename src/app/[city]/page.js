@@ -1392,7 +1392,7 @@ export default function CityPage() {
                       }
                     }}
                     style={{ animationDelay: `${Math.min(index * 45, 280)}ms` }}
-                    className={`qa-cinematic-hover animate-rise-in cursor-pointer rounded-[26px] border p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
+                    className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[28px] border p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
                       index === 0 ? "md:col-span-2" : ""
                     } ${
                       isFocusMode && !isSelected ? "opacity-60 saturate-75" : ""
@@ -1406,10 +1406,11 @@ export default function CityPage() {
                         : ""
                     }`}
                   >
-                    <div className={`mb-5 h-1.5 w-28 rounded-full bg-gradient-to-r ${style.line}`} />
+                    <div className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
+                    <div className={`mb-5 h-1.5 w-36 rounded-full bg-gradient-to-r ${style.line}`} />
                     <div className="mb-4 flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <h3 className={`${index === 0 ? "text-xl md:text-2xl" : "text-lg"} font-semibold leading-tight tracking-[-0.01em] text-white`}>{place.name}</h3>
+                        <h3 className={`${index === 0 ? "text-xl md:text-[1.65rem]" : "text-lg"} font-semibold leading-tight tracking-[-0.015em] text-white`}>{place.name}</h3>
                         <div className="mt-3 flex flex-wrap items-center gap-2">
                           <span className={`rounded-full border border-white/16 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${style.label}`}>
                             {TYPE_LABELS[place.type] || "Place"}
@@ -1430,7 +1431,7 @@ export default function CityPage() {
                           }}
                           className={`rounded-full border px-3 py-1 text-xs transition ${
                             favorites.includes(String(place.id))
-                              ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
+                              ? "border-pink-300/36 bg-gradient-to-r from-pink-300/20 to-fuchsia-300/16 text-pink-100"
                               : "border-white/14 bg-white/5 text-white/65 hover:border-pink-300/25 hover:text-pink-100"
                           }`}
                           aria-label={favorites.includes(String(place.id)) ? `Remove ${place.name} from favorites` : `Save ${place.name} to favorites`}
@@ -1439,14 +1440,14 @@ export default function CityPage() {
                           {favorites.includes(String(place.id)) ? "Saved" : "Save"}
                         </button>
 
-                        <span className={`rounded-full border border-white/14 bg-black/35 px-3 py-1 text-xs font-semibold ${style.label}`}>
-                          ★ {place.avgRating?.toFixed(1) || "-"}
+                        <span className={`rounded-full border border-white/14 bg-black/45 px-3 py-1 text-xs font-semibold ${style.label}`}>
+                          Rating {place.avgRating?.toFixed(1) || "-"}
                         </span>
                       </div>
                     </div>
 
                     {place.description && (
-                      <div className="mb-4 rounded-2xl border border-white/8 bg-black/24 p-4">
+                      <div className="mb-4 rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(0,0,0,0.34),rgba(0,0,0,0.52))] p-4">
                         <p className={`${index === 0 ? "line-clamp-4 text-sm leading-7" : "line-clamp-3 text-sm leading-6"} text-white/68`}>
                           {place.description}
                         </p>
@@ -1454,7 +1455,7 @@ export default function CityPage() {
                     )}
 
                     {place.hours && (
-                      <p className="mb-4 text-[11px] uppercase tracking-[0.14em] text-cyan-200/72">
+                      <p className="mb-4 inline-flex rounded-full border border-cyan-200/18 bg-cyan-200/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/80">
                         {place.hours}
                       </p>
                     )}
@@ -1471,7 +1472,7 @@ export default function CityPage() {
                               clickEvent
                             )
                           }
-                          className={`rounded-full border px-2 py-0.5 transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
+                          className={`rounded-full border px-2.5 py-1 text-[11px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
                           aria-label={`Update quality status for place ${place.name}`}
                         >
                           {qualityStatus.label}
@@ -1502,9 +1503,9 @@ export default function CityPage() {
       )}
 
       {selectedPlace && (
-        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
-          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#0e0e0e]/88 px-4 py-2.5 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closePlace}>
+          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#0e0e0e]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closePlace}>
             Close
           </button>
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -1519,16 +1520,25 @@ export default function CityPage() {
             <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedPlace.name}</h2>
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-fuchsia-300" />
             {selectedPlace.description && (
-              <p className="mb-2 text-sm text-gray-300">{selectedPlace.description}</p>
+              <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="text-sm leading-relaxed text-gray-300">{selectedPlace.description}</p>
+              </div>
             )}
             {selectedPlace.hours && (
               <p className="mb-2 text-xs uppercase tracking-[0.18em] text-cyan-200/72">
                 {selectedPlace.hours}
               </p>
             )}
-            <p className="text-sm text-white/78">
-              Rating {selectedPlace.avgRating?.toFixed(1) || "-"} ({selectedPlace.reviewCount || 0})
-            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Rating</p>
+                <p className="mt-1 text-sm text-white/84">{selectedPlace.avgRating?.toFixed(1) || "-"}</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Reviews</p>
+                <p className="mt-1 text-sm text-white/84">{selectedPlace.reviewCount || 0}</p>
+              </div>
+            </div>
             {selectedPlaceQuality && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <button
@@ -1585,9 +1595,9 @@ export default function CityPage() {
 
           <div className="mt-4 space-y-2">
             {reviews.map((review) => (
-              <div key={review.id} className="rounded-2xl border border-white/8 bg-white/[0.04] p-3">
-                <p className="text-sm text-white/80">Rating {review.rating}</p>
-                <p className="mt-2 text-sm text-gray-300">{review.comment}</p>
+              <div key={review.id} className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3">
+                <p className="text-xs uppercase tracking-[0.14em] text-yellow-300/90">Rating {review.rating}/5</p>
+                <p className="mt-2 text-sm text-gray-200">{review.comment}</p>
               </div>
             ))}
           </div>
@@ -1647,6 +1657,7 @@ export default function CityPage() {
               value={comment}
               disabled={!isMember || !canReviewSelectedPlace || isSubmittingReview}
               onChange={(event) => setComment(event.target.value)}
+              placeholder="Share vibe, safety, crowd energy, music, and what to expect."
               className={`mb-2 w-full rounded-2xl border border-white/10 bg-black/40 p-3 ${
                 !isMember || !canReviewSelectedPlace ? "hidden" : ""
               }`}
@@ -1700,9 +1711,9 @@ export default function CityPage() {
       )}
 
       {selectedEvent && (
-        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] lg:relative lg:inset-auto lg:w-[420px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
-          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/12 bg-[#111021]/88 px-4 py-2.5 text-sm text-white/75 backdrop-blur hover:border-white/20 hover:text-white" onClick={closeEvent}>
+          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#111021]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closeEvent}>
             Close
           </button>
 
@@ -1723,7 +1734,7 @@ export default function CityPage() {
             <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedEvent.name}</h2>
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
             {selectedEvent.description && (
-              <div className="mb-1">
+              <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About event</p>
                 <p className="text-sm leading-relaxed text-gray-300">{selectedEvent.description}</p>
               </div>
@@ -1767,7 +1778,7 @@ export default function CityPage() {
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="mt-3 space-y-2">
             <button
               onClick={() => toggleFavorite(`event-${selectedEvent.id}`)}
               className={`qa-cinematic-hover w-full rounded-2xl border px-4 py-3 text-sm ${
