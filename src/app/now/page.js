@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
@@ -823,9 +824,18 @@ export default function NowPage() {
 
             <section className="flex h-full min-h-[920px] flex-col rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(11,44,56,0.75),rgba(9,9,9,0.96))] p-6 shadow-[0_24px_64px_rgba(34,211,238,0.10)]">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
+                <div className="flex items-center gap-3.5">
+                  <Image
+                    src="/qa-top-destination-badge-premium.svg"
+                    alt="Top destination badge"
+                    width={88}
+                    height={88}
+                    className="h-16 w-16 rounded-full border border-cyan-200/45 shadow-[0_0_46px_rgba(34,211,238,0.38)]"
+                  />
+                  <div>
                   <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">Ranking</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">Top 15 Queer Travel Destinations</h3>
+                  </div>
                 </div>
                 <select
                   value={selectedRankingYear}
@@ -898,7 +908,8 @@ export default function NowPage() {
                 {Array.from({ length: 15 }).map((_, index) => {
                   const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
                   const cityKey = String(item.city || "").toLowerCase();
-                  const cityExists = cityOptions.includes(cityKey);
+                  const citySlug = cityKey.replaceAll(" ", "_").trim();
+                  const cityExists = cityOptions.includes(citySlug);
                   return (
                     <div
                       key={`${selectedRankingYear}-${index + 1}`}
@@ -940,7 +951,10 @@ export default function NowPage() {
                       <button
                         type="button"
                         disabled={!cityExists}
-                        onClick={() => setSelectedCity(cityKey)}
+                        onClick={() => {
+                          if (!cityExists) return;
+                          router.push(`/${citySlug}`);
+                        }}
                         className={`rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] transition ${
                           cityExists
                             ? "border border-cyan-200/35 bg-cyan-200/12 text-cyan-100 hover:bg-cyan-200/22"

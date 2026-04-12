@@ -1,0 +1,86 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bg" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(600 560) rotate(90) scale(560)">
+      <stop offset="0" stop-color="#211133"/>
+      <stop offset="0.52" stop-color="#131727"/>
+      <stop offset="1" stop-color="#07070A"/>
+    </radialGradient>
+    <linearGradient id="accent" x1="250" y1="210" x2="950" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F472B6"/>
+      <stop offset="0.32" stop-color="#A78BFA"/>
+      <stop offset="0.64" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#34D399"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="320" y1="280" x2="880" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FCEEC4"/>
+      <stop offset="1" stop-color="#E3A83C"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="300" y1="260" x2="900" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2A1840"/>
+      <stop offset="1" stop-color="#111C31"/>
+    </linearGradient>
+    <filter id="shadow" x="160" y="150" width="880" height="920" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="22" stdDeviation="16" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+    <clipPath id="globeClip">
+      <circle cx="600" cy="585" r="128"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1200" height="1200" fill="url(#bg)"/>
+
+  <g filter="url(#shadow)">
+    <circle cx="600" cy="590" r="380" fill="#0B1325" stroke="url(#accent)" stroke-width="20"/>
+    <circle cx="600" cy="590" r="350" fill="url(#ink)" stroke="url(#gold)" stroke-width="10"/>
+    <circle cx="600" cy="590" r="300" fill="#EAD8B0" stroke="url(#accent)" stroke-width="8"/>
+  </g>
+
+  <path d="M308 522C336 510 370 513 398 530C430 549 451 581 473 607C442 608 407 600 376 579C346 559 323 540 308 522Z" fill="#DCC9F4" stroke="#36537A" stroke-width="6"/>
+  <path d="M892 522C864 510 830 513 802 530C770 549 749 581 727 607C758 608 793 600 824 579C854 559 877 540 892 522Z" fill="#DCC9F4" stroke="#36537A" stroke-width="6"/>
+  <path d="M332 560C363 546 394 549 423 567C442 580 457 600 473 617C444 619 413 612 384 595C362 582 345 571 332 560Z" fill="#BDEAF5" stroke="#36537A" stroke-width="5"/>
+  <path d="M868 560C837 546 806 549 777 567C758 580 743 600 727 617C756 619 787 612 816 595C838 582 855 571 868 560Z" fill="#BDEAF5" stroke="#36537A" stroke-width="5"/>
+  <path d="M356 598C384 586 411 589 437 604C451 613 462 625 473 637C447 640 421 634 395 620C380 611 367 604 356 598Z" fill="#CFEBCF" stroke="#36537A" stroke-width="4"/>
+  <path d="M844 598C816 586 789 589 763 604C749 613 738 625 727 637C753 640 779 634 805 620C820 611 833 604 844 598Z" fill="#CFEBCF" stroke="#36537A" stroke-width="4"/>
+
+  <circle cx="600" cy="585" r="132" fill="#182B4A" stroke="url(#accent)" stroke-width="8"/>
+  <g clip-path="url(#globeClip)">
+    <rect x="470" y="457" width="260" height="36" fill="#E94141"/>
+    <rect x="470" y="493" width="260" height="36" fill="#FF9B00"/>
+    <rect x="470" y="529" width="260" height="36" fill="#FFD84D"/>
+    <rect x="470" y="565" width="260" height="36" fill="#2FBF5E"/>
+    <rect x="470" y="601" width="260" height="36" fill="#1C73FF"/>
+    <rect x="470" y="637" width="260" height="36" fill="#7A34D5"/>
+    <path d="M470 457L566 553L470 649V457Z" fill="#FFFFFF"/>
+    <path d="M470 457L536 553L470 649V457Z" fill="#F3B2D4"/>
+    <path d="M470 457L506 553L470 649V457Z" fill="#78D3F4"/>
+    <path d="M470 457L486 553L470 649V457Z" fill="#6B3A1F"/>
+    <path d="M470 457L478 553L470 649V457Z" fill="#000000"/>
+    <path d="M600 455V715M472 585H728M510 500C560 530 640 530 690 500M510 670C560 640 640 640 690 670" stroke="#EAD8A6" stroke-width="3" opacity="0.5"/>
+  </g>
+
+  <text
+    x="600"
+    y="590"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="#F8F2E0"
+    stroke="#2C446E"
+    stroke-width="8"
+    paint-order="stroke"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="190"
+    font-weight="700"
+  >
+    1
+  </text>
+
+  <text x="600" y="392" text-anchor="middle" fill="#F6CF61" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-weight="700" letter-spacing="10">&#9733; &#9733; &#9733;</text>
+
+  <rect x="240" y="742" width="720" height="132" rx="34" fill="#E9D4A0" stroke="#2D466F" stroke-width="8"/>
+  <text x="600" y="816" text-anchor="middle" dominant-baseline="middle" fill="#0F2E54" font-family="Georgia, 'Times New Roman', serif" font-size="68" font-weight="700" letter-spacing="2">QUEER TRAVEL</text>
+
+  <rect x="334" y="864" width="532" height="86" rx="34" fill="#1B2744" stroke="url(#accent)" stroke-width="8"/>
+  <text x="600" y="918" text-anchor="middle" dominant-baseline="middle" fill="#F8DE98" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-weight="700" letter-spacing="2">DESTINATION</text>
+
+  <text x="600" y="1018" text-anchor="middle" fill="#D9B56A" font-family="Georgia, 'Times New Roman', serif" font-size="42" font-weight="700" letter-spacing="4">2026</text>
+</svg>

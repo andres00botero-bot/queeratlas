@@ -165,6 +165,7 @@ export default function CityPage() {
   const searchParams = useSearchParams();
 
   const config = cityConfig[city] || cityConfig.berlin;
+  const showTopDestinationBadge = String(city || "").toLowerCase() === "berlin";
   const placeId = searchParams.get("placeId");
   const eventId = searchParams.get("eventId");
   const contributeMode = searchParams.get("contribute");
@@ -863,40 +864,66 @@ export default function CityPage() {
     <main className="flex min-h-screen bg-[#050505] text-white">
       <ActionToast toast={toast} />
       <div className="flex-1 overflow-y-auto px-6 py-8 pb-24 lg:pb-8">
-        <div className="animate-cinematic-in relative mb-6 overflow-hidden rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_88%_10%,rgba(45,212,191,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(135deg,rgba(24,24,24,0.96),rgba(10,10,10,0.99),rgba(25,22,20,0.97))] p-7 shadow-[0_30px_110px_rgba(0,0,0,0.42)]">
+        <div className={`animate-cinematic-in relative mb-6 overflow-hidden rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_88%_10%,rgba(45,212,191,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(135deg,rgba(24,24,24,0.96),rgba(10,10,10,0.99),rgba(25,22,20,0.97))] p-7 shadow-[0_30px_110px_rgba(0,0,0,0.42)] ${
+          showTopDestinationBadge ? "md:pr-52 lg:pr-60" : ""
+        }`}>
           <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-fuchsia-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-4 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="mb-2 flex items-center gap-4">
-            <Image
-              src="/queer-atlas-heart-logo-progress.svg"
-              alt="Queer Atlas heart"
-              width={64}
-              height={64}
-              className="h-12 w-12 shrink-0 sm:h-14 sm:w-14"
-            />
-            <h1 className="text-4xl font-bold tracking-[-0.03em]">{config.title}</h1>
-          </div>
-          <div className="mb-4 flex flex-wrap gap-2">
-            <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/90">
-              {cityPlaceCount} places
-            </span>
-            <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-100/90">
-              {cityEventCount} events
-            </span>
-            <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70">
-              Queer signal live
-            </span>
-          </div>
-          {config.guide?.[0] && (
-            <div className="max-w-6xl text-justify text-sm leading-7 text-gray-300 [text-wrap:pretty] sm:text-[15px]">
-              {config.guide[0].text}
+          {showTopDestinationBadge && (
+            <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-52 items-center justify-center md:flex lg:w-60">
+              <Image
+                src="/qa-top-destination-badge-premium.svg"
+                alt="Top queer travel destination 2026"
+                width={184}
+                height={184}
+                className="h-36 w-36 rounded-full border border-amber-200/35 bg-black/20 shadow-[0_0_55px_rgba(251,191,36,0.28)] lg:h-40 lg:w-40"
+              />
             </div>
           )}
-          {config.guide?.[0]?.extra && (
-            <div className="mt-3 text-xs uppercase tracking-[0.18em] text-white/45">
-              {config.guide[0].extra}
+          <div>
+            <div className="mb-2 flex items-center gap-4">
+              <Image
+                src="/queer-atlas-heart-logo-progress.svg"
+                alt="Queer Atlas heart"
+                width={64}
+                height={64}
+                className="h-12 w-12 shrink-0 sm:h-14 sm:w-14"
+              />
+              <h1 className="text-4xl font-bold tracking-[-0.03em]">{config.title}</h1>
             </div>
-          )}
+            {showTopDestinationBadge && (
+              <div className="mb-3 md:hidden">
+                <Image
+                  src="/qa-top-destination-badge-premium.svg"
+                  alt="Top queer travel destination 2026"
+                  width={140}
+                  height={140}
+                  className="h-28 w-28 rounded-full border border-amber-200/35 bg-black/20 shadow-[0_0_42px_rgba(251,191,36,0.25)]"
+                />
+              </div>
+            )}
+            <div className="mb-4 flex flex-wrap gap-2">
+              <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/90">
+                {cityPlaceCount} places
+              </span>
+              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-100/90">
+                {cityEventCount} events
+              </span>
+              <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70">
+                Queer signal live
+              </span>
+            </div>
+            {config.guide?.[0] && (
+              <div className="text-justify text-sm leading-7 text-gray-300 [text-wrap:pretty] sm:text-[15px]">
+                {config.guide[0].text}
+              </div>
+            )}
+            {config.guide?.[0]?.extra && (
+              <div className="mt-3 text-xs uppercase tracking-[0.18em] text-white/45">
+                {config.guide[0].extra}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="animate-cinematic-in mb-4 flex flex-wrap gap-2" style={{ animationDelay: "70ms" }}>

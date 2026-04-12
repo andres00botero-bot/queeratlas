@@ -1,0 +1,73 @@
+<svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(450 430) rotate(90) scale(410)">
+      <stop offset="0" stop-color="#3B0A2A"/>
+      <stop offset="0.45" stop-color="#130A1F"/>
+      <stop offset="1" stop-color="#09090B"/>
+    </radialGradient>
+    <linearGradient id="luxGold" x1="190" y1="180" x2="720" y2="720" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF1B8"/>
+      <stop offset="0.32" stop-color="#FFD35E"/>
+      <stop offset="0.68" stop-color="#FFB300"/>
+      <stop offset="1" stop-color="#E28A00"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="200" y1="200" x2="700" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE082"/>
+      <stop offset="1" stop-color="#FFB300"/>
+    </linearGradient>
+    <filter id="softShadow" x="80" y="80" width="740" height="740" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <circle cx="450" cy="450" r="430" fill="url(#bgGlow)"/>
+
+  <g filter="url(#softShadow)">
+    <circle cx="450" cy="450" r="300" fill="#0B0B12" stroke="url(#edge)" stroke-width="16"/>
+    <circle cx="450" cy="450" r="264" fill="none" stroke="url(#luxGold)" stroke-width="8" stroke-opacity="0.95"/>
+  </g>
+
+  <g transform="translate(450 450)">
+    <g id="leaf">
+      <ellipse cx="0" cy="-238" rx="17" ry="33" fill="url(#edge)"/>
+    </g>
+
+    <g>
+      <use href="#leaf" transform="rotate(-62)"/>
+      <use href="#leaf" transform="rotate(-56)"/>
+      <use href="#leaf" transform="rotate(-50)"/>
+      <use href="#leaf" transform="rotate(-44)"/>
+      <use href="#leaf" transform="rotate(-38)"/>
+      <use href="#leaf" transform="rotate(-32)"/>
+      <use href="#leaf" transform="rotate(-26)"/>
+    </g>
+
+    <g transform="scale(-1,1)">
+      <use href="#leaf" transform="rotate(-62)"/>
+      <use href="#leaf" transform="rotate(-56)"/>
+      <use href="#leaf" transform="rotate(-50)"/>
+      <use href="#leaf" transform="rotate(-44)"/>
+      <use href="#leaf" transform="rotate(-38)"/>
+      <use href="#leaf" transform="rotate(-32)"/>
+      <use href="#leaf" transform="rotate(-26)"/>
+    </g>
+  </g>
+
+  <path d="M338 644C380 675 520 675 562 644" stroke="url(#edge)" stroke-width="10" stroke-linecap="round"/>
+
+  <text x="450" y="346" text-anchor="middle" fill="#FFDE8A" font-family="Georgia, 'Times New Roman', serif" font-size="34" font-weight="700" letter-spacing="18">
+    ★ ★ ★
+  </text>
+  <text x="450" y="456" text-anchor="middle" fill="#FFFFFF" font-family="Georgia, 'Times New Roman', serif" font-size="124" font-weight="700">
+    No.1
+  </text>
+  <text x="450" y="538" text-anchor="middle" fill="#FFCE45" font-family="Georgia, 'Times New Roman', serif" font-size="38" letter-spacing="8">
+    DESTINATION
+  </text>
+  <text x="450" y="614" text-anchor="middle" fill="#FFE082" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-weight="700" letter-spacing="3">
+    QUEER ATLAS
+  </text>
+  <text x="450" y="692" text-anchor="middle" fill="#FFDA6A" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="700" letter-spacing="4">
+    TOP QUEER TRAVEL
+  </text>
+</svg>
