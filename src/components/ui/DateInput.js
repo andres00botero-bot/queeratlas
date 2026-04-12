@@ -96,13 +96,6 @@ export default function DateInput({
   const calendarDays = useMemo(() => buildCalendarDays(viewMonth), [viewMonth]);
 
   useEffect(() => {
-    if (!value) return;
-    const parsed = parseIsoDate(value);
-    if (!parsed) return;
-    setViewMonth(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
-  }, [value]);
-
-  useEffect(() => {
     if (!isOpen) return undefined;
 
     const onOutsideClick = (event) => {
@@ -159,7 +152,18 @@ export default function DateInput({
       <input type="hidden" id={id} name={name} value={value || ""} required={required} />
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen((current) => !current)}
+        onClick={() => {
+          if (disabled) return;
+          setIsOpen((current) => {
+            if (current) return false;
+            const parsed = parseIsoDate(value);
+            const nextMonth = parsed
+              ? new Date(parsed.getFullYear(), parsed.getMonth(), 1)
+              : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            setViewMonth(nextMonth);
+            return true;
+          });
+        }}
         disabled={disabled}
         className={`relative z-20 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${toneStyles.wrapper} ${toneStyles.field} ${className} disabled:cursor-not-allowed disabled:opacity-60`}
         aria-label="Open calendar"

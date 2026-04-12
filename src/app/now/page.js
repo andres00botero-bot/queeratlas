@@ -115,6 +115,13 @@ function isMissingTableError(error) {
   return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
 }
 
+function createClientId(prefix) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
 function PulseSkeletonCard({ tone = "orange" }) {
   const toneClass =
     tone === "emerald"
@@ -152,6 +159,7 @@ export default function NowPage() {
   const [rankingDraft, setRankingDraft] = useState([]);
   const [adminNews, setAdminNews] = useState([]);
   const [hiddenNewsIds, setHiddenNewsIds] = useState([]);
+  const [isAdminByTable, setIsAdminByTable] = useState(false);
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [adminForm, setAdminForm] = useState({
     title: "",
@@ -234,56 +242,117 @@ export default function NowPage() {
     });
   }, []);
 
-  const cityOptions = [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))]
-    .sort();
+  const cityOptions = useMemo(
+    () => [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))].sort(),
+    [events, places]
+  );
   const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
     .split(",")
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
   const currentEmail = String(user?.email || "").toLowerCase();
-  const isAdmin = isMember && adminEmails.includes(currentEmail);
-  const rankingYears = Object.keys(ATLAS_DESTINATION_RANKINGS).sort((a, b) => Number(b) - Number(a));
-  const baseRankingItems = ATLAS_DESTINATION_RANKINGS[selectedRankingYear] || [];
-  const rankingItems = (rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, 15);
+  const isAdminByEnv = isMember && adminEmails.includes(currentEmail);
+  const isAdmin = isAdminByEnv || isAdminByTable;
 
   useEffect(() => {
-    if (!isRankingEditorOpen) {
-      setRankingDraft([]);
+    if (!isMember || !currentEmail) {
       return;
     }
-    setRankingDraft((rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, 15).map((item) => ({ ...item })));
-  }, [baseRankingItems, isRankingEditorOpen, rankingOverrides, selectedRankingYear]);
 
-  const filteredEvents =
-    selectedCity === "all"
-      ? events
-      : events.filter((event) => event.city?.toLowerCase() === selectedCity);
+    let active = true;
 
-  const filteredPlaces =
-    selectedCity === "all"
-      ? places
-      : places.filter((place) => place.city?.toLowerCase() === selectedCity);
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("qa_admin_users")
+        .select("email")
+        .ilike("email", currentEmail)
+        .limit(1);
 
-  const upcomingEvents = filteredEvents.filter((event) => event.date && new Date(event.date) >= today);
-  const tonightEvents = upcomingEvents.slice(0, 4);
-  const thisWeekEvents = upcomingEvents.filter((event) => isThisWeek(event.date, today)).slice(0, 6);
-  const trendingPlaces = [...filteredPlaces]
-    .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))
-    .slice(0, 6);
+      if (!active) return;
 
-  const cityMomentum = Object.values(
-    filteredPlaces.reduce((acc, place) => {
-      const city = place.city || "Unknown";
-      if (!acc[city]) {
-        acc[city] = { city, reviews: 0, places: 0 };
+      if (error) {
+        if (isMissingTableError(error)) {
+          setIsAdminByTable(false);
+          return;
+        }
+        setIsAdminByTable(false);
+        return;
       }
-      acc[city].reviews += place.reviewCount || 0;
-      acc[city].places += 1;
-      return acc;
-    }, {})
-  )
-    .sort((a, b) => b.reviews - a.reviews)
-    .slice(0, 4);
+
+      setIsAdminByTable((data || []).length > 0);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [currentEmail, isMember]);
+
+  const rankingYears = Object.keys(ATLAS_DESTINATION_RANKINGS).sort((a, b) => Number(b) - Number(a));
+  const buildRankingDraftForYear = useCallback(
+    (year) =>
+      (rankingOverrides[year] || ATLAS_DESTINATION_RANKINGS[year] || [])
+        .slice(0, 15)
+        .map((item) => ({ ...item })),
+    [rankingOverrides]
+  );
+  const baseRankingItems = useMemo(
+    () => ATLAS_DESTINATION_RANKINGS[selectedRankingYear] || [],
+    [selectedRankingYear]
+  );
+  const rankingItems = (rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, 15);
+  const filteredEvents = useMemo(
+    () =>
+      selectedCity === "all"
+        ? events
+        : events.filter((event) => event.city?.toLowerCase() === selectedCity),
+    [events, selectedCity]
+  );
+
+  const filteredPlaces = useMemo(
+    () =>
+      selectedCity === "all"
+        ? places
+        : places.filter((place) => place.city?.toLowerCase() === selectedCity),
+    [places, selectedCity]
+  );
+
+  const upcomingEvents = useMemo(
+    () => filteredEvents.filter((event) => event.date && new Date(event.date) >= today),
+    [filteredEvents, today]
+  );
+
+  const tonightEvents = useMemo(() => upcomingEvents.slice(0, 4), [upcomingEvents]);
+
+  const thisWeekEvents = useMemo(
+    () => upcomingEvents.filter((event) => isThisWeek(event.date, today)).slice(0, 6),
+    [today, upcomingEvents]
+  );
+
+  const trendingPlaces = useMemo(
+    () =>
+      [...filteredPlaces]
+        .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))
+        .slice(0, 6),
+    [filteredPlaces]
+  );
+
+  const cityMomentum = useMemo(
+    () =>
+      Object.values(
+        filteredPlaces.reduce((acc, place) => {
+          const city = place.city || "Unknown";
+          if (!acc[city]) {
+            acc[city] = { city, reviews: 0, places: 0 };
+          }
+          acc[city].reviews += place.reviewCount || 0;
+          acc[city].places += 1;
+          return acc;
+        }, {})
+      )
+        .sort((a, b) => b.reviews - a.reviews)
+        .slice(0, 4),
+    [filteredPlaces]
+  );
 
   const categoryLabels = useMemo(
     () =>
@@ -413,7 +482,7 @@ export default function NowPage() {
     if (!adminForm.title || !adminForm.summary || !adminForm.whyItMatters) return;
 
     const item = {
-      id: `admin-news-${Date.now()}`,
+      id: createClientId("admin-news"),
       title: adminForm.title,
       city: adminForm.city || "Global",
       category: adminForm.category || "culture_tip",
@@ -760,7 +829,13 @@ export default function NowPage() {
                 </div>
                 <select
                   value={selectedRankingYear}
-                  onChange={(event) => setSelectedRankingYear(event.target.value)}
+                  onChange={(event) => {
+                    const year = event.target.value;
+                    setSelectedRankingYear(year);
+                    if (isRankingEditorOpen) {
+                      setRankingDraft(buildRankingDraftForYear(year));
+                    }
+                  }}
                   className="rounded-xl border border-cyan-200/20 bg-black/35 px-3 py-2 text-xs text-cyan-100 outline-none focus:border-cyan-200/45"
                 >
                   {rankingYears.map((year) => (
@@ -778,7 +853,16 @@ export default function NowPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setIsRankingEditorOpen((current) => !current)}
+                    onClick={() => {
+                      if (isRankingEditorOpen) {
+                        setIsRankingEditorOpen(false);
+                        setRankingDraft([]);
+                        return;
+                      }
+
+                      setRankingDraft(buildRankingDraftForYear(selectedRankingYear));
+                      setIsRankingEditorOpen(true);
+                    }}
                     className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1.5 text-xs text-cyan-100 transition hover:border-cyan-200/45"
                   >
                     {isRankingEditorOpen ? "Close ranking edit" : "Edit ranking"}

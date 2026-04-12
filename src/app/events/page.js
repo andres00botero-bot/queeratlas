@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getBlockedItems } from "@/lib/moderation";
+import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import { mergeSeedEvents } from "@/lib/seedContent";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
@@ -95,14 +95,36 @@ export default function EventsPage() {
   const [loadError, setLoadError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSavingGlobal, setIsSavingGlobal] = useState(false);
+  const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
 
   const blockedEventIds = useMemo(() => (
     new Set(
-      getBlockedItems()
+      blockedItems
         .filter((item) => item.targetType === "event")
         .map((item) => String(item.targetId))
     )
-  ), []);
+  ), [blockedItems]);
+
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(async () => {
+      const synced = await syncBlockedItemsFromCloud();
+      if (active) {
+        setBlockedItems(synced.blockedItems || []);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return subscribeBlockedItems((items) => {
+      setBlockedItems(items || []);
+    });
+  }, []);
 
   const qualityMap = getQualityMap();
   const refreshQuality = async (event, clickEvent) => {

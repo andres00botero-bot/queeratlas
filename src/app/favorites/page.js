@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
 import { useAuth } from "@/lib/auth";
 import { cityConfig } from "@/lib/cities";
-import { getBlockedItems } from "@/lib/moderation";
+import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getMemberProfile } from "@/lib/memberProfile";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { useActionToast } from "@/lib/useActionToast";
@@ -100,6 +100,7 @@ export default function FavoritesPage() {
   const [atlasLoadError, setAtlasLoadError] = useState("");
   const [plans, setPlans] = useState([]);
   const [showPlannerForm, setShowPlannerForm] = useState(false);
+  const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [plannerForm, setPlannerForm] = useState({
     title: "",
     city: "",
@@ -214,19 +215,39 @@ export default function FavoritesPage() {
   }, []);
 
   const blocked = useMemo(() => {
-    const items = getBlockedItems();
     return {
       places: new Set(
-        items
+        blockedItems
           .filter((item) => item.targetType === "place")
           .map((item) => String(item.targetId))
       ),
       events: new Set(
-        items
+        blockedItems
           .filter((item) => item.targetType === "event")
           .map((item) => String(item.targetId))
       ),
     };
+  }, [blockedItems]);
+
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(async () => {
+      const synced = await syncBlockedItemsFromCloud();
+      if (active) {
+        setBlockedItems(synced.blockedItems || []);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return subscribeBlockedItems((items) => {
+      setBlockedItems(items || []);
+    });
   }, []);
 
   useEffect(() => {

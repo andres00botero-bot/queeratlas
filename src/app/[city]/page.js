@@ -8,7 +8,12 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { cityConfig } from "@/lib/cities";
 import { mergeSeedEvents } from "@/lib/seedContent";
 import { useAuth } from "@/lib/auth";
-import { addReport, getBlockedItems } from "@/lib/moderation";
+import {
+  addReport,
+  getBlockedItems,
+  subscribeBlockedItems,
+  syncBlockedItemsFromCloud,
+} from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
@@ -191,11 +196,13 @@ export default function CityPage() {
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(null);
   const [comment, setComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const { toast, showToast } = useActionToast();
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsLoadError, setEventsLoadError] = useState("");
   const [mapError, setMapError] = useState("");
   const [, setQualityTick] = useState(0);
+  const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [hoveredPlaceId, setHoveredPlaceId] = useState(null);
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
@@ -238,35 +245,54 @@ export default function CityPage() {
     isMapInteractingRef.current = isMapInteracting;
   }, [isMapInteracting]);
 
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(async () => {
+      const synced = await syncBlockedItemsFromCloud();
+      if (active) {
+        setBlockedItems(synced.blockedItems || []);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return subscribeBlockedItems((items) => {
+      setBlockedItems(items || []);
+    });
+  }, []);
+
   const cityPlaces = useMemo(
     () => {
-      const blocked = getBlockedItems();
       return places.filter((place) => (
         place.city?.toLowerCase() === city.toLowerCase()
-        && !blocked.some(
+        && !blockedItems.some(
           (item) =>
             item.targetType === "place" &&
             String(item.targetId) === String(place.id)
         )
       ));
     },
-    [city, places]
+    [blockedItems, city, places]
   );
 
   const cityEvents = useMemo(
     () => {
-      const blocked = getBlockedItems();
       return eventsData.filter((event) => (
         event.city?.toLowerCase() === city.toLowerCase()
         && isEventVisibleOnCityPage(event.date)
-        && !blocked.some(
+        && !blockedItems.some(
           (item) =>
             item.targetType === "event" &&
             String(item.targetId) === String(event.id)
         )
       ));
     },
-    [city, eventsData]
+    [blockedItems, city, eventsData]
   );
 
   const qualityMap = getQualityMap();
@@ -446,11 +472,6 @@ export default function CityPage() {
       }
     });
   }, []);
-
-  useEffect(() => {
-    setHoveredPlaceId(null);
-    setHoveredEventId(null);
-  }, [city]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -1573,11 +1594,41 @@ export default function CityPage() {
 
           <div className="mt-4">
             <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/45">Add your review</p>
-            <div className="mb-2 flex">
+            {!isMember && (
+              <div className="mb-3 rounded-2xl border border-amber-300/20 bg-amber-200/10 p-3">
+                <p className="text-sm text-amber-100">
+                  Log in as member to add reviews and strengthen quality signal.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const redirectTarget = buildSelectionUrl({
+                      nextPlaceId: selectedPlace.id,
+                      nextEventId: null,
+                    });
+                    writeLocalValue("qa_redirect", redirectTarget);
+                    writeLocalValue("qa_post_login_target", redirectTarget);
+                    router.push("/?join=true");
+                  }}
+                  className="mt-3 rounded-full border border-amber-200/28 bg-amber-200/14 px-4 py-2 text-xs text-amber-100 transition hover:border-amber-200/45"
+                >
+                  Join to review
+                </button>
+              </div>
+            )}
+            {isMember && !canReviewSelectedPlace && (
+              <div className="mb-3 rounded-2xl border border-white/12 bg-white/5 p-3">
+                <p className="text-sm text-white/75">
+                  Reviews are disabled for seeded places. Add reviews on community-added venues.
+                </p>
+              </div>
+            )}
+            <div className={`mb-2 flex ${!isMember || !canReviewSelectedPlace ? "hidden" : ""}`}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
                   type="button"
+                  disabled={isSubmittingReview}
                   onMouseEnter={() => setHoverRating(star)}
                   onMouseLeave={() => setHoverRating(null)}
                   onClick={() => setRating(star)}
@@ -1585,7 +1636,7 @@ export default function CityPage() {
                   aria-pressed={rating === star}
                   className={`cursor-pointer rounded px-0.5 text-2xl ${
                     (hoverRating || rating) >= star ? "text-yellow-400" : "text-gray-600"
-                  }`}
+                  } ${isSubmittingReview ? "opacity-60" : ""}`}
                 >
                   ★
                 </button>
@@ -1594,28 +1645,55 @@ export default function CityPage() {
 
             <textarea
               value={comment}
+              disabled={!isMember || !canReviewSelectedPlace || isSubmittingReview}
               onChange={(event) => setComment(event.target.value)}
-              className="mb-2 w-full rounded-2xl border border-white/10 bg-black/40 p-3"
+              className={`mb-2 w-full rounded-2xl border border-white/10 bg-black/40 p-3 ${
+                !isMember || !canReviewSelectedPlace ? "hidden" : ""
+              }`}
             />
 
             <button
+              disabled={!isMember || !canReviewSelectedPlace || isSubmittingReview}
               onClick={async () => {
-                if (!comment) return;
+                const trimmedComment = comment.trim();
+                if (!trimmedComment) {
+                  showToast("Write a short comment before submitting.", {
+                    tone: "warn",
+                    duration: 2200,
+                  });
+                  return;
+                }
 
-                await addReview({
-                  placeId: selectedPlace.id,
-                  rating,
-                  comment,
-                });
+                setIsSubmittingReview(true);
+                try {
+                  const result = await addReview({
+                    placeId: selectedPlace.id,
+                    rating,
+                    comment: trimmedComment,
+                  });
 
-                setComment("");
-                setRating(5);
-                const updated = await getReviews(selectedPlace.id);
-                setReviews(updated);
+                  if (!result?.ok) {
+                    showToast("Could not submit review right now.", {
+                      tone: "warn",
+                      duration: 2400,
+                    });
+                    return;
+                  }
+
+                  setComment("");
+                  setRating(5);
+                  const updated = await getReviews(selectedPlace.id);
+                  setReviews(updated);
+                  showToast("Review submitted.", { tone: "ok", duration: 1800 });
+                } finally {
+                  setIsSubmittingReview(false);
+                }
               }}
-              className="qa-cinematic-hover w-full rounded-2xl bg-white py-3 font-semibold text-black"
+              className={`qa-cinematic-hover w-full rounded-2xl bg-white py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60 ${
+                !isMember || !canReviewSelectedPlace ? "hidden" : ""
+              }`}
             >
-              Submit review
+              {isSubmittingReview ? "Submitting..." : "Submit review"}
             </button>
           </div>
         </div>

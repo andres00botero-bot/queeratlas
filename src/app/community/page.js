@@ -5,7 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { addReport, getBlockedItems } from "@/lib/moderation";
+import {
+  addReport,
+  getBlockedItems,
+  subscribeBlockedItems,
+  syncBlockedItemsFromCloud,
+} from "@/lib/moderation";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import ActionToast from "@/components/ui/ActionToast";
@@ -47,6 +52,13 @@ const baseIdeas = [
   { id: "i1", text: "Member follow lists for trusted reviewers", votes: 14, author: "Atlas Member", createdAt: "2026-04-01T08:00:00.000Z" },
   { id: "i2", text: "Neighborhood safety notes on city pages", votes: 21, author: "Noah", createdAt: "2026-04-03T16:00:00.000Z" },
 ];
+
+function createClientId(prefix) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+  return `${prefix}-${Math.random().toString(36).slice(2, 12)}`;
+}
 
 function readStored(key, fallback) {
   return readLocalJson(key, fallback);
@@ -170,6 +182,7 @@ export default function CommunityPage() {
   const [topicForm, setTopicForm] = useState({ name: "", mood: "Fresh", description: "" });
   const [ideaForm, setIdeaForm] = useState({ author: memberName || "", text: "" });
   const [syncError, setSyncError] = useState("");
+  const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const { toast, showToast } = useActionToast();
 
   const loadCommunityData = useCallback(async () => {
@@ -237,6 +250,29 @@ export default function CommunityPage() {
     writeLocalJson(KEYS.ideas, ideas);
   }, [isReady, isMember, stories, guides, topics, messages, ideas]);
 
+  useEffect(() => {
+    if (!isReady || !isMember) return;
+    let active = true;
+
+    queueMicrotask(async () => {
+      const synced = await syncBlockedItemsFromCloud();
+      if (active) {
+        setBlockedItems(synced.blockedItems || []);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isReady, isMember]);
+
+  useEffect(() => {
+    if (!isReady || !isMember) return () => {};
+    return subscribeBlockedItems((items) => {
+      setBlockedItems(items || []);
+    });
+  }, [isReady, isMember]);
+
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
@@ -245,7 +281,6 @@ export default function CommunityPage() {
     );
   }
 
-  const blockedItems = getBlockedItems();
   const isBlocked = (targetType, targetId) =>
     blockedItems.some(
       (item) =>
@@ -282,7 +317,7 @@ export default function CommunityPage() {
       showToast("Story not published. Fill all required fields.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: `s-${Date.now()}`, ...storyForm, excerpt: storyForm.excerpt || storyForm.body.slice(0, 120), createdAt: new Date().toISOString() };
+    const fallbackItem = { id: createClientId("s"), ...storyForm, excerpt: storyForm.excerpt || storyForm.body.slice(0, 120), createdAt: new Date().toISOString() };
     const { data, error } = await supabase
       .from("community_stories")
       .insert([{
@@ -309,7 +344,7 @@ export default function CommunityPage() {
       showToast("Guide not published. Fill required fields.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: `g-${Date.now()}`, ...guideForm, city: guideForm.city || "Multi-city", focus: guideForm.focus || "Community", summary: guideForm.summary || guideForm.content.slice(0, 120), createdAt: new Date().toISOString() };
+    const fallbackItem = { id: createClientId("g"), ...guideForm, city: guideForm.city || "Multi-city", focus: guideForm.focus || "Community", summary: guideForm.summary || guideForm.content.slice(0, 120), createdAt: new Date().toISOString() };
     const { data, error } = await supabase
       .from("community_guides")
       .insert([{
@@ -337,7 +372,7 @@ export default function CommunityPage() {
       showToast("Write a message before sending.", { tone: "warn", duration: 2200 });
       return;
     }
-    const fallbackItem = { id: `m-${Date.now()}`, author: memberName || "Member", text: messageForm.text.trim(), createdAt: new Date().toISOString() };
+    const fallbackItem = { id: createClientId("m"), author: memberName || "Member", text: messageForm.text.trim(), createdAt: new Date().toISOString() };
     const { data, error } = await supabase
       .from("community_messages")
       .insert([{
@@ -367,7 +402,7 @@ export default function CommunityPage() {
       showToast("Topic not created. Add title and description.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: `t-${Date.now()}`, ...topicForm, author: memberName || "Member", createdAt: new Date().toISOString() };
+    const fallbackItem = { id: createClientId("t"), ...topicForm, author: memberName || "Member", createdAt: new Date().toISOString() };
     const { data, error } = await supabase
       .from("community_topics")
       .insert([{
@@ -393,7 +428,7 @@ export default function CommunityPage() {
       showToast("Idea not shared. Add name and idea text.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: `i-${Date.now()}`, text: ideaForm.text, author: ideaForm.author, votes: 1, createdAt: new Date().toISOString() };
+    const fallbackItem = { id: createClientId("i"), text: ideaForm.text, author: ideaForm.author, votes: 1, createdAt: new Date().toISOString() };
     const { data, error } = await supabase
       .from("community_ideas")
       .insert([{

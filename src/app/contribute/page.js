@@ -7,7 +7,16 @@ import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
-import { blockItem, getBlockedItems, getReports, saveReports, unblockItem } from "@/lib/moderation";
+import {
+  blockItem,
+  getBlockedItems,
+  getReports,
+  removeReport,
+  saveReports,
+  syncBlockedItemsFromCloud,
+  syncModerationFromCloud,
+  unblockItem,
+} from "@/lib/moderation";
 import { upsertQuality } from "@/lib/quality";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
@@ -66,10 +75,17 @@ function Field({ value, onChange, placeholder, area = false }) {
   );
 }
 
+function isMissingTableError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
+}
+
 export default function ContributePage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
-  const { isMember, isLoading: isAuthLoading } = useAuth();
+  const { isMember, isLoading: isAuthLoading, user } = useAuth();
   const [selectedCity, setSelectedCity] = useState("");
   const [addMode, setAddMode] = useState(false);
   const [addEventMode, setAddEventMode] = useState(false);
@@ -85,6 +101,8 @@ export default function ContributePage() {
   const [reportFilter, setReportFilter] = useState("open");
   const [showRequestForm, setShowRequestForm] = useState(false);
   const { toast, showToast } = useActionToast();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [moderationSyncNotice, setModerationSyncNotice] = useState("");
   const [placeForm, setPlaceForm] = useState({
     name: "",
     city: "",
@@ -132,15 +150,52 @@ export default function ContributePage() {
       });
     }
 
-    queueMicrotask(() => {
+    queueMicrotask(async () => {
       setReports(getReports());
       setBlockedItems(getBlockedItems());
-    });
 
-    queueMicrotask(() => {
+      let adminAccess = false;
+      const notices = [];
+      const currentEmail = String(user?.email || "").trim().toLowerCase();
+      if (currentEmail) {
+        const { data, error } = await supabase
+          .from("qa_admin_users")
+          .select("email")
+          .ilike("email", currentEmail)
+          .limit(1);
+
+        if (!error) {
+          adminAccess = (data || []).length > 0;
+          setIsAdmin(adminAccess);
+        } else {
+          setIsAdmin(false);
+          if (isMissingTableError(error)) {
+            notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
+          }
+        }
+      } else {
+        setIsAdmin(false);
+      }
+
+      const synced = adminAccess
+        ? await syncModerationFromCloud()
+        : await syncBlockedItemsFromCloud();
+
+      if (adminAccess) {
+        setReports(synced.reports || []);
+      } else {
+        setReports([]);
+      }
+      setBlockedItems(synced.blockedItems || []);
+
+      if (synced.warning) {
+        notices.push(synced.warning);
+      }
+
+      setModerationSyncNotice(notices.join(" "));
       setIsReady(true);
     });
-  }, [isAuthLoading, isMember, router]);
+  }, [isAuthLoading, isMember, router, user?.email]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -348,6 +403,7 @@ export default function ContributePage() {
   };
 
   const resolveReport = (reportId) => {
+    if (!isAdmin) return;
     const updated = reports.map((report) =>
       report.id === reportId
         ? { ...report, status: "resolved", resolvedAt: new Date().toISOString() }
@@ -358,6 +414,7 @@ export default function ContributePage() {
   };
 
   const blockFromReport = (report) => {
+    if (!isAdmin) return;
     const mappedType =
       report.targetType === "community-story"
         ? "community-story"
@@ -380,6 +437,7 @@ export default function ContributePage() {
   };
 
   const unblockFromReport = (report) => {
+    if (!isAdmin) return;
     const mappedType =
       report.targetType === "community-story"
         ? "community-story"
@@ -407,10 +465,11 @@ export default function ContributePage() {
     );
   };
 
-  const deleteReport = (reportId) => {
+  const deleteReport = async (reportId) => {
+    if (!isAdmin) return;
     const updated = reports.filter((report) => report.id !== reportId);
     setReports(updated);
-    saveReports(updated);
+    await removeReport(reportId);
   };
 
   const openReports = reports.filter((report) => report.status !== "resolved");
@@ -466,6 +525,12 @@ export default function ContributePage() {
             </div>
           </div>
         </div>
+
+        {moderationSyncNotice && (
+          <div className="mb-6 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+            {moderationSyncNotice}
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-2">
           <section className="rounded-[28px] border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(8,39,32,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(16,185,129,0.08)]">
@@ -716,6 +781,8 @@ export default function ContributePage() {
             </div>
           </div>
 
+          {isAdmin ? (
+            <>
           <div className="mb-4 flex flex-wrap gap-2">
             {[
               { id: "open", label: "Open" },
@@ -804,6 +871,12 @@ export default function ContributePage() {
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/14 bg-white/[0.03] px-5 py-8 text-sm text-white/70">
+              Safety Inbox is visible only for admin members. Reporting still works globally.
             </div>
           )}
         </section>

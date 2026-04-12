@@ -101,6 +101,8 @@ export default function CitiesPage() {
   const [query, setQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [mapError, setMapError] = useState("");
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+  const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
   const countryMapContainerRef = useRef(null);
   const countryMapRef = useRef(null);
@@ -152,15 +154,10 @@ export default function CitiesPage() {
   }, [availableCountries]);
 
   useEffect(() => {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
     if (!countryMapContainerRef.current || countryMapRef.current) return;
-    if (!token) {
-      setMapError("Mapbox token missing. Add NEXT_PUBLIC_MAPBOX_TOKEN to enable world map filter.");
-      return;
-    }
+    if (!mapboxToken) return;
 
-    mapboxgl.accessToken = token;
+    mapboxgl.accessToken = mapboxToken;
 
     const map = new mapboxgl.Map({
       container: countryMapContainerRef.current,
@@ -242,7 +239,7 @@ export default function CitiesPage() {
       map.remove();
       countryMapRef.current = null;
     };
-  }, [availableCountries, scrollToCountrySection, selectedCountry, updateCountryMapStyles]);
+  }, [availableCountries, mapboxToken, scrollToCountrySection, selectedCountry, updateCountryMapStyles]);
 
   useEffect(() => {
     updateCountryMapStyles(selectedCountry);
@@ -361,9 +358,11 @@ export default function CitiesPage() {
               </button>
             </div>
             <div ref={countryMapContainerRef} className="h-[320px] w-full" />
-            {mapError && (
+            {(mapboxMissing || mapError) && (
               <p className="border-t border-white/10 px-4 py-3 text-sm text-amber-100/85">
-                {mapError}
+                {mapboxMissing
+                  ? "Mapbox token missing. Add NEXT_PUBLIC_MAPBOX_TOKEN to enable world map filter."
+                  : mapError}
               </p>
             )}
           </div>

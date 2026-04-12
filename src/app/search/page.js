@@ -39,7 +39,11 @@ function SearchResultSkeleton({ tone = "rose" }) {
 
 export default function SearchPage() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search);
+    return params.get("q") || "";
+  });
   const [events, setEvents] = useState([]);
   const [typeFilter, setTypeFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
@@ -75,13 +79,6 @@ export default function SearchPage() {
       fetchEvents();
     });
   }, [fetchEvents]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const q = params.get("q") || "";
-    setQuery(q);
-  }, []);
 
   const qualityMap = getQualityMap();
 
