@@ -41,7 +41,6 @@ function compareNewsRecency(a, b) {
 const ADMIN_NEWS_KEY = "qa_world_news_admin";
 const HIDDEN_NEWS_KEY = "qa_world_news_hidden";
 const RANKING_OVERRIDES_KEY = "qa_atlas_ranking_overrides";
-const OWNER_EMAIL_KEY = "qa_owner_email";
 const NEWS_TABLE = "qa_world_news";
 const NEWS_HIDDEN_TABLE = "qa_world_news_hidden";
 const RANKING_TABLE = "qa_atlas_rankings";
@@ -148,7 +147,6 @@ export default function NowPage() {
   const [expandedNewsId, setExpandedNewsId] = useState(null);
   const [expandedPullPlaceId, setExpandedPullPlaceId] = useState(null);
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
-  const [ownerEmail, setOwnerEmail] = useState("");
   const [rankingOverrides, setRankingOverrides] = useState({});
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
@@ -200,11 +198,6 @@ export default function NowPage() {
       setHiddenNewsIds(localHidden);
       setRankingOverrides(localRankings);
 
-      const storedOwner = String(readLocalJson(OWNER_EMAIL_KEY, "") || "").toLowerCase();
-      if (storedOwner) {
-        setOwnerEmail(storedOwner);
-      }
-
       const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
         supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
         supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
@@ -241,16 +234,6 @@ export default function NowPage() {
     });
   }, []);
 
-  useEffect(() => {
-    const email = String(user?.email || "").toLowerCase();
-    if (!email) return;
-
-    if (ownerEmail) return;
-
-    setOwnerEmail(email);
-    writeLocalJson(OWNER_EMAIL_KEY, email);
-  }, [ownerEmail, user?.email]);
-
   const cityOptions = [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))]
     .sort();
   const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
@@ -258,9 +241,7 @@ export default function NowPage() {
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
   const currentEmail = String(user?.email || "").toLowerCase();
-  const isAdmin =
-    isMember &&
-    (adminEmails.includes(currentEmail) || (ownerEmail && ownerEmail === currentEmail));
+  const isAdmin = isMember && adminEmails.includes(currentEmail);
   const rankingYears = Object.keys(ATLAS_DESTINATION_RANKINGS).sort((a, b) => Number(b) - Number(a));
   const baseRankingItems = ATLAS_DESTINATION_RANKINGS[selectedRankingYear] || [];
   const rankingItems = (rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, 15);

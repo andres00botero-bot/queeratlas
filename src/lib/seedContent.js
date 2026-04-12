@@ -4620,15 +4620,6 @@ export const seedEvents = [
     lng: 139.6949,
   }),
   createEvent({
-    id: "seed-event-palmsprings-pride",
-    city: "palm_springs",
-    name: "Palm Springs Pride",
-    description: "Desert sunshine, parade energy, resort overflow, and one of the easiest queer pride atmospheres in the U.S. to sink into instantly.",
-    link: "https://www.travelgay.com/destination/gay-usa/gay-palm-springs",
-    lat: 33.8236,
-    lng: -116.5462,
-  }),
-  createEvent({
     id: "seed-event-ptown-carnival",
     city: "provincetown",
     name: "Provincetown Carnival",
@@ -5025,37 +5016,51 @@ function normalizeSeedKey(value = "") {
 }
 
 export function mergeSeedPlaces(databasePlaces = []) {
-  const ids = new Set(databasePlaces.map((place) => String(place.id)));
-  const venueKeys = new Set(
+  const seenIds = new Set(databasePlaces.map((place) => String(place.id)));
+  const seenVenueKeys = new Set(
     databasePlaces.map((place) =>
       `${normalizeSeedKey(place.city)}::${normalizeSeedKey(place.name)}`,
     ),
   );
+  const uniqueSeedPlaces = [];
+
+  seedPlaces.forEach((place) => {
+    const id = String(place.id);
+    const venueKey = `${normalizeSeedKey(place.city)}::${normalizeSeedKey(place.name)}`;
+    if (seenIds.has(id) || seenVenueKeys.has(venueKey)) return;
+
+    seenIds.add(id);
+    seenVenueKeys.add(venueKey);
+    uniqueSeedPlaces.push(place);
+  });
 
   return [
     ...databasePlaces,
-    ...seedPlaces.filter((place) => {
-      const id = String(place.id);
-      const venueKey = `${normalizeSeedKey(place.city)}::${normalizeSeedKey(place.name)}`;
-      return !ids.has(id) && !venueKeys.has(venueKey);
-    }),
+    ...uniqueSeedPlaces,
   ];
 }
 
 export function mergeSeedEvents(databaseEvents = []) {
-  const ids = new Set(databaseEvents.map((event) => String(event.id)));
-  const eventKeys = new Set(
+  const seenIds = new Set(databaseEvents.map((event) => String(event.id)));
+  const seenEventKeys = new Set(
     databaseEvents.map((event) =>
       `${normalizeSeedKey(event.city)}::${normalizeSeedKey(event.name)}`,
     ),
   );
+  const uniqueSeedEvents = [];
+
+  seedEvents.forEach((event) => {
+    const id = String(event.id);
+    const eventKey = `${normalizeSeedKey(event.city)}::${normalizeSeedKey(event.name)}`;
+    if (seenIds.has(id) || seenEventKeys.has(eventKey)) return;
+
+    seenIds.add(id);
+    seenEventKeys.add(eventKey);
+    uniqueSeedEvents.push(event);
+  });
 
   return [
     ...databaseEvents,
-    ...seedEvents.filter((event) => {
-      const id = String(event.id);
-      const eventKey = `${normalizeSeedKey(event.city)}::${normalizeSeedKey(event.name)}`;
-      return !ids.has(id) && !eventKeys.has(eventKey);
-    }),
+    ...uniqueSeedEvents,
   ];
 }
