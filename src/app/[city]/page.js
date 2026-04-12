@@ -1633,7 +1633,7 @@ export default function CityPage() {
                 </p>
               </div>
             )}
-            <div className={`mb-2 flex ${!isMember || !canReviewSelectedPlace ? "hidden" : ""}`}>
+            <div className={`mb-3 flex items-center gap-1 ${!isMember || !canReviewSelectedPlace ? "hidden" : ""}`}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
@@ -1644,9 +1644,9 @@ export default function CityPage() {
                   onClick={() => setRating(star)}
                   aria-label={`Set rating to ${star} star${star > 1 ? "s" : ""}`}
                   aria-pressed={rating === star}
-                  className={`cursor-pointer rounded px-0.5 text-2xl ${
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-2xl transition ${
                     (hoverRating || rating) >= star ? "text-yellow-400" : "text-gray-600"
-                  } ${isSubmittingReview ? "opacity-60" : ""}`}
+                  } ${isSubmittingReview ? "opacity-60" : "hover:bg-white/8"}`}
                 >
                   ★
                 </button>
@@ -1658,7 +1658,7 @@ export default function CityPage() {
               disabled={!isMember || !canReviewSelectedPlace || isSubmittingReview}
               onChange={(event) => setComment(event.target.value)}
               placeholder="Share vibe, safety, crowd energy, music, and what to expect."
-              className={`mb-2 w-full rounded-2xl border border-white/10 bg-black/40 p-3 ${
+              className={`mb-2 min-h-[110px] w-full rounded-2xl border border-white/10 bg-black/40 p-3 ${
                 !isMember || !canReviewSelectedPlace ? "hidden" : ""
               }`}
             />
