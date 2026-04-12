@@ -25,6 +25,72 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(244, 114, 182, 0.28);
+  color: #fff;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.24) rgba(255, 255, 255, 0.05);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(244, 114, 182, 0.54),
+    rgba(59, 130, 246, 0.48)
+  );
+  border-radius: 999px;
+  border: 2px solid rgba(9, 9, 11, 0.8);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(251, 146, 60, 0.62),
+    rgba(168, 85, 247, 0.58)
+  );
+}
+
+:where(a, button, input, select, textarea) {
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    opacity 180ms ease;
+}
+
+:where(button, [role="button"], a[href]) {
+  touch-action: manipulation;
+}
+
+:where(button, [role="button"], a[href]):active {
+  transform: translateY(1px) scale(0.995);
+}
+
+:where(input, select, textarea):focus-visible,
+:where(button, [role="button"], a[href]):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.44),
+    0 0 0 5px rgba(236, 72, 153, 0.18);
 }
 
 /* ---------------- GLOBAL TEXT RHYTHM ---------------- */
@@ -179,6 +245,12 @@ body {
   .qa-cinematic-hover:hover {
     transform: none;
     box-shadow: inherit;
+  }
+  :where(a, button, input, select, textarea) {
+    transition: none;
+  }
+  :where(button, [role="button"], a[href]):active {
+    transform: none;
   }
 }
 
