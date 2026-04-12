@@ -583,17 +583,25 @@ export default function CityPage() {
   const fetchEvents = async () => {
     setEventsLoading(true);
     setEventsLoadError("");
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("date", { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order("date", { ascending: true });
 
-    if (error) {
-      setEventsLoadError("Could not load city events right now.");
+      if (error) {
+        setEventsLoadError("Could not load city events right now.");
+        setEventsData(mergeSeedEvents([]));
+        return;
+      }
+
+      setEventsData(mergeSeedEvents(data || []));
+    } catch {
+      setEventsLoadError("Could not reach event service right now.");
+      setEventsData(mergeSeedEvents([]));
+    } finally {
+      setEventsLoading(false);
     }
-
-    setEventsData(mergeSeedEvents(data || []));
-    setEventsLoading(false);
   };
 
   const geocodeAddress = async (value) => {
@@ -1030,7 +1038,7 @@ export default function CityPage() {
           <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-fuchsia-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-4 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           {showTopDestinationBadge && (
-            <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-52 items-center justify-center md:flex lg:w-60">
+            <div className="pointer-events-none absolute inset-y-0 right-11 hidden w-52 items-center justify-center md:flex lg:right-12 lg:w-60">
               <Image
                 src="/qa-top-destination-badge-premium.svg"
                 alt="Top queer travel destination 2026"

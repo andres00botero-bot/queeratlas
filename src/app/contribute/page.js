@@ -166,49 +166,57 @@ export default function ContributePage() {
     }
 
     queueMicrotask(async () => {
-      setReports(getReports());
-      setBlockedItems(getBlockedItems());
+      try {
+        setReports(getReports());
+        setBlockedItems(getBlockedItems());
 
-      let adminAccess = false;
-      const notices = [];
-      const currentEmail = String(user?.email || "").trim().toLowerCase();
-      if (currentEmail) {
-        const { data, error } = await supabase
-          .from("qa_admin_users")
-          .select("email")
-          .ilike("email", currentEmail)
-          .limit(1);
+        let adminAccess = false;
+        const notices = [];
+        const currentEmail = String(user?.email || "").trim().toLowerCase();
+        if (currentEmail) {
+          const { data, error } = await supabase
+            .from("qa_admin_users")
+            .select("email")
+            .ilike("email", currentEmail)
+            .limit(1);
 
-        if (!error) {
-          adminAccess = (data || []).length > 0;
-          setIsAdmin(adminAccess);
+          if (!error) {
+            adminAccess = (data || []).length > 0;
+            setIsAdmin(adminAccess);
+          } else {
+            setIsAdmin(false);
+            if (isMissingTableError(error)) {
+              notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
+            }
+          }
         } else {
           setIsAdmin(false);
-          if (isMissingTableError(error)) {
-            notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
-          }
         }
-      } else {
+
+        const synced = adminAccess
+          ? await syncModerationFromCloud()
+          : await syncBlockedItemsFromCloud();
+
+        if (adminAccess) {
+          setReports(synced.reports || []);
+        } else {
+          setReports([]);
+        }
+        setBlockedItems(synced.blockedItems || []);
+
+        if (synced.warning) {
+          notices.push(synced.warning);
+        }
+
+        setModerationSyncNotice(notices.join(" "));
+      } catch {
         setIsAdmin(false);
-      }
-
-      const synced = adminAccess
-        ? await syncModerationFromCloud()
-        : await syncBlockedItemsFromCloud();
-
-      if (adminAccess) {
-        setReports(synced.reports || []);
-      } else {
         setReports([]);
+        setBlockedItems(getBlockedItems());
+        setModerationSyncNotice("Could not sync moderation right now.");
+      } finally {
+        setIsReady(true);
       }
-      setBlockedItems(synced.blockedItems || []);
-
-      if (synced.warning) {
-        notices.push(synced.warning);
-      }
-
-      setModerationSyncNotice(notices.join(" "));
-      setIsReady(true);
     });
   }, [isAuthLoading, isMember, router, user?.email]);
 
@@ -226,35 +234,45 @@ export default function ContributePage() {
     let active = true;
 
     queueMicrotask(async () => {
-      setQaSnapshot((current) => ({ ...current, loading: true, error: "" }));
-      const [{ data: placesData, error: placesError }, { data: eventsData, error: eventsError }] =
-        await Promise.all([
-          supabase
-            .from("places_with_stats")
-            .select("id, name, city, type, vibe, description, hours, lat, lng, source, lastChecked, verified"),
-          supabase
-            .from("events")
-            .select("id, name, city, description, date, link, lat, lng, source, lastChecked, verified"),
-        ]);
+      try {
+        setQaSnapshot((current) => ({ ...current, loading: true, error: "" }));
+        const [{ data: placesData, error: placesError }, { data: eventsData, error: eventsError }] =
+          await Promise.all([
+            supabase
+              .from("places_with_stats")
+              .select("id, name, city, type, vibe, description, hours, lat, lng, source, lastChecked, verified"),
+            supabase
+              .from("events")
+              .select("id, name, city, description, date, link, lat, lng, source, lastChecked, verified"),
+          ]);
 
-      if (!active) return;
+        if (!active) return;
 
-      if (placesError || eventsError) {
+        if (placesError || eventsError) {
+          setQaSnapshot({
+            places: [],
+            events: [],
+            loading: false,
+            error: "Could not load complete QA snapshot from Supabase.",
+          });
+          return;
+        }
+
+        setQaSnapshot({
+          places: mergeSeedPlaces(placesData || []),
+          events: mergeSeedEvents(eventsData || []),
+          loading: false,
+          error: "",
+        });
+      } catch {
+        if (!active) return;
         setQaSnapshot({
           places: [],
           events: [],
           loading: false,
-          error: "Could not load complete QA snapshot from Supabase.",
+          error: "Network issue while loading QA snapshot.",
         });
-        return;
       }
-
-      setQaSnapshot({
-        places: mergeSeedPlaces(placesData || []),
-        events: mergeSeedEvents(eventsData || []),
-        loading: false,
-        error: "",
-      });
     });
 
     return () => {
