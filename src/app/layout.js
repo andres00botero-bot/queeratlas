@@ -1,8 +1,10 @@
 import "./globals.css"; // 
 import { AuthProvider } from "@/lib/auth";
 
+const baseUrl = "https://queeratlas.app";
+
 export const metadata = {
-  metadataBase: new URL("https://queeratlas.app"),
+  metadataBase: new URL(baseUrl),
   title: {
     default: "Queer Atlas",
     template: "%s | Queer Atlas",
@@ -10,6 +12,22 @@ export const metadata = {
   description:
     "Global queer discovery atlas for venues, events, guides, and member community signal.",
   applicationName: "Queer Atlas",
+  alternates: {
+    canonical: "/",
+  },
+  manifest: "/manifest.webmanifest",
+  category: "travel",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   keywords: [
     "Queer Atlas",
     "LGBTQ travel",
@@ -45,9 +63,28 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Queer Atlas",
+    url: baseUrl,
+    description:
+      "Global queer discovery atlas for venues, events, guides, and member community signal.",
+    inLanguage: "en",
+    publisher: {
+      "@type": "Organization",
+      name: "Queer Atlas",
+      url: baseUrl,
+    },
+  };
+
   return (
     <html lang="en">
     <body>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <AuthProvider>{children}</AuthProvider>
     </body>
     </html>

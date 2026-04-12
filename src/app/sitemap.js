@@ -9,9 +9,6 @@ export default function sitemap() {
     "/cities",
     "/events",
     "/now",
-    "/community",
-    "/contribute",
-    "/favorites",
     "/search",
     "/terms",
     "/privacy",
@@ -22,7 +19,7 @@ export default function sitemap() {
     url: `${BASE_URL}${route}`,
     lastModified: now,
     changeFrequency: route === "" ? "daily" : "weekly",
-    priority: route === "" ? 1 : 0.8,
+    priority: route === "" ? 1 : route === "/cities" || route === "/events" ? 0.9 : 0.75,
   }));
 
   const cityEntries = Object.keys(cityConfig).map((city) => ({
