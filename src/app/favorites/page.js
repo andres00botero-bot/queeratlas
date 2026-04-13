@@ -14,6 +14,7 @@ import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
 import PageOpeningState from "@/components/ui/PageOpeningState";
+import TripPlannerV2 from "@/components/planner/TripPlannerV2";
 
 function timeAgo(value) {
   if (!value) return "Recently";
@@ -39,6 +40,18 @@ function formatSavedTime(value) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function stopQuickContext(stop) {
+  const explicitReason = String(stop?.reason || "").trim();
+  if (explicitReason) return explicitReason;
+
+  const slot = String(stop?.slotLabel || "").trim();
+  const kind = String(stop?.type || stop?.itemType || "").trim().toLowerCase();
+  const kindLabel = kind ? kind.replaceAll("_", " ") : "spot";
+
+  if (slot) return `${slot} energy in the flow.`;
+  return `Selected as a ${kindLabel} stop for this plan arc.`;
 }
 
 const PLAN_STORAGE_KEY = "qa_trip_plans";
@@ -88,6 +101,7 @@ export default function FavoritesPage() {
   const [isAtlasLoading, setIsAtlasLoading] = useState(false);
   const [atlasLoadError, setAtlasLoadError] = useState("");
   const [plans, setPlans] = useState([]);
+  const [expandedPlanId, setExpandedPlanId] = useState(null);
   const [showPlannerForm, setShowPlannerForm] = useState(false);
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [plannerForm, setPlannerForm] = useState({
@@ -573,6 +587,7 @@ export default function FavoritesPage() {
 
   const removePlan = async (planId) => {
     setPlans((current) => current.filter((entry) => String(entry.id) !== String(planId)));
+    setExpandedPlanId((current) => (String(current) === String(planId) ? null : current));
 
     if (user?.id) {
       const { error } = await supabase
@@ -585,6 +600,89 @@ export default function FavoritesPage() {
         setSyncWarning("Plan removed locally. Cloud sync unavailable.");
       }
     }
+  };
+
+  const openPlannerStopOnMap = (stop) => {
+    if (!stop?.city || !stop?.id) return;
+    const citySlug = String(stop.city).toLowerCase();
+    if (stop.itemType === "event") {
+      router.push(`/${citySlug}?eventId=${stop.id}`);
+      return;
+    }
+    router.push(`/${citySlug}?placeId=${stop.id}`);
+  };
+
+  const saveV2Plan = async (payload) => {
+    const cityName = String(payload?.city || "").trim();
+    const itineraryDays = Array.isArray(payload?.itinerary) ? payload.itinerary : [];
+    if (!cityName || itineraryDays.length === 0) return false;
+
+    const flatStops = itineraryDays
+      .flatMap((day) =>
+        (day?.stops || []).map((stop) => ({
+          type: stop.itemType === "event" ? "event" : "place",
+          id: stop.id,
+          name: stop.name,
+          city: stop.city || cityName,
+          time: stop.time || null,
+          slotLabel: stop.slotLabel || null,
+          dayLabel: day.dayLabel || null,
+        }))
+      )
+      .filter((stop) => stop?.id);
+
+    if (flatStops.length === 0) {
+      showToast("No stops to save yet. Build itinerary first.", { tone: "warn", duration: 2200 });
+      return false;
+    }
+
+    const uniquePlaceIds = [...new Set(flatStops.filter((s) => s.type === "place").map((s) => String(s.id)))];
+    const uniqueEventIds = [...new Set(flatStops.filter((s) => s.type === "event").map((s) => String(s.id)))];
+
+    const title = `${cityName} · ${String(payload?.horizon || "trip").replaceAll("_", " ")} · ${String(payload?.vibe || "mixed")}`;
+    const note = `V2 plan · budget: ${payload?.budget || "balanced"} · energy: ${payload?.energy || 70} · solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
+
+    const draftPlan = {
+      id: `plan-v2-${Date.now()}`,
+      title,
+      city: cityName,
+      date: null,
+      placeIds: uniquePlaceIds,
+      eventIds: uniqueEventIds,
+      stops: flatStops,
+      note,
+      createdAt: new Date().toISOString(),
+    };
+
+    let savedPlan = draftPlan;
+    if (user?.id) {
+      const { data, error } = await supabase
+        .from("member_plans")
+        .insert([{
+          user_id: user.id,
+          client_id: draftPlan.id,
+          title: draftPlan.title,
+          city: draftPlan.city,
+          date: draftPlan.date,
+          place_ids: draftPlan.placeIds,
+          event_ids: draftPlan.eventIds,
+          stops: draftPlan.stops,
+          note: draftPlan.note,
+        }])
+        .select("*")
+        .single();
+
+      if (error || !data) {
+        setSyncWarning("V2 plan saved locally. Cloud sync unavailable.");
+      } else {
+        savedPlan = mapPlanRow(data);
+      }
+    }
+
+    setPlans((current) => [savedPlan, ...current]);
+    setExpandedPlanId(savedPlan.id);
+    showToast("V2 plan saved.", { tone: "ok", duration: 2200 });
+    return true;
   };
 
   if (!isReady || !isMember) {
@@ -1115,6 +1213,14 @@ export default function FavoritesPage() {
               </button>
             </div>
 
+          <TripPlannerV2
+            plannerCities={plannerCities}
+            places={places}
+            events={events}
+            onOpenStop={openPlannerStopOnMap}
+            onSavePlan={saveV2Plan}
+          />
+
           {showPlannerForm && (
             <form
               onSubmit={createPlan}
@@ -1244,89 +1350,121 @@ export default function FavoritesPage() {
             </form>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="space-y-3">
             {isAtlasLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <FavoritesCardSkeleton key={`plan-skeleton-${index}`} />
               ))
             ) : plans.length > 0 ? (
-              plans.map((plan) => (
+              plans.map((plan, index) => (
                 <article
                   key={plan.id}
-                  className="animate-rise-in rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5 shadow-[0_20px_50px_rgba(0,0,0,0.20)]"
+                  className="animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.20)]"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-white/36">
-                        {plan.city}
-                      </p>
-                      <h3 className="mt-2 text-xl font-semibold text-white">{plan.title}</h3>
-                      {plan.date && (
-                        <p className="mt-1 text-xs uppercase tracking-[0.16em] text-cyan-100/70">
-                          {formatDate(plan.date)}
-                        </p>
-                      )}
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/[0.10] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-fuchsia-100/90">
+                          #{index + 1}
+                        </span>
+                        <p className="text-xs uppercase tracking-[0.18em] text-white/42">{plan.city || "City plan"}</p>
+                        <span className="rounded-full border border-white/12 bg-white/6 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/55">
+                          {timeAgo(plan.createdAt)}
+                        </span>
+                        {plan.date && (
+                          <span className="rounded-full border border-cyan-200/16 bg-cyan-200/[0.08] px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/75">
+                            {formatDate(plan.date)}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="mt-2 truncate text-lg font-semibold text-white">{plan.title}</h3>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-white/12 bg-black/25 px-2.5 py-1 text-[11px] text-white/62">
+                          {plan.placeIds.length} places
+                        </span>
+                        <span className="rounded-full border border-white/12 bg-black/25 px-2.5 py-1 text-[11px] text-white/62">
+                          {plan.eventIds.length} events
+                        </span>
+                        <span className="rounded-full border border-white/12 bg-black/25 px-2.5 py-1 text-[11px] text-white/62">
+                          {Array.isArray(plan.stops) ? plan.stops.length : 0} stops
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="block text-xs text-white/38">{timeAgo(plan.createdAt)}</span>
+
+                    <div className="flex items-center gap-2 self-start lg:self-center">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedPlanId((current) =>
+                            String(current) === String(plan.id) ? null : plan.id
+                          )
+                        }
+                        className="rounded-full border border-cyan-200/16 bg-cyan-200/[0.08] px-3 py-1.5 text-xs uppercase tracking-[0.12em] text-cyan-100/85 transition hover:border-cyan-200/30"
+                      >
+                        {String(expandedPlanId) === String(plan.id) ? "Collapse" : "Expand"}
+                      </button>
                       <button
                         type="button"
                         onClick={() => removePlan(plan.id)}
-                        className="mt-2 text-[11px] text-rose-100/70 transition hover:text-rose-100"
+                        className="rounded-full border border-rose-200/16 bg-rose-200/[0.08] px-3 py-1.5 text-xs uppercase tracking-[0.12em] text-rose-100/85 transition hover:border-rose-200/30"
                       >
                         Remove
                       </button>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                        Places
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-white">{plan.placeIds.length}</p>
-                    </div>
-                    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                        Events
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-white">{plan.eventIds.length}</p>
-                    </div>
-                  </div>
-
-                  {Array.isArray(plan.stops) && plan.stops.length > 0 && (
-                    <div className="mt-4 space-y-2 rounded-2xl border border-white/8 bg-black/20 p-3">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/36">Itinerary</p>
-                      {plan.stops.slice(0, 4).map((stop) => (
-                        <button
-                          key={`${stop.type}-${stop.id}`}
-                          type="button"
-                          onClick={() =>
-                            router.push(
-                              stop.type === "place"
-                                ? `/${stop.city?.toLowerCase()}?placeId=${stop.id}`
-                                : `/${stop.city?.toLowerCase()}?eventId=${stop.id}`
-                            )
-                          }
-                          className="flex w-full items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2 text-left text-xs text-white/70 transition hover:border-white/14 hover:text-white"
-                        >
-                          <span className="truncate">{stop.name}</span>
-                          <span className="ml-3 uppercase text-[10px] tracking-[0.14em] text-white/40">{stop.type}</span>
-                        </button>
+                  {String(expandedPlanId) === String(plan.id) && Array.isArray(plan.stops) && plan.stops.length > 0 && (
+                    <div className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-black/25 p-3">
+                      {Object.entries(
+                        plan.stops.reduce((acc, stop) => {
+                          const label = stop.dayLabel || "Itinerary";
+                          if (!acc[label]) acc[label] = [];
+                          acc[label].push(stop);
+                          return acc;
+                        }, {})
+                      ).map(([day, stops]) => (
+                        <div key={day} className="space-y-2">
+                          <p className="text-[11px] uppercase tracking-[0.16em] text-white/44">{day}</p>
+                          {stops.map((stop, stopIndex) => (
+                            <button
+                              key={`${stop.type}-${stop.id}-${stopIndex}`}
+                              type="button"
+                              onClick={() =>
+                                router.push(
+                                  stop.type === "place"
+                                    ? `/${stop.city?.toLowerCase()}?placeId=${stop.id}`
+                                    : `/${stop.city?.toLowerCase()}?eventId=${stop.id}`
+                                )
+                              }
+                              className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-white/75 transition hover:border-white/18 hover:text-white"
+                            >
+                              <span className="min-w-0">
+                                <span className="block truncate">
+                                  {stop.time ? `${stop.time} - ` : ""}
+                                  {stop.name}
+                                </span>
+                                <span className="mt-1 block truncate text-[10px] text-white/48">
+                                  {stopQuickContext(stop)}
+                                </span>
+                              </span>
+                              <span className="ml-3 uppercase text-[10px] tracking-[0.14em] text-white/44">
+                                {stop.type}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
                       ))}
-                      {plan.stops.length > 4 && (
-                        <p className="text-[11px] text-white/42">+{plan.stops.length - 4} more stops</p>
+                      {plan.note && (
+                        <p className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-5 text-white/60">
+                          {plan.note}
+                        </p>
                       )}
                     </div>
-                  )}
-
-                  {plan.note && (
-                    <p className="mt-4 text-sm leading-6 text-white/46">{plan.note}</p>
                   )}
                 </article>
               ))
             ) : (
-              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42 md:col-span-2 xl:col-span-3">
+              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42">
                 No plans yet. Build your first night or city flow from saved places and events.
               </div>
             )}
