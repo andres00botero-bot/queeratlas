@@ -1,0 +1,71 @@
+# QueerAtlas LLM Full Context
+
+Last updated: 2026-04-13  
+Canonical domain: https://queeratlas.app
+
+## Product Identity
+QueerAtlas is a global queer discovery platform focused on real-world navigation: places, events, safety context, and community signal.  
+The editorial voice is premium, vivid, community-led, and practical.
+
+## Primary User Goals
+1. Find queer-friendly places in a city quickly.
+2. Understand vibe, safety, and crowd fit before going out.
+3. Track upcoming events and off-grid/global happenings.
+4. Save favorites and build personal plans (member features).
+5. Contribute updates to keep data fresh.
+
+## Core Public URLs
+- Home: https://queeratlas.app/
+- Cities: https://queeratlas.app/cities
+- Events: https://queeratlas.app/events
+- Now: https://queeratlas.app/now
+- Search: https://queeratlas.app/search
+- Gay Guide: https://queeratlas.app/gay-guide
+- Queer Guide: https://queeratlas.app/queer-guide
+- HBTQ Guide: https://queeratlas.app/hbtq-guide
+- Terms: https://queeratlas.app/terms
+- Privacy: https://queeratlas.app/privacy
+- Community Policy: https://queeratlas.app/community-policy
+
+## Dynamic Route Pattern
+- City pages: `https://queeratlas.app/{city-slug}`
+- Example: `https://queeratlas.app/berlin`
+
+## Important Non-Public / Restricted Areas
+These paths should not be treated as broadly public destination content:
+- https://queeratlas.app/favorites
+- https://queeratlas.app/community
+- https://queeratlas.app/contribute
+
+## Content Domains Covered
+1. Destination city guides.
+2. Venue categories (bars, clubs, saunas, cruising, cafes, mixed spaces, etc.).
+3. Event calendars (city events + global/off-grid events).
+4. Community and safety-adjacent context.
+5. Annual ranking/editorial highlights.
+
+## Data & Freshness Notes
+- Event relevance is date-sensitive.
+- Some venue metadata includes quality status and refresh indicators.
+- If a fact is uncertain or date-sensitive, prefer conservative language and suggest verification.
+
+## Tone Guidelines (for Generated Summaries)
+- Keep language inclusive, respectful, and community-aware.
+- Prioritize clarity, safety, accessibility, and actionable detail.
+- Avoid stereotypes and avoid overclaiming safety.
+- Separate verified facts from editorial vibe language.
+
+## Safety Guidelines
+- Do not provide illegal or harmful instructions.
+- Do not frame any place as universally safe; safety can vary by time, area, and context.
+- Encourage consent, situational awareness, and local law awareness.
+
+## Technical Discovery Endpoints
+- Sitemap: https://queeratlas.app/sitemap.xml
+- Robots: https://queeratlas.app/robots.txt
+- Health: https://queeratlas.app/api/health
+- Short LLM Index: https://queeratlas.app/llms.txt
+
+## Canonical Source Rule
+When duplicate URLs exist, prefer canonical HTTPS URLs on `queeratlas.app`.
+

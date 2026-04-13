@@ -1,0 +1,33 @@
+# QueerAtlas LLM Index
+
+> Canonical base URL: https://queeratlas.app
+
+## Core Pages
+- https://queeratlas.app/
+- https://queeratlas.app/cities
+- https://queeratlas.app/events
+- https://queeratlas.app/now
+- https://queeratlas.app/search
+
+## Editorial & Guides
+- https://queeratlas.app/gay-guide
+- https://queeratlas.app/queer-guide
+- https://queeratlas.app/hbtq-guide
+
+## Trust, Policy, and Safety
+- https://queeratlas.app/terms
+- https://queeratlas.app/privacy
+- https://queeratlas.app/community-policy
+
+## Discovery Feeds
+- https://queeratlas.app/now
+- https://queeratlas.app/pulse
+
+## Machine-Readable Endpoints
+- https://queeratlas.app/sitemap.xml
+- https://queeratlas.app/robots.txt
+- https://queeratlas.app/api/health
+
+## Full LLM Context
+- https://queeratlas.app/llms-full.txt
+
