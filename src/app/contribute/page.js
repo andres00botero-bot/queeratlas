@@ -124,6 +124,7 @@ export default function ContributePage() {
     type: "club",
     address: "",
     description: "",
+    hours: "",
     vibe: "",
     source: "",
     lastChecked: "",
@@ -349,8 +350,8 @@ export default function ContributePage() {
   };
 
   const submitPlaceDirect = async () => {
-    if (!placeForm.name || !placeForm.address || !placeForm.description || !(selectedCity || placeForm.city)) {
-      setPlaceNotice("Fill in city, place name, address and description.");
+    if (!placeForm.name || !placeForm.address || !placeForm.description || !placeForm.hours || !(selectedCity || placeForm.city)) {
+      setPlaceNotice("Fill in city, place name, address, description and opening hours.");
       showToast("Place not saved. Required fields are missing.", { tone: "warn", duration: 2400 });
       return;
     }
@@ -373,6 +374,7 @@ export default function ContributePage() {
         name: placeForm.name,
         type: placeForm.type,
         description: placeForm.description,
+        hours: placeForm.hours,
         vibe: placeForm.vibe,
         lat: coords.lat,
         lng: coords.lng,
@@ -395,6 +397,7 @@ export default function ContributePage() {
         type: "club",
         address: "",
         description: "",
+        hours: "",
         vibe: "",
         source: "",
         lastChecked: "",
@@ -771,6 +774,7 @@ export default function ContributePage() {
                   <Field value={placeForm.vibe} onChange={(event) => setPlaceForm((current) => ({ ...current, vibe: event.target.value }))} placeholder="Vibe" />
                 </div>
                 <Field value={placeForm.address} onChange={(event) => setPlaceForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
+                <Field value={placeForm.hours} onChange={(event) => setPlaceForm((current) => ({ ...current, hours: event.target.value }))} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field value={placeForm.source} onChange={(event) => setPlaceForm((current) => ({ ...current, source: event.target.value }))} placeholder="Source URL or name (optional)" />
                   <DateInput

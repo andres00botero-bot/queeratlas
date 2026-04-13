@@ -64,6 +64,7 @@ export function usePlaces(city) {
           type: place.type,
           description: place.description,
           vibe: place.vibe,
+          hours: place.hours,
           lat: place.lat,
           lng: place.lng,
           city: place.city,

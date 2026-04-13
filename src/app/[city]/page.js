@@ -349,6 +349,7 @@ export default function CityPage() {
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [vibe, setVibe] = useState("");
+  const [placeHours, setPlaceHours] = useState("");
   const [eventName, setEventName] = useState("");
   const [eventAddress, setEventAddress] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -851,8 +852,8 @@ export default function CityPage() {
   }, [config.center, selectedEvent, selectedPlace]);
 
   const handleAddPlace = async () => {
-    if (!name.trim() || !address.trim() || !description.trim()) {
-      showToast("Fill in name, address, and description before saving place.", { tone: "warn", duration: 2400 });
+    if (!name.trim() || !address.trim() || !description.trim() || !placeHours.trim()) {
+      showToast("Fill in name, address, description, and opening hours before saving place.", { tone: "warn", duration: 2400 });
       return;
     }
 
@@ -869,6 +870,7 @@ export default function CityPage() {
         type,
         description,
         vibe,
+        hours: placeHours,
         lat: coords.lat,
         lng: coords.lng,
         city,
@@ -892,6 +894,7 @@ export default function CityPage() {
       setAddress("");
       setDescription("");
       setVibe("");
+      setPlaceHours("");
       setAddMode(false);
       showToast("Place added to city atlas.", { tone: "ok", duration: 2200 });
     } catch (error) {
@@ -1171,6 +1174,7 @@ export default function CityPage() {
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Place name" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (vibe, crowd, energy...)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={vibe} onChange={(event) => setVibe(event.target.value)} placeholder="Vibe (for example Chill, Techno, Luxury)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+            <input value={placeHours} onChange={(event) => setPlaceHours(event.target.value)} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <select value={type} onChange={(event) => setType(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/40 p-3 outline-none">
               {TYPES.map((item) => (
@@ -1681,11 +1685,12 @@ export default function CityPage() {
                       </div>
                     )}
 
-                    {place.hours && (
-                      <p className="mb-4 inline-flex rounded-full border border-cyan-200/18 bg-cyan-200/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/80">
-                        {place.hours}
+                    <div className="mb-4 rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">Opening Hours</p>
+                      <p className="mt-1 text-xs leading-6 text-cyan-50/90">
+                        {String(place.hours || "").trim() || "Hours vary by night. Check official channels before going."}
                       </p>
-                    )}
+                    </div>
 
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                       <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
@@ -1751,11 +1756,12 @@ export default function CityPage() {
                 <p className="text-sm leading-relaxed text-gray-300">{polishVenueDescription(selectedPlace, cityName)}</p>
               </div>
             )}
-            {selectedPlace.hours && (
-              <p className="mb-2 text-xs uppercase tracking-[0.18em] text-cyan-200/72">
-                {selectedPlace.hours}
+            <div className="mb-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">Opening Hours</p>
+              <p className="mt-1 text-xs leading-6 text-cyan-50/90">
+                {String(selectedPlace.hours || "").trim() || "Hours vary by night. Check official channels before going."}
               </p>
-            )}
+            </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
                 <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Rating</p>

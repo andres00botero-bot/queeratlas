@@ -1,4 +1,14 @@
-function createPlace({ id, city, name, type, vibe, description, hours = "", lat, lng }) {
+function createPlace({
+  id,
+  city,
+  name,
+  type,
+  vibe,
+  description,
+  hours = "Hours vary by night. Check official channels before going.",
+  lat,
+  lng,
+}) {
   return {
     id,
     city,
@@ -5560,9 +5570,16 @@ function normalizeSeedKey(value = "") {
 }
 
 export function mergeSeedPlaces(databasePlaces = []) {
-  const seenIds = new Set(databasePlaces.map((place) => String(place.id)));
+  const normalizedDatabasePlaces = databasePlaces.map((place) => ({
+    ...place,
+    hours:
+      String(place.hours || place.opening_hours || "").trim() ||
+      "Hours vary by night. Check official channels before going.",
+  }));
+
+  const seenIds = new Set(normalizedDatabasePlaces.map((place) => String(place.id)));
   const seenVenueKeys = new Set(
-    databasePlaces.map((place) =>
+    normalizedDatabasePlaces.map((place) =>
       `${normalizeSeedKey(place.city)}::${normalizeSeedKey(place.name)}`,
     ),
   );
@@ -5579,7 +5596,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
   });
 
   return [
-    ...databasePlaces,
+    ...normalizedDatabasePlaces,
     ...uniqueSeedPlaces,
   ];
 }
