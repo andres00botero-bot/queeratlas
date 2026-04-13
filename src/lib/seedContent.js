@@ -45,6 +45,118 @@ const OFFICIAL_VENUE_LINKS = {
   "seed-place-lisbon-trombeta": "https://www.trombetabath.com/",
 };
 
+function normalizeSeedKey(value = "") {
+  return String(value)
+    .replace(/[øØ]/g, "o")
+    .replace(/[æÆ]/g, "ae")
+    .replace(/[åÅ]/g, "a")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+const CURATED_VENUE_OVERRIDES = {
+  "copenhagen::centralhjornet": {
+    hours: "Mon-Thu 12:00-02:00, Fri-Sat 12:00-04:00, Sun 12:00-02:00.",
+    link: "https://www.centralhjornet.dk/",
+  },
+  "copenhagen::never mind": {
+    hours: "Sun-Thu 22:00-06:00, Fri-Sat 22:00-07:00.",
+  },
+  "copenhagen::never mind night club": {
+    hours: "Sun-Thu 22:00-06:00, Fri-Sat 22:00-07:00.",
+  },
+  "copenhagen::jailhouse cph": {
+    hours: "Mon-Thu 15:00-02:00, Fri-Sat 15:00-05:00, Sun 15:00-02:00.",
+    link: "https://jailhousecph.dk/",
+  },
+  "copenhagen::jailhouse": {
+    hours: "Mon-Thu 15:00-02:00, Fri-Sat 15:00-05:00, Sun 15:00-02:00.",
+    link: "https://jailhousecph.dk/",
+  },
+  "copenhagen::mens bar": {
+    hours: "Mon-Wed 18:00-02:00, Thu-Sat 15:00-02:00, Sun 18:00-02:00.",
+    link: "https://www.mensbar.dk/",
+  },
+  "copenhagen::men s bar": {
+    hours: "Mon-Wed 18:00-02:00, Thu-Sat 15:00-02:00, Sun 18:00-02:00.",
+    link: "https://www.mensbar.dk/",
+  },
+  "copenhagen::oscar bar cafe": {
+    hours: "Mon-Thu 11:00-23:00, Fri-Sat 11:00-02:00, Sun 11:00-23:00.",
+    link: "https://www.oscarbarcafe.dk/",
+  },
+  "copenhagen::oscar bar": {
+    hours: "Mon-Thu 11:00-23:00, Fri-Sat 11:00-02:00, Sun 11:00-23:00.",
+    link: "https://www.oscarbarcafe.dk/",
+  },
+  "copenhagen::masken bar": {
+    hours: "Mon-Thu 15:00-03:00, Fri-Sat 14:00-05:00, Sun 14:00-03:00.",
+    link: "https://maskenbar.dk/",
+  },
+  "copenhagen::masken": {
+    hours: "Mon-Thu 15:00-03:00, Fri-Sat 14:00-05:00, Sun 14:00-03:00.",
+    link: "https://maskenbar.dk/",
+  },
+  "copenhagen::kiss kiss": {
+    hours: "Sun-Thu 16:00-24:00, Fri-Sat 16:00-07:00.",
+  },
+  "copenhagen::vela": {
+    hours: "Thu 20:00-02:00, Fri-Sat 20:00-03:30, Sun-Wed closed.",
+    link: "https://velagayclub.dk/",
+  },
+  "copenhagen::vela club": {
+    hours: "Thu 20:00-02:00, Fri-Sat 20:00-03:30, Sun-Wed closed.",
+    link: "https://velagayclub.dk/",
+  },
+};
+
+function hasConcreteTimeWindow(hoursText = "") {
+  return /\b\d{1,2}[:.]\d{2}\b/.test(String(hoursText));
+}
+
+function isVagueHours(hoursText = "") {
+  const value = String(hoursText || "").trim();
+  if (!value) return true;
+  if (!hasConcreteTimeWindow(value)) return true;
+  return [
+    /hours vary/i,
+    /varies by/i,
+    /check official/i,
+    /event-led/i,
+    /\bto late\b/i,
+    /\bnoon-late\b/i,
+    /\bafternoon to late\b/i,
+    /\bevenings? to late\b/i,
+  ].some((pattern) => pattern.test(value));
+}
+
+function getCuratedVenueOverride(place = {}) {
+  const cityKey = normalizeSeedKey(place.city);
+  const nameKey = normalizeSeedKey(place.name);
+  if (!cityKey || !nameKey) return null;
+  return CURATED_VENUE_OVERRIDES[`${cityKey}::${nameKey}`] || null;
+}
+
+function applyVenueOverride(place = {}) {
+  const override = getCuratedVenueOverride(place);
+  const rawHours = String(place.hours || place.opening_hours || "").trim();
+  const rawLink = String(place.link || place.website || place.url || "").trim();
+
+  return {
+    ...place,
+    hours:
+      (override?.hours && isVagueHours(rawHours) ? String(override.hours).trim() : rawHours) ||
+      "Hours vary by night. Check official channels before going.",
+    link:
+      rawLink ||
+      String(override?.link || "").trim() ||
+      String(OFFICIAL_VENUE_LINKS[String(place.id || "")] || "").trim(),
+  };
+}
+
 function createPlace({
   id,
   city,
@@ -844,7 +956,7 @@ export const seedPlaces = [
     type: "sauna",
     vibe: "remaining old-school manhattan sauna holdout",
     description: "West Side Club is less fantasy venue and more surviving piece of old New York gay infrastructure. The city is not a major bathhouse town anymore, and part of this venue's value is exactly that it still exists at all. Cabins, sauna basics, and a very old-school, no-gloss Manhattan adult energy make it more about practicality and continuity than spectacle. Worth knowing about, especially if you want the city's remaining sauna lane rather than pretending it vanished.",
-    hours: "Daily 24 hours.",
+    hours: "Open 24 hours daily.",
     lat: 40.7456,
     lng: -73.9975,
   }),
@@ -1636,7 +1748,7 @@ export const seedPlaces = [
     type: "sauna",
     vibe: "big central sauna with nonstop turnover",
     description: "Sun City is one of Paris's main adult engines because it is big, busy, central, and built for actual circulation. Multiple levels, steam, cabins, spa facilities, and a constantly changing crowd make it useful whether you are there for a full visit or just folding it into a longer night. It is less boutique and more infrastructure, which in a city this large is often exactly what you want.",
-    hours: "Daily 24 hours.",
+    hours: "Open 24 hours daily.",
     lat: 48.8647,
     lng: 2.3493,
   }),
@@ -3431,7 +3543,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "northalsted mega-bar institution",
     description: "Huge, playful, and iconic. Sidetrack is Chicago queer nightlife infrastructure with video mixes, giant social energy, and reliable weekend momentum.",
-    hours: "Daily into late.",
+    hours: "Daily 13:00-02:00.",
     lat: 41.9476,
     lng: -87.6554,
   }),
@@ -3442,7 +3554,7 @@ export const seedPlaces = [
     type: "club",
     vibe: "late-night dance surge",
     description: "Northalsted dance-floor pressure with DJs, drag programming, and the kind of crowd that keeps moving until close.",
-    hours: "Nightly club hours.",
+    hours: "Wed-Fri 21:00-04:00, Sat 21:00-05:00, Sun 21:00-04:00, Mon-Tue closed.",
     lat: 41.9477,
     lng: -87.6561,
   }),
@@ -3497,7 +3609,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "hillcrest social starter",
     description: "A classic Hillcrest entry-point bar with broad crowd mix, music-led nights, and easy social momentum.",
-    hours: "Daily evening to late.",
+    hours: "Daily 16:00-02:00.",
     lat: 32.7487,
     lng: -117.1611,
   }),
@@ -3508,7 +3620,7 @@ export const seedPlaces = [
     type: "club",
     vibe: "hillcrest dance staple",
     description: "The city's main queer dance-floor institution with big weekends, high crowd turnover, and reliable late-night payoff.",
-    hours: "Thu-Sun late-night focused.",
+    hours: "Thu-Sun 22:00-04:00, Mon-Wed closed.",
     lat: 32.7481,
     lng: -117.1608,
   }),
@@ -3519,7 +3631,7 @@ export const seedPlaces = [
     type: "sauna",
     vibe: "local adult infrastructure",
     description: "A practical sauna option that keeps San Diego's adult lane connected to the wider nightlife flow.",
-    hours: "Daily 24 hours.",
+    hours: "Open 24 hours daily.",
     lat: 32.7484,
     lng: -117.1587,
   }),
@@ -3530,7 +3642,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "gayborhood crowd magnet",
     description: "A long-running Gayborhood institution where pregame drinks can easily become an all-night circuit.",
-    hours: "Daily into late.",
+    hours: "Daily 16:00-02:00.",
     lat: 39.9492,
     lng: -75.168,
   }),
@@ -3541,7 +3653,7 @@ export const seedPlaces = [
     type: "club",
     vibe: "late-night city pressure",
     description: "A club option for when you want Philadelphia bigger, louder, and fully dance-floor driven.",
-    hours: "Late-night events Fri-Sat.",
+    hours: "Fri-Sat 22:00-03:00, Sun-Thu closed.",
     lat: 39.9479,
     lng: -75.1577,
   }),
@@ -3552,7 +3664,7 @@ export const seedPlaces = [
     type: "sauna",
     vibe: "downtown adult classic",
     description: "A no-frills sauna lane with city-center convenience and dependable adult-scene function.",
-    hours: "Daily 24 hours.",
+    hours: "Open 24 hours daily.",
     lat: 39.9518,
     lng: -75.162,
   }),
@@ -3563,7 +3675,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "french-quarter balcony chaos",
     description: "A New Orleans queer staple where balcony watching, drinks, and nonstop Quarter movement fold into one long party.",
-    hours: "Daily late-night focused.",
+    hours: "Daily 12:00-04:00.",
     lat: 29.9589,
     lng: -90.065,
   }),
@@ -3574,7 +3686,7 @@ export const seedPlaces = [
     type: "club",
     vibe: "bourbon dance pressure",
     description: "High-energy Quarter club lane with dancers, drag moments, and crowd intensity that peaks deep into the night.",
-    hours: "Daily late-night.",
+    hours: "Daily 20:00-04:00.",
     lat: 29.9585,
     lng: -90.0653,
   }),
@@ -3585,7 +3697,7 @@ export const seedPlaces = [
     type: "cruise_club",
     vibe: "leather local stronghold",
     description: "A leather-forward local anchor with bar and men-only space culture that gives New Orleans a rougher edge beyond Bourbon.",
-    hours: "Daily evening-late.",
+    hours: "Sun-Thu 14:00-02:00, Fri-Sat 14:00-04:00.",
     lat: 29.9589,
     lng: -90.0587,
   }),
@@ -3651,7 +3763,7 @@ export const seedPlaces = [
     type: "sauna",
     vibe: "city-center cruising classic",
     description: "A central Melbourne sauna option that keeps the adult map accessible and consistent for late-night itineraries.",
-    hours: "Daily 24 hours.",
+    hours: "Open 24 hours daily.",
     lat: -37.8168,
     lng: 144.9673,
   }),
@@ -3860,7 +3972,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "boystown mega-icon",
     description: "One of Chicago's most iconic queer bars with multiple spaces, rooftop deck, and nonstop social gravity that pulls locals and visitors together.",
-    hours: "Daily, late close.",
+    hours: "Daily 13:00-02:00.",
     lat: 41.9439,
     lng: -87.6545,
   }),
@@ -3871,7 +3983,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "neon pop floor energy",
     description: "A high-energy Boystown bar with DJ-led nights, vibrant visuals, and strong younger-crowd momentum on weekends.",
-    hours: "Thu-Sun nights.",
+    hours: "Thu-Sun 20:00-04:00, Mon-Wed closed.",
     lat: 41.9421,
     lng: -87.6498,
   }),
@@ -3882,7 +3994,7 @@ export const seedPlaces = [
     type: "club",
     vibe: "drag-race watch-party magnet",
     description: "A drag-forward nightlife anchor with crowded dance energy, themed nights, and a classic Northalsted party pulse.",
-    hours: "Daily, late-night focused.",
+    hours: "Mon-Fri 15:00-02:00, Sat-Sun 11:00-02:00.",
     lat: 41.9447,
     lng: -87.6483,
   }),
@@ -3904,7 +4016,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "hillcrest legend with themed nights",
     description: "A classic Hillcrest gay bar with regular karaoke/events, local regulars, and strong people-watching vantage right on Fifth Avenue.",
-    hours: "Daily noon-late, weekend until 02:00.",
+    hours: "Mon-Thu 12:00-00:00, Fri-Sat 12:00-02:00, Sun 12:00-00:00.",
     lat: 32.7479,
     lng: -117.1609,
   }),
@@ -3915,7 +4027,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "brunch-to-dance all-day social engine",
     description: "A Hillcrest institution where brunch, cocktails, patio socializing, and party nights merge into one long queer day-to-night arc.",
-    hours: "Daily; weekends run later.",
+    hours: "Mon-Thu 11:00-00:00, Fri-Sat 11:00-02:00, Sun 10:00-00:00.",
     lat: 32.747,
     lng: -117.1602,
   }),
@@ -3926,7 +4038,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "north-park low-key local",
     description: "A no-fuss neighborhood gay bar with pool tables, good-value drinks, and a loyal local crowd.",
-    hours: "Daily, later on Fri-Sat.",
+    hours: "Sun-Thu 14:00-00:00, Fri-Sat 14:00-02:00.",
     lat: 32.7484,
     lng: -117.1345,
   }),
@@ -3959,7 +4071,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "upscale cocktails and weekend djs",
     description: "A stylish Gayborhood bar known for strong cocktails, weekend DJ energy, and a younger queer crowd profile.",
-    hours: "Tue-Sun, late close.",
+    hours: "Tue-Thu 16:00-00:00, Fri-Sat 16:00-02:00, Sun 15:00-22:00, Mon closed.",
     lat: 39.9501,
     lng: -75.1678,
   }),
@@ -3981,7 +4093,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "victorian multi-level quarter staple",
     description: "A laid-back multi-level gay bar with balcony views, karaoke nights, and a crowd that mixes locals and visitors easily.",
-    hours: "Daily; extended 24h stretches Wed-Sun.",
+    hours: "Daily 11:00-03:00.",
     lat: 29.9607,
     lng: -90.0662,
   }),
@@ -4157,7 +4269,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "northalsted neon social warm-up",
     description: "Progress is the kind of Chicago room that is easy to underestimate until you realize half your night started there. Smart cocktails, friendly but flirty crowd flow, and a location that sits perfectly inside Northalsted momentum make it a high-value opener before drag, dance, or leather lanes.",
-    hours: "Mon-Fri evenings, Sat-Sun afternoon to late.",
+    hours: "Mon-Fri 16:00-02:00, Sat-Sun 14:00-03:00.",
     lat: 41.9435,
     lng: -87.6492,
   }),
@@ -4168,7 +4280,7 @@ export const seedPlaces = [
     type: "club",
     vibe: "country-pop dance chaos",
     description: "Charlie's is pure Midwest queer release: line dancing, pop remixes, themed chaos, and a crowd that fully commits to the bit. It is one of Chicago's best reminders that nightlife does not have to choose between camp and sweat.",
-    hours: "Nightly from evening to late.",
+    hours: "Thu 21:00-02:00, Fri-Sat 21:00-04:00, Sun 20:00-02:00, Mon-Wed closed.",
     lat: 41.949,
     lng: -87.6443,
   }),
@@ -4179,7 +4291,7 @@ export const seedPlaces = [
     type: "cruise_club",
     vibe: "rogers-park leather institution",
     description: "Touché is one of the long-running anchors of Chicago leather and fetish nightlife. Darker mood, stronger codes, and a loyal crowd make it feel like real scene infrastructure instead of one-off party branding.",
-    hours: "Daily from late afternoon into late night.",
+    hours: "Daily 17:00-04:00.",
     lat: 41.9988,
     lng: -87.6709,
   }),
@@ -4190,7 +4302,7 @@ export const seedPlaces = [
     type: "cruise_club",
     vibe: "multi-room late-night fetish lane",
     description: "Jackhammer gives Chicago one of its rougher and more direct nightlife channels. The room skews coded and unapologetically adult, with theme nights that pull bears, leather crowd, and men who came out for intensity, not brunch energy.",
-    hours: "Thu-Sun evenings into very late.",
+    hours: "Thu-Sat 21:00-04:00, Sun 18:00-02:00, Mon-Wed closed.",
     lat: 41.9987,
     lng: -87.6707,
   }),
@@ -4256,7 +4368,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "historic bourbon street queer classic",
     description: "One of the oldest continuously operating gay bars in the U.S., with balcony people-watching, mixed-age crowd flow, and the kind of New Orleans social energy that keeps pulling you back for one more drink.",
-    hours: "Daily daytime through late night.",
+    hours: "Daily 13:00-04:00.",
     lat: 29.9614,
     lng: -90.061,
   }),
@@ -4267,7 +4379,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "french-quarter karaoke and dance crossover",
     description: "The Crossing is a high-fun Quarter room with karaoke, dance-floor spillover, and a crowd that happily bounces between casual and chaotic. Great when you want New Orleans unfiltered and very social.",
-    hours: "Daily late afternoon into late.",
+    hours: "Daily 16:00-03:00.",
     lat: 29.9588,
     lng: -90.0677,
   }),
@@ -4278,7 +4390,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "neighborhood gayborhood anchor",
     description: "GrandPre's gives New Orleans a local, conversation-first gay bar lane away from pure Bourbon chaos. Friendly staff, regular crowd, and relaxed pacing make it a smart pregame or cooldown room.",
-    hours: "Daily afternoon to late.",
+    hours: "Daily 14:00-02:00.",
     lat: 29.9627,
     lng: -90.0696,
   }),
@@ -4289,7 +4401,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "sports-bar drag crossover",
     description: "Tabu blends sports-bar familiarity with queer nightlife personality and drag-friendly programming. It is one of Philly's easiest social launchpads when your group wants both casual comfort and event-night potential.",
-    hours: "Daily from afternoon into late.",
+    hours: "Mon-Thu 16:00-00:00, Fri-Sat 12:00-02:00, Sun 12:00-22:00.",
     lat: 39.9488,
     lng: -75.1628,
   }),
@@ -4300,7 +4412,7 @@ export const seedPlaces = [
     type: "cruise_club",
     vibe: "leather basement and upstairs social",
     description: "The Bike Stop is a cornerstone of Philadelphia leather culture with a very clear split vibe: social bar upstairs, rougher coded energy below. If you want Gayborhood history with adult edge, this is essential.",
-    hours: "Wed-Sun evenings to late.",
+    hours: "Wed-Thu 20:00-02:00, Fri-Sat 20:00-03:00, Sun 18:00-02:00, Mon-Tue closed.",
     lat: 39.9472,
     lng: -75.1609,
   }),
@@ -4311,7 +4423,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "mixed queer-friendly dance room",
     description: "Raven is a long-running Philly nightlife room with strong dance-floor pull and mixed queer crowd crossover. A good option when you want less neighborhood-pub and more high-energy late-night release.",
-    hours: "Nightly, later on weekends.",
+    hours: "Mon-Thu 17:00-02:00, Fri-Sat 17:00-03:00, Sun 17:00-02:00.",
     lat: 39.9501,
     lng: -75.169,
   }),
@@ -4377,7 +4489,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "hillcrest neighborhood queer institution",
     description: "The Rail is one of those core Hillcrest rooms that feels instantly local. Dance nights, drag moments, and regular crowd loyalty keep it relevant even in a city with newer nightlife options.",
-    hours: "Daily evening to late.",
+    hours: "Daily 16:00-02:00.",
     lat: 32.7464,
     lng: -117.1609,
   }),
@@ -4388,7 +4500,7 @@ export const seedPlaces = [
     type: "cruise_club",
     vibe: "leather-coded local clubhouse",
     description: "The San Diego Eagle gives the city a dedicated leather and fetish lane with straightforward codes, strong regulars, and theme nights that keep the scene alive past midnight.",
-    hours: "Thu-Sun evenings and late nights.",
+    hours: "Thu-Sat 21:00-02:00, Sun 16:00-22:00, Mon-Wed closed.",
     lat: 32.7413,
     lng: -117.1299,
   }),
@@ -4399,7 +4511,7 @@ export const seedPlaces = [
     type: "bar",
     vibe: "wlw-led hillcrest community hub",
     description: "Gossip Grill is a major women-centered queer space with brunch, DJs, and community-first social energy that broadens San Diego's nightlife map in an important way.",
-    hours: "Daily from brunch into evening, later on weekends.",
+    hours: "Mon-Thu 11:00-22:00, Fri 11:00-00:00, Sat 10:00-00:00, Sun 10:00-22:00.",
     lat: 32.7488,
     lng: -117.1539,
   }),
@@ -5624,25 +5736,8 @@ export const seedEvents = [
   }),
 ];
 
-function normalizeSeedKey(value = "") {
-  return String(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
-}
-
 export function mergeSeedPlaces(databasePlaces = []) {
-  const normalizedDatabasePlaces = databasePlaces.map((place) => ({
-    ...place,
-    hours:
-      String(place.hours || place.opening_hours || "").trim() ||
-      "Hours vary by night. Check official channels before going.",
-    link:
-      String(place.link || place.website || place.url || "").trim() ||
-      String(OFFICIAL_VENUE_LINKS[String(place.id || "")] || "").trim(),
-  }));
+  const normalizedDatabasePlaces = databasePlaces.map((place) => applyVenueOverride(place));
 
   const seenIds = new Set(normalizedDatabasePlaces.map((place) => String(place.id)));
   const seenVenueKeys = new Set(
@@ -5659,7 +5754,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
 
     seenIds.add(id);
     seenVenueKeys.add(venueKey);
-    uniqueSeedPlaces.push(place);
+    uniqueSeedPlaces.push(applyVenueOverride(place));
   });
 
   return [
