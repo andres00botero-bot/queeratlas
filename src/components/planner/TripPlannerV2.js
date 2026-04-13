@@ -136,7 +136,9 @@ export default function TripPlannerV2({
   onOpenStop,
   onSavePlan,
 }) {
+  const [planTitle, setPlanTitle] = useState("");
   const [city, setCity] = useState(plannerCities[0] || "");
+  const [note, setNote] = useState("");
   const [horizon, setHorizon] = useState("three_days");
   const [vibe, setVibe] = useState("mixed");
   const [budget, setBudget] = useState("balanced");
@@ -192,12 +194,14 @@ export default function TripPlannerV2({
     setIsSaving(true);
     try {
       const saved = await onSavePlan({
+        planTitle,
         city,
         horizon,
         vibe,
         budget,
         energy,
         soloSafe,
+        note,
         itinerary,
       });
       if (saved) {
@@ -213,8 +217,8 @@ export default function TripPlannerV2({
     <div className="mb-6 rounded-[28px] border border-fuchsia-200/16 bg-[radial-gradient(circle_at_top_left,rgba(217,70,239,0.16),transparent_30%),linear-gradient(180deg,rgba(28,14,36,0.95),rgba(10,10,10,0.98))] p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/78">Trip Planner V2 (beta)</p>
-          <h3 className="mt-1 text-xl font-semibold text-white">Spotify-like flow for queer nights</h3>
+          <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/78">Trip planner</p>
+          <h3 className="mt-1 text-xl font-semibold text-white">Queer Atlas flow for queer nights</h3>
         </div>
         <div className="rounded-full border border-fuchsia-200/16 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
           {cityPlacesCount} places · {cityEventsCount} events
@@ -222,6 +226,16 @@ export default function TripPlannerV2({
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className="rounded-2xl border border-white/12 bg-black/25 p-3 md:col-span-2 xl:col-span-3">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Plan title</p>
+          <input
+            value={planTitle}
+            onChange={(event) => setPlanTitle(event.target.value)}
+            placeholder="ex. Berlin peak weekend"
+            className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+          />
+        </div>
+
         <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
           <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">City</p>
           <select
@@ -321,6 +335,16 @@ export default function TripPlannerV2({
             />
             Solo-safe mode
           </label>
+        </div>
+
+        <div className="rounded-2xl border border-white/12 bg-black/25 p-3 md:col-span-2 xl:col-span-3">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Optional notes</p>
+          <textarea
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="Add your personal intent, people, pacing, or must-hit spots."
+            className="mt-2 h-20 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+          />
         </div>
       </div>
 

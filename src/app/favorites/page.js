@@ -12,7 +12,6 @@ import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
-import DateInput from "@/components/ui/DateInput";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import TripPlannerV2 from "@/components/planner/TripPlannerV2";
 
@@ -102,16 +101,7 @@ export default function FavoritesPage() {
   const [atlasLoadError, setAtlasLoadError] = useState("");
   const [plans, setPlans] = useState([]);
   const [expandedPlanId, setExpandedPlanId] = useState(null);
-  const [showPlannerForm, setShowPlannerForm] = useState(false);
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
-  const [plannerForm, setPlannerForm] = useState({
-    title: "",
-    city: "",
-    date: "",
-    placeIds: [],
-    eventIds: [],
-    note: "",
-  });
   const {
     isMember,
     isLoading: isAuthLoading,
@@ -456,109 +446,6 @@ export default function FavoritesPage() {
     const dataCities = [...new Set(places.concat(events).map((item) => item.city).filter(Boolean))];
     return [...new Set([...configCities, ...dataCities])].sort((a, b) => a.localeCompare(b));
   }, [events, places]);
-  const activePlannerCity =
-    plannerCities.includes(plannerForm.city) ? plannerForm.city : plannerCities[0] || "";
-  const plannerPlaces = places
-    .filter((place) => place.city?.toLowerCase() === activePlannerCity.toLowerCase())
-    .sort((a, b) => {
-      const aSaved = favorites.includes(String(a.id)) ? 1 : 0;
-      const bSaved = favorites.includes(String(b.id)) ? 1 : 0;
-      if (bSaved !== aSaved) return bSaved - aSaved;
-      return (b.reviewCount || 0) - (a.reviewCount || 0);
-    })
-    .slice(0, 24);
-  const plannerEvents = events
-    .filter((event) => event.city?.toLowerCase() === activePlannerCity.toLowerCase())
-    .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
-    .slice(0, 24);
-
-  const togglePlannerSelection = (kind, id) => {
-    const key = kind === "place" ? "placeIds" : "eventIds";
-
-    setPlannerForm((current) => ({
-      ...current,
-      [key]: current[key].includes(id)
-        ? current[key].filter((entry) => entry !== id)
-        : [...current[key], id],
-    }));
-  };
-
-  const createPlan = async (event) => {
-    event.preventDefault();
-    if (!activePlannerCity || !plannerForm.title) return;
-    if (plannerForm.placeIds.length === 0 && plannerForm.eventIds.length === 0) return;
-
-    const stops = [
-      ...plannerForm.placeIds.map((id) => {
-        const place = places.find((entry) => String(entry.id) === String(id));
-        return place
-          ? { type: "place", id: place.id, name: place.name, city: place.city }
-          : null;
-      }),
-      ...plannerForm.eventIds.map((id) => {
-        const selectedEvent = events.find((entry) => String(entry.id) === String(id));
-        return selectedEvent
-          ? {
-              type: "event",
-              id: selectedEvent.id,
-              name: selectedEvent.name,
-              city: selectedEvent.city,
-              date: selectedEvent.date || null,
-            }
-          : null;
-      }),
-    ].filter(Boolean);
-
-    const draftPlan = {
-      id: `plan-${Date.now()}`,
-      title: plannerForm.title,
-      city: activePlannerCity,
-      date: plannerForm.date || null,
-      placeIds: plannerForm.placeIds.map(String),
-      eventIds: plannerForm.eventIds.map(String),
-      stops,
-      note: plannerForm.note,
-      createdAt: new Date().toISOString(),
-    };
-
-    let savedPlan = draftPlan;
-    if (user?.id) {
-      const { data, error } = await supabase
-        .from("member_plans")
-        .insert([{
-          user_id: user.id,
-          client_id: draftPlan.id,
-          title: draftPlan.title,
-          city: draftPlan.city,
-          date: draftPlan.date,
-          place_ids: draftPlan.placeIds,
-          event_ids: draftPlan.eventIds,
-          stops: draftPlan.stops,
-          note: draftPlan.note,
-        }])
-        .select("*")
-        .single();
-
-      if (error || !data) {
-        setSyncWarning("Plan synced locally only. Cloud save unavailable.");
-      } else {
-        savedPlan = mapPlanRow(data);
-      }
-    }
-
-    setPlans((current) => [savedPlan, ...current]);
-
-    setPlannerForm({
-      title: "",
-      city: activePlannerCity,
-      date: "",
-      placeIds: [],
-      eventIds: [],
-      note: "",
-    });
-    setShowPlannerForm(false);
-    showToast("Plan saved.", { tone: "ok", duration: 2200 });
-  };
 
   const removeFavorite = async (favoriteId, label = "Item") => {
     const updated = favorites.filter((entry) => String(entry) !== String(favoriteId));
@@ -627,6 +514,7 @@ export default function FavoritesPage() {
           time: stop.time || null,
           slotLabel: stop.slotLabel || null,
           dayLabel: day.dayLabel || null,
+          reason: stop.reason || null,
         }))
       )
       .filter((stop) => stop?.id);
@@ -644,13 +532,13 @@ export default function FavoritesPage() {
 
     const draftPlan = {
       id: `plan-v2-${Date.now()}`,
-      title,
+      title: String(payload?.planTitle || "").trim() || title,
       city: cityName,
       date: null,
       placeIds: uniquePlaceIds,
       eventIds: uniqueEventIds,
       stops: flatStops,
-      note,
+      note: String(payload?.note || "").trim() || note,
       createdAt: new Date().toISOString(),
     };
 
@@ -673,7 +561,7 @@ export default function FavoritesPage() {
         .single();
 
       if (error || !data) {
-        setSyncWarning("V2 plan saved locally. Cloud sync unavailable.");
+        setSyncWarning("Plan saved locally. Cloud sync unavailable.");
       } else {
         savedPlan = mapPlanRow(data);
       }
@@ -681,7 +569,7 @@ export default function FavoritesPage() {
 
     setPlans((current) => [savedPlan, ...current]);
     setExpandedPlanId(savedPlan.id);
-    showToast("V2 plan saved.", { tone: "ok", duration: 2200 });
+    showToast("Plan saved.", { tone: "ok", duration: 2200 });
     return true;
   };
 
@@ -1205,12 +1093,6 @@ export default function FavoritesPage() {
                   Plan a night or city flow
                 </h2>
               </div>
-              <button
-                onClick={() => setShowPlannerForm((current) => !current)}
-                className="rounded-full border border-cyan-200/10 bg-cyan-200/[0.06] px-4 py-2 text-sm text-white/70 transition hover:border-cyan-200/18 hover:text-white"
-              >
-                {showPlannerForm ? "Close planner" : "New plan"}
-              </button>
             </div>
 
           <TripPlannerV2
@@ -1220,135 +1102,6 @@ export default function FavoritesPage() {
             onOpenStop={openPlannerStopOnMap}
             onSavePlan={saveV2Plan}
           />
-
-          {showPlannerForm && (
-            <form
-              onSubmit={createPlan}
-              className="mb-6 rounded-[28px] border border-cyan-200/10 bg-white/[0.03] p-5"
-            >
-              <div className="grid gap-3 md:grid-cols-[1fr_0.45fr]">
-                <input
-                  value={plannerForm.title}
-                  onChange={(event) =>
-                    setPlannerForm((current) => ({ ...current, title: event.target.value }))
-                  }
-                  placeholder="Plan title"
-                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-                />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <select
-                    value={activePlannerCity}
-                    onChange={(event) =>
-                      setPlannerForm((current) => ({
-                        ...current,
-                        city: event.target.value,
-                        placeIds: [],
-                        eventIds: [],
-                      }))
-                    }
-                    className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-                  >
-                    {plannerCities.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
-                  <DateInput
-                    value={plannerForm.date}
-                    onChange={(event) =>
-                      setPlannerForm((current) => ({ ...current, date: event.target.value }))
-                    }
-                    className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-                    tone="cyan"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4 grid gap-4 xl:grid-cols-2">
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/36">
-                    Saved places
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {plannerPlaces.length > 0 ? (
-                      plannerPlaces.map((place) => (
-                        <button
-                          key={place.id}
-                          type="button"
-                          onClick={() => togglePlannerSelection("place", place.id)}
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                            plannerForm.placeIds.includes(place.id)
-                              ? "border-cyan-200/18 bg-cyan-200/[0.08] text-white"
-                              : "border-white/8 bg-white/[0.03] text-white/62 hover:border-white/14"
-                          }`}
-                        >
-                          <span>{place.name}</span>
-                          <span>
-                            {plannerForm.placeIds.includes(place.id)
-                              ? "Added"
-                              : favorites.includes(String(place.id))
-                                ? "Saved"
-                                : "Add"}
-                          </span>
-                        </button>
-                      ))
-                    ) : (
-                      <p className="text-sm text-white/42">No places found in this city yet.</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/36">
-                    Saved events
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {plannerEvents.length > 0 ? (
-                      plannerEvents.map((item) => (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => togglePlannerSelection("event", item.id)}
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                            plannerForm.eventIds.includes(item.id)
-                              ? "border-cyan-200/18 bg-cyan-200/[0.08] text-white"
-                              : "border-white/8 bg-white/[0.03] text-white/62 hover:border-white/14"
-                          }`}
-                        >
-                          <span>{item.name}</span>
-                          <span>
-                            {plannerForm.eventIds.includes(item.id) ? "Added" : formatDate(item.date)}
-                          </span>
-                        </button>
-                      ))
-                    ) : (
-                      <p className="text-sm text-white/42">No events found in this city yet.</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <textarea
-                value={plannerForm.note}
-                onChange={(event) =>
-                  setPlannerForm((current) => ({ ...current, note: event.target.value }))
-                }
-                placeholder="Optional note for the plan"
-                className="mt-4 h-28 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-              />
-
-              <button
-                type="submit"
-                className="mt-4 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)]"
-              >
-                Save plan
-              </button>
-              {plannerForm.placeIds.length === 0 && plannerForm.eventIds.length === 0 && (
-                <p className="mt-3 text-xs text-white/45">Pick at least one saved place or event to create a plan.</p>
-              )}
-            </form>
-          )}
 
           <div className="space-y-3">
             {isAtlasLoading ? (
