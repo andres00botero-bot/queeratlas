@@ -390,6 +390,7 @@ export default function CityPage() {
   const placeMarkersRef = useRef(new Map());
   const eventMarkersRef = useRef(new Map());
   const isMapInteractingRef = useRef(false);
+  const keepMapViewOnNextCloseRef = useRef(false);
 
   const openEventContribution = useCallback(() => {
     setAddEventMode(true);
@@ -478,7 +479,7 @@ export default function CityPage() {
     return cityEvents.find((event) => String(event.id) === String(eventId)) || null;
   }, [cityEvents, eventId]);
 
-  const canReviewSelectedPlace = Boolean(selectedPlace && !selectedPlace.seeded);
+  const canReviewSelectedPlace = Boolean(selectedPlace);
 
   const selectedPlaceQuality = selectedPlace
     ? getEntityQuality({
@@ -567,6 +568,37 @@ export default function CityPage() {
 
   const closeEvent = () => {
     router.push(buildSelectionUrl({ nextEventId: null }));
+  };
+
+  const showEventOnMap = () => {
+    if (!selectedEvent || !mapRef.current || selectedEvent.lat == null || selectedEvent.lng == null) return;
+
+    mapRef.current.flyTo({
+      center: [selectedEvent.lng, selectedEvent.lat],
+      zoom: 14,
+    });
+
+    const isMobileViewport =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 1024px)").matches;
+
+    if (isMobileViewport) {
+      keepMapViewOnNextCloseRef.current = true;
+      closeEvent();
+      requestAnimationFrame(() => {
+        mapWrapperRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+      return;
+    }
+
+    mapWrapperRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const toggleFavorite = (id) => {
@@ -831,7 +863,7 @@ export default function CityPage() {
       return;
     }
 
-    getReviews(selectedPlace.id).then((data) => {
+    getReviews(selectedPlace.id, selectedPlace).then((data) => {
       setReviews(data);
     });
   }, [getReviews, selectedPlace]);
@@ -841,6 +873,10 @@ export default function CityPage() {
 
     if (!target || !mapRef.current || target.lat == null || target.lng == null) {
       if (!selectedPlace && !selectedEvent && mapRef.current) {
+        if (keepMapViewOnNextCloseRef.current) {
+          keepMapViewOnNextCloseRef.current = false;
+          return;
+        }
         mapRef.current.flyTo({
           center: config.center,
           zoom: 11,
@@ -1910,13 +1946,6 @@ export default function CityPage() {
                 </button>
               </div>
             )}
-            {isMember && !canReviewSelectedPlace && (
-              <div className="mb-3 rounded-2xl border border-white/12 bg-white/5 p-3">
-                <p className="text-sm text-white/75">
-                  Reviews are disabled for seeded places. Add reviews on community-added venues.
-                </p>
-              </div>
-            )}
             <div className={`mb-3 flex items-center gap-1 ${!isMember || !canReviewSelectedPlace ? "hidden" : ""}`}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
@@ -1963,6 +1992,7 @@ export default function CityPage() {
                 try {
                   const result = await addReview({
                     placeId: selectedPlace.id,
+                    place: selectedPlace,
                     rating,
                     comment: trimmedComment,
                   });
@@ -1977,7 +2007,7 @@ export default function CityPage() {
 
                   setComment("");
                   setRating(5);
-                  const updated = await getReviews(selectedPlace.id);
+                  const updated = await getReviews(selectedPlace.id, selectedPlace);
                   setReviews(updated);
                   showToast("Review submitted.", { tone: "ok", duration: 1800 });
                 } finally {
@@ -2087,14 +2117,7 @@ export default function CityPage() {
             )}
 
             <button
-              onClick={() => {
-                if (!mapRef.current || selectedEvent.lat == null || selectedEvent.lng == null) return;
-
-                mapRef.current.flyTo({
-                  center: [selectedEvent.lng, selectedEvent.lat],
-                  zoom: 14,
-                });
-              }}
+              onClick={showEventOnMap}
               className="qa-cinematic-hover w-full rounded-2xl border border-white/10 bg-white/5 py-3"
             >
               Show on map

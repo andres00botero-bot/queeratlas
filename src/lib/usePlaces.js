@@ -132,10 +132,73 @@ export function usePlaces(city) {
   }, [fetchPlaces]);
 
   /* ---------------- ADD REVIEW ---------------- */
-  const addReview = useCallback(async ({ placeId, rating, comment, safety }) => {
+  const resolvePlaceIdForReview = useCallback(
+    async ({ placeId, place, createIfMissing = true }) => {
+      if (!placeId) return null;
+      const placeIdStr = String(placeId);
+
+      if (!placeIdStr.startsWith("seed-place-")) {
+        return placeId;
+      }
+
+      const cityName = String(place?.city || "").trim();
+      const placeName = String(place?.name || "").trim();
+      if (!cityName || !placeName) return null;
+
+      const existing = await supabase
+        .from("places")
+        .select("id")
+        .ilike("city", cityName)
+        .ilike("name", placeName)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.data?.id) {
+        return existing.data.id;
+      }
+
+      if (!createIfMissing) return null;
+
+      const insertPayload = {
+        name: placeName,
+        type: String(place?.type || "bar"),
+        description: String(place?.description || "").trim(),
+        vibe: String(place?.vibe || "").trim(),
+        hours: String(place?.hours || "").trim(),
+        link: String(place?.link || "").trim(),
+        lat: place?.lat ?? null,
+        lng: place?.lng ?? null,
+        city: cityName,
+      };
+
+      const inserted = await supabase
+        .from("places")
+        .insert([insertPayload])
+        .select("id")
+        .single();
+
+      if (inserted?.data?.id) {
+        return inserted.data.id;
+      }
+
+      return null;
+    },
+    []
+  );
+
+  const addReview = useCallback(async ({ placeId, place, rating, comment, safety }) => {
+    const resolvedPlaceId = await resolvePlaceIdForReview({
+      placeId,
+      place,
+      createIfMissing: true,
+    });
+    if (!resolvedPlaceId) {
+      return { ok: false, error: { message: "Could not resolve place for review." } };
+    }
+
     const { error } = await supabase.from("reviews").insert([
       {
-        place_id: placeId,
+        place_id: resolvedPlaceId,
         rating,
         comment,
         safety,
@@ -149,18 +212,28 @@ export function usePlaces(city) {
 
     await fetchPlaces();
     return { ok: true };
-  }, [fetchPlaces]);
+  }, [fetchPlaces, resolvePlaceIdForReview]);
 
   /* ---------------- FETCH REVIEWS (OPTIONAL) ---------------- */
-  const getReviews = useCallback(async (placeId) => {
-    if (!placeId || String(placeId).startsWith("seed-place-")) {
+  const getReviews = useCallback(async (placeId, place = null) => {
+    if (!placeId) {
       return [];
+    }
+
+    let resolvedPlaceId = placeId;
+    if (String(placeId).startsWith("seed-place-")) {
+      resolvedPlaceId = await resolvePlaceIdForReview({
+        placeId,
+        place,
+        createIfMissing: false,
+      });
+      if (!resolvedPlaceId) return [];
     }
 
     const { data, error } = await supabase
       .from("reviews")
       .select("*")
-      .eq("place_id", placeId)
+      .eq("place_id", resolvedPlaceId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -210,7 +283,7 @@ export function usePlaces(city) {
         memberTitle: titleByUserId.get(userId) || "",
       };
     });
-  }, []);
+  }, [resolvePlaceIdForReview]);
 
   return { places, addPlace, addReview, getReviews, isLoading, loadError, reloadPlaces: fetchPlaces };
 }
