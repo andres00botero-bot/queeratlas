@@ -168,7 +168,48 @@ export function usePlaces(city) {
       return [];
     }
 
-    return data;
+    const rows = Array.isArray(data) ? data : [];
+    const userIds = [...new Set(rows.map((row) => row?.created_by).filter(Boolean))];
+
+    if (userIds.length === 0) {
+      return rows.map((row) => ({
+        ...row,
+        authorName: "Member",
+        memberTitle: "",
+      }));
+    }
+
+    const [profilesRes, leaderboardRes] = await Promise.all([
+      supabase
+        .from("member_profiles")
+        .select("user_id, display_name")
+        .in("user_id", userIds),
+      supabase
+        .from("qa_member_leaderboard")
+        .select("user_id, title")
+        .in("user_id", userIds),
+    ]);
+
+    const displayNameByUserId = new Map(
+      (profilesRes?.data || [])
+        .filter((row) => row?.user_id)
+        .map((row) => [String(row.user_id), String(row.display_name || "").trim()])
+    );
+
+    const titleByUserId = new Map(
+      (leaderboardRes?.data || [])
+        .filter((row) => row?.user_id)
+        .map((row) => [String(row.user_id), String(row.title || "").trim()])
+    );
+
+    return rows.map((row) => {
+      const userId = String(row?.created_by || "");
+      return {
+        ...row,
+        authorName: displayNameByUserId.get(userId) || "Member",
+        memberTitle: titleByUserId.get(userId) || "",
+      };
+    });
   }, []);
 
   return { places, addPlace, addReview, getReviews, isLoading, loadError, reloadPlaces: fetchPlaces };

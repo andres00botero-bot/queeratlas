@@ -15,6 +15,7 @@ import {
   syncBlockedItemsFromCloud,
 } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
+import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { usePlaces } from "@/lib/usePlaces";
@@ -1861,12 +1862,28 @@ export default function CityPage() {
           </div>
 
           <div className="mt-4 space-y-2">
-            {reviews.map((review) => (
-              <div key={review.id} className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3">
-                <p className="text-xs uppercase tracking-[0.14em] text-yellow-300/90">Rating {review.rating}/5</p>
-                <p className="mt-2 text-sm text-gray-200">{review.comment}</p>
-              </div>
-            ))}
+            {reviews.map((review) => {
+              const titleMeta = getMemberTitleMeta(review.memberTitle);
+              return (
+                <div key={review.id} className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-medium text-white/85">{review.authorName || "Member"}</p>
+                      {review.memberTitle && (
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}
+                        >
+                          <span>{titleMeta.icon}</span>
+                          {titleMeta.label}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs uppercase tracking-[0.14em] text-yellow-300/90">Rating {review.rating}/5</p>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-200">{review.comment}</p>
+                </div>
+              );
+            })}
           </div>
 
           <div className="mt-4">

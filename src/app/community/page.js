@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { getMemberTitleMeta } from "@/lib/communityRanking";
 import {
   addReport,
   getBlockedItems,
@@ -63,6 +64,14 @@ function createClientId(prefix) {
 
 function readStored(key, fallback) {
   return readLocalJson(key, fallback);
+}
+
+function normalizeMemberKey(value = "") {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[^a-z0-9 @._-]/g, "");
 }
 
 function mapStoryRow(row) {
@@ -153,7 +162,7 @@ function Field({ value, onChange, placeholder, area = false }) {
 export default function CommunityPage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
-  const { isMember, memberName, isLoading: isAuthLoading } = useAuth();
+  const { isMember, memberName, user, isLoading: isAuthLoading } = useAuth();
   const [stories, setStories] = useState(baseStories);
   const [guides, setGuides] = useState(baseGuides);
   const [topics, setTopics] = useState(baseTopics);
@@ -164,23 +173,26 @@ export default function CommunityPage() {
   const [showGuideForm, setShowGuideForm] = useState(false);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [guideId, setGuideId] = useState("g1");
-  const [storyForm, setStoryForm] = useState({ title: "", city: "", category: "Experience", author: memberName || "", excerpt: "", body: "" });
-  const [guideForm, setGuideForm] = useState({ title: "", city: "", focus: "", author: memberName || "", summary: "", content: "" });
+  const [storyForm, setStoryForm] = useState({ title: "", city: "", category: "Experience", excerpt: "", body: "" });
+  const [guideForm, setGuideForm] = useState({ title: "", city: "", focus: "", summary: "", content: "" });
   const [messageForm, setMessageForm] = useState({ text: "" });
   const [topicForm, setTopicForm] = useState({ name: "", mood: "Fresh", description: "" });
-  const [ideaForm, setIdeaForm] = useState({ author: memberName || "", text: "" });
+  const [ideaForm, setIdeaForm] = useState({ text: "" });
   const [syncError, setSyncError] = useState("");
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [myRank, setMyRank] = useState(null);
   const { toast, showToast } = useActionToast();
 
   const loadCommunityData = useCallback(async () => {
     setSyncError("");
-    const [storiesRes, guidesRes, topicsRes, messagesRes, ideasRes] = await Promise.all([
+    const [storiesRes, guidesRes, topicsRes, messagesRes, ideasRes, leaderboardRes] = await Promise.all([
       supabase.from("community_stories").select("*").order("created_at", { ascending: false }),
       supabase.from("community_guides").select("*").order("created_at", { ascending: false }),
       supabase.from("community_topics").select("*").order("created_at", { ascending: false }),
       supabase.from("community_messages").select("*").order("created_at", { ascending: true }),
       supabase.from("community_ideas").select("*").order("created_at", { ascending: false }),
+      supabase.from("qa_member_leaderboard").select("*").order("rank", { ascending: true }).limit(200),
     ]);
 
     const hasError = Boolean(
@@ -202,12 +214,14 @@ export default function CommunityPage() {
     const nextTopics = (topicsRes.data || []).length > 0 ? (topicsRes.data || []).map(mapTopicRow) : baseTopics;
     const nextIdeas = (ideasRes.data || []).length > 0 ? (ideasRes.data || []).map(mapIdeaRow) : baseIdeas;
     const nextMessages = mapMessages(messagesRes.data || [], nextTopics);
+    const nextLeaderboard = Array.isArray(leaderboardRes?.data) ? leaderboardRes.data : [];
 
     setStories(nextStories);
     setGuides(nextGuides);
     setTopics(nextTopics);
     setMessages(Object.keys(nextMessages).length > 0 ? nextMessages : baseMessages);
     setIdeas(nextIdeas);
+    setLeaderboard(nextLeaderboard);
   }, []);
 
   useEffect(() => {
@@ -261,6 +275,30 @@ export default function CommunityPage() {
     });
   }, [isReady, isMember]);
 
+  useEffect(() => {
+    if (!isReady || !isMember || !user?.id) return;
+    let active = true;
+
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("qa_member_leaderboard")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!active) return;
+      if (error || !data) {
+        setMyRank(null);
+        return;
+      }
+      setMyRank(data);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isReady, isMember, user?.id]);
+
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
@@ -302,10 +340,37 @@ export default function CommunityPage() {
     }))
     .sort((a, b) => b.replies - a.replies)[0];
   const topCities = [...new Set(sortedStories.map((story) => story.city).filter(Boolean))].slice(0, 3);
+  const myRankMeta = getMemberTitleMeta(myRank?.title || "");
+  const rankMetaByAuthor = (() => {
+    const map = new Map();
+    leaderboard.forEach((entry) => {
+      const authorKey = normalizeMemberKey(entry.display_name || "");
+      if (!authorKey || map.has(authorKey)) return;
+      map.set(authorKey, getMemberTitleMeta(entry.title));
+    });
+    return map;
+  })();
+
+  const getAuthorRankMeta = (authorName) =>
+    rankMetaByAuthor.get(normalizeMemberKey(authorName || "")) || null;
+  const getAuthorIdentityMeta = (authorName) => {
+    const rankMeta = getAuthorRankMeta(authorName);
+    if (rankMeta) return rankMeta;
+
+    if (normalizeMemberKey(authorName) === normalizeMemberKey(memberName || "")) {
+      return {
+        label: "Member",
+        icon: "*",
+        iconClass: "text-white/65",
+      };
+    }
+
+    return null;
+  };
 
   const publishStory = async (event) => {
     event.preventDefault();
-    if (!storyForm.title || !storyForm.city || !storyForm.author || !storyForm.body) {
+    if (!storyForm.title || !storyForm.city || !storyForm.body) {
       showToast("Story not published. Fill all required fields.", { tone: "warn", duration: 2400 });
       return;
     }
@@ -315,7 +380,7 @@ export default function CommunityPage() {
       .insert([{
         title: storyForm.title,
         city: storyForm.city,
-        author: storyForm.author,
+        author: memberName || "Member",
         category: storyForm.category || "Experience",
         excerpt: storyForm.excerpt || storyForm.body.slice(0, 120),
         body: storyForm.body,
@@ -325,14 +390,14 @@ export default function CommunityPage() {
 
     const item = error || !data ? fallbackItem : mapStoryRow(data);
     setStories((current) => [item, ...current]);
-    setStoryForm({ title: "", city: "", category: "Experience", author: memberName || "", excerpt: "", body: "" });
+    setStoryForm({ title: "", city: "", category: "Experience", excerpt: "", body: "" });
     setShowStoryForm(false);
     showToast(error ? "Story saved locally. Supabase sync unavailable." : "Story published.", { tone: error ? "info" : "ok", duration: 2400 });
   };
 
   const publishGuide = async (event) => {
     event.preventDefault();
-    if (!guideForm.title || !guideForm.author || !guideForm.content) {
+    if (!guideForm.title || !guideForm.content) {
       showToast("Guide not published. Fill required fields.", { tone: "warn", duration: 2400 });
       return;
     }
@@ -342,7 +407,7 @@ export default function CommunityPage() {
       .insert([{
         title: guideForm.title,
         city: guideForm.city || "Multi-city",
-        author: guideForm.author,
+        author: memberName || "Member",
         focus: guideForm.focus || "Community",
         summary: guideForm.summary || guideForm.content.slice(0, 120),
         content: guideForm.content,
@@ -353,7 +418,7 @@ export default function CommunityPage() {
     const item = error || !data ? fallbackItem : mapGuideRow(data);
     setGuides((current) => [item, ...current]);
     setGuideId(item.id);
-    setGuideForm({ title: "", city: "", focus: "", author: memberName || "", summary: "", content: "" });
+    setGuideForm({ title: "", city: "", focus: "", summary: "", content: "" });
     setShowGuideForm(false);
     showToast(error ? "Guide saved locally. Supabase sync unavailable." : "Guide published.", { tone: error ? "info" : "ok", duration: 2400 });
   };
@@ -416,16 +481,16 @@ export default function CommunityPage() {
 
   const publishIdea = async (event) => {
     event.preventDefault();
-    if (!ideaForm.author || !ideaForm.text) {
-      showToast("Idea not shared. Add name and idea text.", { tone: "warn", duration: 2400 });
+    if (!ideaForm.text) {
+      showToast("Idea not shared. Add idea text.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: createClientId("i"), text: ideaForm.text, author: ideaForm.author, votes: 1, createdAt: new Date().toISOString() };
+    const fallbackItem = { id: createClientId("i"), text: ideaForm.text, author: memberName || "Member", votes: 1, createdAt: new Date().toISOString() };
     const { data, error } = await supabase
       .from("community_ideas")
       .insert([{
         text: ideaForm.text,
-        author: ideaForm.author,
+        author: memberName || "Member",
         votes: 1,
       }])
       .select("*")
@@ -433,7 +498,7 @@ export default function CommunityPage() {
 
     const item = error || !data ? fallbackItem : mapIdeaRow(data);
     setIdeas((current) => [item, ...current]);
-    setIdeaForm({ author: memberName || "", text: "" });
+    setIdeaForm({ text: "" });
     setShowIdeaForm(false);
     showToast(error ? "Idea saved locally. Supabase sync unavailable." : "Idea shared.", { tone: error ? "info" : "ok", duration: 2200 });
   };
@@ -502,8 +567,50 @@ export default function CommunityPage() {
                 <span key={city} className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white shadow-[0_0_24px_rgba(255,255,255,0.06)] backdrop-blur">{city}</span>
               ))}
             </div>
+            {myRank && (
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs">
+                <span className="text-white/75">Your community rank: #{myRank.rank}</span>
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${myRankMeta.className}`}>
+                  <span>{myRankMeta.icon}</span>
+                  {myRankMeta.label}
+                </span>
+              </div>
+            )}
           </div>
         </div>
+
+        <section className="mb-6 rounded-[26px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-5 shadow-[0_22px_70px_rgba(99,102,241,0.12)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-indigo-200/80">Community Ranking</p>
+              <h2 className="mt-1 text-lg font-semibold text-white">Your community ranking just now</h2>
+            </div>
+            <p className="text-xs text-white/55">Points: places (5) · events (4) · reviews (2)</p>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {leaderboard.slice(0, 5).map((entry) => {
+              const titleMeta = getMemberTitleMeta(entry.title);
+              return (
+                <article key={entry.user_id} className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                  <p className="text-xs text-white/60">#{entry.rank}</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-white">{entry.display_name}</p>
+                  <span className={`mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
+                    <span>{titleMeta.icon}</span>
+                    {titleMeta.label}
+                  </span>
+                  <p className="mt-2 text-xs text-white/58">
+                    {entry.score} pts · {entry.city_count || 0} cities
+                  </p>
+                </article>
+              );
+            })}
+            {leaderboard.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-5 text-sm text-white/55 md:col-span-2 xl:col-span-5">
+                Ranking goes live as members add places, events, and reviews.
+              </div>
+            )}
+          </div>
+        </section>
 
         <div className="relative grid gap-6 xl:grid-cols-2">
           <section className="rounded-[30px] border border-rose-400/15 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.18),transparent_26%),linear-gradient(180deg,rgba(38,14,28,0.96),rgba(10,10,10,1))] p-6 shadow-[0_28px_90px_rgba(244,114,182,0.10)]">
@@ -519,7 +626,9 @@ export default function CommunityPage() {
                 <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
-                  <Field value={storyForm.author} onChange={(event) => setStoryForm((current) => ({ ...current, author: event.target.value }))} placeholder="Your name" />
+                  <div className="rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm text-white/75">
+                    Posting as <span className="font-medium text-white">{memberName || "Member"}</span>
+                  </div>
                 </div>
                 <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
                 <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
@@ -536,7 +645,21 @@ export default function CommunityPage() {
                       <h3 className="mt-2 text-lg font-semibold">{story.title}</h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="rounded-full border border-rose-300/15 bg-rose-300/10 px-3 py-1 text-xs text-rose-100">{story.author}</span>
+                      <span className="rounded-full border border-rose-300/15 bg-rose-300/10 px-3 py-1 text-xs text-rose-100">
+                        {(() => {
+                          const rankMeta = getAuthorIdentityMeta(story.author);
+                          return (
+                            <span className="inline-flex items-center gap-1.5">
+                              {rankMeta?.icon ? (
+                                <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
+                                  {rankMeta.icon}
+                                </span>
+                              ) : null}
+                              <span>{story.author}</span>
+                            </span>
+                          );
+                        })()}
+                      </span>
                       <button
                         onClick={() =>
                           reportContent({
@@ -572,7 +695,9 @@ export default function CommunityPage() {
                 <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field value={guideForm.city} onChange={(event) => setGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or region" />
-                  <Field value={guideForm.author} onChange={(event) => setGuideForm((current) => ({ ...current, author: event.target.value }))} placeholder="Your name" />
+                  <div className="rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm text-white/75">
+                    Posting as <span className="font-medium text-white">{memberName || "Member"}</span>
+                  </div>
                 </div>
                 <Field value={guideForm.focus} onChange={(event) => setGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder="Focus" />
                 <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Short summary" area />
@@ -599,7 +724,22 @@ export default function CommunityPage() {
                       </p>
                       <h3 className="mt-2 text-sm font-semibold text-white">{guide.title}</h3>
                       <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/55">{guide.summary}</p>
-                      <p className="mt-3 text-[11px] text-white/38">by {guide.author} · {timeAgo(guide.createdAt)}</p>
+                      <p className="mt-3 text-[11px] text-white/38">
+                        {(() => {
+                          const rankMeta = getAuthorIdentityMeta(guide.author);
+                          return (
+                            <span className="inline-flex items-center gap-1.5">
+                              {rankMeta?.icon ? (
+                                <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
+                                  {rankMeta.icon}
+                                </span>
+                              ) : null}
+                              <span>{guide.author}</span>
+                            </span>
+                          );
+                        })()}{" "}
+                        · {timeAgo(guide.createdAt)}
+                      </p>
                     </button>
                   );
                 })}
@@ -631,7 +771,21 @@ export default function CommunityPage() {
                     <h3 className="mt-3 text-lg font-semibold text-white">{activeGuide.title}</h3>
                     <p className="mt-3 text-sm leading-7 text-gray-300">{activeGuide.summary}</p>
                     <p className="mt-3 text-sm leading-7 text-gray-400">{activeGuide.content}</p>
-                    <p className="mt-4 text-xs text-gray-500">by {activeGuide.author}</p>
+                    <p className="mt-4 text-xs text-gray-500">
+                      {(() => {
+                        const rankMeta = getAuthorIdentityMeta(activeGuide.author);
+                        return (
+                          <span className="inline-flex items-center gap-1.5">
+                            {rankMeta?.icon ? (
+                              <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
+                                {rankMeta.icon}
+                              </span>
+                            ) : null}
+                            <span>{activeGuide.author}</span>
+                          </span>
+                        );
+                      })()}
+                    </p>
                   </>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-white/12 px-4 py-8 text-sm text-white/50">
@@ -715,7 +869,21 @@ export default function CommunityPage() {
                             )}
                             <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${isMine ? "border border-cyan-300/35 bg-cyan-300/18" : "border border-white/10 bg-black/35"}`}>
                               <div className="flex items-center justify-between gap-3">
-                                <p className="text-xs font-semibold text-gray-200">{message.author}</p>
+                                <p className="text-xs font-semibold text-gray-200">
+                                  {(() => {
+                                    const rankMeta = getAuthorIdentityMeta(message.author);
+                                    return (
+                                      <span className="inline-flex items-center gap-1.5">
+                                        {rankMeta?.icon ? (
+                                          <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
+                                            {rankMeta.icon}
+                                          </span>
+                                        ) : null}
+                                        <span>{message.author}</span>
+                                      </span>
+                                    );
+                                  })()}
+                                </p>
                                 <div className="flex items-center gap-2">
                                   <p className="text-xs text-gray-500">{timeAgo(message.createdAt)}</p>
                                   <button
@@ -759,8 +927,7 @@ export default function CommunityPage() {
           </div>
           {showIdeaForm && (
             <form onSubmit={publishIdea} className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <div className="grid gap-3 md:grid-cols-[0.35fr_1fr_auto]">
-                <Field value={ideaForm.author} onChange={(event) => setIdeaForm((current) => ({ ...current, author: event.target.value }))} placeholder="Your name" />
+              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What should we improve in the app?" />
                 <button type="submit" className="rounded-xl bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
               </div>

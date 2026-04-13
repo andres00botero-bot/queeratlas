@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { cityConfig } from "@/lib/cities";
 import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getMemberProfile } from "@/lib/memberProfile";
+import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
@@ -107,6 +108,7 @@ export default function FavoritesPage() {
   } = useAuth();
   const { toast, showToast } = useActionToast();
   const [syncWarning, setSyncWarning] = useState("");
+  const [memberRank, setMemberRank] = useState(null);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -292,6 +294,30 @@ export default function FavoritesPage() {
     writeLocalJson(PLAN_STORAGE_KEY, plans);
   }, [isReady, isMember, plans]);
 
+  useEffect(() => {
+    if (!isReady || !isMember || !user?.id) return;
+    let active = true;
+
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("qa_member_leaderboard")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!active) return;
+      if (error || !data) {
+        setMemberRank(null);
+        return;
+      }
+      setMemberRank(data);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isReady, isMember, user?.id]);
+
   const savedPlaces = useMemo(() => {
     return places
       .filter((place) => favorites.includes(String(place.id)) && !blocked.places.has(String(place.id)))
@@ -408,6 +434,7 @@ export default function FavoritesPage() {
   const greeting =
     hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const displayName = memberName.trim() || "Explorer";
+  const memberTitleMeta = getMemberTitleMeta(memberRank?.title || "");
   const plannerCities = useMemo(() => {
     const configCities = Object.values(cityConfig)
       .map((item) => item.title?.replace("Queer ", ""))
@@ -573,12 +600,12 @@ export default function FavoritesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] px-6 py-8 text-white">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#120b1d_0%,#050505_38%,#040404_100%)] px-6 py-8 text-white">
       <ActionToast toast={toast} />
       <div className="relative mx-auto max-w-7xl">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.10),transparent_20%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.10),transparent_20%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.08),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.14),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />
 
-        <section className="relative mb-8 overflow-hidden rounded-[38px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.14),transparent_24%),linear-gradient(135deg,rgba(24,24,24,0.96),rgba(10,10,10,0.99),rgba(18,24,23,0.97))] p-8 shadow-[0_34px_130px_rgba(0,0,0,0.40)]">
+        <section className="relative mb-8 overflow-hidden rounded-[38px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.22),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.20),transparent_28%),linear-gradient(135deg,rgba(36,20,44,0.96),rgba(10,10,10,0.99),rgba(14,28,26,0.98))] p-8 shadow-[0_40px_140px_rgba(0,0,0,0.48)]">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="max-w-4xl">
@@ -625,19 +652,19 @@ export default function FavoritesPage() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-3xl border border-rose-200/10 bg-rose-200/[0.06] p-5 backdrop-blur">
+            <div className="rounded-3xl border border-rose-200/18 bg-[linear-gradient(180deg,rgba(251,113,133,0.18),rgba(251,113,133,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved places</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalPlaces}</p>
             </div>
-            <div className="rounded-3xl border border-violet-200/10 bg-violet-200/[0.06] p-5 backdrop-blur">
+            <div className="rounded-3xl border border-violet-200/18 bg-[linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved events</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalEvents}</p>
             </div>
-            <div className="rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 backdrop-blur">
+            <div className="rounded-3xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(34,211,238,0.16),rgba(34,211,238,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalCities}</p>
             </div>
-            <div className="rounded-3xl border border-amber-200/10 bg-amber-200/[0.05] p-5 backdrop-blur">
+            <div className="rounded-3xl border border-amber-200/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.16),rgba(251,191,36,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Top vibe</p>
               <p className="mt-3 text-3xl font-semibold capitalize text-white">
                 {String(topVibe).replaceAll("_", " ")}
@@ -646,7 +673,7 @@ export default function FavoritesPage() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-[34px] border border-emerald-200/12 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,rgba(13,32,28,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+        <section className="hidden mb-8 rounded-[34px] border border-emerald-200/12 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,rgba(13,32,28,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-emerald-200/70">
@@ -752,6 +779,15 @@ export default function FavoritesPage() {
                   {(memberProfile?.displayName || memberName || "Explorer")}
                   {memberProfile?.pronouns ? ` · ${memberProfile.pronouns}` : ""}
                 </p>
+                {memberRank?.title && (
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
+                    <span className="text-[10px] text-white/65">#{memberRank.rank}</span>
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
+                      <span>{memberTitleMeta.icon}</span>
+                      {memberTitleMeta.label}
+                    </span>
+                  </div>
+                )}
                 <p className="mt-1 text-xs text-white/55">
                   {memberProfile?.homeCity ? `Home city: ${memberProfile.homeCity}` : "Home city not set"}
                 </p>
@@ -785,7 +821,7 @@ export default function FavoritesPage() {
         </section>
 
         <section className="relative mb-8 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+          <div className="rounded-[34px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-white/38">
@@ -818,7 +854,29 @@ export default function FavoritesPage() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-[28px] border border-white/8 bg-white/[0.03] p-5">
+            <div className="mt-4 rounded-3xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,20,38,0.72),rgba(12,12,12,0.96))] p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-indigo-200/75">
+                Your community ranking just now
+              </p>
+              {memberRank?.title ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/75">
+                    #{memberRank.rank}
+                  </span>
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
+                    <span>{memberTitleMeta.icon}</span>
+                    {memberTitleMeta.label}
+                  </span>
+                  <span className="text-xs text-white/55">{memberRank.score} pts</span>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-white/62">
+                  No rank yet. Add places, events, or reviews to activate your badge.
+                </p>
+              )}
+            </div>
+
+            <div className="mt-5 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-white/38">
                 Your cities
               </p>
@@ -840,7 +898,7 @@ export default function FavoritesPage() {
             </div>
           </div>
 
-          <div className="rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+          <div className="rounded-[34px] border border-sky-200/14 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_28%),linear-gradient(180deg,rgba(14,20,30,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-white/38">
@@ -864,7 +922,7 @@ export default function FavoritesPage() {
                           : `/${item.city.toLowerCase()}?eventId=${item.id}`
                       )
                     }
-                    className="animate-rise-in flex w-full items-center justify-between rounded-[24px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-5 py-4 text-left transition hover:-translate-y-[1px] hover:border-white/16"
+                    className="animate-rise-in flex w-full items-center justify-between rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-5 py-4 text-left transition hover:-translate-y-[1px] hover:border-white/20"
                   >
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-white/35">
@@ -884,23 +942,178 @@ export default function FavoritesPage() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-[34px] border border-cyan-200/10 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_26%),linear-gradient(180deg,rgba(14,27,31,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
-                Trip planner
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                Plan a night or city flow
-              </h2>
+        <section className="mb-8 grid gap-6 xl:grid-cols-[0.74fr_1.26fr]">
+          <div className="rounded-[34px] border border-emerald-200/16 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_30%),linear-gradient(180deg,rgba(11,38,31,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-emerald-200/72">
+                  Profile signal
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">
+                  Your footprint
+                </h2>
+              </div>
+              <div className="rounded-full border border-emerald-200/16 bg-emerald-200/[0.08] px-3 py-1.5 text-[11px] text-emerald-100">
+                {contributionCounts.total} contributions
+              </div>
             </div>
-            <button
-              onClick={() => setShowPlannerForm((current) => !current)}
-              className="rounded-full border border-cyan-200/10 bg-cyan-200/[0.06] px-4 py-2 text-sm text-white/70 transition hover:border-cyan-200/18 hover:text-white"
-            >
-              {showPlannerForm ? "Close planner" : "New plan"}
-            </button>
+
+            <form onSubmit={saveProfile} className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/18 bg-emerald-200/10 px-3 py-1">
+                  <span className="text-[10px] uppercase tracking-[0.14em] text-emerald-100/80">Member</span>
+                  <span className="text-xs font-medium text-white">
+                    {(memberProfile?.displayName || memberName || "Explorer")}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                {!isEditingProfile ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileForm({
+                        displayName: memberProfile?.displayName || authMemberName || memberName,
+                        pronouns: memberProfile?.pronouns || "",
+                        homeCity: memberProfile?.homeCity || "",
+                        residentCountry: memberProfile?.residentCountry || "",
+                      });
+                      setIsEditingProfile(true);
+                    }}
+                    className="rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-[11px] text-white/72 transition hover:border-white/20 hover:text-white"
+                  >
+                    Edit profile
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="submit"
+                      disabled={!hasProfileChanges}
+                      className="rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-4 py-2 text-xs font-semibold text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {hasProfileChanges ? "Save profile" : "Saved"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileForm({
+                          displayName: memberProfile?.displayName || authMemberName || memberName,
+                          pronouns: memberProfile?.pronouns || "",
+                          homeCity: memberProfile?.homeCity || "",
+                          residentCountry: memberProfile?.residentCountry || "",
+                        });
+                        setIsEditingProfile(false);
+                      }}
+                      className="rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-[11px] text-white/72 transition hover:border-white/20 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+                </div>
+              </div>
+
+              {isEditingProfile && (
+                <div className="grid gap-2 rounded-2xl border border-emerald-200/16 bg-emerald-200/[0.05] p-3 sm:grid-cols-2">
+                  <input
+                    value={profileForm.displayName}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, displayName: event.target.value }))
+                    }
+                    placeholder="Display name"
+                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={profileForm.pronouns}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, pronouns: event.target.value }))
+                    }
+                    placeholder="Pronouns"
+                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={profileForm.homeCity}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, homeCity: event.target.value }))
+                    }
+                    placeholder="Home city"
+                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                  <input
+                    value={profileForm.residentCountry}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, residentCountry: event.target.value }))
+                    }
+                    placeholder="Country"
+                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+              )}
+
+              <div className="rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-4">
+                <p className="text-sm text-white/85">
+                  {(memberProfile?.displayName || memberName || "Explorer")}
+                  {memberProfile?.pronouns ? ` · ${memberProfile.pronouns}` : ""}
+                </p>
+                {memberRank?.title && (
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
+                    <span className="text-[10px] text-white/65">#{memberRank.rank}</span>
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
+                      <span>{memberTitleMeta.icon}</span>
+                      {memberTitleMeta.label}
+                    </span>
+                  </div>
+                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[11px] text-white/62">
+                    {memberProfile?.homeCity ? `Home: ${memberProfile.homeCity}` : "Home city not set"}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[11px] text-white/62">
+                    {memberProfile?.residentCountry ? `Country: ${memberProfile.residentCountry}` : "Country not set"}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] text-white/62">
+                    Last saved: {formatSavedTime(memberProfile?.updatedAt)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-rose-200/18 bg-rose-200/8 p-2.5">
+                  <p className="text-[10px] uppercase tracking-[0.13em] text-rose-100/72">Stories</p>
+                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.stories}</p>
+                </div>
+                <div className="rounded-xl border border-violet-200/18 bg-violet-200/8 p-2.5">
+                  <p className="text-[10px] uppercase tracking-[0.13em] text-violet-100/72">Guides</p>
+                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.guides}</p>
+                </div>
+                <div className="rounded-xl border border-amber-200/18 bg-amber-200/8 p-2.5">
+                  <p className="text-[10px] uppercase tracking-[0.13em] text-amber-100/72">Ideas</p>
+                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.ideas}</p>
+                </div>
+                <div className="rounded-xl border border-cyan-200/18 bg-cyan-200/8 p-2.5">
+                  <p className="text-[10px] uppercase tracking-[0.13em] text-cyan-100/72">Topics</p>
+                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.topics}</p>
+                </div>
+              </div>
+            </form>
           </div>
+
+          <div className="rounded-[34px] border border-cyan-200/16 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_30%),linear-gradient(180deg,rgba(11,31,36,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
+                  Trip planner
+                </p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+                  Plan a night or city flow
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowPlannerForm((current) => !current)}
+                className="rounded-full border border-cyan-200/10 bg-cyan-200/[0.06] px-4 py-2 text-sm text-white/70 transition hover:border-cyan-200/18 hover:text-white"
+              >
+                {showPlannerForm ? "Close planner" : "New plan"}
+              </button>
+            </div>
 
           {showPlannerForm && (
             <form
@@ -1117,6 +1330,7 @@ export default function FavoritesPage() {
                 No plans yet. Build your first night or city flow from saved places and events.
               </div>
             )}
+          </div>
           </div>
         </section>
 
