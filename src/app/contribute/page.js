@@ -125,6 +125,7 @@ export default function ContributePage() {
     address: "",
     description: "",
     hours: "",
+    link: "",
     vibe: "",
     source: "",
     lastChecked: "",
@@ -241,7 +242,7 @@ export default function ContributePage() {
           await Promise.all([
             supabase
               .from("places_with_stats")
-              .select("id, name, city, type, vibe, description, hours, lat, lng, source, lastChecked, verified"),
+              .select("id, name, city, type, vibe, description, hours, link, lat, lng, source, lastChecked, verified"),
             supabase
               .from("events")
               .select("id, name, city, description, date, link, lat, lng, source, lastChecked, verified"),
@@ -375,6 +376,7 @@ export default function ContributePage() {
         type: placeForm.type,
         description: placeForm.description,
         hours: placeForm.hours,
+        link: placeForm.link,
         vibe: placeForm.vibe,
         lat: coords.lat,
         lng: coords.lng,
@@ -398,6 +400,7 @@ export default function ContributePage() {
         address: "",
         description: "",
         hours: "",
+        link: "",
         vibe: "",
         source: "",
         lastChecked: "",
@@ -775,6 +778,7 @@ export default function ContributePage() {
                 </div>
                 <Field value={placeForm.address} onChange={(event) => setPlaceForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
                 <Field value={placeForm.hours} onChange={(event) => setPlaceForm((current) => ({ ...current, hours: event.target.value }))} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" />
+                <Field value={placeForm.link} onChange={(event) => setPlaceForm((current) => ({ ...current, link: event.target.value }))} placeholder="Official link (website, Instagram, Facebook) - optional" />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field value={placeForm.source} onChange={(event) => setPlaceForm((current) => ({ ...current, source: event.target.value }))} placeholder="Source URL or name (optional)" />
                   <DateInput

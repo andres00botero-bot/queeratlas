@@ -12,9 +12,14 @@ export function usePlaces(city) {
     setIsLoading(true);
     setLoadError("");
 
-    const { data, error } = await supabase
-      .from("places_with_stats")
-      .select("*");
+    const [{ data, error }, placesRes] = await Promise.all([
+      supabase
+        .from("places_with_stats")
+        .select("*"),
+      supabase
+        .from("places")
+        .select("id, name, city, link"),
+    ]);
 
     if (error) {
       console.error("Fetch places error:", error);
@@ -23,7 +28,33 @@ export function usePlaces(city) {
       return;
     }
 
-    setPlaces(mergeSeedPlaces(data || []));
+    const placeRows = Array.isArray(placesRes?.data) ? placesRes.data : [];
+    const placeLinkById = new Map(
+      placeRows
+        .filter((row) => row?.id && row?.link)
+        .map((row) => [String(row.id), String(row.link)]),
+    );
+    const placeLinkByCityName = new Map(
+      placeRows
+        .filter((row) => row?.name && row?.city && row?.link)
+        .map((row) => [
+          `${String(row.city).toLowerCase()}::${String(row.name).trim().toLowerCase()}`,
+          String(row.link),
+        ]),
+    );
+
+    const mergedViewRows = (data || []).map((row) => {
+      const byId = placeLinkById.get(String(row.id || ""));
+      const byCityName = placeLinkByCityName.get(
+        `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
+      );
+      return {
+        ...row,
+        link: String(row.link || byId || byCityName || "").trim(),
+      };
+    });
+
+    setPlaces(mergeSeedPlaces(mergedViewRows));
     setIsLoading(false);
   }, []);
 
@@ -55,23 +86,41 @@ export function usePlaces(city) {
   /* ---------------- ADD PLACE ---------------- */
   const addPlace = useCallback(async (place) => {
     console.log("PLACE PAYLOAD:", place);
-
-    const { data, error } = await supabase
+    const basePayload = {
+      name: place.name,
+      type: place.type,
+      description: place.description,
+      vibe: place.vibe,
+      hours: place.hours,
+      link: place.link,
+      lat: place.lat,
+      lng: place.lng,
+      city: place.city,
+    };
+    let { data, error } = await supabase
       .from("places")
-      .insert([
-        {
-          name: place.name,
-          type: place.type,
-          description: place.description,
-          vibe: place.vibe,
-          hours: place.hours,
-          lat: place.lat,
-          lng: place.lng,
-          city: place.city,
-        },
-      ])
+      .insert([basePayload])
       .select("*")
       .single();
+
+    const canRetryWithoutLink =
+      error &&
+      String(error.message || "").toLowerCase().includes("link");
+
+    if (canRetryWithoutLink) {
+      const retry = await supabase
+        .from("places")
+        .insert([
+          {
+            ...basePayload,
+            link: undefined,
+          },
+        ])
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error("Add place error:", error);

@@ -253,6 +253,13 @@ function formatDate(value) {
   });
 }
 
+function normalizeExternalUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+}
+
 function isEventVisibleOnCityPage(value) {
   if (!value) return false;
 
@@ -350,6 +357,7 @@ export default function CityPage() {
   const [description, setDescription] = useState("");
   const [vibe, setVibe] = useState("");
   const [placeHours, setPlaceHours] = useState("");
+  const [placeLink, setPlaceLink] = useState("");
   const [eventName, setEventName] = useState("");
   const [eventAddress, setEventAddress] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -871,6 +879,7 @@ export default function CityPage() {
         description,
         vibe,
         hours: placeHours,
+        link: placeLink,
         lat: coords.lat,
         lng: coords.lng,
         city,
@@ -895,6 +904,7 @@ export default function CityPage() {
       setDescription("");
       setVibe("");
       setPlaceHours("");
+      setPlaceLink("");
       setAddMode(false);
       showToast("Place added to city atlas.", { tone: "ok", duration: 2200 });
     } catch (error) {
@@ -1175,6 +1185,7 @@ export default function CityPage() {
             <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (vibe, crowd, energy...)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={vibe} onChange={(event) => setVibe(event.target.value)} placeholder="Vibe (for example Chill, Techno, Luxury)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={placeHours} onChange={(event) => setPlaceHours(event.target.value)} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+            <input value={placeLink} onChange={(event) => setPlaceLink(event.target.value)} placeholder="Official link (website, Instagram, Facebook) - optional" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <select value={type} onChange={(event) => setType(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/40 p-3 outline-none">
               {TYPES.map((item) => (
@@ -1691,6 +1702,19 @@ export default function CityPage() {
                         {String(place.hours || "").trim() || "Hours vary by night. Check official channels before going."}
                       </p>
                     </div>
+                    {place.link && (
+                      <div className="mb-4">
+                        <a
+                          href={normalizeExternalUrl(place.link)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="inline-flex items-center rounded-full border border-cyan-200/18 bg-cyan-200/[0.08] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/34"
+                        >
+                          Official Link
+                        </a>
+                      </div>
+                    )}
 
                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
                       <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
@@ -1762,6 +1786,16 @@ export default function CityPage() {
                 {String(selectedPlace.hours || "").trim() || "Hours vary by night. Check official channels before going."}
               </p>
             </div>
+            {selectedPlace.link && (
+              <a
+                href={normalizeExternalUrl(selectedPlace.link)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mb-3 inline-flex items-center rounded-full border border-cyan-200/18 bg-cyan-200/[0.08] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/34"
+              >
+                Official Link
+              </a>
+            )}
             <div className="mt-3 grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
                 <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Rating</p>
