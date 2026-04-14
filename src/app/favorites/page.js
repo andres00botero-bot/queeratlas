@@ -53,6 +53,15 @@ function stopQuickContext(stop) {
   return `Selected as a ${kindLabel} stop for this plan arc.`;
 }
 
+function normalizeCityKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\s+/g, " ");
+}
+
 function isMissingTableError(error) {
   if (!error) return false;
   const code = String(error.code || "");
@@ -496,6 +505,103 @@ export default function FavoritesPage() {
       })
       .filter(Boolean);
   }, [events, followingFeedRows, places]);
+
+  const forYouRecommendations = useMemo(() => {
+    const savedCityCounts = new Map();
+    const trustedCityCounts = new Map();
+    const savedVibeCounts = new Map();
+
+    savedPlaces.forEach((place) => {
+      const cityKey = normalizeCityKey(place.city);
+      if (cityKey) {
+        savedCityCounts.set(cityKey, (savedCityCounts.get(cityKey) || 0) + 1);
+      }
+
+      const vibeKey = String(place.vibe || place.type || "").trim().toLowerCase();
+      if (vibeKey) {
+        savedVibeCounts.set(vibeKey, (savedVibeCounts.get(vibeKey) || 0) + 1);
+      }
+    });
+
+    followingFeedItems.forEach((item) => {
+      const cityKey = normalizeCityKey(item.city);
+      if (!cityKey) return;
+      trustedCityCounts.set(cityKey, (trustedCityCounts.get(cityKey) || 0) + 1);
+    });
+
+    const topSavedCity = [...savedCityCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+    const topTrustedCity = [...trustedCityCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+    const topVibeKey = [...savedVibeCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+
+    const recommendedPlaces = places
+      .filter((place) => !favorites.includes(String(place.id)) && !blocked.places.has(String(place.id)))
+      .map((place) => {
+        const cityKey = normalizeCityKey(place.city);
+        const placeVibe = String(place.vibe || place.type || "").trim().toLowerCase();
+        let score = 0;
+        if (cityKey && cityKey === topSavedCity) score += 5;
+        if (cityKey && cityKey === topTrustedCity) score += 4;
+        if (topVibeKey && placeVibe && placeVibe === topVibeKey) score += 3;
+        score += Math.min(Number(place.reviewCount || 0), 20) * 0.15;
+        score += Number(place.avgRating || 0) * 0.35;
+
+        return {
+          kind: "place",
+          id: String(place.id),
+          city: place.city || "",
+          name: place.name || "Place",
+          subtitle: String(place.vibe || place.type || "Venue").replaceAll("_", " "),
+          score,
+          reason:
+            cityKey && cityKey === topSavedCity
+              ? "Matches your strongest saved city signal."
+              : cityKey && cityKey === topTrustedCity
+                ? "Trending inside your trusted network."
+                : topVibeKey && placeVibe === topVibeKey
+                  ? "Aligned with your saved vibe pattern."
+                  : "Strong quality signal from reviews.",
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    const recommendedEvents = events
+      .filter((event) => !favorites.includes(`event-${event.id}`) && !blocked.events.has(String(event.id)))
+      .map((event) => {
+        const cityKey = normalizeCityKey(event.city);
+        const eventDate = new Date(event.date || "");
+        const now = new Date();
+        const daysUntil = Number.isNaN(eventDate.getTime())
+          ? 120
+          : Math.max(0, Math.round((eventDate.getTime() - now.getTime()) / 86400000));
+
+        let score = 0;
+        if (cityKey && cityKey === topSavedCity) score += 4;
+        if (cityKey && cityKey === topTrustedCity) score += 4;
+        score += Math.max(0, 40 - daysUntil) * 0.08;
+
+        return {
+          kind: "event",
+          id: String(event.id),
+          city: event.city || "",
+          name: event.name || "Event",
+          subtitle: formatDate(event.date),
+          score,
+          reason:
+            cityKey && cityKey === topSavedCity
+              ? "Upcoming in your saved city pattern."
+              : cityKey && cityKey === topTrustedCity
+                ? "Upcoming where your trusted members are active."
+                : "Strong timing for your next plan window.",
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4);
+
+    return [...recommendedPlaces, ...recommendedEvents]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+  }, [blocked.events, blocked.places, events, favorites, followingFeedItems, places, savedPlaces]);
 
   const contributionCounts = useMemo(() => {
     if (typeof window === "undefined") {
@@ -1023,6 +1129,9 @@ export default function FavoritesPage() {
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                   Your signal
                 </h2>
+                <p className="mt-2 text-sm leading-6 text-white/56">
+                  Snapshot of your current momentum, rank, and city footprint.
+                </p>
               </div>
               <button
                 onClick={() => router.push("/cities")}
@@ -1100,6 +1209,9 @@ export default function FavoritesPage() {
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                   Continue where you left off
                 </h2>
+                <p className="mt-2 text-sm leading-6 text-white/56">
+                  Jump straight back into your latest saved venues and events.
+                </p>
               </div>
             </div>
 
@@ -1145,6 +1257,9 @@ export default function FavoritesPage() {
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">
                   Your footprint
                 </h2>
+                <p className="mt-2 text-sm leading-6 text-white/56">
+                  Keep your profile signal clean so your atlas recommendations stay relevant.
+                </p>
               </div>
               <div className="rounded-full border border-emerald-200/16 bg-emerald-200/[0.08] px-3 py-1.5 text-[11px] text-emerald-100">
                 {contributionCounts.total} contributions
@@ -1299,6 +1414,9 @@ export default function FavoritesPage() {
                 <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                   Plan a night or city flow
                 </h2>
+                <p className="mt-2 text-sm leading-6 text-white/56">
+                  Build and save itinerary flows based on your vibe, timing, and city context.
+                </p>
               </div>
             </div>
 
@@ -1441,6 +1559,9 @@ export default function FavoritesPage() {
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                 Trusted members network
               </h2>
+              <p className="mt-2 text-sm leading-6 text-white/56">
+                Follow trusted members and pull signal from what they save.
+              </p>
             </div>
             <button
               type="button"
@@ -1560,12 +1681,82 @@ export default function FavoritesPage() {
         <section className="mb-8 rounded-[34px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
+                For you
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+                Next best signal
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-white/56">
+                Personalized picks from your saved vibe, city history, and trusted network.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {forYouRecommendations.length > 0 ? (
+              forYouRecommendations.map((item) => (
+                <article
+                  key={`for-you-${item.kind}-${item.id}`}
+                  className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4"
+                >
+                  <p className="text-[10px] uppercase tracking-[0.15em] text-white/46">
+                    {item.city || "City"} · {item.kind}
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">{item.name}</h3>
+                  <p className="mt-1 text-xs text-cyan-100/75">{item.subtitle}</p>
+                  <p className="mt-3 min-h-[36px] text-xs leading-5 text-white/60">
+                    {item.reason}
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          item.kind === "event"
+                            ? `/${String(item.city || "").toLowerCase()}?eventId=${item.id}`
+                            : `/${String(item.city || "").toLowerCase()}?placeId=${item.id}`
+                        )
+                      }
+                      className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/85 transition hover:border-white/30"
+                    >
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addFavoriteFromNetwork(
+                          item.kind === "event" ? `event-${item.id}` : item.id,
+                          item.name
+                        )
+                      }
+                      className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42 md:col-span-2 xl:col-span-3">
+                Save more places and follow members to unlock stronger personal recommendations.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[34px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
               <p className="text-xs uppercase tracking-[0.26em] text-rose-200/70">
                 Saved places
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                 Places with gravity
               </h2>
+              <p className="mt-2 text-sm leading-6 text-white/56">
+                Your core saved venues, ready to open fast when you plan your next move.
+              </p>
             </div>
           </div>
 
@@ -1643,6 +1834,9 @@ export default function FavoritesPage() {
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                 Time-based queer signal
               </h2>
+              <p className="mt-2 text-sm leading-6 text-white/56">
+                Upcoming moments you saved, organized for timing and quick navigation.
+              </p>
             </div>
           </div>
 
