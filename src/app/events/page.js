@@ -634,7 +634,7 @@ export default function EventsPage() {
                           : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] hover:border-white/18 hover:bg-white/8"
                       }`}
                     >
-                      <p className="whitespace-nowrap text-base font-semibold leading-none text-white sm:text-sm sm:font-medium">
+                      <p className="inline-block whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal] text-[13px] font-semibold leading-none tracking-normal text-white sm:text-sm sm:font-medium">
                         {day}
                       </p>
 
