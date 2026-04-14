@@ -22,6 +22,7 @@ const KEYS = {
   guides: "qa_community_guides",
   topics: "qa_community_topics",
   messages: "qa_community_messages",
+  messageArchive: "qa_community_messages_archive",
   ideas: "qa_community_ideas",
 };
 
@@ -65,6 +66,8 @@ function createClientId(prefix) {
 function readStored(key, fallback) {
   return readLocalJson(key, fallback);
 }
+
+const MAX_MESSAGES_PER_TOPIC = 100;
 
 function normalizeMemberKey(value = "") {
   return String(value || "")
@@ -143,6 +146,41 @@ function mapMessages(rows, topics) {
   return base;
 }
 
+function pruneTopicMessages(rows = [], max = MAX_MESSAGES_PER_TOPIC) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  if (safeRows.length <= max) {
+    return { visible: safeRows, archived: [] };
+  }
+  const keepFrom = safeRows.length - max;
+  return {
+    visible: safeRows.slice(keepFrom),
+    archived: safeRows.slice(0, keepFrom),
+  };
+}
+
+function mergeMessageMaps(primary = {}, fallback = {}, topics = []) {
+  const topicIds = [...new Set(topics.map((topic) => String(topic.id)))];
+  const result = {};
+
+  topicIds.forEach((topicId) => {
+    const first = Array.isArray(primary[topicId]) ? primary[topicId] : [];
+    const second = Array.isArray(fallback[topicId]) ? fallback[topicId] : [];
+
+    const seen = new Set();
+    const merged = [];
+    [...first, ...second].forEach((entry) => {
+      const signature = String(entry.id || `${entry.author}|${entry.text}|${entry.createdAt}`);
+      if (seen.has(signature)) return;
+      seen.add(signature);
+      merged.push(entry);
+    });
+
+    result[topicId] = merged;
+  });
+
+  return result;
+}
+
 function timeAgo(value) {
   const diffHours = Math.round((new Date() - new Date(value)) / 3600000);
   if (diffHours < 1) return "Just now";
@@ -167,12 +205,15 @@ export default function CommunityPage() {
   const [guides, setGuides] = useState(baseGuides);
   const [topics, setTopics] = useState(baseTopics);
   const [messages, setMessages] = useState(baseMessages);
+  const [messageArchive, setMessageArchive] = useState(() =>
+    readStored(KEYS.messageArchive, {}),
+  );
   const [ideas, setIdeas] = useState(baseIdeas);
   const [topicId, setTopicId] = useState("t1");
   const [showStoryForm, setShowStoryForm] = useState(false);
   const [showGuideForm, setShowGuideForm] = useState(false);
-  const [isStoriesOpen, setIsStoriesOpen] = useState(true);
-  const [isGuidesOpen, setIsGuidesOpen] = useState(true);
+  const [expandedStoryIds, setExpandedStoryIds] = useState([]);
+  const [expandedGuideIds, setExpandedGuideIds] = useState([]);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [guideId, setGuideId] = useState("g1");
   const [storyForm, setStoryForm] = useState({ title: "", city: "", category: "Experience", excerpt: "", body: "" });
@@ -188,6 +229,13 @@ export default function CommunityPage() {
 
   const loadCommunityData = useCallback(async () => {
     setSyncError("");
+    const localStories = readStored(KEYS.stories, baseStories);
+    const localGuides = readStored(KEYS.guides, baseGuides);
+    const localTopics = readStored(KEYS.topics, baseTopics);
+    const localMessages = readStored(KEYS.messages, baseMessages);
+    const localIdeas = readStored(KEYS.ideas, baseIdeas);
+    const localArchive = readStored(KEYS.messageArchive, {});
+
     const [storiesRes, guidesRes, topicsRes, messagesRes, ideasRes, leaderboardRes] = await Promise.all([
       supabase.from("community_stories").select("*").order("created_at", { ascending: false }),
       supabase.from("community_guides").select("*").order("created_at", { ascending: false }),
@@ -202,11 +250,12 @@ export default function CommunityPage() {
     );
 
     if (hasError) {
-      setStories(readStored(KEYS.stories, baseStories));
-      setGuides(readStored(KEYS.guides, baseGuides));
-      setTopics(readStored(KEYS.topics, baseTopics));
-      setMessages(readStored(KEYS.messages, baseMessages));
-      setIdeas(readStored(KEYS.ideas, baseIdeas));
+      setStories(localStories);
+      setGuides(localGuides);
+      setTopics(localTopics);
+      setMessages(localMessages);
+      setIdeas(localIdeas);
+      setMessageArchive(localArchive);
       setSyncError("Community sync fallback active. Local data is shown.");
       return;
     }
@@ -216,12 +265,23 @@ export default function CommunityPage() {
     const nextTopics = (topicsRes.data || []).length > 0 ? (topicsRes.data || []).map(mapTopicRow) : baseTopics;
     const nextIdeas = (ideasRes.data || []).length > 0 ? (ideasRes.data || []).map(mapIdeaRow) : baseIdeas;
     const nextMessages = mapMessages(messagesRes.data || [], nextTopics);
+    const mergedMessages = mergeMessageMaps(nextMessages, localMessages, nextTopics);
+    const nextArchive = { ...localArchive };
+    const cappedMessages = {};
+    Object.keys(mergedMessages).forEach((topicKey) => {
+      const pruned = pruneTopicMessages(mergedMessages[topicKey], MAX_MESSAGES_PER_TOPIC);
+      cappedMessages[topicKey] = pruned.visible;
+      if (pruned.archived.length > 0) {
+        nextArchive[topicKey] = [...(nextArchive[topicKey] || []), ...pruned.archived].slice(-500);
+      }
+    });
     const nextLeaderboard = Array.isArray(leaderboardRes?.data) ? leaderboardRes.data : [];
 
     setStories(nextStories);
     setGuides(nextGuides);
     setTopics(nextTopics);
-    setMessages(Object.keys(nextMessages).length > 0 ? nextMessages : baseMessages);
+    setMessages(Object.keys(cappedMessages).length > 0 ? cappedMessages : baseMessages);
+    setMessageArchive(nextArchive);
     setIdeas(nextIdeas);
     setLeaderboard(nextLeaderboard);
   }, []);
@@ -251,8 +311,9 @@ export default function CommunityPage() {
     writeLocalJson(KEYS.guides, guides);
     writeLocalJson(KEYS.topics, topics);
     writeLocalJson(KEYS.messages, messages);
+    writeLocalJson(KEYS.messageArchive, messageArchive);
     writeLocalJson(KEYS.ideas, ideas);
-  }, [isReady, isMember, stories, guides, topics, messages, ideas]);
+  }, [isReady, isMember, stories, guides, topics, messages, messageArchive, ideas]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -450,7 +511,17 @@ export default function CommunityPage() {
           text: data.text || "",
           createdAt: data.created_at || new Date().toISOString(),
         };
-    setMessages((current) => ({ ...current, [activeTopic.id]: [...(current[activeTopic.id] || []), item] }));
+    setMessages((current) => {
+      const topicMessages = [...(current[activeTopic.id] || []), item];
+      const pruned = pruneTopicMessages(topicMessages, MAX_MESSAGES_PER_TOPIC);
+      if (pruned.archived.length > 0) {
+        setMessageArchive((archiveCurrent) => ({
+          ...archiveCurrent,
+          [activeTopic.id]: [...(archiveCurrent[activeTopic.id] || []), ...pruned.archived].slice(-500),
+        }));
+      }
+      return { ...current, [activeTopic.id]: pruned.visible };
+    });
     setMessageForm({ text: "" });
     showToast(error ? "Message saved locally. Supabase sync unavailable." : "Message sent.", { tone: error ? "info" : "ok", duration: 1800 });
   };
@@ -476,6 +547,7 @@ export default function CommunityPage() {
     const item = error || !data ? fallbackItem : mapTopicRow(data);
     setTopics((current) => [item, ...current]);
     setMessages((current) => ({ ...current, [item.id]: [] }));
+    setMessageArchive((current) => ({ ...current, [item.id]: [] }));
     setTopicId(item.id);
     setTopicForm({ name: "", mood: "Fresh", description: "" });
     showToast(error ? "Topic saved locally. Supabase sync unavailable." : "Topic created.", { tone: error ? "info" : "ok", duration: 2200 });
@@ -538,6 +610,20 @@ export default function CommunityPage() {
     });
 
     showToast("Report sent. Thanks for helping keep community safe.", { tone: "info", duration: 2600 });
+  };
+
+  const toggleStoryExpanded = (storyId) => {
+    setExpandedStoryIds((current) =>
+      current.includes(storyId) ? current.filter((id) => id !== storyId) : [...current, storyId]
+    );
+  };
+
+  const toggleGuideExpanded = (guideIdValue) => {
+    setExpandedGuideIds((current) =>
+      current.includes(guideIdValue)
+        ? current.filter((id) => id !== guideIdValue)
+        : [...current, guideIdValue]
+    );
   };
 
   return (
@@ -621,17 +707,9 @@ export default function CommunityPage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-rose-300">Stories</p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Member experiences</h2>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsStoriesOpen((current) => !current)}
-                  className="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-xs text-white transition hover:border-white/35 hover:bg-white/12"
-                >
-                  {isStoriesOpen ? "Collapse" : "Expand"}
-                </button>
-                <button onClick={() => setShowStoryForm((current) => !current)} className="rounded-full border border-rose-400/30 bg-rose-300/8 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-300 hover:bg-rose-300/15 hover:text-white">{showStoryForm ? "Close form" : "Write a story"}</button>
-              </div>
+              <button onClick={() => setShowStoryForm((current) => !current)} className="rounded-full border border-rose-400/30 bg-rose-300/8 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-300 hover:bg-rose-300/15 hover:text-white">{showStoryForm ? "Close form" : "Write a story"}</button>
             </div>
-            {isStoriesOpen && showStoryForm && (
+            {showStoryForm && (
               <form onSubmit={publishStory} className="mb-5 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
                 <div className="grid gap-3 md:grid-cols-2">
@@ -646,8 +724,7 @@ export default function CommunityPage() {
                 <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
               </form>
             )}
-            {isStoriesOpen ? (
-              <div className="max-h-[560px] space-y-4 overflow-y-auto pr-1">
+            <div className="max-h-[560px] space-y-4 overflow-y-auto pr-1">
               {sortedStories.map((story) => (
                 <article key={story.id} className="animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
                   <div className="flex items-center justify-between gap-3">
@@ -686,16 +763,19 @@ export default function CommunityPage() {
                     </div>
                   </div>
                   <p className="mt-4 text-sm leading-7 text-gray-300">{story.excerpt}</p>
-                  <p className="mt-3 text-sm leading-7 text-gray-400">{story.body}</p>
+                  {expandedStoryIds.includes(story.id) && (
+                    <p className="mt-3 text-sm leading-7 text-gray-400">{story.body}</p>
+                  )}
+                  <button
+                    onClick={() => toggleStoryExpanded(story.id)}
+                    className="mt-3 rounded-full border border-rose-200/20 bg-rose-200/8 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/35"
+                  >
+                    {expandedStoryIds.includes(story.id) ? "Show less" : "Read full story"}
+                  </button>
                   <p className="mt-4 text-xs text-gray-500">{timeAgo(story.createdAt)}</p>
                 </article>
               ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-6 text-sm text-white/55">
-                Experiences hidden. Tap <span className="text-white/85">Expand</span> to open the list.
-              </div>
-            )}
+            </div>
           </section>
 
           <section className="rounded-[30px] border border-violet-400/15 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.18),transparent_26%),linear-gradient(180deg,rgba(24,18,44,0.96),rgba(10,10,10,1))] p-6 shadow-[0_28px_90px_rgba(139,92,246,0.10)]">
@@ -704,17 +784,9 @@ export default function CommunityPage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-violet-300">Member Guides</p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Practical wisdom</h2>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsGuidesOpen((current) => !current)}
-                  className="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-xs text-white transition hover:border-white/35 hover:bg-white/12"
-                >
-                  {isGuidesOpen ? "Collapse" : "Expand"}
-                </button>
-                <button onClick={() => setShowGuideForm((current) => !current)} className="rounded-full border border-violet-400/30 bg-violet-300/8 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-300 hover:bg-violet-300/15 hover:text-white">{showGuideForm ? "Close form" : "New guide"}</button>
-              </div>
+              <button onClick={() => setShowGuideForm((current) => !current)} className="rounded-full border border-violet-400/30 bg-violet-300/8 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-300 hover:bg-violet-300/15 hover:text-white">{showGuideForm ? "Close form" : "New guide"}</button>
             </div>
-            {isGuidesOpen && showGuideForm && (
+            {showGuideForm && (
               <form onSubmit={publishGuide} className="mb-5 space-y-3 rounded-2xl border border-violet-400/20 bg-violet-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" />
                 <div className="grid gap-3 md:grid-cols-2">
@@ -729,27 +801,34 @@ export default function CommunityPage() {
                 <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
               </form>
             )}
-            {isGuidesOpen ? (
-            <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.95fr)_minmax(0,1.05fr)]">
-              <div className="qa-guides-scroll max-h-[520px] space-y-2 overflow-y-auto pr-1">
-                {sortedGuides.map((guide) => {
-                  const active = activeGuide?.id === guide.id;
-                  return (
-                    <button
-                      key={guide.id}
-                      onClick={() => setGuideId(guide.id)}
-                      className={`w-full rounded-2xl border p-4 text-left break-normal transition ${
-                        active
-                          ? "border-violet-300/35 bg-violet-300/12 shadow-[0_14px_34px_rgba(139,92,246,0.14)]"
-                          : "border-white/8 bg-[linear-gradient(180deg,rgba(23,19,42,0.72),rgba(11,11,11,0.96))] hover:border-violet-300/24"
-                      }`}
-                    >
+            <div className="qa-guides-scroll max-h-[560px] space-y-3 overflow-y-auto pr-1">
+              {sortedGuides.map((guide) => {
+                const isExpanded = expandedGuideIds.includes(guide.id);
+                return (
+                  <article
+                    key={guide.id}
+                    className={`rounded-2xl border p-4 text-left break-normal transition ${
+                      isExpanded
+                        ? "border-violet-300/35 bg-violet-300/12 shadow-[0_14px_34px_rgba(139,92,246,0.14)]"
+                        : "border-white/8 bg-[linear-gradient(180deg,rgba(23,19,42,0.72),rgba(11,11,11,0.96))] hover:border-violet-300/24"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
                       <p className="text-xs uppercase tracking-[0.18em] text-violet-200/75">
                         {guide.city} · {guide.focus}
                       </p>
-                      <h3 className="mt-2 text-sm font-semibold text-white">{guide.title}</h3>
-                      <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/55">{guide.summary}</p>
-                      <p className="mt-3 text-[11px] text-white/38">
+                      <button
+                        onClick={() => toggleGuideExpanded(guide.id)}
+                        className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/35"
+                      >
+                        {isExpanded ? "Show less" : "Expand guide"}
+                      </button>
+                    </div>
+                    <h3 className="mt-2 text-sm font-semibold text-white">{guide.title}</h3>
+                    <p className="mt-2 text-xs leading-5 text-white/55">{guide.summary}</p>
+                    {isExpanded && <p className="mt-3 text-sm leading-7 text-gray-300">{guide.content}</p>}
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[11px] text-white/38">
                         {(() => {
                           const rankMeta = getAuthorIdentityMeta(guide.author);
                           return (
@@ -765,65 +844,28 @@ export default function CommunityPage() {
                         })()}{" "}
                         · {timeAgo(guide.createdAt)}
                       </p>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(23,19,42,0.94),rgba(11,11,11,0.96))] p-4">
-                {activeGuide ? (
-                  <>
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-xs uppercase tracking-[0.2em] text-violet-200/80">
-                        {activeGuide.city} · {activeGuide.focus}
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="whitespace-nowrap text-xs text-gray-500">{timeAgo(activeGuide.createdAt)}</p>
-                        <button
-                          onClick={() =>
-                            reportContent({
-                              targetType: "community-guide",
-                              targetId: activeGuide.id,
-                              title: activeGuide.title,
-                            })
-                          }
-                          className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/35"
-                        >
-                          Report
-                        </button>
-                      </div>
+                      <button
+                        onClick={() =>
+                          reportContent({
+                            targetType: "community-guide",
+                            targetId: guide.id,
+                            title: guide.title,
+                          })
+                        }
+                        className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/35"
+                      >
+                        Report
+                      </button>
                     </div>
-                    <h3 className="mt-3 text-lg font-semibold text-white">{activeGuide.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-gray-300">{activeGuide.summary}</p>
-                    <p className="mt-3 text-sm leading-7 text-gray-400">{activeGuide.content}</p>
-                    <p className="mt-4 text-xs text-gray-500">
-                      {(() => {
-                        const rankMeta = getAuthorIdentityMeta(activeGuide.author);
-                        return (
-                          <span className="inline-flex items-center gap-1.5">
-                            {rankMeta?.icon ? (
-                              <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
-                                {rankMeta.icon}
-                              </span>
-                            ) : null}
-                            <span>{activeGuide.author}</span>
-                          </span>
-                        );
-                      })()}
-                    </p>
-                  </>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/12 px-4 py-8 text-sm text-white/50">
-                    No guides yet.
-                  </div>
-                )}
-              </div>
+                  </article>
+                );
+              })}
+              {sortedGuides.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-white/12 px-4 py-8 text-sm text-white/50">
+                  No guides yet.
+                </div>
+              )}
             </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-6 text-sm text-white/55">
-                Guides hidden. Tap <span className="text-white/85">Expand</span> to open the guide panel.
-              </div>
-            )}
           </section>
         </div>
 

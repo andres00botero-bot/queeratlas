@@ -534,7 +534,7 @@ export default function FavoritesPage() {
       id: `plan-v2-${Date.now()}`,
       title: String(payload?.planTitle || "").trim() || title,
       city: cityName,
-      date: null,
+      date: String(payload?.planDate || "").trim() || null,
       placeIds: uniquePlaceIds,
       eventIds: uniqueEventIds,
       stops: flatStops,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import DateInput from "@/components/ui/DateInput";
 
 const VIBES = [
   { value: "soft", label: "Soft" },
@@ -22,17 +23,163 @@ const HORIZONS = [
   { value: "three_days", label: "3 Days" },
 ];
 
+const DAY_INDEX = {
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6,
+};
+
 function normalize(value = "") {
   return String(value || "").trim().toLowerCase();
 }
 
-function seededShuffle(items = []) {
-  const next = [...items];
-  for (let i = next.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [next[i], next[j]] = [next[j], next[i]];
-  }
+function parseIsoDate(value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return null;
+  const [year, month, day] = String(value).split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+}
+
+function endOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
   return next;
+}
+
+function parseTimeToMinutes(value = "") {
+  const match = String(value).match(/(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (Number.isNaN(hour) || Number.isNaN(minute)) return null;
+  return hour * 60 + minute;
+}
+
+function expandDaySpec(daySpec = "") {
+  const normalized = normalize(daySpec).replace(/\./g, "");
+  if (!normalized) return [];
+  if (normalized === "daily") return [0, 1, 2, 3, 4, 5, 6];
+
+  if (normalized.includes("-")) {
+    const [fromRaw, toRaw] = normalized.split("-");
+    const from = DAY_INDEX[fromRaw?.slice(0, 3)];
+    const to = DAY_INDEX[toRaw?.slice(0, 3)];
+    if (from === undefined || to === undefined) return [];
+
+    const result = [from];
+    let cursor = from;
+    while (cursor !== to) {
+      cursor = (cursor + 1) % 7;
+      if (result.includes(cursor)) break;
+      result.push(cursor);
+    }
+    return result;
+  }
+
+  const single = DAY_INDEX[normalized.slice(0, 3)];
+  return single === undefined ? [] : [single];
+}
+
+function parseHoursSegments(hoursText = "") {
+  const raw = String(hoursText || "").replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  if (!raw) return [];
+  if (/open\s*24\s*hours\s*daily|24\/7|daily\s*24\s*hours/i.test(raw)) {
+    return [{ days: [0, 1, 2, 3, 4, 5, 6], open: 0, close: 24 * 60, isClosed: false }];
+  }
+
+  const chunks = raw
+    .split(";")
+    .flatMap((part) => part.split(","))
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return chunks.flatMap((chunk) => {
+    const closedMatch = chunk.match(/^(daily|[A-Za-z]{3}(?:-[A-Za-z]{3})?)\s+(closed|event-only)$/i);
+    if (closedMatch) {
+      return [{ days: expandDaySpec(closedMatch[1]), isClosed: true }];
+    }
+
+    const timedMatch = chunk.match(
+      /^(daily|[A-Za-z]{3}(?:-[A-Za-z]{3})?)\s+(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/i
+    );
+    if (timedMatch) {
+      const open = parseTimeToMinutes(timedMatch[2]);
+      const close = parseTimeToMinutes(timedMatch[3]);
+      if (open === null || close === null) return [];
+      return [{ days: expandDaySpec(timedMatch[1]), open, close, isClosed: false }];
+    }
+
+    const allDayTimedMatch = chunk.match(
+      /^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})\s*(daily)?$/i
+    );
+    if (allDayTimedMatch) {
+      const open = parseTimeToMinutes(allDayTimedMatch[1]);
+      const close = parseTimeToMinutes(allDayTimedMatch[2]);
+      if (open === null || close === null) return [];
+      return [{ days: [0, 1, 2, 3, 4, 5, 6], open, close, isClosed: false }];
+    }
+
+    return [];
+  });
+}
+
+function isPlaceOpenAt(place, date, timeLabel) {
+  const segments = parseHoursSegments(place?.hours || "");
+  if (segments.length === 0) return true;
+
+  const dow = date.getDay();
+  const targetMinutes = parseTimeToMinutes(timeLabel);
+  if (targetMinutes === null) return true;
+
+  const daySegments = segments.filter((segment) => segment.days?.includes(dow));
+  if (daySegments.length === 0) return false;
+
+  const hasOpenSegment = daySegments.some((segment) => !segment.isClosed);
+  if (!hasOpenSegment) return false;
+
+  return daySegments.some((segment) => {
+    if (segment.isClosed) return false;
+    if (segment.open === 0 && segment.close === 24 * 60) return true;
+    if (segment.close > segment.open) {
+      return targetMinutes >= segment.open && targetMinutes <= segment.close;
+    }
+    return targetMinutes >= segment.open || targetMinutes <= segment.close;
+  });
+}
+
+function filterPlacesOpenAt(pool, date, timeLabel) {
+  const openPool = pool.filter((place) => isPlaceOpenAt(place, date, timeLabel));
+  return openPool.length > 0 ? openPool : pool;
+}
+
+function isEventInWindow(eventDate, startDate, endDate) {
+  if (!eventDate) return false;
+  const parsed = parseIsoDate(String(eventDate).slice(0, 10));
+  if (!parsed) return false;
+  const value = parsed.getTime();
+  return value >= startDate.getTime() && value <= endDate.getTime();
+}
+
+function isSameDay(eventDate, targetDate) {
+  if (!eventDate) return false;
+  const parsed = parseIsoDate(String(eventDate).slice(0, 10));
+  if (!parsed) return false;
+  return (
+    parsed.getFullYear() === targetDate.getFullYear() &&
+    parsed.getMonth() === targetDate.getMonth() &&
+    parsed.getDate() === targetDate.getDate()
+  );
 }
 
 function dayLabel(index, horizon) {
@@ -44,6 +191,10 @@ function chooseFromPool(pool, usedIds, fallback = null) {
   const available = pool.filter((item) => !usedIds.has(String(item.id)));
   if (available.length === 0) return fallback;
   return available[Math.floor(Math.random() * available.length)];
+}
+
+function chooseEventFromPool(eventsPool, usedIds) {
+  return chooseFromPool(eventsPool, usedIds, null);
 }
 
 function mapStop(item, stopType, slotLabel, time, reason) {
@@ -61,9 +212,16 @@ function mapStop(item, stopType, slotLabel, time, reason) {
   };
 }
 
-function buildItinerary({ city, places, events, vibe, horizon, soloSafe }) {
+function buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDate }) {
   const placeRows = places.filter((row) => normalize(row.city) === normalize(city));
-  const eventRows = events.filter((row) => normalize(row.city) === normalize(city));
+  const daysCount = horizon === "tonight" ? 1 : horizon === "weekend" ? 2 : 3;
+  const startDate = startOfDay(parseIsoDate(planDate) || new Date());
+  const endDate = endOfDay(addDays(startDate, daysCount - 1));
+  const eventRows = events.filter(
+    (row) =>
+      normalize(row.city) === normalize(city) &&
+      isEventInWindow(row.date, startDate, endDate)
+  );
 
   const cafes = placeRows.filter((p) => p.type === "cafe");
   const bars = placeRows.filter((p) => p.type === "bar");
@@ -73,51 +231,89 @@ function buildItinerary({ city, places, events, vibe, horizon, soloSafe }) {
   const dark = placeRows.filter((p) => ["sauna", "cruise_club", "club"].includes(p.type));
   const safeLean = placeRows.filter((p) => ["cafe", "bar"].includes(p.type));
 
-  const daysCount = horizon === "tonight" ? 1 : horizon === "weekend" ? 2 : 3;
   const used = new Set();
 
   return Array.from({ length: daysCount }).map((_, dayIndex) => {
+    const currentDate = addDays(startDate, dayIndex);
+    const dayEvents = eventRows.filter((event) => isSameDay(event.date, currentDate));
     const stops = [];
 
-    if (dayIndex === 0) {
-      const landingPool = soloSafe ? [...safeLean, ...cafes, ...bars] : [...cafes, ...bars, ...safeLean];
-      const introPool = vibe === "soft" ? [...bars, ...cafes] : [...bars, ...clubs, ...eventRows];
+    if (dayIndex === 0 && daysCount > 1) {
+      const landingPoolRaw = soloSafe ? [...safeLean, ...cafes, ...bars] : [...cafes, ...bars, ...safeLean];
+      const introPlacePoolRaw = vibe === "soft" ? [...bars, ...cafes] : [...bars, ...clubs];
+      const landingPool = filterPlacesOpenAt(landingPoolRaw, currentDate, "18:30");
+      const introPlacePool = filterPlacesOpenAt(introPlacePoolRaw, currentDate, "21:30");
+
       const s1 = chooseFromPool(landingPool, used);
       if (s1) used.add(String(s1.id));
-      const s2 = chooseFromPool(introPool, used);
+      const forcedEvent = chooseEventFromPool(dayEvents, used);
+      const s2 = forcedEvent || chooseFromPool(introPlacePool, used);
       if (s2) used.add(String(s2.id));
 
       stops.push(
         mapStop(s1, "place", "Soft landing", "18:30", "Easy entry to read local energy."),
-        mapStop(s2, s2 && eventRows.some((e) => String(e.id) === String(s2.id)) ? "event" : "place", "Intro signal", "21:30", "Warm social momentum before peak.")
+        mapStop(
+          s2,
+          forcedEvent ? "event" : "place",
+          "Intro signal",
+          "21:30",
+          forcedEvent
+            ? "Date-matched event anchored into your selected plan window."
+            : "Warm social momentum before peak."
+        )
       );
-    } else if (dayIndex === 1 || daysCount === 1) {
-      const warmPool = vibe === "dark" ? [...dark, ...bars] : [...bars, ...clubs];
-      const peakPool = [...eventRows, ...clubs, ...(vibe === "dark" ? dark : [])];
-      const latePool = vibe === "soft" ? [...bars, ...chill] : [...clubs, ...bars, ...saunas];
+    } else if (dayIndex === 1 || (dayIndex === 0 && daysCount === 1)) {
+      const warmPoolRaw = vibe === "dark" ? [...dark, ...bars] : [...bars, ...clubs];
+      const peakPlacePoolRaw = [...clubs, ...(vibe === "dark" ? dark : [])];
+      const latePoolRaw = vibe === "soft" ? [...bars, ...chill] : [...clubs, ...bars, ...saunas];
+
+      const warmPool = filterPlacesOpenAt(warmPoolRaw, currentDate, "20:30");
+      const peakPlacePool = filterPlacesOpenAt(peakPlacePoolRaw, currentDate, "01:00");
+      const latePool = filterPlacesOpenAt(latePoolRaw, currentDate, "03:00");
+      const peakPool = [...dayEvents, ...peakPlacePool];
 
       const s1 = chooseFromPool(warmPool, used);
       if (s1) used.add(String(s1.id));
-      const s2 = chooseFromPool(peakPool, used);
+      const forcedEvent = chooseEventFromPool(dayEvents, used);
+      const s2 = forcedEvent || chooseFromPool(peakPool, used);
       if (s2) used.add(String(s2.id));
       const s3 = chooseFromPool(latePool, used);
       if (s3) used.add(String(s3.id));
 
       stops.push(
         mapStop(s1, "place", "Warmup", "20:30", "Set baseline before the rush."),
-        mapStop(s2, s2 && eventRows.some((e) => String(e.id) === String(s2.id)) ? "event" : "place", "Peak", "01:00", "Core nightlife pressure point."),
+        mapStop(
+          s2,
+          forcedEvent ? "event" : "place",
+          "Peak",
+          "01:00",
+          forcedEvent
+            ? "Date-matched event in your selected window."
+            : "Core nightlife pressure point."
+        ),
         mapStop(s3, "place", "Late drift", "03:00", "Post-peak continuation with lower friction.")
       );
     } else {
-      const recoveryPool = [...chill, ...cafes, ...bars];
-      const s1 = chooseFromPool(recoveryPool, used);
+      const recoveryPoolRaw = [...chill, ...cafes, ...bars];
+      const recoveryPoolEarly = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "11:30");
+      const recoveryPoolLate = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "16:00");
+      const s1 = chooseFromPool(recoveryPoolEarly, used);
       if (s1) used.add(String(s1.id));
-      const s2 = chooseFromPool(recoveryPool, used);
+      const forcedEvent = chooseEventFromPool(dayEvents, used);
+      const s2 = forcedEvent || chooseFromPool(recoveryPoolLate, used);
       if (s2) used.add(String(s2.id));
 
       stops.push(
         mapStop(s1, "place", "Recovery", "11:30", "Slow restart and social reset."),
-        mapStop(s2, "place", "Golden hour", "16:00", "Chill close to the trip arc.")
+        mapStop(
+          s2,
+          forcedEvent ? "event" : "place",
+          forcedEvent ? "Night highlight" : "Golden hour",
+          forcedEvent ? "21:30" : "16:00",
+          forcedEvent
+            ? "Date-matched event added for this plan day."
+            : "Chill close to the trip arc."
+        )
       );
     }
 
@@ -137,6 +333,7 @@ export default function TripPlannerV2({
   onSavePlan,
 }) {
   const [planTitle, setPlanTitle] = useState("");
+  const [planDate, setPlanDate] = useState("");
   const [city, setCity] = useState(plannerCities[0] || "");
   const [note, setNote] = useState("");
   const [horizon, setHorizon] = useState("three_days");
@@ -162,14 +359,14 @@ export default function TripPlannerV2({
 
   const generate = () => {
     if (!canBuild) return;
-    const next = buildItinerary({ city, places, events, vibe, horizon, soloSafe });
+    const next = buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDate });
     setItinerary(next);
     setLocks({});
   };
 
   const shuffleUnlocked = () => {
     if (!itinerary.length) return;
-    const fresh = buildItinerary({ city, places, events, vibe, horizon, soloSafe });
+    const fresh = buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDate });
     const merged = itinerary.map((day, dayIdx) => {
       const freshDay = fresh[dayIdx] || { ...day, stops: [] };
       const nextStops = freshDay.stops.map((stop, stopIdx) => {
@@ -202,6 +399,7 @@ export default function TripPlannerV2({
         energy,
         soloSafe,
         note,
+        planDate,
         itinerary,
       });
       if (saved) {
@@ -234,6 +432,23 @@ export default function TripPlannerV2({
             placeholder="ex. Berlin peak weekend"
             className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
           />
+          <div className="mt-3 rounded-xl border border-violet-200/18 bg-violet-300/[0.08] p-3">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-violet-100/80">
+              Trip date (optional)
+            </p>
+            <p className="mt-1 text-xs text-violet-100/60">
+              Pick your start date for this plan.
+            </p>
+            <div className="mt-2 max-w-sm">
+              <DateInput
+                value={planDate}
+                onChange={(event) => setPlanDate(event.target.value)}
+                name="trip-plan-date"
+                id="trip-plan-date"
+                tone="violet"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
