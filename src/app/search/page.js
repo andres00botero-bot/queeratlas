@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -11,6 +11,7 @@ import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
 import { getEntityQuality, getQualityMap, getQualityStatus } from "@/lib/quality";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { trackKpiEvent } from "@/lib/analytics";
 import EmptyState from "@/components/ui/EmptyState";
 
 const TYPE_FILTERS = ["all", "city", "place", "event"];
@@ -57,6 +58,7 @@ export default function SearchPage() {
   });
   const { places } = usePlaces();
   const { isMember } = useAuth();
+  const deferredQuery = useDeferredValue(query);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
@@ -80,11 +82,30 @@ export default function SearchPage() {
     });
   }, [fetchEvents]);
 
+  useEffect(() => {
+    if (!deferredQuery.trim()) return;
+    trackKpiEvent("search_opened", {
+      targetType: "search",
+      targetId: deferredQuery.trim().toLowerCase(),
+    });
+  }, [deferredQuery]);
+
   const qualityMap = getQualityMap();
 
   const results = useMemo(
-    () => buildAtlasSearchResults({ query, places, events, cityLimit: 50, placeLimit: 300, eventLimit: 300 }),
-    [events, places, query]
+    () =>
+      buildAtlasSearchResults({
+        query: deferredQuery,
+        places,
+        events,
+        cityLimit: 50,
+        placeLimit: 300,
+        eventLimit: 300,
+        favoriteIds: favorites,
+        qualityMap,
+        preferredCity: cityFilter === "all" ? "" : cityFilter,
+      }),
+    [cityFilter, deferredQuery, events, favorites, places, qualityMap]
   );
 
   const cityOptions = useMemo(() => {
@@ -171,6 +192,12 @@ export default function SearchPage() {
     }
     setFavorites(updated);
     writeLocalJson("qa_favorites", updated);
+    if (!favorites.includes(id)) {
+      trackKpiEvent("favorite_saved", {
+        targetType: String(id).startsWith("event-") ? "event" : "place",
+        targetId: String(id),
+      });
+    }
   };
 
   const openResult = (item) => {

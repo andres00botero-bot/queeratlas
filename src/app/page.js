@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,8 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
 import { buildAtlasSearchResults } from "@/lib/search";
+import { getQualityMap } from "@/lib/quality";
+import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { ArrowUpRight, Search } from "lucide-react";
@@ -75,6 +77,7 @@ export default function Home() {
   const [authMessage, setAuthMessage] = useState("");
   const [isIntroVisible, setIsIntroVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const deferredQuery = useDeferredValue(query);
   const {
     isMember,
     memberName,
@@ -165,7 +168,14 @@ export default function Home() {
       return;
     }
 
-    toggleFavorite(getResultKey(item));
+    const favoriteKey = getResultKey(item);
+    toggleFavorite(favoriteKey);
+    trackKpiEvent("favorite_saved", {
+      city: String(item?.city || item?.name || ""),
+      targetType: item?.type || "",
+      targetId: favoriteKey,
+      memberKey: String(memberProfile?.displayName || memberName || "").trim().toLowerCase(),
+    });
     setShowSaved(true);
 
     setTimeout(() => {
@@ -389,10 +399,7 @@ export default function Home() {
   }, [isMember, pendingConfirmationPassword, pendingEmailConfirmation, signInWithPassword]);
 
   useEffect(() => {
-    if (isAuthLoading || !isMember) {
-      setIsAdmin(false);
-      return;
-    }
+    if (isAuthLoading || !isMember) return;
 
     let active = true;
 
@@ -415,7 +422,7 @@ export default function Home() {
   }, [isAuthLoading, isMember]);
 
   useEffect(() => {
-    if (!query) {
+    if (!deferredQuery) {
       queueMicrotask(() => {
         setResults([]);
       });
@@ -424,12 +431,14 @@ export default function Home() {
 
     const timeout = setTimeout(() => {
       const merged = buildAtlasSearchResults({
-        query,
+        query: deferredQuery,
         places,
         events,
         cityLimit: 4,
         placeLimit: 4,
         eventLimit: 4,
+        favoriteIds: favorites,
+        qualityMap: getQualityMap(),
       }).all;
 
       setResults(merged);
@@ -437,7 +446,7 @@ export default function Home() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [events, places, query]);
+  }, [deferredQuery, events, favorites, places]);
 
   const homeNewsItems = [...worldNews]
     .sort(compareNewsRecency)
@@ -1039,6 +1048,9 @@ export default function Home() {
                           setAuthMessage(error.message);
                         } else {
                           setAuthMessage("Signed in. Redirecting...");
+                          trackKpiEvent("login_completed", {
+                            memberKey: emailInput.trim().toLowerCase(),
+                          });
                         }
                         setAuthLoading(false);
                       }}
@@ -1169,6 +1181,9 @@ export default function Home() {
                         } else {
                           setAuthMessage("Account created. Profile can be edited in Your Atlas.");
                         }
+                        trackKpiEvent("signup_completed", {
+                          memberKey: email.toLowerCase(),
+                        });
                       } else {
                         setPendingEmailConfirmation(email);
                         setPendingConfirmationPassword(password);
@@ -1177,6 +1192,9 @@ export default function Home() {
                           JSON.stringify({ ...profilePayload, email })
                         );
                         setAuthMessage("Account created. Confirm your email to activate your profile.");
+                        trackKpiEvent("signup_completed", {
+                          memberKey: email.toLowerCase(),
+                        });
                       }
 
                       setSignupForm({

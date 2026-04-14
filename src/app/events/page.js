@@ -7,6 +7,7 @@ import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } fro
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import { mergeSeedEvents } from "@/lib/seedContent";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
+import { trackKpiEvent } from "@/lib/analytics";
 import EmptyState from "@/components/ui/EmptyState";
 import DateInput from "@/components/ui/DateInput";
 
@@ -381,6 +382,11 @@ export default function EventsPage() {
 
     const createdId = String(data.id);
     setGlobalEvents((current) => [mapGlobalEventRow(data), ...current]);
+    trackKpiEvent("event_added", {
+      city: "Global",
+      targetType: "event",
+      targetId: createdId,
+    });
 
     upsertQuality({
       targetType: "event",

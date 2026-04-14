@@ -13,6 +13,7 @@ import {
   syncBlockedItemsFromCloud,
 } from "@/lib/moderation";
 import { useActionToast } from "@/lib/useActionToast";
+import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
@@ -213,6 +214,19 @@ function timeAgo(value) {
   const days = Math.round(diffHours / 24);
   if (days < 7) return `${days}d ago`;
   return new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+function normalizeReportReason(input = "") {
+  const value = String(input || "").trim();
+  if (!value) return "";
+  const map = {
+    "1": "Safety issue",
+    "2": "Wrong info",
+    "3": "Spam or scam",
+    "4": "Abuse or hate",
+    "5": "Other issue",
+  };
+  return map[value] || value;
 }
 
 function Field({ value, onChange, placeholder, area = false }) {
@@ -811,7 +825,11 @@ export default function CommunityPage() {
   };
 
   const reportContent = ({ targetType, targetId, title }) => {
-    const reason = window.prompt("Why are you reporting this content? (safety, abuse, spam, misinformation)");
+    const reason = normalizeReportReason(
+      window.prompt(
+        "Report reason:\n1 = Safety issue\n2 = Wrong info\n3 = Spam/scam\n4 = Abuse/hate\n5 = Other\n\nEnter number or short reason"
+      )
+    );
     if (!reason) return;
 
     addReport({
@@ -822,6 +840,12 @@ export default function CommunityPage() {
       reason,
     });
 
+    trackKpiEvent("report_submitted", {
+      targetType,
+      targetId: String(targetId),
+      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      meta: { reason },
+    });
     showToast("Report sent. Thanks for helping keep community safe.", { tone: "info", duration: 2600 });
   };
 

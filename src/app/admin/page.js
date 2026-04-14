@@ -14,6 +14,7 @@ import {
   syncModerationFromCloud,
 } from "@/lib/moderation";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
+import { getKpiSummary } from "@/lib/analytics";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
@@ -100,6 +101,7 @@ export default function AdminPage() {
   const [diagRows, setDiagRows] = useState([]);
   const [diagTestEmail, setDiagTestEmail] = useState("");
   const [diagMailState, setDiagMailState] = useState("");
+  const [kpiSummary, setKpiSummary] = useState(() => getKpiSummary(7));
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
@@ -199,6 +201,14 @@ export default function AdminPage() {
   useEffect(() => {
     writeLocalJson(ROUTINE_KEY, weeklyRoutine || {});
   }, [weeklyRoutine]);
+
+  useEffect(() => {
+    setKpiSummary(getKpiSummary(7));
+    const timer = window.setInterval(() => {
+      setKpiSummary(getKpiSummary(7));
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const refreshQueue = useMemo(() => {
     const placeItems = places.map((item) => {
@@ -694,6 +704,63 @@ export default function AdminPage() {
             <p className="text-xs uppercase tracking-[0.18em] text-rose-100/75">Blocked items</p>
             <p className="mt-2 text-3xl font-semibold text-white">{stats.blockedItems}</p>
           </article>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-emerald-300/14 bg-[linear-gradient(180deg,rgba(7,42,34,0.82),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-100/75">Growth loop</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Launch KPI snapshot (7 days)</h2>
+              <p className="mt-1 text-xs text-white/60">
+                Fast pulse on acquisition, activation, contribution, and return intent.
+              </p>
+            </div>
+            <span className="rounded-full border border-emerald-200/22 bg-emerald-200/10 px-3 py-1 text-xs text-emerald-100">
+              {kpiSummary.totalEvents} tracked actions
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Signup</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{kpiSummary.counts.signupCompleted}</p>
+              <p className="mt-1 text-[11px] text-white/45">logins: {kpiSummary.counts.loginCompleted}</p>
+            </article>
+            <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Saves</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{kpiSummary.counts.favoriteSaved}</p>
+              <p className="mt-1 text-[11px] text-white/45">search opens: {kpiSummary.counts.searchOpened}</p>
+            </article>
+            <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Plans + reviews</p>
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {kpiSummary.counts.planSaved + kpiSummary.counts.reviewSubmitted}
+              </p>
+              <p className="mt-1 text-[11px] text-white/45">
+                plans: {kpiSummary.counts.planSaved} · reviews: {kpiSummary.counts.reviewSubmitted}
+              </p>
+            </article>
+            <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Contributions</p>
+              <p className="mt-2 text-2xl font-semibold text-white">
+                {kpiSummary.counts.placeAdded + kpiSummary.counts.eventAdded}
+              </p>
+              <p className="mt-1 text-[11px] text-white/45">
+                places: {kpiSummary.counts.placeAdded} · events: {kpiSummary.counts.eventAdded}
+              </p>
+            </article>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-white/62">
+            <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1">
+              Active members: {kpiSummary.activeMembers}
+            </span>
+            {(kpiSummary.topCities || []).map((entry) => (
+              <span key={`kpi-city-${entry.city}`} className="rounded-full border border-emerald-200/18 bg-emerald-200/10 px-3 py-1 text-emerald-100">
+                {entry.city}: {entry.count}
+              </span>
+            ))}
+          </div>
         </section>
 
         <section className="mb-8 rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5">

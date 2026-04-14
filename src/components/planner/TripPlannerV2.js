@@ -677,7 +677,7 @@ export default function TripPlannerV2({
     } catch {
       return {};
     }
-  }, [city, itinerary.length]);
+  }, []);
   const trustedFavoritesSet = useMemo(
     () => new Set((trustedFavoriteIds || []).map((item) => String(item))),
     [trustedFavoriteIds]

@@ -19,6 +19,7 @@ import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
+import { trackKpiEvent } from "@/lib/analytics";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
@@ -100,6 +101,19 @@ function humanizeCitySlug(value = "") {
 function cityNameFromConfig(config, citySlug) {
   const titleName = String(config?.title || "").replace(/^Queer\s+/i, "").trim();
   return titleName || humanizeCitySlug(citySlug) || "this city";
+}
+
+function normalizeReportReason(input = "") {
+  const value = String(input || "").trim();
+  if (!value) return "";
+  const map = {
+    "1": "Safety issue",
+    "2": "Wrong info",
+    "3": "Spam or scam",
+    "4": "Abuse or hate",
+    "5": "Other issue",
+  };
+  return map[value] || value;
 }
 
 const CITY_HERO_COPY = {
@@ -1076,6 +1090,12 @@ export default function CityPage() {
       setPlaceHours("");
       setPlaceLink("");
       setAddMode(false);
+      trackKpiEvent("place_added", {
+        city,
+        targetType: "place",
+        targetId: String(createdPlace.id || ""),
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
       showToast("Place added to city atlas.", { tone: "ok", duration: 2200 });
     } catch (error) {
       showToast(error?.message || "Could not save place right now.", { tone: "warn", duration: 2600 });
@@ -1139,6 +1159,12 @@ export default function CityPage() {
       setEventDescription("");
       setEventLink("");
       setAddEventMode(false);
+      trackKpiEvent("event_added", {
+        city,
+        targetType: "event",
+        targetId: String(createdEvent?.id || ""),
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
       showToast("Event added to city atlas.", { tone: "ok", duration: 2200 });
     } catch (error) {
       captureOperationalError("save_event_fail", error, {
@@ -1151,7 +1177,10 @@ export default function CityPage() {
   };
 
   const handleReport = ({ targetType, targetId, title }) => {
-    const reason = window.prompt("Why are you reporting this? (safety, wrong info, spam, abuse)");
+    const reasonRaw = window.prompt(
+      "Report reason:\n1 = Safety issue\n2 = Wrong info\n3 = Spam/scam\n4 = Abuse/hate\n5 = Other\n\nEnter number or short reason"
+    );
+    const reason = normalizeReportReason(reasonRaw);
     if (!reason) return;
 
     addReport({
@@ -1162,6 +1191,13 @@ export default function CityPage() {
       reason,
     });
 
+    trackKpiEvent("report_submitted", {
+      city: config.title?.replace("Queer ", "") || city,
+      targetType,
+      targetId: String(targetId),
+      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      meta: { reason },
+    });
     showToast("Report sent. Thanks for keeping the atlas safe.", { tone: "info", duration: 2600 });
   };
 
@@ -2501,6 +2537,12 @@ export default function CityPage() {
                   setRating(5);
                   const updated = await getReviews(selectedPlace.id, selectedPlace);
                   setReviews(updated);
+                  trackKpiEvent("review_submitted", {
+                    city,
+                    targetType: "place",
+                    targetId: String(selectedPlace.id || ""),
+                    memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+                  });
                   showToast("Review submitted.", { tone: "ok", duration: 1800 });
                 } finally {
                   setIsSubmittingReview(false);

@@ -10,6 +10,7 @@ import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } fro
 import { getMemberProfile } from "@/lib/memberProfile";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
@@ -97,6 +98,7 @@ function isMissingTableError(error) {
 const PLAN_STORAGE_KEY = "qa_trip_plans";
 const FAVORITES_STORAGE_KEY = "qa_favorites";
 const ADDED_STORAGE_KEY = "qa_added";
+const INITIAL_NOW_TS = Date.now();
 
 function mapPlanRow(row) {
   return {
@@ -160,6 +162,7 @@ export default function FavoritesPage() {
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkWarning, setNetworkWarning] = useState("");
   const [recommendationMode, setRecommendationMode] = useState("balanced");
+  const [nowTs, setNowTs] = useState(INITIAL_NOW_TS);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -346,6 +349,13 @@ export default function FavoritesPage() {
   }, [isReady, isMember, plans]);
 
   useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowTs(Date.now());
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
     if (!isReady || !isMember || !user?.id) return;
     let active = true;
 
@@ -439,7 +449,10 @@ export default function FavoritesPage() {
 
   const totalPlaces = savedPlaces.length;
   const totalEvents = savedEvents.length;
-  const allCities = [...new Set(savedPlaces.concat(savedEvents).map((item) => item.city).filter(Boolean))];
+  const allCities = useMemo(
+    () => [...new Set(savedPlaces.concat(savedEvents).map((item) => item.city).filter(Boolean))],
+    [savedEvents, savedPlaces]
+  );
   const totalCities = allCities.length;
 
   const vibeCount = savedPlaces.reduce((acc, place) => {
@@ -695,7 +708,7 @@ export default function FavoritesPage() {
   }, [blocked.events, blocked.places, events, favorites, followingFeedItems, places, recommendationMode, savedPlaces]);
 
   const weeklyDigest = useMemo(() => {
-    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const weekAgo = nowTs - 7 * 24 * 60 * 60 * 1000;
     const followingThisWeek = followingFeedItems.filter((item) => {
       const value = new Date(item.date || "").getTime();
       return Number.isFinite(value) && value >= weekAgo;
@@ -722,7 +735,7 @@ export default function FavoritesPage() {
       upcomingInSavedCities,
       newCityTarget,
     };
-  }, [allCities, events, followingFeedItems, totalCities]);
+  }, [allCities, events, followingFeedItems, nowTs, totalCities]);
 
   const contributionCounts = useMemo(() => {
     if (typeof window === "undefined") {
@@ -859,6 +872,11 @@ export default function FavoritesPage() {
     }
 
     showToast(`${label} saved to your atlas.`, { tone: "ok", duration: 2200 });
+    trackKpiEvent("favorite_saved", {
+      targetType: normalized.startsWith("event-") ? "event" : "place",
+      targetId: normalized,
+      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+    });
   };
 
   const toggleFollowMember = async (targetUserId) => {
@@ -1005,6 +1023,12 @@ export default function FavoritesPage() {
 
     setPlans((current) => [savedPlan, ...current]);
     setExpandedPlanId(savedPlan.id);
+    trackKpiEvent("plan_saved", {
+      city: cityName,
+      targetType: "plan",
+      targetId: String(savedPlan.id || ""),
+      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+    });
     showToast("Plan saved.", { tone: "ok", duration: 2200 });
     return true;
   };
