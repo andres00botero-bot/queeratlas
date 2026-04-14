@@ -50,6 +50,7 @@ export function usePlaces(city) {
       );
       return {
         ...row,
+        hours: String(row.hours || "").trim(),
         link: String(row.link || byId || byCityName || "").trim(),
       };
     });
@@ -97,30 +98,11 @@ export function usePlaces(city) {
       lng: place.lng,
       city: place.city,
     };
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from("places")
       .insert([basePayload])
       .select("*")
       .single();
-
-    const canRetryWithoutLink =
-      error &&
-      String(error.message || "").toLowerCase().includes("link");
-
-    if (canRetryWithoutLink) {
-      const retry = await supabase
-        .from("places")
-        .insert([
-          {
-            ...basePayload,
-            link: undefined,
-          },
-        ])
-        .select("*")
-        .single();
-      data = retry.data;
-      error = retry.error;
-    }
 
     if (error) {
       console.error("Add place error:", error);

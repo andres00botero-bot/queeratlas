@@ -289,6 +289,26 @@ function qualityPillClass(tone) {
   return "border-white/16 bg-white/7 text-white/70";
 }
 
+function buildPlaceAdminDraft(place) {
+  return {
+    name: String(place?.name || ""),
+    type: String(place?.type || "bar"),
+    description: String(place?.description || ""),
+    vibe: String(place?.vibe || ""),
+    hours: String(place?.hours || ""),
+    link: String(place?.link || ""),
+  };
+}
+
+function buildEventAdminDraft(event) {
+  return {
+    name: String(event?.name || ""),
+    date: String(event?.date || ""),
+    description: String(event?.description || ""),
+    link: String(event?.link || ""),
+  };
+}
+
 function SectionSkeleton({ tone = "violet", rows = 3 }) {
   const toneMap = {
     violet: {
@@ -377,7 +397,16 @@ export default function CityPage() {
   const [hoveredPlaceId, setHoveredPlaceId] = useState(null);
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
-  const { isMember } = useAuth();
+  const { isMember, user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [placeAdminOpen, setPlaceAdminOpen] = useState(false);
+  const [eventAdminOpen, setEventAdminOpen] = useState(false);
+  const [placeAdminDraft, setPlaceAdminDraft] = useState(() => buildPlaceAdminDraft(null));
+  const [eventAdminDraft, setEventAdminDraft] = useState(() => buildEventAdminDraft(null));
+  const [isSavingPlaceAdmin, setIsSavingPlaceAdmin] = useState(false);
+  const [isSavingEventAdmin, setIsSavingEventAdmin] = useState(false);
+  const [isDeletingPlaceAdmin, setIsDeletingPlaceAdmin] = useState(false);
+  const [isDeletingEventAdmin, setIsDeletingEventAdmin] = useState(false);
 
   const mapContainerRef = useRef(null);
   const mapWrapperRef = useRef(null);
@@ -416,6 +445,43 @@ export default function CityPage() {
   useEffect(() => {
     isMapInteractingRef.current = isMapInteracting;
   }, [isMapInteracting]);
+
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(async () => {
+      if (!isMember || !user?.email) {
+        if (active) setIsAdmin(false);
+        return;
+      }
+
+      let adminState = false;
+      try {
+        const rpcRes = await supabase.rpc("qa_is_admin");
+        if (!rpcRes.error) {
+          adminState = Boolean(rpcRes.data);
+        } else {
+          const { data, error } = await supabase
+            .from("qa_admin_users")
+            .select("email")
+            .ilike("email", String(user.email).trim().toLowerCase())
+            .limit(1);
+
+          adminState = !error && (data || []).length > 0;
+        }
+      } catch {
+        adminState = false;
+      }
+
+      if (active) {
+        setIsAdmin(adminState);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isMember, user?.email]);
 
   useEffect(() => {
     let active = true;
@@ -478,6 +544,26 @@ export default function CityPage() {
     if (!eventId) return null;
     return cityEvents.find((event) => String(event.id) === String(eventId)) || null;
   }, [cityEvents, eventId]);
+
+  useEffect(() => {
+    if (!selectedPlace) {
+      setPlaceAdminOpen(false);
+      setPlaceAdminDraft(buildPlaceAdminDraft(null));
+      return;
+    }
+    setPlaceAdminOpen(false);
+    setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
+  }, [selectedPlace]);
+
+  useEffect(() => {
+    if (!selectedEvent) {
+      setEventAdminOpen(false);
+      setEventAdminDraft(buildEventAdminDraft(null));
+      return;
+    }
+    setEventAdminOpen(false);
+    setEventAdminDraft(buildEventAdminDraft(selectedEvent));
+  }, [selectedEvent]);
 
   const canReviewSelectedPlace = Boolean(selectedPlace);
 
@@ -1077,6 +1163,255 @@ export default function CityPage() {
 
     showToast("Marked as closed or moved (needs review).", { tone: "warn", duration: 2400 });
   };
+
+  const resolvePlaceDbId = useCallback(async (place) => {
+    const placeId = String(place?.id || "");
+    const placeName = String(place?.name || "").trim();
+    const placeCity = String(place?.city || city).trim();
+    const normalizeCity = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (placeId && !placeId.startsWith("seed-place-")) {
+      return placeId;
+    }
+
+    if (!placeName || !placeCity) return null;
+
+    const lookup = await supabase
+      .from("places")
+      .select("id, city, name")
+      .ilike("name", placeName)
+      .limit(20);
+
+    const rows = Array.isArray(lookup?.data) ? lookup.data : [];
+    const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(placeCity));
+
+    return matched?.id ? String(matched.id) : null;
+  }, [city]);
+
+  const resolveEventDbId = useCallback(async (event) => {
+    const eventId = String(event?.id || "");
+    const eventName = String(event?.name || "").trim();
+    const eventCity = String(event?.city || city).trim();
+    const eventDateValue = String(event?.date || "").trim();
+    const normalizeCity = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (eventId && !eventId.startsWith("seed-event-")) {
+      return eventId;
+    }
+
+    if (!eventName || !eventCity) return null;
+
+    let query = supabase
+      .from("events")
+      .select("id, city, name, date")
+      .ilike("name", eventName)
+      .limit(20);
+
+    if (eventDateValue) {
+      query = query.eq("date", eventDateValue);
+    }
+
+    const lookup = await query;
+    const rows = Array.isArray(lookup?.data) ? lookup.data : [];
+    const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(eventCity));
+    return matched?.id ? String(matched.id) : null;
+  }, [city]);
+
+  const handleAdminSavePlace = useCallback(async () => {
+    if (!isAdmin || !selectedPlace) return;
+    if (!placeAdminDraft.name.trim() || !placeAdminDraft.description.trim() || !placeAdminDraft.hours.trim()) {
+      showToast("Name, description, and opening hours are required.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    setIsSavingPlaceAdmin(true);
+    try {
+      const dbId = await resolvePlaceDbId(selectedPlace);
+      const payload = {
+        name: placeAdminDraft.name.trim(),
+        type: placeAdminDraft.type,
+        description: placeAdminDraft.description.trim(),
+        vibe: placeAdminDraft.vibe.trim(),
+        hours: placeAdminDraft.hours.trim(),
+        link: placeAdminDraft.link.trim() || null,
+      };
+
+      if (dbId) {
+        const { error } = await supabase
+          .from("places")
+          .update(payload)
+          .eq("id", dbId);
+
+        if (error) {
+          showToast(error.message || "Could not save venue changes.", { tone: "warn", duration: 2600 });
+          return;
+        }
+      } else {
+        const insertPayload = {
+          ...payload,
+          city: String(selectedPlace.city || city).trim(),
+          lat: selectedPlace.lat ?? null,
+          lng: selectedPlace.lng ?? null,
+        };
+        const { data: inserted, error } = await supabase
+          .from("places")
+          .insert([insertPayload])
+          .select("id")
+          .single();
+
+        if (error || !inserted?.id) {
+          showToast(error?.message || "Could not save venue changes.", { tone: "warn", duration: 2600 });
+          return;
+        }
+
+        router.push(buildSelectionUrl({ nextPlaceId: inserted.id, nextEventId: null }));
+      }
+
+      await reloadPlaces();
+      setPlaceAdminOpen(false);
+      showToast("Venue updated and saved.", { tone: "ok", duration: 2100 });
+    } catch (error) {
+      showToast(error?.message || "Could not save venue changes.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsSavingPlaceAdmin(false);
+    }
+  }, [buildSelectionUrl, city, isAdmin, placeAdminDraft, reloadPlaces, resolvePlaceDbId, router, selectedPlace, showToast]);
+
+  const handleAdminDeletePlace = useCallback(async () => {
+    if (!isAdmin || !selectedPlace) return;
+    const confirmed = window.confirm(`Delete venue "${selectedPlace.name}" from atlas?`);
+    if (!confirmed) return;
+
+    setIsDeletingPlaceAdmin(true);
+    try {
+      const dbId = await resolvePlaceDbId(selectedPlace);
+      if (!dbId) {
+        showToast("Could not resolve place record in database.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("places")
+        .delete()
+        .eq("id", dbId);
+
+      if (error) {
+        showToast(error.message || "Could not delete venue.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      await reloadPlaces();
+      closePlace();
+      showToast("Venue deleted.", { tone: "ok", duration: 2000 });
+    } catch (error) {
+      showToast(error?.message || "Could not delete venue.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsDeletingPlaceAdmin(false);
+    }
+  }, [closePlace, isAdmin, reloadPlaces, resolvePlaceDbId, selectedPlace, showToast]);
+
+  const handleAdminSaveEvent = useCallback(async () => {
+    if (!isAdmin || !selectedEvent) return;
+    if (!eventAdminDraft.name.trim() || !eventAdminDraft.date) {
+      showToast("Event name and date are required.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    setIsSavingEventAdmin(true);
+    try {
+      const dbId = await resolveEventDbId(selectedEvent);
+      const payload = {
+        name: eventAdminDraft.name.trim(),
+        date: eventAdminDraft.date,
+        description: eventAdminDraft.description.trim(),
+        link: eventAdminDraft.link.trim() || null,
+      };
+
+      if (dbId) {
+        const { error } = await supabase
+          .from("events")
+          .update(payload)
+          .eq("id", dbId);
+
+        if (error) {
+          showToast(error.message || "Could not save event changes.", { tone: "warn", duration: 2600 });
+          return;
+        }
+      } else {
+        const insertPayload = {
+          ...payload,
+          city: String(selectedEvent.city || city).trim(),
+          lat: selectedEvent.lat ?? null,
+          lng: selectedEvent.lng ?? null,
+        };
+        const { data: inserted, error } = await supabase
+          .from("events")
+          .insert([insertPayload])
+          .select("id")
+          .single();
+
+        if (error || !inserted?.id) {
+          showToast(error?.message || "Could not save event changes.", { tone: "warn", duration: 2600 });
+          return;
+        }
+
+        router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: inserted.id }));
+      }
+
+      await fetchEvents();
+      setEventAdminOpen(false);
+      showToast("Event updated and saved.", { tone: "ok", duration: 2000 });
+    } catch (error) {
+      showToast(error?.message || "Could not save event changes.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsSavingEventAdmin(false);
+    }
+  }, [buildSelectionUrl, city, eventAdminDraft, fetchEvents, isAdmin, resolveEventDbId, router, selectedEvent, showToast]);
+
+  const handleAdminDeleteEvent = useCallback(async () => {
+    if (!isAdmin || !selectedEvent) return;
+    const confirmed = window.confirm(`Delete event "${selectedEvent.name}" from atlas?`);
+    if (!confirmed) return;
+
+    setIsDeletingEventAdmin(true);
+    try {
+      const dbId = await resolveEventDbId(selectedEvent);
+      if (!dbId) {
+        showToast("Could not resolve event record in database.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", dbId);
+
+      if (error) {
+        showToast(error.message || "Could not delete event.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      await fetchEvents();
+      closeEvent();
+      showToast("Event deleted.", { tone: "ok", duration: 2000 });
+    } catch (error) {
+      showToast(error?.message || "Could not delete event.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsDeletingEventAdmin(false);
+    }
+  }, [closeEvent, fetchEvents, isAdmin, resolveEventDbId, selectedEvent, showToast]);
 
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
@@ -1868,6 +2203,87 @@ export default function CityPage() {
                 )}
               </div>
             )}
+            {isAdmin && (
+              <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/82">Admin controls</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPlaceAdminOpen((value) => !value);
+                      setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
+                    }}
+                    className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
+                  >
+                    {placeAdminOpen ? "Close editor" : "Edit venue"}
+                  </button>
+                </div>
+
+                {placeAdminOpen && (
+                  <div className="mt-3 space-y-2">
+                    <input
+                      value={placeAdminDraft.name}
+                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, name: event.target.value }))}
+                      placeholder="Venue name"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <select
+                      value={placeAdminDraft.type}
+                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, type: event.target.value }))}
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    >
+                      {TYPES.map((item) => (
+                        <option key={`admin-place-type-${item.value}`} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                    <textarea
+                      value={placeAdminDraft.description}
+                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, description: event.target.value }))}
+                      placeholder="Description"
+                      className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={placeAdminDraft.vibe}
+                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
+                      placeholder="Vibe"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={placeAdminDraft.hours}
+                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, hours: event.target.value }))}
+                      placeholder="Opening hours"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={placeAdminDraft.link}
+                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, link: event.target.value }))}
+                      placeholder="Official link"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAdminSavePlace}
+                        disabled={isSavingPlaceAdmin}
+                        className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
+                      >
+                        {isSavingPlaceAdmin ? "Saving..." : "Save changes"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAdminDeletePlace}
+                        disabled={isDeletingPlaceAdmin}
+                        className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
+                      >
+                        {isDeletingPlaceAdmin ? "Deleting..." : "Delete venue"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="mt-3 flex gap-2">
             <button
@@ -2088,6 +2504,69 @@ export default function CityPage() {
                 >
                   {getQualityStatus(selectedEventQuality).label}
                 </button>
+              </div>
+            )}
+            {isAdmin && (
+              <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/82">Admin controls</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEventAdminOpen((value) => !value);
+                      setEventAdminDraft(buildEventAdminDraft(selectedEvent));
+                    }}
+                    className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
+                  >
+                    {eventAdminOpen ? "Close editor" : "Edit event"}
+                  </button>
+                </div>
+
+                {eventAdminOpen && (
+                  <div className="mt-3 space-y-2">
+                    <input
+                      value={eventAdminDraft.name}
+                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, name: event.target.value }))}
+                      placeholder="Event name"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <DateInput
+                      value={eventAdminDraft.date}
+                      onChange={(value) => setEventAdminDraft((current) => ({ ...current, date: value }))}
+                      placeholder="Event date"
+                    />
+                    <textarea
+                      value={eventAdminDraft.description}
+                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, description: event.target.value }))}
+                      placeholder="Description"
+                      className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={eventAdminDraft.link}
+                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, link: event.target.value }))}
+                      placeholder="Official link"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAdminSaveEvent}
+                        disabled={isSavingEventAdmin}
+                        className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
+                      >
+                        {isSavingEventAdmin ? "Saving..." : "Save changes"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAdminDeleteEvent}
+                        disabled={isDeletingEventAdmin}
+                        className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
+                      >
+                        {isDeletingEventAdmin ? "Deleting..." : "Delete event"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
