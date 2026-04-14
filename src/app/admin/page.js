@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import {
   blockItem,
   getBlockedItems,
@@ -12,9 +13,12 @@ import {
   saveReports,
   syncModerationFromCloud,
 } from "@/lib/moderation";
+import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
+
+const FIXED_LOG_KEY = "qa_admin_fixed_log";
 
 function timeAgo(value) {
   if (!value) return "Recently";
@@ -29,6 +33,14 @@ function formatTitle(value = "") {
     .replaceAll("_", " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function isWithinDays(value, days) {
+  if (!value) return false;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const diff = Date.now() - parsed.getTime();
+  return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
 }
 
 export default function AdminPage() {
@@ -48,27 +60,41 @@ export default function AdminPage() {
   });
   const [reports, setReports] = useState([]);
   const [blockedItems, setBlockedItems] = useState([]);
+  const [places, setPlaces] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [qualityMap, setQualityMap] = useState({});
+  const [fixedLog, setFixedLog] = useState(() => readLocalJson(FIXED_LOG_KEY, {}));
+  const [queueCityFilter, setQueueCityFilter] = useState("all");
+  const [queueTypeFilter, setQueueTypeFilter] = useState("all");
+  const [queueEntityFilter, setQueueEntityFilter] = useState("all");
   const [warning, setWarning] = useState("");
   const [busyMap, setBusyMap] = useState({});
 
   const loadAdminState = useCallback(async () => {
     setWarning("");
 
-    const [placesRes, eventsRes, globalEventsRes, moderationRes] = await Promise.all([
+    const [placesCountRes, eventsCountRes, globalEventsRes, moderationRes, placesRes, eventsRes] = await Promise.all([
       supabase.from("places_with_stats").select("*", { count: "exact", head: true }),
       supabase.from("events").select("*", { count: "exact", head: true }),
       supabase.from("global_events").select("*", { count: "exact", head: true }),
       syncModerationFromCloud(),
+      supabase.from("places_with_stats").select("id,name,city,type"),
+      supabase.from("events").select("id,name,city,date"),
     ]);
 
     const reportsRows = moderationRes?.reports || getReports();
     const blockedRows = moderationRes?.blockedItems || getBlockedItems();
+    const placesRows = Array.isArray(placesRes.data) ? placesRes.data : [];
+    const eventsRows = Array.isArray(eventsRes.data) ? eventsRes.data : [];
 
     setReports(reportsRows);
     setBlockedItems(blockedRows);
+    setPlaces(placesRows);
+    setEvents(eventsRows);
+    setQualityMap(getQualityMap());
     setStats({
-      places: Number(placesRes.count || 0),
-      events: Number(eventsRes.count || 0),
+      places: Number(placesCountRes.count || 0),
+      events: Number(eventsCountRes.count || 0),
       globalEvents: Number(globalEventsRes.count || 0),
       openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,
       blockedItems: blockedRows.length,
@@ -121,6 +147,86 @@ export default function AdminPage() {
     () => reports.filter((item) => String(item.status || "open") === "open"),
     [reports]
   );
+
+  useEffect(() => {
+    writeLocalJson(FIXED_LOG_KEY, fixedLog || {});
+  }, [fixedLog]);
+
+  const refreshQueue = useMemo(() => {
+    const placeItems = places.map((item) => {
+      const quality = getEntityQuality({
+        targetType: "place",
+        targetId: item.id,
+        entity: item,
+        map: qualityMap,
+      });
+      const qualityStatus = getQualityStatus(quality);
+      return {
+        key: `place:${item.id}`,
+        targetType: "place",
+        targetId: String(item.id),
+        city: String(item.city || ""),
+        type: String(item.type || ""),
+        name: item.name || "Place",
+        quality,
+        qualityStatus,
+      };
+    });
+
+    const eventItems = events.map((item) => {
+      const quality = getEntityQuality({
+        targetType: "event",
+        targetId: item.id,
+        entity: item,
+        map: qualityMap,
+      });
+      const qualityStatus = getQualityStatus(quality);
+      return {
+        key: `event:${item.id}`,
+        targetType: "event",
+        targetId: String(item.id),
+        city: String(item.city || ""),
+        type: "event",
+        name: item.name || "Event",
+        quality,
+        qualityStatus,
+      };
+    });
+
+    return [...placeItems, ...eventItems]
+      .filter((item) => item.qualityStatus.stale)
+      .sort((a, b) => {
+        const aFixed = isWithinDays(fixedLog[a.key], 7) ? 1 : 0;
+        const bFixed = isWithinDays(fixedLog[b.key], 7) ? 1 : 0;
+        if (aFixed !== bFixed) return aFixed - bFixed;
+        return String(a.city).localeCompare(String(b.city));
+      });
+  }, [events, fixedLog, places, qualityMap]);
+
+  const queueCityOptions = useMemo(
+    () =>
+      [...new Set(refreshQueue.map((item) => item.city).filter(Boolean))].sort((a, b) =>
+        String(a).localeCompare(String(b))
+      ),
+    [refreshQueue]
+  );
+
+  const queueTypeOptions = useMemo(
+    () =>
+      [...new Set(refreshQueue.map((item) => item.type).filter(Boolean))].sort((a, b) =>
+        String(a).localeCompare(String(b))
+      ),
+    [refreshQueue]
+  );
+
+  const filteredRefreshQueue = useMemo(() => {
+    return refreshQueue.filter((item) => {
+      const cityOk = queueCityFilter === "all" || item.city === queueCityFilter;
+      const typeOk = queueTypeFilter === "all" || item.type === queueTypeFilter;
+      const entityOk = queueEntityFilter === "all" || item.targetType === queueEntityFilter;
+      return cityOk && typeOk && entityOk;
+    });
+  }, [queueCityFilter, queueEntityFilter, queueTypeFilter, refreshQueue]);
 
   const setReportStatus = async (reportId, status) => {
     const targetId = String(reportId);
@@ -186,6 +292,34 @@ export default function AdminPage() {
     } finally {
       setBusyMap((current) => ({ ...current, [targetId]: false }));
     }
+  };
+
+  const openQueueItem = (item) => {
+    if (!item?.city || !item?.targetId) return;
+    const slug = String(item.city).toLowerCase();
+    if (item.targetType === "event") {
+      router.push(`/${slug}?eventId=${item.targetId}`);
+      return;
+    }
+    router.push(`/${slug}?placeId=${item.targetId}`);
+  };
+
+  const markQueueItemFixed = (item) => {
+    if (!item?.targetType || !item?.targetId) return;
+    upsertQuality({
+      targetType: item.targetType,
+      targetId: item.targetId,
+      source: "Admin command center",
+      lastChecked: new Date().toISOString().slice(0, 10),
+      verified: true,
+    });
+
+    setQualityMap(getQualityMap());
+    setFixedLog((current) => ({
+      ...(current || {}),
+      [item.key]: new Date().toISOString(),
+    }));
+    showToast("Marked as fixed this week.", { tone: "ok", duration: 1800 });
   };
 
   if (!isReady || !adminChecked) {
@@ -305,6 +439,110 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-[0.15em] text-emerald-100/75">Community</p>
               <p className="mt-1 text-sm font-semibold text-white">Topics, safety reports, moderation</p>
             </button>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-fuchsia-300/16 bg-[linear-gradient(180deg,rgba(63,18,73,0.72),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/80">Cross-city quality queue</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Needs refresh</h2>
+              <p className="mt-1 text-xs text-white/60">
+                Worklist across all cities. Open item, verify source, then mark fixed.
+              </p>
+            </div>
+            <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
+              {filteredRefreshQueue.length} items
+            </span>
+          </div>
+
+          <div className="mb-4 grid gap-3 md:grid-cols-3">
+            <select
+              value={queueCityFilter}
+              onChange={(event) => setQueueCityFilter(event.target.value)}
+              className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
+            >
+              <option value="all">All cities</option>
+              {queueCityOptions.map((city) => (
+                <option key={`queue-city-${city}`} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+            <select
+              value={queueTypeFilter}
+              onChange={(event) => setQueueTypeFilter(event.target.value)}
+              className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
+            >
+              <option value="all">All types</option>
+              {queueTypeOptions.map((type) => (
+                <option key={`queue-type-${type}`} value={type}>
+                  {formatTitle(type)}
+                </option>
+              ))}
+            </select>
+            <select
+              value={queueEntityFilter}
+              onChange={(event) => setQueueEntityFilter(event.target.value)}
+              className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
+            >
+              <option value="all">Places + events</option>
+              <option value="place">Places only</option>
+              <option value="event">Events only</option>
+            </select>
+          </div>
+
+          <div className="max-h-[460px] space-y-3 overflow-y-auto pr-1">
+            {filteredRefreshQueue.length > 0 ? (
+              filteredRefreshQueue.map((item) => {
+                const fixedThisWeek = isWithinDays(fixedLog[item.key], 7);
+                return (
+                  <article key={item.key} className="rounded-2xl border border-white/12 bg-black/25 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
+                          {formatTitle(item.targetType)} · {item.city || "Global"} · {formatTitle(item.type)}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">{item.name}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-amber-200/22 bg-amber-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-amber-100">
+                            {item.qualityStatus.label}
+                          </span>
+                          {fixedThisWeek && (
+                            <span className="rounded-full border border-emerald-200/22 bg-emerald-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100">
+                              Fixed this week
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-2 text-xs text-white/45">
+                          Last checked: {item.quality?.lastChecked || "Not set"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openQueueItem(item)}
+                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                        >
+                          Open item
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => markQueueItemFixed(item)}
+                          className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
+                        >
+                          Mark fixed
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
+                Queue is clear for current filters.
+              </div>
+            )}
           </div>
         </section>
 
