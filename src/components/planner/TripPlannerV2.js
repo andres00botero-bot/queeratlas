@@ -187,14 +187,22 @@ function dayLabel(index, horizon) {
   return `Day ${index + 1}`;
 }
 
-function chooseFromPool(pool, usedIds, fallback = null) {
+function chooseFromPool(pool, usedIds, fallback = null, preferredFavoriteIds = null, itemPrefix = "") {
   const available = pool.filter((item) => !usedIds.has(String(item.id)));
   if (available.length === 0) return fallback;
+  if (preferredFavoriteIds && preferredFavoriteIds.size > 0) {
+    const preferred = available.filter((item) =>
+      preferredFavoriteIds.has(`${itemPrefix}${item.id}`)
+    );
+    if (preferred.length > 0) {
+      return preferred[Math.floor(Math.random() * preferred.length)];
+    }
+  }
   return available[Math.floor(Math.random() * available.length)];
 }
 
-function chooseEventFromPool(eventsPool, usedIds) {
-  return chooseFromPool(eventsPool, usedIds, null);
+function chooseEventFromPool(eventsPool, usedIds, preferredFavoriteIds = null) {
+  return chooseFromPool(eventsPool, usedIds, null, preferredFavoriteIds, "event-");
 }
 
 function mapStop(item, stopType, slotLabel, time, reason) {
@@ -212,7 +220,16 @@ function mapStop(item, stopType, slotLabel, time, reason) {
   };
 }
 
-function buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDate }) {
+function buildItinerary({
+  city,
+  places,
+  events,
+  vibe,
+  horizon,
+  soloSafe,
+  planDate,
+  preferredFavoriteIds = null,
+}) {
   const placeRows = places.filter((row) => normalize(row.city) === normalize(city));
   const daysCount = horizon === "tonight" ? 1 : horizon === "weekend" ? 2 : 3;
   const startDate = startOfDay(parseIsoDate(planDate) || new Date());
@@ -244,10 +261,10 @@ function buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDat
       const landingPool = filterPlacesOpenAt(landingPoolRaw, currentDate, "18:30");
       const introPlacePool = filterPlacesOpenAt(introPlacePoolRaw, currentDate, "21:30");
 
-      const s1 = chooseFromPool(landingPool, used);
+      const s1 = chooseFromPool(landingPool, used, null, preferredFavoriteIds);
       if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(dayEvents, used);
-      const s2 = forcedEvent || chooseFromPool(introPlacePool, used);
+      const forcedEvent = chooseEventFromPool(dayEvents, used, preferredFavoriteIds);
+      const s2 = forcedEvent || chooseFromPool(introPlacePool, used, null, preferredFavoriteIds);
       if (s2) used.add(String(s2.id));
 
       stops.push(
@@ -272,12 +289,12 @@ function buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDat
       const latePool = filterPlacesOpenAt(latePoolRaw, currentDate, "03:00");
       const peakPool = [...dayEvents, ...peakPlacePool];
 
-      const s1 = chooseFromPool(warmPool, used);
+      const s1 = chooseFromPool(warmPool, used, null, preferredFavoriteIds);
       if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(dayEvents, used);
-      const s2 = forcedEvent || chooseFromPool(peakPool, used);
+      const forcedEvent = chooseEventFromPool(dayEvents, used, preferredFavoriteIds);
+      const s2 = forcedEvent || chooseFromPool(peakPool, used, null, preferredFavoriteIds);
       if (s2) used.add(String(s2.id));
-      const s3 = chooseFromPool(latePool, used);
+      const s3 = chooseFromPool(latePool, used, null, preferredFavoriteIds);
       if (s3) used.add(String(s3.id));
 
       stops.push(
@@ -297,10 +314,10 @@ function buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDat
       const recoveryPoolRaw = [...chill, ...cafes, ...bars];
       const recoveryPoolEarly = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "11:30");
       const recoveryPoolLate = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "16:00");
-      const s1 = chooseFromPool(recoveryPoolEarly, used);
+      const s1 = chooseFromPool(recoveryPoolEarly, used, null, preferredFavoriteIds);
       if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(dayEvents, used);
-      const s2 = forcedEvent || chooseFromPool(recoveryPoolLate, used);
+      const forcedEvent = chooseEventFromPool(dayEvents, used, preferredFavoriteIds);
+      const s2 = forcedEvent || chooseFromPool(recoveryPoolLate, used, null, preferredFavoriteIds);
       if (s2) used.add(String(s2.id));
 
       stops.push(
@@ -329,6 +346,7 @@ export default function TripPlannerV2({
   plannerCities = [],
   places = [],
   events = [],
+  trustedFavoriteIds = [],
   onOpenStop,
   onSavePlan,
 }) {
@@ -344,6 +362,10 @@ export default function TripPlannerV2({
   const [itinerary, setItinerary] = useState([]);
   const [locks, setLocks] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const trustedFavoritesSet = useMemo(
+    () => new Set((trustedFavoriteIds || []).map((item) => String(item))),
+    [trustedFavoriteIds]
+  );
 
   const canBuild = Boolean(city);
 
@@ -359,14 +381,32 @@ export default function TripPlannerV2({
 
   const generate = () => {
     if (!canBuild) return;
-    const next = buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDate });
+    const next = buildItinerary({
+      city,
+      places,
+      events,
+      vibe,
+      horizon,
+      soloSafe,
+      planDate,
+      preferredFavoriteIds: trustedFavoritesSet,
+    });
     setItinerary(next);
     setLocks({});
   };
 
   const shuffleUnlocked = () => {
     if (!itinerary.length) return;
-    const fresh = buildItinerary({ city, places, events, vibe, horizon, soloSafe, planDate });
+    const fresh = buildItinerary({
+      city,
+      places,
+      events,
+      vibe,
+      horizon,
+      soloSafe,
+      planDate,
+      preferredFavoriteIds: trustedFavoritesSet,
+    });
     const merged = itinerary.map((day, dayIdx) => {
       const freshDay = fresh[dayIdx] || { ...day, stops: [] };
       const nextStops = freshDay.stops.map((stop, stopIdx) => {
@@ -417,6 +457,11 @@ export default function TripPlannerV2({
         <div>
           <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/78">Trip planner</p>
           <h3 className="mt-1 text-xl font-semibold text-white">Queer Atlas flow for queer nights</h3>
+          {trustedFavoritesSet.size > 0 && (
+            <p className="mt-1 text-xs text-fuchsia-100/72">
+              Trusted signal active · planning with your network saves.
+            </p>
+          )}
         </div>
         <div className="rounded-full border border-fuchsia-200/16 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
           {cityPlacesCount} places · {cityEventsCount} events

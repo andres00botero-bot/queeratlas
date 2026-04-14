@@ -1424,6 +1424,9 @@ export default function FavoritesPage() {
             plannerCities={plannerCities}
             places={places}
             events={events}
+            trustedFavoriteIds={(followingFeedRows || [])
+              .map((row) => String(row.favorite_id || ""))
+              .filter(Boolean)}
             onOpenStop={openPlannerStopOnMap}
             onSavePlan={saveV2Plan}
           />
