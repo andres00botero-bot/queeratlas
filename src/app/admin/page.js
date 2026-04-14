@@ -93,42 +93,50 @@ export default function AdminPage() {
   );
   const [warning, setWarning] = useState("");
   const [busyMap, setBusyMap] = useState({});
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState("");
 
   const loadAdminState = useCallback(async () => {
+    setIsRefreshing(true);
     setWarning("");
+    try {
+      const [placesCountRes, eventsCountRes, globalEventsRes, moderationRes, placesRes, eventsRes] = await Promise.all([
+        supabase.from("places_with_stats").select("*", { count: "exact", head: true }),
+        supabase.from("events").select("*", { count: "exact", head: true }),
+        supabase.from("global_events").select("*", { count: "exact", head: true }),
+        syncModerationFromCloud(),
+        supabase.from("places_with_stats").select("id,name,city,type"),
+        supabase.from("events").select("id,name,city,date"),
+      ]);
 
-    const [placesCountRes, eventsCountRes, globalEventsRes, moderationRes, placesRes, eventsRes] = await Promise.all([
-      supabase.from("places_with_stats").select("*", { count: "exact", head: true }),
-      supabase.from("events").select("*", { count: "exact", head: true }),
-      supabase.from("global_events").select("*", { count: "exact", head: true }),
-      syncModerationFromCloud(),
-      supabase.from("places_with_stats").select("id,name,city,type"),
-      supabase.from("events").select("id,name,city,date"),
-    ]);
+      const reportsRows = moderationRes?.reports || getReports();
+      const blockedRows = moderationRes?.blockedItems || getBlockedItems();
+      const placesRows = Array.isArray(placesRes.data) ? placesRes.data : [];
+      const eventsRows = Array.isArray(eventsRes.data) ? eventsRes.data : [];
 
-    const reportsRows = moderationRes?.reports || getReports();
-    const blockedRows = moderationRes?.blockedItems || getBlockedItems();
-    const placesRows = Array.isArray(placesRes.data) ? placesRes.data : [];
-    const eventsRows = Array.isArray(eventsRes.data) ? eventsRes.data : [];
+      setReports(reportsRows);
+      setBlockedItems(blockedRows);
+      setPlaces(placesRows);
+      setEvents(eventsRows);
+      setQualityMap(getQualityMap());
+      setSelectedReportIds((current) =>
+        current.filter((id) => reportsRows.some((row) => String(row.id) === String(id)))
+      );
+      setStats({
+        places: Number(placesCountRes.count || 0),
+        events: Number(eventsCountRes.count || 0),
+        globalEvents: Number(globalEventsRes.count || 0),
+        openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,
+        blockedItems: blockedRows.length,
+      });
 
-    setReports(reportsRows);
-    setBlockedItems(blockedRows);
-    setPlaces(placesRows);
-    setEvents(eventsRows);
-    setQualityMap(getQualityMap());
-    setSelectedReportIds((current) =>
-      current.filter((id) => reportsRows.some((row) => String(row.id) === String(id)))
-    );
-    setStats({
-      places: Number(placesCountRes.count || 0),
-      events: Number(eventsCountRes.count || 0),
-      globalEvents: Number(globalEventsRes.count || 0),
-      openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,
-      blockedItems: blockedRows.length,
-    });
+      if (moderationRes?.warning) {
+        setWarning(moderationRes.warning);
+      }
 
-    if (moderationRes?.warning) {
-      setWarning(moderationRes.warning);
+      setLastSyncedAt(new Date().toISOString());
+    } finally {
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -544,6 +552,11 @@ export default function AdminPage() {
           <p className="mt-3 text-xs text-cyan-100/70">
             Logged in as {memberName || user?.email || "Admin"}
           </p>
+          {lastSyncedAt && (
+            <p className="mt-2 text-[11px] text-cyan-100/62">
+              Last synced {timeAgo(lastSyncedAt)}
+            </p>
+          )}
           {warning && (
             <div className="mt-4 inline-flex rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
               {warning}
@@ -583,9 +596,10 @@ export default function AdminPage() {
             <button
               type="button"
               onClick={loadAdminState}
+              disabled={isRefreshing}
               className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
             >
-              Refresh
+              {isRefreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-3">

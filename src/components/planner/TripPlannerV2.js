@@ -782,6 +782,9 @@ export default function TripPlannerV2({
               Trusted signal active · planning with your network saves.
             </p>
           )}
+          <p className="mt-1 text-[11px] text-white/55">
+            Trust score blends network signal, quality status, and time-fit.
+          </p>
         </div>
         <div className="rounded-full border border-fuchsia-200/16 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
           {cityPlacesCount} places · {cityEventsCount} events

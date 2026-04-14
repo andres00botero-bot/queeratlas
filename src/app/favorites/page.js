@@ -2006,6 +2006,9 @@ export default function FavoritesPage() {
               Peak mode
             </button>
           </div>
+          <p className="mb-4 text-xs text-white/52">
+            Mode changes how the engine weights trust, timing, and venue energy.
+          </p>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {forYouRecommendations.length > 0 ? (
