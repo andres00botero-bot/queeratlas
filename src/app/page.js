@@ -59,6 +59,7 @@ export default function Home() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [isIntroVisible, setIsIntroVisible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { isMember, memberName, memberProfile, isLoading: isAuthLoading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
 
   const getResultKey = (item) => (
@@ -94,7 +95,7 @@ export default function Home() {
       return "";
     }
 
-    const allowedPrefixes = ["/community", "/contribute", "/search"];
+    const allowedPrefixes = ["/community", "/contribute", "/search", "/admin"];
     return allowedPrefixes.some(
       (prefix) => rawRedirect === prefix || rawRedirect.startsWith(`${prefix}?`)
     )
@@ -282,6 +283,32 @@ export default function Home() {
   }, [isAuthLoading, isMember, router]);
 
   useEffect(() => {
+    if (isAuthLoading || !isMember) {
+      setIsAdmin(false);
+      return;
+    }
+
+    let active = true;
+
+    queueMicrotask(async () => {
+      let adminState = false;
+      try {
+        const rpcRes = await supabase.rpc("qa_is_admin");
+        adminState = Boolean(rpcRes.data);
+      } catch {
+        adminState = false;
+      }
+
+      if (!active) return;
+      setIsAdmin(adminState);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, isMember]);
+
+  useEffect(() => {
     if (!query) {
       queueMicrotask(() => {
         setResults([]);
@@ -445,6 +472,14 @@ export default function Home() {
                   >
                     Community
                   </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => router.push("/admin")}
+                      className="hidden rounded-full border border-cyan-200/24 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/45 sm:inline-flex"
+                    >
+                      Admin
+                    </button>
+                  )}
                 </>
               )}
 
