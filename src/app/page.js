@@ -60,6 +60,7 @@ export default function Home() {
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState("signin");
+  const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState("");
   const [signupForm, setSignupForm] = useState({
     displayName: "",
     pronouns: "",
@@ -85,6 +86,7 @@ export default function Home() {
     updateMemberProfile,
     signOut,
   } = useAuth();
+  const needsEmailConfirmation = authMessage.toLowerCase().includes("confirm your email");
 
   const getResultKey = (item) => (
     item.type === "event" ? `event-${item.id}` : String(item.id)
@@ -96,6 +98,7 @@ export default function Home() {
     setAuthMessage("");
     setAuthMode("signin");
     setPasswordInput("");
+    setPendingEmailConfirmation("");
     if (redirect) {
       writeLocalValue("qa_redirect", redirect);
       writeLocalValue("qa_post_login_target", redirect);
@@ -1100,11 +1103,13 @@ export default function Home() {
                       const { data, error } = await signUpWithPassword(email, password);
                       if (error) {
                         setAuthMessage(error.message);
+                        setPendingEmailConfirmation("");
                         setAuthLoading(false);
                         return;
                       }
 
                       if (data?.session) {
+                        setPendingEmailConfirmation("");
                         const result = await updateMemberProfile(profilePayload);
                         if (result?.ok) {
                           setAuthMessage("Account ready. Welcome to Queer Atlas.");
@@ -1112,6 +1117,7 @@ export default function Home() {
                           setAuthMessage("Account created. Profile can be edited in Your Atlas.");
                         }
                       } else {
+                        setPendingEmailConfirmation(email);
                         localStorage.setItem(
                           PENDING_SIGNUP_PROFILE_KEY,
                           JSON.stringify({ ...profilePayload, email })
@@ -1139,9 +1145,39 @@ export default function Home() {
               )}
 
               {authMessage && (
-                <p className="mt-4 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/75">
+                <div
+                  className={`mt-4 rounded-xl border px-3 py-2 text-xs ${
+                    needsEmailConfirmation
+                      ? "animate-pulse border-amber-300/45 bg-amber-300/15 text-amber-100"
+                      : "border-white/10 bg-white/5 text-white/75"
+                  }`}
+                >
                   {authMessage}
-                </p>
+                </div>
+              )}
+              {needsEmailConfirmation && (
+                <div className="mt-2 rounded-xl border border-amber-200/25 bg-amber-200/10 px-3 py-2 text-[11px] text-amber-100/90">
+                  <p>Check inbox + spam in 1-2 minutes, then confirm the link.</p>
+                  {pendingEmailConfirmation && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setAuthLoading(true);
+                        const { error } = await signInWithEmail(pendingEmailConfirmation);
+                        if (error) {
+                          setAuthMessage(error.message);
+                        } else {
+                          setAuthMessage("New confirmation email sent. Check inbox + spam.");
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="mt-2 rounded-full border border-amber-100/35 bg-amber-100/15 px-3 py-1 text-[10px] font-semibold tracking-[0.08em] text-amber-50 transition hover:bg-amber-100/22 disabled:opacity-70"
+                    >
+                      {authLoading ? "Sending..." : "Resend confirmation"}
+                    </button>
+                  )}
+                </div>
               )}
 
               <p className="mt-5 text-xs leading-6 text-white/36">
