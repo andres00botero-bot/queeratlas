@@ -655,14 +655,14 @@ export default function Home() {
                     onChange={(event) => setQuery(event.target.value)}
                     onFocus={() => setShowResults(true)}
                     placeholder="Search cities, places, events"
-                    className="w-full rounded-[28px] border border-fuchsia-200/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-14 py-5 text-base text-white outline-none backdrop-blur focus:border-fuchsia-300/45 focus:ring-2 focus:ring-fuchsia-300/20"
+                    className="w-full rounded-[28px] border border-fuchsia-200/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] pl-12 pr-28 py-4 text-sm text-white outline-none backdrop-blur placeholder:text-white/45 focus:border-fuchsia-300/45 focus:ring-2 focus:ring-fuchsia-300/20 sm:pl-14 sm:pr-32 sm:py-5 sm:text-base"
                   />
 
                   <button
                     onClick={() => {
                       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-4 py-2 text-xs font-semibold text-black transition hover:scale-[1.02]"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-3 py-1.5 text-[11px] font-semibold text-black transition hover:scale-[1.02] sm:right-3 sm:px-4 sm:py-2 sm:text-xs"
                   >
                     Explore
                   </button>
