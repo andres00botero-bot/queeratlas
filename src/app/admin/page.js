@@ -19,6 +19,8 @@ import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
 
 const FIXED_LOG_KEY = "qa_admin_fixed_log";
+const AUDIT_LOG_KEY = "qa_admin_audit_log";
+const ROUTINE_KEY = "qa_admin_weekly_routine";
 
 function timeAgo(value) {
   if (!value) return "Recently";
@@ -41,6 +43,18 @@ function isWithinDays(value, days) {
   if (Number.isNaN(parsed.getTime())) return false;
   const diff = Date.now() - parsed.getTime();
   return diff >= 0 && diff <= days * 24 * 60 * 60 * 1000;
+}
+
+function toCsv(rows = []) {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+  const headers = Object.keys(rows[0]);
+  const escapeCell = (value) => {
+    const text = String(value ?? "");
+    const escaped = text.replace(/"/g, '""');
+    return `"${escaped}"`;
+  };
+  const body = rows.map((row) => headers.map((key) => escapeCell(row[key])).join(","));
+  return [headers.join(","), ...body].join("\n");
 }
 
 export default function AdminPage() {
@@ -67,6 +81,16 @@ export default function AdminPage() {
   const [queueCityFilter, setQueueCityFilter] = useState("all");
   const [queueTypeFilter, setQueueTypeFilter] = useState("all");
   const [queueEntityFilter, setQueueEntityFilter] = useState("all");
+  const [selectedReportIds, setSelectedReportIds] = useState([]);
+  const [selectedQueueKeys, setSelectedQueueKeys] = useState([]);
+  const [auditLog, setAuditLog] = useState(() => readLocalJson(AUDIT_LOG_KEY, []));
+  const [weeklyRoutine, setWeeklyRoutine] = useState(() =>
+    readLocalJson(ROUTINE_KEY, {
+      queuePassDoneAt: "",
+      newsPassDoneAt: "",
+      linksPassDoneAt: "",
+    })
+  );
   const [warning, setWarning] = useState("");
   const [busyMap, setBusyMap] = useState({});
 
@@ -92,6 +116,9 @@ export default function AdminPage() {
     setPlaces(placesRows);
     setEvents(eventsRows);
     setQualityMap(getQualityMap());
+    setSelectedReportIds((current) =>
+      current.filter((id) => reportsRows.some((row) => String(row.id) === String(id)))
+    );
     setStats({
       places: Number(placesCountRes.count || 0),
       events: Number(eventsCountRes.count || 0),
@@ -151,6 +178,14 @@ export default function AdminPage() {
   useEffect(() => {
     writeLocalJson(FIXED_LOG_KEY, fixedLog || {});
   }, [fixedLog]);
+
+  useEffect(() => {
+    writeLocalJson(AUDIT_LOG_KEY, auditLog || []);
+  }, [auditLog]);
+
+  useEffect(() => {
+    writeLocalJson(ROUTINE_KEY, weeklyRoutine || {});
+  }, [weeklyRoutine]);
 
   const refreshQueue = useMemo(() => {
     const placeItems = places.map((item) => {
@@ -228,6 +263,56 @@ export default function AdminPage() {
     });
   }, [queueCityFilter, queueEntityFilter, queueTypeFilter, refreshQueue]);
 
+  useEffect(() => {
+    const allowed = new Set(filteredRefreshQueue.map((item) => String(item.key)));
+    setSelectedQueueKeys((current) => current.filter((key) => allowed.has(String(key))));
+  }, [filteredRefreshQueue]);
+
+  const appendAuditLog = (action, detail = "") => {
+    const actor = String(memberName || user?.email || "admin");
+    setAuditLog((current) => [
+      {
+        id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        action,
+        detail,
+        actor,
+        createdAt: new Date().toISOString(),
+      },
+      ...(Array.isArray(current) ? current : []),
+    ].slice(0, 150));
+  };
+
+  const toggleReportSelection = (reportId) => {
+    const key = String(reportId);
+    setSelectedReportIds((current) =>
+      current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
+    );
+  };
+
+  const toggleQueueSelection = (queueKey) => {
+    const key = String(queueKey);
+    setSelectedQueueKeys((current) =>
+      current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
+    );
+  };
+
+  const exportCsv = (rows, fileName) => {
+    const csv = toCsv(rows);
+    if (!csv) {
+      showToast("No data to export.", { tone: "info", duration: 1600 });
+      return;
+    }
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+    appendAuditLog("export_csv", fileName);
+    showToast("CSV exported.", { tone: "ok", duration: 1600 });
+  };
+
   const setReportStatus = async (reportId, status) => {
     const targetId = String(reportId);
     setBusyMap((current) => ({ ...current, [targetId]: true }));
@@ -242,6 +327,7 @@ export default function AdminPage() {
       });
       setReports(nextReports);
       saveReports(nextReports);
+      appendAuditLog("report_status", `${targetId} -> ${status}`);
       showToast(status === "resolved" ? "Report resolved." : "Report reopened.", {
         tone: "ok",
         duration: 1900,
@@ -273,6 +359,7 @@ export default function AdminPage() {
       });
       setReports(nextReports);
       saveReports(nextReports);
+      appendAuditLog("report_block", `${report.targetType}:${report.targetId}`);
       showToast("Item blocked and report resolved.", { tone: "ok", duration: 2200 });
       await loadAdminState();
     } finally {
@@ -287,6 +374,7 @@ export default function AdminPage() {
       const next = blockedItems.filter((item) => String(item.id) !== targetId);
       setBlockedItems(next);
       saveBlockedItems(next);
+      appendAuditLog("unblock_item", targetId);
       showToast("Blocked item removed.", { tone: "info", duration: 2000 });
       await loadAdminState();
     } finally {
@@ -319,7 +407,93 @@ export default function AdminPage() {
       ...(current || {}),
       [item.key]: new Date().toISOString(),
     }));
+    appendAuditLog("queue_fixed", `${item.targetType}:${item.targetId}`);
     showToast("Marked as fixed this week.", { tone: "ok", duration: 1800 });
+  };
+
+  const bulkResolveSelectedReports = () => {
+    if (selectedReportIds.length === 0) return;
+    const selectedSet = new Set(selectedReportIds.map(String));
+    const nextReports = reports.map((report) =>
+      selectedSet.has(String(report.id))
+        ? { ...report, status: "resolved", resolvedAt: new Date().toISOString() }
+        : report
+    );
+    setReports(nextReports);
+    saveReports(nextReports);
+    appendAuditLog("bulk_resolve_reports", `${selectedReportIds.length} reports`);
+    setSelectedReportIds([]);
+    showToast("Selected reports resolved.", { tone: "ok", duration: 1900 });
+  };
+
+  const bulkEmergencyHideSelected = () => {
+    if (selectedReportIds.length === 0) return;
+    const selectedSet = new Set(selectedReportIds.map(String));
+    const selectedReports = reports.filter((report) => selectedSet.has(String(report.id)));
+
+    selectedReports.forEach((report) => {
+      blockItem({
+        targetType: report.targetType,
+        targetId: report.targetId,
+        title: report.title,
+        city: report.city,
+      });
+    });
+
+    const nextReports = reports.map((report) =>
+      selectedSet.has(String(report.id))
+        ? { ...report, status: "resolved", resolvedAt: new Date().toISOString() }
+        : report
+    );
+    setReports(nextReports);
+    saveReports(nextReports);
+    appendAuditLog("bulk_emergency_hide", `${selectedReports.length} reports`);
+    setSelectedReportIds([]);
+    showToast("Emergency hide applied to selected reports.", { tone: "ok", duration: 2200 });
+    queueMicrotask(async () => {
+      await loadAdminState();
+    });
+  };
+
+  const bulkMarkQueueFixed = () => {
+    if (selectedQueueKeys.length === 0) return;
+    const selectedSet = new Set(selectedQueueKeys.map(String));
+    const selectedItems = filteredRefreshQueue.filter((item) => selectedSet.has(String(item.key)));
+    const nowIso = new Date().toISOString();
+    selectedItems.forEach((item) => {
+      upsertQuality({
+        targetType: item.targetType,
+        targetId: item.targetId,
+        source: "Admin command center (bulk)",
+        lastChecked: nowIso.slice(0, 10),
+        verified: true,
+      });
+    });
+    setQualityMap(getQualityMap());
+    setFixedLog((current) => {
+      const next = { ...(current || {}) };
+      selectedItems.forEach((item) => {
+        next[item.key] = nowIso;
+      });
+      return next;
+    });
+    appendAuditLog("bulk_queue_fixed", `${selectedItems.length} items`);
+    setSelectedQueueKeys([]);
+    showToast("Selected queue items marked fixed.", { tone: "ok", duration: 2100 });
+  };
+
+  const markRoutineDone = (key) => {
+    const labelMap = {
+      queuePassDoneAt: "Queue pass completed",
+      newsPassDoneAt: "News pass completed",
+      linksPassDoneAt: "Dead-link pass completed",
+    };
+    setWeeklyRoutine((current) => ({
+      ...(current || {}),
+      [key]: new Date().toISOString(),
+    }));
+    appendAuditLog("weekly_routine", labelMap[key] || key);
+    showToast(labelMap[key] || "Routine step completed.", { tone: "ok", duration: 1800 });
   };
 
   if (!isReady || !adminChecked) {
@@ -451,9 +625,38 @@ export default function AdminPage() {
                 Worklist across all cities. Open item, verify source, then mark fixed.
               </p>
             </div>
-            <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
-              {filteredRefreshQueue.length} items
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
+                {filteredRefreshQueue.length} items
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  exportCsv(
+                    filteredRefreshQueue.map((item) => ({
+                      entity: item.targetType,
+                      city: item.city,
+                      type: item.type,
+                      name: item.name,
+                      last_checked: item.quality?.lastChecked || "",
+                      status: item.qualityStatus?.label || "",
+                    })),
+                    "qa-needs-refresh-queue.csv"
+                  )
+                }
+                className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/30"
+              >
+                Export CSV
+              </button>
+              <button
+                type="button"
+                onClick={bulkMarkQueueFixed}
+                disabled={selectedQueueKeys.length === 0}
+                className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40 disabled:opacity-60"
+              >
+                Mark selected fixed ({selectedQueueKeys.length})
+              </button>
+            </div>
           </div>
 
           <div className="mb-4 grid gap-3 md:grid-cols-3">
@@ -500,6 +703,15 @@ export default function AdminPage() {
                   <article key={item.key} className="rounded-2xl border border-white/12 bg-black/25 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
+                        <label className="mb-2 inline-flex cursor-pointer items-center gap-2 text-[11px] text-white/60">
+                          <input
+                            type="checkbox"
+                            checked={selectedQueueKeys.includes(String(item.key))}
+                            onChange={() => toggleQueueSelection(item.key)}
+                            className="h-3.5 w-3.5 rounded border-white/25 bg-black/40"
+                          />
+                          Select
+                        </label>
                         <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
                           {formatTitle(item.targetType)} · {item.city || "Global"} · {formatTitle(item.type)}
                         </p>
@@ -552,9 +764,47 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Safety inbox</p>
               <h2 className="mt-1 text-xl font-semibold text-white">Open reports</h2>
             </div>
-            <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">
-              {openReports.length} open
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">
+                {openReports.length} open
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  exportCsv(
+                    openReports.map((item) => ({
+                      id: item.id,
+                      target_type: item.targetType,
+                      target_id: item.targetId,
+                      city: item.city,
+                      title: item.title,
+                      reason: item.reason,
+                      created_at: item.createdAt,
+                    })),
+                    "qa-open-reports.csv"
+                  )
+                }
+                className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/30"
+              >
+                Export CSV
+              </button>
+              <button
+                type="button"
+                onClick={bulkResolveSelectedReports}
+                disabled={selectedReportIds.length === 0}
+                className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40 disabled:opacity-60"
+              >
+                Resolve selected ({selectedReportIds.length})
+              </button>
+              <button
+                type="button"
+                onClick={bulkEmergencyHideSelected}
+                disabled={selectedReportIds.length === 0}
+                className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+              >
+                Emergency hide selected
+              </button>
+            </div>
           </div>
           <div className="space-y-3">
             {openReports.length > 0 ? (
@@ -565,6 +815,15 @@ export default function AdminPage() {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
+                      <label className="mb-2 inline-flex cursor-pointer items-center gap-2 text-[11px] text-white/60">
+                        <input
+                          type="checkbox"
+                          checked={selectedReportIds.includes(String(report.id))}
+                          onChange={() => toggleReportSelection(report.id)}
+                          className="h-3.5 w-3.5 rounded border-white/25 bg-black/40"
+                        />
+                        Select
+                      </label>
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
                         {formatTitle(report.targetType)} · {report.city || "Global"}
                       </p>
@@ -598,6 +857,88 @@ export default function AdminPage() {
             ) : (
               <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
                 No open reports right now.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-cyan-300/16 bg-[linear-gradient(180deg,rgba(8,38,45,0.82),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/80">Growth ops</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Weekly routine</h2>
+            </div>
+            <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">
+              Keep atlas quality high
+            </span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Queue pass</p>
+              <p className="mt-2 text-sm text-white/80">
+                {weeklyRoutine.queuePassDoneAt ? `Done ${timeAgo(weeklyRoutine.queuePassDoneAt)}` : "Pending this week"}
+              </p>
+              <button
+                type="button"
+                onClick={() => markRoutineDone("queuePassDoneAt")}
+                className="mt-3 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+              >
+                Mark done
+              </button>
+            </article>
+            <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">News pass</p>
+              <p className="mt-2 text-sm text-white/80">
+                {weeklyRoutine.newsPassDoneAt ? `Done ${timeAgo(weeklyRoutine.newsPassDoneAt)}` : "Pending this week"}
+              </p>
+              <button
+                type="button"
+                onClick={() => markRoutineDone("newsPassDoneAt")}
+                className="mt-3 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+              >
+                Mark done
+              </button>
+            </article>
+            <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Dead-link pass</p>
+              <p className="mt-2 text-sm text-white/80">
+                {weeklyRoutine.linksPassDoneAt ? `Done ${timeAgo(weeklyRoutine.linksPassDoneAt)}` : "Pending this week"}
+              </p>
+              <button
+                type="button"
+                onClick={() => markRoutineDone("linksPassDoneAt")}
+                className="mt-3 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+              >
+                Mark done
+              </button>
+            </article>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-violet-300/16 bg-[linear-gradient(180deg,rgba(37,18,56,0.82),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-violet-100/80">Governance</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Audit log</h2>
+            </div>
+            <span className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">
+              {auditLog.length} entries
+            </span>
+          </div>
+          <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
+            {auditLog.length > 0 ? (
+              auditLog.map((entry) => (
+                <article key={entry.id} className="rounded-xl border border-white/12 bg-black/25 px-3 py-2">
+                  <p className="text-xs uppercase tracking-[0.12em] text-violet-100/75">{entry.action}</p>
+                  <p className="mt-1 text-sm text-white/82">{entry.detail || "No detail"}</p>
+                  <p className="mt-1 text-[11px] text-white/50">
+                    {entry.actor} · {timeAgo(entry.createdAt)}
+                  </p>
+                </article>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
+                No actions logged yet.
               </div>
             )}
           </div>

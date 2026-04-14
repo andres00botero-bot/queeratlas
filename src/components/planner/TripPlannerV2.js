@@ -960,6 +960,9 @@ export default function TripPlannerV2({
           {itinerary.map((day, dayIdx) => (
             <article key={day.dayKey} className="rounded-2xl border border-white/12 bg-white/[0.04] p-3">
               <p className="text-xs uppercase tracking-[0.16em] text-white/56">{day.dayLabel}</p>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-white/42">
+                Energy curve: soft → peak → recover
+              </p>
               <div className="mt-3 space-y-2">
                 {day.stops.length === 0 && (
                   <p className="text-xs text-white/52">No matched stops. Try another vibe/city.</p>
@@ -979,6 +982,11 @@ export default function TripPlannerV2({
                           {typeof stop.trustScore === "number" && (
                             <p className="mt-1 text-[11px] text-cyan-100/75">
                               Trust {stop.trustScore} · {stop.trustReason || "network + quality + timing"}
+                            </p>
+                          )}
+                          {String(stop.trustReason || "").includes("opening unclear") && (
+                            <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-amber-100/80">
+                              Check opening hours before you go
                             </p>
                           )}
                         </div>

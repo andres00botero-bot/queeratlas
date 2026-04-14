@@ -490,6 +490,17 @@ export default function FavoritesPage() {
         const userId = String(entry.user_id || "");
         return userId && userId !== selfId;
       })
+      .sort((a, b) => {
+        const aRank = Number(a.rank || 9999);
+        const bRank = Number(b.rank || 9999);
+        const aScore = Number(a.score || 0);
+        const bScore = Number(b.score || 0);
+        const aCities = Number(a.city_count || 0);
+        const bCities = Number(b.city_count || 0);
+        const aSignal = aScore * 0.08 + aCities * 2.4 - aRank * 0.6;
+        const bSignal = bScore * 0.08 + bCities * 2.4 - bRank * 0.6;
+        return bSignal - aSignal;
+      })
       .slice(0, 18);
   }, [networkMembers, user?.id]);
 
@@ -531,6 +542,41 @@ export default function FavoritesPage() {
       })
       .filter(Boolean);
   }, [events, followingFeedRows, places]);
+
+  const followingProfiles = useMemo(() => {
+    if (!Array.isArray(followingUserIds) || followingUserIds.length === 0) return [];
+
+    const latestByOwner = new Map();
+    (followingFeedRows || []).forEach((row) => {
+      const ownerId = String(row.owner_user_id || "");
+      if (!ownerId) return;
+      const current = latestByOwner.get(ownerId);
+      const currentTime = current ? new Date(current.created_at || 0).getTime() : 0;
+      const nextTime = new Date(row.created_at || 0).getTime();
+      if (!current || nextTime > currentTime) {
+        latestByOwner.set(ownerId, row);
+      }
+    });
+
+    return followingUserIds
+      .map((id) => {
+        const key = String(id);
+        const member = (networkMembers || []).find((entry) => String(entry.user_id || "") === key);
+        const latest = latestByOwner.get(key);
+        return {
+          userId: key,
+          displayName: member?.display_name || "Member",
+          title: member?.title || "",
+          rank: member?.rank || null,
+          score: member?.score || 0,
+          cityCount: member?.city_count || 0,
+          latestItemName: latest?.item_name || latest?.favorite_id || "",
+          latestItemCity: latest?.item_city || "",
+          latestAt: latest?.created_at || "",
+        };
+      })
+      .sort((a, b) => new Date(b.latestAt || 0) - new Date(a.latestAt || 0));
+  }, [followingFeedRows, followingUserIds, networkMembers]);
 
   const forYouRecommendations = useMemo(() => {
     const modeWeights =
@@ -1757,7 +1803,60 @@ export default function FavoritesPage() {
             </div>
           )}
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 xl:grid-cols-3">
+            <div className="rounded-[24px] border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Following now</p>
+              <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                {followingProfiles.length > 0 ? (
+                  followingProfiles.map((profile) => {
+                    const titleMeta = getMemberTitleMeta(profile.title || "");
+                    return (
+                      <article
+                        key={`following-profile-${profile.userId}`}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-white">
+                              {profile.displayName}
+                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                              {profile.title ? (
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
+                                  <span>{titleMeta.icon}</span>
+                                  {titleMeta.label}
+                                </span>
+                              ) : null}
+                              {profile.rank ? (
+                                <span className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/65">
+                                  #{profile.rank}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-2 text-xs text-white/60">
+                              {profile.cityCount || 0} cities · {profile.score || 0} pts
+                            </p>
+                            {profile.latestItemName ? (
+                              <p className="mt-1 truncate text-[11px] text-cyan-100/72">
+                                Latest: {profile.latestItemName}
+                                {profile.latestItemCity ? ` · ${profile.latestItemCity}` : ""}
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-[11px] text-white/45">No recent shared save yet.</p>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 py-6 text-sm text-white/45">
+                    Follow members to build your trusted inner circle.
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="rounded-[24px] border border-white/10 bg-black/25 p-4">
               <p className="text-xs uppercase tracking-[0.16em] text-white/50">Members to follow</p>
               <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
