@@ -180,13 +180,13 @@ export function AuthProvider({ children }) {
       }
     };
 
-    const signInWithPassword = async (email, password) => {
+    const signInWithPassword = async (email, password, options = {}) => {
       try {
         const result = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        if (result?.error) {
+        if (result?.error && !options?.silent) {
           captureOperationalError("login_fail", result.error, {
             provider: "email",
             flow: "password_sign_in",
@@ -194,10 +194,12 @@ export function AuthProvider({ children }) {
         }
         return result;
       } catch (error) {
-        captureOperationalError("login_fail", error, {
-          provider: "email",
-          flow: "password_sign_in",
-        });
+        if (!options?.silent) {
+          captureOperationalError("login_fail", error, {
+            provider: "email",
+            flow: "password_sign_in",
+          });
+        }
         return { data: null, error };
       }
     };

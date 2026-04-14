@@ -61,6 +61,7 @@ export default function Home() {
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState("signin");
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState("");
+  const [pendingConfirmationPassword, setPendingConfirmationPassword] = useState("");
   const [signupForm, setSignupForm] = useState({
     displayName: "",
     pronouns: "",
@@ -86,7 +87,8 @@ export default function Home() {
     updateMemberProfile,
     signOut,
   } = useAuth();
-  const needsEmailConfirmation = authMessage.toLowerCase().includes("confirm your email");
+  const needsEmailConfirmation =
+    Boolean(pendingEmailConfirmation) || authMessage.toLowerCase().includes("confirm your email");
 
   const getResultKey = (item) => (
     item.type === "event" ? `event-${item.id}` : String(item.id)
@@ -99,6 +101,7 @@ export default function Home() {
     setAuthMode("signin");
     setPasswordInput("");
     setPendingEmailConfirmation("");
+    setPendingConfirmationPassword("");
     if (redirect) {
       writeLocalValue("qa_redirect", redirect);
       writeLocalValue("qa_post_login_target", redirect);
@@ -336,6 +339,54 @@ export default function Home() {
       }
     });
   }, [isAuthLoading, isMember, updateMemberProfile]);
+
+  useEffect(() => {
+    if (!pendingEmailConfirmation || !pendingConfirmationPassword || isMember) return;
+
+    let cancelled = false;
+    let checking = false;
+
+    const tryAutoSignIn = async () => {
+      if (cancelled || checking) return;
+      checking = true;
+      const { error } = await signInWithPassword(
+        pendingEmailConfirmation,
+        pendingConfirmationPassword,
+        { silent: true }
+      );
+
+      if (cancelled) return;
+
+      if (!error) {
+        setAuthMessage("Email confirmed. Signing you in...");
+        setPendingEmailConfirmation("");
+        setPendingConfirmationPassword("");
+        checking = false;
+        return;
+      }
+
+      const lower = String(error?.message || "").toLowerCase();
+      const stillPending =
+        lower.includes("confirm") ||
+        lower.includes("verification") ||
+        lower.includes("not confirmed");
+
+      if (!stillPending) {
+        setAuthMessage(error.message || "Login pending. Please try again.");
+      }
+
+      checking = false;
+    };
+
+    const initial = window.setTimeout(tryAutoSignIn, 4000);
+    const interval = window.setInterval(tryAutoSignIn, 12000);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, [isMember, pendingConfirmationPassword, pendingEmailConfirmation, signInWithPassword]);
 
   useEffect(() => {
     if (isAuthLoading || !isMember) {
@@ -1104,12 +1155,14 @@ export default function Home() {
                       if (error) {
                         setAuthMessage(error.message);
                         setPendingEmailConfirmation("");
+                        setPendingConfirmationPassword("");
                         setAuthLoading(false);
                         return;
                       }
 
                       if (data?.session) {
                         setPendingEmailConfirmation("");
+                        setPendingConfirmationPassword("");
                         const result = await updateMemberProfile(profilePayload);
                         if (result?.ok) {
                           setAuthMessage("Account ready. Welcome to Queer Atlas.");
@@ -1118,6 +1171,7 @@ export default function Home() {
                         }
                       } else {
                         setPendingEmailConfirmation(email);
+                        setPendingConfirmationPassword(password);
                         localStorage.setItem(
                           PENDING_SIGNUP_PROFILE_KEY,
                           JSON.stringify({ ...profilePayload, email })
@@ -1158,6 +1212,11 @@ export default function Home() {
               {needsEmailConfirmation && (
                 <div className="mt-2 rounded-xl border border-amber-200/25 bg-amber-200/10 px-3 py-2 text-[11px] text-amber-100/90">
                   <p>Check inbox + spam in 1-2 minutes, then confirm the link.</p>
+                  {pendingEmailConfirmation && (
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-amber-100/80">
+                      Auto-check active on this screen. After confirmation on phone, this tab signs in automatically.
+                    </p>
+                  )}
                   {pendingEmailConfirmation && (
                     <button
                       type="button"
