@@ -68,6 +68,8 @@ function readStored(key, fallback) {
 }
 
 const MAX_MESSAGES_PER_TOPIC = 100;
+const MAX_TOPICS = 120;
+const TOPIC_RETENTION_DAYS = 365;
 
 function normalizeMemberKey(value = "") {
   return String(value || "")
@@ -110,6 +112,8 @@ function mapTopicRow(row) {
     mood: row.mood || "Fresh",
     description: row.description || "",
     author: row.author || "Member",
+    authorUserId: row.user_id ? String(row.user_id) : "",
+    authorEmail: row.created_by_email || "",
     createdAt: row.created_at || new Date().toISOString(),
   };
 }
@@ -158,6 +162,17 @@ function pruneTopicMessages(rows = [], max = MAX_MESSAGES_PER_TOPIC) {
   };
 }
 
+function applyTopicPolicy(inputTopics = []) {
+  const cutoff = Date.now() - TOPIC_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  return [...(Array.isArray(inputTopics) ? inputTopics : [])]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .filter((topic) => {
+      const created = new Date(topic.createdAt).getTime();
+      return Number.isFinite(created) ? created >= cutoff : true;
+    })
+    .slice(0, MAX_TOPICS);
+}
+
 function mergeMessageMaps(primary = {}, fallback = {}, topics = []) {
   const topicIds = [...new Set(topics.map((topic) => String(topic.id)))];
   const result = {};
@@ -201,6 +216,7 @@ export default function CommunityPage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
   const { isMember, memberName, user, isLoading: isAuthLoading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
   const [stories, setStories] = useState(baseStories);
   const [guides, setGuides] = useState(baseGuides);
   const [topics, setTopics] = useState(baseTopics);
@@ -231,7 +247,7 @@ export default function CommunityPage() {
     setSyncError("");
     const localStories = readStored(KEYS.stories, baseStories);
     const localGuides = readStored(KEYS.guides, baseGuides);
-    const localTopics = readStored(KEYS.topics, baseTopics);
+    const localTopics = applyTopicPolicy(readStored(KEYS.topics, baseTopics));
     const localMessages = readStored(KEYS.messages, baseMessages);
     const localIdeas = readStored(KEYS.ideas, baseIdeas);
     const localArchive = readStored(KEYS.messageArchive, {});
@@ -262,7 +278,9 @@ export default function CommunityPage() {
 
     const nextStories = (storiesRes.data || []).length > 0 ? (storiesRes.data || []).map(mapStoryRow) : baseStories;
     const nextGuides = (guidesRes.data || []).length > 0 ? (guidesRes.data || []).map(mapGuideRow) : baseGuides;
-    const nextTopics = (topicsRes.data || []).length > 0 ? (topicsRes.data || []).map(mapTopicRow) : baseTopics;
+    const nextTopics = applyTopicPolicy(
+      (topicsRes.data || []).length > 0 ? (topicsRes.data || []).map(mapTopicRow) : baseTopics
+    );
     const nextIdeas = (ideasRes.data || []).length > 0 ? (ideasRes.data || []).map(mapIdeaRow) : baseIdeas;
     const nextMessages = mapMessages(messagesRes.data || [], nextTopics);
     const mergedMessages = mergeMessageMaps(nextMessages, localMessages, nextTopics);
@@ -362,6 +380,35 @@ export default function CommunityPage() {
     };
   }, [isReady, isMember, user?.id]);
 
+  useEffect(() => {
+    if (!isReady || !isMember || !user?.email) return;
+    let active = true;
+
+    queueMicrotask(async () => {
+      let adminState = false;
+      try {
+        const rpcRes = await supabase.rpc("qa_is_admin");
+        if (rpcRes.error) throw rpcRes.error;
+        adminState = Boolean(rpcRes.data);
+      } catch {
+        const email = String(user.email || "").trim().toLowerCase();
+        const { data, error } = await supabase
+          .from("qa_admin_users")
+          .select("email")
+          .eq("email", email)
+          .maybeSingle();
+        adminState = !error && Boolean(data);
+      }
+
+      if (!active) return;
+      setIsAdmin(adminState);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isReady, isMember, user?.email]);
+
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
@@ -429,6 +476,61 @@ export default function CommunityPage() {
     }
 
     return null;
+  };
+
+  const canDeleteTopic = (topic) => {
+    if (!topic) return false;
+    if (isAdmin) return true;
+    if (topic.authorUserId && user?.id && String(topic.authorUserId) === String(user.id)) return true;
+
+    const topicEmail = normalizeMemberKey(topic.authorEmail || "");
+    const memberEmail = normalizeMemberKey(user?.email || "");
+    if (topicEmail && memberEmail && topicEmail === memberEmail) return true;
+
+    const authorKey = normalizeMemberKey(topic.author || "");
+    const memberKey = normalizeMemberKey(memberName || "");
+    const emailAlias = normalizeMemberKey(String(user?.email || "").split("@")[0] || "");
+    return Boolean(authorKey) && (authorKey === memberKey || authorKey === emailAlias);
+  };
+
+  const deleteTopic = async (topic) => {
+    if (!topic || !canDeleteTopic(topic)) {
+      showToast("You can only delete your own topics.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `Delete topic "${topic.name}" and all its messages? This cannot be undone.`
+    );
+    if (!confirmDelete) return;
+
+    const topicIdValue = String(topic.id);
+
+    setTopics((current) => current.filter((entry) => String(entry.id) !== topicIdValue));
+    setMessages((current) => {
+      const next = { ...current };
+      delete next[topicIdValue];
+      return next;
+    });
+    setMessageArchive((current) => {
+      const next = { ...current };
+      delete next[topicIdValue];
+      return next;
+    });
+    setTopicId((current) => (String(current) === topicIdValue ? "" : current));
+
+    const [messagesDeleteRes, topicDeleteRes] = await Promise.all([
+      supabase.from("community_messages").delete().eq("topic_id", topicIdValue),
+      supabase.from("community_topics").delete().eq("id", topicIdValue),
+    ]);
+
+    if (messagesDeleteRes.error || topicDeleteRes.error) {
+      showToast("Topic removed locally. Cloud sync unavailable.", { tone: "info", duration: 2400 });
+      setSyncError("Topic deletion synced locally. Some cloud cleanup may still be pending.");
+      return;
+    }
+
+    showToast("Topic deleted.", { tone: "ok", duration: 2200 });
   };
 
   const publishStory = async (event) => {
@@ -532,7 +634,14 @@ export default function CommunityPage() {
       showToast("Topic not created. Add title and description.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: createClientId("t"), ...topicForm, author: memberName || "Member", createdAt: new Date().toISOString() };
+    const fallbackItem = {
+      id: createClientId("t"),
+      ...topicForm,
+      author: memberName || "Member",
+      authorUserId: String(user?.id || ""),
+      authorEmail: String(user?.email || ""),
+      createdAt: new Date().toISOString(),
+    };
     const { data, error } = await supabase
       .from("community_topics")
       .insert([{
@@ -544,8 +653,15 @@ export default function CommunityPage() {
       .select("*")
       .single();
 
-    const item = error || !data ? fallbackItem : mapTopicRow(data);
-    setTopics((current) => [item, ...current]);
+    const item =
+      error || !data
+        ? fallbackItem
+        : {
+            ...mapTopicRow(data),
+            authorUserId: String(data?.user_id || user?.id || ""),
+            authorEmail: String(data?.created_by_email || user?.email || ""),
+          };
+    setTopics((current) => applyTopicPolicy([item, ...current]));
     setMessages((current) => ({ ...current, [item.id]: [] }));
     setMessageArchive((current) => ({ ...current, [item.id]: [] }));
     setTopicId(item.id);
@@ -881,14 +997,26 @@ export default function CommunityPage() {
                   const replies = (messages[topic.id] || []).length;
                   const active = activeTopic?.id === topic.id;
                   return (
-                    <button key={topic.id} onClick={() => setTopicId(topic.id)} className={`w-full rounded-2xl border p-4 text-left transition ${active ? "border-cyan-300 bg-cyan-300/12 shadow-[0_12px_30px_rgba(34,211,238,0.12)]" : "border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.74),rgba(11,11,11,0.95))] hover:border-cyan-300/30"} animate-rise-in`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-sm font-semibold">{topic.name}</h3>
-                        <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-xs text-cyan-200">{topic.mood}</span>
-                      </div>
-                      <p className="mt-2 text-xs leading-5 text-gray-400">{topic.description}</p>
-                      <p className="mt-3 text-xs text-gray-500">{replies} replies</p>
-                    </button>
+                    <article key={topic.id} className={`w-full rounded-2xl border p-4 text-left transition ${active ? "border-cyan-300 bg-cyan-300/12 shadow-[0_12px_30px_rgba(34,211,238,0.12)]" : "border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.74),rgba(11,11,11,0.95))] hover:border-cyan-300/30"} animate-rise-in`}>
+                      <button onClick={() => setTopicId(topic.id)} className="w-full text-left">
+                        <div className="flex items-center justify-between gap-3">
+                          <h3 className="text-sm font-semibold">{topic.name}</h3>
+                          <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-xs text-cyan-200">{topic.mood}</span>
+                        </div>
+                        <p className="mt-2 text-xs leading-5 text-gray-400">{topic.description}</p>
+                        <p className="mt-3 text-xs text-gray-500">{replies} replies</p>
+                      </button>
+                      {canDeleteTopic(topic) && (
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            onClick={() => deleteTopic(topic)}
+                            className="rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                          >
+                            Delete topic
+                          </button>
+                        </div>
+                      )}
+                    </article>
                   );
                 })}
               </div>
@@ -915,11 +1043,24 @@ export default function CommunityPage() {
                         <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">{activeTopic.mood}</p>
                         <h3 className="mt-2 text-lg font-semibold">{activeTopic.name}</h3>
                       </div>
-                      <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100">
-                        {busiestTopic ? `Trending: ${busiestTopic.name}` : "New conversation"}
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100">
+                          {busiestTopic ? `Trending: ${busiestTopic.name}` : "New conversation"}
+                        </div>
+                        {canDeleteTopic(activeTopic) && (
+                          <button
+                            onClick={() => deleteTopic(activeTopic)}
+                            className="rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                          >
+                            Delete topic
+                          </button>
+                        )}
                       </div>
                     </div>
                     <p className="mt-2 text-sm leading-6 text-gray-400">{activeTopic.description}</p>
+                    <p className="mt-2 text-[11px] text-cyan-100/60">
+                      Topic policy: max {MAX_TOPICS} topics, kept for {TOPIC_RETENTION_DAYS} days.
+                    </p>
                   </div>
                   <div className="mt-4 rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,28,36,0.8),rgba(8,8,8,0.96))] p-3">
                     <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
