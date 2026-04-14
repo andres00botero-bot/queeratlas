@@ -271,28 +271,38 @@ export default function CommunityPage() {
       supabase.from("qa_member_leaderboard").select("*").order("rank", { ascending: true }).limit(200),
     ]);
 
-    const hasError = Boolean(
-      storiesRes.error || guidesRes.error || topicsRes.error || messagesRes.error || ideasRes.error
-    );
+    const errorParts = [];
+    if (storiesRes.error) errorParts.push("stories");
+    if (guidesRes.error) errorParts.push("guides");
+    if (topicsRes.error) errorParts.push("topics");
+    if (messagesRes.error) errorParts.push("messages");
+    if (ideasRes.error) errorParts.push("ideas");
 
-    if (hasError) {
-      setStories(localStories);
-      setGuides(localGuides);
-      setTopics(localTopics);
-      setMessages(localMessages);
-      setIdeas(localIdeas);
-      setMessageArchive(localArchive);
-      setSyncError("Community sync fallback active. Local data is shown.");
-      return;
-    }
-
-    const nextStories = (storiesRes.data || []).length > 0 ? (storiesRes.data || []).map(mapStoryRow) : baseStories;
-    const nextGuides = (guidesRes.data || []).length > 0 ? (guidesRes.data || []).map(mapGuideRow) : baseGuides;
+    const nextStories = storiesRes.error
+      ? localStories
+      : (storiesRes.data || []).length > 0
+        ? (storiesRes.data || []).map(mapStoryRow)
+        : baseStories;
+    const nextGuides = guidesRes.error
+      ? localGuides
+      : (guidesRes.data || []).length > 0
+        ? (guidesRes.data || []).map(mapGuideRow)
+        : baseGuides;
     const nextTopics = applyTopicPolicy(
-      (topicsRes.data || []).length > 0 ? (topicsRes.data || []).map(mapTopicRow) : baseTopics
+      topicsRes.error
+        ? localTopics
+        : (topicsRes.data || []).length > 0
+          ? (topicsRes.data || []).map(mapTopicRow)
+          : baseTopics
     );
-    const nextIdeas = (ideasRes.data || []).length > 0 ? (ideasRes.data || []).map(mapIdeaRow) : baseIdeas;
-    const nextMessages = mapMessages(messagesRes.data || [], nextTopics);
+    const nextIdeas = ideasRes.error
+      ? localIdeas
+      : (ideasRes.data || []).length > 0
+        ? (ideasRes.data || []).map(mapIdeaRow)
+        : baseIdeas;
+    const nextMessages = messagesRes.error
+      ? localMessages
+      : mapMessages(messagesRes.data || [], nextTopics);
     const mergedMessages = mergeMessageMaps(nextMessages, localMessages, nextTopics);
     const nextArchive = { ...localArchive };
     const cappedMessages = {};
@@ -312,7 +322,40 @@ export default function CommunityPage() {
     setMessageArchive(nextArchive);
     setIdeas(nextIdeas);
     setLeaderboard(nextLeaderboard);
+    if (errorParts.length > 0) {
+      setSyncError(`Partial cloud sync: ${errorParts.join(", ")} using local fallback.`);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!isReady || !isMember) return () => {};
+
+    const channel = supabase
+      .channel("community-live-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_topics" },
+        () => {
+          queueMicrotask(async () => {
+            await loadCommunityData();
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_messages" },
+        () => {
+          queueMicrotask(async () => {
+            await loadCommunityData();
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isReady, isMember, loadCommunityData]);
 
   useEffect(() => {
     if (isAuthLoading) return;
