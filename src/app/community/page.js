@@ -79,6 +79,16 @@ function normalizeMemberKey(value = "") {
     .replace(/[^a-z0-9 @._-]/g, "");
 }
 
+function formatCityLabel(value = "") {
+  return String(value || "")
+    .replaceAll("_", " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map((part) => (part ? part.charAt(0).toUpperCase() + part.slice(1) : ""))
+    .join(" ");
+}
+
 function mapStoryRow(row) {
   return {
     id: String(row.id),
@@ -478,6 +488,50 @@ export default function CommunityPage() {
     return null;
   };
 
+  const cityChampions = (() => {
+    const cityBuckets = new Map();
+    const records = [...visibleStories, ...visibleGuides];
+
+    records.forEach((entry) => {
+      const rawCity = String(entry.city || "").trim();
+      const normalizedCity = normalizeMemberKey(rawCity);
+      const authorKey = normalizeMemberKey(entry.author || "");
+      if (!normalizedCity || !authorKey) return;
+      if (normalizedCity === "multi-city" || normalizedCity === "multi city") return;
+
+      if (!cityBuckets.has(normalizedCity)) {
+        cityBuckets.set(normalizedCity, {
+          city: rawCity,
+          total: 0,
+          authors: new Map(),
+        });
+      }
+
+      const bucket = cityBuckets.get(normalizedCity);
+      bucket.total += 1;
+      const current = bucket.authors.get(authorKey) || {
+        author: entry.author || "Member",
+        count: 0,
+      };
+      current.count += 1;
+      bucket.authors.set(authorKey, current);
+    });
+
+    return [...cityBuckets.values()]
+      .map((bucket) => {
+        const topAuthor = [...bucket.authors.values()].sort((a, b) => b.count - a.count)[0];
+        return {
+          city: formatCityLabel(bucket.city),
+          total: bucket.total,
+          champion: topAuthor?.author || "Member",
+          championCount: topAuthor?.count || 0,
+          titleMeta: getAuthorIdentityMeta(topAuthor?.author || ""),
+        };
+      })
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 3);
+  })();
+
   const canDeleteTopic = (topic) => {
     if (!topic) return false;
     if (isAdmin) return true;
@@ -813,6 +867,53 @@ export default function CommunityPage() {
                 Ranking goes live as members add places, events, and reviews.
               </div>
             )}
+          </div>
+          <div className="mt-5 rounded-2xl border border-indigo-200/16 bg-indigo-200/[0.06] p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-indigo-100/80">City champions</p>
+              <p className="text-[11px] text-white/55">Top member signal per city this cycle</p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {cityChampions.length > 0 ? (
+                cityChampions.map((champion) => (
+                  <article
+                    key={`champion-${normalizeMemberKey(champion.city)}`}
+                    className="rounded-2xl border border-white/10 bg-black/25 p-3"
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-indigo-100/75">
+                      {champion.city}
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-white">
+                      {champion.titleMeta?.icon ? (
+                        <span
+                          className={`mr-1.5 ${champion.titleMeta.iconClass || "text-white/70"}`}
+                          title={champion.titleMeta.label}
+                          aria-label={champion.titleMeta.label}
+                        >
+                          {champion.titleMeta.icon}
+                        </span>
+                      ) : null}
+                      {champion.champion}
+                    </p>
+                    <p className="mt-1 text-xs text-white/60">
+                      {champion.championCount} contributions · {champion.total} city posts
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100/85">
+                        Featured
+                      </span>
+                      <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/85">
+                        Trusted
+                      </span>
+                    </div>
+                  </article>
+                ))
+              ) : (
+                <div className="rounded-xl border border-dashed border-white/14 px-3 py-4 text-xs text-white/55 md:col-span-3">
+                  City champions unlock as members publish stories and guides for each city.
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
