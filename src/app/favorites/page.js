@@ -41,6 +41,31 @@ function formatSavedTime(value) {
   });
 }
 
+function isWithinDays(value, days) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  const now = Date.now();
+  const diff = date.getTime() - now;
+  const windowMs = days * 24 * 60 * 60 * 1000;
+  return diff >= 0 && diff <= windowMs;
+}
+
+function formatWeekRange(reference = new Date()) {
+  const current = new Date(reference);
+  const day = current.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const start = new Date(current);
+  start.setDate(current.getDate() - diffToMonday);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} - ${end.toLocaleDateString(
+    "en-GB",
+    { day: "numeric", month: "short" }
+  )}`;
+}
+
 function stopQuickContext(stop) {
   const explicitReason = String(stop?.reason || "").trim();
   if (explicitReason) return explicitReason;
@@ -602,6 +627,36 @@ export default function FavoritesPage() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 6);
   }, [blocked.events, blocked.places, events, favorites, followingFeedItems, places, savedPlaces]);
+
+  const weeklyDigest = useMemo(() => {
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const followingThisWeek = followingFeedItems.filter((item) => {
+      const value = new Date(item.date || "").getTime();
+      return Number.isFinite(value) && value >= weekAgo;
+    });
+
+    const upcomingInSavedCities = events
+      .filter((event) => {
+        const cityKey = normalizeCityKey(event.city);
+        return (
+          allCities.some((city) => normalizeCityKey(city) === cityKey) &&
+          isWithinDays(event.date, 10)
+        );
+      })
+      .slice(0, 3);
+
+    const newCityTarget = Math.max(0, 5 - totalCities);
+    const topFollowingCity =
+      [...new Set(followingThisWeek.map((item) => item.city).filter(Boolean))][0] || "";
+
+    return {
+      weekLabel: formatWeekRange(new Date()),
+      followingThisWeekCount: followingThisWeek.length,
+      topFollowingCity,
+      upcomingInSavedCities,
+      newCityTarget,
+    };
+  }, [allCities, events, followingFeedItems, totalCities]);
 
   const contributionCounts = useMemo(() => {
     if (typeof window === "undefined") {
@@ -1244,6 +1299,93 @@ export default function FavoritesPage() {
                 </div>
               )}
             </div>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[34px] border border-cyan-200/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_80%_15%,rgba(244,114,182,0.10),transparent_26%),linear-gradient(180deg,rgba(10,28,38,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/75">
+                Retention loop
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+                Weekly digest
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-white/56">
+                Fresh signal from your network, your cities, and your next move.
+              </p>
+            </div>
+            <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100/85">
+              Week {weeklyDigest.weekLabel}
+            </span>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <article className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.02))] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/75">Your network discovered</p>
+              <p className="mt-2 text-3xl font-semibold text-white">{weeklyDigest.followingThisWeekCount}</p>
+              <p className="mt-2 text-sm leading-6 text-white/62">
+                saves in the last 7 days
+                {weeklyDigest.topFollowingCity ? `, strongest in ${weeklyDigest.topFollowingCity}` : "."}
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/favorites")}
+                className="mt-3 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+              >
+                Open trusted feed
+              </button>
+            </article>
+
+            <article className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(167,139,250,0.14),rgba(255,255,255,0.02))] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-violet-100/75">Upcoming in your cities</p>
+              {weeklyDigest.upcomingInSavedCities.length > 0 ? (
+                <>
+                  <p className="mt-2 text-3xl font-semibold text-white">{weeklyDigest.upcomingInSavedCities.length}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/62">
+                    events in the next 10 days ready for your plan window.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/events")}
+                    className="mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
+                  >
+                    Open events
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mt-2 text-lg font-semibold text-white">Quiet week ahead</p>
+                  <p className="mt-2 text-sm leading-6 text-white/62">
+                    Add new city signal or check world news for off-grid momentum.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/now")}
+                    className="mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
+                  >
+                    Open queer world news
+                  </button>
+                </>
+              )}
+            </article>
+
+            <article className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.02))] p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-rose-100/75">Next growth move</p>
+              <p className="mt-2 text-3xl font-semibold text-white">{weeklyDigest.newCityTarget}</p>
+              <p className="mt-2 text-sm leading-6 text-white/62">
+                {weeklyDigest.newCityTarget > 0
+                  ? `more city signal to reach your 5-city atlas baseline.`
+                  : "city baseline complete. Time to deepen quality and reviews."}
+              </p>
+              <button
+                type="button"
+                onClick={() => router.push("/cities")}
+                className="mt-3 rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
+              >
+                Explore cities
+              </button>
+            </article>
           </div>
         </section>
 
