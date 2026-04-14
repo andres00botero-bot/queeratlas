@@ -12,6 +12,8 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { ArrowUpRight, Search } from "lucide-react";
 
+const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
+
 function formatDate(value) {
   if (!value) return "Date TBA";
   return new Date(value).toLocaleDateString("en-GB", {
@@ -57,6 +59,16 @@ export default function Home() {
   const [favorites, setFavorites] = useState([]);
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
+  const [authMode, setAuthMode] = useState("signin");
+  const [signupForm, setSignupForm] = useState({
+    displayName: "",
+    pronouns: "",
+    homeCity: "",
+    residentCountry: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [isIntroVisible, setIsIntroVisible] = useState(false);
@@ -70,6 +82,7 @@ export default function Home() {
     signInWithEmail,
     signInWithPassword,
     signUpWithPassword,
+    updateMemberProfile,
     signOut,
   } = useAuth();
 
@@ -81,6 +94,7 @@ export default function Home() {
 
   const openSignup = (redirect = "") => {
     setAuthMessage("");
+    setAuthMode("signin");
     setPasswordInput("");
     if (redirect) {
       writeLocalValue("qa_redirect", redirect);
@@ -293,6 +307,32 @@ export default function Home() {
       setShowSignup(false);
     });
   }, [isAuthLoading, isMember, router]);
+
+  useEffect(() => {
+    if (isAuthLoading || !isMember || typeof window === "undefined") return;
+
+    const raw = localStorage.getItem(PENDING_SIGNUP_PROFILE_KEY);
+    if (!raw) return;
+
+    queueMicrotask(async () => {
+      try {
+        const parsed = JSON.parse(raw);
+        const profilePayload = {
+          displayName: String(parsed?.displayName || "").trim(),
+          pronouns: String(parsed?.pronouns || "").trim(),
+          homeCity: String(parsed?.homeCity || "").trim(),
+          residentCountry: String(parsed?.residentCountry || "").trim(),
+        };
+
+        const result = await updateMemberProfile(profilePayload);
+        if (result?.ok) {
+          localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
+        }
+      } catch {
+        localStorage.removeItem(PENDING_SIGNUP_PROFILE_KEY);
+      }
+    });
+  }, [isAuthLoading, isMember, updateMemberProfile]);
 
   useEffect(() => {
     if (isAuthLoading || !isMember) {
@@ -857,7 +897,7 @@ export default function Home() {
             onClick={() => setShowSignup(false)}
           />
 
-          <div className="relative w-full max-w-md overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(21,21,21,0.97),rgba(10,10,10,0.99))] p-8 shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
+          <div className="relative w-full max-w-lg overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(21,21,21,0.97),rgba(10,10,10,0.99))] p-8 shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
             <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full bg-rose-400/12 blur-3xl" />
             <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
 
@@ -872,126 +912,231 @@ export default function Home() {
                 Unlock community, contribution, and the deeper layer of queer discovery.
               </p>
 
-              <div className="mt-6 space-y-3">
+              <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/30 p-1.5">
                 <button
-                  onClick={async () => {
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("signin");
                     setAuthMessage("");
-                    setAuthLoading(true);
-                    writeLocalValue("qa_post_login_target", "/");
-                    const { error } = await signInWithGoogle();
-                    if (error) setAuthMessage(error.message);
-                    setAuthLoading(false);
                   }}
-                  disabled={authLoading}
-                  className="w-full rounded-2xl bg-gradient-to-r from-white via-rose-100 to-orange-100 py-3 font-semibold text-black transition hover:opacity-95"
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    authMode === "signin" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
+                  }`}
                 >
-                  {authLoading ? "Opening..." : "Continue with Google"}
+                  Sign in
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("signup");
+                    setAuthMessage("");
+                  }}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    authMode === "signup" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
+                  }`}
+                >
+                  Create account
+                </button>
+              </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                  <input
-                    value={emailInput}
-                    onChange={(event) => setEmailInput(event.target.value)}
-                    placeholder="you@email.com"
-                    className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
-                  />
-                  <input
-                    value={passwordInput}
-                    onChange={(event) => setPasswordInput(event.target.value)}
-                    type="password"
-                    placeholder="Password"
-                    className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
-                  />
+              {authMode === "signin" ? (
+                <div className="mt-6 space-y-3">
                   <button
                     onClick={async () => {
-                      if (!emailInput.trim() || !passwordInput.trim()) {
-                        setAuthMessage("Enter both email and password.");
-                        return;
-                      }
-
                       setAuthMessage("");
                       setAuthLoading(true);
                       writeLocalValue("qa_post_login_target", "/");
-                      const { error } = await signInWithPassword(
-                        emailInput.trim(),
-                        passwordInput
-                      );
-
-                      if (error) {
-                        setAuthMessage(error.message);
-                      } else {
-                        setAuthMessage("Signed in. Redirecting...");
-                      }
-
+                      const { error } = await signInWithGoogle();
+                      if (error) setAuthMessage(error.message);
                       setAuthLoading(false);
                     }}
                     disabled={authLoading}
-                    className="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+                    className="w-full rounded-2xl bg-gradient-to-r from-white via-rose-100 to-orange-100 py-3 font-semibold text-black transition hover:opacity-95"
                   >
-                    {authLoading ? "Signing in..." : "Sign in with email + password"}
+                    {authLoading ? "Opening..." : "Continue with Google"}
                   </button>
 
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                    <input
+                      value={emailInput}
+                      onChange={(event) => setEmailInput(event.target.value)}
+                      placeholder="you@email.com"
+                      className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={passwordInput}
+                      onChange={(event) => setPasswordInput(event.target.value)}
+                      type="password"
+                      placeholder="Password"
+                      className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!emailInput.trim() || !passwordInput.trim()) {
+                          setAuthMessage("Enter both email and password.");
+                          return;
+                        }
+
+                        setAuthMessage("");
+                        setAuthLoading(true);
+                        writeLocalValue("qa_post_login_target", "/");
+                        const { error } = await signInWithPassword(emailInput.trim(), passwordInput);
+                        if (error) {
+                          setAuthMessage(error.message);
+                        } else {
+                          setAuthMessage("Signed in. Redirecting...");
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+                    >
+                      {authLoading ? "Signing in..." : "Sign in with email + password"}
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (!emailInput.trim()) {
+                          setAuthMessage("Enter your email to receive a magic link.");
+                          return;
+                        }
+
+                        setAuthMessage("");
+                        setAuthLoading(true);
+                        writeLocalValue("qa_post_login_target", "/");
+                        const { error } = await signInWithEmail(emailInput.trim());
+                        if (error) {
+                          setAuthMessage(error.message);
+                        } else {
+                          setAuthMessage("Magic link sent. Check your inbox.");
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 py-2 text-xs font-semibold tracking-[0.08em] text-white/75 transition hover:border-white/24 hover:text-white"
+                    >
+                      {authLoading ? "Sending..." : "Send magic link instead"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(244,114,182,0.08),rgba(0,0,0,0.22))] p-4">
+                  <p className="mb-3 text-xs uppercase tracking-[0.14em] text-fuchsia-100/85">Build your member identity</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      value={signupForm.displayName}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, displayName: event.target.value }))}
+                      placeholder="Display name"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.pronouns}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, pronouns: event.target.value }))}
+                      placeholder="Pronouns (optional)"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.homeCity}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, homeCity: event.target.value }))}
+                      placeholder="Home city"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.residentCountry}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, residentCountry: event.target.value }))}
+                      placeholder="Country"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.email}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, email: event.target.value }))}
+                      placeholder="Email"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30 sm:col-span-2"
+                    />
+                    <input
+                      type="password"
+                      value={signupForm.password}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, password: event.target.value }))}
+                      placeholder="Choose password"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      type="password"
+                      value={signupForm.confirmPassword}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                      placeholder="Confirm password"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                  </div>
+
                   <button
                     onClick={async () => {
-                      if (!emailInput.trim() || !passwordInput.trim()) {
-                        setAuthMessage("Enter both email and password.");
+                      const email = signupForm.email.trim();
+                      const password = signupForm.password.trim();
+                      const confirmPassword = signupForm.confirmPassword.trim();
+                      const profilePayload = {
+                        displayName: signupForm.displayName.trim(),
+                        pronouns: signupForm.pronouns.trim(),
+                        homeCity: signupForm.homeCity.trim(),
+                        residentCountry: signupForm.residentCountry.trim(),
+                      };
+
+                      if (!profilePayload.displayName || !email || !password) {
+                        setAuthMessage("Name, email, and password are required.");
                         return;
                       }
-
-                      if (passwordInput.trim().length < 6) {
-                        setAuthMessage("Password needs at least 6 characters.");
+                      if (password.length < 6) {
+                        setAuthMessage("Password must be at least 6 characters.");
+                        return;
+                      }
+                      if (password !== confirmPassword) {
+                        setAuthMessage("Passwords do not match.");
                         return;
                       }
 
                       setAuthMessage("");
                       setAuthLoading(true);
                       writeLocalValue("qa_post_login_target", "/");
-                      const { data, error } = await signUpWithPassword(
-                        emailInput.trim(),
-                        passwordInput
-                      );
-
+                      const { data, error } = await signUpWithPassword(email, password);
                       if (error) {
                         setAuthMessage(error.message);
-                      } else if (data?.session) {
-                        setAuthMessage("Account created. You are now signed in.");
-                      } else {
-                        setAuthMessage("Account created. Check your email to confirm.");
+                        setAuthLoading(false);
+                        return;
                       }
 
+                      if (data?.session) {
+                        const result = await updateMemberProfile(profilePayload);
+                        if (result?.ok) {
+                          setAuthMessage("Account ready. Welcome to Queer Atlas.");
+                        } else {
+                          setAuthMessage("Account created. Profile can be edited in Your Atlas.");
+                        }
+                      } else {
+                        localStorage.setItem(
+                          PENDING_SIGNUP_PROFILE_KEY,
+                          JSON.stringify({ ...profilePayload, email })
+                        );
+                        setAuthMessage("Account created. Confirm your email to activate your profile.");
+                      }
+
+                      setSignupForm({
+                        displayName: "",
+                        pronouns: "",
+                        homeCity: "",
+                        residentCountry: "",
+                        email: "",
+                        password: "",
+                        confirmPassword: "",
+                      });
                       setAuthLoading(false);
                     }}
                     disabled={authLoading}
-                    className="mt-2 w-full rounded-xl border border-fuchsia-200/22 bg-fuchsia-200/12 py-2.5 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/38 hover:bg-fuchsia-200/18"
+                    className="mt-3 w-full rounded-xl border border-fuchsia-200/22 bg-fuchsia-200/12 py-2.5 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/38 hover:bg-fuchsia-200/18"
                   >
                     {authLoading ? "Creating..." : "Create account"}
                   </button>
-
-                  <button
-                    onClick={async () => {
-                      if (!emailInput.trim()) {
-                        setAuthMessage("Enter your email to receive a magic link.");
-                        return;
-                      }
-
-                      setAuthMessage("");
-                      setAuthLoading(true);
-                      writeLocalValue("qa_post_login_target", "/");
-                      const { error } = await signInWithEmail(emailInput.trim());
-                      if (error) {
-                        setAuthMessage(error.message);
-                      } else {
-                        setAuthMessage("Magic link sent. Check your inbox.");
-                      }
-                      setAuthLoading(false);
-                    }}
-                    disabled={authLoading}
-                    className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 py-2 text-xs font-semibold tracking-[0.08em] text-white/75 transition hover:border-white/24 hover:text-white"
-                  >
-                    {authLoading ? "Sending..." : "Send magic link instead"}
-                  </button>
                 </div>
-              </div>
+              )}
 
               {authMessage && (
                 <p className="mt-4 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/75">
