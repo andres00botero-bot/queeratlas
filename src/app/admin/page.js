@@ -95,6 +95,11 @@ export default function AdminPage() {
   const [busyMap, setBusyMap] = useState({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState("");
+  const [diagLoading, setDiagLoading] = useState(false);
+  const [diagRanAt, setDiagRanAt] = useState("");
+  const [diagRows, setDiagRows] = useState([]);
+  const [diagTestEmail, setDiagTestEmail] = useState("");
+  const [diagMailState, setDiagMailState] = useState("");
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
@@ -504,6 +509,110 @@ export default function AdminPage() {
     showToast(labelMap[key] || "Routine step completed.", { tone: "ok", duration: 1800 });
   };
 
+  const runAuthDiagnostics = useCallback(async () => {
+    setDiagLoading(true);
+    setDiagMailState("");
+    const rows = [];
+
+    const pushRow = (label, status, detail) => {
+      rows.push({ label, status, detail });
+    };
+
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    pushRow(
+      "Current origin",
+      origin.startsWith("https://") ? "ok" : "warn",
+      origin || "Unknown origin"
+    );
+
+    const supabaseUrl = String(process.env.NEXT_PUBLIC_SUPABASE_URL || "");
+    pushRow(
+      "Supabase URL",
+      supabaseUrl ? "ok" : "fail",
+      supabaseUrl || "Missing NEXT_PUBLIC_SUPABASE_URL"
+    );
+
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        pushRow("Auth session", "fail", error.message || "Could not read session");
+      } else if (data?.session?.user?.email) {
+        pushRow("Auth session", "ok", `Signed in as ${data.session.user.email}`);
+      } else {
+        pushRow("Auth session", "warn", "No active session");
+      }
+    } catch (error) {
+      pushRow("Auth session", "fail", error?.message || "Session check failed");
+    }
+
+    try {
+      const rpcRes = await supabase.rpc("qa_is_admin");
+      pushRow(
+        "Admin role RPC",
+        rpcRes?.data ? "ok" : "warn",
+        rpcRes?.data ? "qa_is_admin = true" : "qa_is_admin = false"
+      );
+    } catch (error) {
+      pushRow("Admin role RPC", "fail", error?.message || "RPC failed");
+    }
+
+    try {
+      const { error } = await supabase.from("qa_admin_users").select("email").limit(1);
+      pushRow(
+        "Admin table read",
+        error ? "warn" : "ok",
+        error ? error.message || "Read failed" : "Readable"
+      );
+    } catch (error) {
+      pushRow("Admin table read", "warn", error?.message || "Read failed");
+    }
+
+    try {
+      const { error } = await supabase.from("member_profiles").select("user_id").limit(1);
+      pushRow(
+        "Member profile table",
+        error ? "warn" : "ok",
+        error ? error.message || "Read failed" : "Readable"
+      );
+    } catch (error) {
+      pushRow("Member profile table", "warn", error?.message || "Read failed");
+    }
+
+    pushRow(
+      "Confirm-email route",
+      "info",
+      `Expected redirect/origin should include: ${origin || "your-site-origin"}`
+    );
+
+    setDiagRows(rows);
+    setDiagRanAt(new Date().toISOString());
+    setDiagLoading(false);
+  }, []);
+
+  const sendDiagnosticEmail = useCallback(async () => {
+    const email = String(diagTestEmail || "").trim();
+    if (!email) {
+      setDiagMailState("Enter an email first.");
+      return;
+    }
+    setDiagLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) {
+        setDiagMailState(`Email send failed: ${error.message || "Unknown error"}`);
+      } else {
+        setDiagMailState("Diagnostic email sent. Check inbox + spam.");
+      }
+    } catch (error) {
+      setDiagMailState(`Email send failed: ${error?.message || "Unknown error"}`);
+    } finally {
+      setDiagLoading(false);
+    }
+  }, [diagTestEmail]);
+
   if (!isReady || !adminChecked) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
@@ -627,6 +736,89 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-[0.15em] text-emerald-100/75">Community</p>
               <p className="mt-1 text-sm font-semibold text-white">Topics, safety reports, moderation</p>
             </button>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-cyan-300/16 bg-[linear-gradient(180deg,rgba(7,28,44,0.84),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/80">Auth diagnostics</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Email delivery + login checks</h2>
+              <p className="mt-1 text-xs text-white/60">
+                Fast troubleshooting when users don&apos;t receive confirmation emails.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={runAuthDiagnostics}
+              disabled={diagLoading}
+              className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
+            >
+              {diagLoading ? "Running..." : "Run diagnostics"}
+            </button>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[1.05fr_0.95fr]">
+            <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Live checks</p>
+              {diagRanAt ? (
+                <p className="mt-1 text-[11px] text-white/45">Last run {timeAgo(diagRanAt)}</p>
+              ) : (
+                <p className="mt-1 text-[11px] text-white/45">Run diagnostics to populate status.</p>
+              )}
+              <div className="mt-3 space-y-2">
+                {(diagRows.length > 0 ? diagRows : []).map((row, index) => {
+                  const toneClass =
+                    row.status === "ok"
+                      ? "border-emerald-200/22 bg-emerald-200/10 text-emerald-100"
+                      : row.status === "fail"
+                        ? "border-rose-200/22 bg-rose-200/10 text-rose-100"
+                        : row.status === "warn"
+                          ? "border-amber-200/22 bg-amber-200/10 text-amber-100"
+                          : "border-cyan-200/22 bg-cyan-200/10 text-cyan-100";
+                  return (
+                    <div key={`diag-row-${index}`} className={`rounded-xl border px-3 py-2 text-xs ${toneClass}`}>
+                      <p className="font-semibold">{row.label}</p>
+                      <p className="mt-1 opacity-90">{row.detail}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Send test email</p>
+              <p className="mt-1 text-[11px] text-white/50">
+                Sends a Supabase OTP/magic-link email using your current project settings.
+              </p>
+              <input
+                value={diagTestEmail}
+                onChange={(event) => setDiagTestEmail(event.target.value)}
+                placeholder="test@email.com"
+                className="mt-3 w-full rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
+              />
+              <button
+                type="button"
+                onClick={sendDiagnosticEmail}
+                disabled={diagLoading}
+                className="mt-3 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
+              >
+                {diagLoading ? "Sending..." : "Send test email"}
+              </button>
+              {diagMailState && (
+                <p className="mt-3 rounded-xl border border-white/10 bg-white/6 px-3 py-2 text-xs text-white/80">
+                  {diagMailState}
+                </p>
+              )}
+
+              <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-[11px] leading-5 text-white/70">
+                Check in Supabase:
+                <p className="mt-1">Auth → Providers → Email enabled</p>
+                <p>Auth → URL Configuration → Site URL = your live URL</p>
+                <p>Redirect URLs include live URL + localhost for dev</p>
+                <p>Auth logs for SMTP/rate-limit errors</p>
+              </div>
+            </article>
           </div>
         </section>
 
