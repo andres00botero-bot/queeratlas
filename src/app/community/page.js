@@ -171,6 +171,8 @@ export default function CommunityPage() {
   const [topicId, setTopicId] = useState("t1");
   const [showStoryForm, setShowStoryForm] = useState(false);
   const [showGuideForm, setShowGuideForm] = useState(false);
+  const [isStoriesOpen, setIsStoriesOpen] = useState(true);
+  const [isGuidesOpen, setIsGuidesOpen] = useState(true);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [guideId, setGuideId] = useState("g1");
   const [storyForm, setStoryForm] = useState({ title: "", city: "", category: "Experience", excerpt: "", body: "" });
@@ -619,9 +621,17 @@ export default function CommunityPage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-rose-300">Stories</p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Member experiences</h2>
               </div>
-              <button onClick={() => setShowStoryForm((current) => !current)} className="rounded-full border border-rose-400/30 bg-rose-300/8 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-300 hover:bg-rose-300/15 hover:text-white">{showStoryForm ? "Close form" : "Write a story"}</button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsStoriesOpen((current) => !current)}
+                  className="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-xs text-white transition hover:border-white/35 hover:bg-white/12"
+                >
+                  {isStoriesOpen ? "Collapse" : "Expand"}
+                </button>
+                <button onClick={() => setShowStoryForm((current) => !current)} className="rounded-full border border-rose-400/30 bg-rose-300/8 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-300 hover:bg-rose-300/15 hover:text-white">{showStoryForm ? "Close form" : "Write a story"}</button>
+              </div>
             </div>
-            {showStoryForm && (
+            {isStoriesOpen && showStoryForm && (
               <form onSubmit={publishStory} className="mb-5 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
                 <div className="grid gap-3 md:grid-cols-2">
@@ -636,7 +646,8 @@ export default function CommunityPage() {
                 <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
               </form>
             )}
-            <div className="max-h-[560px] space-y-4 overflow-y-auto pr-1">
+            {isStoriesOpen ? (
+              <div className="max-h-[560px] space-y-4 overflow-y-auto pr-1">
               {sortedStories.map((story) => (
                 <article key={story.id} className="animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
                   <div className="flex items-center justify-between gap-3">
@@ -679,7 +690,12 @@ export default function CommunityPage() {
                   <p className="mt-4 text-xs text-gray-500">{timeAgo(story.createdAt)}</p>
                 </article>
               ))}
-            </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-6 text-sm text-white/55">
+                Experiences hidden. Tap <span className="text-white/85">Expand</span> to open the list.
+              </div>
+            )}
           </section>
 
           <section className="rounded-[30px] border border-violet-400/15 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.18),transparent_26%),linear-gradient(180deg,rgba(24,18,44,0.96),rgba(10,10,10,1))] p-6 shadow-[0_28px_90px_rgba(139,92,246,0.10)]">
@@ -688,9 +704,17 @@ export default function CommunityPage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-violet-300">Member Guides</p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Practical wisdom</h2>
               </div>
-              <button onClick={() => setShowGuideForm((current) => !current)} className="rounded-full border border-violet-400/30 bg-violet-300/8 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-300 hover:bg-violet-300/15 hover:text-white">{showGuideForm ? "Close form" : "New guide"}</button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsGuidesOpen((current) => !current)}
+                  className="rounded-full border border-white/20 bg-white/8 px-4 py-2 text-xs text-white transition hover:border-white/35 hover:bg-white/12"
+                >
+                  {isGuidesOpen ? "Collapse" : "Expand"}
+                </button>
+                <button onClick={() => setShowGuideForm((current) => !current)} className="rounded-full border border-violet-400/30 bg-violet-300/8 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-300 hover:bg-violet-300/15 hover:text-white">{showGuideForm ? "Close form" : "New guide"}</button>
+              </div>
             </div>
-            {showGuideForm && (
+            {isGuidesOpen && showGuideForm && (
               <form onSubmit={publishGuide} className="mb-5 space-y-3 rounded-2xl border border-violet-400/20 bg-violet-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" />
                 <div className="grid gap-3 md:grid-cols-2">
@@ -705,6 +729,7 @@ export default function CommunityPage() {
                 <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
               </form>
             )}
+            {isGuidesOpen ? (
             <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.95fr)_minmax(0,1.05fr)]">
               <div className="qa-guides-scroll max-h-[520px] space-y-2 overflow-y-auto pr-1">
                 {sortedGuides.map((guide) => {
@@ -794,6 +819,11 @@ export default function CommunityPage() {
                 )}
               </div>
             </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-6 text-sm text-white/55">
+                Guides hidden. Tap <span className="text-white/85">Expand</span> to open the guide panel.
+              </div>
+            )}
           </section>
         </div>
 
