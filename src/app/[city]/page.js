@@ -18,6 +18,7 @@ import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { captureOperationalError } from "@/lib/monitoring";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
@@ -1112,6 +1113,11 @@ export default function CityPage() {
         .single();
 
       if (error) {
+        captureOperationalError("save_event_fail", error, {
+          city: String(city || ""),
+          flow: "city_add_event",
+          hasDate: Boolean(eventDate),
+        });
         showToast("Could not save event right now.", { tone: "warn", duration: 2600 });
         return;
       }
@@ -1135,6 +1141,11 @@ export default function CityPage() {
       setAddEventMode(false);
       showToast("Event added to city atlas.", { tone: "ok", duration: 2200 });
     } catch (error) {
+      captureOperationalError("save_event_fail", error, {
+        city: String(city || ""),
+        flow: "city_add_event_catch",
+        hasDate: Boolean(eventDate),
+      });
       showToast(error?.message || "Could not save event right now.", { tone: "warn", duration: 2600 });
     }
   };
@@ -1392,6 +1403,11 @@ export default function CityPage() {
           .eq("id", dbId);
 
         if (error) {
+          captureOperationalError("save_event_fail", error, {
+            city: String(selectedEvent?.city || city || ""),
+            flow: "city_admin_update_event",
+            eventId: String(dbId),
+          });
           showToast(error.message || "Could not save event changes.", { tone: "warn", duration: 2600 });
           return;
         }
@@ -1409,6 +1425,10 @@ export default function CityPage() {
           .single();
 
         if (error || !inserted?.id) {
+          captureOperationalError("save_event_fail", error || new Error("Event insert returned no id."), {
+            city: String(selectedEvent?.city || city || ""),
+            flow: "city_admin_upsert_event",
+          });
           showToast(error?.message || "Could not save event changes.", { tone: "warn", duration: 2600 });
           return;
         }
@@ -1420,6 +1440,11 @@ export default function CityPage() {
       setEventAdminOpen(false);
       showToast("Event updated and saved.", { tone: "ok", duration: 2000 });
     } catch (error) {
+      captureOperationalError("save_event_fail", error, {
+        city: String(selectedEvent?.city || city || ""),
+        flow: "city_admin_save_event_catch",
+        eventId: String(selectedEvent?.id || ""),
+      });
       showToast(error?.message || "Could not save event changes.", { tone: "warn", duration: 2600 });
     } finally {
       setIsSavingEventAdmin(false);

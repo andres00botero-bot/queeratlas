@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
+import { captureOperationalError } from "@/lib/monitoring";
 
 const AuthContext = createContext(null);
 const ALLOWED_POST_LOGIN_PREFIXES = ["/", "/community", "/contribute", "/search"];
@@ -135,6 +136,61 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => {
     const computedMemberName = memberProfile.displayName || getMemberName(user);
 
+    const signInWithGoogle = async () => {
+      try {
+        const result = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: window.location.origin },
+        });
+        if (result?.error) {
+          captureOperationalError("login_fail", result.error, {
+            provider: "google",
+            flow: "oauth",
+          });
+        }
+        return result;
+      } catch (error) {
+        captureOperationalError("login_fail", error, {
+          provider: "google",
+          flow: "oauth",
+        });
+        return { data: null, error };
+      }
+    };
+
+    const signInWithEmail = async (email) => {
+      try {
+        const result = await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (result?.error) {
+          captureOperationalError("login_fail", result.error, {
+            provider: "email",
+            flow: "otp",
+          });
+        }
+        return result;
+      } catch (error) {
+        captureOperationalError("login_fail", error, {
+          provider: "email",
+          flow: "otp",
+        });
+        return { data: null, error };
+      }
+    };
+
+    const signOut = async () => {
+      try {
+        return await supabase.auth.signOut();
+      } catch (error) {
+        captureOperationalError("logout_fail", error, {
+          flow: "signout",
+        });
+        return { error };
+      }
+    };
+
     return {
       session,
       user,
@@ -171,17 +227,9 @@ export function AuthProvider({ children }) {
         setMemberProfile(remoteProfile);
         return { ok: true };
       },
-      signInWithGoogle: () =>
-        supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: window.location.origin },
-        }),
-      signInWithEmail: (email) =>
-        supabase.auth.signInWithOtp({
-          email,
-          options: { emailRedirectTo: window.location.origin },
-        }),
-      signOut: () => supabase.auth.signOut(),
+      signInWithGoogle,
+      signInWithEmail,
+      signOut,
     };
   }, [isLoading, memberProfile, session, user]);
 

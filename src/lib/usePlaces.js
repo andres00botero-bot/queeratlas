@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { mergeSeedPlaces } from "./seedContent";
+import { captureOperationalError } from "./monitoring";
 
 export function usePlaces(city) {
   const [places, setPlaces] = useState([]);
@@ -175,6 +176,10 @@ export function usePlaces(city) {
       createIfMissing: true,
     });
     if (!resolvedPlaceId) {
+      captureOperationalError("save_review_fail", new Error("Could not resolve place for review."), {
+        placeId: String(placeId || ""),
+        city: String(place?.city || ""),
+      });
       return { ok: false, error: { message: "Could not resolve place for review." } };
     }
 
@@ -189,6 +194,10 @@ export function usePlaces(city) {
 
     if (error) {
       console.error("Add review error:", error);
+      captureOperationalError("save_review_fail", error, {
+        placeId: String(resolvedPlaceId || ""),
+        city: String(place?.city || ""),
+      });
       return { ok: false, error };
     }
 

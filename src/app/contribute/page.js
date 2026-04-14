@@ -21,6 +21,7 @@ import {
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { captureOperationalError } from "@/lib/monitoring";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
 import PageOpeningState from "@/components/ui/PageOpeningState";
@@ -454,6 +455,11 @@ export default function ContributePage() {
         .single();
 
       if (error) {
+        captureOperationalError("save_event_fail", error, {
+          city: String(cityName || ""),
+          flow: "contribute_add_event",
+          hasDate: Boolean(eventForm.date),
+        });
         setEventNotice(error.message || "Could not save event right now.");
         showToast(error.message || "Could not save event right now.", { tone: "warn", duration: 2600 });
         return;
@@ -483,6 +489,15 @@ export default function ContributePage() {
       setAtlasNotice("Event added to atlas.");
       showToast("Event saved to atlas.", { tone: "ok", duration: 2400 });
     } catch (error) {
+      captureOperationalError("save_event_fail", error, {
+        city: String(
+          (selectedCity ? cityConfig[selectedCity]?.title?.replace("Queer ", "") : "") ||
+            eventForm.city ||
+            ""
+        ),
+        flow: "contribute_add_event_catch",
+        hasDate: Boolean(eventForm.date),
+      });
       setEventNotice(error?.message || "Could not save event right now.");
       showToast(error?.message || "Could not save event right now.", { tone: "warn", duration: 2600 });
     } finally {
