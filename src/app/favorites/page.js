@@ -53,6 +53,13 @@ function stopQuickContext(stop) {
   return `Selected as a ${kindLabel} stop for this plan arc.`;
 }
 
+function isMissingTableError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
+}
+
 const PLAN_STORAGE_KEY = "qa_trip_plans";
 const FAVORITES_STORAGE_KEY = "qa_favorites";
 const ADDED_STORAGE_KEY = "qa_added";
@@ -113,6 +120,11 @@ export default function FavoritesPage() {
   const { toast, showToast } = useActionToast();
   const [syncWarning, setSyncWarning] = useState("");
   const [memberRank, setMemberRank] = useState(null);
+  const [networkMembers, setNetworkMembers] = useState([]);
+  const [followingUserIds, setFollowingUserIds] = useState([]);
+  const [followingFeedRows, setFollowingFeedRows] = useState([]);
+  const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkWarning, setNetworkWarning] = useState("");
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -322,6 +334,62 @@ export default function FavoritesPage() {
     };
   }, [isReady, isMember, user?.id]);
 
+  const loadTrustNetwork = useCallback(async () => {
+    if (!isMember || !user?.id) return;
+    setNetworkLoading(true);
+    setNetworkWarning("");
+
+    const [leaderboardRes, followingRes, feedRes] = await Promise.all([
+      supabase
+        .from("qa_member_leaderboard")
+        .select("user_id, display_name, title, rank")
+        .order("rank", { ascending: true })
+        .limit(80),
+      supabase
+        .from("member_following")
+        .select("followed_user_id")
+        .eq("follower_user_id", user.id),
+      supabase.rpc("qa_following_feed_favorites", { feed_limit: 40 }),
+    ]);
+
+    const missingTable =
+      isMissingTableError(followingRes.error) ||
+      isMissingTableError(feedRes.error);
+
+    if (missingTable) {
+      setNetworkMembers([]);
+      setFollowingUserIds([]);
+      setFollowingFeedRows([]);
+      setNetworkWarning("Friends network not enabled yet. Run the latest Supabase SQL.");
+      setNetworkLoading(false);
+      return;
+    }
+
+    if (leaderboardRes.error || followingRes.error || feedRes.error) {
+      setNetworkWarning("Could not sync trusted members right now.");
+      setNetworkLoading(false);
+      return;
+    }
+
+    const memberRows = Array.isArray(leaderboardRes.data) ? leaderboardRes.data : [];
+    const followRows = Array.isArray(followingRes.data) ? followingRes.data : [];
+    const feedRows = Array.isArray(feedRes.data) ? feedRes.data : [];
+
+    setNetworkMembers(memberRows);
+    setFollowingUserIds(
+      followRows.map((row) => String(row.followed_user_id)).filter(Boolean)
+    );
+    setFollowingFeedRows(feedRows);
+    setNetworkLoading(false);
+  }, [isMember, user?.id]);
+
+  useEffect(() => {
+    if (!isReady || !isMember || !user?.id) return;
+    queueMicrotask(async () => {
+      await loadTrustNetwork();
+    });
+  }, [isReady, isMember, loadTrustNetwork, user?.id]);
+
   const savedPlaces = useMemo(() => {
     return places
       .filter((place) => favorites.includes(String(place.id)) && !blocked.places.has(String(place.id)))
@@ -374,6 +442,60 @@ export default function FavoritesPage() {
     weekAgo.setDate(weekAgo.getDate() - 7);
     return date >= weekAgo;
   }).length;
+
+  const followingIdSet = useMemo(
+    () => new Set((followingUserIds || []).map((id) => String(id))),
+    [followingUserIds]
+  );
+
+  const suggestedMembers = useMemo(() => {
+    const selfId = String(user?.id || "");
+    return (networkMembers || [])
+      .filter((entry) => {
+        const userId = String(entry.user_id || "");
+        return userId && userId !== selfId;
+      })
+      .slice(0, 18);
+  }, [networkMembers, user?.id]);
+
+  const followingFeedItems = useMemo(() => {
+    return (followingFeedRows || [])
+      .map((row) => {
+        const favoriteId = String(row.favorite_id || "");
+        if (!favoriteId) return null;
+
+        const isEvent = favoriteId.startsWith("event-");
+        if (isEvent) {
+          const eventId = favoriteId.replace("event-", "");
+          const event = events.find((entry) => String(entry.id) === String(eventId));
+          if (!event) return null;
+          return {
+            kind: "event",
+            favoriteId,
+            itemId: String(event.id),
+            name: event.name,
+            city: event.city,
+            date: row.created_at,
+            sourceName: row.display_name || "Member",
+            sourceTitle: row.title || "",
+          };
+        }
+
+        const place = places.find((entry) => String(entry.id) === favoriteId);
+        if (!place) return null;
+        return {
+          kind: "place",
+          favoriteId,
+          itemId: String(place.id),
+          name: place.name,
+          city: place.city,
+          date: row.created_at,
+          sourceName: row.display_name || "Member",
+          sourceTitle: row.title || "",
+        };
+      })
+      .filter(Boolean);
+  }, [events, followingFeedRows, places]);
 
   const contributionCounts = useMemo(() => {
     if (typeof window === "undefined") {
@@ -470,6 +592,91 @@ export default function FavoritesPage() {
     }
 
     showToast(`${label} removed from favorites.`, { tone: "info", duration: 2200 });
+  };
+
+  const addFavoriteFromNetwork = async (favoriteId, label = "Item") => {
+    const normalized = String(favoriteId || "");
+    if (!normalized) return;
+    if (favorites.includes(normalized)) {
+      showToast(`${label} is already in your atlas.`, { tone: "info", duration: 2000 });
+      return;
+    }
+
+    const updated = [...favorites, normalized];
+    setFavorites(updated);
+    writeLocalJson(FAVORITES_STORAGE_KEY, updated);
+
+    const nextAdded = [
+      {
+        id: normalized,
+        date: new Date().toISOString(),
+      },
+      ...added,
+    ];
+    setAdded(nextAdded);
+    writeLocalJson(ADDED_STORAGE_KEY, nextAdded);
+
+    if (user?.id) {
+      const { error } = await supabase
+        .from("member_favorites")
+        .insert([
+          {
+            user_id: user.id,
+            favorite_id: normalized,
+          },
+        ]);
+
+      if (error) {
+        setSyncWarning("Saved locally. Cloud sync unavailable.");
+      }
+    }
+
+    showToast(`${label} saved to your atlas.`, { tone: "ok", duration: 2200 });
+  };
+
+  const toggleFollowMember = async (targetUserId) => {
+    const normalizedTarget = String(targetUserId || "");
+    if (!user?.id || !normalizedTarget || normalizedTarget === String(user.id)) return;
+
+    const isFollowing = followingIdSet.has(normalizedTarget);
+
+    if (isFollowing) {
+      const { error } = await supabase
+        .from("member_following")
+        .delete()
+        .eq("follower_user_id", user.id)
+        .eq("followed_user_id", normalizedTarget);
+
+      if (error) {
+        setNetworkWarning("Could not update follow state right now.");
+        return;
+      }
+
+      setFollowingUserIds((current) => current.filter((id) => String(id) !== normalizedTarget));
+      setFollowingFeedRows((current) =>
+        current.filter((row) => String(row.owner_user_id || "") !== normalizedTarget)
+      );
+      showToast("Member removed from trusted signal.", { tone: "info", duration: 2100 });
+      return;
+    }
+
+    const { error } = await supabase
+      .from("member_following")
+      .insert([
+        {
+          follower_user_id: user.id,
+          followed_user_id: normalizedTarget,
+        },
+      ]);
+
+    if (error) {
+      setNetworkWarning("Could not follow member right now.");
+      return;
+    }
+
+    setFollowingUserIds((current) => [...new Set([...current, normalizedTarget])]);
+    showToast("Member added to your trusted signal.", { tone: "ok", duration: 2100 });
+    await loadTrustNetwork();
   };
 
   const removePlan = async (planId) => {
@@ -1222,6 +1429,131 @@ export default function FavoritesPage() {
               </div>
             )}
           </div>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[34px] border border-emerald-200/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(13,26,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-emerald-200/70">
+                People signal
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+                Trusted members network
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={loadTrustNetwork}
+              className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {networkWarning && (
+            <div className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-xs text-amber-100/90">
+              {networkWarning}
+            </div>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="rounded-[24px] border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Members to follow</p>
+              <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                {networkLoading ? (
+                  Array.from({ length: 4 }).map((_, index) => (
+                    <FavoritesCardSkeleton key={`member-skeleton-${index}`} />
+                  ))
+                ) : suggestedMembers.length > 0 ? (
+                  suggestedMembers.map((member) => {
+                    const memberId = String(member.user_id || "");
+                    const isFollowing = followingIdSet.has(memberId);
+                    const titleMeta = getMemberTitleMeta(member.title || "");
+                    return (
+                      <div
+                        key={`member-suggest-${memberId}`}
+                        className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-white">
+                              {member.display_name || "Member"}
+                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                              {member.title && (
+                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
+                                  <span>{titleMeta.icon}</span>
+                                  {titleMeta.label}
+                                </span>
+                              )}
+                              {member.rank && (
+                                <span className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/65">
+                                  #{member.rank}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleFollowMember(memberId)}
+                            className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                              isFollowing
+                                ? "border-fuchsia-200/30 bg-fuchsia-200/12 text-fuchsia-100"
+                                : "border-emerald-200/25 bg-emerald-200/10 text-emerald-100 hover:border-emerald-200/40"
+                            }`}
+                          >
+                            {isFollowing ? "Following" : "Follow"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 py-6 text-sm text-white/45">
+                    No member signal yet. As community grows, top contributors appear here.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-white/10 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Saved by people you follow</p>
+              <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+                {followingFeedItems.length > 0 ? (
+                  followingFeedItems.map((item, index) => (
+                    <div
+                      key={`following-feed-${item.favoriteId}-${index}`}
+                      className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-white">{item.name}</p>
+                          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/55">
+                            {item.city || "City"} · {item.kind}
+                          </p>
+                          <p className="mt-1 text-xs text-white/60">
+                            Saved by {item.sourceName}
+                            {item.sourceTitle ? ` · ${item.sourceTitle}` : ""}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => addFavoriteFromNetwork(item.favoriteId, item.name)}
+                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 py-6 text-sm text-white/45">
+                    Follow members to unlock trusted favorites feed.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 

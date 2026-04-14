@@ -407,6 +407,8 @@ export default function CityPage() {
   const [isSavingEventAdmin, setIsSavingEventAdmin] = useState(false);
   const [isDeletingPlaceAdmin, setIsDeletingPlaceAdmin] = useState(false);
   const [isDeletingEventAdmin, setIsDeletingEventAdmin] = useState(false);
+  const [trustedPlaceSavesCount, setTrustedPlaceSavesCount] = useState(0);
+  const [trustedEventSavesCount, setTrustedEventSavesCount] = useState(0);
 
   const mapContainerRef = useRef(null);
   const mapWrapperRef = useRef(null);
@@ -564,6 +566,50 @@ export default function CityPage() {
     setEventAdminOpen(false);
     setEventAdminDraft(buildEventAdminDraft(selectedEvent));
   }, [selectedEvent]);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(async () => {
+      if (!isMember || !user?.id || !selectedPlace?.id) {
+        if (active) setTrustedPlaceSavesCount(0);
+        return;
+      }
+      const { data, error } = await supabase.rpc("qa_following_favorite_count", {
+        target_favorite_id: String(selectedPlace.id),
+      });
+      if (!active) return;
+      if (error) {
+        setTrustedPlaceSavesCount(0);
+        return;
+      }
+      setTrustedPlaceSavesCount(Number(data || 0));
+    });
+    return () => {
+      active = false;
+    };
+  }, [isMember, selectedPlace?.id, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+    queueMicrotask(async () => {
+      if (!isMember || !user?.id || !selectedEvent?.id) {
+        if (active) setTrustedEventSavesCount(0);
+        return;
+      }
+      const { data, error } = await supabase.rpc("qa_following_favorite_count", {
+        target_favorite_id: `event-${String(selectedEvent.id)}`,
+      });
+      if (!active) return;
+      if (error) {
+        setTrustedEventSavesCount(0);
+        return;
+      }
+      setTrustedEventSavesCount(Number(data || 0));
+    });
+    return () => {
+      active = false;
+    };
+  }, [isMember, selectedEvent?.id, user?.id]);
 
   const canReviewSelectedPlace = Boolean(selectedPlace);
 
@@ -2203,6 +2249,11 @@ export default function CityPage() {
                 )}
               </div>
             )}
+            {trustedPlaceSavesCount > 0 && (
+              <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200/24 bg-emerald-200/[0.10] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100">
+                Saved by {trustedPlaceSavesCount} trusted member{trustedPlaceSavesCount > 1 ? "s" : ""}
+              </div>
+            )}
             {isAdmin && (
               <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2504,6 +2555,11 @@ export default function CityPage() {
                 >
                   {getQualityStatus(selectedEventQuality).label}
                 </button>
+              </div>
+            )}
+            {trustedEventSavesCount > 0 && (
+              <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200/24 bg-emerald-200/[0.10] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100">
+                Saved by {trustedEventSavesCount} trusted member{trustedEventSavesCount > 1 ? "s" : ""}
               </div>
             )}
             {isAdmin && (
