@@ -159,6 +159,7 @@ export default function FavoritesPage() {
   const [followingFeedRows, setFollowingFeedRows] = useState([]);
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkWarning, setNetworkWarning] = useState("");
+  const [recommendationMode, setRecommendationMode] = useState("balanced");
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -532,6 +533,13 @@ export default function FavoritesPage() {
   }, [events, followingFeedRows, places]);
 
   const forYouRecommendations = useMemo(() => {
+    const modeWeights =
+      recommendationMode === "safe"
+        ? { trustedCity: 3, savedCity: 4, vibe: 2, reviews: 0.25, rating: 0.5, typeSafe: 2.5, typePeak: 0.5, eventSoon: 0.04 }
+        : recommendationMode === "peak"
+          ? { trustedCity: 5, savedCity: 3, vibe: 3, reviews: 0.1, rating: 0.25, typeSafe: 0.6, typePeak: 2.8, eventSoon: 0.14 }
+          : { trustedCity: 4, savedCity: 5, vibe: 3, reviews: 0.15, rating: 0.35, typeSafe: 1.2, typePeak: 1.4, eventSoon: 0.08 };
+
     const savedCityCounts = new Map();
     const trustedCityCounts = new Map();
     const savedVibeCounts = new Map();
@@ -563,12 +571,15 @@ export default function FavoritesPage() {
       .map((place) => {
         const cityKey = normalizeCityKey(place.city);
         const placeVibe = String(place.vibe || place.type || "").trim().toLowerCase();
+        const placeType = String(place.type || "").trim().toLowerCase();
         let score = 0;
-        if (cityKey && cityKey === topSavedCity) score += 5;
-        if (cityKey && cityKey === topTrustedCity) score += 4;
-        if (topVibeKey && placeVibe && placeVibe === topVibeKey) score += 3;
-        score += Math.min(Number(place.reviewCount || 0), 20) * 0.15;
-        score += Number(place.avgRating || 0) * 0.35;
+        if (cityKey && cityKey === topSavedCity) score += modeWeights.savedCity;
+        if (cityKey && cityKey === topTrustedCity) score += modeWeights.trustedCity;
+        if (topVibeKey && placeVibe && placeVibe === topVibeKey) score += modeWeights.vibe;
+        score += Math.min(Number(place.reviewCount || 0), 20) * modeWeights.reviews;
+        score += Number(place.avgRating || 0) * modeWeights.rating;
+        if (["cafe", "bar", "hotel"].includes(placeType)) score += modeWeights.typeSafe;
+        if (["club", "sauna", "cruise_club"].includes(placeType)) score += modeWeights.typePeak;
 
         return {
           kind: "place",
@@ -577,7 +588,7 @@ export default function FavoritesPage() {
           name: place.name || "Place",
           subtitle: String(place.vibe || place.type || "Venue").replaceAll("_", " "),
           score,
-          reason:
+          reasonBase:
             cityKey && cityKey === topSavedCity
               ? "Matches your strongest saved city signal."
               : cityKey && cityKey === topTrustedCity
@@ -601,9 +612,9 @@ export default function FavoritesPage() {
           : Math.max(0, Math.round((eventDate.getTime() - now.getTime()) / 86400000));
 
         let score = 0;
-        if (cityKey && cityKey === topSavedCity) score += 4;
-        if (cityKey && cityKey === topTrustedCity) score += 4;
-        score += Math.max(0, 40 - daysUntil) * 0.08;
+        if (cityKey && cityKey === topSavedCity) score += modeWeights.savedCity - 1;
+        if (cityKey && cityKey === topTrustedCity) score += modeWeights.trustedCity;
+        score += Math.max(0, 40 - daysUntil) * modeWeights.eventSoon;
 
         return {
           kind: "event",
@@ -612,7 +623,7 @@ export default function FavoritesPage() {
           name: event.name || "Event",
           subtitle: formatDate(event.date),
           score,
-          reason:
+          reasonBase:
             cityKey && cityKey === topSavedCity
               ? "Upcoming in your saved city pattern."
               : cityKey && cityKey === topTrustedCity
@@ -625,8 +636,17 @@ export default function FavoritesPage() {
 
     return [...recommendedPlaces, ...recommendedEvents]
       .sort((a, b) => b.score - a.score)
-      .slice(0, 6);
-  }, [blocked.events, blocked.places, events, favorites, followingFeedItems, places, savedPlaces]);
+      .slice(0, 6)
+      .map((item) => ({
+        ...item,
+        reason:
+          recommendationMode === "safe"
+            ? `${item.reasonBase} Prioritizing safer, lower-friction flow.`
+            : recommendationMode === "peak"
+              ? `${item.reasonBase} Prioritizing peak energy and late momentum.`
+              : `${item.reasonBase} Balanced between comfort and intensity.`,
+      }));
+  }, [blocked.events, blocked.places, events, favorites, followingFeedItems, places, recommendationMode, savedPlaces]);
 
   const weeklyDigest = useMemo(() => {
     const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -1836,6 +1856,42 @@ export default function FavoritesPage() {
                 Personalized picks from your saved vibe, city history, and trusted network.
               </p>
             </div>
+          </div>
+
+          <div className="mb-5 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRecommendationMode("safe")}
+              className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
+                recommendationMode === "safe"
+                  ? "border-emerald-200/40 bg-emerald-200/16 text-emerald-100"
+                  : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
+              }`}
+            >
+              Safe mode
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecommendationMode("balanced")}
+              className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
+                recommendationMode === "balanced"
+                  ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
+                  : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
+              }`}
+            >
+              Balanced
+            </button>
+            <button
+              type="button"
+              onClick={() => setRecommendationMode("peak")}
+              className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
+                recommendationMode === "peak"
+                  ? "border-fuchsia-200/40 bg-fuchsia-200/16 text-fuchsia-100"
+                  : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
+              }`}
+            >
+              Peak mode
+            </button>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
