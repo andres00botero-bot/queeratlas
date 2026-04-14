@@ -615,7 +615,7 @@ export default function EventsPage() {
 
               <div className="mt-2 grid grid-cols-7 gap-2">
                 {[...Array(firstDay)].map((_, index) => (
-                  <div key={`empty-${index}`} className="h-24 rounded-2xl border border-transparent" />
+                  <div key={`empty-${index}`} className="h-20 rounded-2xl border border-transparent sm:h-24" />
                 ))}
 
                 {[...Array(daysInMonth)].map((_, index) => {
@@ -628,24 +628,28 @@ export default function EventsPage() {
                     <button
                       key={day}
                       onClick={() => setSelectedDate(dateStr)}
-                      className={`h-24 rounded-2xl border p-3 text-left transition ${
+                      className={`h-20 rounded-2xl border p-2 text-left transition sm:h-24 sm:p-3 ${
                         isSelected
                           ? "border-fuchsia-300/34 bg-[linear-gradient(180deg,rgba(236,72,153,0.22),rgba(91,33,182,0.30))] shadow-[0_20px_48px_rgba(217,70,239,0.20)]"
                           : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] hover:border-white/18 hover:bg-white/8"
                       }`}
                     >
-                      <p className="text-sm font-medium text-white">{day}</p>
+                      <p className="whitespace-nowrap text-base font-semibold leading-none text-white sm:text-sm sm:font-medium">
+                        {day}
+                      </p>
 
                       {eventsCount > 0 && (
-                        <div className="mt-3">
-                          <p className="text-[11px] text-white/48">
+                        <div className="mt-2 sm:mt-3">
+                          <p className="hidden text-[11px] text-white/48 sm:block">
                             {eventsCount} {eventsCount === 1 ? "event" : "events"}
                           </p>
-                          <div className="mt-2 flex gap-1.5">
+                          <div className="mt-2 flex gap-1 sm:gap-1.5">
                             {[...Array(Math.min(eventsCount, 3))].map((_, dotIndex) => (
                               <span
                                 key={`${day}-${dotIndex}`}
-                                className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-fuchsia-400 via-rose-400 to-orange-300 shadow-[0_0_18px_rgba(244,114,182,0.7)]"
+                                className={`h-2 w-2 rounded-full bg-gradient-to-r from-fuchsia-400 via-rose-400 to-orange-300 shadow-[0_0_16px_rgba(244,114,182,0.65)] sm:h-2.5 sm:w-2.5 ${
+                                  dotIndex > 0 ? "hidden sm:inline-flex" : "inline-flex"
+                                }`}
                               />
                             ))}
                           </div>
