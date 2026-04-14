@@ -903,6 +903,8 @@ export default function FavoritesPage() {
           slotLabel: stop.slotLabel || null,
           dayLabel: day.dayLabel || null,
           reason: stop.reason || null,
+          trustScore: Number.isFinite(Number(stop.trustScore)) ? Number(stop.trustScore) : null,
+          trustReason: String(stop.trustReason || "").trim() || null,
         }))
       )
       .filter((stop) => stop?.id);
@@ -1589,6 +1591,12 @@ export default function FavoritesPage() {
             trustedFavoriteIds={(followingFeedRows || [])
               .map((row) => String(row.favorite_id || ""))
               .filter(Boolean)}
+            trustedFavoriteStats={(followingFeedRows || []).reduce((acc, row) => {
+              const favoriteId = String(row.favorite_id || "");
+              if (!favoriteId) return acc;
+              acc[favoriteId] = (acc[favoriteId] || 0) + 1;
+              return acc;
+            }, {})}
             onOpenStop={openPlannerStopOnMap}
             onSavePlan={saveV2Plan}
           />
@@ -1689,6 +1697,12 @@ export default function FavoritesPage() {
                                 <span className="mt-1 block truncate text-[10px] text-white/48">
                                   {stopQuickContext(stop)}
                                 </span>
+                                {typeof stop.trustScore === "number" && (
+                                  <span className="mt-1 block truncate text-[10px] text-cyan-100/72">
+                                    Trust {stop.trustScore}
+                                    {stop.trustReason ? ` · ${stop.trustReason}` : ""}
+                                  </span>
+                                )}
                               </span>
                               <span className="ml-3 uppercase text-[10px] tracking-[0.14em] text-white/44">
                                 {stop.type}

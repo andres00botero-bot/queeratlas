@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import DateInput from "@/components/ui/DateInput";
+import { getEntityQuality, getQualityStatus } from "@/lib/quality";
 
 const VIBES = [
   { value: "soft", label: "Soft" },
@@ -187,22 +188,42 @@ function dayLabel(index, horizon) {
   return `Day ${index + 1}`;
 }
 
-function chooseFromPool(pool, usedIds, fallback = null, preferredFavoriteIds = null, itemPrefix = "") {
+function chooseFromPool(
+  pool,
+  usedIds,
+  fallback = null,
+  preferredFavoriteIds = null,
+  itemPrefix = "",
+  scoreFn = null
+) {
   const available = pool.filter((item) => !usedIds.has(String(item.id)));
   if (available.length === 0) return fallback;
+
+  if (scoreFn) {
+    const scored = available.map((item) => {
+      let score = Number(scoreFn(item) || 0);
+      if (preferredFavoriteIds && preferredFavoriteIds.size > 0) {
+        const prefKey = `${itemPrefix}${item.id}`;
+        if (preferredFavoriteIds.has(prefKey)) score += 6;
+      }
+      return { item, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+    const topScore = scored[0]?.score;
+    const top = scored.filter((entry) => entry.score === topScore);
+    return top[Math.floor(Math.random() * top.length)]?.item || fallback;
+  }
+
   if (preferredFavoriteIds && preferredFavoriteIds.size > 0) {
-    const preferred = available.filter((item) =>
-      preferredFavoriteIds.has(`${itemPrefix}${item.id}`)
-    );
-    if (preferred.length > 0) {
-      return preferred[Math.floor(Math.random() * preferred.length)];
-    }
+    const preferred = available.filter((item) => preferredFavoriteIds.has(`${itemPrefix}${item.id}`));
+    if (preferred.length > 0) return preferred[Math.floor(Math.random() * preferred.length)];
   }
   return available[Math.floor(Math.random() * available.length)];
 }
 
-function chooseEventFromPool(eventsPool, usedIds, preferredFavoriteIds = null) {
-  return chooseFromPool(eventsPool, usedIds, null, preferredFavoriteIds, "event-");
+function chooseEventFromPool(eventsPool, usedIds, preferredFavoriteIds = null, scoreFn = null) {
+  return chooseFromPool(eventsPool, usedIds, null, preferredFavoriteIds, "event-", scoreFn);
 }
 
 function mapStop(item, stopType, slotLabel, time, reason) {
@@ -217,6 +238,97 @@ function mapStop(item, stopType, slotLabel, time, reason) {
     time,
     reason,
     description: item.description || "",
+    trustScore: null,
+    trustReason: "",
+  };
+}
+
+function getTrustedCount(itemType, itemId, trustedFavoriteStats = {}) {
+  if (!itemId) return 0;
+  const key = itemType === "event" ? `event-${itemId}` : String(itemId);
+  return Number(trustedFavoriteStats?.[key] || 0);
+}
+
+function computeTrustMeta({
+  item,
+  itemType,
+  timeLabel,
+  date,
+  trustedFavoriteStats,
+  qualityMap,
+}) {
+  if (!item) return { score: 0, reason: "No trust signal available." };
+
+  const trustedCount = getTrustedCount(itemType, item.id, trustedFavoriteStats);
+  const quality = getEntityQuality({
+    targetType: itemType,
+    targetId: item.id,
+    entity: item,
+    map: qualityMap,
+  });
+  const qualityStatus = getQualityStatus(quality);
+
+  let score = 42;
+  const reason = [];
+
+  if (trustedCount > 0) {
+    score += Math.min(34, trustedCount * 12);
+    reason.push(`saved by ${trustedCount} trusted member${trustedCount > 1 ? "s" : ""}`);
+  }
+
+  if (qualityStatus.tone === "verified") {
+    score += 18;
+    reason.push("verified quality");
+  } else if (qualityStatus.tone === "stale") {
+    score -= 8;
+    reason.push("needs refresh");
+  }
+
+  if (itemType === "place") {
+    if (isPlaceOpenAt(item, date, timeLabel)) {
+      score += 12;
+      reason.push(`open at ${timeLabel}`);
+    } else {
+      score -= 6;
+      reason.push(`opening unclear at ${timeLabel}`);
+    }
+  }
+
+  if (itemType === "event" && isSameDay(item?.date, date)) {
+    score += 14;
+    reason.push("date-matched event");
+  }
+
+  return {
+    score: Math.max(20, Math.min(99, Math.round(score))),
+    reason: reason.length > 0 ? reason.join(" · ") : "Balanced trust signal.",
+  };
+}
+
+function createTrustedStop({
+  item,
+  stopType,
+  slotLabel,
+  time,
+  reason,
+  date,
+  trustedFavoriteStats,
+  qualityMap,
+}) {
+  const base = mapStop(item, stopType, slotLabel, time, reason);
+  if (!base) return null;
+  const trust = computeTrustMeta({
+    item,
+    itemType: stopType,
+    timeLabel: time,
+    date,
+    trustedFavoriteStats,
+    qualityMap,
+  });
+  return {
+    ...base,
+    trustScore: trust.score,
+    trustReason: trust.reason,
   };
 }
 
@@ -229,6 +341,8 @@ function buildItinerary({
   soloSafe,
   planDate,
   preferredFavoriteIds = null,
+  trustedFavoriteStats = {},
+  qualityMap = {},
 }) {
   const placeRows = places.filter((row) => normalize(row.city) === normalize(city));
   const daysCount = horizon === "tonight" ? 1 : horizon === "weekend" ? 2 : 3;
@@ -261,23 +375,80 @@ function buildItinerary({
       const landingPool = filterPlacesOpenAt(landingPoolRaw, currentDate, "18:30");
       const introPlacePool = filterPlacesOpenAt(introPlacePoolRaw, currentDate, "21:30");
 
-      const s1 = chooseFromPool(landingPool, used, null, preferredFavoriteIds);
+      const s1 = chooseFromPool(
+        landingPool,
+        used,
+        null,
+        preferredFavoriteIds,
+        "",
+        (candidate) =>
+          computeTrustMeta({
+            item: candidate,
+            itemType: "place",
+            timeLabel: "18:30",
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+          }).score
+      );
       if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(dayEvents, used, preferredFavoriteIds);
-      const s2 = forcedEvent || chooseFromPool(introPlacePool, used, null, preferredFavoriteIds);
+      const forcedEvent = chooseEventFromPool(
+        dayEvents,
+        used,
+        preferredFavoriteIds,
+        (candidate) =>
+          computeTrustMeta({
+            item: candidate,
+            itemType: "event",
+            timeLabel: "21:30",
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+          }).score
+      );
+      const s2 =
+        forcedEvent ||
+        chooseFromPool(
+          introPlacePool,
+          used,
+          null,
+          preferredFavoriteIds,
+          "",
+          (candidate) =>
+            computeTrustMeta({
+              item: candidate,
+              itemType: "place",
+              timeLabel: "21:30",
+              date: currentDate,
+              trustedFavoriteStats,
+              qualityMap,
+            }).score
+        );
       if (s2) used.add(String(s2.id));
 
       stops.push(
-        mapStop(s1, "place", "Soft landing", "18:30", "Easy entry to read local energy."),
-        mapStop(
-          s2,
-          forcedEvent ? "event" : "place",
-          "Intro signal",
-          "21:30",
-          forcedEvent
+        createTrustedStop({
+          item: s1,
+          stopType: "place",
+          slotLabel: "Soft landing",
+          time: "18:30",
+          reason: "Easy entry to read local energy.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        }),
+        createTrustedStop({
+          item: s2,
+          stopType: forcedEvent ? "event" : "place",
+          slotLabel: "Intro signal",
+          time: "21:30",
+          reason: forcedEvent
             ? "Date-matched event anchored into your selected plan window."
-            : "Warm social momentum before peak."
-        )
+            : "Warm social momentum before peak.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        })
       );
     } else if (dayIndex === 1 || (dayIndex === 0 && daysCount === 1)) {
       const warmPoolRaw = vibe === "dark" ? [...dark, ...bars] : [...bars, ...clubs];
@@ -287,50 +458,186 @@ function buildItinerary({
       const warmPool = filterPlacesOpenAt(warmPoolRaw, currentDate, "20:30");
       const peakPlacePool = filterPlacesOpenAt(peakPlacePoolRaw, currentDate, "01:00");
       const latePool = filterPlacesOpenAt(latePoolRaw, currentDate, "03:00");
-      const peakPool = [...dayEvents, ...peakPlacePool];
-
-      const s1 = chooseFromPool(warmPool, used, null, preferredFavoriteIds);
+      const s1 = chooseFromPool(
+        warmPool,
+        used,
+        null,
+        preferredFavoriteIds,
+        "",
+        (candidate) =>
+          computeTrustMeta({
+            item: candidate,
+            itemType: "place",
+            timeLabel: "20:30",
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+          }).score
+      );
       if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(dayEvents, used, preferredFavoriteIds);
-      const s2 = forcedEvent || chooseFromPool(peakPool, used, null, preferredFavoriteIds);
+      const forcedEvent = chooseEventFromPool(
+        dayEvents,
+        used,
+        preferredFavoriteIds,
+        (candidate) =>
+          computeTrustMeta({
+            item: candidate,
+            itemType: "event",
+            timeLabel: "01:00",
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+          }).score
+      );
+      const s2 =
+        forcedEvent ||
+        chooseFromPool(
+          peakPlacePool,
+          used,
+          null,
+          preferredFavoriteIds,
+          "",
+          (candidate) =>
+            computeTrustMeta({
+              item: candidate,
+              itemType: "place",
+              timeLabel: "01:00",
+              date: currentDate,
+              trustedFavoriteStats,
+              qualityMap,
+            }).score
+        );
       if (s2) used.add(String(s2.id));
-      const s3 = chooseFromPool(latePool, used, null, preferredFavoriteIds);
+      const s3 = chooseFromPool(
+        latePool,
+        used,
+        null,
+        preferredFavoriteIds,
+        "",
+        (candidate) =>
+          computeTrustMeta({
+            item: candidate,
+            itemType: "place",
+            timeLabel: "03:00",
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+          }).score
+      );
       if (s3) used.add(String(s3.id));
 
       stops.push(
-        mapStop(s1, "place", "Warmup", "20:30", "Set baseline before the rush."),
-        mapStop(
-          s2,
-          forcedEvent ? "event" : "place",
-          "Peak",
-          "01:00",
-          forcedEvent
+        createTrustedStop({
+          item: s1,
+          stopType: "place",
+          slotLabel: "Warmup",
+          time: "20:30",
+          reason: "Set baseline before the rush.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        }),
+        createTrustedStop({
+          item: s2,
+          stopType: forcedEvent ? "event" : "place",
+          slotLabel: "Peak",
+          time: "01:00",
+          reason: forcedEvent
             ? "Date-matched event in your selected window."
-            : "Core nightlife pressure point."
-        ),
-        mapStop(s3, "place", "Late drift", "03:00", "Post-peak continuation with lower friction.")
+            : "Core nightlife pressure point.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        }),
+        createTrustedStop({
+          item: s3,
+          stopType: "place",
+          slotLabel: "Late drift",
+          time: "03:00",
+          reason: "Post-peak continuation with lower friction.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        })
       );
     } else {
       const recoveryPoolRaw = [...chill, ...cafes, ...bars];
       const recoveryPoolEarly = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "11:30");
       const recoveryPoolLate = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "16:00");
-      const s1 = chooseFromPool(recoveryPoolEarly, used, null, preferredFavoriteIds);
+      const s1 = chooseFromPool(
+        recoveryPoolEarly,
+        used,
+        null,
+        preferredFavoriteIds,
+        "",
+        (candidate) =>
+          computeTrustMeta({
+            item: candidate,
+            itemType: "place",
+            timeLabel: "11:30",
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+          }).score
+      );
       if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(dayEvents, used, preferredFavoriteIds);
-      const s2 = forcedEvent || chooseFromPool(recoveryPoolLate, used, null, preferredFavoriteIds);
+      const forcedEvent = chooseEventFromPool(
+        dayEvents,
+        used,
+        preferredFavoriteIds,
+        (candidate) =>
+          computeTrustMeta({
+            item: candidate,
+            itemType: "event",
+            timeLabel: "21:30",
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+          }).score
+      );
+      const s2 =
+        forcedEvent ||
+        chooseFromPool(
+          recoveryPoolLate,
+          used,
+          null,
+          preferredFavoriteIds,
+          "",
+          (candidate) =>
+            computeTrustMeta({
+              item: candidate,
+              itemType: "place",
+              timeLabel: "16:00",
+              date: currentDate,
+              trustedFavoriteStats,
+              qualityMap,
+            }).score
+        );
       if (s2) used.add(String(s2.id));
 
       stops.push(
-        mapStop(s1, "place", "Recovery", "11:30", "Slow restart and social reset."),
-        mapStop(
-          s2,
-          forcedEvent ? "event" : "place",
-          forcedEvent ? "Night highlight" : "Golden hour",
-          forcedEvent ? "21:30" : "16:00",
-          forcedEvent
+        createTrustedStop({
+          item: s1,
+          stopType: "place",
+          slotLabel: "Recovery",
+          time: "11:30",
+          reason: "Slow restart and social reset.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        }),
+        createTrustedStop({
+          item: s2,
+          stopType: forcedEvent ? "event" : "place",
+          slotLabel: forcedEvent ? "Night highlight" : "Golden hour",
+          time: forcedEvent ? "21:30" : "16:00",
+          reason: forcedEvent
             ? "Date-matched event added for this plan day."
-            : "Chill close to the trip arc."
-        )
+            : "Chill close to the trip arc.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        })
       );
     }
 
@@ -347,6 +654,7 @@ export default function TripPlannerV2({
   places = [],
   events = [],
   trustedFavoriteIds = [],
+  trustedFavoriteStats = {},
   onOpenStop,
   onSavePlan,
 }) {
@@ -362,6 +670,14 @@ export default function TripPlannerV2({
   const [itinerary, setItinerary] = useState([]);
   const [locks, setLocks] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const qualityMap = useMemo(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      return JSON.parse(window.localStorage.getItem("qa_quality_meta") || "{}");
+    } catch {
+      return {};
+    }
+  }, [city, itinerary.length]);
   const trustedFavoritesSet = useMemo(
     () => new Set((trustedFavoriteIds || []).map((item) => String(item))),
     [trustedFavoriteIds]
@@ -390,6 +706,8 @@ export default function TripPlannerV2({
       soloSafe,
       planDate,
       preferredFavoriteIds: trustedFavoritesSet,
+      trustedFavoriteStats,
+      qualityMap,
     });
     setItinerary(next);
     setLocks({});
@@ -406,6 +724,8 @@ export default function TripPlannerV2({
       soloSafe,
       planDate,
       preferredFavoriteIds: trustedFavoritesSet,
+      trustedFavoriteStats,
+      qualityMap,
     });
     const merged = itinerary.map((day, dayIdx) => {
       const freshDay = fresh[dayIdx] || { ...day, stops: [] };
@@ -656,6 +976,11 @@ export default function TripPlannerV2({
                           </p>
                           <p className="mt-1 text-sm font-medium text-white">{stop.name}</p>
                           <p className="mt-1 text-xs text-white/55">{stop.reason}</p>
+                          {typeof stop.trustScore === "number" && (
+                            <p className="mt-1 text-[11px] text-cyan-100/75">
+                              Trust {stop.trustScore} · {stop.trustReason || "network + quality + timing"}
+                            </p>
+                          )}
                         </div>
                         <button
                           type="button"
