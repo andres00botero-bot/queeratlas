@@ -664,8 +664,7 @@ export default function Home() {
                     }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-2.5 py-1.5 text-[10px] font-semibold text-black transition hover:scale-[1.02] sm:right-3 sm:px-4 sm:py-2 sm:text-xs"
                   >
-                    <span className="sm:hidden">Go</span>
-                    <span className="hidden sm:inline">Explore</span>
+                    Explore
                   </button>
 
                   {showResults && results.length > 0 && (
