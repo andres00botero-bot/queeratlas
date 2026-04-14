@@ -180,6 +180,53 @@ export function AuthProvider({ children }) {
       }
     };
 
+    const signInWithPassword = async (email, password) => {
+      try {
+        const result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (result?.error) {
+          captureOperationalError("login_fail", result.error, {
+            provider: "email",
+            flow: "password_sign_in",
+          });
+        }
+        return result;
+      } catch (error) {
+        captureOperationalError("login_fail", error, {
+          provider: "email",
+          flow: "password_sign_in",
+        });
+        return { data: null, error };
+      }
+    };
+
+    const signUpWithPassword = async (email, password) => {
+      try {
+        const result = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (result?.error) {
+          captureOperationalError("login_fail", result.error, {
+            provider: "email",
+            flow: "password_sign_up",
+          });
+        }
+        return result;
+      } catch (error) {
+        captureOperationalError("login_fail", error, {
+          provider: "email",
+          flow: "password_sign_up",
+        });
+        return { data: null, error };
+      }
+    };
+
     const signOut = async () => {
       try {
         return await supabase.auth.signOut();
@@ -229,6 +276,8 @@ export function AuthProvider({ children }) {
       },
       signInWithGoogle,
       signInWithEmail,
+      signInWithPassword,
+      signUpWithPassword,
       signOut,
     };
   }, [isLoading, memberProfile, session, user]);

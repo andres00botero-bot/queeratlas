@@ -56,11 +56,22 @@ export default function Home() {
   const [worldNews, setWorldNews] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [emailInput, setEmailInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
   const [isIntroVisible, setIsIntroVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { isMember, memberName, memberProfile, isLoading: isAuthLoading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
+  const {
+    isMember,
+    memberName,
+    memberProfile,
+    isLoading: isAuthLoading,
+    signInWithGoogle,
+    signInWithEmail,
+    signInWithPassword,
+    signUpWithPassword,
+    signOut,
+  } = useAuth();
 
   const getResultKey = (item) => (
     item.type === "event" ? `event-${item.id}` : String(item.id)
@@ -70,6 +81,7 @@ export default function Home() {
 
   const openSignup = (redirect = "") => {
     setAuthMessage("");
+    setPasswordInput("");
     if (redirect) {
       writeLocalValue("qa_redirect", redirect);
       writeLocalValue("qa_post_login_target", redirect);
@@ -883,22 +895,32 @@ export default function Home() {
                     placeholder="you@email.com"
                     className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
                   />
+                  <input
+                    value={passwordInput}
+                    onChange={(event) => setPasswordInput(event.target.value)}
+                    type="password"
+                    placeholder="Password"
+                    className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                  />
                   <button
                     onClick={async () => {
-                      if (!emailInput.trim()) {
-                        setAuthMessage("Enter an email first.");
+                      if (!emailInput.trim() || !passwordInput.trim()) {
+                        setAuthMessage("Enter both email and password.");
                         return;
                       }
 
-                    setAuthMessage("");
-                    setAuthLoading(true);
-                    writeLocalValue("qa_post_login_target", "/");
-                    const { error } = await signInWithEmail(emailInput.trim());
+                      setAuthMessage("");
+                      setAuthLoading(true);
+                      writeLocalValue("qa_post_login_target", "/");
+                      const { error } = await signInWithPassword(
+                        emailInput.trim(),
+                        passwordInput
+                      );
 
-                    if (error) {
+                      if (error) {
                         setAuthMessage(error.message);
                       } else {
-                        setAuthMessage("Magic link sent. Check your inbox.");
+                        setAuthMessage("Signed in. Redirecting...");
                       }
 
                       setAuthLoading(false);
@@ -906,7 +928,67 @@ export default function Home() {
                     disabled={authLoading}
                     className="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
                   >
-                    {authLoading ? "Sending..." : "Continue with email link"}
+                    {authLoading ? "Signing in..." : "Sign in with email + password"}
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (!emailInput.trim() || !passwordInput.trim()) {
+                        setAuthMessage("Enter both email and password.");
+                        return;
+                      }
+
+                      if (passwordInput.trim().length < 6) {
+                        setAuthMessage("Password needs at least 6 characters.");
+                        return;
+                      }
+
+                      setAuthMessage("");
+                      setAuthLoading(true);
+                      writeLocalValue("qa_post_login_target", "/");
+                      const { data, error } = await signUpWithPassword(
+                        emailInput.trim(),
+                        passwordInput
+                      );
+
+                      if (error) {
+                        setAuthMessage(error.message);
+                      } else if (data?.session) {
+                        setAuthMessage("Account created. You are now signed in.");
+                      } else {
+                        setAuthMessage("Account created. Check your email to confirm.");
+                      }
+
+                      setAuthLoading(false);
+                    }}
+                    disabled={authLoading}
+                    className="mt-2 w-full rounded-xl border border-fuchsia-200/22 bg-fuchsia-200/12 py-2.5 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/38 hover:bg-fuchsia-200/18"
+                  >
+                    {authLoading ? "Creating..." : "Create account"}
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (!emailInput.trim()) {
+                        setAuthMessage("Enter your email to receive a magic link.");
+                        return;
+                      }
+
+                      setAuthMessage("");
+                      setAuthLoading(true);
+                      writeLocalValue("qa_post_login_target", "/");
+                      const { error } = await signInWithEmail(emailInput.trim());
+                      if (error) {
+                        setAuthMessage(error.message);
+                      } else {
+                        setAuthMessage("Magic link sent. Check your inbox.");
+                      }
+                      setAuthLoading(false);
+                    }}
+                    disabled={authLoading}
+                    className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 py-2 text-xs font-semibold tracking-[0.08em] text-white/75 transition hover:border-white/24 hover:text-white"
+                  >
+                    {authLoading ? "Sending..." : "Send magic link instead"}
                   </button>
                 </div>
               </div>
