@@ -648,13 +648,13 @@ export default function CityPage() {
     router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id }));
   };
 
-  const closePlace = () => {
+  const closePlace = useCallback(() => {
     router.push(buildSelectionUrl({ nextPlaceId: null }));
-  };
+  }, [buildSelectionUrl, router]);
 
-  const closeEvent = () => {
+  const closeEvent = useCallback(() => {
     router.push(buildSelectionUrl({ nextEventId: null }));
-  };
+  }, [buildSelectionUrl, router]);
 
   const showEventOnMap = () => {
     if (!selectedEvent || !mapRef.current || selectedEvent.lat == null || selectedEvent.lng == null) return;
@@ -708,7 +708,7 @@ export default function CityPage() {
     writeLocalJson("qa_favorites", updated);
   };
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     setEventsLoading(true);
     setEventsLoadError("");
     try {
@@ -730,7 +730,7 @@ export default function CityPage() {
     } finally {
       setEventsLoading(false);
     }
-  };
+  }, []);
 
   const geocodeAddress = async (value) => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -759,7 +759,7 @@ export default function CityPage() {
     queueMicrotask(() => {
       fetchEvents();
     });
-  }, []);
+  }, [fetchEvents]);
 
   useEffect(() => {
     queueMicrotask(() => {
