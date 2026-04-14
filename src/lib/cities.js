@@ -724,6 +724,32 @@ export const cityConfig = {
       cost: "Lima can still deliver strong value compared with many global capitals, especially for food and rides. Premium stays in Miraflores or ocean-view zones can rise fast, but nightlife itself is often accessible. The city rewards spending on location and transport convenience first, then letting bars/clubs carry the rest.",
     }),
   },
+  quito: {
+    center: [-78.4678, -0.1807],
+    title: "Queer Quito",
+    country: "Ecuador",
+    vibe: "andean nightlife pulse",
+    guide: buildGuide({
+      about: "Quito mixes high-altitude city intensity with a queer scene that feels real, social, and local-first. It is less packaged than mega tourist capitals and more about finding the right lanes: drag-pop club energy, old-school bars, sauna culture, and community nights that run late once the room clicks. What makes Quito addictive is the contrast between colonial skyline calm and after-dark release.",
+      district: "La Mariscal and nearby nightlife corridors are the easiest entry point for bars, clubs, and social warm-up. Centro-north routes and selected local pockets add depth when you want less tourist flow and more city texture. Best move: base near Miraflores/La Mariscal logistics, then build short intentional hops instead of long random movement.",
+      safety: "Quito is very workable when you keep routing simple and intentional, especially at night. Use rideshare between neighborhoods after late hours, keep phone battery high, and avoid drifting too far on foot once energy drops. Venue zones are usually social and warm; transitions are where planning matters most.",
+      nightlife: "The city starts relatively late, then escalates fast. A strong Quito night often means one social bar, one momentum club stop, and one final choice between dance-floor pressure or darker adult energy. The scene is less about massive scale and more about room chemistry, local crowd mix, and picking the right sequence.",
+      cost: "Quito can deliver excellent queer-nightlife value versus many global capitals. Drinks and transport are often manageable, while premium stays in top zones still stay below major North American or Western European averages. Spend on location and route ease first, then let the city do the rest.",
+    }),
+  },
+  bucharest: {
+    center: [26.1025, 44.4268],
+    title: "Queer Bucharest",
+    country: "Romania",
+    vibe: "east-europe night voltage",
+    guide: buildGuide({
+      about: "Bucharest feels raw, stylish, and surprisingly magnetic once you hit the right queer lanes. The dedicated scene is more compact than Berlin or Madrid, but that is part of the charm: fewer rooms, stronger room chemistry, and a nightlife culture where regulars and new travelers still collide in the same spaces. It is a city of contrast, from Belle Epoque streets to dark-room energy by midnight.",
+      district: "Old Town and nearby central routes are the easiest first anchor, especially for bar-to-club flow. University-area movement helps keep logistics simple, while selected side neighborhoods add quieter pregame options. Best strategy: stay central, build short hops, and let one strong bar decide where your night escalates next.",
+      safety: "Bucharest is workable and increasingly queer-visible in scene zones, but practical routing still matters. Use rideshare late, keep your phone charged, and avoid drifting too far between neighborhoods once energy drops. Venue interiors tend to feel safe and community-led; transitions between stops are where planning keeps the night smooth.",
+      nightlife: "The city starts late and often peaks very late. A strong Bucharest run usually means social warm-up in a smaller bar, then club pressure, then optional sauna or adult lane if that is your speed. The scene rewards intention over quantity: choose the right two or three stops and the night lands harder than trying to sample everything.",
+      cost: "Compared with many Western capitals, Bucharest can still deliver high nightlife return for moderate spend. Drinks and entry are often manageable, while premium central stays remain below London/Paris levels. Spend on location and transport convenience first, then let the city's queer night map do the rest.",
+    }),
+  },
   sofia: {
     center: [23.3219, 42.6977],
     title: "Queer Sofia",

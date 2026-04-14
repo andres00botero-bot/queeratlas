@@ -28,6 +28,7 @@ import DateInput from "@/components/ui/DateInput";
 const TYPES = [
   { value: "club", label: "Clubs", color: "#ef4444" },
   { value: "bar", label: "Bars", color: "#3b82f6" },
+  { value: "restaurant", label: "Restaurants", color: "#14b8a6" },
   { value: "sauna", label: "Saunas", color: "#a855f7" },
   { value: "cruise_club", label: "Cruise Clubs", color: "#111111" },
   { value: "cruising_area", label: "Cruising Areas", color: "#f97316" },
@@ -38,6 +39,7 @@ const TYPES = [
 const TYPE_LABELS = {
   club: "Club",
   bar: "Bar",
+  restaurant: "Restaurant",
   sauna: "Sauna",
   cruise_club: "Cruise Club",
   cruising_area: "Cruising Area",
@@ -57,6 +59,12 @@ const TYPE_STYLES = {
     selected: "border-sky-200/30 bg-[linear-gradient(180deg,rgba(14,116,244,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(59,130,246,0.12)]",
     label: "text-sky-200",
     line: "from-sky-300/75 via-cyan-300/45 to-transparent",
+  },
+  restaurant: {
+    card: "border-teal-300/12 bg-[linear-gradient(180deg,rgba(8,64,58,0.34),rgba(15,15,15,0.96))]",
+    selected: "border-teal-200/30 bg-[linear-gradient(180deg,rgba(20,184,166,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(20,184,166,0.12)]",
+    label: "text-teal-200",
+    line: "from-teal-300/75 via-cyan-300/45 to-transparent",
   },
   sauna: {
     card: "border-fuchsia-300/12 bg-[linear-gradient(180deg,rgba(78,18,90,0.34),rgba(15,15,15,0.96))]",
@@ -172,6 +180,8 @@ const CITY_HERO_COPY = {
   ibiza: 'Hook: Island hedonism where sunset becomes strategy. Queer status: Very visible in season with iconic party and beach circuits. Crowd: Global party travelers, DJs, style crowd, and holiday groups. "No casual nights here."',
   santiago: 'Hook: Urban Andes backdrop with increasingly bold queer flow. Queer status: Growing visibility and active nightlife in key neighborhoods. Crowd: Local creatives, social groups, and culture-forward travelers. "Rising city, rising signal."',
   lima: 'Hook: Coastal capital with a late-night social arc. Queer status: Active and growing, especially across curated nightlife lanes. Crowd: Local party circles, travelers, drag fans, and weekend explorers. "Understated start, strong finish."',
+  quito: 'Hook: High-altitude city heat with late-night queer momentum. Queer status: Active and resilient, with visible nightlife lanes and a growing community pulse. Crowd: Local regulars, drag-night lovers, party travelers, and social bar hoppers. "Altitude by day, release by night."',
+  bucharest: 'Hook: Grit, glamour, and late-night queer voltage in one city loop. Queer status: Compact but alive, with resilient community spaces and rising visibility. Crowd: Local regulars, alt-club lovers, drag-night travelers, and weekend social crews. "Smaller scene, sharper chemistry."',
   sofia: 'Hook: Balkan city edge with emerging queer confidence. Queer status: Smaller but resilient and increasingly visible community scene. Crowd: Local regulars, students, creatives, and intentional travelers. "Not huge, but absolutely real."',
   montevideo: 'Hook: Relaxed coastal capital with loyal nightlife pockets. Queer status: Visible and welcoming, especially around core social venues. Crowd: Local regulars, South American travelers, and low-drama bar hoppers. "Calm pace, strong connection."',
   hamburg: 'Hook: Port-city grit with polished nightlife options. Queer status: Active and welcoming, with strong bar and club routes. Crowd: Music lovers, locals, leather crowd, and weekend travelers. "Salt, steel, and after-dark glow."',
