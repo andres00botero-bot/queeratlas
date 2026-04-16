@@ -3,6 +3,17 @@ import { supabase } from "./supabase";
 import { mergeSeedPlaces } from "./seedContent";
 import { captureOperationalError } from "./monitoring";
 
+function formatSupabaseError(error) {
+  if (!error) return "Unknown error";
+  const details = {
+    message: error.message || "",
+    code: error.code || "",
+    details: error.details || "",
+    hint: error.hint || "",
+  };
+  return JSON.stringify(details);
+}
+
 export function usePlaces(city) {
   const [places, setPlaces] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,8 +34,55 @@ export function usePlaces(city) {
     ]);
 
     if (error) {
-      console.error("Fetch places error:", error);
-      setLoadError("Could not load places right now.");
+      console.error("Fetch places_with_stats error:", formatSupabaseError(error));
+
+      const [{ data: fallbackPlaces, error: fallbackPlacesError }, { data: fallbackReviews, error: fallbackReviewsError }] = await Promise.all([
+        supabase
+          .from("places")
+          .select("id, name, type, city, lat, lng, description, vibe, hours, link"),
+        supabase
+          .from("reviews")
+          .select("place_id, rating"),
+      ]);
+
+      if (fallbackPlacesError) {
+        console.error("Fallback places query error:", formatSupabaseError(fallbackPlacesError));
+        setLoadError("Could not load places right now.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (fallbackReviewsError) {
+        console.error("Fallback reviews query error:", formatSupabaseError(fallbackReviewsError));
+      }
+
+      const reviewRows = Array.isArray(fallbackReviews) ? fallbackReviews : [];
+      const statsByPlaceId = reviewRows.reduce((acc, row) => {
+        const placeId = String(row?.place_id || "");
+        if (!placeId) return acc;
+        if (!acc[placeId]) {
+          acc[placeId] = { total: 0, count: 0 };
+        }
+        const numericRating = Number(row?.rating);
+        if (Number.isFinite(numericRating) && numericRating > 0) {
+          acc[placeId].total += numericRating;
+          acc[placeId].count += 1;
+        }
+        return acc;
+      }, {});
+
+      const fallbackRows = (Array.isArray(fallbackPlaces) ? fallbackPlaces : []).map((place) => {
+        const stat = statsByPlaceId[String(place.id)] || { total: 0, count: 0 };
+        const avgRating = stat.count > 0 ? Number((stat.total / stat.count).toFixed(1)) : null;
+        return {
+          ...place,
+          avgRating,
+          reviewCount: stat.count,
+        };
+      });
+
+      setPlaces(mergeSeedPlaces(fallbackRows));
+      setLoadError("Live stats view is unavailable. Showing direct place data.");
       setIsLoading(false);
       return;
     }

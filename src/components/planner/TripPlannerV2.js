@@ -358,9 +358,9 @@ function buildItinerary({
   const bars = placeRows.filter((p) => p.type === "bar");
   const clubs = placeRows.filter((p) => p.type === "club");
   const saunas = placeRows.filter((p) => p.type === "sauna");
-  const chill = placeRows.filter((p) => ["cafe", "bar", "hotel"].includes(p.type));
+  const chill = placeRows.filter((p) => ["cafe", "bar", "hotel", "restaurant"].includes(p.type));
   const dark = placeRows.filter((p) => ["sauna", "cruise_club", "club"].includes(p.type));
-  const safeLean = placeRows.filter((p) => ["cafe", "bar"].includes(p.type));
+  const safeLean = placeRows.filter((p) => ["cafe", "bar", "restaurant"].includes(p.type));
 
   const used = new Set();
 
