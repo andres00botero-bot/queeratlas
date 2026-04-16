@@ -9,7 +9,6 @@ export default function sitemap() {
     "/cities",
     "/events",
     "/now",
-    "/search",
     "/gay-guide",
     "/queer-guide",
     "/hbtq-guide",

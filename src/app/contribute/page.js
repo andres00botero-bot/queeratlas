@@ -42,6 +42,7 @@ const initialRequests = [
 const PLACE_TYPES = [
   { value: "club", label: "Club" },
   { value: "bar", label: "Bar" },
+  { value: "restaurant", label: "Restaurant" },
   { value: "sauna", label: "Sauna" },
   { value: "cruise_club", label: "Cruise Club" },
   { value: "cruising_area", label: "Cruising Area" },
@@ -154,7 +155,6 @@ export default function ContributePage() {
     if (!isMember) {
       writeLocalValue("qa_redirect", "/contribute");
       writeLocalValue("qa_post_login_target", "/contribute");
-      router.replace("/?join=true");
       queueMicrotask(() => {
         setIsReady(true);
       });
@@ -221,7 +221,7 @@ export default function ContributePage() {
         setIsReady(true);
       }
     });
-  }, [isAuthLoading, isMember, router, user?.email]);
+  }, [isAuthLoading, isMember, user?.email]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;

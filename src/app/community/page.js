@@ -377,7 +377,6 @@ export default function CommunityPage() {
     if (!isMember) {
       writeLocalValue("qa_redirect", "/community");
       writeLocalValue("qa_post_login_target", "/community");
-      router.replace("/?join=true");
       queueMicrotask(() => {
         setIsReady(true);
       });
@@ -388,7 +387,7 @@ export default function CommunityPage() {
       await loadCommunityData();
       setIsReady(true);
     });
-  }, [isAuthLoading, isMember, loadCommunityData, router]);
+  }, [isAuthLoading, isMember, loadCommunityData]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;

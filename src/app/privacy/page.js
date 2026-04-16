@@ -1,6 +1,9 @@
 export const metadata = {
   title: "Privacy",
   description: "Queer Atlas privacy overview.",
+  alternates: {
+    canonical: "/privacy",
+  },
 };
 
 export default function PrivacyPage() {

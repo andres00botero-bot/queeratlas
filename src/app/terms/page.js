@@ -1,6 +1,9 @@
 export const metadata = {
   title: "Terms",
   description: "Queer Atlas terms and acceptable use.",
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsPage() {
