@@ -3,15 +3,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
+import { useAuth } from "@/lib/auth";
+import { addReport, getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import { mergeSeedEvents } from "@/lib/seedContent";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
+import { useActionToast } from "@/lib/useActionToast";
 import EmptyState from "@/components/ui/EmptyState";
 import DateInput from "@/components/ui/DateInput";
+import ActionToast from "@/components/ui/ActionToast";
 
 const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
+const REPORT_REASONS = [
+  { value: "safety", label: "Safety issue", helper: "Unsafe behavior, consent issues, harassment, or risky conditions." },
+  { value: "wrong_info", label: "Wrong info", helper: "Date, location, link, or event details are incorrect." },
+  { value: "spam", label: "Spam or scam", helper: "Misleading promos, fake listings, or low-trust content." },
+  { value: "abuse", label: "Abuse or hate", helper: "Hate speech, threats, discrimination, or abusive language." },
+  { value: "other", label: "Other issue", helper: "Anything else that should be reviewed by admin." },
+];
 
 function formatDateLabel(value) {
   if (!value) return "Date TBA";
@@ -65,6 +75,7 @@ function mapGlobalEventRow(row) {
     name: row.name || "",
     date: row.date || "",
     location: row.location || "",
+    vibe: row.vibe || "",
     description: row.description || "",
     link: row.link || "",
     source: row.source || "",
@@ -92,15 +103,19 @@ function EventSkeletonCard({ tone = "orange" }) {
 
 export default function EventsPage() {
   const router = useRouter();
+  const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
+  const { toast, showToast } = useActionToast();
 
   const [events, setEvents] = useState([]);
   const [, setQualityTick] = useState(0);
   const [globalEvents, setGlobalEvents] = useState([]);
   const [showGlobalForm, setShowGlobalForm] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [globalForm, setGlobalForm] = useState({
     name: "",
     date: "",
     location: "",
+    vibe: "",
     description: "",
     link: "",
     source: "",
@@ -113,6 +128,14 @@ export default function EventsPage() {
   const [globalError, setGlobalError] = useState("");
   const [isSavingGlobal, setIsSavingGlobal] = useState(false);
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportDraft, setReportDraft] = useState({
+    targetId: "",
+    title: "",
+    city: "",
+    reasonKey: REPORT_REASONS[0].value,
+    details: "",
+  });
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -143,9 +166,44 @@ export default function EventsPage() {
     });
   }, []);
 
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (!isMember) {
+      setIsAdmin(false);
+      setShowGlobalForm(false);
+      return;
+    }
+
+    let active = true;
+
+    queueMicrotask(async () => {
+      let adminState = false;
+      try {
+        const rpcRes = await supabase.rpc("qa_is_admin");
+        adminState = Boolean(rpcRes.data);
+      } catch {
+        adminState = false;
+      }
+
+      if (!active) return;
+      setIsAdmin(adminState);
+      if (!adminState) {
+        setShowGlobalForm(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, isMember]);
+
   const qualityMap = getQualityMap();
   const refreshQuality = async (event, clickEvent) => {
     clickEvent?.stopPropagation();
+    if (event?.isGlobal && !isAdmin) {
+      setGlobalError("Admin access required to edit off-grid event metadata.");
+      return;
+    }
 
     const existing = getEntityQuality({
       targetType: "event",
@@ -377,25 +435,105 @@ export default function EventsPage() {
     return eventDate.getFullYear() === year && eventDate.getMonth() === month;
   }).length;
 
+  const handleReport = (event, clickEvent) => {
+    clickEvent?.stopPropagation();
+    setReportDraft({
+      targetId: String(event?.id || ""),
+      title: String(event?.name || "Reported event"),
+      city: String(event?.city || "Global"),
+      reasonKey: REPORT_REASONS[0].value,
+      details: "",
+    });
+    setReportModalOpen(true);
+  };
+
+  const closeReportModal = () => {
+    setReportModalOpen(false);
+  };
+
+  const submitReport = () => {
+    const selectedReason = REPORT_REASONS.find((item) => item.value === reportDraft.reasonKey) || REPORT_REASONS[0];
+    const details = String(reportDraft.details || "").trim();
+
+    if (details.length < 8) {
+      showToast("Add a short note so admin can act quickly.", { tone: "warn", duration: 2300 });
+      return;
+    }
+
+    addReport({
+      targetType: "event",
+      targetId: String(reportDraft.targetId || ""),
+      city: reportDraft.city || "Global",
+      title: reportDraft.title,
+      reason: selectedReason.label,
+      message: details,
+    });
+
+    trackKpiEvent("report_submitted", {
+      city: String(reportDraft.city || "Global"),
+      targetType: "event",
+      targetId: String(reportDraft.targetId || ""),
+      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      meta: { reason: selectedReason.label },
+    });
+
+    setReportModalOpen(false);
+    showToast("Report sent to admin inbox.", { tone: "info", duration: 2400 });
+  };
+
+  const insertGlobalEvent = async (payload) => {
+    const withVibe = {
+      ...payload,
+      vibe: payload.vibe || null,
+    };
+
+    const primaryInsert = await supabase
+      .from("global_events")
+      .insert([withVibe])
+      .select("*")
+      .single();
+
+    if (!primaryInsert.error) return primaryInsert;
+
+    const errorText = `${primaryInsert.error?.code || ""} ${primaryInsert.error?.message || ""}`.toLowerCase();
+    const missingVibeColumn = errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+    if (!missingVibeColumn) return primaryInsert;
+
+    const fallbackInsert = await supabase
+      .from("global_events")
+      .insert([{
+        ...payload,
+        description: payload.vibe
+          ? `[Vibe: ${payload.vibe}]${payload.description ? `\n\n${payload.description}` : ""}`
+          : payload.description,
+      }])
+      .select("*")
+      .single();
+
+    return fallbackInsert;
+  };
+
   const addGlobalEvent = async (submitEvent) => {
     submitEvent.preventDefault();
+    if (!isAdmin) {
+      setGlobalError("Admin access required to add off-grid events.");
+      return;
+    }
     if (!globalForm.name || !globalForm.date || !globalForm.location) return;
     setIsSavingGlobal(true);
     setGlobalError("");
 
-    const { data, error } = await supabase
-      .from("global_events")
-      .insert([{
-        name: globalForm.name,
-        date: globalForm.date,
-        location: globalForm.location,
-        description: globalForm.description || null,
-        link: globalForm.link || null,
-        source: globalForm.source || null,
-        last_checked: globalForm.lastChecked || null,
-      }])
-      .select("*")
-      .single();
+    const { data, error } = await insertGlobalEvent({
+      name: globalForm.name,
+      date: globalForm.date,
+      location: globalForm.location,
+      vibe: globalForm.vibe || null,
+      description: globalForm.description || null,
+      link: globalForm.link || null,
+      source: globalForm.source || null,
+      last_checked: globalForm.lastChecked || null,
+    });
 
     if (error || !data) {
       setGlobalError("Could not save off-grid event to Supabase yet.");
@@ -423,6 +561,7 @@ export default function EventsPage() {
       name: "",
       date: "",
       location: "",
+      vibe: "",
       description: "",
       link: "",
       source: "",
@@ -776,7 +915,8 @@ export default function EventsPage() {
                             <div className="mb-3">
                               <button
                                 onClick={(clickEvent) => refreshQuality(event, clickEvent)}
-                                className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}>
+                                disabled={event.isGlobal && !isAdmin}
+                                className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.14em] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 ${qualityPillClass(qualityStatus.tone)}`}>
                                 {qualityStatus.label}
                               </button>
                             </div>
@@ -793,6 +933,11 @@ export default function EventsPage() {
                               <p className="mt-3 text-sm leading-7 text-white/68">
                                 {event.description || "No description yet."}
                               </p>
+                              {event.vibe && (
+                                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-amber-200/75">
+                                  Vibe: {event.vibe}
+                                </p>
+                              )}
                               {event.isGlobal && event.location && (
                                 <p className="mt-3 text-xs uppercase tracking-[0.18em] text-cyan-200/75">
                                   Location: {event.location}
@@ -824,6 +969,13 @@ export default function EventsPage() {
                                   Show on map
                                 </button>
                               )}
+
+                              <button
+                                onClick={(eventClick) => handleReport(event, eventClick)}
+                                className="rounded-2xl border border-rose-200/24 bg-rose-200/10 px-4 py-3 text-sm text-rose-100 transition hover:border-rose-200/36 hover:bg-rose-200/16"
+                              >
+                                Report event
+                              </button>
                             </div>
                           </div>
                             );
@@ -848,10 +1000,14 @@ export default function EventsPage() {
                         Show all dates
                       </button>
                       <button
-                        onClick={() => setShowGlobalForm(true)}
-                        className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/32"
+                        onClick={() => {
+                          if (!isAdmin) return;
+                          setShowGlobalForm(true);
+                        }}
+                        disabled={!isAdmin}
+                        className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/32 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        Add off-grid event
+                        {isAdmin ? "Add off-grid event" : "Admin only"}
                       </button>
                     </div>
                   </EmptyState>
@@ -876,14 +1032,23 @@ export default function EventsPage() {
               </div>
 
               <button
-                onClick={() => setShowGlobalForm((current) => !current)}
-                className="rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14"
+                onClick={() => {
+                  if (!isAdmin) return;
+                  setShowGlobalForm((current) => !current);
+                }}
+                disabled={!isAdmin}
+                className="rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                {showGlobalForm ? "Close form" : "Add off-grid event"}
+                {isAdmin ? (showGlobalForm ? "Close form" : "Add off-grid event") : "Admin only"}
               </button>
             </div>
+            {!isAdmin && !isAuthLoading && (
+              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-white/45">
+                Off-grid event editing is restricted to admins.
+              </p>
+            )}
 
-            {showGlobalForm && (
+            {isAdmin && showGlobalForm && (
               <form onSubmit={addGlobalEvent} className="mt-6 grid gap-3 md:grid-cols-2">
                 <input
                   value={globalForm.name}
@@ -905,6 +1070,12 @@ export default function EventsPage() {
                   className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
                   placeholder="Location (e.g. Mediterranean Sea, Alps, Desert Camp) *"
                   required
+                />
+                <input
+                  value={globalForm.vibe}
+                  onChange={(event) => setGlobalForm((current) => ({ ...current, vibe: event.target.value }))}
+                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
+                  placeholder="Vibe (e.g. circuit, beach, queer arts, cozy social)"
                 />
                 <textarea
                   value={globalForm.description}
@@ -984,7 +1155,8 @@ export default function EventsPage() {
                         </span>
                         <button
                           onClick={(clickEvent) => refreshQuality(event, clickEvent)}
-                          className={`rounded-full border px-3 py-1 text-xs transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}>
+                          disabled={!isAdmin}
+                          className={`rounded-full border px-3 py-1 text-xs transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 ${qualityPillClass(qualityStatus.tone)}`}>
                           {qualityStatus.label}
                         </button>
                       </div>
@@ -997,19 +1169,32 @@ export default function EventsPage() {
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-cyan-200/72">
                       {event.location}
                     </p>
+                    {event.vibe && (
+                      <p className="mt-2 text-xs uppercase tracking-[0.18em] text-amber-200/75">
+                        Vibe: {event.vibe}
+                      </p>
+                    )}
                     {event.description && (
                       <p className="mt-3 text-sm leading-7 text-white/66">{event.description}</p>
                     )}
-                    {event.link && (
-                      <a
-                        href={event.link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-flex rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/36 hover:bg-cyan-200/14"
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {event.link && (
+                        <a
+                          href={event.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/36 hover:bg-cyan-200/14"
+                        >
+                          Open official link
+                        </a>
+                      )}
+                      <button
+                        onClick={(clickEvent) => handleReport(event, clickEvent)}
+                        className="inline-flex rounded-xl border border-rose-200/24 bg-rose-200/10 px-3 py-2 text-xs text-rose-100 transition hover:border-rose-200/36 hover:bg-rose-200/16"
                       >
-                        Open official link
-                      </a>
-                    )}
+                        Report event
+                      </button>
+                    </div>
                   </div>
                     );
                   })()
@@ -1019,6 +1204,77 @@ export default function EventsPage() {
           </section>
         </div>
       </div>
+      {reportModalOpen && (
+        <div className="fixed inset-0 z-[91] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-rose-200/22 bg-[linear-gradient(165deg,rgba(64,18,38,0.88),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
+              <div className="border-b border-white/10 px-5 py-4">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-rose-100/75">Safety report</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Report event</h3>
+                <p className="mt-1 line-clamp-1 text-sm text-white/70">{reportDraft.title}</p>
+              </div>
+
+              <div className="max-h-[65vh] space-y-4 overflow-y-auto px-5 py-5 sm:max-h-[70vh]">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/58">Reason</p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {REPORT_REASONS.map((item) => {
+                      const active = reportDraft.reasonKey === item.value;
+                      return (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => setReportDraft((current) => ({ ...current, reasonKey: item.value }))}
+                          className={`rounded-2xl border px-3 py-2 text-left transition ${
+                            active
+                              ? "border-rose-200/42 bg-rose-200/16 text-rose-50 shadow-[0_8px_28px_rgba(244,63,94,0.18)]"
+                              : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
+                          }`}
+                        >
+                          <p className="text-sm font-semibold">{item.label}</p>
+                          <p className="mt-1 text-xs text-white/60">{item.helper}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="event-report-details">
+                    What is wrong?
+                  </label>
+                  <textarea
+                    id="event-report-details"
+                    value={reportDraft.details}
+                    onChange={(event) => setReportDraft((current) => ({ ...current, details: event.target.value }))}
+                    placeholder="Example: wrong date, broken link, inaccurate location, or safety concern around venue access..."
+                    className="mt-2 min-h-[116px] w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-3 text-sm leading-6 text-white outline-none focus:border-rose-200/45"
+                  />
+                  <p className="mt-2 text-xs text-white/52">This note goes directly to admin moderation inbox.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={closeReportModal}
+                  className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitReport}
+                  className="rounded-full border border-rose-200/34 bg-rose-200/16 px-4 py-2 text-sm font-semibold text-rose-50 transition hover:border-rose-200/55"
+                >
+                  Send report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <ActionToast toast={toast} />
     </main>
   );
 }
