@@ -2,6 +2,7 @@ import "./globals.css"; //
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
 import FloatingHomeButton from "@/components/ui/FloatingHomeButton";
+import MessageAlertGate from "@/components/messaging/MessageAlertGate";
 
 const baseUrl = "https://queeratlas.app";
 
@@ -87,6 +88,7 @@ export default function RootLayout({ children }) {
       <AuthProvider>
         {children}
         <FloatingHomeButton />
+        <MessageAlertGate />
       </AuthProvider>
       <Analytics />
     </body>

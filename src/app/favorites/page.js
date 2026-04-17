@@ -1869,6 +1869,17 @@ export default function FavoritesPage() {
                               <p className="mt-1 text-[11px] text-white/45">No recent shared save yet.</p>
                             )}
                           </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              router.push(
+                                `/messages?user=${encodeURIComponent(String(profile.userId || ""))}&name=${encodeURIComponent(String(profile.displayName || "Member"))}`
+                              )
+                            }
+                            className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                          >
+                            Message
+                          </button>
                         </div>
                       </article>
                     );
