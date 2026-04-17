@@ -413,7 +413,7 @@ export default function CityPage() {
   const [comment, setComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const { toast, showToast } = useActionToast();
-  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsLoadError, setEventsLoadError] = useState("");
   const [mapError, setMapError] = useState("");
   const [, setQualityTick] = useState(0);

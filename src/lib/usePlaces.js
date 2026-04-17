@@ -16,7 +16,7 @@ function formatSupabaseError(error) {
 
 export function usePlaces(city) {
   const [places, setPlaces] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
   /* ---------------- FETCH PLACES ---------------- */

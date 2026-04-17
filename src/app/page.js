@@ -476,6 +476,10 @@ export default function Home() {
   const cityCount = new Set(places.map((place) => place.city).filter(Boolean)).size;
   const eventCount = events.length;
   const placeCount = places.length;
+  const formatMetric = (value) => (value > 0 ? String(value) : "—");
+  const cityCountDisplay = isDataLoading ? "…" : formatMetric(cityCount);
+  const placeCountDisplay = isDataLoading ? "…" : formatMetric(placeCount);
+  const eventCountDisplay = isDataLoading ? "…" : formatMetric(eventCount);
   const introClass = (visibleClass = "") =>
     `transition-all duration-700 ease-out ${isIntroVisible ? `translate-y-0 opacity-100 ${visibleClass}` : "translate-y-3 opacity-0"}`.trim();
   const introStyle = (delay = 0) => ({ transitionDelay: `${delay}ms` });
@@ -734,15 +738,15 @@ export default function Home() {
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-3xl border border-cyan-200/15 bg-[linear-gradient(180deg,rgba(56,189,248,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{cityCount}</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{cityCountDisplay}</p>
                 </div>
                 <div className="rounded-3xl border border-emerald-200/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Places</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{placeCount}</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{placeCountDisplay}</p>
                 </div>
                 <div className="rounded-3xl border border-amber-200/20 bg-[linear-gradient(180deg,rgba(251,191,36,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Events</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{eventCount}</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{eventCountDisplay}</p>
                 </div>
               </div>
             </section>
