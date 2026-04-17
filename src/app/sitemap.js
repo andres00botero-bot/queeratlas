@@ -1,6 +1,6 @@
 import { cityConfig } from "@/lib/cities";
 
-const BASE_URL = "https://queeratlas.app";
+const BASE_URL = "https://www.queeratlas.app";
 
 export default function sitemap() {
   const now = new Date();
@@ -33,3 +33,4 @@ export default function sitemap() {
 
   return [...staticEntries, ...cityEntries];
 }
+

@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import FloatingHomeButton from "@/components/ui/FloatingHomeButton";
 import MessageAlertGate from "@/components/messaging/MessageAlertGate";
 
-const baseUrl = "https://queeratlas.app";
+const baseUrl = "https://www.queeratlas.app";
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
@@ -40,7 +40,7 @@ export const metadata = {
     title: "Queer Atlas",
     description:
       "Find the city. Feel the signal. Global queer discovery for places, events, and community.",
-    url: "https://queeratlas.app",
+    url: "https://www.queeratlas.app",
     siteName: "Queer Atlas",
     images: [
       {
@@ -95,3 +95,4 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+

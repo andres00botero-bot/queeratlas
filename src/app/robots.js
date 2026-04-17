@@ -7,7 +7,8 @@ export default function robots() {
         disallow: ["/contribute", "/community"],
       },
     ],
-    host: "https://queeratlas.app",
-    sitemap: "https://queeratlas.app/sitemap.xml",
+    host: "https://www.queeratlas.app",
+    sitemap: "https://www.queeratlas.app/sitemap.xml",
   };
 }
+
