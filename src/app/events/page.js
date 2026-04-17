@@ -23,6 +23,29 @@ const REPORT_REASONS = [
   { value: "other", label: "Other issue", helper: "Anything else that should be reviewed by admin." },
 ];
 
+function splitLegacyVibe(description = "") {
+  const raw = String(description || "");
+  const match = raw.match(/^\[Vibe:\s*([^\]]+)\]\s*(?:\n\n)?([\s\S]*)$/i);
+  if (!match) {
+    return {
+      vibe: "",
+      description: raw,
+    };
+  }
+
+  return {
+    vibe: String(match[1] || "").trim(),
+    description: String(match[2] || "").trim(),
+  };
+}
+
+function mergeVibeIntoDescription(vibe = "", description = "") {
+  const cleanVibe = String(vibe || "").trim();
+  const cleanDescription = String(description || "").trim();
+  if (!cleanVibe) return cleanDescription || null;
+  return `[Vibe: ${cleanVibe}]${cleanDescription ? `\n\n${cleanDescription}` : ""}`;
+}
+
 function formatDateLabel(value) {
   if (!value) return "Date TBA";
 
@@ -70,13 +93,14 @@ function qualityPillClass(tone) {
 }
 
 function mapGlobalEventRow(row) {
+  const parsed = splitLegacyVibe(row.description || "");
   return {
     id: String(row.id),
     name: row.name || "",
     date: row.date || "",
     location: row.location || "",
-    vibe: row.vibe || "",
-    description: row.description || "",
+    vibe: row.vibe || parsed.vibe || "",
+    description: parsed.description || "",
     link: row.link || "",
     source: row.source || "",
     lastChecked: row.last_checked || "",
@@ -111,6 +135,7 @@ export default function EventsPage() {
   const [globalEvents, setGlobalEvents] = useState([]);
   const [showGlobalForm, setShowGlobalForm] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [editingGlobalEventId, setEditingGlobalEventId] = useState("");
   const [globalForm, setGlobalForm] = useState({
     name: "",
     date: "",
@@ -171,6 +196,7 @@ export default function EventsPage() {
     if (!isMember) {
       setIsAdmin(false);
       setShowGlobalForm(false);
+      setEditingGlobalEventId("");
       return;
     }
 
@@ -180,22 +206,38 @@ export default function EventsPage() {
       let adminState = false;
       try {
         const rpcRes = await supabase.rpc("qa_is_admin");
-        adminState = Boolean(rpcRes.data);
+        if (!rpcRes.error) {
+          adminState = Boolean(rpcRes.data);
+        }
       } catch {
         adminState = false;
+      }
+
+      if (!adminState && user?.email) {
+        try {
+          const { data, error } = await supabase
+            .from("qa_admin_users")
+            .select("email")
+            .ilike("email", String(user.email).trim().toLowerCase())
+            .limit(1);
+          adminState = !error && (data || []).length > 0;
+        } catch {
+          adminState = false;
+        }
       }
 
       if (!active) return;
       setIsAdmin(adminState);
       if (!adminState) {
         setShowGlobalForm(false);
+        setEditingGlobalEventId("");
       }
     });
 
     return () => {
       active = false;
     };
-  }, [isAuthLoading, isMember]);
+  }, [isAuthLoading, isMember, user?.email]);
 
   const qualityMap = getQualityMap();
   const refreshQuality = async (event, clickEvent) => {
@@ -504,9 +546,7 @@ export default function EventsPage() {
       .from("global_events")
       .insert([{
         ...payload,
-        description: payload.vibe
-          ? `[Vibe: ${payload.vibe}]${payload.description ? `\n\n${payload.description}` : ""}`
-          : payload.description,
+        description: mergeVibeIntoDescription(payload.vibe, payload.description),
       }])
       .select("*")
       .single();
@@ -514,49 +554,63 @@ export default function EventsPage() {
     return fallbackInsert;
   };
 
-  const addGlobalEvent = async (submitEvent) => {
-    submitEvent.preventDefault();
-    if (!isAdmin) {
-      setGlobalError("Admin access required to add off-grid events.");
-      return;
-    }
-    if (!globalForm.name || !globalForm.date || !globalForm.location) return;
-    setIsSavingGlobal(true);
-    setGlobalError("");
+  const updateGlobalEvent = async (eventId, payload) => {
+    const withVibe = {
+      ...payload,
+      vibe: payload.vibe || null,
+    };
 
-    const { data, error } = await insertGlobalEvent({
-      name: globalForm.name,
-      date: globalForm.date,
-      location: globalForm.location,
-      vibe: globalForm.vibe || null,
-      description: globalForm.description || null,
-      link: globalForm.link || null,
-      source: globalForm.source || null,
-      last_checked: globalForm.lastChecked || null,
+    const primaryUpdate = await supabase
+      .from("global_events")
+      .update(withVibe)
+      .eq("id", String(eventId))
+      .select("*")
+      .single();
+
+    if (!primaryUpdate.error) return primaryUpdate;
+
+    const errorText = `${primaryUpdate.error?.code || ""} ${primaryUpdate.error?.message || ""}`.toLowerCase();
+    const missingVibeColumn = errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+    if (!missingVibeColumn) return primaryUpdate;
+
+    const fallbackUpdate = await supabase
+      .from("global_events")
+      .update({
+        name: payload.name,
+        date: payload.date,
+        location: payload.location,
+        description: mergeVibeIntoDescription(payload.vibe, payload.description),
+        link: payload.link,
+        source: payload.source,
+        last_checked: payload.last_checked,
+      })
+      .eq("id", String(eventId))
+      .select("*")
+      .single();
+
+    return fallbackUpdate;
+  };
+
+  const startEditGlobalEvent = (event, clickEvent) => {
+    clickEvent?.stopPropagation();
+    if (!isAdmin) return;
+
+    setEditingGlobalEventId(String(event?.id || ""));
+    setGlobalForm({
+      name: String(event?.name || ""),
+      date: String(event?.date || ""),
+      location: String(event?.location || ""),
+      vibe: String(event?.vibe || ""),
+      description: String(event?.description || ""),
+      link: String(event?.link || ""),
+      source: String(event?.source || ""),
+      lastChecked: String(event?.lastChecked || ""),
     });
+    setShowGlobalForm(true);
+  };
 
-    if (error || !data) {
-      setGlobalError("Could not save off-grid event to Supabase yet.");
-      setIsSavingGlobal(false);
-      return;
-    }
-
-    const createdId = String(data.id);
-    setGlobalEvents((current) => [mapGlobalEventRow(data), ...current]);
-    trackKpiEvent("event_added", {
-      city: "Global",
-      targetType: "event",
-      targetId: createdId,
-    });
-
-    upsertQuality({
-      targetType: "event",
-      targetId: createdId,
-      source: globalForm.source,
-      lastChecked: globalForm.lastChecked,
-      verified: Boolean(globalForm.source && globalForm.lastChecked),
-    });
-
+  const resetGlobalForm = () => {
+    setEditingGlobalEventId("");
     setGlobalForm({
       name: "",
       date: "",
@@ -567,6 +621,65 @@ export default function EventsPage() {
       source: "",
       lastChecked: "",
     });
+  };
+
+  const saveGlobalEvent = async (submitEvent) => {
+    submitEvent.preventDefault();
+    if (!isAdmin) {
+      setGlobalError("Admin access required to add or edit off-grid events.");
+      return;
+    }
+    if (!globalForm.name || !globalForm.date || !globalForm.location) return;
+    setIsSavingGlobal(true);
+    setGlobalError("");
+
+    const payload = {
+      name: globalForm.name,
+      date: globalForm.date,
+      location: globalForm.location,
+      vibe: globalForm.vibe || null,
+      description: globalForm.description || null,
+      link: globalForm.link || null,
+      source: globalForm.source || null,
+      last_checked: globalForm.lastChecked || null,
+    };
+
+    const { data, error } = editingGlobalEventId
+      ? await updateGlobalEvent(editingGlobalEventId, payload)
+      : await insertGlobalEvent(payload);
+
+    if (error || !data) {
+      setGlobalError("Could not save off-grid event to Supabase yet.");
+      setIsSavingGlobal(false);
+      return;
+    }
+
+    const createdId = String(data.id);
+    setGlobalEvents((current) => {
+      const mapped = mapGlobalEventRow(data);
+      if (editingGlobalEventId) {
+        return current.map((item) => (String(item.id) === createdId ? mapped : item));
+      }
+      return [mapped, ...current];
+    });
+
+    if (!editingGlobalEventId) {
+      trackKpiEvent("event_added", {
+        city: "Global",
+        targetType: "event",
+        targetId: createdId,
+      });
+    }
+
+    upsertQuality({
+      targetType: "event",
+      targetId: createdId,
+      source: globalForm.source,
+      lastChecked: globalForm.lastChecked,
+      verified: Boolean(globalForm.source && globalForm.lastChecked),
+    });
+
+    resetGlobalForm();
     setShowGlobalForm(false);
     setIsSavingGlobal(false);
   };
@@ -1035,6 +1148,9 @@ export default function EventsPage() {
                 onClick={() => {
                   if (!isAdmin) return;
                   setShowGlobalForm((current) => !current);
+                  if (showGlobalForm) {
+                    resetGlobalForm();
+                  }
                 }}
                 disabled={!isAdmin}
                 className="rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
@@ -1049,7 +1165,12 @@ export default function EventsPage() {
             )}
 
             {isAdmin && showGlobalForm && (
-              <form onSubmit={addGlobalEvent} className="mt-6 grid gap-3 md:grid-cols-2">
+              <form onSubmit={saveGlobalEvent} className="mt-6 grid gap-3 md:grid-cols-2">
+                {editingGlobalEventId && (
+                  <p className="rounded-2xl border border-emerald-200/24 bg-emerald-200/10 px-4 py-3 text-xs uppercase tracking-[0.18em] text-emerald-100 md:col-span-2">
+                    Editing off-grid event
+                  </p>
+                )}
                 <input
                   value={globalForm.name}
                   onChange={(event) => setGlobalForm((current) => ({ ...current, name: event.target.value }))}
@@ -1108,8 +1229,17 @@ export default function EventsPage() {
                   disabled={isSavingGlobal}
                   className="rounded-2xl bg-gradient-to-r from-cyan-300 via-teal-300 to-emerald-300 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 md:col-span-2"
                 >
-                  {isSavingGlobal ? "Saving..." : "Save to calendar"}
+                  {isSavingGlobal ? "Saving..." : editingGlobalEventId ? "Save changes" : "Save to calendar"}
                 </button>
+                {editingGlobalEventId && (
+                  <button
+                    type="button"
+                    onClick={resetGlobalForm}
+                    className="rounded-2xl border border-white/16 bg-white/7 px-4 py-3 text-sm text-white/82 transition hover:border-white/28 md:col-span-2"
+                  >
+                    Cancel edit
+                  </button>
+                )}
               </form>
             )}
 
@@ -1187,6 +1317,14 @@ export default function EventsPage() {
                         >
                           Open official link
                         </a>
+                      )}
+                      {isAdmin && (
+                        <button
+                          onClick={(clickEvent) => startEditGlobalEvent(event, clickEvent)}
+                          className="inline-flex rounded-xl border border-emerald-200/24 bg-emerald-200/10 px-3 py-2 text-xs text-emerald-100 transition hover:border-emerald-200/36 hover:bg-emerald-200/16"
+                        >
+                          Edit event
+                        </button>
                       )}
                       <button
                         onClick={(clickEvent) => handleReport(event, clickEvent)}
