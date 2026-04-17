@@ -971,4 +971,43 @@ export const cityConfig = {
       cost: "Often more affordable than Spain's biggest capitals, especially if you avoid peak holiday windows.",
     }),
   },
+  san_juan: {
+    center: [-66.1057, 18.4655],
+    title: "Queer San Juan",
+    country: "Puerto Rico",
+    vibe: "caribbean heat",
+    guide: buildGuide({
+      about: "San Juan is tropical voltage with real queer nightlife signal, not just vacation branding. You get beachlight by day, Condado and Santurce momentum by sunset, then clubs and bars that can run deep into sunrise. The scene is compact enough for easy routing, but energetic enough to feel like a true destination weekend.",
+      district: "Condado and Santurce are the practical anchors for queer bars, drag-forward venues, and late-night crossover. Old San Juan is better for daytime texture and food, then return to Condado/Santurce when you want the room temperature to rise.",
+      safety: "San Juan is generally workable for queer travelers in core nightlife lanes. Main risk factors are late-night fatigue, alcohol, and route drift rather than scene hostility. Keep your return plan simple, use rides when tired, and stay aware around crowded exits.",
+      nightlife: "This city starts social and ends loud. Patio cocktails, local-heavy bars, drag programming, stripper/cruise-coded lanes, and late club pressure all coexist in short distance. San Juan rewards a layered night: warm-up first, then choose your lane and go all-in.",
+      cost: "Mid-range for a Caribbean capital with tourism pressure. You can still do a strong queer weekend without luxury burn if you stay near your nightlife orbit and avoid unnecessary transport zigzags.",
+    }),
+  },
+  edinburgh: {
+    center: [-3.1883, 55.9533],
+    title: "Queer Edinburgh",
+    country: "United Kingdom",
+    vibe: "gothic glow",
+    guide: buildGuide({
+      about: "Edinburgh blends old-stone drama with a compact, social queer scene that is smaller than London but easier to enjoy in one clean route. The city feels classy, a little dark, and very alive when bars fill near the Pink Triangle.",
+      district: "Most queer nightlife signal clusters around New Town / Leith Street / Broughton lanes, often called the Pink Triangle. You can do bar-to-club movement on foot, which is a luxury in UK city nightlife terms.",
+      safety: "Generally comfortable and walkable in central nightlife areas. Standard late-night awareness still matters: weather shifts, hills, and post-club fatigue can hit quickly, especially outside summer months.",
+      nightlife: "Expect social bars, drag-friendly programming, and one-room dance-floor peaks rather than giant mega-club chaos. Edinburgh works best for people who want personality, fast routing, and a night that feels local instead of anonymous.",
+      cost: "Moderate-to-high for the UK. Festival periods can spike prices hard, but outside major event windows you can still build a premium-feel weekend without London-level punishment.",
+    }),
+  },
+  guadalajara: {
+    center: [-103.3496, 20.6597],
+    title: "Queer Guadalajara",
+    country: "Mexico",
+    vibe: "latin neon",
+    guide: buildGuide({
+      about: "Guadalajara is one of Mexicos most important queer nightlife cities, with a dense center, strong local crowd culture, and club energy that can run until sunrise. It feels raw, festive, and fully social, with enough scale to keep repeat trips fresh.",
+      district: "Zona Centro and nearby Chapultepec corridors are the practical anchors. You can build a full route through bars, dance clubs, and men-only dark-room lanes without losing the flow to long transfers.",
+      safety: "Use normal big-city nightlife discipline: stay on known routes late, keep transport clear after heavy hours, and avoid unnecessary drift when tired. In active queer zones, the scene is vibrant and highly visible.",
+      nightlife: "Guadalajara nightlife is high-tempo and layered: terrace warm-ups, heavy dance floors, drag/strip programming, and cruise-coded rooms all inside one city core. It rewards stamina, social confidence, and timing your energy curve.",
+      cost: "Great value for the amount of nightlife output you get. Covers and drinks are typically lower than North American and Western European capitals, making the city very attractive for long queer weekends.",
+    }),
+  },
 };
