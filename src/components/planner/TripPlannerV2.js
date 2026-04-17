@@ -305,6 +305,90 @@ function computeTrustMeta({
   };
 }
 
+function computeBudgetAdjustment({ itemType, venueType, budget, slotLabel }) {
+  const normalizedType = normalize(venueType);
+  const normalizedSlot = normalize(slotLabel);
+
+  if (budget === "low") {
+    if (normalizedType === "hotel") return -6;
+    if (normalizedType === "restaurant") return normalizedSlot.includes("recovery") ? 2 : -2;
+    if (itemType === "event") return -2;
+    if (["cafe", "bar"].includes(normalizedType)) return 4;
+    return 0;
+  }
+
+  if (budget === "treat") {
+    if (itemType === "event") return 2;
+    if (["hotel", "restaurant", "club"].includes(normalizedType)) return 4;
+    if (normalizedType === "cafe") return -1;
+    return 0;
+  }
+
+  return 0;
+}
+
+function computeEnergyAdjustment({ itemType, venueType, energy, slotLabel, timeLabel }) {
+  const normalizedType = normalize(venueType);
+  const normalizedSlot = normalize(slotLabel);
+  const targetMinutes = parseTimeToMinutes(timeLabel) ?? 0;
+  const isLate = targetMinutes >= 60;
+  const isPeakSlot = normalizedSlot.includes("peak");
+
+  if (energy <= 35) {
+    if (itemType === "event" && (isLate || isPeakSlot)) return -4;
+    if (["club", "cruise_club"].includes(normalizedType)) return -7;
+    if (normalizedType === "sauna") return -3;
+    if (["cafe", "bar", "restaurant"].includes(normalizedType)) return 5;
+    return 0;
+  }
+
+  if (energy >= 75) {
+    if (itemType === "event" && (isLate || isPeakSlot)) return 5;
+    if (["club", "cruise_club"].includes(normalizedType)) return 7;
+    if (normalizedType === "sauna") return 2;
+    if (normalizedType === "cafe" && isLate) return -3;
+    return 0;
+  }
+
+  return 0;
+}
+
+function computePlannerScore({
+  item,
+  itemType,
+  timeLabel,
+  date,
+  slotLabel,
+  trustedFavoriteStats,
+  qualityMap,
+  budget,
+  energy,
+}) {
+  const trust = computeTrustMeta({
+    item,
+    itemType,
+    timeLabel,
+    date,
+    trustedFavoriteStats,
+    qualityMap,
+  });
+  const budgetAdjustment = computeBudgetAdjustment({
+    itemType,
+    venueType: item?.type,
+    budget,
+    slotLabel,
+  });
+  const energyAdjustment = computeEnergyAdjustment({
+    itemType,
+    venueType: item?.type,
+    energy,
+    slotLabel,
+    timeLabel,
+  });
+
+  return trust.score + budgetAdjustment + energyAdjustment;
+}
+
 function createTrustedStop({
   item,
   stopType,
@@ -339,6 +423,8 @@ function buildItinerary({
   vibe,
   horizon,
   soloSafe,
+  budget,
+  energy,
   planDate,
   preferredFavoriteIds = null,
   trustedFavoriteStats = {},
@@ -382,14 +468,17 @@ function buildItinerary({
         preferredFavoriteIds,
         "",
         (candidate) =>
-          computeTrustMeta({
+          computePlannerScore({
             item: candidate,
             itemType: "place",
             timeLabel: "18:30",
             date: currentDate,
+            slotLabel: "Soft landing",
             trustedFavoriteStats,
             qualityMap,
-          }).score
+            budget,
+            energy,
+          })
       );
       if (s1) used.add(String(s1.id));
       const forcedEvent = chooseEventFromPool(
@@ -397,14 +486,17 @@ function buildItinerary({
         used,
         preferredFavoriteIds,
         (candidate) =>
-          computeTrustMeta({
+          computePlannerScore({
             item: candidate,
             itemType: "event",
             timeLabel: "21:30",
             date: currentDate,
+            slotLabel: "Intro signal",
             trustedFavoriteStats,
             qualityMap,
-          }).score
+            budget,
+            energy,
+          })
       );
       const s2 =
         forcedEvent ||
@@ -415,14 +507,17 @@ function buildItinerary({
           preferredFavoriteIds,
           "",
           (candidate) =>
-            computeTrustMeta({
+            computePlannerScore({
               item: candidate,
               itemType: "place",
               timeLabel: "21:30",
               date: currentDate,
+              slotLabel: "Intro signal",
               trustedFavoriteStats,
               qualityMap,
-            }).score
+              budget,
+              energy,
+            })
         );
       if (s2) used.add(String(s2.id));
 
@@ -465,14 +560,17 @@ function buildItinerary({
         preferredFavoriteIds,
         "",
         (candidate) =>
-          computeTrustMeta({
+          computePlannerScore({
             item: candidate,
             itemType: "place",
             timeLabel: "20:30",
             date: currentDate,
+            slotLabel: "Warmup",
             trustedFavoriteStats,
             qualityMap,
-          }).score
+            budget,
+            energy,
+          })
       );
       if (s1) used.add(String(s1.id));
       const forcedEvent = chooseEventFromPool(
@@ -480,14 +578,17 @@ function buildItinerary({
         used,
         preferredFavoriteIds,
         (candidate) =>
-          computeTrustMeta({
+          computePlannerScore({
             item: candidate,
             itemType: "event",
             timeLabel: "01:00",
             date: currentDate,
+            slotLabel: "Peak",
             trustedFavoriteStats,
             qualityMap,
-          }).score
+            budget,
+            energy,
+          })
       );
       const s2 =
         forcedEvent ||
@@ -498,14 +599,17 @@ function buildItinerary({
           preferredFavoriteIds,
           "",
           (candidate) =>
-            computeTrustMeta({
+            computePlannerScore({
               item: candidate,
               itemType: "place",
               timeLabel: "01:00",
               date: currentDate,
+              slotLabel: "Peak",
               trustedFavoriteStats,
               qualityMap,
-            }).score
+              budget,
+              energy,
+            })
         );
       if (s2) used.add(String(s2.id));
       const s3 = chooseFromPool(
@@ -515,14 +619,17 @@ function buildItinerary({
         preferredFavoriteIds,
         "",
         (candidate) =>
-          computeTrustMeta({
+          computePlannerScore({
             item: candidate,
             itemType: "place",
             timeLabel: "03:00",
             date: currentDate,
+            slotLabel: "Late drift",
             trustedFavoriteStats,
             qualityMap,
-          }).score
+            budget,
+            energy,
+          })
       );
       if (s3) used.add(String(s3.id));
 
@@ -571,14 +678,17 @@ function buildItinerary({
         preferredFavoriteIds,
         "",
         (candidate) =>
-          computeTrustMeta({
+          computePlannerScore({
             item: candidate,
             itemType: "place",
             timeLabel: "11:30",
             date: currentDate,
+            slotLabel: "Recovery",
             trustedFavoriteStats,
             qualityMap,
-          }).score
+            budget,
+            energy,
+          })
       );
       if (s1) used.add(String(s1.id));
       const forcedEvent = chooseEventFromPool(
@@ -586,14 +696,17 @@ function buildItinerary({
         used,
         preferredFavoriteIds,
         (candidate) =>
-          computeTrustMeta({
+          computePlannerScore({
             item: candidate,
             itemType: "event",
             timeLabel: "21:30",
             date: currentDate,
+            slotLabel: "Night highlight",
             trustedFavoriteStats,
             qualityMap,
-          }).score
+            budget,
+            energy,
+          })
       );
       const s2 =
         forcedEvent ||
@@ -604,14 +717,17 @@ function buildItinerary({
           preferredFavoriteIds,
           "",
           (candidate) =>
-            computeTrustMeta({
+            computePlannerScore({
               item: candidate,
               itemType: "place",
               timeLabel: "16:00",
               date: currentDate,
+              slotLabel: "Golden hour",
               trustedFavoriteStats,
               qualityMap,
-            }).score
+              budget,
+              energy,
+            })
         );
       if (s2) used.add(String(s2.id));
 
@@ -704,6 +820,8 @@ export default function TripPlannerV2({
       vibe,
       horizon,
       soloSafe,
+      budget,
+      energy,
       planDate,
       preferredFavoriteIds: trustedFavoritesSet,
       trustedFavoriteStats,
@@ -722,6 +840,8 @@ export default function TripPlannerV2({
       vibe,
       horizon,
       soloSafe,
+      budget,
+      energy,
       planDate,
       preferredFavoriteIds: trustedFavoritesSet,
       trustedFavoriteStats,

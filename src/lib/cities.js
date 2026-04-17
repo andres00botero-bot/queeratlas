@@ -295,6 +295,32 @@ export const cityConfig = {
       cost: "Oslo is expensive, so selective planning matters across hotels, drinks, and transport. The key is to spend around the parts of the city that actually give you joy.",
     }),
   },
+  helsinki: {
+    center: [24.9384, 60.1699],
+    title: "Queer Helsinki",
+    country: "Finland",
+    vibe: "nordic edge",
+    guide: buildGuide({
+      about: "Helsinki has a clean Nordic shell and a surprisingly emotional queer core once you step inside the right rooms. The scene is not massive, but it is intentional, expressive, and very community-aware. Think design city by day, queer dance pressure by night.",
+      district: "The scene works best in central lanes around Kamppi, Kluuvi, and Kallio spillover rather than one giant rainbow district. Helsinki rewards a route mindset: one social bar, one dance pivot, one late safe return.",
+      safety: "Helsinki is generally high-trust and low-drama for queer travelers. Standard late-night awareness still matters, but this is one of the easier capitals in Europe to navigate solo with confidence.",
+      nightlife: "Expect focused nightlife: karaoke-social warmups, polished cocktail queer bars, then full release in larger club rooms on peak nights. It is less chaos than Berlin and more curated momentum with strong local identity.",
+      cost: "Helsinki sits in a mid-to-high budget band. Drinks and weekends add up quickly, but smart area planning keeps the experience premium without feeling wasteful.",
+    }),
+  },
+  reykjavik: {
+    center: [-21.9426, 64.1466],
+    title: "Queer Reykjavik",
+    country: "Iceland",
+    vibe: "small but electric",
+    guide: buildGuide({
+      about: "Reykjavik is a small scene with outsized heart. You do not come here for endless venue volume. You come for intimacy, visibility, and nights where one or two rooms hold the whole city's queer voltage.",
+      district: "Most of the action is concentrated around central Laugavegur and adjacent nightlife streets. Distances are short, so the city feels walkable and immediate once your evening rhythm clicks.",
+      safety: "Reykjavik is typically one of the safest urban environments for queer visitors. The key variable is weather and late-night pacing, not social hostility. Layer up, stay hydrated, and move with intention.",
+      nightlife: "The scene runs late and compact: warm-up drinks, one big queer dance anchor, and fluid crossover with the wider city crowd. When it lands, it feels intimate, camp, and unexpectedly addictive.",
+      cost: "Reykjavik is expensive across bars, dining, and stays. The upside is efficiency: you can do a lot in a short radius if you spend on the right moments.",
+    }),
+  },
   dublin: {
     center: [-6.2603, 53.3498],
     title: "Queer Dublin",
