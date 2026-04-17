@@ -198,51 +198,75 @@ export default function NowPage() {
     });
   }, [loadPulseData]);
 
-  useEffect(() => {
-    queueMicrotask(async () => {
-      const localNews = readLocalJson(ADMIN_NEWS_KEY, []);
-      const localHidden = (readLocalJson(HIDDEN_NEWS_KEY, []) || []).map((id) => String(id));
-      const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
+  const loadEditorialData = useCallback(async () => {
+    const localNews = readLocalJson(ADMIN_NEWS_KEY, []);
+    const localHidden = (readLocalJson(HIDDEN_NEWS_KEY, []) || []).map((id) => String(id));
+    const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
 
-      setAdminNews(localNews);
-      setHiddenNewsIds(localHidden);
-      setRankingOverrides(localRankings);
+    setAdminNews(localNews);
+    setHiddenNewsIds(localHidden);
+    setRankingOverrides(localRankings);
 
-      const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
-        supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
-        supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
-        supabase.from(RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
-      ]);
+    const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
+      supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
+      supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
+      supabase.from(RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
+    ]);
 
-      const hasMissingTables =
-        isMissingTableError(newsResponse.error) ||
-        isMissingTableError(hiddenResponse.error) ||
-        isMissingTableError(rankingResponse.error);
+    const hasMissingTables =
+      isMissingTableError(newsResponse.error) ||
+      isMissingTableError(hiddenResponse.error) ||
+      isMissingTableError(rankingResponse.error);
 
-      if (hasMissingTables) {
-        setSyncWarning("Off-grid sync is unavailable right now.");
-        return;
-      }
+    if (hasMissingTables) {
+      setSyncWarning("Off-grid sync is unavailable right now.");
+      return;
+    }
 
-      if (newsResponse.error || hiddenResponse.error || rankingResponse.error) {
-        setSyncWarning("Cloud sync failed. Using local backup.");
-        return;
-      }
+    if (newsResponse.error || hiddenResponse.error || rankingResponse.error) {
+      setSyncWarning("Cloud sync failed. Using local backup.");
+      return;
+    }
 
-      const remoteNews = (newsResponse.data || []).map(mapNewsRowToItem);
-      const remoteHidden = (hiddenResponse.data || []).map((row) => String(row.feed_id));
-      const remoteRankings = groupRankingRows(rankingResponse.data || []);
+    const remoteNews = (newsResponse.data || []).map(mapNewsRowToItem);
+    const remoteHidden = (hiddenResponse.data || []).map((row) => String(row.feed_id));
+    const remoteRankings = groupRankingRows(rankingResponse.data || []);
 
-      setAdminNews(remoteNews);
-      setHiddenNewsIds(remoteHidden);
-      setRankingOverrides(remoteRankings);
-      setSyncWarning("");
+    setAdminNews(remoteNews);
+    setHiddenNewsIds(remoteHidden);
+    setRankingOverrides(remoteRankings);
+    setSyncWarning("");
 
-      writeLocalJson(ADMIN_NEWS_KEY, remoteNews);
-      writeLocalJson(HIDDEN_NEWS_KEY, remoteHidden);
-      writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
-    });
+    writeLocalJson(ADMIN_NEWS_KEY, remoteNews);
+    writeLocalJson(HIDDEN_NEWS_KEY, remoteHidden);
+    writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
   }, []);
+
+  useEffect(() => {
+    queueMicrotask(loadEditorialData);
+  }, [loadEditorialData]);
+
+  useEffect(() => {
+    const refreshOnFocus = () => {
+      queueMicrotask(async () => {
+        await Promise.all([loadPulseData(), loadEditorialData()]);
+      });
+    };
+
+    const refreshOnVisibility = () => {
+      if (document.visibilityState === "visible") {
+        refreshOnFocus();
+      }
+    };
+
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnVisibility);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnVisibility);
+    };
+  }, [loadEditorialData, loadPulseData]);
 
   const cityOptions = useMemo(
     () => [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))].sort(),
@@ -497,58 +521,43 @@ export default function NowPage() {
     };
 
     setIsPublishingNews(true);
-    const { error } = await supabase.from(NEWS_TABLE).insert({
-      id: item.id,
-      title: item.title,
-      city: item.city,
-      category: item.category,
-      date: item.date,
-      summary: item.summary,
-      why_it_matters: item.whyItMatters,
-      source_name: item.sourceName,
-      created_by_email: currentEmail || null,
-    });
+    try {
+      const { error } = await supabase.from(NEWS_TABLE).insert({
+        id: item.id,
+        title: item.title,
+        city: item.city,
+        category: item.category,
+        date: item.date,
+        summary: item.summary,
+        why_it_matters: item.whyItMatters,
+        source_name: item.sourceName,
+        created_by_email: currentEmail || null,
+      });
 
-    if (error && !isMissingTableError(error)) {
-      setSyncWarning("Cloud sync failed. News was not published.");
+      if (error && !isMissingTableError(error)) {
+        setSyncWarning("Cloud sync failed. News was not published.");
+        return;
+      }
+
+      if (error && isMissingTableError(error)) {
+        setSyncWarning("Off-grid sync is unavailable right now.");
+        return;
+      }
+
+      await loadEditorialData();
+
+      setAdminForm({
+        title: "",
+        city: "",
+        category: "culture_tip",
+        summary: "",
+        whyItMatters: "",
+        date: "",
+      });
+      setShowAdminForm(false);
+    } finally {
       setIsPublishingNews(false);
-      return;
     }
-
-    if (error && isMissingTableError(error)) {
-      setSyncWarning("Off-grid sync is unavailable right now.");
-      setIsPublishingNews(false);
-      return;
-    }
-
-    const { data: remoteNewsRows, error: refreshError } = await supabase
-      .from(NEWS_TABLE)
-      .select("*")
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false });
-
-    if (refreshError) {
-      setSyncWarning("News published, but refresh failed. Reload to sync.");
-      const next = [item, ...adminNews];
-      setAdminNews(next);
-      writeLocalJson(ADMIN_NEWS_KEY, next);
-    } else {
-      const remoteNews = (remoteNewsRows || []).map(mapNewsRowToItem);
-      setAdminNews(remoteNews);
-      writeLocalJson(ADMIN_NEWS_KEY, remoteNews);
-      setSyncWarning("");
-    }
-
-    setAdminForm({
-      title: "",
-      city: "",
-      category: "culture_tip",
-      summary: "",
-      whyItMatters: "",
-      date: "",
-    });
-    setShowAdminForm(false);
-    setIsPublishingNews(false);
   };
 
   const deleteFeedItem = async (itemId) => {
