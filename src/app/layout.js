@@ -43,7 +43,7 @@ export const metadata = {
     siteName: "Queer Atlas",
     images: [
       {
-        url: "/queer-atlas-heart-logo-progress.svg",
+        url: "/queer-atlas-heart-logo-progress.png",
         width: 1200,
         height: 630,
         alt: "Queer Atlas",
@@ -57,7 +57,7 @@ export const metadata = {
     title: "Queer Atlas",
     description:
       "Global queer discovery for venues, events, and community signal.",
-    images: ["/queer-atlas-heart-logo-progress.svg"],
+    images: ["/queer-atlas-heart-logo-progress.png"],
   },
 };
 

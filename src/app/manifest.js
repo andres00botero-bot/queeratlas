@@ -11,9 +11,9 @@ export default function manifest() {
     categories: ["travel", "lifestyle", "community"],
     icons: [
       {
-        src: "/queer-atlas-heart-logo-progress.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/queer-atlas-heart-logo-progress.png",
+        sizes: "512x512",
+        type: "image/png",
       },
     ],
   };

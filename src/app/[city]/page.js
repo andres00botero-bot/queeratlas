@@ -1553,7 +1553,7 @@ export default function CityPage() {
           <div>
             <div className="mb-2 flex items-center gap-4">
               <Image
-                src="/queer-atlas-heart-logo-progress.svg"
+                src="/queer-atlas-heart-logo-progress.png"
                 alt="Queer Atlas heart"
                 width={64}
                 height={64}
@@ -2407,7 +2407,7 @@ export default function CityPage() {
               </div>
             )}
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <button
               onClick={() =>
                 handleReport({
@@ -2433,6 +2433,17 @@ export default function CityPage() {
             >
               {favorites.includes(String(selectedPlace.id)) ? "Saved" : "Save place"}
             </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleAdminDeletePlace}
+                disabled={isDeletingPlaceAdmin}
+                className="qa-cinematic-hover rounded-full border border-rose-200/25 bg-rose-200/12 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
+                aria-label={`Delete venue ${selectedPlace.name}`}
+              >
+                {isDeletingPlaceAdmin ? "Deleting..." : "Delete venue"}
+              </button>
+            )}
           </div>
 
           <div className="mt-4 space-y-2">
@@ -2734,6 +2745,17 @@ export default function CityPage() {
             >
               Show on map
             </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleAdminDeleteEvent}
+                disabled={isDeletingEventAdmin}
+                className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/25 bg-rose-200/12 py-3 text-sm text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
+                aria-label={`Delete event ${selectedEvent.name}`}
+              >
+                {isDeletingEventAdmin ? "Deleting..." : "Delete event"}
+              </button>
+            )}
             <button
               onClick={() =>
                 handleReport({

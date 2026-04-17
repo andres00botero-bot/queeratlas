@@ -9,6 +9,7 @@ import {
   blockItem,
   getBlockedItems,
   getReports,
+  removeReport,
   saveBlockedItems,
   saveReports,
   syncModerationFromCloud,
@@ -56,6 +57,13 @@ function toCsv(rows = []) {
   };
   const body = rows.map((row) => headers.map((key) => escapeCell(row[key])).join(","));
   return [headers.join(","), ...body].join("\n");
+}
+
+function formatDbError(error) {
+  if (!error) return "Unknown error";
+  const message = String(error.message || error.details || error.hint || "").trim();
+  if (!message) return "Unknown error";
+  return message;
 }
 
 export default function AdminPage() {
@@ -383,7 +391,23 @@ export default function AdminPage() {
       setReports(nextReports);
       saveReports(nextReports);
       appendAuditLog("report_block", `${report.targetType}:${report.targetId}`);
-      showToast("Item blocked and report resolved.", { tone: "ok", duration: 2200 });
+      showToast("Item hidden and report resolved.", { tone: "ok", duration: 2200 });
+      await loadAdminState();
+    } finally {
+      setBusyMap((current) => ({ ...current, [targetId]: false }));
+    }
+  };
+
+  const deleteReportItem = async (report) => {
+    if (!report?.id) return;
+    const targetId = String(report.id);
+    setBusyMap((current) => ({ ...current, [targetId]: true }));
+    try {
+      await removeReport(targetId);
+      setReports((current) => current.filter((entry) => String(entry.id) !== targetId));
+      setSelectedReportIds((current) => current.filter((id) => String(id) !== targetId));
+      appendAuditLog("report_delete", targetId);
+      showToast("Report deleted.", { tone: "ok", duration: 1800 });
       await loadAdminState();
     } finally {
       setBusyMap((current) => ({ ...current, [targetId]: false }));
@@ -434,6 +458,73 @@ export default function AdminPage() {
     showToast("Marked as fixed this week.", { tone: "ok", duration: 1800 });
   };
 
+  const hideQueueItem = async (item) => {
+    if (!item?.targetType || !item?.targetId) return;
+    const busyKey = `queue-hide-${item.key}`;
+    setBusyMap((current) => ({ ...current, [busyKey]: true }));
+    try {
+      blockItem({
+        targetType: item.targetType,
+        targetId: item.targetId,
+        title: item.name || "",
+        city: item.city || "",
+      });
+      appendAuditLog("queue_hide", `${item.targetType}:${item.targetId}`);
+      showToast("Item hidden from atlas.", { tone: "ok", duration: 2000 });
+      await loadAdminState();
+    } finally {
+      setBusyMap((current) => ({ ...current, [busyKey]: false }));
+    }
+  };
+
+  const deleteQueueItem = async (item, { silent = false } = {}) => {
+    if (!item?.targetType || !item?.targetId) return { deleted: 0, skipped: 0, failed: 0 };
+    const busyKey = `queue-delete-${item.key}`;
+    setBusyMap((current) => ({ ...current, [busyKey]: true }));
+    try {
+      if (item.targetType === "event") {
+        const { error } = await supabase.from("events").delete().eq("id", String(item.targetId));
+        if (error) {
+          if (!silent) {
+            showToast(`Could not delete event: ${formatDbError(error)}`, { tone: "warn", duration: 2600 });
+          }
+          return { deleted: 0, skipped: 0, failed: 1 };
+        }
+        appendAuditLog("queue_delete", `event:${item.targetId}`);
+        if (!silent) {
+          showToast("Event deleted.", { tone: "ok", duration: 1800 });
+          await loadAdminState();
+        }
+        return { deleted: 1, skipped: 0, failed: 0 };
+      }
+
+      const numericPlaceId = Number(item.targetId);
+      if (!Number.isFinite(numericPlaceId)) {
+        if (!silent) {
+          showToast("Seeded place cannot be deleted. Use Hide instead.", { tone: "info", duration: 2600 });
+        }
+        return { deleted: 0, skipped: 1, failed: 0 };
+      }
+
+      const { error } = await supabase.from("places").delete().eq("id", numericPlaceId);
+      if (error) {
+        if (!silent) {
+          showToast(`Could not delete place: ${formatDbError(error)}`, { tone: "warn", duration: 2600 });
+        }
+        return { deleted: 0, skipped: 0, failed: 1 };
+      }
+
+      appendAuditLog("queue_delete", `place:${item.targetId}`);
+      if (!silent) {
+        showToast("Place deleted.", { tone: "ok", duration: 1800 });
+        await loadAdminState();
+      }
+      return { deleted: 1, skipped: 0, failed: 0 };
+    } finally {
+      setBusyMap((current) => ({ ...current, [busyKey]: false }));
+    }
+  };
+
   const bulkResolveSelectedReports = () => {
     if (selectedReportIds.length === 0) return;
     const selectedSet = new Set(selectedReportIds.map(String));
@@ -478,6 +569,23 @@ export default function AdminPage() {
     });
   };
 
+  const bulkDeleteSelectedReports = async () => {
+    if (selectedReportIds.length === 0) return;
+    const selectedSet = new Set(selectedReportIds.map(String));
+    const selectedReports = reports.filter((report) => selectedSet.has(String(report.id)));
+    for (const report of selectedReports) {
+      await removeReport(String(report.id));
+    }
+    setReports((current) => current.filter((report) => !selectedSet.has(String(report.id))));
+    setSelectedReportIds([]);
+    appendAuditLog("bulk_delete_reports", `${selectedReports.length} reports`);
+    showToast(`Deleted ${selectedReports.length} report${selectedReports.length === 1 ? "" : "s"}.`, {
+      tone: "ok",
+      duration: 2100,
+    });
+    await loadAdminState();
+  };
+
   const bulkMarkQueueFixed = () => {
     if (selectedQueueKeys.length === 0) return;
     const selectedSet = new Set(selectedQueueKeys.map(String));
@@ -503,6 +611,50 @@ export default function AdminPage() {
     appendAuditLog("bulk_queue_fixed", `${selectedItems.length} items`);
     setSelectedQueueKeys([]);
     showToast("Selected queue items marked fixed.", { tone: "ok", duration: 2100 });
+  };
+
+  const bulkHideQueueSelected = async () => {
+    if (selectedQueueKeys.length === 0) return;
+    const selectedSet = new Set(selectedQueueKeys.map(String));
+    const selectedItems = filteredRefreshQueue.filter((item) => selectedSet.has(String(item.key)));
+    selectedItems.forEach((item) => {
+      blockItem({
+        targetType: item.targetType,
+        targetId: item.targetId,
+        title: item.name || "",
+        city: item.city || "",
+      });
+    });
+    appendAuditLog("bulk_queue_hide", `${selectedItems.length} items`);
+    setSelectedQueueKeys([]);
+    showToast(`Hidden ${selectedItems.length} item${selectedItems.length === 1 ? "" : "s"}.`, {
+      tone: "ok",
+      duration: 2200,
+    });
+    await loadAdminState();
+  };
+
+  const bulkDeleteQueueSelected = async () => {
+    if (selectedQueueKeys.length === 0) return;
+    const selectedSet = new Set(selectedQueueKeys.map(String));
+    const selectedItems = filteredRefreshQueue.filter((item) => selectedSet.has(String(item.key)));
+    let deleted = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (const item of selectedItems) {
+      const result = await deleteQueueItem(item, { silent: true });
+      deleted += Number(result.deleted || 0);
+      skipped += Number(result.skipped || 0);
+      failed += Number(result.failed || 0);
+    }
+    setSelectedQueueKeys([]);
+    appendAuditLog("bulk_queue_delete", `${deleted} deleted, ${skipped} skipped, ${failed} failed`);
+    if (failed > 0) {
+      showToast(`Deleted ${deleted}. Skipped ${skipped}. Failed ${failed}.`, { tone: "warn", duration: 2800 });
+    } else {
+      showToast(`Deleted ${deleted}. Skipped ${skipped}.`, { tone: "ok", duration: 2300 });
+    }
+    await loadAdminState();
   };
 
   const markRoutineDone = (key) => {
@@ -927,7 +1079,23 @@ export default function AdminPage() {
                 disabled={selectedQueueKeys.length === 0}
                 className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40 disabled:opacity-60"
               >
-                Mark selected fixed ({selectedQueueKeys.length})
+                Verify selected ({selectedQueueKeys.length})
+              </button>
+              <button
+                type="button"
+                onClick={bulkHideQueueSelected}
+                disabled={selectedQueueKeys.length === 0}
+                className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-200/40 disabled:opacity-60"
+              >
+                Hide selected ({selectedQueueKeys.length})
+              </button>
+              <button
+                type="button"
+                onClick={bulkDeleteQueueSelected}
+                disabled={selectedQueueKeys.length === 0}
+                className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+              >
+                Delete selected ({selectedQueueKeys.length})
               </button>
             </div>
           </div>
@@ -1016,7 +1184,23 @@ export default function AdminPage() {
                           onClick={() => markQueueItemFixed(item)}
                           className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
                         >
-                          Mark fixed
+                          Verify
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Boolean(busyMap[`queue-hide-${item.key}`])}
+                          onClick={() => hideQueueItem(item)}
+                          className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-200/40 disabled:opacity-60"
+                        >
+                          Hide
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Boolean(busyMap[`queue-delete-${item.key}`])}
+                          onClick={() => deleteQueueItem(item)}
+                          className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>
@@ -1075,7 +1259,15 @@ export default function AdminPage() {
                 disabled={selectedReportIds.length === 0}
                 className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
               >
-                Emergency hide selected
+                Hide selected
+              </button>
+              <button
+                type="button"
+                onClick={bulkDeleteSelectedReports}
+                disabled={selectedReportIds.length === 0}
+                className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+              >
+                Delete selected
               </button>
             </div>
           </div>
@@ -1107,18 +1299,26 @@ export default function AdminPage() {
                       <p className="mt-2 text-xs text-white/45">{timeAgo(report.createdAt)}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={Boolean(busyMap[String(report.id)])}
-                        onClick={() => blockFromReport(report)}
-                        className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
-                      >
-                        Block
-                      </button>
-                      <button
-                        type="button"
-                        disabled={Boolean(busyMap[String(report.id)])}
-                        onClick={() => setReportStatus(report.id, "resolved")}
+                        <button
+                          type="button"
+                          disabled={Boolean(busyMap[String(report.id)])}
+                          onClick={() => blockFromReport(report)}
+                          className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+                        >
+                          Hide
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Boolean(busyMap[String(report.id)])}
+                          onClick={() => deleteReportItem(report)}
+                          className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          disabled={Boolean(busyMap[String(report.id)])}
+                          onClick={() => setReportStatus(report.id, "resolved")}
                         className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40 disabled:opacity-60"
                       >
                         Resolve

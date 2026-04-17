@@ -621,7 +621,7 @@ export default function Home() {
 
               <div className="mt-6 flex items-center gap-4 sm:gap-5">
                 <Image
-                  src="/queer-atlas-heart-logo-progress.svg"
+                  src="/queer-atlas-heart-logo-progress.png"
                   alt="Queer Atlas heart"
                   width={96}
                   height={96}
