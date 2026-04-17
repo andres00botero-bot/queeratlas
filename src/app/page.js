@@ -928,23 +928,24 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={`mt-10 pb-4 ${introClass()}`} style={introStyle(680)}>
-            <div className="mx-auto flex flex-wrap items-center justify-center gap-2.5">
+          <section className={`mt-10 pb-4 ${introClass("opacity-80")}`} style={introStyle(680)}>
+            <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
+              <span className="mr-1 uppercase tracking-[0.18em] text-white/32">Search guides</span>
               <Link
                 href="/gay-guide"
-                className="rounded-full border border-fuchsia-200/22 bg-fuchsia-200/10 px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+                className="rounded-full border border-fuchsia-200/14 bg-fuchsia-200/[0.05] px-2.5 py-1 text-[11px] text-fuchsia-100/70 transition hover:border-fuchsia-200/30 hover:text-fuchsia-100"
               >
                 Gay Guide
               </Link>
               <Link
                 href="/queer-guide"
-                className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/40"
+                className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-[11px] text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100"
               >
                 Queer Guide
               </Link>
               <Link
                 href="/hbtq-guide"
-                className="rounded-full border border-amber-200/22 bg-amber-200/10 px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-200/40"
+                className="rounded-full border border-amber-200/14 bg-amber-200/[0.05] px-2.5 py-1 text-[11px] text-amber-100/70 transition hover:border-amber-200/30 hover:text-amber-100"
               >
                 HBTQ Guide
               </Link>
