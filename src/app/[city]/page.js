@@ -708,6 +708,16 @@ export default function CityPage() {
   const cityPlaceCount = cityPlaces.length;
   const cityEventCount = cityEvents.length;
   const hasAnyPlaces = cityPlaceCount > 0;
+  const placesChipLabel = placesLoading
+    ? "Places syncing"
+    : cityPlaceCount > 0
+      ? `${cityPlaceCount} places`
+      : "Places incoming";
+  const eventsChipLabel = eventsLoading
+    ? "Events syncing"
+    : cityEventCount > 0
+      ? `${cityEventCount} events`
+      : "Events incoming";
 
   const buildSelectionUrl = useCallback(({ nextPlaceId = placeId, nextEventId = eventId } = {}) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -1621,10 +1631,10 @@ export default function CityPage() {
             )}
             <div className="mb-4 flex flex-wrap gap-2">
               <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/90">
-                {cityPlaceCount} places
+                {placesChipLabel}
               </span>
               <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-100/90">
-                {cityEventCount} events
+                {eventsChipLabel}
               </span>
               <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70">
                 Queer signal live
@@ -1972,9 +1982,9 @@ export default function CityPage() {
           {!eventsLoading && !featuredEvent && remainingEvents.length === 0 && (
             <div className="rounded-[26px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.20),rgba(18,18,18,0.96))] px-5 py-8 text-center">
               <p className="text-xs uppercase tracking-[0.2em] text-violet-200/70">Event signal</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">No live pulse yet</h3>
+              <h3 className="mt-2 text-lg font-semibold text-white">Event pulse is warming up</h3>
               <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-                No upcoming events are published yet. Start the first drop for this city, or scan the guide lane and build your route before posting.
+                This city&apos;s event lane is being refreshed. Check back soon, or add the first trusted event to kickstart the pulse.
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
                 <button
@@ -2106,9 +2116,9 @@ export default function CityPage() {
         {!placesLoading && !hasAnyPlaces && (
           <div className="mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
-            <h3 className="mt-2 text-lg font-semibold text-white">No venues dropped yet</h3>
+            <h3 className="mt-2 text-lg font-semibold text-white">Venue map is taking shape</h3>
             <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-              First drops define the culture. Add the rooms people truly trust and shape this city&apos;s map from day one.
+              We&apos;re curating trusted drops for this city. Explore the guide lane now, or add a venue locals can rely on.
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
               <button
