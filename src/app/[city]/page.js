@@ -111,18 +111,13 @@ function cityNameFromConfig(config, citySlug) {
   return titleName || humanizeCitySlug(citySlug) || "this city";
 }
 
-function normalizeReportReason(input = "") {
-  const value = String(input || "").trim();
-  if (!value) return "";
-  const map = {
-    "1": "Safety issue",
-    "2": "Wrong info",
-    "3": "Spam or scam",
-    "4": "Abuse or hate",
-    "5": "Other issue",
-  };
-  return map[value] || value;
-}
+const REPORT_REASONS = [
+  { value: "safety", label: "Safety issue", helper: "Unsafe behavior, consent issues, harassment or risky conditions." },
+  { value: "wrong_info", label: "Wrong info", helper: "Hours, location, link, category, or details are incorrect." },
+  { value: "spam", label: "Spam or scam", helper: "Misleading promos, fake listings, or low-trust content." },
+  { value: "abuse", label: "Abuse or hate", helper: "Hate speech, threats, discrimination, or abusive language." },
+  { value: "other", label: "Other issue", helper: "Anything else that should be reviewed by admin." },
+];
 
 const CITY_HERO_COPY = {
   berlin: 'Hook: Raw and magnetic, Berlin rewards curiosity after dark. Queer status: Deeply alive and historically foundational, with strong visibility across scenes. Crowd: Club kids, leather, artists, trans community, and global nightlife pilgrims. "Not the loudest scene in Europe, but one of the deepest."',
@@ -311,6 +306,10 @@ function qualityPillClass(tone) {
     return "border-amber-200/24 bg-amber-200/12 text-amber-100";
   }
 
+  if (tone === "community") {
+    return "border-cyan-200/24 bg-cyan-200/12 text-cyan-100";
+  }
+
   return "border-white/16 bg-white/7 text-white/70";
 }
 
@@ -422,7 +421,7 @@ export default function CityPage() {
   const [hoveredPlaceId, setHoveredPlaceId] = useState(null);
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
-  const { isMember, user } = useAuth();
+  const { isMember, user, memberName } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [placeAdminOpen, setPlaceAdminOpen] = useState(false);
   const [eventAdminOpen, setEventAdminOpen] = useState(false);
@@ -434,9 +433,18 @@ export default function CityPage() {
   const [isDeletingEventAdmin, setIsDeletingEventAdmin] = useState(false);
   const [trustedPlaceSavesCount, setTrustedPlaceSavesCount] = useState(0);
   const [trustedEventSavesCount, setTrustedEventSavesCount] = useState(0);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportDraft, setReportDraft] = useState({
+    targetType: "place",
+    targetId: "",
+    title: "",
+    reasonKey: REPORT_REASONS[0].value,
+    details: "",
+  });
 
   const mapContainerRef = useRef(null);
   const mapWrapperRef = useRef(null);
+  const mainScrollRef = useRef(null);
   const eventsSectionRef = useRef(null);
   const guideSectionRef = useRef(null);
   const placesSectionRef = useRef(null);
@@ -467,6 +475,18 @@ export default function CityPage() {
       behavior: "smooth",
       block: "start",
     });
+  }, []);
+
+  const handleDesktopPanelWheel = useCallback((event) => {
+    if (typeof window === "undefined") return;
+    if (window.innerWidth < 1024) return;
+
+    event.preventDefault();
+    const scrollContainer = mainScrollRef.current;
+    if (scrollContainer) {
+      scrollContainer.scrollTop += event.deltaY;
+    }
+    window.scrollBy({ top: event.deltaY, left: 0, behavior: "auto" });
   }, []);
 
   useEffect(() => {
@@ -1187,28 +1207,48 @@ export default function CityPage() {
   };
 
   const handleReport = ({ targetType, targetId, title }) => {
-    const reasonRaw = window.prompt(
-      "Report reason:\n1 = Safety issue\n2 = Wrong info\n3 = Spam/scam\n4 = Abuse/hate\n5 = Other\n\nEnter number or short reason"
-    );
-    const reason = normalizeReportReason(reasonRaw);
-    if (!reason) return;
+    setReportDraft({
+      targetType: String(targetType || "place"),
+      targetId: String(targetId || ""),
+      title: String(title || "Reported item"),
+      reasonKey: REPORT_REASONS[0].value,
+      details: "",
+    });
+    setReportModalOpen(true);
+  };
+
+  const closeReportModal = () => {
+    setReportModalOpen(false);
+  };
+
+  const submitReport = () => {
+    const selectedReason = REPORT_REASONS.find((item) => item.value === reportDraft.reasonKey) || REPORT_REASONS[0];
+    const details = String(reportDraft.details || "").trim();
+
+    if (details.length < 8) {
+      showToast("Add a short note so admin can act quickly.", { tone: "warn", duration: 2300 });
+      return;
+    }
 
     addReport({
-      targetType,
-      targetId,
+      targetType: reportDraft.targetType,
+      targetId: reportDraft.targetId,
       city: config.title?.replace("Queer ", "") || city,
-      title,
-      reason,
+      title: reportDraft.title,
+      reason: selectedReason.label,
+      message: details,
     });
 
     trackKpiEvent("report_submitted", {
       city: config.title?.replace("Queer ", "") || city,
-      targetType,
-      targetId: String(targetId),
+      targetType: reportDraft.targetType,
+      targetId: String(reportDraft.targetId),
       memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
-      meta: { reason },
+      meta: { reason: selectedReason.label },
     });
-    showToast("Report sent. Thanks for keeping the atlas safe.", { tone: "info", duration: 2600 });
+
+    setReportModalOpen(false);
+    showToast("Report sent to admin inbox.", { tone: "info", duration: 2400 });
   };
 
   const refreshEntityQuality = ({ targetType, targetId, fallbackSource = "" }, clickEvent) => {
@@ -1222,7 +1262,7 @@ export default function CityPage() {
     });
 
     const actionInput = window.prompt(
-      "Verify this info:\n1 = Still correct\n2 = Something is wrong\n3 = Closed or moved\n\nEnter 1, 2, or 3",
+      "Update trust status:\n1 = Verified now\n2 = Needs refresh\n3 = Closed or moved\n\nEnter 1, 2, or 3",
       "1"
     );
     if (actionInput === null) return;
@@ -1235,12 +1275,19 @@ export default function CityPage() {
 
     const today = new Date().toISOString().slice(0, 10);
     const knownSource = (existing?.source || fallbackSource || "").trim();
-    const sourceByAction =
+    const sourceDefaultByAction =
       action === "1"
         ? knownSource || "Community verified"
         : action === "2"
           ? knownSource || "Community flagged: needs review"
           : knownSource || "Community flagged: closed or moved";
+    const sourceInput = window.prompt(
+      "Source note (optional):\nAdd official link/name if you have one.\nLeave blank to keep current source.",
+      knownSource
+    );
+    if (sourceInput === null) return;
+
+    const sourceByAction = String(sourceInput).trim() || sourceDefaultByAction;
     const verified = action === "1";
     const lastChecked = action === "1" ? today : "";
 
@@ -1255,16 +1302,16 @@ export default function CityPage() {
     setQualityTick((value) => value + 1);
 
     if (action === "1") {
-      showToast("Marked as verified.", { tone: "ok", duration: 2100 });
+      showToast("Trust status updated: verified.", { tone: "ok", duration: 2000 });
       return;
     }
 
     if (action === "2") {
-      showToast("Marked for review.", { tone: "info", duration: 2200 });
+      showToast("Trust status updated: needs refresh.", { tone: "info", duration: 2200 });
       return;
     }
 
-    showToast("Marked as closed or moved (needs review).", { tone: "warn", duration: 2400 });
+    showToast("Trust status updated: closed or moved.", { tone: "warn", duration: 2300 });
   };
 
   const resolvePlaceDbId = useCallback(async (place) => {
@@ -1533,7 +1580,7 @@ export default function CityPage() {
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
       <ActionToast toast={toast} />
-      <div className="flex-1 overflow-y-auto px-6 py-8 pb-24 lg:pb-8">
+      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-6 py-8 pb-24 lg:pb-8">
         <div className={`animate-cinematic-in relative mb-6 overflow-hidden rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_88%_10%,rgba(45,212,191,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(135deg,rgba(24,24,24,0.96),rgba(10,10,10,0.99),rgba(25,22,20,0.97))] p-7 shadow-[0_30px_110px_rgba(0,0,0,0.42)] ${
           showTopDestinationBadge ? "md:pr-52 lg:pr-60" : ""
         }`}>
@@ -1776,6 +1823,16 @@ export default function CityPage() {
           )}
 
           {featuredEvent && (
+            (() => {
+              const featuredEventQuality = getEntityQuality({
+                targetType: "event",
+                targetId: featuredEvent.id,
+                entity: featuredEvent,
+                map: qualityMap,
+              });
+              const featuredEventQualityStatus = getQualityStatus(featuredEventQuality);
+
+              return (
             <div className="mb-4">
               <h3 className="mb-2 text-sm text-purple-400">Featured upcoming</h3>
               <div
@@ -1822,25 +1879,22 @@ export default function CityPage() {
                         clickEvent
                       )
                     }
-                    className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(getQualityStatus(getEntityQuality({
-                    targetType: "event",
-                    targetId: featuredEvent.id,
-                    entity: featuredEvent,
-                    map: qualityMap,
-                  })).tone)}`}
+                    className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(featuredEventQualityStatus.tone)}`}
                     aria-label={`Update quality status for event ${featuredEvent.name}`}
                   >
-                    {getQualityStatus(getEntityQuality({
-                      targetType: "event",
-                      targetId: featuredEvent.id,
-                      entity: featuredEvent,
-                      map: qualityMap,
-                    })).label}
+                    {featuredEventQualityStatus.label}
                   </button>
                 </div>
+                {featuredEventQuality.lastChecked && (
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
+                    Checked {formatDate(featuredEventQuality.lastChecked)}
+                  </p>
+                )}
                 <div className="mt-3 h-1.5 w-28 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-orange-200" />
               </div>
             </div>
+              );
+            })()
           )}
 
           {remainingEvents.map((event) => (
@@ -1906,6 +1960,11 @@ export default function CityPage() {
                       {qualityStatus.label}
                     </button>
                   </div>
+                  {quality.lastChecked && (
+                    <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
+                      Checked {formatDate(quality.lastChecked)}
+                    </p>
+                  )}
                 </div>
               );
             })()
@@ -2092,7 +2151,6 @@ export default function CityPage() {
               <h2 className="sticky top-0 z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 text-lg tracking-wide text-white/82 backdrop-blur">
                 {group.label}
               </h2>
-
               <div className="grid gap-4 md:grid-cols-2">
                 {group.items.map((place, index) => (
                   (() => {
@@ -2225,6 +2283,11 @@ export default function CityPage() {
                         <span>{group.label}</span>
                       </div>
                     </div>
+                    {quality.lastChecked && (
+                      <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/50">
+                        Checked {formatDate(quality.lastChecked)}
+                      </p>
+                    )}
                   </div>
                     );
                   })()
@@ -2248,7 +2311,7 @@ export default function CityPage() {
       )}
 
       {selectedPlace && (
-        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
           <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#0e0e0e]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closePlace}>
             Close
@@ -2315,7 +2378,7 @@ export default function CityPage() {
                 )}
                 {selectedPlaceQuality.source && (
                   <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
-                    Source set
+                    Source added
                   </span>
                 )}
               </div>
@@ -2419,7 +2482,7 @@ export default function CityPage() {
               className="qa-cinematic-hover rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
               aria-label={`Report place ${selectedPlace.name}`}
             >
-              Report place
+              Report issue
             </button>
             <button
               onClick={() => toggleFavorite(selectedPlace.id)}
@@ -2431,7 +2494,7 @@ export default function CityPage() {
               aria-label={favorites.includes(String(selectedPlace.id)) ? `Remove ${selectedPlace.name} from favorites` : `Save ${selectedPlace.name} to favorites`}
               aria-pressed={favorites.includes(String(selectedPlace.id))}
             >
-              {favorites.includes(String(selectedPlace.id)) ? "Saved" : "Save place"}
+              {favorites.includes(String(selectedPlace.id)) ? "Saved in atlas" : "Save to atlas"}
             </button>
             {isAdmin && (
               <button
@@ -2580,7 +2643,7 @@ export default function CityPage() {
       )}
 
       {selectedEvent && (
-        <div className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
           <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#111021]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closeEvent}>
             Close
@@ -2726,7 +2789,7 @@ export default function CityPage() {
               aria-label={favorites.includes(`event-${selectedEvent.id}`) ? `Remove ${selectedEvent.name} from favorites` : `Save ${selectedEvent.name} to favorites`}
               aria-pressed={favorites.includes(`event-${selectedEvent.id}`)}
             >
-              {favorites.includes(`event-${selectedEvent.id}`) ? "Saved" : "Save event"}
+              {favorites.includes(`event-${selectedEvent.id}`) ? "Saved in atlas" : "Save to atlas"}
             </button>
             {selectedEvent.link && (
               <a
@@ -2735,7 +2798,7 @@ export default function CityPage() {
                 rel="noreferrer"
                 className="qa-cinematic-hover block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
               >
-                Open event link
+                Open official link
               </a>
             )}
 
@@ -2767,8 +2830,79 @@ export default function CityPage() {
               className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
               aria-label={`Report event ${selectedEvent.name}`}
             >
-              Report event
+              Report issue
             </button>
+          </div>
+        </div>
+      )}
+
+      {reportModalOpen && (
+        <div className="fixed inset-0 z-[91] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-rose-200/22 bg-[linear-gradient(165deg,rgba(64,18,38,0.88),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
+            <div className="border-b border-white/10 px-5 py-4">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-rose-100/75">Safety report</p>
+              <h3 className="mt-2 text-xl font-semibold text-white">Report {reportDraft.targetType}</h3>
+              <p className="mt-1 text-sm text-white/70 line-clamp-1">{reportDraft.title}</p>
+            </div>
+
+            <div className="max-h-[65vh] space-y-4 overflow-y-auto px-5 py-5 sm:max-h-[70vh]">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-white/58">Reason</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {REPORT_REASONS.map((item) => {
+                    const active = reportDraft.reasonKey === item.value;
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setReportDraft((current) => ({ ...current, reasonKey: item.value }))}
+                        className={`rounded-2xl border px-3 py-2 text-left transition ${
+                          active
+                            ? "border-rose-200/42 bg-rose-200/16 text-rose-50 shadow-[0_8px_28px_rgba(244,63,94,0.18)]"
+                            : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold">{item.label}</p>
+                        <p className="mt-1 text-xs text-white/65">{item.helper}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="report-details">
+                  What is wrong?
+                </label>
+                <textarea
+                  id="report-details"
+                  value={reportDraft.details}
+                  onChange={(event) => setReportDraft((current) => ({ ...current, details: event.target.value }))}
+                  placeholder="Example: venue is closed, link is dead, or safety issue happened around 01:30 near entrance..."
+                  className="mt-2 min-h-[116px] w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-3 text-sm leading-6 text-white outline-none focus:border-rose-200/45"
+                />
+                <p className="mt-2 text-xs text-white/52">This note goes directly to admin moderation inbox.</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
+              <button
+                type="button"
+                onClick={closeReportModal}
+                className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitReport}
+                className="rounded-full border border-rose-200/34 bg-rose-200/16 px-4 py-2 text-sm font-semibold text-rose-50 transition hover:border-rose-200/55"
+              >
+                Send report
+              </button>
+            </div>
+          </div>
           </div>
         </div>
       )}

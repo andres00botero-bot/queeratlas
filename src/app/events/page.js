@@ -43,6 +43,22 @@ function normalizeCityKey(value) {
   return raw.replace(/[\s-]+/g, "_");
 }
 
+function qualityPillClass(tone) {
+  if (tone === "verified") {
+    return "border-emerald-200/24 bg-emerald-200/12 text-emerald-100";
+  }
+
+  if (tone === "stale") {
+    return "border-amber-200/24 bg-amber-200/12 text-amber-100";
+  }
+
+  if (tone === "community") {
+    return "border-cyan-200/24 bg-cyan-200/12 text-cyan-100";
+  }
+
+  return "border-white/16 bg-white/7 text-white/70";
+}
+
 function mapGlobalEventRow(row) {
   return {
     id: String(row.id),
@@ -138,25 +154,32 @@ export default function EventsPage() {
       map: qualityMap,
     });
     const actionInput = window.prompt(
-      "Verify event info:\n1 = Still correct\n2 = Something is wrong\n3 = Closed or moved\n\nEnter 1, 2, or 3",
+      "Update trust status:\n1 = Verified now\n2 = Needs refresh\n3 = Closed or moved\n\nEnter 1, 2, or 3",
       "1"
     );
     if (actionInput === null) return;
 
     const action = String(actionInput).trim();
     if (!["1", "2", "3"].includes(action)) {
-      window.alert("Please enter 1, 2, or 3.");
+      window.alert("Use 1, 2, or 3 to continue.");
       return;
     }
 
     const today = new Date().toISOString().slice(0, 10);
     const fallbackSource = (existing?.source || event.link || "").trim();
-    const sourceByAction =
+    const sourceDefaultByAction =
       action === "1"
         ? fallbackSource || "Community verified"
         : action === "2"
           ? fallbackSource || "Community flagged: needs review"
           : fallbackSource || "Community flagged: closed or moved";
+    const sourceInput = window.prompt(
+      "Source note (optional):\nAdd official link/name if you have one.\nLeave blank to keep current source.",
+      fallbackSource
+    );
+    if (sourceInput === null) return;
+
+    const sourceByAction = String(sourceInput).trim() || sourceDefaultByAction;
     const verified = action === "1";
     const lastChecked = action === "1" ? today : "";
 
@@ -481,7 +504,6 @@ export default function EventsPage() {
                     Open Now
                   </button>
                 </div>
-
                 <div className="mt-5 space-y-3">
                   {isLoading && (
                     <div className="space-y-3 rounded-2xl border border-orange-200/14 bg-orange-200/[0.03] p-4">
@@ -520,17 +542,16 @@ export default function EventsPage() {
                         </p>
                         <button
                           onClick={(clickEvent) => refreshQuality(event, clickEvent)}
-                          className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${
-                          qualityStatus.tone === "verified"
-                            ? "border-emerald-200/24 bg-emerald-200/12 text-emerald-100"
-                            : qualityStatus.tone === "stale"
-                              ? "border-amber-200/24 bg-amber-200/12 text-amber-100"
-                              : "border-white/16 bg-white/7 text-white/70"
-                        }`}>
+                          className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}>
                           {qualityStatus.label}
                         </button>
                       </div>
                       <p className="mt-3 text-base font-semibold text-white">{event.name}</p>
+                      {quality.lastChecked && (
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
+                          Checked {formatDateLabel(quality.lastChecked)}
+                        </p>
+                      )}
                     </div>
                       );
                     })()
@@ -686,7 +707,6 @@ export default function EventsPage() {
                   {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"}
                 </div>
               </div>
-
               <div className="mt-6 max-h-[900px] space-y-6 overflow-y-auto pr-1">
                 {isLoading && (
                   <div className="space-y-3">
@@ -756,16 +776,15 @@ export default function EventsPage() {
                             <div className="mb-3">
                               <button
                                 onClick={(clickEvent) => refreshQuality(event, clickEvent)}
-                                className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.14em] transition hover:opacity-90 ${
-                                qualityStatus.tone === "verified"
-                                  ? "border-emerald-200/24 bg-emerald-200/12 text-emerald-100"
-                                  : qualityStatus.tone === "stale"
-                                    ? "border-amber-200/24 bg-amber-200/12 text-amber-100"
-                                    : "border-white/16 bg-white/7 text-white/70"
-                              }`}>
+                                className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}>
                                 {qualityStatus.label}
                               </button>
                             </div>
+                            {quality.lastChecked && (
+                              <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-white/50">
+                                Checked {formatDateLabel(quality.lastChecked)}
+                              </p>
+                            )}
 
                             <div className="mt-4 rounded-2xl border border-white/6 bg-black/20 p-4">
                               <p className="text-[11px] uppercase tracking-[0.18em] text-white/36">
@@ -790,7 +809,7 @@ export default function EventsPage() {
                                   onClick={(eventClick) => eventClick.stopPropagation()}
                                   className="rounded-2xl bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-4 py-3 text-center text-sm font-semibold text-black transition hover:opacity-95"
                                 >
-                                  Open event link
+                                  Open official link
                                 </a>
                               )}
 
@@ -965,17 +984,16 @@ export default function EventsPage() {
                         </span>
                         <button
                           onClick={(clickEvent) => refreshQuality(event, clickEvent)}
-                          className={`rounded-full border px-3 py-1 text-xs transition hover:opacity-90 ${
-                          qualityStatus.tone === "verified"
-                            ? "border-emerald-200/24 bg-emerald-200/12 text-emerald-100"
-                            : qualityStatus.tone === "stale"
-                              ? "border-amber-200/24 bg-amber-200/12 text-amber-100"
-                              : "border-white/16 bg-white/7 text-white/70"
-                        }`}>
+                          className={`rounded-full border px-3 py-1 text-xs transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}>
                           {qualityStatus.label}
                         </button>
                       </div>
                     </div>
+                    {quality.lastChecked && (
+                      <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/50">
+                        Checked {formatDateLabel(quality.lastChecked)}
+                      </p>
+                    )}
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-cyan-200/72">
                       {event.location}
                     </p>
@@ -989,7 +1007,7 @@ export default function EventsPage() {
                         rel="noreferrer"
                         className="mt-3 inline-flex rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/36 hover:bg-cyan-200/14"
                       >
-                        Open link
+                        Open official link
                       </a>
                     )}
                   </div>

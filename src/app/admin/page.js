@@ -293,6 +293,8 @@ export default function AdminPage() {
       return cityOk && typeOk && entityOk;
     });
   }, [queueCityFilter, queueEntityFilter, queueTypeFilter, refreshQueue]);
+  const firstStaleQueueItem = useMemo(() => filteredRefreshQueue[0] || null, [filteredRefreshQueue]);
+  const firstOpenReport = useMemo(() => openReports[0] || null, [openReports]);
 
   useEffect(() => {
     const allowed = new Set(filteredRefreshQueue.map((item) => String(item.key)));
@@ -437,6 +439,30 @@ export default function AdminPage() {
       return;
     }
     router.push(`/${slug}?placeId=${item.targetId}`);
+  };
+
+  const quickVerifyFirstStale = () => {
+    if (!firstStaleQueueItem) {
+      showToast("Queue is already clean.", { tone: "info", duration: 1700 });
+      return;
+    }
+    markQueueItemFixed(firstStaleQueueItem);
+  };
+
+  const quickHideFirstReport = async () => {
+    if (!firstOpenReport) {
+      showToast("No open reports right now.", { tone: "info", duration: 1700 });
+      return;
+    }
+    await blockFromReport(firstOpenReport);
+  };
+
+  const quickResolveFirstReport = async () => {
+    if (!firstOpenReport) {
+      showToast("No open reports right now.", { tone: "info", duration: 1700 });
+      return;
+    }
+    await setReportStatus(firstOpenReport.id, "resolved");
   };
 
   const markQueueItemFixed = (item) => {
@@ -958,6 +984,47 @@ export default function AdminPage() {
           </div>
         </section>
 
+        <section className="mb-8 rounded-[30px] border border-violet-300/16 bg-[linear-gradient(180deg,rgba(30,16,51,0.86),rgba(10,10,10,0.98))] p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-violet-100/75">Quick actions</p>
+              <h2 className="mt-2 text-xl font-semibold text-white">Fast moderation moves</h2>
+            </div>
+            <span className="rounded-full border border-violet-200/22 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">
+              One-click triage
+            </span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <button
+              type="button"
+              onClick={quickVerifyFirstStale}
+              className="rounded-2xl border border-emerald-200/24 bg-emerald-200/10 p-4 text-left transition hover:border-emerald-200/40"
+            >
+              <p className="text-xs uppercase tracking-[0.15em] text-emerald-100/75">Queue</p>
+              <p className="mt-1 text-sm font-semibold text-white">Verify first stale item</p>
+              <p className="mt-1 text-xs text-white/60">{firstStaleQueueItem ? firstStaleQueueItem.name : "No stale items"}</p>
+            </button>
+            <button
+              type="button"
+              onClick={quickResolveFirstReport}
+              className="rounded-2xl border border-cyan-200/24 bg-cyan-200/10 p-4 text-left transition hover:border-cyan-200/40"
+            >
+              <p className="text-xs uppercase tracking-[0.15em] text-cyan-100/75">Reports</p>
+              <p className="mt-1 text-sm font-semibold text-white">Resolve first open report</p>
+              <p className="mt-1 text-xs text-white/60">{firstOpenReport ? firstOpenReport.title || "Reported item" : "No open reports"}</p>
+            </button>
+            <button
+              type="button"
+              onClick={quickHideFirstReport}
+              className="rounded-2xl border border-rose-200/24 bg-rose-200/10 p-4 text-left transition hover:border-rose-200/40"
+            >
+              <p className="text-xs uppercase tracking-[0.15em] text-rose-100/75">Safety</p>
+              <p className="mt-1 text-sm font-semibold text-white">Hide first open report target</p>
+              <p className="mt-1 text-xs text-white/60">{firstOpenReport ? firstOpenReport.reason : "No open reports"}</p>
+            </button>
+          </div>
+        </section>
+
         <section className="mb-8 rounded-[30px] border border-cyan-300/16 bg-[linear-gradient(180deg,rgba(7,28,44,0.84),rgba(10,10,10,0.98))] p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1236,6 +1303,7 @@ export default function AdminPage() {
                       city: item.city,
                       title: item.title,
                       reason: item.reason,
+                      message: item.message || "",
                       created_at: item.createdAt,
                     })),
                     "qa-open-reports.csv"
@@ -1295,7 +1363,12 @@ export default function AdminPage() {
                       <p className="mt-1 text-sm font-semibold text-white">
                         {report.title || "Reported content"}
                       </p>
-                      <p className="mt-2 text-sm leading-6 text-white/70">{report.reason}</p>
+                      <p className="mt-2 text-sm leading-6 text-white/78">{report.reason}</p>
+                      {report.message && (
+                        <div className="mt-2 rounded-xl border border-rose-200/20 bg-rose-200/8 px-3 py-2 text-sm leading-6 text-rose-50/92">
+                          {report.message}
+                        </div>
+                      )}
                       <p className="mt-2 text-xs text-white/45">{timeAgo(report.createdAt)}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">

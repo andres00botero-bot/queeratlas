@@ -6,6 +6,7 @@ const REPORTS_TABLE = "qa_reports";
 const BLOCKED_TABLE = "qa_blocked_items";
 const BLOCKED_UPDATED_EVENT = "qa:blocked-updated";
 const REPORTS_UPDATED_EVENT = "qa:reports-updated";
+const REPORT_REASON_DETAIL_SEPARATOR = "\n\nDetails: ";
 
 function safeParse(raw, fallback) {
   if (!raw) return fallback;
@@ -35,6 +36,31 @@ function emitModerationEvent(eventName) {
   window.dispatchEvent(new Event(eventName));
 }
 
+function splitReportReason(value = "") {
+  const raw = String(value || "");
+  const dividerIndex = raw.indexOf(REPORT_REASON_DETAIL_SEPARATOR);
+
+  if (dividerIndex === -1) {
+    return {
+      reason: raw || "No reason provided",
+      message: "",
+    };
+  }
+
+  return {
+    reason: raw.slice(0, dividerIndex).trim() || "No reason provided",
+    message: raw.slice(dividerIndex + REPORT_REASON_DETAIL_SEPARATOR.length).trim(),
+  };
+}
+
+function combineReportReason(reason = "", message = "") {
+  const reasonText = String(reason || "").trim() || "No reason provided";
+  const messageText = String(message || "").trim();
+
+  if (!messageText) return reasonText;
+  return `${reasonText}${REPORT_REASON_DETAIL_SEPARATOR}${messageText}`;
+}
+
 function writeReportsLocal(reports) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(REPORTS_KEY, JSON.stringify(reports));
@@ -48,13 +74,15 @@ function writeBlockedLocal(items) {
 }
 
 function mapReportRow(row) {
+  const parsed = splitReportReason(row.reason || "");
   return {
     id: String(row.id),
     targetType: row.target_type || "",
     targetId: String(row.target_id || ""),
     city: row.city || "",
     title: row.title || "",
-    reason: row.reason || "No reason provided",
+    reason: parsed.reason,
+    message: parsed.message,
     status: row.status || "open",
     createdAt: row.created_at || new Date().toISOString(),
     resolvedAt: row.resolved_at || null,
@@ -171,7 +199,7 @@ export async function syncModerationFromCloud(options = {}) {
   return { reports, blockedItems, warning: blockedSync.warning || "" };
 }
 
-export function addReport({ targetType, targetId, city = "", title = "", reason = "" }) {
+export function addReport({ targetType, targetId, city = "", title = "", reason = "", message = "" }) {
   if (typeof window === "undefined") return null;
 
   const report = {
@@ -180,7 +208,8 @@ export function addReport({ targetType, targetId, city = "", title = "", reason 
     targetId: String(targetId),
     city,
     title,
-    reason: reason || "No reason provided",
+    reason: String(reason || "").trim() || "No reason provided",
+    message: String(message || "").trim(),
     status: "open",
     createdAt: new Date().toISOString(),
   };
@@ -197,7 +226,7 @@ export function addReport({ targetType, targetId, city = "", title = "", reason 
         target_id: report.targetId,
         city: report.city || null,
         title: report.title || null,
-        reason: report.reason,
+        reason: combineReportReason(report.reason, report.message),
         status: report.status,
         created_by_email: createdByEmail || null,
       });
@@ -221,7 +250,7 @@ export function saveReports(reports) {
       target_id: String(report.targetId || ""),
       city: report.city || null,
       title: report.title || null,
-      reason: report.reason || "No reason provided",
+      reason: combineReportReason(report.reason, report.message),
       status: report.status || "open",
       created_by_email: createdByEmail || null,
       resolved_at: report.resolvedAt || null,

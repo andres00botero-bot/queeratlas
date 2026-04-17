@@ -77,7 +77,7 @@ export function getQualityStatus(quality) {
 
   if (verified && !stale) {
     return {
-      label: "Verified",
+      label: "Verified recently",
       tone: "verified",
       stale: false,
     };
@@ -92,8 +92,8 @@ export function getQualityStatus(quality) {
   }
 
   return {
-    label: "Unverified",
-    tone: "neutral",
+    label: "Community",
+    tone: "community",
     stale: false,
   };
 }
