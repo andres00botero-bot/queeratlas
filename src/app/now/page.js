@@ -162,6 +162,7 @@ export default function NowPage() {
   const [hiddenNewsIds, setHiddenNewsIds] = useState([]);
   const [isAdminByTable, setIsAdminByTable] = useState(false);
   const [showAdminForm, setShowAdminForm] = useState(false);
+  const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [adminForm, setAdminForm] = useState({
     title: "",
     city: "",
@@ -480,6 +481,7 @@ export default function NowPage() {
   const publishAdminNews = async (event) => {
     event.preventDefault();
     if (!isAdmin) return;
+    if (isPublishingNews) return;
     if (!adminForm.title || !adminForm.summary || !adminForm.whyItMatters) return;
 
     const item = {
@@ -494,6 +496,7 @@ export default function NowPage() {
       createdAt: new Date().toISOString(),
     };
 
+    setIsPublishingNews(true);
     const { error } = await supabase.from(NEWS_TABLE).insert({
       id: item.id,
       title: item.title,
@@ -507,16 +510,35 @@ export default function NowPage() {
     });
 
     if (error && !isMissingTableError(error)) {
-      setSyncWarning("Cloud sync failed. Using local backup.");
-    } else if (error && isMissingTableError(error)) {
+      setSyncWarning("Cloud sync failed. News was not published.");
+      setIsPublishingNews(false);
+      return;
+    }
+
+    if (error && isMissingTableError(error)) {
       setSyncWarning("Off-grid sync is unavailable right now.");
+      setIsPublishingNews(false);
+      return;
+    }
+
+    const { data: remoteNewsRows, error: refreshError } = await supabase
+      .from(NEWS_TABLE)
+      .select("*")
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (refreshError) {
+      setSyncWarning("News published, but refresh failed. Reload to sync.");
+      const next = [item, ...adminNews];
+      setAdminNews(next);
+      writeLocalJson(ADMIN_NEWS_KEY, next);
     } else {
+      const remoteNews = (remoteNewsRows || []).map(mapNewsRowToItem);
+      setAdminNews(remoteNews);
+      writeLocalJson(ADMIN_NEWS_KEY, remoteNews);
       setSyncWarning("");
     }
 
-    const next = [item, ...adminNews];
-    setAdminNews(next);
-    writeLocalJson(ADMIN_NEWS_KEY, next);
     setAdminForm({
       title: "",
       city: "",
@@ -526,6 +548,7 @@ export default function NowPage() {
       date: "",
     });
     setShowAdminForm(false);
+    setIsPublishingNews(false);
   };
 
   const deleteFeedItem = async (itemId) => {
@@ -726,9 +749,10 @@ export default function NowPage() {
                   />
                   <button
                     type="submit"
-                    className="rounded-xl bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 md:col-span-2"
+                    disabled={isPublishingNews}
+                    className="rounded-xl bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
                   >
-                    Publish news
+                    {isPublishingNews ? "Publishing..." : "Publish news"}
                   </button>
                 </form>
               )}
