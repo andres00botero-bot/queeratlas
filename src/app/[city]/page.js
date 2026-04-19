@@ -397,7 +397,7 @@ function SectionSkeleton({ tone = "violet", rows = 3 }) {
       {Array.from({ length: rows }).map((_, index) => (
         <div
           key={`skeleton-${tone}-${index}`}
-          className={`relative overflow-hidden rounded-[22px] border p-4 ${selectedTone.outer} animate-pulse`}
+          className={`relative overflow-hidden rounded-[24px] border p-4 ${selectedTone.outer} animate-pulse`}
         >
           <div className={`pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full blur-3xl ${selectedTone.glow}`} />
           <div className="h-4 w-44 rounded-full bg-white/14" />
@@ -496,6 +496,7 @@ export default function CityPage() {
   const placesSectionRef = useRef(null);
   const addEventFormRef = useRef(null);
   const mapRef = useRef(null);
+  const hoverPopupRef = useRef(null);
   const markersRef = useRef([]);
   const placeMarkersRef = useRef(new Map());
   const eventMarkersRef = useRef(new Map());
@@ -955,6 +956,14 @@ export default function CityPage() {
         center: config.center,
         zoom: 11,
       });
+      hoverPopupRef.current = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        closeOnMove: false,
+        anchor: "top",
+        offset: 22,
+        className: "qa-map-hover-popup",
+      });
     } catch {
       queueMicrotask(() => {
         setMapError("Map failed to initialize. You can still browse venues and events below.");
@@ -971,6 +980,7 @@ export default function CityPage() {
     const beginInteraction = () => {
       isMapInteractingRef.current = true;
       setIsMapInteracting(true);
+      hoverPopupRef.current?.remove();
     };
     const endInteraction = () => {
       isMapInteractingRef.current = false;
@@ -1007,6 +1017,8 @@ export default function CityPage() {
       markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
+      hoverPopupRef.current?.remove();
+      hoverPopupRef.current = null;
     };
   }, [config.center]);
 
@@ -1017,6 +1029,26 @@ export default function CityPage() {
     markersRef.current = [];
     placeMarkersRef.current = new Map();
     eventMarkersRef.current = new Map();
+
+    const showHoverPopup = (name, lng, lat) => {
+      if (!hoverPopupRef.current || isMapInteractingRef.current) return;
+      const popupNode = document.createElement("div");
+      popupNode.className = "text-xs font-semibold tracking-[0.02em] text-[#111]";
+      popupNode.textContent = name;
+      hoverPopupRef.current
+        .setLngLat([lng, lat])
+        .setDOMContent(popupNode)
+        .addTo(mapRef.current);
+      const popupEl = hoverPopupRef.current.getElement();
+      if (popupEl) {
+        popupEl.style.zIndex = "9999";
+        popupEl.style.pointerEvents = "none";
+      }
+    };
+
+    const hideHoverPopup = () => {
+      hoverPopupRef.current?.remove();
+    };
 
     cityPlaces.forEach((place) => {
       if (place.lat == null || place.lng == null) return;
@@ -1032,9 +1064,11 @@ export default function CityPage() {
       marker.getElement().addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
         setHoveredPlaceId(String(place.id));
+        showHoverPopup(place.name || "Venue", place.lng, place.lat);
       });
       marker.getElement().addEventListener("mouseleave", () => {
         setHoveredPlaceId(null);
+        hideHoverPopup();
       });
 
       markersRef.current.push(marker);
@@ -1061,9 +1095,11 @@ export default function CityPage() {
       marker.getElement().addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
         setHoveredEventId(String(event.id));
+        showHoverPopup(event.name || "Event", event.lng, event.lat);
       });
       marker.getElement().addEventListener("mouseleave", () => {
         setHoveredEventId(null);
+        hideHoverPopup();
       });
 
       markersRef.current.push(marker);
@@ -1123,7 +1159,7 @@ export default function CityPage() {
 
     mapRef.current.flyTo({
       center: [target.lng, target.lat],
-      zoom: 13,
+      zoom: 14.8,
     });
 
     mapWrapperRef.current?.scrollIntoView({
@@ -1822,8 +1858,8 @@ export default function CityPage() {
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
       <ActionToast toast={toast} />
-      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-6 py-8 pb-24 lg:pb-8">
-        <div className="animate-cinematic-in relative mb-6 overflow-hidden rounded-[34px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_88%_10%,rgba(45,212,191,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(135deg,rgba(24,24,24,0.96),rgba(10,10,10,0.99),rgba(25,22,20,0.97))] p-7 shadow-[0_30px_110px_rgba(0,0,0,0.42)]">
+      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8">
+        <div className="animate-cinematic-in relative mb-6 overflow-hidden rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(244,114,182,0.11),transparent_30%),radial-gradient(circle_at_86%_12%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(135deg,rgba(22,22,22,0.97),rgba(10,10,10,0.99),rgba(18,18,18,0.97))] p-6 shadow-[0_28px_96px_rgba(0,0,0,0.40)] sm:p-7">
           <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-fuchsia-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-4 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div>
@@ -1838,17 +1874,17 @@ export default function CityPage() {
               <h1 className="text-4xl font-bold tracking-[-0.03em]">{config.title}</h1>
             </div>
             <div className="mb-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/90">
+              <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/90">
                 {placesChipLabel}
               </span>
-              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-100/90">
+              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/90">
                 {eventsChipLabel}
               </span>
-              <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/70">
+              <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
                 Queer signal live
               </span>
             </div>
-            <div className="max-w-4xl rounded-2xl border border-white/10 bg-black/20 p-4 sm:p-5">
+            <div className="max-w-4xl rounded-2xl border border-white/10 bg-black/28 p-4 sm:p-5">
               <div className="space-y-3">
                 {cityHero.hook && (
                   <div className="flex items-start gap-3">
@@ -1979,7 +2015,7 @@ export default function CityPage() {
         )}
 
         <div ref={mapWrapperRef} className="animate-cinematic-in mb-8" style={{ animationDelay: "120ms" }}>
-          <div className="relative h-[460px] w-full overflow-hidden rounded-[30px] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.30)]">
+          <div className="relative h-[460px] w-full overflow-hidden rounded-[32px] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.30)]">
             <div ref={mapContainerRef} className="h-full w-full" />
             {mapError && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-6 text-center backdrop-blur-sm">
@@ -1999,38 +2035,38 @@ export default function CityPage() {
           </div>
         </div>
 
-        <div className="animate-cinematic-in mb-8 rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_16px_50px_rgba(0,0,0,0.22)]" style={{ animationDelay: "170ms" }}>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-white/45">Quick Navigation</p>
+        <div className="animate-cinematic-in mb-8 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_44px_rgba(0,0,0,0.22)]" style={{ animationDelay: "170ms" }}>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Quick Navigation</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <button
               type="button"
               onClick={() => scrollToSection(eventsSectionRef)}
-              className="qa-cinematic-hover rounded-2xl border border-violet-200/16 bg-violet-200/[0.06] px-4 py-3 text-left text-sm text-violet-100 hover:border-violet-200/32"
+              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
             >
-              <p className="text-[10px] uppercase tracking-[0.16em] text-violet-100/75">Jump To</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
               <p className="mt-1 font-semibold">Events</p>
             </button>
             <button
               type="button"
               onClick={() => scrollToSection(guideSectionRef)}
-              className="qa-cinematic-hover rounded-2xl border border-amber-200/16 bg-amber-200/[0.06] px-4 py-3 text-left text-sm text-amber-100 hover:border-amber-200/32"
+              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
             >
-              <p className="text-[10px] uppercase tracking-[0.16em] text-amber-100/75">Jump To</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
               <p className="mt-1 font-semibold">Quick Guide</p>
             </button>
             <button
               type="button"
               onClick={() => scrollToSection(placesSectionRef)}
-              className="qa-cinematic-hover rounded-2xl border border-rose-200/16 bg-rose-200/[0.06] px-4 py-3 text-left text-sm text-rose-100 hover:border-rose-200/32"
+              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
             >
-              <p className="text-[10px] uppercase tracking-[0.16em] text-rose-100/75">Jump To</p>
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
               <p className="mt-1 font-semibold">Venues</p>
             </button>
           </div>
         </div>
 
-        <div ref={eventsSectionRef} className="animate-cinematic-in mb-10 rounded-[30px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,18,56,0.90),rgba(10,10,10,0.98))] p-6 shadow-[0_20px_60px_rgba(139,92,246,0.08)]" style={{ animationDelay: "210ms" }}>
-          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-violet-300/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-wide text-violet-200 backdrop-blur">
+        <div ref={eventsSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]" style={{ animationDelay: "210ms" }}>
+          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-violet-300/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-violet-200 backdrop-blur">
             Events
           </h2>
           {eventsLoadError && (
@@ -2156,7 +2192,7 @@ export default function CityPage() {
                       openEvent(event);
                     }
                   }}
-                  className={`qa-cinematic-hover animate-rise-in mb-3 cursor-pointer rounded-[22px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                  className={`qa-cinematic-hover animate-rise-in mb-3 cursor-pointer rounded-[24px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
                     String(selectedEvent?.id) === String(event.id)
                       ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
                       : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${
@@ -2209,7 +2245,7 @@ export default function CityPage() {
             })()
           ))}
           {!eventsLoading && !featuredEvent && remainingEvents.length === 0 && (
-            <div className="rounded-[26px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.20),rgba(18,18,18,0.96))] px-5 py-8 text-center">
+            <div className="rounded-[24px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.16),rgba(18,18,18,0.96))] px-5 py-8 text-center">
               <p className="text-xs uppercase tracking-[0.2em] text-violet-200/70">Event signal</p>
               <h3 className="mt-2 text-lg font-semibold text-white">Event pulse is warming up</h3>
               <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
@@ -2250,8 +2286,8 @@ export default function CityPage() {
           )}
         </div>
 
-        <div ref={guideSectionRef} className="animate-cinematic-in mb-10 rounded-[30px] border border-amber-200/10 bg-[linear-gradient(180deg,rgba(36,28,15,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_20px_60px_rgba(251,191,36,0.06)]" style={{ animationDelay: "250ms" }}>
-          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-amber-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-wide text-amber-100 backdrop-blur">
+        <div ref={guideSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-amber-200/10 bg-[linear-gradient(180deg,rgba(30,26,18,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(251,191,36,0.05)]" style={{ animationDelay: "250ms" }}>
+          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-amber-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-amber-100 backdrop-blur">
             Quick Guide
           </h2>
           {placesLoading && (
@@ -2386,7 +2422,7 @@ export default function CityPage() {
 
         {visiblePlaceGroups.map((group, groupIndex) => {
           return (
-            <div ref={groupIndex === 0 ? placesSectionRef : null} key={group.value} className="animate-cinematic-in mb-10 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-7 shadow-[0_20px_60px_rgba(0,0,0,0.25)]" style={{ animationDelay: `${300 + groupIndex * 40}ms` }}>
+            <div ref={groupIndex === 0 ? placesSectionRef : null} key={group.value} className="animate-cinematic-in mb-10 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)]" style={{ animationDelay: `${300 + groupIndex * 40}ms` }}>
               <h2 className="sticky top-0 z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 text-lg tracking-wide text-white/82 backdrop-blur">
                 {group.label}
               </h2>
@@ -2420,7 +2456,7 @@ export default function CityPage() {
                       }
                     }}
                     style={{ animationDelay: `${Math.min(index * 45, 280)}ms` }}
-                    className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[28px] border p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
+                    className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
                       index === 0 ? "md:col-span-2" : ""
                     } ${
                       isFocusMode && !isSelected ? "opacity-60 saturate-75" : ""
@@ -2550,7 +2586,7 @@ export default function CityPage() {
       )}
 
       {selectedPlace && (
-        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.10),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.08),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
           <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#0e0e0e]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closePlace}>
             Close
@@ -2568,7 +2604,7 @@ export default function CityPage() {
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-fuchsia-300" />
             {polishVenueDescription(selectedPlace, cityName) && (
               <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <p className="text-sm leading-relaxed text-gray-300">{polishVenueDescription(selectedPlace, cityName)}</p>
+                <p className="text-sm leading-relaxed text-white/68">{polishVenueDescription(selectedPlace, cityName)}</p>
               </div>
             )}
             <div className="mb-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
@@ -2888,7 +2924,7 @@ export default function CityPage() {
       )}
 
       {selectedEvent && (
-        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.12),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
           <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#111021]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closeEvent}>
             Close
@@ -2923,7 +2959,7 @@ export default function CityPage() {
             {polishEventDescription(selectedEvent, cityName) && (
               <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About event</p>
-                <p className="text-sm leading-relaxed text-gray-300">{polishEventDescription(selectedEvent, cityName)}</p>
+                <p className="text-sm leading-relaxed text-white/68">{polishEventDescription(selectedEvent, cityName)}</p>
               </div>
             )}
             {(selectedEvent.link || selectedEventQuality?.lastChecked || selectedEventQuality?.source) && (
