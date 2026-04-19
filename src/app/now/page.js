@@ -116,6 +116,17 @@ function isMissingTableError(error) {
   return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
 }
 
+function isMissingColumnError(error, columnName = "") {
+  if (!error || !columnName) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return (
+    code === "42703" ||
+    code === "PGRST204" ||
+    message.includes(String(columnName).toLowerCase())
+  );
+}
+
 function createClientId(prefix) {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `${prefix}-${crypto.randomUUID()}`;
@@ -205,39 +216,44 @@ export default function NowPage() {
       supabase.from(RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
     ]);
 
-    const hasMissingTables =
-      isMissingTableError(newsResponse.error) ||
-      isMissingTableError(hiddenResponse.error) ||
-      isMissingTableError(rankingResponse.error);
+    const warnings = [];
 
-    if (hasMissingTables) {
-      setSyncWarning("Off-grid sync is unavailable right now.");
+    if (newsResponse.error) {
+      if (isMissingTableError(newsResponse.error)) {
+        warnings.push("News table is missing.");
+      } else {
+        warnings.push("News sync failed.");
+      }
       setAdminNews([]);
-      setHiddenNewsIds([]);
-      setRankingOverrides({});
-      return;
+    } else {
+      const remoteNews = (newsResponse.data || []).map(mapNewsRowToItem);
+      setAdminNews(remoteNews);
+      writeLocalJson(ADMIN_NEWS_KEY, remoteNews);
     }
 
-    if (newsResponse.error || hiddenResponse.error || rankingResponse.error) {
-      setSyncWarning("Cloud sync failed. Showing verified cloud/editorial content only.");
-      setAdminNews([]);
+    if (hiddenResponse.error) {
+      if (!isMissingTableError(hiddenResponse.error)) {
+        warnings.push("Hidden-news sync failed.");
+      }
       setHiddenNewsIds([]);
-      setRankingOverrides({});
-      return;
+    } else {
+      const remoteHidden = (hiddenResponse.data || []).map((row) => String(row.feed_id));
+      setHiddenNewsIds(remoteHidden);
+      writeLocalJson(HIDDEN_NEWS_KEY, remoteHidden);
     }
 
-    const remoteNews = (newsResponse.data || []).map(mapNewsRowToItem);
-    const remoteHidden = (hiddenResponse.data || []).map((row) => String(row.feed_id));
-    const remoteRankings = groupRankingRows(rankingResponse.data || []);
+    if (rankingResponse.error) {
+      if (!isMissingTableError(rankingResponse.error)) {
+        warnings.push("Ranking sync failed.");
+      }
+      setRankingOverrides({});
+    } else {
+      const remoteRankings = groupRankingRows(rankingResponse.data || []);
+      setRankingOverrides(remoteRankings);
+      writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
+    }
 
-    setAdminNews(remoteNews);
-    setHiddenNewsIds(remoteHidden);
-    setRankingOverrides(remoteRankings);
-    setSyncWarning("");
-
-    writeLocalJson(ADMIN_NEWS_KEY, remoteNews);
-    writeLocalJson(HIDDEN_NEWS_KEY, remoteHidden);
-    writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
+    setSyncWarning(warnings.join(" ") || "");
   }, []);
 
   useEffect(() => {
@@ -520,7 +536,7 @@ export default function NowPage() {
 
     setIsPublishingNews(true);
     try {
-      const { error } = await supabase.from(NEWS_TABLE).insert({
+      const basePayload = {
         id: item.id,
         title: item.title,
         city: item.city,
@@ -529,11 +545,31 @@ export default function NowPage() {
         summary: item.summary,
         why_it_matters: item.whyItMatters,
         source_name: item.sourceName,
-        created_by_email: currentEmail || null,
+      };
+
+      // Prefer canonical created_by (uuid) when available.
+      let { error } = await supabase.from(NEWS_TABLE).insert({
+        ...basePayload,
+        created_by: user?.id || null,
       });
 
+      // Backward-compatible fallback for older schemas using created_by_email.
+      if (error && isMissingColumnError(error, "created_by")) {
+        const retry = await supabase.from(NEWS_TABLE).insert({
+          ...basePayload,
+          created_by_email: currentEmail || null,
+        });
+        error = retry.error;
+      }
+
+      // Final fallback if neither metadata column exists.
+      if (error && (isMissingColumnError(error, "created_by_email") || isMissingColumnError(error, "created_by"))) {
+        const retry = await supabase.from(NEWS_TABLE).insert(basePayload);
+        error = retry.error;
+      }
+
       if (error && !isMissingTableError(error)) {
-        setSyncWarning("Cloud sync failed. News was not published.");
+        setSyncWarning(`Cloud sync failed. News was not published. ${String(error.message || "").trim()}`.trim());
         return;
       }
 
@@ -567,7 +603,7 @@ export default function NowPage() {
       setSyncWarning("Cloud sync failed. Using local backup.");
     }
 
-    const { error: hideError } = await supabase
+    let { error: hideError } = await supabase
       .from(NEWS_HIDDEN_TABLE)
       .upsert(
         {
@@ -576,6 +612,18 @@ export default function NowPage() {
         },
         { onConflict: "feed_id" }
       );
+
+    if (hideError && isMissingColumnError(hideError, "hidden_by_email")) {
+      const retry = await supabase
+        .from(NEWS_HIDDEN_TABLE)
+        .upsert(
+          {
+            feed_id: key,
+          },
+          { onConflict: "feed_id" }
+        );
+      hideError = retry.error;
+    }
 
     if (hideError && !isMissingTableError(hideError)) {
       setSyncWarning("Cloud sync failed. Using local backup.");
