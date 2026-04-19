@@ -210,12 +210,7 @@ export default function Home() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      const localNews = readLocalJson("qa_world_news_admin", []);
-      const withLocalCategory = (localNews || []).map((item) => ({
-        ...item,
-        categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
-      }));
-      const fallback = [...withLocalCategory, ...EDITORIAL_PULSE_ITEMS].sort(compareNewsRecency);
+      const fallback = [...EDITORIAL_PULSE_ITEMS].sort(compareNewsRecency);
       setWorldNews(fallback);
       return { error: null };
     }
@@ -226,13 +221,7 @@ export default function Home() {
       categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
     }));
 
-    const localNews = readLocalJson("qa_world_news_admin", []);
-    const withLocalCategory = (localNews || []).map((item) => ({
-      ...item,
-      categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
-    }));
-
-    const merged = [...withCategoryLabel, ...withLocalCategory, ...EDITORIAL_PULSE_ITEMS].reduce((acc, item) => {
+    const merged = [...withCategoryLabel, ...EDITORIAL_PULSE_ITEMS].reduce((acc, item) => {
       const key = String(item.id || `${item.title}-${item.date}`);
       if (!acc.some((existing) => String(existing.id || `${existing.title}-${existing.date}`) === key)) {
         acc.push(item);

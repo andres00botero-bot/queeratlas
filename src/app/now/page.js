@@ -199,14 +199,6 @@ export default function NowPage() {
   }, [loadPulseData]);
 
   const loadEditorialData = useCallback(async () => {
-    const localNews = readLocalJson(ADMIN_NEWS_KEY, []);
-    const localHidden = (readLocalJson(HIDDEN_NEWS_KEY, []) || []).map((id) => String(id));
-    const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
-
-    setAdminNews(localNews);
-    setHiddenNewsIds(localHidden);
-    setRankingOverrides(localRankings);
-
     const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
       supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
@@ -220,11 +212,17 @@ export default function NowPage() {
 
     if (hasMissingTables) {
       setSyncWarning("Off-grid sync is unavailable right now.");
+      setAdminNews([]);
+      setHiddenNewsIds([]);
+      setRankingOverrides({});
       return;
     }
 
     if (newsResponse.error || hiddenResponse.error || rankingResponse.error) {
-      setSyncWarning("Cloud sync failed. Using local backup.");
+      setSyncWarning("Cloud sync failed. Showing verified cloud/editorial content only.");
+      setAdminNews([]);
+      setHiddenNewsIds([]);
+      setRankingOverrides({});
       return;
     }
 
