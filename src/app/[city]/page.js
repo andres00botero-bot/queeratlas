@@ -274,6 +274,52 @@ function formatDate(value) {
   });
 }
 
+function normalizeIsoDate(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const iso = raw.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
+}
+
+function normalizeEventRange(event = {}) {
+  const startDate = normalizeIsoDate(event.startDate || event.start_date || event.date);
+  const endDateRaw = normalizeIsoDate(event.endDate || event.end_date || event.date);
+  const endDate = endDateRaw && endDateRaw >= startDate ? endDateRaw : startDate;
+  return {
+    ...event,
+    startDate,
+    endDate: endDate || startDate,
+    date: startDate,
+  };
+}
+
+function formatEventDateLabel(event = {}) {
+  const normalized = normalizeEventRange(event);
+  if (!normalized.startDate) return "Date TBA";
+  if (!normalized.endDate || normalized.endDate === normalized.startDate) {
+    return formatDate(normalized.startDate);
+  }
+
+  const start = new Date(normalized.startDate);
+  const end = new Date(normalized.endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return formatDate(normalized.startDate);
+  }
+
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const sameMonth = sameYear && start.getMonth() === end.getMonth();
+
+  if (sameMonth) {
+    return `${start.getDate()}-${end.getDate()} ${start.toLocaleDateString("en-GB", { month: "short" })} ${start.getFullYear()}`;
+  }
+
+  if (sameYear) {
+    return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${start.getFullYear()}`;
+  }
+
+  return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+}
+
 function normalizeExternalUrl(value = "") {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -281,20 +327,14 @@ function normalizeExternalUrl(value = "") {
   return `https://${raw}`;
 }
 
-function isEventVisibleOnCityPage(value) {
-  if (!value) return false;
+function isEventVisibleOnCityPage(event) {
+  const normalized = normalizeEventRange(event || {});
+  if (!normalized.startDate) return false;
 
-  const dateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/.test(String(value));
-
-  if (dateOnlyMatch) {
-    const [year, month, day] = String(value).split("-").map(Number);
-    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
-    return endOfDay.getTime() >= Date.now();
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return true;
-  return parsed.getTime() >= Date.now();
+  const parsedEnd = new Date(normalized.endDate || normalized.startDate);
+  if (Number.isNaN(parsedEnd.getTime())) return true;
+  const endOfDay = new Date(parsedEnd.getFullYear(), parsedEnd.getMonth(), parsedEnd.getDate(), 23, 59, 59, 999);
+  return endOfDay.getTime() >= Date.now();
 }
 
 function qualityPillClass(tone) {
@@ -325,9 +365,12 @@ function buildPlaceAdminDraft(place) {
 }
 
 function buildEventAdminDraft(event) {
+  const normalized = normalizeEventRange(event || {});
   return {
     name: String(event?.name || ""),
-    date: String(event?.date || ""),
+    startDate: String(normalized.startDate || ""),
+    endDate: String(normalized.endDate || ""),
+    vibe: String(event?.vibe || ""),
     description: String(event?.description || ""),
     link: String(event?.link || ""),
   };
@@ -405,7 +448,9 @@ export default function CityPage() {
   const [placeLink, setPlaceLink] = useState("");
   const [eventName, setEventName] = useState("");
   const [eventAddress, setEventAddress] = useState("");
-  const [eventDate, setEventDate] = useState("");
+  const [eventStartDate, setEventStartDate] = useState("");
+  const [eventEndDate, setEventEndDate] = useState("");
+  const [eventVibe, setEventVibe] = useState("");
   const [eventDescription, setEventDescription] = useState("");
   const [eventLink, setEventLink] = useState("");
   const [rating, setRating] = useState(5);
@@ -569,7 +614,7 @@ export default function CityPage() {
     () => {
       return eventsData.filter((event) => (
         event.city?.toLowerCase() === city.toLowerCase()
-        && isEventVisibleOnCityPage(event.date)
+        && isEventVisibleOnCityPage(event)
         && !blockedItems.some(
           (item) =>
             item.targetType === "event" &&
@@ -689,14 +734,17 @@ export default function CityPage() {
   );
 
   const sortedEvents = useMemo(
-    () => [...cityEvents].filter((event) => event.date).sort((a, b) => new Date(a.date) - new Date(b.date)),
+    () => [...cityEvents]
+      .filter((event) => normalizeEventRange(event).startDate)
+      .sort((a, b) => String(normalizeEventRange(a).startDate).localeCompare(String(normalizeEventRange(b).startDate))),
     [cityEvents]
   );
 
   const featuredEvent = useMemo(() => {
     if (sortedEvents.length === 0) return null;
     const now = new Date();
-    const upcoming = sortedEvents.find((event) => new Date(event.date) >= now);
+    const nowIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const upcoming = sortedEvents.find((event) => normalizeEventRange(event).endDate >= nowIso);
     return upcoming || sortedEvents[0];
   }, [sortedEvents]);
 
@@ -820,14 +868,14 @@ export default function CityPage() {
 
       if (error) {
         setEventsLoadError("Could not load city events right now.");
-        setEventsData(mergeSeedEvents([]));
+        setEventsData(mergeSeedEvents([]).map((event) => normalizeEventRange(event)));
         return;
       }
 
-      setEventsData(mergeSeedEvents(data || []));
+        setEventsData(mergeSeedEvents(data || []).map((event) => normalizeEventRange(event)));
     } catch {
       setEventsLoadError("Could not reach event service right now.");
-      setEventsData(mergeSeedEvents([]));
+      setEventsData(mergeSeedEvents([]).map((event) => normalizeEventRange(event)));
     } finally {
       setEventsLoading(false);
     }
@@ -1143,8 +1191,15 @@ export default function CityPage() {
   };
 
   const handleAddEvent = async () => {
-    if (!eventName.trim() || !eventAddress.trim() || !eventDate) {
-      showToast("Fill in event name, address, and date before saving.", { tone: "warn", duration: 2400 });
+    const startDate = normalizeIsoDate(eventStartDate);
+    const endDateInput = normalizeIsoDate(eventEndDate);
+    const endDate = endDateInput && endDateInput >= startDate ? endDateInput : startDate;
+    if (!eventName.trim() || !eventAddress.trim() || !startDate) {
+      showToast("Fill in event name, address, and start date before saving.", { tone: "warn", duration: 2400 });
+      return;
+    }
+    if (endDateInput && endDateInput < startDate) {
+      showToast("End date must be same day or after start date.", { tone: "warn", duration: 2400 });
       return;
     }
 
@@ -1156,27 +1211,53 @@ export default function CityPage() {
         return;
       }
 
-      const { data: createdEvent, error } = await supabase
-        .from("events")
-        .insert([
-          {
+      const insertBasePayload = {
+        name: eventName,
+        city,
+        lat: coords.lat,
+        lng: coords.lng,
+        date: startDate,
+        start_date: startDate,
+        end_date: endDate || startDate,
+        vibe: eventVibe.trim() || null,
+        description: eventDescription,
+        link: eventLink,
+      };
+
+      let insertResult = await supabase.from("events").insert([insertBasePayload]).select("*").single();
+
+      if (insertResult.error) {
+        const errorText = `${insertResult.error?.code || ""} ${insertResult.error?.message || ""}`.toLowerCase();
+        const missingDateRange =
+          (errorText.includes("start_date") || errorText.includes("end_date")) &&
+          (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingVibe =
+          errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+        if (missingDateRange || missingVibe) {
+          const legacyPayload = {
             name: eventName,
             city,
             lat: coords.lat,
             lng: coords.lng,
-            date: eventDate,
+            date: startDate,
             description: eventDescription,
             link: eventLink,
-          },
-        ])
-        .select("*")
-        .single();
+          };
+          if (!missingVibe) {
+            legacyPayload.vibe = eventVibe.trim() || null;
+          }
+          insertResult = await supabase.from("events").insert([legacyPayload]).select("*").single();
+        }
+      }
+
+      const { data: createdEvent, error } = insertResult;
 
       if (error) {
         captureOperationalError("save_event_fail", error, {
           city: String(city || ""),
           flow: "city_add_event",
-          hasDate: Boolean(eventDate),
+          hasDate: Boolean(startDate),
         });
         showToast("Could not save event right now.", { tone: "warn", duration: 2600 });
         return;
@@ -1195,7 +1276,9 @@ export default function CityPage() {
       await fetchEvents();
       setEventName("");
       setEventAddress("");
-      setEventDate("");
+      setEventStartDate("");
+      setEventEndDate("");
+      setEventVibe("");
       setEventDescription("");
       setEventLink("");
       setAddEventMode(false);
@@ -1210,7 +1293,7 @@ export default function CityPage() {
       captureOperationalError("save_event_fail", error, {
         city: String(city || ""),
         flow: "city_add_event_catch",
-        hasDate: Boolean(eventDate),
+        hasDate: Boolean(startDate),
       });
       showToast(error?.message || "Could not save event right now.", { tone: "warn", duration: 2600 });
     }
@@ -1358,7 +1441,7 @@ export default function CityPage() {
     const eventId = String(event?.id || "");
     const eventName = String(event?.name || "").trim();
     const eventCity = String(event?.city || city).trim();
-    const eventDateValue = String(event?.date || "").trim();
+    const eventDateValue = normalizeEventRange(event || {}).startDate;
     const normalizeCity = (value) =>
       String(value || "")
         .toLowerCase()
@@ -1484,8 +1567,15 @@ export default function CityPage() {
 
   const handleAdminSaveEvent = useCallback(async () => {
     if (!isAdmin || !selectedEvent) return;
-    if (!eventAdminDraft.name.trim() || !eventAdminDraft.date) {
-      showToast("Event name and date are required.", { tone: "warn", duration: 2400 });
+    const startDate = normalizeIsoDate(eventAdminDraft.startDate);
+    const endDateInput = normalizeIsoDate(eventAdminDraft.endDate);
+    const endDate = endDateInput && endDateInput >= startDate ? endDateInput : startDate;
+    if (!eventAdminDraft.name.trim() || !startDate) {
+      showToast("Event name and start date are required.", { tone: "warn", duration: 2400 });
+      return;
+    }
+    if (endDateInput && endDateInput < startDate) {
+      showToast("End date must be same day or after start date.", { tone: "warn", duration: 2400 });
       return;
     }
 
@@ -1494,16 +1584,49 @@ export default function CityPage() {
       const dbId = await resolveEventDbId(selectedEvent);
       const payload = {
         name: eventAdminDraft.name.trim(),
-        date: eventAdminDraft.date,
+        date: startDate,
+        start_date: startDate,
+        end_date: endDate || startDate,
+        vibe: eventAdminDraft.vibe.trim() || null,
         description: eventAdminDraft.description.trim(),
         link: eventAdminDraft.link.trim() || null,
       };
 
       if (dbId) {
-        const { error } = await supabase
+        let updateResult = await supabase
           .from("events")
           .update(payload)
-          .eq("id", dbId);
+          .eq("id", dbId)
+          .select("*")
+          .single();
+
+        if (updateResult.error) {
+          const errorText = `${updateResult.error?.code || ""} ${updateResult.error?.message || ""}`.toLowerCase();
+          const missingDateRange =
+            (errorText.includes("start_date") || errorText.includes("end_date")) &&
+            (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVibe =
+            errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+          if (missingDateRange || missingVibe) {
+            const legacyPayload = {
+              name: eventAdminDraft.name.trim(),
+              date: startDate,
+              description: eventAdminDraft.description.trim(),
+              link: eventAdminDraft.link.trim() || null,
+            };
+            if (!missingVibe) {
+              legacyPayload.vibe = eventAdminDraft.vibe.trim() || null;
+            }
+            updateResult = await supabase
+              .from("events")
+              .update(legacyPayload)
+              .eq("id", dbId)
+              .select("*")
+              .single();
+          }
+        }
+        const { error } = updateResult;
 
         if (error) {
           captureOperationalError("save_event_fail", error, {
@@ -1521,11 +1644,43 @@ export default function CityPage() {
           lat: selectedEvent.lat ?? null,
           lng: selectedEvent.lng ?? null,
         };
-        const { data: inserted, error } = await supabase
+
+        let insertResult = await supabase
           .from("events")
           .insert([insertPayload])
-          .select("id")
+          .select("*")
           .single();
+
+        if (insertResult.error) {
+          const errorText = `${insertResult.error?.code || ""} ${insertResult.error?.message || ""}`.toLowerCase();
+          const missingDateRange =
+            (errorText.includes("start_date") || errorText.includes("end_date")) &&
+            (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVibe =
+            errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+          if (missingDateRange || missingVibe) {
+            const legacyInsertPayload = {
+              name: eventAdminDraft.name.trim(),
+              date: startDate,
+              description: eventAdminDraft.description.trim(),
+              link: eventAdminDraft.link.trim() || null,
+              city: String(selectedEvent.city || city).trim(),
+              lat: selectedEvent.lat ?? null,
+              lng: selectedEvent.lng ?? null,
+            };
+            if (!missingVibe) {
+              legacyInsertPayload.vibe = eventAdminDraft.vibe.trim() || null;
+            }
+            insertResult = await supabase
+              .from("events")
+              .insert([legacyInsertPayload])
+              .select("*")
+              .single();
+          }
+        }
+
+        const { data: inserted, error } = insertResult;
 
         if (error || !inserted?.id) {
           captureOperationalError("save_event_fail", error || new Error("Event insert returned no id."), {
@@ -1750,9 +1905,20 @@ export default function CityPage() {
           <div ref={addEventFormRef} className="mb-6 space-y-3 rounded-[28px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(28,19,56,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(139,92,246,0.08)]">
             <input value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="Event name" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <textarea value={eventDescription} onChange={(event) => setEventDescription(event.target.value)} placeholder="Description (what is this event?)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+            <input value={eventVibe} onChange={(event) => setEventVibe(event.target.value)} placeholder="Vibe (for example Festival, Circuit, Queer arts)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={eventLink} onChange={(event) => setEventLink(event.target.value)} placeholder="Event link (Instagram, RA, etc)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <DateInput value={eventDate} onChange={(event) => setEventDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" tone="violet" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">From</p>
+                <DateInput value={eventStartDate} onChange={(event) => setEventStartDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" tone="violet" />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">To</p>
+                <DateInput value={eventEndDate} onChange={(event) => setEventEndDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" tone="violet" />
+              </div>
+            </div>
+            <p className="text-[11px] text-white/50">Leave "To" empty for single-day events.</p>
             <button onClick={handleAddEvent} className="w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 font-semibold text-black">
               Save event
             </button>
@@ -1871,15 +2037,20 @@ export default function CityPage() {
                 <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-violet-300/18 blur-3xl" />
                 <div className="mb-2 flex items-center justify-between">
                   <h3 className="text-lg font-semibold">{featuredEvent.name}</h3>
-                  {featuredEvent.date && (
+                  {normalizeEventRange(featuredEvent).startDate && (
                     <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
-                      {formatDate(featuredEvent.date)}
+                      {formatEventDateLabel(featuredEvent)}
                     </span>
                   )}
                 </div>
                 <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/72">
                   {polishEventDescription(featuredEvent, cityName)}
                 </p>
+                {featuredEvent.vibe && (
+                  <p className="mb-2 inline-flex rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
+                    Vibe: {featuredEvent.vibe}
+                  </p>
+                )}
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-purple-200/90">Next notable event in this city</p>
                   <button
@@ -1946,15 +2117,20 @@ export default function CityPage() {
                 >
                   <div className="mb-1 flex items-center justify-between">
                     <h3 className="font-semibold">{event.name}</h3>
-                    {event.date && (
+                    {normalizeEventRange(event).startDate && (
                       <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
-                        {formatDate(event.date)}
+                        {formatEventDateLabel(event)}
                       </span>
                     )}
                   </div>
                   <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/70">
                     {polishEventDescription(event, cityName)}
                   </p>
+                  {event.vibe && (
+                    <p className="mb-2 inline-flex rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
+                      Vibe: {event.vibe}
+                    </p>
+                  )}
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs text-purple-400">Community event</p>
                     <button
@@ -2667,13 +2843,18 @@ export default function CityPage() {
               <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">
                 Community event
               </span>
-              {selectedEvent.date && (
+              {normalizeEventRange(selectedEvent).startDate && (
                 <span className="rounded-full border border-violet-200/24 bg-violet-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-violet-100">
-                  {formatDate(selectedEvent.date)}
+                  {formatEventDateLabel(selectedEvent)}
                 </span>
               )}
             </div>
             <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedEvent.name}</h2>
+            {selectedEvent.vibe && (
+              <p className="mb-2 inline-flex rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
+                Vibe: {selectedEvent.vibe}
+              </p>
+            )}
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
             {polishEventDescription(selectedEvent, cityName) && (
               <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">
@@ -2747,10 +2928,23 @@ export default function CityPage() {
                       placeholder="Event name"
                       className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
-                    <DateInput
-                      value={eventAdminDraft.date}
-                      onChange={(value) => setEventAdminDraft((current) => ({ ...current, date: value }))}
-                      placeholder="Event date"
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <DateInput
+                        value={eventAdminDraft.startDate}
+                        onChange={(value) => setEventAdminDraft((current) => ({ ...current, startDate: value }))}
+                        placeholder="From"
+                      />
+                      <DateInput
+                        value={eventAdminDraft.endDate}
+                        onChange={(value) => setEventAdminDraft((current) => ({ ...current, endDate: value }))}
+                        placeholder="To"
+                      />
+                    </div>
+                    <input
+                      value={eventAdminDraft.vibe}
+                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
+                      placeholder="Vibe"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
                     <textarea
                       value={eventAdminDraft.description}

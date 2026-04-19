@@ -119,7 +119,7 @@ export function buildAtlasSearchResults({
       );
       const cityAffinity =
         preferredCityKey && normalizeValue(event.city) === preferredCityKey ? 18 : 0;
-      const freshness = eventFreshnessBoost(event.date, nowTs);
+      const freshness = eventFreshnessBoost(event.start_date || event.startDate || event.date, nowTs);
       const qualityScore = qualityBoost("event", event.id, qualityMap);
       const noveltyPenalty = favoriteSet.has(`event-${event.id}`) ? -15 : 0;
       const score = Math.round(baseScore + cityAffinity + freshness + qualityScore + noveltyPenalty);

@@ -44,6 +44,20 @@ function parseIsoDate(value) {
   return new Date(year, month - 1, day);
 }
 
+function normalizeEventDateValue(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const iso = raw.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
+}
+
+function getEventRange(event = {}) {
+  const startDate = normalizeEventDateValue(event.startDate || event.start_date || event.date);
+  const endDateRaw = normalizeEventDateValue(event.endDate || event.end_date || event.date);
+  const endDate = endDateRaw && endDateRaw >= startDate ? endDateRaw : startDate;
+  return { startDate, endDate: endDate || startDate };
+}
+
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
 }
@@ -164,23 +178,20 @@ function filterPlacesOpenAt(pool, date, timeLabel) {
   return openPool.length > 0 ? openPool : pool;
 }
 
-function isEventInWindow(eventDate, startDate, endDate) {
-  if (!eventDate) return false;
-  const parsed = parseIsoDate(String(eventDate).slice(0, 10));
-  if (!parsed) return false;
-  const value = parsed.getTime();
-  return value >= startDate.getTime() && value <= endDate.getTime();
+function isEventInWindow(event, startDate, endDate) {
+  const range = getEventRange(event);
+  if (!range.startDate) return false;
+  const eventStart = parseIsoDate(range.startDate);
+  const eventEnd = parseIsoDate(range.endDate || range.startDate);
+  if (!eventStart || !eventEnd) return false;
+  return eventStart.getTime() <= endDate.getTime() && eventEnd.getTime() >= startDate.getTime();
 }
 
-function isSameDay(eventDate, targetDate) {
-  if (!eventDate) return false;
-  const parsed = parseIsoDate(String(eventDate).slice(0, 10));
-  if (!parsed) return false;
-  return (
-    parsed.getFullYear() === targetDate.getFullYear() &&
-    parsed.getMonth() === targetDate.getMonth() &&
-    parsed.getDate() === targetDate.getDate()
-  );
+function isSameDay(event, targetDate) {
+  const range = getEventRange(event);
+  if (!range.startDate) return false;
+  const targetIso = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${String(targetDate.getDate()).padStart(2, "0")}`;
+  return targetIso >= range.startDate && targetIso <= (range.endDate || range.startDate);
 }
 
 function dayLabel(index, horizon) {
@@ -294,7 +305,7 @@ function computeTrustMeta({
     }
   }
 
-  if (itemType === "event" && isSameDay(item?.date, date)) {
+  if (itemType === "event" && isSameDay(item, date)) {
     score += 14;
     reason.push("date-matched event");
   }
@@ -437,7 +448,7 @@ function buildItinerary({
   const eventRows = events.filter(
     (row) =>
       normalize(row.city) === normalize(city) &&
-      isEventInWindow(row.date, startDate, endDate)
+      isEventInWindow(row, startDate, endDate)
   );
 
   const cafes = placeRows.filter((p) => p.type === "cafe");
@@ -452,7 +463,7 @@ function buildItinerary({
 
   return Array.from({ length: daysCount }).map((_, dayIndex) => {
     const currentDate = addDays(startDate, dayIndex);
-    const dayEvents = eventRows.filter((event) => isSameDay(event.date, currentDate));
+    const dayEvents = eventRows.filter((event) => isSameDay(event, currentDate));
     const stops = [];
 
     if (dayIndex === 0 && daysCount > 1) {
