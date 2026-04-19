@@ -649,7 +649,13 @@ export default function EventsPage() {
       : await insertGlobalEvent(payload);
 
     if (error || !data) {
-      setGlobalError("Could not save off-grid event to Supabase yet.");
+      const code = String(error?.code || "").trim();
+      const message = String(error?.message || error?.details || "Unknown error").trim();
+      const hint = String(error?.hint || "").trim();
+      const suffix = [code ? `[${code}]` : "", message, hint].filter(Boolean).join(" ");
+      setGlobalError(`Could not save off-grid event to Supabase yet. ${suffix}`);
+      // Keep full server error in console for faster ops debugging.
+      console.error("Off-grid save failed", { error, payload, editingGlobalEventId });
       setIsSavingGlobal(false);
       return;
     }
