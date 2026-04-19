@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build --webpack --debug",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backfill:place-locations": "node scripts/backfill-place-locations.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.48.0",

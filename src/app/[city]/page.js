@@ -111,6 +111,19 @@ function cityNameFromConfig(config, citySlug) {
   return titleName || humanizeCitySlug(citySlug) || "this city";
 }
 
+function getEntityAddressLabel(entity) {
+  const directAddress = String(entity?.location || entity?.address || "").trim();
+  if (directAddress) return directAddress;
+
+  const lat = Number(entity?.lat);
+  const lng = Number(entity?.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)} (map coordinates)`;
+  }
+
+  return "Address not available yet.";
+}
+
 const REPORT_REASONS = [
   { value: "safety", label: "Safety issue", helper: "Unsafe behavior, consent issues, harassment or risky conditions." },
   { value: "wrong_info", label: "Wrong info", helper: "Hours, location, link, category, or details are incorrect." },
@@ -475,6 +488,8 @@ export default function CityPage() {
   const [eventAdminDraft, setEventAdminDraft] = useState(() => buildEventAdminDraft(null));
   const [isSavingPlaceAdmin, setIsSavingPlaceAdmin] = useState(false);
   const [isSavingEventAdmin, setIsSavingEventAdmin] = useState(false);
+  const [isSavingPlaceAddressOnly, setIsSavingPlaceAddressOnly] = useState(false);
+  const [isSavingEventAddressOnly, setIsSavingEventAddressOnly] = useState(false);
   const [isDeletingPlaceAdmin, setIsDeletingPlaceAdmin] = useState(false);
   const [isDeletingEventAdmin, setIsDeletingEventAdmin] = useState(false);
   const [trustedPlaceSavesCount, setTrustedPlaceSavesCount] = useState(0);
@@ -1189,6 +1204,8 @@ export default function CityPage() {
         vibe,
         hours: placeHours,
         link: placeLink,
+        location: address,
+        address,
         lat: coords.lat,
         lng: coords.lng,
         city,
@@ -1657,6 +1674,71 @@ export default function CityPage() {
     }
   }, [closePlace, isAdmin, reloadPlaces, resolvePlaceDbId, selectedPlace, showToast]);
 
+  const handleAdminSavePlaceAddressOnly = useCallback(async () => {
+    if (!isAdmin || !selectedPlace) return;
+    const locationValue = String(placeAdminDraft.location || "").trim();
+    if (!locationValue) {
+      showToast("Address is required.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    setIsSavingPlaceAddressOnly(true);
+    try {
+      const coords = await geocodeAddress(locationValue);
+      if (!coords) {
+        showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+        return;
+      }
+
+      const dbId = await resolvePlaceDbId(selectedPlace);
+      if (!dbId) {
+        showToast("Could not resolve place record in database.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      let updateResult = await supabase
+        .from("places")
+        .update({
+          location: locationValue,
+          lat: coords.lat,
+          lng: coords.lng,
+        })
+        .eq("id", dbId)
+        .select("id")
+        .single();
+
+      if (updateResult.error) {
+        const errorText = `${updateResult.error?.code || ""} ${updateResult.error?.message || ""}`.toLowerCase();
+        const missingLocation =
+          errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+        if (missingLocation) {
+          updateResult = await supabase
+            .from("places")
+            .update({
+              lat: coords.lat,
+              lng: coords.lng,
+            })
+            .eq("id", dbId)
+            .select("id")
+            .single();
+        }
+      }
+
+      if (updateResult.error) {
+        showToast(updateResult.error.message || "Could not save venue address.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      await reloadPlaces();
+      showToast("Venue address updated.", { tone: "ok", duration: 2100 });
+    } catch (error) {
+      showToast(error?.message || "Could not save venue address.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsSavingPlaceAddressOnly(false);
+    }
+  }, [geocodeAddress, isAdmin, placeAdminDraft.location, reloadPlaces, resolvePlaceDbId, selectedPlace, showToast]);
+
   const handleAdminSaveEvent = useCallback(async () => {
     if (!isAdmin || !selectedEvent) return;
     const startDate = normalizeIsoDate(eventAdminDraft.startDate);
@@ -1821,6 +1903,71 @@ export default function CityPage() {
       setIsSavingEventAdmin(false);
     }
   }, [buildSelectionUrl, city, eventAdminDraft, fetchEvents, geocodeAddress, isAdmin, resolveEventDbId, router, selectedEvent, showToast]);
+
+  const handleAdminSaveEventAddressOnly = useCallback(async () => {
+    if (!isAdmin || !selectedEvent) return;
+    const locationValue = String(eventAdminDraft.location || "").trim();
+    if (!locationValue) {
+      showToast("Address is required.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    setIsSavingEventAddressOnly(true);
+    try {
+      const coords = await geocodeAddress(locationValue);
+      if (!coords) {
+        showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+        return;
+      }
+
+      const dbId = await resolveEventDbId(selectedEvent);
+      if (!dbId) {
+        showToast("Could not resolve event record in database.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      let updateResult = await supabase
+        .from("events")
+        .update({
+          location: locationValue,
+          lat: coords.lat,
+          lng: coords.lng,
+        })
+        .eq("id", dbId)
+        .select("id")
+        .single();
+
+      if (updateResult.error) {
+        const errorText = `${updateResult.error?.code || ""} ${updateResult.error?.message || ""}`.toLowerCase();
+        const missingLocation =
+          errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+        if (missingLocation) {
+          updateResult = await supabase
+            .from("events")
+            .update({
+              lat: coords.lat,
+              lng: coords.lng,
+            })
+            .eq("id", dbId)
+            .select("id")
+            .single();
+        }
+      }
+
+      if (updateResult.error) {
+        showToast(updateResult.error.message || "Could not save event address.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      await fetchEvents();
+      showToast("Event address updated.", { tone: "ok", duration: 2100 });
+    } catch (error) {
+      showToast(error?.message || "Could not save event address.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsSavingEventAddressOnly(false);
+    }
+  }, [eventAdminDraft.location, fetchEvents, geocodeAddress, isAdmin, resolveEventDbId, selectedEvent, showToast]);
 
   const handleAdminDeleteEvent = useCallback(async () => {
     if (!isAdmin || !selectedEvent) return;
@@ -2601,6 +2748,9 @@ export default function CityPage() {
               </span>
             </div>
             <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedPlace.name}</h2>
+            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
+              Address: {getEntityAddressLabel(selectedPlace)}
+            </p>
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-fuchsia-300" />
             {polishVenueDescription(selectedPlace, cityName) && (
               <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
@@ -2713,9 +2863,17 @@ export default function CityPage() {
                     <input
                       value={placeAdminDraft.location}
                       onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, location: event.target.value }))}
-                      placeholder="Location / address (updates map pin)"
+                      placeholder="Address / location (updates map pin)"
                       className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
+                    <button
+                      type="button"
+                      onClick={handleAdminSavePlaceAddressOnly}
+                      disabled={isSavingPlaceAddressOnly}
+                      className="w-full rounded-xl border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55 disabled:opacity-60"
+                    >
+                      {isSavingPlaceAddressOnly ? "Saving address..." : "Save address only"}
+                    </button>
                     <input
                       value={placeAdminDraft.hours}
                       onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, hours: event.target.value }))}
@@ -2950,11 +3108,9 @@ export default function CityPage() {
                 Vibe: {selectedEvent.vibe}
               </p>
             )}
-            {selectedEvent.location && (
-              <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
-                Location: {selectedEvent.location}
-              </p>
-            )}
+            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
+              Address: {getEntityAddressLabel(selectedEvent)}
+            </p>
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
             {polishEventDescription(selectedEvent, cityName) && (
               <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">
@@ -3049,9 +3205,17 @@ export default function CityPage() {
                     <input
                       value={eventAdminDraft.location}
                       onChange={(event) => setEventAdminDraft((current) => ({ ...current, location: event.target.value }))}
-                      placeholder="Location (area / venue / neighborhood)"
+                      placeholder="Address / location (area / venue / neighborhood)"
                       className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
+                    <button
+                      type="button"
+                      onClick={handleAdminSaveEventAddressOnly}
+                      disabled={isSavingEventAddressOnly}
+                      className="w-full rounded-xl border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55 disabled:opacity-60"
+                    >
+                      {isSavingEventAddressOnly ? "Saving address..." : "Save address only"}
+                    </button>
                     <textarea
                       value={eventAdminDraft.description}
                       onChange={(event) => setEventAdminDraft((current) => ({ ...current, description: event.target.value }))}

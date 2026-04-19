@@ -30,7 +30,7 @@ export function usePlaces(city) {
         .select("*"),
       supabase
         .from("places")
-        .select("id, name, city, link"),
+        .select("id, name, city, link, location"),
     ]);
 
     if (error) {
@@ -39,7 +39,7 @@ export function usePlaces(city) {
       const [{ data: fallbackPlaces, error: fallbackPlacesError }, { data: fallbackReviews, error: fallbackReviewsError }] = await Promise.all([
         supabase
           .from("places")
-          .select("id, name, type, city, lat, lng, description, vibe, hours, link"),
+          .select("id, name, type, city, lat, lng, description, vibe, hours, link, location"),
         supabase
           .from("reviews")
           .select("place_id, rating"),
@@ -101,15 +101,33 @@ export function usePlaces(city) {
           String(row.link),
         ]),
     );
+    const placeLocationById = new Map(
+      placeRows
+        .filter((row) => row?.id && row?.location)
+        .map((row) => [String(row.id), String(row.location)]),
+    );
+    const placeLocationByCityName = new Map(
+      placeRows
+        .filter((row) => row?.name && row?.city && row?.location)
+        .map((row) => [
+          `${String(row.city).toLowerCase()}::${String(row.name).trim().toLowerCase()}`,
+          String(row.location),
+        ]),
+    );
 
     const mergedViewRows = (data || []).map((row) => {
       const byId = placeLinkById.get(String(row.id || ""));
       const byCityName = placeLinkByCityName.get(
         `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
       );
+      const locationById = placeLocationById.get(String(row.id || ""));
+      const locationByCityName = placeLocationByCityName.get(
+        `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
+      );
       return {
         ...row,
         hours: String(row.hours || "").trim(),
+        location: String(row.location || locationById || locationByCityName || "").trim(),
         link: String(row.link || byId || byCityName || "").trim(),
       };
     });
@@ -153,6 +171,7 @@ export function usePlaces(city) {
       vibe: place.vibe,
       hours: place.hours,
       link: place.link,
+      location: String(place.location || place.address || "").trim() || null,
       lat: place.lat,
       lng: place.lng,
       city: place.city,
@@ -207,6 +226,7 @@ export function usePlaces(city) {
         vibe: String(place?.vibe || "").trim(),
         hours: String(place?.hours || "").trim(),
         link: String(place?.link || "").trim(),
+        location: String(place?.location || place?.address || "").trim() || null,
         lat: place?.lat ?? null,
         lng: place?.lng ?? null,
         city: cityName,
