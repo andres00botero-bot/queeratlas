@@ -370,6 +370,7 @@ function buildEventAdminDraft(event) {
     name: String(event?.name || ""),
     startDate: String(normalized.startDate || ""),
     endDate: String(normalized.endDate || ""),
+    location: String(event?.location || ""),
     vibe: String(event?.vibe || ""),
     description: String(event?.description || ""),
     link: String(event?.link || ""),
@@ -1219,6 +1220,7 @@ export default function CityPage() {
         date: startDate,
         start_date: startDate,
         end_date: endDate || startDate,
+        location: eventAddress,
         vibe: eventVibe.trim() || null,
         description: eventDescription,
         link: eventLink,
@@ -1233,8 +1235,10 @@ export default function CityPage() {
           (errorText.includes("column") || errorText.includes("schema cache"));
         const missingVibe =
           errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingLocation =
+          errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingDateRange || missingVibe) {
+        if (missingDateRange || missingVibe || missingLocation) {
           const legacyPayload = {
             name: eventName,
             city,
@@ -1587,6 +1591,7 @@ export default function CityPage() {
         date: startDate,
         start_date: startDate,
         end_date: endDate || startDate,
+        location: eventAdminDraft.location.trim() || null,
         vibe: eventAdminDraft.vibe.trim() || null,
         description: eventAdminDraft.description.trim(),
         link: eventAdminDraft.link.trim() || null,
@@ -1607,8 +1612,10 @@ export default function CityPage() {
             (errorText.includes("column") || errorText.includes("schema cache"));
           const missingVibe =
             errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingLocation =
+            errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe) {
+          if (missingDateRange || missingVibe || missingLocation) {
             const legacyPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -1658,8 +1665,10 @@ export default function CityPage() {
             (errorText.includes("column") || errorText.includes("schema cache"));
           const missingVibe =
             errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingLocation =
+            errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe) {
+          if (missingDateRange || missingVibe || missingLocation) {
             const legacyInsertPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -2855,6 +2864,11 @@ export default function CityPage() {
                 Vibe: {selectedEvent.vibe}
               </p>
             )}
+            {selectedEvent.location && (
+              <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
+                Location: {selectedEvent.location}
+              </p>
+            )}
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
             {polishEventDescription(selectedEvent, cityName) && (
               <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">
@@ -2944,6 +2958,12 @@ export default function CityPage() {
                       value={eventAdminDraft.vibe}
                       onChange={(event) => setEventAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
                       placeholder="Vibe"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={eventAdminDraft.location}
+                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, location: event.target.value }))}
+                      placeholder="Location (area / venue / neighborhood)"
                       className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
                     <textarea
