@@ -359,6 +359,7 @@ function buildPlaceAdminDraft(place) {
     type: String(place?.type || "bar"),
     description: String(place?.description || ""),
     vibe: String(place?.vibe || ""),
+    location: String(place?.location || ""),
     hours: String(place?.hours || ""),
     link: String(place?.link || ""),
   };
@@ -1238,12 +1239,7 @@ export default function CityPage() {
         const missingLocation =
           errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingLocation) {
-          showToast("Database schema missing events.location. Add the column before saving event location.", { tone: "warn", duration: 3200 });
-          return;
-        }
-
-        if (missingDateRange || missingVibe) {
+        if (missingDateRange || missingVibe || missingLocation) {
           const legacyPayload = {
             name: eventName,
             city,
@@ -1491,37 +1487,89 @@ export default function CityPage() {
     setIsSavingPlaceAdmin(true);
     try {
       const dbId = await resolvePlaceDbId(selectedPlace);
+      const locationValue = String(placeAdminDraft.location || "").trim();
+      let nextLat = selectedPlace.lat ?? null;
+      let nextLng = selectedPlace.lng ?? null;
+
+      if (locationValue) {
+        const coords = await geocodeAddress(locationValue);
+        if (!coords) {
+          showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+          return;
+        }
+        nextLat = coords.lat;
+        nextLng = coords.lng;
+      }
+
       const payload = {
         name: placeAdminDraft.name.trim(),
         type: placeAdminDraft.type,
         description: placeAdminDraft.description.trim(),
         vibe: placeAdminDraft.vibe.trim(),
+        location: locationValue || null,
         hours: placeAdminDraft.hours.trim(),
         link: placeAdminDraft.link.trim() || null,
+        lat: nextLat,
+        lng: nextLng,
       };
 
       if (dbId) {
-        const { error } = await supabase
+        let updateResult = await supabase
           .from("places")
           .update(payload)
-          .eq("id", dbId);
+          .eq("id", dbId)
+          .select("id")
+          .single();
+
+        if (updateResult.error) {
+          const errorText = `${updateResult.error?.code || ""} ${updateResult.error?.message || ""}`.toLowerCase();
+          const missingLocation =
+            errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+          if (missingLocation) {
+            const fallbackPayload = { ...payload };
+            delete fallbackPayload.location;
+            updateResult = await supabase
+              .from("places")
+              .update(fallbackPayload)
+              .eq("id", dbId)
+              .select("id")
+              .single();
+          }
+        }
+        const { error } = updateResult;
 
         if (error) {
           showToast(error.message || "Could not save venue changes.", { tone: "warn", duration: 2600 });
           return;
         }
       } else {
-        const insertPayload = {
+        let insertPayload = {
           ...payload,
           city: String(selectedPlace.city || city).trim(),
-          lat: selectedPlace.lat ?? null,
-          lng: selectedPlace.lng ?? null,
         };
-        const { data: inserted, error } = await supabase
+        let insertResult = await supabase
           .from("places")
           .insert([insertPayload])
           .select("id")
           .single();
+
+        if (insertResult.error) {
+          const errorText = `${insertResult.error?.code || ""} ${insertResult.error?.message || ""}`.toLowerCase();
+          const missingLocation =
+            errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+          if (missingLocation) {
+            insertPayload = { ...insertPayload };
+            delete insertPayload.location;
+            insertResult = await supabase
+              .from("places")
+              .insert([insertPayload])
+              .select("id")
+              .single();
+          }
+        }
+        const { data: inserted, error } = insertResult;
 
         if (error || !inserted?.id) {
           showToast(error?.message || "Could not save venue changes.", { tone: "warn", duration: 2600 });
@@ -1539,7 +1587,7 @@ export default function CityPage() {
     } finally {
       setIsSavingPlaceAdmin(false);
     }
-  }, [buildSelectionUrl, city, isAdmin, placeAdminDraft, reloadPlaces, resolvePlaceDbId, router, selectedPlace, showToast]);
+  }, [buildSelectionUrl, city, geocodeAddress, isAdmin, placeAdminDraft, reloadPlaces, resolvePlaceDbId, router, selectedPlace, showToast]);
 
   const handleAdminDeletePlace = useCallback(async () => {
     if (!isAdmin || !selectedPlace) return;
@@ -1580,8 +1628,6 @@ export default function CityPage() {
     const endDateInput = normalizeIsoDate(eventAdminDraft.endDate);
     const endDate = endDateInput && endDateInput >= startDate ? endDateInput : startDate;
     const locationValue = String(eventAdminDraft.location || "").trim();
-    const previousLocationValue = String(selectedEvent.location || "").trim();
-    const locationChanged = locationValue !== previousLocationValue;
 
     if (!eventAdminDraft.name.trim() || !startDate) {
       showToast("Event name and start date are required.", { tone: "warn", duration: 2400 });
@@ -1591,18 +1637,13 @@ export default function CityPage() {
       showToast("End date must be same day or after start date.", { tone: "warn", duration: 2400 });
       return;
     }
-    if (!locationValue) {
-      showToast("Location is required for event editing.", { tone: "warn", duration: 2400 });
-      return;
-    }
-
     setIsSavingEventAdmin(true);
     try {
       const dbId = await resolveEventDbId(selectedEvent);
       let nextLat = selectedEvent.lat ?? null;
       let nextLng = selectedEvent.lng ?? null;
 
-      if (locationChanged) {
+      if (locationValue) {
         const coords = await geocodeAddress(locationValue);
         if (!coords) {
           showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
@@ -1643,12 +1684,7 @@ export default function CityPage() {
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingLocation) {
-            showToast("Database schema missing events.location. Add the column before saving event location.", { tone: "warn", duration: 3200 });
-            return;
-          }
-
-          if (missingDateRange || missingVibe) {
+          if (missingDateRange || missingVibe || missingLocation) {
             const legacyPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -1701,12 +1737,7 @@ export default function CityPage() {
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingLocation) {
-            showToast("Database schema missing events.location. Add the column before saving event location.", { tone: "warn", duration: 3200 });
-            return;
-          }
-
-          if (missingDateRange || missingVibe) {
+          if (missingDateRange || missingVibe || missingLocation) {
             const legacyInsertPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -2666,6 +2697,12 @@ export default function CityPage() {
                       value={placeAdminDraft.vibe}
                       onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
                       placeholder="Vibe"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={placeAdminDraft.location}
+                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, location: event.target.value }))}
+                      placeholder="Location / address (updates map pin)"
                       className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
                     <input
