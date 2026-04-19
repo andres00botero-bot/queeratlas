@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
@@ -691,24 +690,24 @@ export default function NowPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white px-6 py-8">
+    <main className="min-h-screen bg-black px-5 py-6 text-white sm:px-6 sm:py-8">
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-[32px] border border-orange-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_24%),radial-gradient(circle_at_80%_20%,rgba(239,68,68,0.14),transparent_28%),linear-gradient(135deg,rgba(67,20,7,0.92),rgba(10,10,10,0.98),rgba(120,53,15,0.88))] p-8 shadow-[0_30px_120px_rgba(251,146,60,0.08)]">
+        <div className="mb-8 rounded-[30px] border border-cyan-300/15 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.2),transparent_25%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.12),transparent_30%),linear-gradient(135deg,rgba(8,38,54,0.92),rgba(10,10,10,0.98),rgba(11,28,44,0.88))] p-7 shadow-[0_30px_120px_rgba(34,211,238,0.08)] sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs uppercase tracking-[0.35em] text-orange-200/90">Live Discovery + Editorial Signal</p>
+              <p className="text-xs uppercase tracking-[0.35em] text-cyan-200/85">Live Discovery + Editorial Signal</p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">Queer World News</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-200">
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/75">
                 One mixed stream: what is happening now, what is rising, what changed in nightlife, rights/safety updates, major events, and culture tips.
               </p>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/25 p-4 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Focus city</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-white/50">Focus city</p>
               <select
                 value={selectedCity}
                 onChange={(event) => setSelectedCity(event.target.value)}
-                className="mt-3 w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none focus:border-orange-300"
+                className="mt-3 w-full rounded-xl border border-white/15 bg-black px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
               >
                 <option value="all">All cities</option>
                 {cityOptions.map((city) => (
@@ -739,17 +738,17 @@ export default function NowPage() {
 
         <section className="mb-6">
           <div className="grid items-stretch gap-6 xl:grid-cols-[1.35fr_0.9fr]">
-            <section className="flex h-full min-h-[920px] flex-col rounded-[28px] border border-fuchsia-300/15 bg-[linear-gradient(180deg,rgba(44,18,38,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(244,114,182,0.10)]">
+            <section className="flex h-full flex-col rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(14,24,36,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.08)]">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-fuchsia-200">Mixed feed</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-cyan-200/85">Mixed feed</p>
                   <h2 className="mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
                 </div>
                 {isAdmin && (
                   <button
                     type="button"
                     onClick={() => setShowAdminForm((current) => !current)}
-                    className="rounded-full border border-fuchsia-300/28 bg-fuchsia-300/10 px-4 py-2 text-xs text-fuchsia-100 transition hover:border-fuchsia-200/45"
+                    className="rounded-full border border-cyan-300/28 bg-cyan-300/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/45"
                   >
                     {showAdminForm ? "Close admin publish" : "Admin publish"}
                   </button>
@@ -757,7 +756,7 @@ export default function NowPage() {
               </div>
 
               {isAdmin && showAdminForm && (
-                <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-fuchsia-300/18 bg-fuchsia-300/[0.05] p-4 md:grid-cols-2">
+                <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
                   <input
                     value={adminForm.title}
                     onChange={(event) => setAdminForm((current) => ({ ...current, title: event.target.value }))}
@@ -805,7 +804,7 @@ export default function NowPage() {
                   <button
                     type="submit"
                     disabled={isPublishingNews}
-                    className="rounded-xl bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
+                    className="rounded-xl bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
                   >
                     {isPublishingNews ? "Publishing..." : "Publish news"}
                   </button>
@@ -838,9 +837,9 @@ export default function NowPage() {
                           );
                         }
                       }}
-                      className="cursor-pointer rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 transition hover:-translate-y-[1px] hover:border-fuchsia-200/26 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/45"
+                      className="cursor-pointer rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 transition hover:-translate-y-[1px] hover:border-cyan-200/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
                     >
-                      <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-fuchsia-200/80 via-cyan-200/65 to-transparent" />
+                      <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-cyan-200/80 via-sky-200/65 to-transparent" />
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-xs uppercase tracking-[0.16em] text-white/45">{item.city || "Global"}</p>
                         <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
@@ -901,19 +900,15 @@ export default function NowPage() {
               </div>
             </section>
 
-            <section className="flex h-full min-h-[920px] flex-col rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(11,44,56,0.75),rgba(9,9,9,0.96))] p-6 shadow-[0_24px_64px_rgba(34,211,238,0.10)]">
+            <section className="relative flex h-full flex-col overflow-hidden rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(11,44,56,0.75),rgba(9,9,9,0.96))] p-6 shadow-[0_24px_64px_rgba(34,211,238,0.10)]">
+              <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-amber-300/10 blur-3xl" />
+              <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-rose-300/8 blur-3xl" />
               <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3.5">
-                  <Image
-                    src="/qa-top-destination-badge-premium.svg"
-                    alt="Top destination badge"
-                    width={88}
-                    height={88}
-                    className="h-16 w-16 rounded-full border border-cyan-200/45 shadow-[0_0_46px_rgba(34,211,238,0.38)]"
-                  />
-                  <div>
+                <div>
                   <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">Ranking</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">Top 15 Queer Travel Destinations</h3>
+                  <div className="mt-2 inline-flex items-center rounded-full border border-cyan-200/26 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-100/90">
+                    Atlas ranking editorial
                   </div>
                 </div>
                 <select
@@ -983,18 +978,73 @@ export default function NowPage() {
                 </p>
               )}
 
-              <div className="mt-4 grid flex-1 grid-rows-[repeat(15,minmax(0,1fr))] gap-2">
+              {!isRankingEditorOpen && (
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  {[0, 1, 2].map((index) => {
+                    const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
+                    const cityKey = String(item.city || "").toLowerCase();
+                    const citySlug = cityKey.replaceAll(" ", "_").trim();
+                    const cityExists = cityOptions.includes(citySlug);
+                    const medalTone =
+                      index === 0
+                        ? "from-amber-200/90 via-yellow-200/70 to-amber-200/30 border-amber-200/35"
+                        : index === 1
+                          ? "from-slate-200/80 via-slate-300/55 to-slate-200/25 border-slate-200/30"
+                          : "from-orange-300/80 via-amber-300/55 to-orange-300/25 border-orange-200/30";
+                    return (
+                      <button
+                        key={`podium-${selectedRankingYear}-${index + 1}`}
+                        type="button"
+                        disabled={!cityExists}
+                        onClick={() => {
+                          if (!cityExists) return;
+                          router.push(`/${citySlug}`);
+                        }}
+                        className={`group relative overflow-hidden rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 text-left transition ${
+                          cityExists
+                            ? "hover:-translate-y-[1px] hover:border-cyan-200/45 hover:shadow-[0_20px_52px_rgba(34,211,238,0.14)]"
+                            : "opacity-70"
+                        } ${medalTone}`}
+                      >
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/18 bg-white/10 text-sm font-semibold text-white">
+                            #{index + 1}
+                          </span>
+                          <span className="text-[10px] uppercase tracking-[0.14em] text-white/75">
+                            {index === 0 ? "Global icon" : index === 1 ? "High signal" : "Rising elite"}
+                          </span>
+                        </div>
+                        <p className="truncate text-base font-semibold text-white">
+                          {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-white/65">{item.country || "Country TBA"}</p>
+                        <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/70">
+                          {item.signal || "Signal pending editorial update."}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className={`mt-4 ${isRankingEditorOpen ? "grid flex-1 grid-rows-[repeat(15,minmax(0,1fr))] gap-2" : "space-y-2.5"}`}>
                 {Array.from({ length: 15 }).map((_, index) => {
+                  if (!isRankingEditorOpen && index < 3) return null;
                   const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
                   const cityKey = String(item.city || "").toLowerCase();
                   const citySlug = cityKey.replaceAll(" ", "_").trim();
                   const cityExists = cityOptions.includes(citySlug);
+                  const signalStrength = Math.max(22, 100 - index * 4);
                   return (
                     <div
                       key={`${selectedRankingYear}-${index + 1}`}
-                      className="grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border border-white/10 bg-black/25 px-3 py-2"
+                      className={`grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border px-3 py-2 transition ${
+                        isRankingEditorOpen
+                          ? "border-white/10 bg-black/25"
+                          : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] hover:border-cyan-200/32"
+                      }`}
                     >
-                      <p className="text-xs font-semibold text-cyan-200/90">#{index + 1}</p>
+                      <p className={`text-xs font-semibold ${index < 5 ? "text-cyan-100" : "text-cyan-200/90"}`}>#{index + 1}</p>
                       {isAdmin && isRankingEditorOpen ? (
                         <div className="grid gap-1">
                           <input
@@ -1024,7 +1074,13 @@ export default function NowPage() {
                             {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
                           </p>
                           <p className="truncate text-[11px] text-white/55">{item.country || "Country TBA"}</p>
-                          <p className="truncate text-[11px] text-white/55">{item.signal || "Signal pending editorial update."}</p>
+                          <p className="truncate text-[11px] text-white/62">{item.signal || "Signal pending editorial update."}</p>
+                          <div className="mt-2 h-1.5 w-full rounded-full bg-white/10">
+                            <span
+                              className="block h-1.5 rounded-full bg-gradient-to-r from-cyan-200/85 via-sky-200/75 to-cyan-200/45"
+                              style={{ width: `${signalStrength}%` }}
+                            />
+                          </div>
                         </div>
                       )}
                       <button
@@ -1095,7 +1151,7 @@ export default function NowPage() {
                   </div>
                   <h3 className="mt-3 text-lg font-semibold text-white">{event.name}</h3>
                   <p
-                    className={`mt-3 text-sm leading-6 text-gray-300 transition-all ${
+                    className={`mt-3 text-sm leading-6 text-white/65 transition-all ${
                       String(expandedSoonEventId) === String(event.id) ? "" : "line-clamp-2"
                     }`}
                   >
@@ -1139,8 +1195,8 @@ export default function NowPage() {
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-yellow-300/15 bg-[linear-gradient(180deg,rgba(54,36,10,0.95),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(250,204,21,0.07)]">
-            <p className="text-xs uppercase tracking-[0.25em] text-yellow-200">Momentum</p>
+          <section className="rounded-[28px] border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(20,40,50,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.07)]">
+            <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">Momentum</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">Cities with signal</h2>
 
             <div className="mt-5 space-y-3">
@@ -1148,13 +1204,13 @@ export default function NowPage() {
                 <button
                   key={city.city}
                   onClick={() => router.push(`/${city.city.toLowerCase()}`)}
-                  className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(57,43,13,0.8),rgba(11,11,11,0.96))] px-4 py-4 text-left transition hover:border-yellow-200/30"
+                  className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(22,44,56,0.72),rgba(11,11,11,0.96))] px-4 py-4 text-left transition hover:border-cyan-200/30"
                 >
                   <div>
                     <p className="text-sm font-semibold text-white">{city.city}</p>
-                    <p className="mt-1 text-xs text-gray-400">{city.places} places | {city.reviews} reviews</p>
+                    <p className="mt-1 text-xs text-white/55">{city.places} places | {city.reviews} reviews</p>
                   </div>
-                  <span className="rounded-full bg-yellow-200/10 px-3 py-1 text-xs text-yellow-100">Hot</span>
+                  <span className="rounded-full bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">Hot</span>
                 </button>
               ))}
               {cityMomentum.length === 0 && (
@@ -1177,15 +1233,15 @@ export default function NowPage() {
           </section>
         </div>
 
-        <section className="mt-6 rounded-[28px] border border-pink-300/15 bg-[linear-gradient(180deg,rgba(55,16,31,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(244,114,182,0.08)]">
+        <section className="mt-6 rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(18,30,44,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(56,189,248,0.08)]">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-pink-200">This Week</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">This Week</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">Build your next move</h2>
             </div>
             <button
               onClick={() => router.push("/favorites")}
-              className="rounded-full border border-pink-300/30 bg-pink-300/8 px-4 py-2 text-xs text-pink-100 transition hover:border-pink-200 hover:bg-pink-300/15"
+              className="rounded-full border border-cyan-300/30 bg-cyan-300/8 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200 hover:bg-cyan-300/15"
             >
               Open favorites
             </button>
@@ -1193,19 +1249,19 @@ export default function NowPage() {
 
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-pink-200/80">Events this week</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Events this week</p>
               <p className="mt-3 text-4xl font-semibold text-white">{thisWeekEvents.length}</p>
-              <p className="mt-2 text-sm text-gray-400">Time-based queer culture you can act on now.</p>
+              <p className="mt-2 text-sm text-white/55">Time-based queer culture you can act on now.</p>
             </div>
             <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-pink-200/80">Trending places</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Trending places</p>
               <p className="mt-3 text-4xl font-semibold text-white">{trendingPlaces.length}</p>
-              <p className="mt-2 text-sm text-gray-400">Places with the strongest review gravity in this view.</p>
+              <p className="mt-2 text-sm text-white/55">Places with the strongest review gravity in this view.</p>
             </div>
             <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-pink-200/80">Active cities</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Active cities</p>
               <p className="mt-3 text-4xl font-semibold text-white">{cityMomentum.length}</p>
-              <p className="mt-2 text-sm text-gray-400">Places where signal is currently strongest.</p>
+              <p className="mt-2 text-sm text-white/55">Places where signal is currently strongest.</p>
             </div>
           </div>
         </section>
@@ -1246,11 +1302,11 @@ export default function NowPage() {
                 <div className="mb-4 h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(16,185,129,0.96),rgba(52,211,153,0.55),rgba(16,185,129,0.2))]" />
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/80">{place.city}</p>
-                  <p className="text-xs text-gray-400">★ {place.avgRating?.toFixed(1) || "-"}</p>
+                  <p className="text-xs text-white/55">* {place.avgRating?.toFixed(1) || "-"}</p>
                 </div>
                 <h3 className="mt-2 text-lg font-semibold text-white">{place.name}</h3>
                 <p className="mt-2 text-sm text-emerald-100/85">{place.vibe || place.type || "Queer signal"}</p>
-                <p className={`mt-3 text-sm leading-6 text-gray-300 ${isExpanded ? "" : "line-clamp-2"}`}>
+                <p className={`mt-3 text-sm leading-6 text-white/65 ${isExpanded ? "" : "line-clamp-2"}`}>
                   {place.description || "A place drawing real community attention right now."}
                 </p>
                 <div className="mt-4 flex items-center justify-between gap-3">

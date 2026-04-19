@@ -541,14 +541,13 @@ export default function Home() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#050505] text-white">
       <div className="relative">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.06),transparent_16%),radial-gradient(circle_at_22%_18%,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_80%_16%,rgba(59,130,246,0.07),transparent_20%),linear-gradient(180deg,#050505_0%,#080808_50%,#050505_100%)]" />
-        <div className="pointer-events-none absolute left-[-8%] top-16 h-72 w-72 rounded-full bg-rose-500/6 blur-3xl" />
-        <div className="pointer-events-none absolute right-[-4%] top-28 h-80 w-80 rounded-full bg-sky-400/6 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-20 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-amber-400/5 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_10%,rgba(244,114,182,0.09),transparent_23%),radial-gradient(circle_at_86%_14%,rgba(56,189,248,0.08),transparent_24%),linear-gradient(180deg,#050505_0%,#08080a_56%,#050505_100%)]" />
+        <div className="pointer-events-none absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-rose-500/6 blur-3xl" />
+        <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/6 blur-3xl" />
 
-        <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-6 py-8">
+        <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-6 sm:py-8">
           <div className={`mb-8 flex flex-wrap items-center justify-between gap-4 ${introClass()}`} style={introStyle(0)}>
-            <div className="rounded-full border border-fuchsia-200/15 bg-[linear-gradient(90deg,rgba(244,114,182,0.12),rgba(56,189,248,0.1))] px-4 py-2 text-xs uppercase tracking-[0.28em] text-white/78 backdrop-blur">
+            <div className="rounded-full border border-white/14 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-white/76 backdrop-blur">
               Global queer discovery
             </div>
 
@@ -570,7 +569,7 @@ export default function Home() {
                 <>
                   <button
                     onClick={() => router.push("/favorites")}
-                    className="rounded-full border border-fuchsia-200/28 bg-[linear-gradient(90deg,rgba(244,114,182,0.18),rgba(251,146,60,0.16))] px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/45"
+                    className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/45 hover:bg-fuchsia-200/14"
                   >
                     Your Atlas
                   </button>
@@ -607,7 +606,7 @@ export default function Home() {
 
           <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
             <section className={`pt-1 xl:pt-6 ${introClass()}`} style={introStyle(90)}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-[linear-gradient(90deg,rgba(56,189,248,0.14),rgba(16,185,129,0.12))] px-4 py-2 text-xs text-white/78 backdrop-blur">
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/18 bg-cyan-200/8 px-4 py-2 text-xs text-white/78 backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" />
                 Experience-first queer atlas
               </div>
@@ -620,12 +619,12 @@ export default function Home() {
                   height={96}
                   className="h-16 w-16 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
                 />
-                <h1 className="max-w-5xl text-4xl font-bold leading-[0.94] tracking-[-0.05em] text-white sm:text-6xl xl:text-7xl">
+                <h1 className="max-w-5xl text-4xl font-bold leading-[0.95] tracking-[-0.03em] text-white sm:text-6xl xl:text-7xl">
                   QUEER ATLAS
                 </h1>
               </div>
 
-              <p className="mt-5 max-w-2xl text-base leading-7 text-white/68 sm:text-lg">
+              <p className="mt-5 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
                 Find the city. Feel the signal. The global queer database for discovery,
                 vibe, community, and culture.
               </p>
@@ -657,14 +656,14 @@ export default function Home() {
                     onChange={(event) => setQuery(event.target.value)}
                     onFocus={() => setShowResults(true)}
                     placeholder="Search cities, places, events"
-                    className="w-full rounded-[28px] border border-fuchsia-200/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] pl-11 pr-24 py-4 text-[13px] text-white outline-none backdrop-blur placeholder:text-white/45 focus:border-fuchsia-300/45 focus:ring-2 focus:ring-fuchsia-300/20 sm:pl-14 sm:pr-32 sm:py-5 sm:text-base"
+                    className="w-full rounded-[24px] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] py-4 pl-11 pr-24 text-[13px] text-white outline-none backdrop-blur placeholder:text-white/45 focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/20 sm:py-5 sm:pl-14 sm:pr-32 sm:text-base"
                   />
 
                   <button
                     onClick={() => {
                       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-2.5 py-1.5 text-[10px] font-semibold text-black transition hover:scale-[1.02] sm:right-3 sm:px-4 sm:py-2 sm:text-xs"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-2.5 py-1.5 text-[10px] font-semibold text-black transition hover:scale-[1.02] sm:right-3 sm:px-4 sm:py-2 sm:text-xs"
                   >
                     Explore
                   </button>
@@ -719,21 +718,21 @@ export default function Home() {
                 </div>
               </div>
               <div className={`mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/55 ${introClass()}`} style={introStyle(220)}>
-                <span className="rounded-full border border-cyan-200/18 bg-cyan-200/8 px-3 py-1">Updated daily</span>
-                <span className="rounded-full border border-emerald-200/18 bg-emerald-200/8 px-3 py-1">Community-powered</span>
-                <span className="rounded-full border border-fuchsia-200/18 bg-fuchsia-200/8 px-3 py-1">Member-safe by design</span>
+                <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Updated daily</span>
+                <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Community-powered</span>
+                <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Member-safe by design</span>
               </div>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-3xl border border-cyan-200/15 bg-[linear-gradient(180deg,rgba(56,189,248,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                <div className="rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{cityCountDisplay}</p>
                 </div>
-                <div className="rounded-3xl border border-emerald-200/15 bg-[linear-gradient(180deg,rgba(16,185,129,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                <div className="rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Places</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{placeCountDisplay}</p>
                 </div>
-                <div className="rounded-3xl border border-amber-200/20 bg-[linear-gradient(180deg,rgba(251,191,36,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                <div className="rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Events</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{eventCountDisplay}</p>
                 </div>
@@ -741,10 +740,10 @@ export default function Home() {
             </section>
 
             <aside className={`grid gap-4 ${introClass()}`} style={introStyle(170)}>
-              <div className="overflow-hidden rounded-[32px] border border-orange-200/16 bg-[linear-gradient(155deg,rgba(58,26,16,0.56),rgba(24,24,24,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
+              <div className="overflow-hidden rounded-[28px] border border-white/12 bg-[linear-gradient(155deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-amber-200/70">
+                    <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/65">
                       Queer world news
                     </p>
                     <h2 className="mt-2 text-xl font-semibold text-white">
@@ -754,7 +753,7 @@ export default function Home() {
 
                   <button
                     onClick={() => router.push("/now")}
-                    className="rounded-full border border-orange-200/20 bg-orange-200/8 px-3 py-1.5 text-[11px] text-orange-100 transition hover:border-orange-200/40 hover:bg-orange-200/14"
+                    className="rounded-full border border-cyan-200/20 bg-cyan-200/8 px-3 py-1.5 text-[11px] text-cyan-100 transition hover:border-cyan-200/40 hover:bg-cyan-200/14"
                   >
                     Open news
                   </button>
@@ -765,13 +764,13 @@ export default function Home() {
                     <button
                       key={item.id}
                       onClick={() => router.push("/now")}
-                      className="w-full rounded-2xl border border-orange-200/14 bg-[linear-gradient(180deg,rgba(70,33,16,0.72),rgba(31,18,29,0.86),rgba(15,15,15,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-orange-200/35"
+                      className="w-full rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(32,32,32,0.88),rgba(14,14,14,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-white/26"
                     >
                       <div className="mb-2 flex items-center justify-between gap-3">
-                        <p className="rounded-full border border-orange-200/15 bg-orange-200/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-orange-100/85">
+                        <p className="rounded-full border border-white/12 bg-white/7 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/82">
                           {[item.city || "Global", formatDate(item.date)].join(" | ")}
                         </p>
-                        <span className="rounded-full border border-orange-200/18 bg-orange-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-orange-100">
+                        <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
                           {item.categoryLabel || "news"}
                         </span>
                       </div>
@@ -814,17 +813,17 @@ export default function Home() {
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow} ${introClass()}`}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow} ${introClass()}`}
                   style={introStyle(310 + (index * 55))}
                 >
-                  <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br ${item.accent}`} />
-                  <div className="absolute inset-[1px] rounded-[29px] bg-[#0b0b0b]/96" />
+                  <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
+                  <div className="absolute inset-[1px] rounded-[25px] bg-[#0b0b0b]/96" />
 
                   <div className="relative z-10">
                     <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                       {item.subtitle}
                     </p>
-                    <h3 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">
+                    <h3 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
                       {item.title}
                     </h3>
                     <p className="mt-3 max-w-xl text-sm leading-6 text-white/64">
@@ -848,11 +847,11 @@ export default function Home() {
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45 ${item.glow} ${introClass()}`}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow} ${introClass()}`}
                   style={introStyle(430 + (index * 55))}
                 >
-                  <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br ${item.accent}`} />
-                  <div className="absolute inset-[1px] rounded-[29px] bg-[#0b0b0b]/96" />
+                  <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
+                  <div className="absolute inset-[1px] rounded-[25px] bg-[#0b0b0b]/96" />
 
                   <div className="relative z-10">
                     <p className="text-xs uppercase tracking-[0.22em] text-white/40">
@@ -878,7 +877,7 @@ export default function Home() {
           </section>
 
           <section className={`mt-12 ${introClass()}`} style={introStyle(560)}>
-            <div className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.32)]">
+            <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.32)]">
               <p className="text-xs uppercase tracking-[0.28em] text-white/40">
                 City gravity
               </p>
@@ -921,7 +920,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={`mt-10 pb-4 ${introClass("opacity-80")}`} style={introStyle(680)}>
+          <section className={`mt-10 pb-4 ${introClass("opacity-70")}`} style={introStyle(680)}>
             <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
               <span className="mr-1 uppercase tracking-[0.18em] text-white/32">Search guides</span>
               <Link
