@@ -46,6 +46,70 @@ function mergeVibeIntoDescription(vibe = "", description = "") {
   return `[Vibe: ${cleanVibe}]${cleanDescription ? `\n\n${cleanDescription}` : ""}`;
 }
 
+function normalizeIsoDate(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const iso = raw.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
+}
+
+function normalizeEventRange(event = {}) {
+  const startDate = normalizeIsoDate(event.startDate || event.start_date || event.date);
+  const endDateRaw = normalizeIsoDate(event.endDate || event.end_date || event.date);
+  const endDate = endDateRaw && endDateRaw >= startDate ? endDateRaw : startDate;
+
+  return {
+    ...event,
+    startDate,
+    endDate,
+    // Backward-compatible key still used in some views/components.
+    date: startDate,
+  };
+}
+
+function formatEventDateLabel(event = {}) {
+  const normalized = normalizeEventRange(event);
+  if (!normalized.startDate) return "Date TBA";
+  if (!normalized.endDate || normalized.endDate === normalized.startDate) {
+    return formatDateLabel(normalized.startDate);
+  }
+
+  const start = new Date(normalized.startDate);
+  const end = new Date(normalized.endDate);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return formatDateLabel(normalized.startDate);
+  }
+
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const sameMonth = sameYear && start.getMonth() === end.getMonth();
+
+  if (sameMonth) {
+    return `${start.getDate()}-${end.getDate()} ${start.toLocaleDateString("en-GB", { month: "short" })} ${start.getFullYear()}`;
+  }
+
+  if (sameYear) {
+    return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${start.getFullYear()}`;
+  }
+
+  return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+}
+
+function eventOverlapsDate(event = {}, targetDate = "") {
+  const normalized = normalizeEventRange(event);
+  const date = normalizeIsoDate(targetDate);
+  if (!normalized.startDate || !date) return false;
+  return date >= normalized.startDate && date <= (normalized.endDate || normalized.startDate);
+}
+
+function eventOverlapsMonth(event = {}, year, month) {
+  const normalized = normalizeEventRange(event);
+  if (!normalized.startDate) return false;
+  const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
+  const monthEnd = `${year}-${String(month + 1).padStart(2, "0")}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, "0")}`;
+  const end = normalized.endDate || normalized.startDate;
+  return normalized.startDate <= monthEnd && end >= monthStart;
+}
+
 function formatDateLabel(value) {
   if (!value) return "Date TBA";
 
@@ -94,10 +158,12 @@ function qualityPillClass(tone) {
 
 function mapGlobalEventRow(row) {
   const parsed = splitLegacyVibe(row.description || "");
-  return {
+  return normalizeEventRange({
     id: String(row.id),
     name: row.name || "",
-    date: row.date || "",
+    date: row.start_date || row.date || "",
+    start_date: row.start_date || row.date || "",
+    end_date: row.end_date || row.start_date || row.date || "",
     location: row.location || "",
     vibe: row.vibe || parsed.vibe || "",
     description: parsed.description || "",
@@ -106,7 +172,7 @@ function mapGlobalEventRow(row) {
     lastChecked: row.last_checked || "",
     city: "Global",
     isGlobal: true,
-  };
+  });
 }
 
 function EventSkeletonCard({ tone = "orange" }) {
@@ -138,7 +204,8 @@ export default function EventsPage() {
   const [editingGlobalEventId, setEditingGlobalEventId] = useState("");
   const [globalForm, setGlobalForm] = useState({
     name: "",
-    date: "",
+    startDate: "",
+    endDate: "",
     location: "",
     vibe: "",
     description: "",
@@ -325,7 +392,7 @@ export default function EventsPage() {
       .order("date", { ascending: true });
 
     return {
-      data: mergeSeedEvents(data || []),
+      data: mergeSeedEvents(data || []).map((event) => normalizeEventRange(event)),
       error,
     };
   }, []);
@@ -412,12 +479,14 @@ export default function EventsPage() {
       city: "Global",
       isGlobal: true,
     }));
-    return [...events, ...offGrid].filter((event) => !blockedEventIds.has(String(event.id)));
+    return [...events, ...offGrid]
+      .map((event) => normalizeEventRange(event))
+      .filter((event) => !blockedEventIds.has(String(event.id)));
   }, [blockedEventIds, events, globalEvents]);
 
   const filteredEvents = useMemo(() => (
     selectedDate
-      ? calendarEvents.filter((event) => event.date === selectedDate)
+      ? calendarEvents.filter((event) => eventOverlapsDate(event, selectedDate))
       : calendarEvents
   ), [calendarEvents, selectedDate]);
 
@@ -457,24 +526,22 @@ export default function EventsPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const dated = calendarEvents.filter((event) => event.date);
+    const dated = calendarEvents.filter((event) => event.startDate);
     const futureFirst = dated
-      .filter((event) => new Date(event.date) >= today)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      .filter((event) => new Date(event.startDate) >= today)
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
 
     if (futureFirst.length >= 3) return futureFirst.slice(0, 3);
 
     const fallbackPast = dated
-      .filter((event) => new Date(event.date) < today)
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .filter((event) => new Date(event.startDate) < today)
+      .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
 
     return [...futureFirst, ...fallbackPast].slice(0, 3);
   }, [calendarEvents]);
   const activeCities = new Set(events.map((event) => event.city).filter(Boolean)).size;
   const eventsThisMonth = calendarEvents.filter((event) => {
-    if (!event.date) return false;
-    const eventDate = new Date(event.date);
-    return eventDate.getFullYear() === year && eventDate.getMonth() === month;
+    return eventOverlapsMonth(event, year, month);
   }).length;
 
   const handleReport = (event, clickEvent) => {
@@ -529,30 +596,34 @@ export default function EventsPage() {
       vibe: payload.vibe || null,
     };
 
-    const primaryInsert = await supabase
-      .from("global_events")
-      .insert([withVibe])
-      .select("*")
-      .single();
+    const tryInsert = async (insertPayload) => (
+      supabase.from("global_events").insert([insertPayload]).select("*").single()
+    );
 
-    if (!primaryInsert.error) return primaryInsert;
+    let attempt = await tryInsert(withVibe);
+    if (!attempt.error) return attempt;
 
-    const errorText = `${primaryInsert.error?.code || ""} ${primaryInsert.error?.message || ""}`.toLowerCase();
+    const errorText = `${attempt.error?.code || ""} ${attempt.error?.message || ""}`.toLowerCase();
     const missingVibeColumn = errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+    const missingStartOrEnd =
+      (errorText.includes("start_date") || errorText.includes("end_date")) &&
+      (errorText.includes("column") || errorText.includes("schema cache"));
 
-    if (!missingVibeColumn) return primaryInsert;
+    let fallbackPayload = { ...payload };
+    if (missingVibeColumn) {
+      fallbackPayload = {
+        ...fallbackPayload,
+        description: mergeVibeIntoDescription(payload.vibe, payload.description),
+      };
+      delete fallbackPayload.vibe;
+    }
+    if (missingStartOrEnd) {
+      delete fallbackPayload.start_date;
+      delete fallbackPayload.end_date;
+    }
 
-    const { vibe, ...payloadWithoutVibe } = payload;
-    const fallbackInsert = await supabase
-      .from("global_events")
-      .insert([{
-        ...payloadWithoutVibe,
-        description: mergeVibeIntoDescription(vibe, payload.description),
-      }])
-      .select("*")
-      .single();
-
-    return fallbackInsert;
+    attempt = await tryInsert(fallbackPayload);
+    return attempt;
   };
 
   const updateGlobalEvent = async (eventId, payload) => {
@@ -561,45 +632,46 @@ export default function EventsPage() {
       vibe: payload.vibe || null,
     };
 
-    const primaryUpdate = await supabase
-      .from("global_events")
-      .update(withVibe)
-      .eq("id", String(eventId))
-      .select("*")
-      .single();
+    const tryUpdate = async (updatePayload) => (
+      supabase.from("global_events").update(updatePayload).eq("id", String(eventId)).select("*").single()
+    );
 
-    if (!primaryUpdate.error) return primaryUpdate;
+    let attempt = await tryUpdate(withVibe);
+    if (!attempt.error) return attempt;
 
-    const errorText = `${primaryUpdate.error?.code || ""} ${primaryUpdate.error?.message || ""}`.toLowerCase();
+    const errorText = `${attempt.error?.code || ""} ${attempt.error?.message || ""}`.toLowerCase();
     const missingVibeColumn = errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
-    if (!missingVibeColumn) return primaryUpdate;
+    const missingStartOrEnd =
+      (errorText.includes("start_date") || errorText.includes("end_date")) &&
+      (errorText.includes("column") || errorText.includes("schema cache"));
 
-    const fallbackUpdate = await supabase
-      .from("global_events")
-      .update({
-        name: payload.name,
-        date: payload.date,
-        location: payload.location,
+    let fallbackPayload = { ...payload };
+    if (missingVibeColumn) {
+      fallbackPayload = {
+        ...fallbackPayload,
         description: mergeVibeIntoDescription(payload.vibe, payload.description),
-        link: payload.link,
-        source: payload.source,
-        last_checked: payload.last_checked,
-      })
-      .eq("id", String(eventId))
-      .select("*")
-      .single();
+      };
+      delete fallbackPayload.vibe;
+    }
+    if (missingStartOrEnd) {
+      delete fallbackPayload.start_date;
+      delete fallbackPayload.end_date;
+    }
 
-    return fallbackUpdate;
+    attempt = await tryUpdate(fallbackPayload);
+    return attempt;
   };
 
   const startEditGlobalEvent = (event, clickEvent) => {
     clickEvent?.stopPropagation();
     if (!isAdmin) return;
+    const normalized = normalizeEventRange(event || {});
 
     setEditingGlobalEventId(String(event?.id || ""));
     setGlobalForm({
       name: String(event?.name || ""),
-      date: String(event?.date || ""),
+      startDate: String(normalized.startDate || ""),
+      endDate: String(normalized.endDate || ""),
       location: String(event?.location || ""),
       vibe: String(event?.vibe || ""),
       description: String(event?.description || ""),
@@ -614,7 +686,8 @@ export default function EventsPage() {
     setEditingGlobalEventId("");
     setGlobalForm({
       name: "",
-      date: "",
+      startDate: "",
+      endDate: "",
       location: "",
       vibe: "",
       description: "",
@@ -630,13 +703,23 @@ export default function EventsPage() {
       setGlobalError("Admin access required to add or edit off-grid events.");
       return;
     }
-    if (!globalForm.name || !globalForm.date || !globalForm.location) return;
+    const startDate = normalizeIsoDate(globalForm.startDate);
+    const endDateCandidate = normalizeIsoDate(globalForm.endDate);
+    const endDate = endDateCandidate && endDateCandidate >= startDate ? endDateCandidate : startDate;
+
+    if (!globalForm.name || !startDate || !globalForm.location) return;
+    if (endDateCandidate && endDateCandidate < startDate) {
+      setGlobalError("End date must be the same day or after start date.");
+      return;
+    }
     setIsSavingGlobal(true);
     setGlobalError("");
 
     const payload = {
       name: globalForm.name,
-      date: globalForm.date,
+      date: startDate,
+      start_date: startDate,
+      end_date: endDate || startDate,
       location: globalForm.location,
       vibe: globalForm.vibe || null,
       description: globalForm.description || null,
@@ -797,7 +880,7 @@ export default function EventsPage() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-xs uppercase tracking-[0.18em] text-orange-100/72">
-                          {formatCityLabel(event.city)} | {formatDateLabel(event.date)}
+                          {formatCityLabel(event.city)} | {formatEventDateLabel(event)}
                         </p>
                         <button
                           onClick={(clickEvent) => refreshQuality(event, clickEvent)}
@@ -806,6 +889,11 @@ export default function EventsPage() {
                         </button>
                       </div>
                       <p className="mt-3 text-base font-semibold text-white">{event.name}</p>
+                      {event.vibe && (
+                        <p className="mt-2 inline-flex rounded-full border border-amber-200/25 bg-amber-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
+                          Vibe: {event.vibe}
+                        </p>
+                      )}
                       {quality.lastChecked && (
                         <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
                           Checked {formatDateLabel(quality.lastChecked)}
@@ -907,7 +995,7 @@ export default function EventsPage() {
                 {[...Array(daysInMonth)].map((_, index) => {
                   const day = index + 1;
                   const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                  const eventsCount = calendarEvents.filter((event) => event.date === dateStr).length;
+                  const eventsCount = calendarEvents.filter((event) => eventOverlapsDate(event, dateStr)).length;
                   const isSelected = selectedDate === dateStr;
 
                   return (
@@ -976,7 +1064,11 @@ export default function EventsPage() {
                 )}
                 {sortedCities.map((cityKey) => {
                   const cityGroup = eventsByCity[cityKey];
-                  const cityEvents = cityGroup?.events || [];
+                  const cityEvents = (cityGroup?.events || []).slice().sort((a, b) => {
+                    const aStart = normalizeEventRange(a).startDate;
+                    const bStart = normalizeEventRange(b).startDate;
+                    return String(aStart || "").localeCompare(String(bStart || ""));
+                  });
                   const cityLabel = cityGroup?.label || formatCityLabel(cityKey);
 
                   if (!cityEvents || cityEvents.length === 0) return null;
@@ -1025,9 +1117,9 @@ export default function EventsPage() {
                                 </h4>
                               </div>
 
-                              {event.date && (
+                              {event.startDate && (
                                 <div className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100">
-                                  {formatDateLabel(event.date)}
+                                  {formatEventDateLabel(event)}
                                 </div>
                               )}
                             </div>
@@ -1185,13 +1277,30 @@ export default function EventsPage() {
                   placeholder="Event name *"
                   required
                 />
-                <DateInput
-                  value={globalForm.date}
-                  onChange={(event) => setGlobalForm((current) => ({ ...current, date: event.target.value }))}
-                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
-                  required
-                  tone="cyan"
-                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">From</p>
+                    <DateInput
+                      value={globalForm.startDate}
+                      onChange={(event) => setGlobalForm((current) => ({ ...current, startDate: event.target.value }))}
+                      className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
+                      required
+                      tone="cyan"
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">To</p>
+                    <DateInput
+                      value={globalForm.endDate}
+                      onChange={(event) => setGlobalForm((current) => ({ ...current, endDate: event.target.value }))}
+                      className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
+                      tone="cyan"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-white/50 md:col-span-2">
+                  Use a single-day event by leaving <span className="font-medium text-white/70">To</span> empty.
+                </p>
                 <input
                   value={globalForm.location}
                   onChange={(event) => setGlobalForm((current) => ({ ...current, location: event.target.value }))}
@@ -1288,7 +1397,7 @@ export default function EventsPage() {
                       <p className="text-base font-semibold text-white">{event.name}</p>
                       <div className="flex items-center gap-2">
                         <span className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">
-                          {formatDateLabel(event.date)}
+                          {formatEventDateLabel(event)}
                         </span>
                         <button
                           onClick={(clickEvent) => refreshQuality(event, clickEvent)}
