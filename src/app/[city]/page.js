@@ -3020,12 +3020,12 @@ export default function CityPage() {
                     <div className="grid gap-2 sm:grid-cols-2">
                       <DateInput
                         value={eventAdminDraft.startDate}
-                        onChange={(value) => setEventAdminDraft((current) => ({ ...current, startDate: value }))}
+                        onChange={(event) => setEventAdminDraft((current) => ({ ...current, startDate: event.target.value }))}
                         placeholder="From"
                       />
                       <DateInput
                         value={eventAdminDraft.endDate}
-                        onChange={(value) => setEventAdminDraft((current) => ({ ...current, endDate: value }))}
+                        onChange={(event) => setEventAdminDraft((current) => ({ ...current, endDate: event.target.value }))}
                         placeholder="To"
                       />
                     </div>

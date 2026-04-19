@@ -187,7 +187,7 @@ export default function DateInput({
             className="fixed inset-0 z-30 bg-black/45 backdrop-blur-[1px] sm:hidden"
           />
           <div
-            className={`fixed inset-x-4 top-20 z-40 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border p-3 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:max-h-none sm:w-full sm:overflow-visible ${toneStyles.panel}`}
+            className={`fixed inset-x-4 top-20 z-40 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border p-3 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:max-h-none sm:w-[22rem] sm:max-w-[calc(100vw-2rem)] sm:overflow-visible ${toneStyles.panel}`}
           >
           <div className="mb-3 flex items-center justify-between">
             <button
