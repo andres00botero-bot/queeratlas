@@ -59,6 +59,7 @@ export default function DateInput({
   const rootRef = useRef(null);
   const selectedDate = parseIsoDate(value);
   const [isOpen, setIsOpen] = useState(false);
+  const [desktopAlign, setDesktopAlign] = useState("left");
   const [viewMonth, setViewMonth] = useState(
     selectedDate
       ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
@@ -94,6 +95,7 @@ export default function DateInput({
 
   const toneStyles = tones[tone] || tones.cyan;
   const calendarDays = useMemo(() => buildCalendarDays(viewMonth), [viewMonth]);
+  const desktopPanelAnchor = desktopAlign === "right" ? "sm:right-0 sm:left-auto" : "sm:left-0 sm:right-auto";
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -136,6 +138,18 @@ export default function DateInput({
     });
   };
 
+  const calculateDesktopAlign = () => {
+    if (typeof window === "undefined") return "left";
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect) return "left";
+    const panelWidth = 352; // 22rem
+    const viewportPadding = 16;
+    if (rect.left + panelWidth > window.innerWidth - viewportPadding) {
+      return "right";
+    }
+    return "left";
+  };
+
   const selectDate = (date) => {
     const iso = toIsoDate(date);
     if (isDisabledDate(date)) return;
@@ -161,6 +175,7 @@ export default function DateInput({
               ? new Date(parsed.getFullYear(), parsed.getMonth(), 1)
               : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
             setViewMonth(nextMonth);
+            setDesktopAlign(calculateDesktopAlign());
             return true;
           });
         }}
@@ -187,7 +202,7 @@ export default function DateInput({
             className="fixed inset-0 z-30 bg-black/45 backdrop-blur-[1px] sm:hidden"
           />
           <div
-            className={`fixed inset-x-4 top-20 z-40 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border p-3 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:max-h-none sm:w-[22rem] sm:max-w-[calc(100vw-2rem)] sm:overflow-visible ${toneStyles.panel}`}
+            className={`fixed inset-x-4 top-20 z-40 max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl border p-3 shadow-[0_24px_70px_rgba(0,0,0,0.45)] backdrop-blur sm:absolute sm:inset-x-auto sm:top-full sm:mt-2 sm:max-h-none sm:w-[22rem] sm:max-w-[calc(100vw-2rem)] sm:overflow-visible ${desktopPanelAnchor} ${toneStyles.panel}`}
           >
           <div className="mb-3 flex items-center justify-between">
             <button
