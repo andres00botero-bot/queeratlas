@@ -542,11 +542,12 @@ export default function EventsPage() {
 
     if (!missingVibeColumn) return primaryInsert;
 
+    const { vibe, ...payloadWithoutVibe } = payload;
     const fallbackInsert = await supabase
       .from("global_events")
       .insert([{
-        ...payload,
-        description: mergeVibeIntoDescription(payload.vibe, payload.description),
+        ...payloadWithoutVibe,
+        description: mergeVibeIntoDescription(vibe, payload.description),
       }])
       .select("*")
       .single();
