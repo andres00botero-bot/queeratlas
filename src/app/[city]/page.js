@@ -1033,7 +1033,7 @@ export default function CityPage() {
     const showHoverPopup = (name, lng, lat) => {
       if (!hoverPopupRef.current || isMapInteractingRef.current) return;
       const popupNode = document.createElement("div");
-      popupNode.className = "text-xs font-semibold tracking-[0.02em] text-[#111]";
+      popupNode.className = "text-xs font-semibold tracking-[0.02em] text-white";
       popupNode.textContent = name;
       hoverPopupRef.current
         .setLngLat([lng, lat])
