@@ -3,6 +3,7 @@ import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
 import FloatingHomeButton from "@/components/ui/FloatingHomeButton";
 import MessageAlertGate from "@/components/messaging/MessageAlertGate";
+import PwaInstallGate from "@/components/pwa/PwaInstallGate";
 
 const baseUrl = "https://www.queeratlas.app";
 
@@ -16,6 +17,13 @@ export const metadata = {
     "Global queer discovery atlas for venues, events, guides, and member community signal.",
   applicationName: "Queer Atlas",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
   category: "travel",
   robots: {
     index: true,
@@ -89,6 +97,7 @@ export default function RootLayout({ children }) {
         {children}
         <FloatingHomeButton />
         <MessageAlertGate />
+        <PwaInstallGate />
       </AuthProvider>
       <Analytics />
     </body>
