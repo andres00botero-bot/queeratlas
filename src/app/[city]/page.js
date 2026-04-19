@@ -1238,7 +1238,12 @@ export default function CityPage() {
         const missingLocation =
           errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingDateRange || missingVibe || missingLocation) {
+        if (missingLocation) {
+          showToast("Database schema missing events.location. Add the column before saving event location.", { tone: "warn", duration: 3200 });
+          return;
+        }
+
+        if (missingDateRange || missingVibe) {
           const legacyPayload = {
             name: eventName,
             city,
@@ -1574,6 +1579,10 @@ export default function CityPage() {
     const startDate = normalizeIsoDate(eventAdminDraft.startDate);
     const endDateInput = normalizeIsoDate(eventAdminDraft.endDate);
     const endDate = endDateInput && endDateInput >= startDate ? endDateInput : startDate;
+    const locationValue = String(eventAdminDraft.location || "").trim();
+    const previousLocationValue = String(selectedEvent.location || "").trim();
+    const locationChanged = locationValue !== previousLocationValue;
+
     if (!eventAdminDraft.name.trim() || !startDate) {
       showToast("Event name and start date are required.", { tone: "warn", duration: 2400 });
       return;
@@ -1582,16 +1591,35 @@ export default function CityPage() {
       showToast("End date must be same day or after start date.", { tone: "warn", duration: 2400 });
       return;
     }
+    if (!locationValue) {
+      showToast("Location is required for event editing.", { tone: "warn", duration: 2400 });
+      return;
+    }
 
     setIsSavingEventAdmin(true);
     try {
       const dbId = await resolveEventDbId(selectedEvent);
+      let nextLat = selectedEvent.lat ?? null;
+      let nextLng = selectedEvent.lng ?? null;
+
+      if (locationChanged) {
+        const coords = await geocodeAddress(locationValue);
+        if (!coords) {
+          showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+          return;
+        }
+        nextLat = coords.lat;
+        nextLng = coords.lng;
+      }
+
       const payload = {
         name: eventAdminDraft.name.trim(),
         date: startDate,
         start_date: startDate,
         end_date: endDate || startDate,
-        location: eventAdminDraft.location.trim() || null,
+        location: locationValue,
+        lat: nextLat,
+        lng: nextLng,
         vibe: eventAdminDraft.vibe.trim() || null,
         description: eventAdminDraft.description.trim(),
         link: eventAdminDraft.link.trim() || null,
@@ -1615,10 +1643,17 @@ export default function CityPage() {
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingLocation) {
+          if (missingLocation) {
+            showToast("Database schema missing events.location. Add the column before saving event location.", { tone: "warn", duration: 3200 });
+            return;
+          }
+
+          if (missingDateRange || missingVibe) {
             const legacyPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
+              lat: nextLat,
+              lng: nextLng,
               description: eventAdminDraft.description.trim(),
               link: eventAdminDraft.link.trim() || null,
             };
@@ -1648,8 +1683,6 @@ export default function CityPage() {
         const insertPayload = {
           ...payload,
           city: String(selectedEvent.city || city).trim(),
-          lat: selectedEvent.lat ?? null,
-          lng: selectedEvent.lng ?? null,
         };
 
         let insertResult = await supabase
@@ -1668,15 +1701,20 @@ export default function CityPage() {
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingLocation) {
+          if (missingLocation) {
+            showToast("Database schema missing events.location. Add the column before saving event location.", { tone: "warn", duration: 3200 });
+            return;
+          }
+
+          if (missingDateRange || missingVibe) {
             const legacyInsertPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
               description: eventAdminDraft.description.trim(),
               link: eventAdminDraft.link.trim() || null,
               city: String(selectedEvent.city || city).trim(),
-              lat: selectedEvent.lat ?? null,
-              lng: selectedEvent.lng ?? null,
+              lat: nextLat,
+              lng: nextLng,
             };
             if (!missingVibe) {
               legacyInsertPayload.vibe = eventAdminDraft.vibe.trim() || null;
@@ -1716,7 +1754,7 @@ export default function CityPage() {
     } finally {
       setIsSavingEventAdmin(false);
     }
-  }, [buildSelectionUrl, city, eventAdminDraft, fetchEvents, isAdmin, resolveEventDbId, router, selectedEvent, showToast]);
+  }, [buildSelectionUrl, city, eventAdminDraft, fetchEvents, geocodeAddress, isAdmin, resolveEventDbId, router, selectedEvent, showToast]);
 
   const handleAdminDeleteEvent = useCallback(async () => {
     if (!isAdmin || !selectedEvent) return;
