@@ -964,6 +964,21 @@ export default function Home() {
                 HBTQ Guide
               </Link>
             </div>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[11px] text-white/45">
+              <Link
+                href="/privacy"
+                className="underline underline-offset-2 transition hover:text-white"
+              >
+                Privacy Policy
+              </Link>
+              <span className="text-white/25">|</span>
+              <Link
+                href="/terms"
+                className="underline underline-offset-2 transition hover:text-white"
+              >
+                Terms
+              </Link>
+            </div>
           </section>
         </div>
       </div>
