@@ -11,10 +11,13 @@ import { buildAtlasSearchResults } from "@/lib/search";
 import { getQualityMap } from "@/lib/quality";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { ArrowUpRight, Search } from "lucide-react";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
+const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
+const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
 
 function formatDate(value) {
   if (!value) return "Date TBA";
@@ -189,8 +192,7 @@ export default function Home() {
       .select("*")
       .order("date", { ascending: true });
 
-    setEvents(mergeSeedEvents(data || []));
-    return { error };
+    return { error, data: mergeSeedEvents(data || []) };
   };
 
   const fetchPlaces = async () => {
@@ -198,8 +200,7 @@ export default function Home() {
       .from("places_with_stats")
       .select("*");
 
-    setPlaces(mergeSeedPlaces(data || []));
-    return { error };
+    return { error, data: mergeSeedPlaces(data || []) };
   };
 
   const fetchWorldNews = async () => {
@@ -211,8 +212,7 @@ export default function Home() {
 
     if (error) {
       const fallback = [...EDITORIAL_PULSE_ITEMS].sort(compareNewsRecency);
-      setWorldNews(fallback);
-      return { error: null };
+      return { error: null, data: fallback };
     }
 
     const withCategoryLabel = (data || []).map((item) => ({
@@ -229,8 +229,7 @@ export default function Home() {
       return acc;
     }, []);
 
-    setWorldNews(merged.sort(compareNewsRecency));
-    return { error: null };
+    return { error: null, data: merged.sort(compareNewsRecency) };
   };
 
   const toggleFavorite = (id) => {
@@ -256,10 +255,33 @@ export default function Home() {
     writeLocalJson("qa_favorites", updated);
   };
 
-  const loadHomeData = useCallback(async () => {
+  const loadHomeData = useCallback(async ({ forceRefresh = false } = {}) => {
     setIsDataLoading(true);
     setDataError("");
+
+    const cached = forceRefresh ? { hit: false, stale: true } : readRuntimeCache(HOME_DATA_CACHE_KEY, HOME_DATA_CACHE_TTL_MS);
+    if (cached.hit && cached.data) {
+      setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
+      setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
+      setWorldNews(Array.isArray(cached.data.worldNews) ? cached.data.worldNews : []);
+      setIsDataLoading(false);
+      if (!cached.stale) return;
+    }
+
     const [eventsRes, placesRes, worldNewsRes] = await Promise.all([fetchEvents(), fetchPlaces(), fetchWorldNews()]);
+    const nextEvents = eventsRes?.data || [];
+    const nextPlaces = placesRes?.data || [];
+    const nextWorldNews = worldNewsRes?.data || [];
+
+    setEvents(nextEvents);
+    setPlaces(nextPlaces);
+    setWorldNews(nextWorldNews);
+    writeRuntimeCache(HOME_DATA_CACHE_KEY, {
+      events: nextEvents,
+      places: nextPlaces,
+      worldNews: nextWorldNews,
+    });
+
     if (eventsRes?.error || placesRes?.error || worldNewsRes?.error) {
       setDataError("Some live data could not load. Showing available signal.");
     }
@@ -636,7 +658,7 @@ export default function Home() {
                   <span>{dataError}</span>
                   <button
                     type="button"
-                    onClick={loadHomeData}
+                    onClick={() => loadHomeData({ forceRefresh: true })}
                     className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
                   >
                     Retry

@@ -7,6 +7,7 @@ import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
 import { useAuth } from "@/lib/auth";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
+import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import EmptyState from "@/components/ui/EmptyState";
 
 function formatDate(value) {
@@ -44,6 +45,10 @@ const RANKING_OVERRIDES_KEY = "qa_atlas_ranking_overrides";
 const NEWS_TABLE = "qa_world_news";
 const NEWS_HIDDEN_TABLE = "qa_world_news_hidden";
 const RANKING_TABLE = "qa_atlas_rankings";
+const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
+const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
+const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
+const NOW_EDITORIAL_CACHE_TTL_MS = 5 * 60 * 1000;
 const ATLAS_DESTINATION_RANKINGS = {
   2026: [
     { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
@@ -182,11 +187,22 @@ export default function NowPage() {
     date: "",
   });
 
-  const loadPulseData = useCallback(async () => {
+  const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
     setToday(now);
     setLoadError("");
     setReady(false);
+
+    const cached = forceRefresh
+      ? { hit: false, stale: true }
+      : readRuntimeCache(NOW_PULSE_CACHE_KEY, NOW_PULSE_CACHE_TTL_MS);
+
+    if (cached.hit && cached.data) {
+      setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
+      setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
+      setReady(true);
+      if (!cached.stale) return;
+    }
 
     const [{ data: eventsData, error: eventsError }, { data: placesData, error: placesError }] = await Promise.all([
       supabase.from("events").select("*").order("date", { ascending: true }),
@@ -197,8 +213,14 @@ export default function NowPage() {
       setLoadError("Live pulse could not fully load. Showing available data.");
     }
 
-    setEvents(mergeSeedEvents(eventsData || []));
-    setPlaces(mergeSeedPlaces(placesData || []));
+    const nextEvents = mergeSeedEvents(eventsData || []);
+    const nextPlaces = mergeSeedPlaces(placesData || []);
+    setEvents(nextEvents);
+    setPlaces(nextPlaces);
+    writeRuntimeCache(NOW_PULSE_CACHE_KEY, {
+      events: nextEvents,
+      places: nextPlaces,
+    });
     setReady(true);
   }, []);
 
@@ -208,7 +230,19 @@ export default function NowPage() {
     });
   }, [loadPulseData]);
 
-  const loadEditorialData = useCallback(async () => {
+  const loadEditorialData = useCallback(async ({ forceRefresh = false } = {}) => {
+    const cached = forceRefresh
+      ? { hit: false, stale: true }
+      : readRuntimeCache(NOW_EDITORIAL_CACHE_KEY, NOW_EDITORIAL_CACHE_TTL_MS);
+
+    if (cached.hit && cached.data) {
+      setAdminNews(Array.isArray(cached.data.adminNews) ? cached.data.adminNews : []);
+      setHiddenNewsIds(Array.isArray(cached.data.hiddenNewsIds) ? cached.data.hiddenNewsIds : []);
+      setRankingOverrides(cached.data.rankingOverrides || {});
+      setSyncWarning(String(cached.data.syncWarning || ""));
+      if (!cached.stale) return;
+    }
+
     const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
       supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
@@ -252,7 +286,14 @@ export default function NowPage() {
       writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
     }
 
-    setSyncWarning(warnings.join(" ") || "");
+    const nextSyncWarning = warnings.join(" ") || "";
+    setSyncWarning(nextSyncWarning);
+    writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
+      adminNews: newsResponse.error ? [] : (newsResponse.data || []).map(mapNewsRowToItem),
+      hiddenNewsIds: hiddenResponse.error ? [] : (hiddenResponse.data || []).map((row) => String(row.feed_id)),
+      rankingOverrides: rankingResponse.error ? {} : groupRankingRows(rankingResponse.data || []),
+      syncWarning: nextSyncWarning,
+    });
   }, []);
 
   useEffect(() => {
@@ -577,7 +618,7 @@ export default function NowPage() {
         return;
       }
 
-      await loadEditorialData();
+      await loadEditorialData({ forceRefresh: true });
 
       setAdminForm({
         title: "",
@@ -722,7 +763,7 @@ export default function NowPage() {
             <div className="mt-5 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
               <span>{loadError}</span>
               <button
-                onClick={loadPulseData}
+                onClick={() => loadPulseData({ forceRefresh: true })}
                 className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
               >
                 Retry

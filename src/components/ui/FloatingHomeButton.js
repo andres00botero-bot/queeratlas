@@ -28,18 +28,37 @@ export default function FloatingHomeButton() {
     };
 
     refreshUnread();
-    const timer = setInterval(refreshUnread, 30000);
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         refreshUnread();
       }
     };
+
+    const channel = supabase
+      .channel(`qa-floating-unread-${user.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "qa_dm_messages" }, () => {
+        refreshUnread();
+      })
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "qa_dm_thread_state",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          refreshUnread();
+        }
+      )
+      .subscribe();
+
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
       active = false;
-      clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
+      supabase.removeChannel(channel);
     };
   }, [isMember, user?.id]);
 
