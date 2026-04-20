@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +36,16 @@ function formatDate(value) {
 
 function formatSavedTime(value) {
   if (!value) return "Not saved yet";
+  return new Date(value).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatCheckinTime(value) {
+  if (!value) return "Unknown time";
   return new Date(value).toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
@@ -88,6 +100,15 @@ function normalizeCityKey(value) {
     .replace(/\s+/g, " ");
 }
 
+function formatCityLabel(value) {
+  const compact = String(value || "")
+    .trim()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+  if (!compact) return "";
+  return compact.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function isMissingTableError(error) {
   if (!error) return false;
   const code = String(error.code || "");
@@ -98,6 +119,7 @@ function isMissingTableError(error) {
 const PLAN_STORAGE_KEY = "qa_trip_plans";
 const FAVORITES_STORAGE_KEY = "qa_favorites";
 const ADDED_STORAGE_KEY = "qa_added";
+const CHECKINS_STORAGE_KEY = "qa_member_checkins";
 const INITIAL_NOW_TS = Date.now();
 
 function mapPlanRow(row) {
@@ -112,6 +134,62 @@ function mapPlanRow(row) {
     note: row.note || "",
     createdAt: row.created_at || new Date().toISOString(),
   };
+}
+
+function mapCheckinRow(row) {
+  return {
+    id: String(row.id || `${row.user_id || "local"}-${row.checked_in_at || row.created_at || Date.now()}`),
+    mode: String(row.mode || "trip"),
+    privacy: String(row.privacy || "private"),
+    country: String(row.country || "").trim(),
+    city: String(row.city || "").trim(),
+    label: String(row.label || "").trim(),
+    address: String(row.address || "").trim(),
+    note: String(row.note || "").trim(),
+    placeId: row.place_id ? String(row.place_id) : "",
+    eventId: row.event_id ? String(row.event_id) : "",
+    lat: Number.isFinite(Number(row.lat)) ? Number(row.lat) : null,
+    lng: Number.isFinite(Number(row.lng)) ? Number(row.lng) : null,
+    checkedInAt: row.checked_in_at || row.created_at || new Date().toISOString(),
+    createdAt: row.created_at || row.checked_in_at || new Date().toISOString(),
+  };
+}
+
+function isPresenceActiveNow(presence) {
+  if (!presence?.lastSeenAt) return false;
+  return new Date(presence.lastSeenAt).getTime() >= Date.now() - 5 * 60 * 1000;
+}
+
+function normalizeLooseText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .replace(/\s+/g, " ");
+}
+
+async function geocodeCheckinFromCityAndLabel({ city, country, label, address, token }) {
+  const cityValue = String(city || "").trim();
+  const countryValue = String(country || "").trim();
+  const labelValue = String(label || "").trim();
+  const addressValue = String(address || "").trim();
+  if (!cityValue || !labelValue || !token) return null;
+
+  const query = [labelValue, addressValue, cityValue, countryValue].filter(Boolean).join(", ");
+  const url =
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
+    `?limit=1&types=poi,address,neighborhood,locality,place&language=en&access_token=${encodeURIComponent(token)}`;
+
+  const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
+  if (!response.ok) return null;
+  const data = await response.json();
+  const first = Array.isArray(data?.features) ? data.features[0] : null;
+  const center = Array.isArray(first?.center) ? first.center : null;
+  const lng = Number(center?.[0]);
+  const lat = Number(center?.[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
 }
 
 function FavoritesCardSkeleton() {
@@ -162,7 +240,35 @@ export default function FavoritesPage() {
   const [networkLoading, setNetworkLoading] = useState(false);
   const [networkWarning, setNetworkWarning] = useState("");
   const [recommendationMode, setRecommendationMode] = useState("balanced");
+  const [showSignalDeck, setShowSignalDeck] = useState(false);
   const [nowTs, setNowTs] = useState(INITIAL_NOW_TS);
+  const [checkins, setCheckins] = useState([]);
+  const [checkinsWarning, setCheckinsWarning] = useState("");
+  const [isSavingCheckin, setIsSavingCheckin] = useState(false);
+  const [followingCheckins, setFollowingCheckins] = useState([]);
+  const [followingCheckinsWarning, setFollowingCheckinsWarning] = useState("");
+  const [followingPresenceByUserId, setFollowingPresenceByUserId] = useState({});
+  const [checkinMapLoadFailed, setCheckinMapLoadFailed] = useState(false);
+  const [checkinStaticFallbackFailed, setCheckinStaticFallbackFailed] = useState(false);
+  const [editingCheckinId, setEditingCheckinId] = useState("");
+  const [selectedCheckinId, setSelectedCheckinId] = useState("");
+  const [checkinViewFilter, setCheckinViewFilter] = useState("all");
+  const checkinMapContainerRef = useRef(null);
+  const checkinMapCardRef = useRef(null);
+  const checkinFormRef = useRef(null);
+  const checkinMapRef = useRef(null);
+  const checkinMapMarkersRef = useRef([]);
+  const [checkinForm, setCheckinForm] = useState({
+    mode: "trip",
+    privacy: "friends",
+    country: "",
+    city: "",
+    sourceType: "manual",
+    sourceId: "",
+    label: "",
+    address: "",
+    note: "",
+  });
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -258,6 +364,115 @@ export default function FavoritesPage() {
     setIsAtlasLoading(false);
   }, []);
 
+  const loadCheckins = useCallback(async () => {
+    if (!user?.id) {
+      const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
+      const mapped = Array.isArray(localRows) ? localRows.map(mapCheckinRow) : [];
+      setCheckins(mapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0)));
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("qa_member_checkins")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("checked_in_at", { ascending: false })
+      .limit(300);
+
+    if (error) {
+      if (isMissingTableError(error)) {
+        setCheckinsWarning("Check-ins are not enabled yet. Run the latest Supabase SQL.");
+      } else {
+        setCheckinsWarning("Cloud check-ins unavailable. Showing local check-ins.");
+      }
+      const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
+      const mapped = Array.isArray(localRows) ? localRows.map(mapCheckinRow) : [];
+      setCheckins(mapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0)));
+      return;
+    }
+
+    const mapped = (Array.isArray(data) ? data : []).map(mapCheckinRow);
+    setCheckins(mapped);
+    writeLocalJson(CHECKINS_STORAGE_KEY, mapped);
+    setCheckinsWarning("");
+  }, [user?.id]);
+
+  const loadFollowingCheckins = useCallback(async () => {
+    if (!user?.id || !Array.isArray(followingUserIds) || followingUserIds.length === 0) {
+      setFollowingCheckins([]);
+      setFollowingPresenceByUserId({});
+      setFollowingCheckinsWarning("");
+      return;
+    }
+
+    const targetIds = [...new Set(followingUserIds.map((id) => String(id)).filter(Boolean))];
+    if (targetIds.length === 0) {
+      setFollowingCheckins([]);
+      setFollowingPresenceByUserId({});
+      setFollowingCheckinsWarning("");
+      return;
+    }
+
+    const [checkinsRes, profilesRes, presenceRes] = await Promise.all([
+      supabase
+        .from("qa_member_checkins")
+        .select("id, user_id, mode, privacy, country, city, label, address, note, place_id, event_id, lat, lng, checked_in_at, created_at")
+        .in("user_id", targetIds)
+        .neq("privacy", "private")
+        .order("checked_in_at", { ascending: false })
+        .limit(150),
+      supabase
+        .from("member_profiles")
+        .select("user_id, display_name")
+        .in("user_id", targetIds),
+      supabase
+        .from("qa_presence")
+        .select("user_id, is_online, last_seen_at")
+        .in("user_id", targetIds),
+    ]);
+
+    if (checkinsRes.error) {
+      if (isMissingTableError(checkinsRes.error)) {
+        setFollowingCheckinsWarning("Friends check-ins require updated check-in SQL policies.");
+      } else {
+        setFollowingCheckinsWarning("Could not load friends check-ins right now.");
+      }
+      setFollowingCheckins([]);
+      return;
+    }
+
+    const profileByUserId = new Map(
+      (Array.isArray(profilesRes.data) ? profilesRes.data : []).map((row) => [
+        String(row.user_id || ""),
+        String(row.display_name || "").trim() || "Member",
+      ])
+    );
+
+    const presenceMap = {};
+    (Array.isArray(presenceRes.data) ? presenceRes.data : []).forEach((row) => {
+      const userId = String(row.user_id || "");
+      if (!userId) return;
+      presenceMap[userId] = {
+        isOnline: Boolean(row.is_online),
+        lastSeenAt: row.last_seen_at || null,
+      };
+    });
+    setFollowingPresenceByUserId(presenceMap);
+
+    const mapped = (Array.isArray(checkinsRes.data) ? checkinsRes.data : []).map((row) => {
+      const normalized = mapCheckinRow(row);
+      const ownerId = String(row.user_id || "");
+      return {
+        ...normalized,
+        ownerUserId: ownerId,
+        ownerName: profileByUserId.get(ownerId) || "Member",
+      };
+    });
+
+    setFollowingCheckins(mapped);
+    setFollowingCheckinsWarning("");
+  }, [followingUserIds, user?.id]);
+
   const blocked = useMemo(() => {
     return {
       places: new Set(
@@ -339,9 +554,10 @@ export default function FavoritesPage() {
       }
 
       await loadAtlasData();
+      await loadCheckins();
       setIsReady(true);
     });
-  }, [authMemberName, isAuthLoading, isMember, loadAtlasData, loadMemberCollections, memberProfile, router, user?.id]);
+  }, [authMemberName, isAuthLoading, isMember, loadAtlasData, loadCheckins, loadMemberCollections, memberProfile, router, user?.id]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -435,6 +651,13 @@ export default function FavoritesPage() {
     });
   }, [isReady, isMember, loadTrustNetwork, user?.id]);
 
+  useEffect(() => {
+    if (!isReady || !isMember || !user?.id) return;
+    queueMicrotask(async () => {
+      await loadFollowingCheckins();
+    });
+  }, [isReady, isMember, loadFollowingCheckins, user?.id]);
+
   const savedPlaces = useMemo(() => {
     return places
       .filter((place) => favorites.includes(String(place.id)) && !blocked.places.has(String(place.id)))
@@ -449,11 +672,122 @@ export default function FavoritesPage() {
 
   const totalPlaces = savedPlaces.length;
   const totalEvents = savedEvents.length;
+  const cityCountryLookup = useMemo(() => {
+    const map = new Map();
+
+    Object.entries(cityConfig || {}).forEach(([cityKey, config]) => {
+      const normalized = normalizeCityKey(cityKey);
+      const country = String(config?.country || "").trim();
+      if (normalized && country) {
+        map.set(normalized, country);
+      }
+    });
+
+    places.forEach((place) => {
+      const normalized = normalizeCityKey(place.city);
+      const country = String(cityConfig?.[String(place.city || "").toLowerCase()]?.country || "").trim();
+      if (!normalized || !country || map.has(normalized)) return;
+      map.set(normalized, country);
+    });
+
+    events.forEach((event) => {
+      const normalized = normalizeCityKey(event.city);
+      const country = String(cityConfig?.[String(event.city || "").toLowerCase()]?.country || "").trim();
+      if (!normalized || !country || map.has(normalized)) return;
+      map.set(normalized, country);
+    });
+
+    return map;
+  }, [events, places]);
+
+  const cityLabelLookup = useMemo(() => {
+    const map = new Map();
+    Object.keys(cityConfig || {}).forEach((cityKey) => {
+      map.set(normalizeCityKey(cityKey), formatCityLabel(cityKey));
+    });
+    places.forEach((place) => {
+      const key = normalizeCityKey(place.city);
+      if (key && !map.has(key)) {
+        map.set(key, formatCityLabel(place.city));
+      }
+    });
+    events.forEach((event) => {
+      const key = normalizeCityKey(event.city);
+      if (key && !map.has(key)) {
+        map.set(key, formatCityLabel(event.city));
+      }
+    });
+    return map;
+  }, [events, places]);
+
   const allCities = useMemo(
-    () => [...new Set(savedPlaces.concat(savedEvents).map((item) => item.city).filter(Boolean))],
-    [savedEvents, savedPlaces]
+    () =>
+      [...new Set(savedPlaces.concat(savedEvents).map((item) => normalizeCityKey(item.city)).filter(Boolean))]
+        .map((cityKey) => cityLabelLookup.get(cityKey) || formatCityLabel(cityKey))
+        .filter(Boolean),
+    [cityLabelLookup, savedEvents, savedPlaces]
   );
   const totalCities = allCities.length;
+
+  const checkinCountryOptions = useMemo(() => {
+    return [...new Set([...cityCountryLookup.values(), String(memberProfile?.residentCountry || "").trim()].filter(Boolean))].sort(
+      (a, b) => a.localeCompare(b)
+    );
+  }, [cityCountryLookup, memberProfile?.residentCountry]);
+
+  const checkinCityOptions = useMemo(() => {
+    const selectedCountry = String(checkinForm.country || "").trim();
+    const entries = [...cityCountryLookup.entries()].filter(([, country]) => {
+      if (!selectedCountry) return true;
+      return String(country).toLowerCase() === selectedCountry.toLowerCase();
+    });
+    return entries
+      .map(([cityKey]) => cityLabelLookup.get(cityKey) || formatCityLabel(cityKey))
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+  }, [checkinForm.country, cityCountryLookup, cityLabelLookup]);
+
+  useEffect(() => {
+    if (String(checkinForm.country || "").trim()) return;
+    if (memberProfile?.residentCountry) {
+      setCheckinForm((current) => ({ ...current, country: String(memberProfile.residentCountry).trim() }));
+      return;
+    }
+
+    const homeCityKey = normalizeCityKey(memberProfile?.homeCity);
+    const homeCountry = homeCityKey ? cityCountryLookup.get(homeCityKey) : "";
+    if (homeCountry) {
+      setCheckinForm((current) => ({ ...current, country: String(homeCountry) }));
+      return;
+    }
+
+    if (checkinCountryOptions.length > 0) {
+      setCheckinForm((current) => ({ ...current, country: String(checkinCountryOptions[0]) }));
+    }
+  }, [checkinCountryOptions, checkinForm.country, cityCountryLookup, memberProfile?.homeCity, memberProfile?.residentCountry]);
+
+  useEffect(() => {
+    if (String(checkinForm.city || "").trim()) return;
+    if (memberProfile?.homeCity) {
+      setCheckinForm((current) => ({ ...current, city: formatCityLabel(memberProfile.homeCity) }));
+      return;
+    }
+    if (checkinCityOptions.length > 0) {
+      setCheckinForm((current) => ({ ...current, city: String(checkinCityOptions[0]) }));
+    }
+  }, [checkinCityOptions, checkinForm.city, memberProfile?.homeCity]);
+
+  useEffect(() => {
+    if (!checkinForm.city) return;
+    if (checkinCityOptions.includes(checkinForm.city)) return;
+    setCheckinForm((current) => ({
+      ...current,
+      city: checkinCityOptions[0] || "",
+      sourceId: "",
+      label: "",
+      address: "",
+    }));
+  }, [checkinCityOptions, checkinForm.city]);
 
   const vibeCount = savedPlaces.reduce((acc, place) => {
     const vibe = place.vibe || place.type || "Mixed";
@@ -490,6 +824,274 @@ export default function FavoritesPage() {
     weekAgo.setDate(weekAgo.getDate() - 7);
     return date >= weekAgo;
   }).length;
+
+  const recentCheckins = useMemo(
+    () =>
+      [...checkins]
+        .sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0))
+        .slice(0, 10),
+    [checkins]
+  );
+
+  const filteredRecentCheckins = useMemo(() => {
+    const base = [...recentCheckins];
+    if (checkinViewFilter === "places") return base.filter((item) => Boolean(String(item.placeId || "").trim()));
+    if (checkinViewFilter === "events") return base.filter((item) => Boolean(String(item.eventId || "").trim()));
+    if (checkinViewFilter === "manual") {
+      return base.filter(
+        (item) => !String(item.placeId || "").trim() && !String(item.eventId || "").trim()
+      );
+    }
+    return base;
+  }, [checkinViewFilter, recentCheckins]);
+
+  const recentFollowingCheckins = useMemo(
+    () =>
+      [...followingCheckins]
+        .sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0))
+        .slice(0, 12),
+    [followingCheckins]
+  );
+
+  const checkinCities = useMemo(
+    () => [...new Set(checkins.map((item) => String(item.city || "").trim()).filter(Boolean))],
+    [checkins]
+  );
+
+  const selectedCheckinCityKey = useMemo(() => normalizeCityKey(checkinForm.city), [checkinForm.city]);
+
+  const selectedCityPlaces = useMemo(
+    () =>
+      places
+        .filter((place) => normalizeCityKey(place.city) === selectedCheckinCityKey)
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))),
+    [places, selectedCheckinCityKey]
+  );
+
+  const selectedCityEvents = useMemo(
+    () =>
+      events
+        .filter((event) => normalizeCityKey(event.city) === selectedCheckinCityKey)
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))),
+    [events, selectedCheckinCityKey]
+  );
+
+  const checkinMarkers = useMemo(() => {
+    const placeById = new Map(
+      savedPlaces.map((place) => [String(place.id), place])
+    );
+    const eventById = new Map(
+      savedEvents.map((event) => [String(event.id), event])
+    );
+    const placeByCityName = new Map(
+      savedPlaces.map((place) => [
+        `${normalizeLooseText(place.city)}::${normalizeLooseText(place.name)}`,
+        place,
+      ])
+    );
+    const eventByCityName = new Map(
+      savedEvents.map((event) => [
+        `${normalizeLooseText(event.city)}::${normalizeLooseText(event.name)}`,
+        event,
+      ])
+    );
+
+    return checkins
+      .map((entry) => {
+        if (Number.isFinite(entry.lat) && Number.isFinite(entry.lng)) {
+          return { ...entry, markerLat: Number(entry.lat), markerLng: Number(entry.lng) };
+        }
+
+        const placeMatch = entry.placeId ? placeById.get(String(entry.placeId)) : null;
+        const eventMatch = entry.eventId ? eventById.get(String(entry.eventId)) : null;
+        const key = `${normalizeLooseText(entry.city)}::${normalizeLooseText(entry.label)}`;
+        const byName = placeByCityName.get(key) || eventByCityName.get(key) || null;
+        const match = placeMatch || eventMatch || byName;
+
+        if (match && Number.isFinite(Number(match.lat)) && Number.isFinite(Number(match.lng))) {
+          return { ...entry, markerLat: Number(match.lat), markerLng: Number(match.lng) };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0));
+  }, [checkins, savedEvents, savedPlaces]);
+
+  const followingCheckinMarkers = useMemo(
+    () =>
+      recentFollowingCheckins
+        .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng))
+        .map((item) => ({ ...item, markerLat: Number(item.lat), markerLng: Number(item.lng) }))
+        .slice(0, 18),
+    [recentFollowingCheckins]
+  );
+
+  const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+
+  const interactiveCheckinPoints = useMemo(() => {
+    const mine = checkinMarkers.map((item) => ({
+      ...item,
+      markerId: `mine-${String(item.id)}`,
+      markerKind: "mine",
+    }));
+    const friends = followingCheckinMarkers.map((item) => ({
+      ...item,
+      markerId: `friend-${String(item.id)}`,
+      markerKind: "friend",
+    }));
+    return [...mine, ...friends];
+  }, [checkinMarkers, followingCheckinMarkers]);
+
+  const selectedCheckin = useMemo(() => {
+    if (!selectedCheckinId) return null;
+    return checkinMarkers.find((item) => String(item.id) === String(selectedCheckinId)) || null;
+  }, [checkinMarkers, selectedCheckinId]);
+
+  const checkinMapCenter = useMemo(() => {
+    const centerSource =
+      checkinMarkers[0] ||
+      followingCheckinMarkers[0] ||
+      savedPlaces.find((item) => Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))) ||
+      savedEvents.find((item) => Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))) ||
+      null;
+    if (!centerSource) return null;
+
+    const centerLng = Number(centerSource.markerLng ?? centerSource.lng);
+    const centerLat = Number(centerSource.markerLat ?? centerSource.lat);
+    if (!Number.isFinite(centerLat) || !Number.isFinite(centerLng)) return null;
+    return { lat: centerLat, lng: centerLng };
+  }, [checkinMarkers, followingCheckinMarkers, savedEvents, savedPlaces]);
+
+  const staticMapUrl = useMemo(() => {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!token) return "";
+    const myMarkers = checkinMarkers
+      .map((item) => `pin-s+f472b6(${item.markerLng},${item.markerLat})`)
+      .join(",");
+    const friendMarkers = followingCheckinMarkers
+      .map((item) => `pin-s+22d3ee(${item.markerLng},${item.markerLat})`)
+      .join(",");
+    const markerString = [myMarkers, friendMarkers].filter(Boolean).join(",");
+    if (!checkinMapCenter) return "";
+    const centerLng = Number(checkinMapCenter.lng);
+    const centerLat = Number(checkinMapCenter.lat);
+    const zoom = 11;
+    if (!markerString) {
+      return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${centerLng},${centerLat},${zoom}/1200x620?padding=36&access_token=${token}`;
+    }
+    const encoded = markerString.replaceAll("|", "%7C");
+    return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${encoded}/${centerLng},${centerLat},${zoom}/1200x620?padding=36&access_token=${token}`;
+  }, [checkinMapCenter, checkinMarkers, followingCheckinMarkers]);
+
+  const checkinMapEmbedUrl = useMemo(() => {
+    if (!checkinMapCenter) return "";
+    const lat = Number(checkinMapCenter.lat);
+    const lng = Number(checkinMapCenter.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
+
+    const delta = 0.06;
+    const left = (lng - delta).toFixed(6);
+    const right = (lng + delta).toFixed(6);
+    const top = (lat + delta).toFixed(6);
+    const bottom = (lat - delta).toFixed(6);
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat.toFixed(6)}%2C${lng.toFixed(6)}`;
+  }, [checkinMapCenter]);
+
+  const openStreetMapStaticUrl = useMemo(() => {
+    if (!checkinMapCenter) return "";
+    const lat = Number(checkinMapCenter.lat);
+    const lng = Number(checkinMapCenter.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
+    const zoom = 11;
+    const marker = `${lat.toFixed(6)},${lng.toFixed(6)},red-pushpin`;
+    return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat.toFixed(6)},${lng.toFixed(6)}&zoom=${zoom}&size=1200x620&markers=${marker}`;
+  }, [checkinMapCenter]);
+
+  useEffect(() => {
+    if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
+    if (!interactiveCheckinPoints.length) return;
+
+    mapboxgl.accessToken = mapboxToken;
+    const first = interactiveCheckinPoints[0];
+    const map = new mapboxgl.Map({
+      container: checkinMapContainerRef.current,
+      style: "mapbox://styles/mapbox/dark-v11",
+      center: [Number(first.markerLng), Number(first.markerLat)],
+      zoom: 4.2,
+      attributionControl: false,
+    });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    checkinMapRef.current = map;
+
+    return () => {
+      checkinMapMarkersRef.current.forEach((marker) => marker.remove());
+      checkinMapMarkersRef.current = [];
+      map.remove();
+      checkinMapRef.current = null;
+    };
+  }, [interactiveCheckinPoints, mapboxToken]);
+
+  useEffect(() => {
+    const map = checkinMapRef.current;
+    if (!map || !interactiveCheckinPoints.length) return;
+
+    checkinMapMarkersRef.current.forEach((marker) => marker.remove());
+    checkinMapMarkersRef.current = [];
+
+    const bounds = new mapboxgl.LngLatBounds();
+    interactiveCheckinPoints.forEach((point) => {
+      const lat = Number(point.markerLat);
+      const lng = Number(point.markerLng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const markerEl = document.createElement("button");
+      markerEl.type = "button";
+      markerEl.style.width = "14px";
+      markerEl.style.height = "14px";
+      markerEl.style.borderRadius = "9999px";
+      markerEl.style.border = "2px solid rgba(255,255,255,0.85)";
+      markerEl.style.background = point.markerKind === "friend" ? "#22d3ee" : "#f472b6";
+      markerEl.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.42)";
+      markerEl.style.cursor = "pointer";
+      markerEl.style.transform = String(selectedCheckinId) === String(point.id) ? "scale(1.2)" : "scale(1)";
+      markerEl.title = String(point.label || point.ownerName || "Check-in");
+      markerEl.addEventListener("click", () => {
+        if (point.markerKind === "mine") {
+          setSelectedCheckinId(String(point.id || ""));
+        }
+        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 12), essential: true });
+      });
+
+      const marker = new mapboxgl.Marker({ element: markerEl, anchor: "center" })
+        .setLngLat([lng, lat])
+        .addTo(map);
+      checkinMapMarkersRef.current.push(marker);
+      bounds.extend([lng, lat]);
+    });
+
+    if (!bounds.isEmpty()) {
+      if (selectedCheckinId) {
+        const selected = interactiveCheckinPoints.find((item) => String(item.id) === String(selectedCheckinId));
+        if (selected && Number.isFinite(Number(selected.markerLat)) && Number.isFinite(Number(selected.markerLng))) {
+          map.flyTo({
+            center: [Number(selected.markerLng), Number(selected.markerLat)],
+            zoom: Math.max(map.getZoom(), 12),
+            essential: true,
+          });
+          return;
+        }
+      }
+      map.fitBounds(bounds, { padding: 44, maxZoom: 11, duration: 650 });
+    }
+  }, [interactiveCheckinPoints, selectedCheckinId]);
+
+  useEffect(() => {
+    setCheckinMapLoadFailed(false);
+  }, [staticMapUrl]);
+
+  useEffect(() => {
+    setCheckinStaticFallbackFailed(false);
+  }, [openStreetMapStaticUrl]);
 
   const followingIdSet = useMemo(
     () => new Set((followingUserIds || []).map((id) => String(id))),
@@ -876,6 +1478,223 @@ export default function FavoritesPage() {
       targetType: normalized.startsWith("event-") ? "event" : "place",
       targetId: normalized,
       memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+    });
+  };
+
+  const submitCheckin = async (payload) => {
+    const editingId = String(payload?.id || "").trim();
+    const isEditing = Boolean(editingId);
+    const countryValue = String(payload?.country || "").trim();
+    const cityValue = String(payload?.city || "").trim();
+    const labelValue = String(payload?.label || "").trim();
+    const addressValue = String(payload?.address || "").trim();
+    if (!cityValue || !labelValue) {
+      showToast("City and venue/event are required for check-in.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    const modeValue = String(payload?.mode || "trip");
+    const privacyValue = String(payload?.privacy || "friends");
+    const latValue = Number(payload?.lat);
+    const lngValue = Number(payload?.lng);
+    let resolvedCoords =
+      Number.isFinite(latValue) && Number.isFinite(lngValue)
+        ? { lat: latValue, lng: lngValue }
+        : null;
+
+    if (!resolvedCoords) {
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+      resolvedCoords = await geocodeCheckinFromCityAndLabel({
+        city: cityValue,
+        country: countryValue,
+        label: labelValue,
+        address: addressValue,
+        token,
+      });
+    }
+
+    const nextCheckin = {
+      id: isEditing ? editingId : `local-${Date.now()}`,
+      mode: modeValue,
+      privacy: privacyValue,
+      country: countryValue,
+      city: cityValue,
+      label: labelValue,
+      address: addressValue,
+      note: String(payload?.note || "").trim(),
+      placeId: String(payload?.placeId || ""),
+      eventId: String(payload?.eventId || ""),
+      lat: Number.isFinite(Number(resolvedCoords?.lat)) ? Number(resolvedCoords.lat) : null,
+      lng: Number.isFinite(Number(resolvedCoords?.lng)) ? Number(resolvedCoords.lng) : null,
+      checkedInAt: String(payload?.checkedInAt || new Date().toISOString()),
+      createdAt: String(payload?.createdAt || new Date().toISOString()),
+    };
+
+    setIsSavingCheckin(true);
+    try {
+      let savedRow = nextCheckin;
+      if (user?.id) {
+        const writePayload = {
+          user_id: user.id,
+          mode: modeValue,
+          privacy: privacyValue,
+          country: countryValue || null,
+          city: cityValue,
+          label: labelValue,
+          address: addressValue || null,
+          note: nextCheckin.note || null,
+          place_id: nextCheckin.placeId || null,
+          event_id: nextCheckin.eventId || null,
+          lat: nextCheckin.lat,
+          lng: nextCheckin.lng,
+          checked_in_at: nextCheckin.checkedInAt,
+        };
+        const query = isEditing
+          ? supabase
+              .from("qa_member_checkins")
+              .update(writePayload)
+              .eq("id", editingId)
+              .eq("user_id", user.id)
+              .select("*")
+              .single()
+          : supabase
+              .from("qa_member_checkins")
+              .insert([writePayload])
+              .select("*")
+              .single();
+
+        const { data, error } = await query;
+
+        if (error) {
+          if (isMissingTableError(error)) {
+            setCheckinsWarning("Check-ins are not enabled yet. Run the latest Supabase SQL.");
+            showToast("Saved locally. Enable check-ins SQL for cloud sync.", { tone: "info", duration: 2800 });
+          } else {
+            setCheckinsWarning("Cloud check-in unavailable. Saved locally.");
+            showToast("Saved locally. Cloud check-in unavailable.", { tone: "info", duration: 2600 });
+          }
+        } else if (data) {
+          savedRow = mapCheckinRow(data);
+          setCheckinsWarning("");
+        }
+      } else {
+        showToast("Saved locally. Join as member to sync check-ins across devices.", { tone: "info", duration: 2800 });
+      }
+
+      setCheckins((current) => {
+        const merged = isEditing
+          ? current.map((entry) => (String(entry.id) === String(savedRow.id) ? savedRow : entry))
+          : [savedRow, ...current].slice(0, 300);
+        writeLocalJson(CHECKINS_STORAGE_KEY, merged);
+        return merged;
+      });
+
+      trackKpiEvent("checkin_saved", {
+        city: cityValue,
+        targetType: "checkin",
+        targetId: String(savedRow.id || ""),
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
+      showToast(isEditing ? "Check-in updated." : "Check-in saved to your atlas.", { tone: "ok", duration: 2100 });
+      setSelectedCheckinId(String(savedRow.id || ""));
+      if (isEditing) {
+        setEditingCheckinId("");
+      }
+    } finally {
+      setIsSavingCheckin(false);
+    }
+  };
+
+  const startEditCheckin = (entry) => {
+    if (!entry?.id) return;
+    setEditingCheckinId(String(entry.id));
+    setSelectedCheckinId(String(entry.id));
+    setCheckinForm((current) => ({
+      ...current,
+      mode: String(entry.mode || "trip"),
+      privacy: String(entry.privacy || "friends"),
+      country: String(entry.country || cityCountryLookup.get(normalizeCityKey(entry.city)) || current.country || ""),
+      city: formatCityLabel(String(entry.city || current.city || "")),
+      sourceType: "manual",
+      sourceId: "",
+      label: String(entry.label || ""),
+      address: String(entry.address || ""),
+      note: String(entry.note || ""),
+    }));
+  };
+
+  const cancelEditCheckin = () => {
+    setEditingCheckinId("");
+  };
+
+  const deleteCheckin = async (entry) => {
+    const id = String(entry?.id || "");
+    if (!id) return;
+
+    if (user?.id && !id.startsWith("local-")) {
+      const { error } = await supabase
+        .from("qa_member_checkins")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (error) {
+        showToast("Could not delete check-in in cloud. Try again.", { tone: "warn", duration: 2500 });
+        return;
+      }
+    }
+
+    setCheckins((current) => {
+      const next = current.filter((item) => String(item.id) !== id);
+      writeLocalJson(CHECKINS_STORAGE_KEY, next);
+      return next;
+    });
+    if (editingCheckinId === id) {
+      setEditingCheckinId("");
+    }
+    if (selectedCheckinId === id) {
+      setSelectedCheckinId("");
+    }
+    showToast("Check-in deleted.", { tone: "info", duration: 2000 });
+  };
+
+  const focusCheckinOnMap = useCallback(
+    (entry) => {
+      if (!entry?.id) return;
+      setSelectedCheckinId(String(entry.id));
+
+      const map = checkinMapRef.current;
+      if (map && Number.isFinite(Number(entry.markerLat)) && Number.isFinite(Number(entry.markerLng))) {
+        map.flyTo({
+          center: [Number(entry.markerLng), Number(entry.markerLat)],
+          zoom: Math.max(map.getZoom(), 12.5),
+          essential: true,
+        });
+      }
+
+      const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
+      if (isMobile) {
+        checkinMapCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    []
+  );
+
+  const quickCheckinFromItem = async (item, itemType = "place") => {
+    if (!item) return;
+    const cityValue = String(item.city || "");
+    const countryValue = cityCountryLookup.get(normalizeCityKey(cityValue)) || "";
+    await submitCheckin({
+      mode: "trip",
+      privacy: "friends",
+      country: countryValue,
+      city: cityValue,
+      label: String(item.name || item.title || "Unknown stop"),
+      address: String(item.location || item.address || ""),
+      note: "",
+      lat: item.lat,
+      lng: item.lng,
+      placeId: itemType === "place" ? String(item.id || "") : "",
+      eventId: itemType === "event" ? String(item.id || "") : "",
     });
   };
 
@@ -1266,228 +2085,592 @@ export default function FavoritesPage() {
           </form>
         </section>
 
-        <section className="relative mb-8 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[34px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-white/38">
-                  Momentum
-                </p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                  Your signal
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-white/56">
-                  Snapshot of your current momentum, rank, and city footprint.
-                </p>
-              </div>
-              <button
-                onClick={() => router.push("/cities")}
-                className="rounded-full border border-white/8 bg-white/5 px-4 py-2 text-xs text-white/58 transition hover:border-white/14 hover:text-white/80"
-              >
-                Explore cities
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl border border-white/8 bg-[linear-gradient(180deg,rgba(39,17,27,0.72),rgba(12,12,12,0.96))] p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">
-                  Added this week
-                </p>
-                <p className="mt-3 text-4xl font-semibold text-white">{thisWeekAdds}</p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-[linear-gradient(180deg,rgba(14,33,31,0.72),rgba(12,12,12,0.96))] p-5">
-                <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">
-                  Cities touched
-                </p>
-                <p className="mt-3 text-4xl font-semibold text-white">{allCities.length}</p>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-3xl border border-white/8 bg-[linear-gradient(180deg,rgba(18,20,38,0.72),rgba(12,12,12,0.96))] p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-indigo-200/75">
-                Your community ranking just now
+        <section className="relative mb-8 rounded-[34px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.10),transparent_34%),linear-gradient(180deg,rgba(22,14,28,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-white/55">Signal rail</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Momentum</h2>
+              <p className="mt-2 text-sm leading-6 text-white/56">
+                One integrated panel for your current signal and your fastest next actions.
               </p>
-              {memberRank?.title ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/75">
-                    #{memberRank.rank}
-                  </span>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
-                    <span>{memberTitleMeta.icon}</span>
-                    {memberTitleMeta.label}
-                  </span>
-                  <span className="text-xs text-white/55">{memberRank.score} pts</span>
+            </div>
+            <button
+              onClick={() => router.push("/cities")}
+              className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs text-white/65 transition hover:border-white/20 hover:text-white/88"
+            >
+              Explore cities
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="h-full rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/78">Your signal</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-black/22 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-rose-200/75">Added this week</p>
+                  <p className="mt-2 text-3xl font-semibold text-white">{thisWeekAdds}</p>
                 </div>
-              ) : (
-                <p className="mt-3 text-sm text-white/62">
-                  No rank yet. Add places, events, or reviews to activate your badge.
-                </p>
-              )}
+                <div className="rounded-2xl border border-white/10 bg-black/22 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/75">Cities touched</p>
+                  <p className="mt-2 text-3xl font-semibold text-white">{allCities.length}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-indigo-200/75">Community ranking</p>
+                {memberRank?.title ? (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/75">
+                      #{memberRank.rank}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
+                      <span>{memberTitleMeta.icon}</span>
+                      {memberTitleMeta.label}
+                    </span>
+                    <span className="text-xs text-white/55">{memberRank.score} pts</span>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-white/62">
+                    No rank yet. Add places, events, or reviews to activate your badge.
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">Your cities</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {allCities.length > 0 ? (
+                    allCities.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => router.push(`/${city.toLowerCase()}`)}
+                        className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
+                      >
+                        {city}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-sm text-white/45">No cities saved yet.</p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div className="mt-5 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/38">
-                Your cities
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {allCities.length > 0 ? (
-                  allCities.map((city) => (
+            <div className="h-full rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5">
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/78">Continue where you left off</p>
+              <p className="mt-2 text-sm text-white/56">Latest saves, optimized for quick re-entry.</p>
+              <div className="mt-4 flex snap-x gap-3 overflow-x-auto pb-1 md:max-h-[360px] md:space-y-3 md:overflow-y-auto md:pr-1">
+                {recentSaves.length > 0 ? (
+                  recentSaves.map((item) => (
                     <button
-                      key={city}
-                      onClick={() => router.push(`/${city.toLowerCase()}`)}
-                      className="rounded-full border border-white/8 bg-white/5 px-4 py-2 text-sm text-white/70 transition hover:border-white/14 hover:text-white"
+                      key={`${item.type}-${item.id}`}
+                      onClick={() =>
+                        router.push(
+                          item.type === "place"
+                            ? `/${item.city.toLowerCase()}?placeId=${item.id}`
+                            : `/${item.city.toLowerCase()}?eventId=${item.id}`
+                        )
+                      }
+                      className="animate-rise-in min-w-[276px] snap-start rounded-[22px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-white/24 md:flex md:min-w-0 md:w-full md:items-center md:justify-between"
                     >
-                      {city}
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] uppercase tracking-[0.16em] text-white/55">
+                          {item.type === "place" ? "Place" : "Event"} - {item.city}
+                        </p>
+                        <p className="mt-1 truncate text-sm font-semibold text-white">{item.name}</p>
+                      </div>
+                      <span className="mt-2 block text-[11px] text-white/48 md:mt-0">{timeAgo(item.date)}</span>
                     </button>
                   ))
                 ) : (
-                  <p className="text-sm text-white/42">No cities saved yet.</p>
+                  <div className="w-full rounded-[22px] border border-dashed border-white/12 px-4 py-8 text-sm text-white/45">
+                    Start saving places and events to build your atlas.
+                  </div>
                 )}
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="rounded-[34px] border border-sky-200/14 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.12),transparent_28%),linear-gradient(180deg,rgba(14,20,30,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-white/38">
-                  Recent saves
-                </p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                  Continue where you left off
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-white/56">
-                  Jump straight back into your latest saved venues and events.
-                </p>
-              </div>
+        <section className="mb-8 rounded-[34px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-200/75">
+                Your travel timeline
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+                Check-in map
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-white/56">
+                Check in where you are now and build your own live queer map.
+              </p>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/12 bg-white/7 px-3 py-1 text-xs text-white/70">
+                {checkins.length} check-ins
+              </span>
+              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100/85">
+                {checkinCities.length} cities
+              </span>
+            </div>
+          </div>
 
-            <div className="mt-6 space-y-3">
-              {recentSaves.length > 0 ? (
-                recentSaves.map((item) => (
-                  <button
-                    key={`${item.type}-${item.id}`}
-                    onClick={() =>
-                      router.push(
-                        item.type === "place"
-                          ? `/${item.city.toLowerCase()}?placeId=${item.id}`
-                          : `/${item.city.toLowerCase()}?eventId=${item.id}`
-                      )
-                    }
-                    className="animate-rise-in flex w-full items-center justify-between rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-5 py-4 text-left transition hover:-translate-y-[1px] hover:border-white/20"
-                  >
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-white/35">
-                        {item.type === "place" ? "Place" : "Event"} · {item.city}
-                      </p>
-                      <p className="mt-2 text-base font-semibold text-white">{item.name}</p>
-                    </div>
-                    <span className="text-xs text-white/40">{timeAgo(item.date)}</span>
-                  </button>
-                ))
+          <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+            <div
+              ref={checkinMapCardRef}
+              className={`rounded-3xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 transition ${
+                selectedCheckin
+                  ? "border-fuchsia-200/34 shadow-[0_0_0_1px_rgba(244,114,182,0.18),0_24px_80px_rgba(244,114,182,0.14)]"
+                  : "border-white/10"
+              }`}
+            >
+              {selectedCheckin ? (
+                <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-3 py-1 text-[11px] text-fuchsia-100/95">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200" />
+                  <span className="truncate">
+                    Selected: {selectedCheckin.label || "Check-in"} · {selectedCheckin.city || "City"}
+                  </span>
+                </div>
+              ) : null}
+              {mapboxToken && interactiveCheckinPoints.length > 0 ? (
+                <div
+                  ref={checkinMapContainerRef}
+                  className="h-[280px] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/25"
+                />
+              ) : checkinMapEmbedUrl ? (
+                <iframe
+                  title="Your check-in map"
+                  src={checkinMapEmbedUrl}
+                  className="h-[280px] w-full rounded-2xl border border-white/10 bg-black/25"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              ) : staticMapUrl && !checkinMapLoadFailed ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={staticMapUrl}
+                  alt="Your check-in map"
+                  onError={() => setCheckinMapLoadFailed(true)}
+                  className="h-[280px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain"
+                />
+              ) : openStreetMapStaticUrl && !checkinStaticFallbackFailed ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={openStreetMapStaticUrl}
+                  alt="Your check-in map fallback"
+                  onError={() => setCheckinStaticFallbackFailed(true)}
+                  className="h-[280px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain"
+                />
               ) : (
-                <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42">
-                  Start saving places and events to build your atlas.
+                <div className="flex h-[280px] items-center justify-center rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 text-sm text-white/45">
+                  Check-ins auto-pin from city + venue. Add more check-ins to render the map.
                 </div>
               )}
+
+              <form
+                ref={checkinFormRef}
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  const sourceType = String(checkinForm.sourceType || "manual");
+                  const payload = { ...checkinForm };
+
+                  if (sourceType === "atlas_place") {
+                    const selected = selectedCityPlaces.find((item) => String(item.id) === String(checkinForm.sourceId));
+                    if (!selected) {
+                      showToast("Choose a venue from atlas or switch to Manual.", { tone: "warn", duration: 2200 });
+                      return;
+                    }
+                    payload.label = String(selected.name || "");
+                    payload.placeId = String(selected.id || "");
+                    payload.eventId = "";
+                    payload.lat = selected.lat;
+                    payload.lng = selected.lng;
+                    payload.city = formatCityLabel(selected.city || checkinForm.city);
+                    payload.country = cityCountryLookup.get(normalizeCityKey(payload.city)) || checkinForm.country || "";
+                    payload.address = String(selected.location || selected.address || "");
+                  } else if (sourceType === "atlas_event") {
+                    const selected = selectedCityEvents.find((item) => String(item.id) === String(checkinForm.sourceId));
+                    if (!selected) {
+                      showToast("Choose an event from atlas or switch to Manual.", { tone: "warn", duration: 2200 });
+                      return;
+                    }
+                    payload.label = String(selected.name || "");
+                    payload.placeId = "";
+                    payload.eventId = String(selected.id || "");
+                    payload.lat = selected.lat;
+                    payload.lng = selected.lng;
+                    payload.city = formatCityLabel(selected.city || checkinForm.city);
+                    payload.country = cityCountryLookup.get(normalizeCityKey(payload.city)) || checkinForm.country || "";
+                    payload.address = String(selected.location || selected.address || "");
+                  } else {
+                    payload.placeId = "";
+                    payload.eventId = "";
+                    payload.city = formatCityLabel(checkinForm.city);
+                    payload.country = cityCountryLookup.get(normalizeCityKey(payload.city)) || checkinForm.country || "";
+                    payload.address = String(checkinForm.address || "");
+                  }
+
+                  if (editingCheckinId) {
+                    const existing = checkins.find((entry) => String(entry.id) === String(editingCheckinId));
+                    payload.id = editingCheckinId;
+                    payload.lat = payload.lat ?? existing?.lat ?? null;
+                    payload.lng = payload.lng ?? existing?.lng ?? null;
+                    payload.checkedInAt = existing?.checkedInAt || new Date().toISOString();
+                  }
+
+                  await submitCheckin(payload);
+                }}
+                className="mt-4 grid gap-2 sm:grid-cols-2"
+              >
+                <select
+                  value={checkinForm.mode}
+                  onChange={(event) => setCheckinForm((current) => ({ ...current, mode: event.target.value }))}
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                >
+                  <option value="trip">Trip</option>
+                  <option value="home">Home</option>
+                  <option value="night_out">Night out</option>
+                </select>
+                <select
+                  value={checkinForm.privacy}
+                  onChange={(event) => setCheckinForm((current) => ({ ...current, privacy: event.target.value }))}
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                >
+                  <option value="friends">Friends</option>
+                  <option value="private">Private</option>
+                  <option value="public">Public</option>
+                </select>
+                <select
+                  value={checkinForm.country}
+                  onChange={(event) =>
+                    setCheckinForm((current) => ({
+                      ...current,
+                      country: event.target.value,
+                      city: "",
+                      sourceId: "",
+                      label: "",
+                      address: "",
+                    }))
+                  }
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                >
+                  {checkinCountryOptions.length === 0 ? <option value="">No countries yet</option> : null}
+                  {checkinCountryOptions.map((country) => (
+                    <option key={country} value={country}>
+                      {country}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={checkinForm.city}
+                  onChange={(event) =>
+                    setCheckinForm((current) => ({
+                      ...current,
+                      city: event.target.value,
+                      sourceId: "",
+                      label: "",
+                      address: "",
+                    }))
+                  }
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                >
+                  {checkinCityOptions.length === 0 ? <option value="">No cities yet</option> : null}
+                  {checkinCityOptions.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={checkinForm.sourceType}
+                  onChange={(event) =>
+                    setCheckinForm((current) => ({
+                      ...current,
+                      sourceType: event.target.value,
+                      sourceId: "",
+                      label: "",
+                      address: "",
+                    }))
+                  }
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                >
+                  <option value="manual">Manual venue/event</option>
+                  <option value="atlas_place">Choose atlas venue</option>
+                  <option value="atlas_event">Choose atlas event</option>
+                </select>
+                {checkinForm.sourceType === "atlas_place" ? (
+                  <select
+                    value={checkinForm.sourceId}
+                    onChange={(event) => {
+                      const selected = selectedCityPlaces.find((item) => String(item.id) === String(event.target.value));
+                      setCheckinForm((current) => ({
+                        ...current,
+                        sourceId: event.target.value,
+                        label: selected ? String(selected.name || "") : "",
+                        address: selected ? String(selected.location || selected.address || "") : "",
+                      }));
+                    }}
+                    className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                  >
+                    <option value="">
+                      {selectedCityPlaces.length > 0 ? "Select venue" : "No venues in this city yet"}
+                    </option>
+                    {selectedCityPlaces.map((place) => (
+                      <option key={`place-${place.id}`} value={String(place.id)}>
+                        {place.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {checkinForm.sourceType === "atlas_event" ? (
+                  <select
+                    value={checkinForm.sourceId}
+                    onChange={(event) => {
+                      const selected = selectedCityEvents.find((item) => String(item.id) === String(event.target.value));
+                      setCheckinForm((current) => ({
+                        ...current,
+                        sourceId: event.target.value,
+                        label: selected ? String(selected.name || "") : "",
+                        address: selected ? String(selected.location || selected.address || "") : "",
+                      }));
+                    }}
+                    className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                  >
+                    <option value="">
+                      {selectedCityEvents.length > 0 ? "Select event" : "No events in this city yet"}
+                    </option>
+                    {selectedCityEvents.map((item) => (
+                      <option key={`event-${item.id}`} value={String(item.id)}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
+                {checkinForm.sourceType === "manual" ? (
+                  <>
+                    <input
+                      value={checkinForm.label}
+                      onChange={(event) => setCheckinForm((current) => ({ ...current, label: event.target.value }))}
+                      placeholder="Venue / event / area"
+                      className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                    />
+                    <input
+                      value={checkinForm.address}
+                      onChange={(event) => setCheckinForm((current) => ({ ...current, address: event.target.value }))}
+                      placeholder="Address (recommended for accurate map pin)"
+                      className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                    />
+                  </>
+                ) : null}
+                <textarea
+                  value={checkinForm.note}
+                  onChange={(event) => setCheckinForm((current) => ({ ...current, note: event.target.value }))}
+                  placeholder="Note (optional)"
+                  className="min-h-[72px] rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                />
+                <button
+                  type="submit"
+                  disabled={isSavingCheckin}
+                  className="rounded-xl border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/55 disabled:opacity-60 sm:col-span-2"
+                >
+                  {isSavingCheckin ? "Saving check-in..." : editingCheckinId ? "Save check-in changes" : "Check in now"}
+                </button>
+                {editingCheckinId ? (
+                  <button
+                    type="button"
+                    onClick={cancelEditCheckin}
+                    className="rounded-xl border border-white/16 bg-white/7 px-3 py-2 text-xs uppercase tracking-[0.12em] text-white/75 transition hover:border-white/24 sm:col-span-2"
+                  >
+                    Cancel edit
+                  </button>
+                ) : null}
+              </form>
+              {checkinsWarning && (
+                <div className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+                  {checkinsWarning}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-white/42">Your check-ins</p>
+              <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
+                <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-cyan-100/90">Friends</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {[
+                  { id: "all", label: "All" },
+                  { id: "places", label: "Places" },
+                  { id: "events", label: "Events" },
+                  { id: "manual", label: "Manual" },
+                ].map((filter) => (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => setCheckinViewFilter(filter.id)}
+                    className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.11em] transition ${
+                      checkinViewFilter === filter.id
+                        ? "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100"
+                        : "border-white/14 bg-white/6 text-white/62 hover:border-white/24 hover:text-white/82"
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 space-y-2">
+                {filteredRecentCheckins.length > 0 ? (
+                  filteredRecentCheckins.map((entry) => (
+                    <article
+                      key={entry.id}
+                      onClick={() => focusCheckinOnMap(entry)}
+                      className={`cursor-pointer rounded-2xl border bg-black/20 p-3 transition ${
+                        String(selectedCheckinId) === String(entry.id)
+                          ? "border-fuchsia-200/45 shadow-[0_0_0_1px_rgba(244,114,182,0.25)]"
+                          : "border-white/10 hover:border-white/24"
+                      }`}
+                    >
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
+                        {entry.city || "Unknown city"}{entry.country ? ` · ${entry.country}` : ""}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
+                      {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/55">
+                        <span>{formatCheckinTime(entry.checkedInAt)}</span>
+                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/78">
+                          {String(entry.mode).replaceAll("_", " ")}
+                        </span>
+                      </div>
+                      {entry.note ? <p className="mt-1 text-xs text-white/62">{entry.note}</p> : null}
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            startEditCheckin(entry);
+                          }}
+                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/35"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteCheckin(entry);
+                          }}
+                          className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/35"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
+                    <div className="mb-2 text-base">No check-ins in this filter yet.</div>
+                    <button
+                      type="button"
+                      onClick={() => checkinFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                      className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
+                    >
+                      Create check-in
+                    </button>
+                  </div>
+                )}
+              </div>
+              {followingCheckinsWarning && (
+                <div className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+                  {followingCheckinsWarning}
+                </div>
+              )}
+              <div className="mt-4 border-t border-white/10 pt-4">
+                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friends check-ins</p>
+                <div className="mt-2 space-y-2">
+                  {recentFollowingCheckins.length > 0 ? (
+                    recentFollowingCheckins.map((entry) => {
+                      const presence = followingPresenceByUserId[String(entry.ownerUserId || "")] || null;
+                      const activeNow = isPresenceActiveNow(presence);
+                      return (
+                        <article key={`friend-${entry.id}`} className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-white">
+                                {entry.ownerName || "Member"}
+                              </p>
+                              <p className="mt-1 text-xs text-white/65">
+                                {entry.label || "Unnamed check-in"} · {entry.city || "Unknown city"}
+                              </p>
+                              {entry.address ? <p className="mt-1 text-[11px] text-white/52">{entry.address}</p> : null}
+                            </div>
+                            <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
+                              activeNow
+                                ? "border-emerald-200/30 bg-emerald-200/16 text-emerald-100"
+                                : "border-white/16 bg-white/8 text-white/62"
+                            }`}>
+                              {activeNow ? "Active now" : "Offline"}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-[11px] text-white/55">{formatCheckinTime(entry.checkedInAt)}</p>
+                        </article>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
+                      No friend check-ins yet. Follow members and their travel signal appears here.
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="mb-8 rounded-[34px] border border-cyan-200/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_80%_15%,rgba(244,114,182,0.10),transparent_26%),linear-gradient(180deg,rgba(10,28,38,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/75">
-                Retention loop
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                Weekly digest
-              </h2>
+              <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/75">Atlas insights</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Signal dashboard</h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
-                Fresh signal from your network, your cities, and your next move.
+                Keep the page clean: core tools stay open, deeper community signal stays one tap away.
               </p>
             </div>
-            <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100/85">
-              Week {weeklyDigest.weekLabel}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100/85">
+                Week {weeklyDigest.weekLabel}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowSignalDeck((current) => !current)}
+                className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+              >
+                {showSignalDeck ? "Hide deep signal" : "Open deep signal"}
+              </button>
+            </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <article className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.02))] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/75">Your network discovered</p>
-              <p className="mt-2 text-3xl font-semibold text-white">{weeklyDigest.followingThisWeekCount}</p>
-              <p className="mt-2 text-sm leading-6 text-white/62">
-                saves in the last 7 days
-                {weeklyDigest.topFollowingCity ? `, strongest in ${weeklyDigest.topFollowingCity}` : "."}
-              </p>
-              <button
-                type="button"
-                onClick={() => router.push("/favorites")}
-                className="mt-3 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
-              >
-                Open trusted feed
-              </button>
-            </article>
-
-            <article className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(167,139,250,0.14),rgba(255,255,255,0.02))] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-violet-100/75">Upcoming in your cities</p>
-              {weeklyDigest.upcomingInSavedCities.length > 0 ? (
-                <>
-                  <p className="mt-2 text-3xl font-semibold text-white">{weeklyDigest.upcomingInSavedCities.length}</p>
-                  <p className="mt-2 text-sm leading-6 text-white/62">
-                    events in the next 10 days ready for your plan window.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/events")}
-                    className="mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
-                  >
-                    Open events
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="mt-2 text-lg font-semibold text-white">Quiet week ahead</p>
-                  <p className="mt-2 text-sm leading-6 text-white/62">
-                    Add new city signal or check world news for off-grid momentum.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => router.push("/now")}
-                    className="mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
-                  >
-                    Open queer world news
-                  </button>
-                </>
-              )}
-            </article>
-
-            <article className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.02))] p-4">
-              <p className="text-xs uppercase tracking-[0.16em] text-rose-100/75">Next growth move</p>
-              <p className="mt-2 text-3xl font-semibold text-white">{weeklyDigest.newCityTarget}</p>
-              <p className="mt-2 text-sm leading-6 text-white/62">
-                {weeklyDigest.newCityTarget > 0
-                  ? `more city signal to reach your 5-city atlas baseline.`
-                  : "city baseline complete. Time to deepen quality and reviews."}
-              </p>
-              <button
-                type="button"
-                onClick={() => router.push("/cities")}
-                className="mt-3 rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
-              >
-                Explore cities
-              </button>
-            </article>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Network saves (7d)</p>
+              <p className="mt-1 text-2xl font-semibold text-white">{weeklyDigest.followingThisWeekCount}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Upcoming in your cities</p>
+              <p className="mt-1 text-2xl font-semibold text-white">{weeklyDigest.upcomingInSavedCities.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Cities to reach baseline</p>
+              <p className="mt-1 text-2xl font-semibold text-white">{weeklyDigest.newCityTarget}</p>
+            </div>
           </div>
         </section>
 
-        <section className="mb-8 grid gap-6 xl:grid-cols-[0.74fr_1.26fr]">
+        <section className="mb-8 grid gap-6 xl:grid-cols-[0.44fr_1.56fr]">
           <div className="rounded-[34px] border border-emerald-200/16 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_30%),linear-gradient(180deg,rgba(11,38,31,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-emerald-200/72">
-                  Profile signal
-                </p>
+                <p className="text-xs uppercase tracking-[0.24em] text-emerald-200/72">Profile (optional)</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">
                   Your footprint
                 </h2>
@@ -1799,6 +2982,8 @@ export default function FavoritesPage() {
           </div>
         </section>
 
+        {showSignalDeck ? (
+        <>
         <section className="mb-8 rounded-[34px] border border-emerald-200/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(13,26,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
           <div className="mb-6 flex items-center justify-between gap-3">
             <div>
@@ -2096,6 +3281,8 @@ export default function FavoritesPage() {
             )}
           </div>
         </section>
+        </>
+        ) : null}
 
         <section className="mb-8 rounded-[34px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
           <div className="mb-6 flex items-center justify-between gap-3">
@@ -2154,24 +3341,43 @@ export default function FavoritesPage() {
                     </p>
                   )}
 
-                  <div className="mt-5 flex items-center justify-between text-xs text-white/38">
+                  <div className="mt-5 flex items-center justify-between gap-2 text-xs text-white/52">
                     <span>{place.reviewCount || 0} reviews</span>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        removeFavorite(place.id, place.name);
-                      }}
-                      className="rounded-full border border-rose-200/14 bg-rose-200/[0.08] px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/30"
-                    >
-                      Remove
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          quickCheckinFromItem(place, "place");
+                        }}
+                        className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
+                      >
+                        Check in
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          removeFavorite(place.id, place.name);
+                        }}
+                        className="rounded-full border border-rose-200/14 bg-rose-200/[0.08] px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/30"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42 md:col-span-2 xl:col-span-3">
-                No saved places yet.
+                            <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/48 md:col-span-2 xl:col-span-3">
+                <p>No saved places yet.</p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/cities")}
+                  className="mt-3 rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
+                >
+                  Explore cities
+                </button>
               </div>
             )}
           </div>
@@ -2234,24 +3440,43 @@ export default function FavoritesPage() {
                     </p>
                   )}
 
-                  <div className="mt-5 flex items-center justify-between text-xs text-white/38">
+                  <div className="mt-5 flex items-center justify-between gap-2 text-xs text-white/52">
                     <span>{event.link ? "External link available" : "Open on map"}</span>
-                    <button
-                      type="button"
-                      onClick={(itemEvent) => {
-                        itemEvent.stopPropagation();
-                        removeFavorite(`event-${event.id}`, event.name);
-                      }}
-                      className="rounded-full border border-violet-200/14 bg-violet-200/[0.08] px-3 py-1 text-[11px] text-violet-100/90 transition hover:border-violet-200/30"
-                    >
-                      Remove
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(itemEvent) => {
+                          itemEvent.stopPropagation();
+                          quickCheckinFromItem(event, "event");
+                        }}
+                        className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
+                      >
+                        Check in
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(itemEvent) => {
+                          itemEvent.stopPropagation();
+                          removeFavorite(`event-${event.id}`, event.name);
+                        }}
+                        className="rounded-full border border-violet-200/14 bg-violet-200/[0.08] px-3 py-1 text-[11px] text-violet-100/90 transition hover:border-violet-200/30"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42 md:col-span-2 xl:col-span-3">
-                No saved events yet.
+                            <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/48 md:col-span-2 xl:col-span-3">
+                <p>No saved events yet.</p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/events")}
+                  className="mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
+                >
+                  Browse events
+                </button>
               </div>
             )}
           </div>
