@@ -14,31 +14,6 @@ function formatSupabaseError(error) {
   return JSON.stringify(details);
 }
 
-function normalizeCityKey(value = "") {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/[-\s]+/g, "_")
-    .replace(/_+/g, "_")
-    .trim();
-}
-
-function filterSeedPlacesForCoveredCities(places = [], databasePlaces = []) {
-  const coveredCities = new Set(
-    (Array.isArray(databasePlaces) ? databasePlaces : [])
-      .map((place) => normalizeCityKey(place?.city))
-      .filter(Boolean),
-  );
-
-  if (coveredCities.size === 0) return places;
-
-  return (Array.isArray(places) ? places : []).filter((place) => {
-    const id = String(place?.id || "");
-    if (!id.startsWith("seed-place-")) return true;
-    const cityKey = normalizeCityKey(place?.city);
-    return !coveredCities.has(cityKey);
-  });
-}
-
 export function usePlaces(city) {
   const [places, setPlaces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,7 +96,7 @@ export function usePlaces(city) {
       });
 
       const mergedWithSeedFallback = mergeSeedPlaces(fallbackRows);
-      setPlaces(filterSeedPlacesForCoveredCities(mergedWithSeedFallback, fallbackRows));
+      setPlaces(mergedWithSeedFallback);
       setLoadError("Live stats view is unavailable. Showing direct place data.");
       setIsLoading(false);
       return;
@@ -173,7 +148,7 @@ export function usePlaces(city) {
     });
 
     const mergedWithSeed = mergeSeedPlaces(mergedViewRows);
-    setPlaces(filterSeedPlacesForCoveredCities(mergedWithSeed, mergedViewRows));
+    setPlaces(mergedWithSeed);
     setIsLoading(false);
   }, []);
 
