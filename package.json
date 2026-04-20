@@ -7,7 +7,11 @@
     "build": "next build --webpack --debug",
     "start": "next start",
     "lint": "eslint",
+<<<<<<< HEAD
     "backfill:place-locations": "node scripts/backfill-place-locations.mjs"
+=======
+    "seed:city-reviews": "node scripts/seed-city-reviews.mjs"
+>>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
   },
   "dependencies": {
     "@sentry/nextjs": "^10.48.0",

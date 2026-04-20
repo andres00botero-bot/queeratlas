@@ -208,6 +208,7 @@ export default function NowPage() {
     });
   }, [loadPulseData]);
 
+<<<<<<< HEAD
   const loadEditorialData = useCallback(async () => {
     const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
       supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
@@ -225,6 +226,37 @@ export default function NowPage() {
       }
       setAdminNews([]);
     } else {
+=======
+  useEffect(() => {
+    queueMicrotask(async () => {
+      const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
+        supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
+        supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
+        supabase.from(RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
+      ]);
+
+      const hasMissingTables =
+        isMissingTableError(newsResponse.error) ||
+        isMissingTableError(hiddenResponse.error) ||
+        isMissingTableError(rankingResponse.error);
+
+      if (hasMissingTables) {
+        setSyncWarning("Off-grid sync is unavailable right now.");
+        setAdminNews([]);
+        setHiddenNewsIds([]);
+        setRankingOverrides({});
+        return;
+      }
+
+      if (newsResponse.error || hiddenResponse.error || rankingResponse.error) {
+        setSyncWarning("Cloud sync failed. Showing verified cloud/editorial content only.");
+        setAdminNews([]);
+        setHiddenNewsIds([]);
+        setRankingOverrides({});
+        return;
+      }
+
+>>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
       const remoteNews = (newsResponse.data || []).map(mapNewsRowToItem);
       setAdminNews(remoteNews);
       writeLocalJson(ADMIN_NEWS_KEY, remoteNews);

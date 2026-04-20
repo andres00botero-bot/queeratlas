@@ -106,6 +106,14 @@ function humanizeCitySlug(value = "") {
     .join(" ");
 }
 
+function normalizeCityKey(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")
+    .trim();
+}
+
 function cityNameFromConfig(config, citySlug) {
   const titleName = String(config?.title || "").replace(/^Queer\s+/i, "").trim();
   return titleName || humanizeCitySlug(citySlug) || "this city";
@@ -615,8 +623,9 @@ export default function CityPage() {
 
   const cityPlaces = useMemo(
     () => {
+      const normalizedCity = normalizeCityKey(city);
       return places.filter((place) => (
-        place.city?.toLowerCase() === city.toLowerCase()
+        normalizeCityKey(place.city) === normalizedCity
         && !blockedItems.some(
           (item) =>
             item.targetType === "place" &&
@@ -629,9 +638,15 @@ export default function CityPage() {
 
   const cityEvents = useMemo(
     () => {
+      const normalizedCity = normalizeCityKey(city);
       return eventsData.filter((event) => (
+<<<<<<< HEAD
         event.city?.toLowerCase() === city.toLowerCase()
         && isEventVisibleOnCityPage(event)
+=======
+        normalizeCityKey(event.city) === normalizedCity
+        && isEventVisibleOnCityPage(event.date)
+>>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
         && !blockedItems.some(
           (item) =>
             item.targetType === "event" &&

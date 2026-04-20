@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { addReport, getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
-import { mergeSeedEvents } from "@/lib/seedContent";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
@@ -392,7 +391,11 @@ export default function EventsPage() {
       .order("date", { ascending: true });
 
     return {
+<<<<<<< HEAD
       data: mergeSeedEvents(data || []).map((event) => normalizeEventRange(event)),
+=======
+      data: data || [],
+>>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
       error,
     };
   }, []);
