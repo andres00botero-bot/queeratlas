@@ -16,7 +16,6 @@ export default function FloatingHomeButton() {
 
   useEffect(() => {
     if (!isMember || !user?.id) {
-      setUnreadCount(0);
       return;
     }
 

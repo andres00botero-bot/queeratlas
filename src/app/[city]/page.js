@@ -908,7 +908,7 @@ export default function CityPage() {
     }
   }, []);
 
-  const geocodeAddress = async (value) => {
+  const geocodeAddress = useCallback(async (value) => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) {
       throw new Error("Map token is missing.");
@@ -929,7 +929,7 @@ export default function CityPage() {
 
     const [lng, lat] = data.features[0].center;
     return { lat, lng };
-  };
+  }, [city]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -2164,7 +2164,7 @@ export default function CityPage() {
                 <DateInput value={eventEndDate} onChange={(event) => setEventEndDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" tone="violet" />
               </div>
             </div>
-            <p className="text-[11px] text-white/50">Leave "To" empty for single-day events.</p>
+            <p className="text-[11px] text-white/50">Leave &quot;To&quot; empty for single-day events.</p>
             <button onClick={handleAddEvent} className="w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 font-semibold text-black">
               Save event
             </button>

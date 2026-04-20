@@ -69,6 +69,7 @@ function normalizeMessageRow(row) {
 export default function MessagesPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user } = useAuth();
+  const userId = String(user?.id || "");
   const { toast, showToast } = useActionToast();
   const messageEndRef = useRef(null);
   const activeThreadRef = useRef("");
@@ -81,9 +82,16 @@ export default function MessagesPage() {
   const [activeThreadId, setActiveThreadId] = useState("");
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState("");
-  const [presenceByUserId, setPresenceByUserId] = useState({});
-  const [startUserId, setStartUserId] = useState("");
-  const [startUserName, setStartUserName] = useState("");
+  const [startUserId, setStartUserId] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search || "");
+    return String(params.get("user") || "").trim();
+  });
+  const [startUserName, setStartUserName] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search || "");
+    return String(params.get("name") || "").trim();
+  });
   const [filter, setFilter] = useState("all");
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
 
@@ -115,7 +123,7 @@ export default function MessagesPage() {
   }, [filter, threads]);
 
   const loadThreads = useCallback(async () => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     setIsLoadingThreads(true);
     setWarning("");
@@ -123,7 +131,7 @@ export default function MessagesPage() {
     const { data: threadRows, error: threadError } = await supabase
       .from("qa_dm_threads")
       .select("id, user_a, user_b, created_at, updated_at, last_message_at")
-      .or(`user_a.eq.${user.id},user_b.eq.${user.id}`)
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
       .order("last_message_at", { ascending: false });
 
     if (threadError) {
@@ -138,7 +146,7 @@ export default function MessagesPage() {
     }
 
     const normalizedThreads = (threadRows || []).map((row) => {
-      const otherUserId = row.user_a === user.id ? row.user_b : row.user_a;
+      const otherUserId = row.user_a === userId ? row.user_b : row.user_a;
       return {
         id: String(row.id),
         otherUserId: String(otherUserId || ""),
@@ -195,7 +203,7 @@ export default function MessagesPage() {
           .from("qa_dm_messages")
           .select("thread_id")
           .in("thread_id", threadIds)
-          .neq("sender_id", user.id)
+          .neq("sender_id", userId)
           .is("read_at", null),
         supabase
           .from("qa_dm_messages")
@@ -251,18 +259,17 @@ export default function MessagesPage() {
       })
       .sort((a, b) => b.sortTs - a.sortTs);
 
-    setPresenceByUserId(nextPresenceByUserId);
     setThreads(mappedThreads);
     setActiveThreadId((current) => {
       if (current && mappedThreads.some((thread) => thread.id === current)) return current;
       return mappedThreads[0]?.id || "";
     });
     setIsLoadingThreads(false);
-  }, [startUserId, startUserName, user?.id]);
+  }, [startUserId, startUserName, userId]);
 
   const markThreadRead = useCallback(
     async (threadId) => {
-      if (!threadId || !user?.id) return;
+      if (!threadId || !userId) return;
 
       const { error: rpcError } = await supabase.rpc("qa_mark_thread_read", {
         target_thread_id: threadId,
@@ -274,12 +281,12 @@ export default function MessagesPage() {
             .from("qa_dm_messages")
             .update({ read_at: new Date().toISOString() })
             .eq("thread_id", threadId)
-            .neq("sender_id", user.id)
+            .neq("sender_id", userId)
             .is("read_at", null),
           supabase.from("qa_dm_thread_state").upsert(
             {
               thread_id: threadId,
-              user_id: user.id,
+              user_id: userId,
               last_read_at: new Date().toISOString(),
             },
             { onConflict: "thread_id,user_id" }
@@ -298,7 +305,7 @@ export default function MessagesPage() {
         )
       );
     },
-    [user?.id]
+    [userId]
   );
 
   const loadMessages = useCallback(
@@ -343,12 +350,12 @@ export default function MessagesPage() {
 
   const handleSend = useCallback(async () => {
     const body = draft.trim();
-    if (!body || !activeThreadId || !user?.id || sending) return;
+    if (!body || !activeThreadId || !userId || sending) return;
 
     setSending(true);
     const { error } = await supabase.from("qa_dm_messages").insert({
       thread_id: activeThreadId,
-      sender_id: user.id,
+      sender_id: userId,
       body,
     });
 
@@ -365,12 +372,12 @@ export default function MessagesPage() {
     setDraft("");
     showToast("Message sent.", { tone: "ok", duration: 1200 });
     setSending(false);
-  }, [activeThreadId, draft, sending, showToast, user?.id]);
+  }, [activeThreadId, draft, sending, showToast, userId]);
 
   const openOrCreateThreadForUser = useCallback(
     async (targetUserId) => {
       const normalized = String(targetUserId || "").trim();
-      if (!normalized || !user?.id || normalized === user.id) return;
+      if (!normalized || !userId || normalized === userId) return;
 
       const { data, error } = await supabase.rpc("qa_get_or_create_dm_thread", {
         target_user_id: normalized,
@@ -404,7 +411,7 @@ export default function MessagesPage() {
       }
       router.replace("/messages");
     },
-    [loadThreads, router, showToast, user?.id]
+    [loadThreads, router, showToast, userId]
   );
 
   useEffect(() => {
@@ -434,23 +441,20 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!activeThreadId || !isReady) return;
-    loadMessages(activeThreadId);
+    queueMicrotask(() => {
+      loadMessages(activeThreadId);
+    });
   }, [activeThreadId, isReady, loadMessages]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search || "");
-    setStartUserId(String(params.get("user") || "").trim());
-    setStartUserName(String(params.get("name") || "").trim());
-  }, []);
+    if (!isReady || !isMember || !startUserId || !userId) return;
+    queueMicrotask(() => {
+      openOrCreateThreadForUser(startUserId);
+    });
+  }, [isReady, isMember, openOrCreateThreadForUser, startUserId, userId]);
 
   useEffect(() => {
-    if (!isReady || !isMember || !startUserId || !user?.id) return;
-    openOrCreateThreadForUser(startUserId);
-  }, [isReady, isMember, openOrCreateThreadForUser, startUserId, user?.id]);
-
-  useEffect(() => {
-    if (!user?.id || !isMember) return;
+    if (!userId || !isMember) return;
 
     let cancelled = false;
     const heartbeat = async () => {
@@ -474,13 +478,13 @@ export default function MessagesPage() {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [isMember, user?.id]);
+  }, [isMember, userId]);
 
   useEffect(() => {
-    if (!user?.id || !isMember) return;
+    if (!userId || !isMember) return;
 
     const channel = supabase
-      .channel(`qa-signal-inbox-${user.id}`)
+      .channel(`qa-signal-inbox-${userId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "qa_dm_messages" }, async (payload) => {
         const row = payload.new || {};
         const threadId = String(row.thread_id || "");
@@ -496,7 +500,7 @@ export default function MessagesPage() {
 
           const next = current.map((thread) => {
             if (thread.id !== threadId) return thread;
-            const isIncoming = messageRow.senderId && messageRow.senderId !== user.id;
+            const isIncoming = messageRow.senderId && messageRow.senderId !== userId;
             const unreadCount =
               isIncoming && activeThreadRef.current !== threadId
                 ? (thread.unreadCount || 0) + 1
@@ -525,10 +529,10 @@ export default function MessagesPage() {
             if (current.some((item) => String(item.id) === messageRow.id)) return current;
             return [...current, messageRow];
           });
-          if (messageRow.senderId && messageRow.senderId !== user.id) {
+          if (messageRow.senderId && messageRow.senderId !== userId) {
             await markThreadRead(threadId);
           }
-        } else if (messageRow.senderId && messageRow.senderId !== user.id) {
+        } else if (messageRow.senderId && messageRow.senderId !== userId) {
           showToast("New message received.", { tone: "info", duration: 2600 });
         }
       })
@@ -537,33 +541,24 @@ export default function MessagesPage() {
         const updatedUserId = String(row.user_id || "");
         if (!updatedUserId) return;
 
-        setPresenceByUserId((current) => ({
-          ...current,
-          [updatedUserId]: {
-            isOnline: Boolean(row.is_online),
-            lastSeenAt: row.last_seen_at || null,
-          },
-        }));
+        const nextPresence = {
+          isOnline: Boolean(row.is_online),
+          lastSeenAt: row.last_seen_at || null,
+        };
+        setThreads((current) =>
+          current.map((thread) =>
+            thread.otherUserId === updatedUserId
+              ? { ...thread, presence: nextPresence }
+              : thread
+          )
+        );
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isMember, loadThreads, markThreadRead, showToast, user?.id]);
-
-  useEffect(() => {
-    setThreads((current) =>
-      current.map((thread) => {
-        const presence = presenceByUserId[thread.otherUserId];
-        if (!presence) return thread;
-        return {
-          ...thread,
-          presence,
-        };
-      })
-    );
-  }, [presenceByUserId]);
+  }, [isMember, loadThreads, markThreadRead, showToast, userId]);
 
   if (!isReady || isAuthLoading) {
     return (
@@ -743,7 +738,7 @@ export default function MessagesPage() {
                   ) : messages.length > 0 ? (
                     <div className="space-y-3">
                       {messages.map((message) => {
-                        const mine = String(message.senderId) === String(user?.id);
+                        const mine = String(message.senderId) === String(userId);
                         const senderLabel = mine ? "You" : activeThread.displayName;
                         return (
                           <div

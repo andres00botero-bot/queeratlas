@@ -22,15 +22,10 @@ export default function PwaInstallGate() {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
 
-    if (isStandalone()) {
-      setIsVisible(false);
-      return undefined;
-    }
+    if (isStandalone()) return undefined;
 
     const existingChoice = window.localStorage.getItem(INSTALL_CHOICE_KEY);
-    if (existingChoice === "no" || existingChoice === "yes") {
-      setIsVisible(false);
-    }
+    if (existingChoice === "no" || existingChoice === "yes") return undefined;
 
     const onBeforeInstallPrompt = (event) => {
       event.preventDefault();

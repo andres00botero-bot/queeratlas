@@ -261,9 +261,11 @@ export default function EventsPage() {
   useEffect(() => {
     if (isAuthLoading) return;
     if (!isMember) {
-      setIsAdmin(false);
-      setShowGlobalForm(false);
-      setEditingGlobalEventId("");
+      queueMicrotask(() => {
+        setIsAdmin(false);
+        setShowGlobalForm(false);
+        setEditingGlobalEventId("");
+      });
       return;
     }
 
