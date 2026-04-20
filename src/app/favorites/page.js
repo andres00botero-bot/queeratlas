@@ -1009,15 +1009,17 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
-    if (!interactiveCheckinPoints.length) return;
 
     mapboxgl.accessToken = mapboxToken;
-    const first = interactiveCheckinPoints[0];
+    const center = checkinMapCenter
+      ? [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)]
+      : [11, 20];
+    const zoom = checkinMapCenter ? 4.2 : 2;
     const map = new mapboxgl.Map({
       container: checkinMapContainerRef.current,
       style: "mapbox://styles/mapbox/dark-v11",
-      center: [Number(first.markerLng), Number(first.markerLat)],
-      zoom: 4.2,
+      center,
+      zoom,
       attributionControl: false,
     });
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
@@ -1029,14 +1031,25 @@ export default function FavoritesPage() {
       map.remove();
       checkinMapRef.current = null;
     };
-  }, [interactiveCheckinPoints, mapboxToken]);
+  }, [checkinMapCenter, mapboxToken]);
 
   useEffect(() => {
     const map = checkinMapRef.current;
-    if (!map || !interactiveCheckinPoints.length) return;
+    if (!map) return;
 
     checkinMapMarkersRef.current.forEach((marker) => marker.remove());
     checkinMapMarkersRef.current = [];
+
+    if (!interactiveCheckinPoints.length) {
+      if (checkinMapCenter) {
+        map.flyTo({
+          center: [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)],
+          zoom: Math.max(map.getZoom(), 4.2),
+          essential: true,
+        });
+      }
+      return;
+    }
 
     const bounds = new mapboxgl.LngLatBounds();
     interactiveCheckinPoints.forEach((point) => {
@@ -1083,7 +1096,7 @@ export default function FavoritesPage() {
       }
       map.fitBounds(bounds, { padding: 44, maxZoom: 11, duration: 650 });
     }
-  }, [interactiveCheckinPoints, selectedCheckinId]);
+  }, [checkinMapCenter, interactiveCheckinPoints, selectedCheckinId]);
 
   useEffect(() => {
     setCheckinMapLoadFailed(false);
@@ -2159,7 +2172,7 @@ export default function FavoritesPage() {
             <div className="h-full rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5">
               <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/78">Continue where you left off</p>
               <p className="mt-2 text-sm text-white/56">Latest saves, optimized for quick re-entry.</p>
-              <div className="mt-4 flex snap-x gap-3 overflow-x-auto pb-1 md:max-h-[360px] md:space-y-3 md:overflow-y-auto md:pr-1">
+              <div className="mt-4 space-y-2 md:max-h-[360px] md:overflow-y-auto md:pr-1">
                 {recentSaves.length > 0 ? (
                   recentSaves.map((item) => (
                     <button
@@ -2171,15 +2184,15 @@ export default function FavoritesPage() {
                             : `/${item.city.toLowerCase()}?eventId=${item.id}`
                         )
                       }
-                      className="animate-rise-in min-w-[276px] snap-start rounded-[22px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-white/24 md:flex md:min-w-0 md:w-full md:items-center md:justify-between"
+                      className="animate-rise-in w-full rounded-[18px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-white/24 md:flex md:items-center md:justify-between"
                     >
                       <div className="min-w-0">
-                        <p className="truncate text-[11px] uppercase tracking-[0.16em] text-white/55">
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/62">
                           {item.type === "place" ? "Place" : "Event"} - {item.city}
                         </p>
-                        <p className="mt-1 truncate text-sm font-semibold text-white">{item.name}</p>
+                        <p className="mt-1 text-sm font-semibold leading-5 text-white">{item.name}</p>
                       </div>
-                      <span className="mt-2 block text-[11px] text-white/48 md:mt-0">{timeAgo(item.date)}</span>
+                      <span className="mt-1.5 block text-[11px] text-white/52 md:mt-0 md:ml-3">{timeAgo(item.date)}</span>
                     </button>
                   ))
                 ) : (
@@ -2232,7 +2245,7 @@ export default function FavoritesPage() {
                   </span>
                 </div>
               ) : null}
-              {mapboxToken && interactiveCheckinPoints.length > 0 ? (
+              {mapboxToken ? (
                 <div
                   ref={checkinMapContainerRef}
                   className="h-[280px] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/25"
