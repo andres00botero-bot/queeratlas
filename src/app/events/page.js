@@ -9,6 +9,7 @@ import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
+import { mergeSeedEvents } from "@/lib/seedContent";
 import EmptyState from "@/components/ui/EmptyState";
 import DateInput from "@/components/ui/DateInput";
 import ActionToast from "@/components/ui/ActionToast";
@@ -391,11 +392,7 @@ export default function EventsPage() {
       .order("date", { ascending: true });
 
     return {
-<<<<<<< HEAD
       data: mergeSeedEvents(data || []).map((event) => normalizeEventRange(event)),
-=======
-      data: data || [],
->>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
       error,
     };
   }, []);

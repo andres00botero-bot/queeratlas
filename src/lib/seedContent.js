@@ -73,7 +73,6 @@ const OFFICIAL_VENUE_LINKS = {
   "seed-place-gdl-equilibrio": "https://www.facebook.com/EquilibrioDiscotheque/",
   "seed-place-gdl-voltio": "https://www.instagram.com/voltiobargdl/",
   "seed-place-gdl-eagle": "https://www.instagram.com/eaglegdl/",
-<<<<<<< HEAD
   "seed-place-istanbul-tekyon": "https://www.tekyon.club/",
   "seed-place-istanbul-love": "https://www.istanbulgay.com/bars/loveclub.html",
   "seed-place-istanbul-xlarge": "https://turkeygay.net/istanbul/bars/xlarge.html",
@@ -84,8 +83,6 @@ const OFFICIAL_VENUE_LINKS = {
   "seed-place-bratislava-apollon": "https://www.facebook.com/ApollonGayClub/",
   "seed-place-bratislava-ruido": "https://www.ruido.cafe/",
   "seed-place-bratislava-saunaexpert": "https://www.clubsaunaexpert.com/english/",
-=======
->>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
 };
 
 function normalizeSeedKey(value = "") {
@@ -5637,7 +5634,6 @@ export const seedPlaces = [
     lat: 20.6707,
     lng: -103.3431,
   }),
-<<<<<<< HEAD
   createPlace({
     id: "seed-place-istanbul-tekyon",
     city: "istanbul",
@@ -5772,8 +5768,6 @@ export const seedPlaces = [
     lat: 48.1533,
     lng: 17.1133,
   }),
-=======
->>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
 ];
 
 export const seedEvents = [
@@ -6635,7 +6629,6 @@ export const seedEvents = [
     lat: 20.6767,
     lng: -103.3475,
   }),
-<<<<<<< HEAD
   createEvent({
     id: "seed-event-istanbul-trans-pride-week",
     city: "istanbul",
@@ -6716,8 +6709,6 @@ export const seedEvents = [
     lat: 48.1457,
     lng: 17.1119,
   }),
-=======
->>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
 ];
 
 export function mergeSeedPlaces(databasePlaces = []) {

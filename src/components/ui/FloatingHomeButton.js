@@ -52,10 +52,10 @@ export default function FloatingHomeButton() {
         <Link
           href="/messages"
           aria-label="Open Messages"
-          className="relative inline-flex items-center gap-2 rounded-full border border-cyan-200/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(59,130,246,0.2),rgba(10,10,10,0.92))] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_44px_rgba(34,211,238,0.32)] backdrop-blur transition hover:scale-[1.02] hover:border-cyan-100/45 hover:shadow-[0_18px_55px_rgba(34,211,238,0.40)]"
+          title="Messages"
+          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-cyan-200/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(59,130,246,0.2),rgba(10,10,10,0.92))] text-white shadow-[0_14px_44px_rgba(34,211,238,0.32)] backdrop-blur transition hover:scale-[1.02] hover:border-cyan-100/45 hover:shadow-[0_18px_55px_rgba(34,211,238,0.40)]"
         >
           <MessageCircle className="h-4 w-4" aria-hidden="true" />
-          <span>Messages</span>
           {unreadCount > 0 ? (
             <span className="absolute -right-1 -top-1 rounded-full border border-fuchsia-200/35 bg-fuchsia-300 px-1.5 py-0.5 text-[10px] font-bold text-black">
               {unreadCount > 99 ? "99+" : unreadCount}

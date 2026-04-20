@@ -971,7 +971,6 @@ export const cityConfig = {
       cost: "Often more affordable than Spain's biggest capitals, especially if you avoid peak holiday windows.",
     }),
   },
-<<<<<<< HEAD
   istanbul: {
     center: [28.9784, 41.0082],
     title: "Queer Istanbul",
@@ -1011,8 +1010,6 @@ export const cityConfig = {
       cost: "Usually easier on budget than Western European capitals. You can do a full queer-forward city weekend with moderate spend if you stay central.",
     }),
   },
-=======
->>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
   san_juan: {
     center: [-66.1057, 18.4655],
     title: "Queer San Juan",

@@ -640,13 +640,8 @@ export default function CityPage() {
     () => {
       const normalizedCity = normalizeCityKey(city);
       return eventsData.filter((event) => (
-<<<<<<< HEAD
-        event.city?.toLowerCase() === city.toLowerCase()
-        && isEventVisibleOnCityPage(event)
-=======
         normalizeCityKey(event.city) === normalizedCity
-        && isEventVisibleOnCityPage(event.date)
->>>>>>> c8707c7 (Stabilize city/review coverage, seed missing cities, and quality fixes)
+        && isEventVisibleOnCityPage(event)
         && !blockedItems.some(
           (item) =>
             item.targetType === "event" &&

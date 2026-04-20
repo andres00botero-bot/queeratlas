@@ -49,14 +49,28 @@ export function usePlaces(city) {
     setIsLoading(true);
     setLoadError("");
 
-    const [{ data, error }, placesRes] = await Promise.all([
-      supabase
-        .from("places_with_stats")
-        .select("*"),
-      supabase
-        .from("places")
-        .select("id, name, city, link, location"),
-    ]);
+    let data = null;
+    let error = null;
+    let placesRes = null;
+
+    try {
+      const [statsRes, rawPlacesRes] = await Promise.all([
+        supabase
+          .from("places_with_stats")
+          .select("*"),
+        supabase
+          .from("places")
+          .select("id, name, city, link, location"),
+      ]);
+      data = statsRes?.data ?? null;
+      error = statsRes?.error ?? null;
+      placesRes = rawPlacesRes ?? null;
+    } catch (networkError) {
+      console.error("Network error while loading places:", networkError);
+      setLoadError("Could not load places right now. Check connection and try again.");
+      setIsLoading(false);
+      return;
+    }
 
     if (error) {
       console.error("Fetch places_with_stats error:", formatSupabaseError(error));
