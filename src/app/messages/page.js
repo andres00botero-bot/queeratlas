@@ -583,9 +583,9 @@ export default function MessagesPage() {
       <div className="mx-auto max-w-7xl">
         <section className="mb-6 rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_10%_10%,rgba(34,211,238,0.22),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(244,114,182,0.2),transparent_30%),linear-gradient(145deg,rgba(10,34,48,0.98),rgba(10,10,10,1))] p-6 shadow-[0_36px_120px_rgba(0,0,0,0.46)]">
           <p className="text-xs uppercase tracking-[0.35em] text-cyan-100/75">Signal Inbox</p>
-          <h1 className="mt-3 text-4xl font-bold tracking-[-0.03em] text-white sm:text-5xl">Messages</h1>
+          <h1 className="mt-3 text-4xl font-bold tracking-[-0.03em] text-white sm:text-5xl">Inbox</h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-white/76">
-            Inbox-first private messaging. Review unread signal, see who is active now, and reply from one clean panel.
+            Email-style private inbox. Browse conversations on the left, read thread history on the right, and reply from one clean reading panel.
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -613,7 +613,7 @@ export default function MessagesPage() {
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className={`${mobileThreadOpen ? "hidden lg:block" : "block"} rounded-[30px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(9,30,40,0.68),rgba(10,10,10,0.99))] p-4`}>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/45">Inbox</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-white/45">Conversations</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -673,8 +673,10 @@ export default function MessagesPage() {
                           : "border-white/10 bg-white/[0.03] hover:border-cyan-200/26 hover:bg-white/[0.06]"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-sm font-semibold text-white">{thread.displayName}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className={`truncate text-sm ${thread.unreadCount > 0 ? "font-bold text-white" : "font-semibold text-white/92"}`}>
+                          {thread.displayName}
+                        </p>
                         <p className="text-[11px] text-white/45">{formatTime(thread.lastMessage?.createdAt || thread.lastMessageAt)}</p>
                       </div>
                       <div className="mt-1 flex items-center gap-2">
@@ -686,7 +688,9 @@ export default function MessagesPage() {
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-2 line-clamp-1 text-xs text-white/60">{thread.preview}</p>
+                      <p className={`mt-2 line-clamp-1 text-xs ${thread.unreadCount > 0 ? "font-medium text-white/85" : "text-white/60"}`}>
+                        {thread.preview}
+                      </p>
                     </button>
                   );
                 })}
@@ -695,7 +699,7 @@ export default function MessagesPage() {
               <EmptyState
                 tone="violet"
                 title="No threads in this filter"
-                description="Try another filter or start a message from your following list in Favorites."
+                description="Try another filter or start a new message from your friends list in Favorites."
               />
             )}
           </div>
@@ -706,7 +710,8 @@ export default function MessagesPage() {
                 <div className="mb-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-200/[0.06] px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-white">{activeThread.displayName}</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/55">Subject</p>
+                      <p className="mt-1 text-base font-semibold text-white">Conversation with {activeThread.displayName}</p>
                       <p className="mt-1 text-[11px] text-white/58">
                         {isActiveNow(activeThread.presence)
                           ? "Active now"
@@ -734,30 +739,33 @@ export default function MessagesPage() {
 
                 <div className="h-[52vh] overflow-y-auto rounded-2xl border border-white/12 bg-black/35 p-4">
                   {isLoadingMessages ? (
-                    <p className="text-xs text-white/55">Loading conversation...</p>
+                    <p className="text-xs text-white/55">Loading thread...</p>
                   ) : messages.length > 0 ? (
                     <div className="space-y-3">
                       {messages.map((message) => {
                         const mine = String(message.senderId) === String(user?.id);
+                        const senderLabel = mine ? "You" : activeThread.displayName;
                         return (
-                          <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                            <div
-                              className={`max-w-[86%] rounded-2xl border px-3 py-2 text-sm ${
-                                mine
-                                  ? "border-cyan-200/30 bg-gradient-to-r from-cyan-300/24 to-sky-300/16 text-cyan-50"
-                                  : "border-white/12 bg-white/10 text-white/92"
-                              }`}
-                            >
-                              <p className="whitespace-pre-wrap break-words leading-6">{message.body}</p>
-                              <p className="mt-1 text-[10px] text-white/55">{formatDateTime(message.createdAt)}</p>
+                          <div
+                            key={message.id}
+                            className={`rounded-2xl border px-4 py-3 text-sm ${
+                              mine
+                                ? "border-cyan-200/30 bg-gradient-to-r from-cyan-300/14 to-sky-300/10"
+                                : "border-white/12 bg-white/8"
+                            }`}
+                          >
+                            <div className="mb-2 flex items-center justify-between gap-3">
+                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/70">{senderLabel}</p>
+                              <p className="text-[11px] text-white/55">{formatDateTime(message.createdAt)}</p>
                             </div>
+                            <p className="whitespace-pre-wrap break-words leading-6 text-white/92">{message.body}</p>
                           </div>
                         );
                       })}
                       <div ref={messageEndRef} />
                     </div>
                   ) : (
-                    <p className="text-xs text-white/55">No messages yet. Write the first message below.</p>
+                    <p className="text-xs text-white/55">No messages yet in this thread.</p>
                   )}
                 </div>
 
@@ -769,13 +777,13 @@ export default function MessagesPage() {
                   }}
                 >
                   <label className="mb-2 block text-[11px] uppercase tracking-[0.14em] text-white/55">
-                    Write reply
+                    Reply
                   </label>
                   <div className="flex gap-2">
                     <textarea
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
-                      placeholder={activeOtherUserId ? `Write to ${activeThread.displayName}` : "Write a message"}
+                      placeholder={activeOtherUserId ? `Write email-style reply to ${activeThread.displayName}` : "Write a message"}
                       className="h-12 w-full resize-none rounded-xl border border-white/14 bg-black/40 px-3 py-2 text-sm outline-none transition focus:border-cyan-200/40"
                     />
                     <button
