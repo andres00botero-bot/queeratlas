@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { usePlaces } from "@/lib/usePlaces";
-import { mergeSeedEvents } from "@/lib/seedContent";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { buildAtlasSearchResults } from "@/lib/search";
 import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
@@ -72,7 +72,7 @@ export default function SearchPage() {
       setLoadError("Search index is partially unavailable.");
     }
 
-    setEvents(mergeSeedEvents(data || []));
+    setEvents(await mergeSeedEventsAsync(data || []));
     setIsLoading(false);
   }, []);
 

@@ -7,7 +7,7 @@ import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
-import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
+import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import {
   blockItem,
   getBlockedItems,
@@ -262,8 +262,8 @@ export default function ContributePage() {
         }
 
         setQaSnapshot({
-          places: mergeSeedPlaces(placesData || []),
-          events: mergeSeedEvents(eventsData || []),
+          places: await mergeSeedPlacesAsync(placesData || []),
+          events: await mergeSeedEventsAsync(eventsData || []),
           loading: false,
           error: "",
         });

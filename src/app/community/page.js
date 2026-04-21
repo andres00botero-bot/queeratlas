@@ -71,6 +71,13 @@ function readStored(key, fallback) {
 const MAX_MESSAGES_PER_TOPIC = 100;
 const MAX_TOPICS = 120;
 const TOPIC_RETENTION_DAYS = 365;
+const REPORT_REASON_OPTIONS = [
+  { value: "1", label: "Safety issue" },
+  { value: "2", label: "Wrong info" },
+  { value: "3", label: "Spam or scam" },
+  { value: "4", label: "Abuse or hate" },
+  { value: "5", label: "Other issue" },
+];
 
 function normalizeMemberKey(value = "") {
   return String(value || "")
@@ -265,6 +272,14 @@ export default function CommunityPage() {
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [leaderboard, setLeaderboard] = useState([]);
   const [myRank, setMyRank] = useState(null);
+  const [reportModal, setReportModal] = useState({
+    open: false,
+    targetType: "",
+    targetId: "",
+    title: "",
+    reasonKey: "1",
+    details: "",
+  });
   const { toast, showToast } = useActionToast();
 
   const loadCommunityData = useCallback(async () => {
@@ -824,27 +839,43 @@ export default function CommunityPage() {
   };
 
   const reportContent = ({ targetType, targetId, title }) => {
-    const reason = normalizeReportReason(
-      window.prompt(
-        "Report reason:\n1 = Safety issue\n2 = Wrong info\n3 = Spam/scam\n4 = Abuse/hate\n5 = Other\n\nEnter number or short reason"
-      )
-    );
-    if (!reason) return;
+    setReportModal({
+      open: true,
+      targetType: String(targetType || ""),
+      targetId: String(targetId || ""),
+      title: String(title || ""),
+      reasonKey: "1",
+      details: "",
+    });
+  };
+
+  const closeReportModal = () => {
+    setReportModal((current) => ({ ...current, open: false }));
+  };
+
+  const submitReportModal = () => {
+    const reason = normalizeReportReason(reportModal.reasonKey);
+    if (!reason) {
+      showToast("Choose a reason to continue.", { tone: "warn", duration: 2200 });
+      return;
+    }
 
     addReport({
-      targetType,
-      targetId,
+      targetType: reportModal.targetType,
+      targetId: reportModal.targetId,
       city: "",
-      title,
+      title: reportModal.title,
       reason,
+      message: String(reportModal.details || "").trim(),
     });
 
     trackKpiEvent("report_submitted", {
-      targetType,
-      targetId: String(targetId),
+      targetType: reportModal.targetType,
+      targetId: String(reportModal.targetId),
       memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
       meta: { reason },
     });
+    closeReportModal();
     showToast("Report sent. Thanks for helping keep community safe.", { tone: "info", duration: 2600 });
   };
 
@@ -1340,6 +1371,75 @@ export default function CommunityPage() {
           </div>
         </section>
       </div>
+      {reportModal.open && (
+        <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-cyan-200/22 bg-[linear-gradient(165deg,rgba(8,30,38,0.9),rgba(10,10,10,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
+              <div className="border-b border-white/10 px-5 py-4">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">Safety report</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Report content</h3>
+                <p className="mt-1 line-clamp-1 text-sm text-white/70">{reportModal.title}</p>
+              </div>
+
+              <div className="space-y-4 px-5 py-5">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/58">Reason</p>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                    {REPORT_REASON_OPTIONS.map((item) => {
+                      const active = reportModal.reasonKey === item.value;
+                      return (
+                        <button
+                          key={item.value}
+                          type="button"
+                          onClick={() => setReportModal((current) => ({ ...current, reasonKey: item.value }))}
+                          className={`rounded-2xl border px-3 py-2 text-left transition ${
+                            active
+                              ? "border-cyan-200/42 bg-cyan-200/16 text-cyan-50"
+                              : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
+                          }`}
+                        >
+                          <p className="text-sm font-semibold">{item.label}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="community-report-details">
+                    Extra details (optional)
+                  </label>
+                  <textarea
+                    id="community-report-details"
+                    value={reportModal.details}
+                    onChange={(event) => setReportModal((current) => ({ ...current, details: event.target.value }))}
+                    placeholder="Share context to help moderators act faster."
+                    className="mt-2 min-h-[104px] w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-3 text-sm leading-6 text-white outline-none focus:border-cyan-200/45"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={closeReportModal}
+                  className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitReportModal}
+                  className="rounded-full border border-cyan-200/34 bg-cyan-200/16 px-4 py-2 text-sm font-semibold text-cyan-50 transition hover:border-cyan-200/55"
+                >
+                  Send report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      <ActionToast toast={toast} />
     </main>
   );
 }

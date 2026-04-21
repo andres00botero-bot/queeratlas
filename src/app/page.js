@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
+import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { buildAtlasSearchResults } from "@/lib/search";
 import { getQualityMap } from "@/lib/quality";
 import { trackKpiEvent } from "@/lib/analytics";
@@ -18,6 +18,42 @@ import { ArrowUpRight, Search } from "lucide-react";
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
 const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
+
+function splitLegacyVibe(description = "") {
+  const raw = String(description || "");
+  const match = raw.match(/^\[Vibe:\s*([^\]]+)\]\s*(?:\n\n)?([\s\S]*)$/i);
+  if (!match) {
+    return {
+      vibe: "",
+      description: raw,
+    };
+  }
+
+  return {
+    vibe: String(match[1] || "").trim(),
+    description: String(match[2] || "").trim(),
+  };
+}
+
+function mapGlobalEventForSearch(row = {}) {
+  const parsed = splitLegacyVibe(row.description || "");
+  const startDate = String(row.start_date || row.date || "").slice(0, 10);
+  const endDate = String(row.end_date || row.start_date || row.date || "").slice(0, 10);
+
+  return {
+    id: `global-${String(row.id || "")}`,
+    name: String(row.name || "").trim(),
+    city: "Global",
+    description: parsed.description || "",
+    vibe: String(row.vibe || parsed.vibe || "").trim(),
+    date: startDate,
+    start_date: startDate,
+    end_date: endDate || startDate,
+    location: String(row.location || "").trim(),
+    link: String(row.link || "").trim(),
+    isGlobal: true,
+  };
+}
 
 function formatDate(value) {
   if (!value) return "Date TBA";
@@ -147,17 +183,25 @@ export default function Home() {
       return;
     }
 
-    if (!item?.city) {
-      router.push(item?.type === "event" ? "/events" : "/cities");
+    const cityValue = String(item?.city || "").trim().toLowerCase();
+
+    if (!cityValue || (item.type === "event" && cityValue === "global")) {
+      if (item?.type === "event") {
+        const offgridEventId = String(item?.id || "").trim();
+        const query = offgridEventId ? `?offgridEventId=${encodeURIComponent(offgridEventId)}` : "";
+        router.push(`/events${query}`);
+      } else {
+        router.push("/cities");
+      }
       return;
     }
 
     if (item.type === "place") {
-      router.push(`/${item.city.toLowerCase()}?placeId=${item.id}`);
+      router.push(`/${cityValue}?placeId=${item.id}`);
       return;
     }
 
-    router.push(`/${item.city.toLowerCase()}?eventId=${item.id}`);
+    router.push(`/${cityValue}?eventId=${item.id}`);
   };
 
   const saveResult = (item) => {
@@ -187,12 +231,24 @@ export default function Home() {
   };
 
   const fetchEvents = async () => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("date", { ascending: true });
+    const [eventsRes, globalRes] = await Promise.all([
+      supabase
+        .from("events")
+        .select("*")
+        .order("date", { ascending: true }),
+      supabase
+        .from("global_events")
+        .select("*")
+        .order("date", { ascending: true })
+        .order("created_at", { ascending: false }),
+    ]);
 
-    return { error, data: mergeSeedEvents(data || []) };
+    const mergedEvents = await mergeSeedEventsAsync(eventsRes?.data || []);
+    const globalEvents = Array.isArray(globalRes?.data)
+      ? globalRes.data.map(mapGlobalEventForSearch).filter((event) => event.name)
+      : [];
+
+    return { error: eventsRes?.error || globalRes?.error, data: [...mergedEvents, ...globalEvents] };
   };
 
   const fetchPlaces = async () => {
@@ -200,7 +256,7 @@ export default function Home() {
       .from("places_with_stats")
       .select("*");
 
-    return { error, data: mergeSeedPlaces(data || []) };
+    return { error, data: await mergeSeedPlacesAsync(data || []) };
   };
 
   const fetchWorldNews = async () => {

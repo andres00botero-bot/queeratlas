@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack --debug",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:smoke": "node scripts/test-smoke.mjs",
     "backfill:place-locations": "node scripts/backfill-place-locations.mjs",
     "seed:city-reviews": "node scripts/seed-city-reviews.mjs"
   },

@@ -23,6 +23,7 @@
 # misc
 .DS_Store
 *.pem
+Desktop/Websida/gay-guide/
 
 # debug
 npm-debug.log*

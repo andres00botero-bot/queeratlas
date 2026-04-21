@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/lib/supabase";
-import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
+import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { cityConfig } from "@/lib/cities";
 import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
@@ -359,8 +359,8 @@ export default function FavoritesPage() {
       setAtlasLoadError("Could not load some live atlas data. Showing available signal.");
     }
 
-    setPlaces(mergeSeedPlaces(placesData || []));
-    setEvents(mergeSeedEvents(eventsData || []));
+    setPlaces(await mergeSeedPlacesAsync(placesData || []));
+    setEvents(await mergeSeedEventsAsync(eventsData || []));
     setIsAtlasLoading(false);
   }, []);
 

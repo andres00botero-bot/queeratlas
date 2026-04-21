@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -9,7 +9,7 @@ import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
-import { mergeSeedEvents } from "@/lib/seedContent";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import EmptyState from "@/components/ui/EmptyState";
 import DateInput from "@/components/ui/DateInput";
 import ActionToast from "@/components/ui/ActionToast";
@@ -22,6 +22,18 @@ const REPORT_REASONS = [
   { value: "abuse", label: "Abuse or hate", helper: "Hate speech, threats, discrimination, or abusive language." },
   { value: "other", label: "Other issue", helper: "Anything else that should be reviewed by admin." },
 ];
+const TRUST_ACTIONS = [
+  { value: "1", label: "Verified now" },
+  { value: "2", label: "Needs refresh" },
+  { value: "3", label: "Closed or moved" },
+];
+const isDev = process.env.NODE_ENV !== "production";
+
+function logDevError(...args) {
+  if (isDev && typeof console !== "undefined") {
+    console.error(...args);
+  }
+}
 
 function splitLegacyVibe(description = "") {
   const raw = String(description || "");
@@ -195,6 +207,7 @@ export default function EventsPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
   const { toast, showToast } = useActionToast();
+  const offgridSectionRef = useRef(null);
 
   const [events, setEvents] = useState([]);
   const [, setQualityTick] = useState(0);
@@ -228,6 +241,15 @@ export default function EventsPage() {
     reasonKey: REPORT_REASONS[0].value,
     details: "",
   });
+  const [qualityModal, setQualityModal] = useState({
+    open: false,
+    eventId: "",
+    action: "1",
+    sourceInput: "",
+    fallbackSource: "",
+    isGlobal: false,
+  });
+  const [offgridEventParam, setOffgridEventParam] = useState("");
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -236,6 +258,17 @@ export default function EventsPage() {
         .map((item) => String(item.targetId))
     )
   ), [blockedItems]);
+
+  const normalizedFocusedOffgridId = useMemo(
+    () => offgridEventParam.replace(/^global-/i, ""),
+    [offgridEventParam]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const value = String(new URLSearchParams(window.location.search).get("offgridEventId") || "").trim();
+    setOffgridEventParam(value);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -322,58 +355,75 @@ export default function EventsPage() {
       entity: event,
       map: qualityMap,
     });
-    const actionInput = window.prompt(
-      "Update trust status:\n1 = Verified now\n2 = Needs refresh\n3 = Closed or moved\n\nEnter 1, 2, or 3",
-      "1"
-    );
-    if (actionInput === null) return;
+    const fallbackSource = (existing?.source || event.link || "").trim();
+    setQualityModal({
+      open: true,
+      eventId: String(event.id || ""),
+      action: "1",
+      sourceInput: fallbackSource,
+      fallbackSource,
+      isGlobal: Boolean(event?.isGlobal),
+    });
+  };
 
-    const action = String(actionInput).trim();
+  const closeQualityModal = () => {
+    setQualityModal((current) => ({ ...current, open: false }));
+  };
+
+  const submitQualityModal = async () => {
+    const action = String(qualityModal.action || "").trim();
     if (!["1", "2", "3"].includes(action)) {
-      window.alert("Use 1, 2, or 3 to continue.");
+      showToast("Use 1, 2, or 3 to continue.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const selectedEvent = [...events, ...globalEvents].find(
+      (item) => String(item.id || "") === String(qualityModal.eventId || "")
+    );
+    if (!selectedEvent) {
+      closeQualityModal();
+      return;
+    }
+
+    if (qualityModal.isGlobal && !isAdmin) {
+      setGlobalError("Admin access required to edit off-grid event metadata.");
+      closeQualityModal();
       return;
     }
 
     const today = new Date().toISOString().slice(0, 10);
-    const fallbackSource = (existing?.source || event.link || "").trim();
     const sourceDefaultByAction =
       action === "1"
-        ? fallbackSource || "Community verified"
+        ? qualityModal.fallbackSource || "Community verified"
         : action === "2"
-          ? fallbackSource || "Community flagged: needs review"
-          : fallbackSource || "Community flagged: closed or moved";
-    const sourceInput = window.prompt(
-      "Source note (optional):\nAdd official link/name if you have one.\nLeave blank to keep current source.",
-      fallbackSource
-    );
-    if (sourceInput === null) return;
-
-    const sourceByAction = String(sourceInput).trim() || sourceDefaultByAction;
+          ? qualityModal.fallbackSource || "Community flagged: needs review"
+          : qualityModal.fallbackSource || "Community flagged: closed or moved";
+    const sourceByAction = String(qualityModal.sourceInput || "").trim() || sourceDefaultByAction;
     const verified = action === "1";
     const lastChecked = action === "1" ? today : "";
 
     upsertQuality({
       targetType: "event",
-      targetId: event.id,
+      targetId: selectedEvent.id,
       source: sourceByAction,
       lastChecked,
       verified,
     });
 
-    if (event.isGlobal) {
+    if (selectedEvent.isGlobal) {
       const { error } = await supabase
         .from("global_events")
         .update({
           source: sourceByAction || null,
           last_checked: lastChecked || null,
         })
-        .eq("id", event.id);
+        .eq("id", selectedEvent.id);
 
       if (error) {
         setGlobalError("Could not update quality metadata in Supabase.");
       } else {
         setGlobalEvents((current) => current.map((item) => (
-          String(item.id) === String(event.id)
+          String(item.id) === String(selectedEvent.id)
             ? {
                 ...item,
                 source: sourceByAction,
@@ -385,6 +435,7 @@ export default function EventsPage() {
     }
 
     setQualityTick((value) => value + 1);
+    closeQualityModal();
   };
 
   const fetchEvents = useCallback(async () => {
@@ -394,7 +445,7 @@ export default function EventsPage() {
       .order("date", { ascending: true });
 
     return {
-      data: mergeSeedEvents(data || []).map((event) => normalizeEventRange(event)),
+      data: (await mergeSeedEventsAsync(data || [])).map((event) => normalizeEventRange(event)),
       error,
     };
   }, []);
@@ -475,6 +526,25 @@ export default function EventsPage() {
     });
   }, [loadAllEvents]);
 
+  useEffect(() => {
+    if (!normalizedFocusedOffgridId || globalEvents.length === 0) return;
+
+    const exists = globalEvents.some(
+      (event) => String(event.id || "") === normalizedFocusedOffgridId
+    );
+    if (!exists) return;
+
+    const timeoutId = setTimeout(() => {
+      offgridSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const card = document.getElementById(`offgrid-event-${normalizedFocusedOffgridId}`);
+      card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 120);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [globalEvents, normalizedFocusedOffgridId]);
+
   const calendarEvents = useMemo(() => {
     const offGrid = globalEvents.map((event) => ({
       ...event,
@@ -491,6 +561,11 @@ export default function EventsPage() {
       ? calendarEvents.filter((event) => eventOverlapsDate(event, selectedDate))
       : calendarEvents
   ), [calendarEvents, selectedDate]);
+
+  const displayedGlobalEvents = useMemo(
+    () => (normalizedFocusedOffgridId ? globalEvents : globalEvents.slice(0, 8)),
+    [globalEvents, normalizedFocusedOffgridId]
+  );
 
   const eventsByCity = useMemo(() => (
     filteredEvents.reduce((acc, event) => {
@@ -740,8 +815,7 @@ export default function EventsPage() {
       const hint = String(error?.hint || "").trim();
       const suffix = [code ? `[${code}]` : "", message, hint].filter(Boolean).join(" ");
       setGlobalError(`Could not save off-grid event to Supabase yet. ${suffix}`);
-      // Keep full server error in console for faster ops debugging.
-      console.error("Off-grid save failed", { error, payload, editingGlobalEventId });
+      logDevError("Off-grid save failed", { error, payload, editingGlobalEventId });
       setIsSavingGlobal(false);
       return;
     }
@@ -1230,7 +1304,7 @@ export default function EventsPage() {
             </div>
           </section>
 
-          <section className="mt-8 overflow-hidden rounded-[34px] border border-emerald-300/14 bg-[linear-gradient(165deg,rgba(20,20,20,0.96),rgba(8,8,8,0.98))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7">
+          <section ref={offgridSectionRef} className="mt-8 overflow-hidden rounded-[34px] border border-emerald-300/14 bg-[linear-gradient(165deg,rgba(20,20,20,0.96),rgba(8,8,8,0.98))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-emerald-100/58">
@@ -1380,7 +1454,7 @@ export default function EventsPage() {
                   className="px-5 py-7"
                 />
               ) : (
-                globalEvents.slice(0, 8).map((event) => (
+                displayedGlobalEvents.map((event) => (
                   (() => {
                     const quality = getEntityQuality({
                       targetType: "event",
@@ -1389,11 +1463,17 @@ export default function EventsPage() {
                       map: qualityMap,
                     });
                     const qualityStatus = getQualityStatus(quality);
+                    const isFocused = normalizedFocusedOffgridId && String(event.id) === String(normalizedFocusedOffgridId);
 
                     return (
                   <div
+                    id={`offgrid-event-${event.id}`}
                     key={event.id}
-                    className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-4"
+                    className={`rounded-2xl border p-4 transition ${
+                      isFocused
+                        ? "border-cyan-200/55 bg-[linear-gradient(180deg,rgba(34,211,238,0.20),rgba(10,10,10,0.94))] shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_24px_80px_rgba(34,211,238,0.18)]"
+                        : "border-white/10 bg-[linear-gradient(180deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))]"
+                    }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <p className="text-base font-semibold text-white">{event.name}</p>
@@ -1524,6 +1604,67 @@ export default function EventsPage() {
                   className="rounded-full border border-rose-200/34 bg-rose-200/16 px-4 py-2 text-sm font-semibold text-rose-50 transition hover:border-rose-200/55"
                 >
                   Send report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {qualityModal.open && (
+        <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-cyan-200/22 bg-[linear-gradient(165deg,rgba(7,38,44,0.9),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
+              <div className="border-b border-white/10 px-5 py-4">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">Trust status</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Update quality</h3>
+              </div>
+              <div className="space-y-4 px-5 py-5">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {TRUST_ACTIONS.map((item) => {
+                    const active = qualityModal.action === item.value;
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setQualityModal((current) => ({ ...current, action: item.value }))}
+                        className={`rounded-2xl border px-3 py-2 text-sm transition ${
+                          active
+                            ? "border-cyan-200/42 bg-cyan-200/18 text-cyan-50"
+                            : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="events-quality-source">
+                    Source note (optional)
+                  </label>
+                  <input
+                    id="events-quality-source"
+                    value={qualityModal.sourceInput}
+                    onChange={(event) => setQualityModal((current) => ({ ...current, sourceInput: event.target.value }))}
+                    placeholder="Official URL/name or internal verification note"
+                    className="mt-2 w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-cyan-200/45"
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
+                <button
+                  type="button"
+                  onClick={closeQualityModal}
+                  className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitQualityModal}
+                  className="rounded-full border border-cyan-200/34 bg-cyan-200/16 px-4 py-2 text-sm font-semibold text-cyan-50 transition hover:border-cyan-200/55"
+                >
+                  Save
                 </button>
               </div>
             </div>

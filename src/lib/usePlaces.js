@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
-import { mergeSeedPlaces } from "./seedContent";
+import { mergeSeedPlacesAsync } from "./seedMerge";
 import { captureOperationalError } from "./monitoring";
+
+const isDev = process.env.NODE_ENV !== "production";
 
 function formatSupabaseError(error) {
   if (!error) return "Unknown error";
@@ -12,6 +14,18 @@ function formatSupabaseError(error) {
     hint: error.hint || "",
   };
   return JSON.stringify(details);
+}
+
+function logDevError(...args) {
+  if (isDev && typeof console !== "undefined") {
+    console.error(...args);
+  }
+}
+
+function toOperationalError(error) {
+  if (error instanceof Error) return error;
+  if (!error) return new Error("Unknown error");
+  return new Error(formatSupabaseError(error));
 }
 
 export function usePlaces(city) {
@@ -41,14 +55,20 @@ export function usePlaces(city) {
       error = statsRes?.error ?? null;
       placesRes = rawPlacesRes ?? null;
     } catch (networkError) {
-      console.error("Network error while loading places:", networkError);
+      logDevError("Network error while loading places:", networkError);
+      captureOperationalError("places_network_fail", toOperationalError(networkError), {
+        city: String(city || ""),
+      });
       setLoadError("Could not load places right now. Check connection and try again.");
       setIsLoading(false);
       return;
     }
 
     if (error) {
-      console.error("Fetch places_with_stats error:", formatSupabaseError(error));
+      logDevError("Fetch places_with_stats error:", formatSupabaseError(error));
+      captureOperationalError("places_view_fail", toOperationalError(error), {
+        city: String(city || ""),
+      });
 
       const [{ data: fallbackPlaces, error: fallbackPlacesError }, { data: fallbackReviews, error: fallbackReviewsError }] = await Promise.all([
         supabase
@@ -60,14 +80,20 @@ export function usePlaces(city) {
       ]);
 
       if (fallbackPlacesError) {
-        console.error("Fallback places query error:", formatSupabaseError(fallbackPlacesError));
+        logDevError("Fallback places query error:", formatSupabaseError(fallbackPlacesError));
+        captureOperationalError("places_fallback_fail", toOperationalError(fallbackPlacesError), {
+          city: String(city || ""),
+        });
         setLoadError("Could not load places right now.");
         setIsLoading(false);
         return;
       }
 
       if (fallbackReviewsError) {
-        console.error("Fallback reviews query error:", formatSupabaseError(fallbackReviewsError));
+        logDevError("Fallback reviews query error:", formatSupabaseError(fallbackReviewsError));
+        captureOperationalError("reviews_fallback_fail", toOperationalError(fallbackReviewsError), {
+          city: String(city || ""),
+        });
       }
 
       const reviewRows = Array.isArray(fallbackReviews) ? fallbackReviews : [];
@@ -95,7 +121,7 @@ export function usePlaces(city) {
         };
       });
 
-      const mergedWithSeedFallback = mergeSeedPlaces(fallbackRows);
+      const mergedWithSeedFallback = await mergeSeedPlacesAsync(fallbackRows);
       setPlaces(mergedWithSeedFallback);
       setLoadError("Live stats view is unavailable. Showing direct place data.");
       setIsLoading(false);
@@ -147,10 +173,10 @@ export function usePlaces(city) {
       };
     });
 
-    const mergedWithSeed = mergeSeedPlaces(mergedViewRows);
+    const mergedWithSeed = await mergeSeedPlacesAsync(mergedViewRows);
     setPlaces(mergedWithSeed);
     setIsLoading(false);
-  }, []);
+  }, [city]);
 
   /* ---------------- INIT + REALTIME ---------------- */
   useEffect(() => {
@@ -179,7 +205,6 @@ export function usePlaces(city) {
 
   /* ---------------- ADD PLACE ---------------- */
   const addPlace = useCallback(async (place) => {
-    console.log("PLACE PAYLOAD:", place);
     const basePayload = {
       name: place.name,
       type: place.type,
@@ -199,7 +224,11 @@ export function usePlaces(city) {
       .single();
 
     if (error) {
-      console.error("Add place error:", error);
+      logDevError("Add place error:", error);
+      captureOperationalError("add_place_fail", toOperationalError(error), {
+        city: String(place?.city || ""),
+        place: String(place?.name || ""),
+      });
       return null;
     }
 
@@ -287,7 +316,7 @@ export function usePlaces(city) {
     ]);
 
     if (error) {
-      console.error("Add review error:", error);
+      logDevError("Add review error:", error);
       captureOperationalError("save_review_fail", error, {
         placeId: String(resolvedPlaceId || ""),
         city: String(place?.city || ""),
@@ -322,7 +351,11 @@ export function usePlaces(city) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Get reviews error:", error);
+      logDevError("Get reviews error:", error);
+      captureOperationalError("get_reviews_fail", toOperationalError(error), {
+        placeId: String(resolvedPlaceId || ""),
+        city: String(place?.city || ""),
+      });
       return [];
     }
 

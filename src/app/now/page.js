@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { mergeSeedEvents, mergeSeedPlaces } from "@/lib/seedContent";
+import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
@@ -213,8 +213,8 @@ export default function NowPage() {
       setLoadError("Live pulse could not fully load. Showing available data.");
     }
 
-    const nextEvents = mergeSeedEvents(eventsData || []);
-    const nextPlaces = mergeSeedPlaces(placesData || []);
+    const nextEvents = await mergeSeedEventsAsync(eventsData || []);
+    const nextPlaces = await mergeSeedPlacesAsync(placesData || []);
     setEvents(nextEvents);
     setPlaces(nextPlaces);
     writeRuntimeCache(NOW_PULSE_CACHE_KEY, {
