@@ -872,5 +872,119 @@
       "vibe": "Community cafe bar",
       "description": "Gay cafe bar and HIV/AIDS support center with social events in central Frankfurt."
     }
+  ],
+  "mexico_city": [
+    {
+      "name": "Sodome Bath House",
+      "type": "sauna",
+      "location": "Calz. Gral. Mariano Escobedo 716, Anzures, Miguel Hidalgo, 11590 Ciudad de Mexico, CDMX, Mexico",
+      "lat": 19.426322,
+      "lng": -99.178826,
+      "hours": "Mon 18:00-00:00, Tue closed, Wed 18:00-00:00, Thu-Fri 18:00-02:00, Sat 07:00-02:00, Sun 07:00-00:00.",
+      "link": "https://www.sodome.mx/",
+      "vibe": "Sauna / bathhouse",
+      "description": "Men-only gay bathhouse in CDMX with steam, sauna, jacuzzi, cabins, and themed nights."
+    },
+    {
+      "name": "Sexto Piso",
+      "type": "cruise_club",
+      "location": "Eje Central Lazaro Cardenas 123, sexto piso, Centro, Cuauhtemoc, 06000 Ciudad de Mexico, CDMX, Mexico",
+      "lat": 19.4328,
+      "lng": -99.1396,
+      "hours": "Mon-Thu 14:00-22:00, Fri-Sat 15:00-01:00, Sun 13:00-23:00.",
+      "link": "https://www.travelgay.com/mexico-city-gay-cruise-clubs/",
+      "vibe": "Cruise / fetish",
+      "description": "TravelGay-listed cruise venue in central CDMX with play-focused spaces and late schedule."
+    },
+    {
+      "name": "TAPO Bus Station (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Calz. Ignacio Zaragoza 200, 15300 Ciudad de Mexico, CDMX, Mexico",
+      "lat": 19.4302,
+      "lng": -99.114,
+      "hours": "Most active evenings and night transit hours.",
+      "link": "https://www.cruisinggays.com/mexico-city/c/areas/",
+      "vibe": "Urban cruising area",
+      "description": "Community-listed cruising point in the Mexico City areas map."
+    },
+    {
+      "name": "Mexico City Marriott Reforma",
+      "type": "hotel",
+      "location": "Avenida Paseo de la Reforma 276, Juarez, Cuauhtemoc, 06600 Ciudad de Mexico, CDMX, Mexico",
+      "lat": 19.426,
+      "lng": -99.1672,
+      "hours": "24/7 hotel operations; check-in/check-out per official booking policy.",
+      "link": "https://www.travelgay.com/gay-mexico-city-hotels",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed hotel near Zona Rosa and key LGBTQ+ nightlife."
+    },
+    {
+      "name": "Cafe Nin",
+      "type": "cafe",
+      "location": "Havre 73, Juarez, Cuauhtemoc, 06600 Ciudad de Mexico, CDMX, Mexico",
+      "lat": 19.4232,
+      "lng": -99.1648,
+      "hours": "Mon-Wed 07:00-21:00, Thu-Sat 07:00-22:00, Sun 07:00-18:00.",
+      "link": "http://www.cafenin.com.mx/",
+      "vibe": "Cafe / brunch",
+      "description": "Popular Juarez cafe with bakery and all-day coffee-brunch flow near Zona Rosa."
+    }
+  ],
+  "sydney": [
+    {
+      "name": "UNIVERSAL Sydney",
+      "type": "club",
+      "location": "85-93 Oxford Street, Darlinghurst, NSW 2010, Australia",
+      "lat": -33.8786,
+      "lng": 151.2147,
+      "hours": "Universal Superclub Fri-Sat 22:00-06:00; bar levels open daily with varying late hours.",
+      "link": "https://www.universal.sydney/",
+      "vibe": "Queer nightclub",
+      "description": "Major LGBTQIA+ nightlife venue on Oxford Street with drag shows and superclub dance nights."
+    },
+    {
+      "name": "Aarows",
+      "type": "cruise_club",
+      "location": "17 Bridge Street, Rydalmere, NSW 2116, Australia",
+      "lat": -33.8144,
+      "lng": 151.039,
+      "hours": "Open 24 hours daily.",
+      "link": "https://www.travelgay.com/venue/aarows",
+      "vibe": "Cruise / fetish",
+      "description": "TravelGay-listed gay and bi cruise club with multiple play areas and 24/7 opening."
+    },
+    {
+      "name": "Obelisk Beach",
+      "type": "cruising_area",
+      "location": "Chowder Bay Road, Mosman, NSW, Sydney, Australia",
+      "lat": -33.8426,
+      "lng": 151.2527,
+      "hours": "Best in daylight and warm-weather afternoons.",
+      "link": "https://www.travelgay.com/venue/obelisk-beach/",
+      "vibe": "Gay-popular nude beach",
+      "description": "TravelGay-listed Sydney harbour beach known for nudist and gay-popular social scene."
+    },
+    {
+      "name": "Pullman Sydney Hyde Park",
+      "type": "hotel",
+      "location": "36 College Street, Sydney NSW 2010, Australia",
+      "lat": -33.8769,
+      "lng": 151.2133,
+      "hours": "24/7 hotel operations; check-in/check-out per booking policy.",
+      "link": "https://www.travelgay.com/hotels/pullman-sydney-hyde-park",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed 5-star hotel near Oxford Street nightlife and central Sydney attractions."
+    },
+    {
+      "name": "The Rusty Rabbit",
+      "type": "cafe",
+      "location": "252 Forbes St, Darlinghurst, Sydney NSW 2010, Australia",
+      "lat": -33.8762,
+      "lng": 151.2191,
+      "hours": "Mon-Fri 07:00-15:30, Sat-Sun 08:00-15:00.",
+      "link": "https://www.travelgay.com/gay-sydney-restaurants-cafes",
+      "vibe": "Cafe / brunch",
+      "description": "TravelGay-listed Darlinghurst cafe with LGBTQ+ welcoming atmosphere and inclusive menu."
+    }
   ]
 }
