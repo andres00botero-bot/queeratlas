@@ -1048,6 +1048,14 @@ export default function Home() {
                   >
                     {authLoading ? "Opening..." : "Continue with Google"}
                   </button>
+                  <p className="px-1 text-xs leading-5 text-white/60">
+                    Google sign-in only uses basic account identity (openid, email, profile) for authentication.
+                    {" "}
+                    <Link href="/privacy" className="text-cyan-300 underline underline-offset-2 hover:text-cyan-200">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
 
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
                     <input
