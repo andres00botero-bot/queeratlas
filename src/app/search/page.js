@@ -30,10 +30,10 @@ function SearchResultSkeleton({ tone = "rose" }) {
         : "border-rose-200/14 bg-[linear-gradient(180deg,rgba(244,114,182,0.10),rgba(10,10,10,0.94))]";
 
   return (
-    <div className={`animate-pulse rounded-2xl border p-4 ${toneClass}`} aria-hidden="true">
-      <div className="h-4 w-2/3 rounded-full bg-white/14" />
-      <div className="mt-3 h-3 w-1/2 rounded-full bg-white/10" />
-      <div className="mt-4 h-3 w-full rounded-full bg-white/8" />
+    <div className={`qa-skeleton-card rounded-2xl border p-4 ${toneClass}`} aria-hidden="true">
+      <div className="qa-skeleton-card h-4 w-2/3 rounded-full" />
+      <div className="qa-skeleton-card mt-3 h-3 w-1/2 rounded-full" />
+      <div className="qa-skeleton-card mt-4 h-3 w-full rounded-full" />
     </div>
   );
 }
@@ -220,11 +220,11 @@ export default function SearchPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] px-6 py-8 text-white">
-      <div className="mx-auto max-w-7xl">
-        <section className="mb-8 rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_80%_16%,rgba(59,130,246,0.08),transparent_20%),linear-gradient(160deg,rgba(22,22,22,0.96),rgba(10,10,10,0.99))] p-7">
-          <p className="text-xs uppercase tracking-[0.28em] text-white/45">Global search</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.03em]">Find signal instantly</h1>
+    <main className="qa-page min-h-screen bg-[#050505] text-white">
+      <div className="qa-shell">
+        <section className="qa-panel mb-8 rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_80%_16%,rgba(59,130,246,0.08),transparent_20%),linear-gradient(160deg,rgba(22,22,22,0.96),rgba(10,10,10,0.99))] p-7">
+          <p className="qa-eyebrow text-white/45">Global search</p>
+          <h1 className="qa-display qa-h1 mt-3 text-4xl font-semibold">Find signal instantly</h1>
           <form onSubmit={submitSearch} className="mt-5 flex gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
@@ -331,16 +331,18 @@ export default function SearchPage() {
         </section>
 
         {!query.trim() && (
-          <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-8">
+          <section className="qa-panel rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-8">
             <EmptyState
               title="Start with a city, venue name, event title, or vibe keyword."
               description="Search across cities, places, and events in one move."
+              primaryActionLabel="Browse cities"
+              onPrimaryAction={() => router.push("/cities")}
             />
           </section>
         )}
 
         {query.trim() && isLoading && (
-          <section className="mb-6 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-5">
+          <section className="qa-panel mb-6 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-5">
             <p className="mb-4 text-xs uppercase tracking-[0.18em] text-white/45">Scanning atlas signal</p>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <SearchResultSkeleton tone="cyan" />
@@ -354,7 +356,7 @@ export default function SearchPage() {
         )}
 
         {query.trim() && !isLoading && filteredResults.all.length === 0 && (
-          <section className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-8">
+          <section className="qa-panel rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-8">
             <EmptyState
               title="No matches yet for this query."
               description="Try broader words or reset filters."

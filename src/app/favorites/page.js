@@ -194,11 +194,11 @@ async function geocodeCheckinFromCityAndLabel({ city, country, label, address, t
 
 function FavoritesCardSkeleton() {
   return (
-    <div className="animate-pulse rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5" aria-hidden="true">
-      <div className="h-3 w-24 rounded-full bg-white/14" />
-      <div className="mt-3 h-5 w-2/3 rounded-full bg-white/12" />
-      <div className="mt-4 h-3 w-full rounded-full bg-white/8" />
-      <div className="mt-2 h-3 w-4/5 rounded-full bg-white/8" />
+    <div className="qa-skeleton-card rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5" aria-hidden="true">
+      <div className="qa-skeleton-card h-3 w-24 rounded-full" />
+      <div className="qa-skeleton-card mt-3 h-5 w-2/3 rounded-full" />
+      <div className="qa-skeleton-card mt-4 h-3 w-full rounded-full" />
+      <div className="qa-skeleton-card mt-2 h-3 w-4/5 rounded-full" />
     </div>
   );
 }
@@ -1878,25 +1878,25 @@ export default function FavoritesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#120b1d_0%,#050505_38%,#040404_100%)] px-6 py-8 text-white">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_top,#120b1d_0%,#050505_38%,#040404_100%)] text-white">
       <ActionToast toast={toast} />
-      <div className="relative mx-auto max-w-7xl">
+      <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.14),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />
 
-        <section className="relative mb-8 overflow-hidden rounded-[38px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.22),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.20),transparent_28%),linear-gradient(135deg,rgba(36,20,44,0.96),rgba(10,10,10,0.99),rgba(14,28,26,0.98))] p-8 shadow-[0_40px_140px_rgba(0,0,0,0.48)]">
+        <section className="qa-panel relative mb-8 overflow-hidden rounded-[38px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.22),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.20),transparent_28%),linear-gradient(135deg,rgba(36,20,44,0.96),rgba(10,10,10,0.99),rgba(14,28,26,0.98))] p-8 shadow-[0_40px_140px_rgba(0,0,0,0.48)]">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="max-w-4xl">
-            <p className="text-xs uppercase tracking-[0.35em] text-white/45">
+            <p className="qa-eyebrow text-white/45">
               Member atlas
             </p>
             <p className="mt-4 text-sm text-rose-100/78">
               {greeting}, {displayName}
             </p>
-            <h1 className="mt-4 text-5xl font-bold tracking-[-0.04em] text-white sm:text-6xl">
+            <h1 className="qa-display qa-h1 mt-4 text-5xl font-bold text-white sm:text-6xl">
               Your Atlas
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/62">
+            <p className="qa-lead mt-5 max-w-2xl text-base text-white/62">
               Your saved queer map across cities, places, and events. This is where
               discovery becomes direction.
             </p>
@@ -1930,19 +1930,19 @@ export default function FavoritesPage() {
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-3xl border border-rose-200/18 bg-[linear-gradient(180deg,rgba(251,113,133,0.18),rgba(251,113,133,0.06))] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-3xl border border-rose-200/18 bg-[linear-gradient(180deg,rgba(251,113,133,0.18),rgba(251,113,133,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved places</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalPlaces}</p>
             </div>
-            <div className="rounded-3xl border border-violet-200/18 bg-[linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.06))] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-3xl border border-violet-200/18 bg-[linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved events</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalEvents}</p>
             </div>
-            <div className="rounded-3xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(34,211,238,0.16),rgba(34,211,238,0.06))] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-3xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(34,211,238,0.16),rgba(34,211,238,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalCities}</p>
             </div>
-            <div className="rounded-3xl border border-amber-200/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.16),rgba(251,191,36,0.06))] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-3xl border border-amber-200/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.16),rgba(251,191,36,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Top vibe</p>
               <p className="mt-3 text-3xl font-semibold capitalize text-white">
                 {String(topVibe).replaceAll("_", " ")}
@@ -1957,7 +1957,7 @@ export default function FavoritesPage() {
               <p className="text-xs uppercase tracking-[0.26em] text-emerald-200/70">
                 Member identity
               </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                 Profile signal
               </h2>
             </div>
@@ -1980,7 +1980,7 @@ export default function FavoritesPage() {
                     });
                     setIsEditingProfile(true);
                   }}
-                  className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
+                  className="qa-action rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
                 >
                   Edit profile
                 </button>
@@ -1989,7 +1989,7 @@ export default function FavoritesPage() {
                   <button
                     type="submit"
                     disabled={!hasProfileChanges}
-                    className="rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="qa-action qa-action-strong rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {hasProfileChanges ? "Save profile" : "Saved"}
                   </button>
@@ -2004,7 +2004,7 @@ export default function FavoritesPage() {
                       });
                       setIsEditingProfile(false);
                     }}
-                    className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
+                    className="qa-action rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
                   >
                     Cancel
                   </button>
@@ -2102,7 +2102,7 @@ export default function FavoritesPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-white/55">Signal rail</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Momentum</h2>
+              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Momentum</h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
                 One integrated panel for your current signal and your fastest next actions.
               </p>
@@ -2211,7 +2211,7 @@ export default function FavoritesPage() {
               <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-200/75">
                 Your travel timeline
               </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
                 Check-in map
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
@@ -2644,7 +2644,7 @@ export default function FavoritesPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/75">Atlas insights</p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Signal dashboard</h2>
+              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Signal dashboard</h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
                 Keep the page clean: core tools stay open, deeper community signal stays one tap away.
               </p>

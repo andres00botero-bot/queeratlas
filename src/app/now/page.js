@@ -147,11 +147,11 @@ function PulseSkeletonCard({ tone = "orange" }) {
         : "border-orange-200/16 bg-[linear-gradient(180deg,rgba(251,146,60,0.10),rgba(10,10,10,0.94))]";
 
   return (
-    <div className={`animate-pulse rounded-2xl border p-4 ${toneClass}`} aria-hidden="true">
-      <div className="h-3 w-24 rounded-full bg-white/14" />
-      <div className="mt-3 h-5 w-2/3 rounded-full bg-white/12" />
-      <div className="mt-4 h-3 w-full rounded-full bg-white/8" />
-      <div className="mt-2 h-3 w-5/6 rounded-full bg-white/8" />
+    <div className={`qa-skeleton-card rounded-2xl border p-4 ${toneClass}`} aria-hidden="true">
+      <div className="qa-skeleton-card h-3 w-24 rounded-full" />
+      <div className="qa-skeleton-card mt-3 h-5 w-2/3 rounded-full" />
+      <div className="qa-skeleton-card mt-4 h-3 w-full rounded-full" />
+      <div className="qa-skeleton-card mt-2 h-3 w-5/6 rounded-full" />
     </div>
   );
 }
@@ -694,7 +694,7 @@ export default function NowPage() {
 
   if (!ready || !today) {
     return (
-      <main className="min-h-screen bg-black px-6 py-8 text-white">
+      <main className="qa-page min-h-screen bg-black px-6 py-8 text-white">
         <div className="mx-auto max-w-7xl space-y-6">
           <section className="rounded-[32px] border border-orange-300/15 bg-[linear-gradient(135deg,rgba(67,20,7,0.86),rgba(10,10,10,0.98),rgba(120,53,15,0.82))] p-8">
             <div className="animate-pulse space-y-3" aria-hidden="true">
@@ -731,14 +731,14 @@ export default function NowPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black px-5 py-6 text-white sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-[30px] border border-cyan-300/15 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.2),transparent_25%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.12),transparent_30%),linear-gradient(135deg,rgba(8,38,54,0.92),rgba(10,10,10,0.98),rgba(11,28,44,0.88))] p-7 shadow-[0_30px_120px_rgba(34,211,238,0.08)] sm:p-8">
+    <main className="qa-page min-h-screen bg-black text-white">
+      <div className="qa-shell">
+        <div className="qa-panel mb-8 rounded-[30px] border border-cyan-300/15 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.2),transparent_25%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.12),transparent_30%),linear-gradient(135deg,rgba(8,38,54,0.92),rgba(10,10,10,0.98),rgba(11,28,44,0.88))] p-7 shadow-[0_30px_120px_rgba(34,211,238,0.08)] sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs uppercase tracking-[0.35em] text-cyan-200/85">Live Discovery + Editorial Signal</p>
-              <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">Queer World News</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/75">
+              <p className="qa-eyebrow text-cyan-200/85">Live Discovery + Editorial Signal</p>
+              <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Queer World News</h1>
+              <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
                 One mixed stream: what is happening now, what is rising, what changed in nightlife, rights/safety updates, major events, and culture tips.
               </p>
             </div>
@@ -779,11 +779,11 @@ export default function NowPage() {
 
         <section className="mb-6">
           <div className="grid items-stretch gap-6 xl:grid-cols-[1.35fr_0.9fr]">
-            <section className="flex h-full flex-col rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(14,24,36,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.08)]">
+            <section className="qa-panel flex h-full flex-col rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(14,24,36,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.08)]">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.25em] text-cyan-200/85">Mixed feed</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
+                  <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
                 </div>
                 {isAdmin && (
                   <button
@@ -936,12 +936,20 @@ export default function NowPage() {
                     title="No world news items yet."
                     description="Add an admin news item or check back after new signals."
                     className="md:col-span-2 px-4 py-8"
+                    primaryActionLabel={isAdmin ? "Open admin publish" : "Open events"}
+                    onPrimaryAction={() => {
+                      if (isAdmin) {
+                        setShowAdminForm(true);
+                        return;
+                      }
+                      router.push("/events");
+                    }}
                   />
                 )}
               </div>
             </section>
 
-            <section className="relative flex h-full flex-col overflow-hidden rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(11,44,56,0.75),rgba(9,9,9,0.96))] p-6 shadow-[0_24px_64px_rgba(34,211,238,0.10)]">
+            <section className="qa-panel relative flex h-full flex-col overflow-hidden rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(11,44,56,0.75),rgba(9,9,9,0.96))] p-6 shadow-[0_24px_64px_rgba(34,211,238,0.10)]">
               <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-amber-300/10 blur-3xl" />
               <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-rose-300/8 blur-3xl" />
               <div className="mb-4 flex items-center justify-between gap-3">
@@ -1152,7 +1160,7 @@ export default function NowPage() {
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-orange-200">Happening Soon</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Tonight and next up</h2>
+                <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Tonight and next up</h2>
               </div>
               <button
                 onClick={() => router.push("/events")}
@@ -1238,7 +1246,7 @@ export default function NowPage() {
 
           <section className="rounded-[28px] border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(20,40,50,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.07)]">
             <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">Momentum</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Cities with signal</h2>
+            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Cities with signal</h2>
 
             <div className="mt-5 space-y-3">
               {cityMomentum.map((city) => (
@@ -1278,7 +1286,7 @@ export default function NowPage() {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">This Week</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Build your next move</h2>
+              <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Build your next move</h2>
             </div>
             <button
               onClick={() => router.push("/favorites")}
@@ -1310,7 +1318,7 @@ export default function NowPage() {
         <section className="mt-6 rounded-[28px] border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(8,39,32,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(16,185,129,0.08)]">
           <div className="mb-5">
             <p className="text-xs uppercase tracking-[0.25em] text-emerald-200">Discovery Engine</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Places with pull</h2>
+            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Places with pull</h2>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -1371,6 +1379,8 @@ export default function NowPage() {
                 title="No places with momentum in this view yet."
                 description="Try another city filter or check back after new reviews."
                 className="md:col-span-2 xl:col-span-3 px-4 py-8"
+                primaryActionLabel="Show all cities"
+                onPrimaryAction={() => setSelectedCity("all")}
               />
             )}
           </div>

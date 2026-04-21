@@ -194,11 +194,11 @@ function EventSkeletonCard({ tone = "orange" }) {
       : "border-orange-200/14 bg-[linear-gradient(180deg,rgba(251,146,60,0.12),rgba(12,12,12,0.94))]";
 
   return (
-    <div className={`animate-pulse rounded-2xl border p-4 ${toneStyle}`} aria-hidden="true">
-      <div className="h-3 w-40 rounded-full bg-white/14" />
-      <div className="mt-3 h-5 w-3/4 rounded-full bg-white/12" />
-      <div className="mt-4 h-3 w-full rounded-full bg-white/8" />
-      <div className="mt-2 h-3 w-5/6 rounded-full bg-white/8" />
+    <div className={`qa-skeleton-card rounded-2xl border p-4 ${toneStyle}`} aria-hidden="true">
+      <div className="qa-skeleton-card h-3 w-40 rounded-full" />
+      <div className="qa-skeleton-card mt-3 h-5 w-3/4 rounded-full" />
+      <div className="qa-skeleton-card mt-4 h-3 w-full rounded-full" />
+      <div className="qa-skeleton-card mt-2 h-3 w-5/6 rounded-full" />
     </div>
   );
 }
@@ -862,7 +862,7 @@ export default function EventsPage() {
   };
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#040404] text-white">
+    <main className="qa-page min-h-screen overflow-x-hidden bg-[#040404] text-white">
       <div className="relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(249,115,22,0.11),transparent_18%),radial-gradient(circle_at_20%_22%,rgba(236,72,153,0.12),transparent_24%),radial-gradient(circle_at_85%_16%,rgba(59,130,246,0.11),transparent_19%),linear-gradient(180deg,#040404_0%,#090909_48%,#040404_100%)]" />
         <div className="pointer-events-none absolute left-[-6%] top-24 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
@@ -870,44 +870,44 @@ export default function EventsPage() {
         <div className="pointer-events-none absolute bottom-16 left-1/3 h-72 w-72 rounded-full bg-orange-400/9 blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 top-[23rem] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
-        <div className="relative mx-auto max-w-7xl px-6 py-8">
-          <section className="overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(30,30,30,0.96),rgba(8,8,8,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8">
+        <div className="qa-shell relative">
+          <section className="qa-panel overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(30,30,30,0.96),rgba(8,8,8,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8">
             <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs uppercase tracking-[0.24em] text-white/72 backdrop-blur">
+                <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-white/72 backdrop-blur">
                   <span className="h-2 w-2 rounded-full bg-orange-300 shadow-[0_0_20px_rgba(253,186,116,0.9)]" />
                   Time-based queer signal
                 </div>
 
-                <h1 className="mt-6 text-4xl font-semibold tracking-[-0.05em] text-white sm:text-5xl xl:text-6xl">
+                <h1 className="qa-display qa-h1 mt-6 text-4xl font-semibold text-white sm:text-5xl xl:text-6xl">
                   Events
                 </h1>
 
-                <p className="mt-5 max-w-2xl text-base leading-8 text-white/68 sm:text-lg">
+                <p className="qa-lead mt-5 max-w-2xl text-base text-white/68 sm:text-lg">
                   Track what is happening across the atlas, follow the live calendar,
                   and jump straight into cities where queer energy is gathering.
                 </p>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-3xl border border-fuchsia-300/20 bg-[linear-gradient(180deg,rgba(244,114,182,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                  <div className="qa-card qa-metric-card rounded-3xl border border-fuchsia-300/20 bg-[linear-gradient(180deg,rgba(244,114,182,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-100/70">All events</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{calendarEvents.length}</p>
                   </div>
-                  <div className="rounded-3xl border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                  <div className="qa-card qa-metric-card rounded-3xl border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Active cities</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{activeCities}</p>
                   </div>
-                  <div className="rounded-3xl border border-orange-300/20 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-4 backdrop-blur">
-                    <p className="text-xs uppercase tracking-[0.18em] text-orange-100/75">This month</p>
+                  <div className="qa-card qa-metric-card rounded-3xl border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(125,211,252,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                    <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/75">This month</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{eventsThisMonth}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-[30px] border border-orange-200/18 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-5 backdrop-blur">
+              <div className="rounded-[30px] border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-5 backdrop-blur">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-orange-200/70">
+                    <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/70">
                       Next up
                     </p>
                     <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -917,7 +917,7 @@ export default function EventsPage() {
 
                   <button
                     onClick={() => router.push("/now")}
-                    className="rounded-full border border-orange-200/24 bg-orange-200/10 px-4 py-2 text-xs text-orange-100 transition hover:border-orange-200/42 hover:bg-orange-200/16"
+                    className="qa-action rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-4 py-2 text-xs text-fuchsia-100 transition hover:border-fuchsia-200/42 hover:bg-fuchsia-200/16"
                   >
                     Open Now
                   </button>
@@ -985,6 +985,8 @@ export default function EventsPage() {
                       title="No upcoming event signal yet."
                       description="Check all dates or add a new off-grid event."
                       className="px-4 py-8"
+                      primaryActionLabel="Show all dates"
+                      onPrimaryAction={() => setSelectedDate("")}
                     />
                   )}
                   {loadError && (
@@ -1293,7 +1295,7 @@ export default function EventsPage() {
                           setShowGlobalForm(true);
                         }}
                         disabled={!isAdmin}
-                        className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/32 disabled:cursor-not-allowed disabled:opacity-45"
+                        className="qa-action rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/32 disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         {isAdmin ? "Add off-grid event" : "Admin only"}
                       </button>
@@ -1328,7 +1330,7 @@ export default function EventsPage() {
                   }
                 }}
                 disabled={!isAdmin}
-                className="rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
+                className="qa-action rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {isAdmin ? (showGlobalForm ? "Close form" : "Add off-grid event") : "Admin only"}
               </button>
@@ -1452,6 +1454,14 @@ export default function EventsPage() {
                   title="No off-grid events yet."
                   description="Add cruises, ski weekends, and destination events here."
                   className="px-5 py-7"
+                  primaryActionLabel={isAdmin ? "Add off-grid event" : "Open all events"}
+                  onPrimaryAction={() => {
+                    if (isAdmin) {
+                      setShowGlobalForm(true);
+                      return;
+                    }
+                    router.push("/events");
+                  }}
                 />
               ) : (
                 displayedGlobalEvents.map((event) => (

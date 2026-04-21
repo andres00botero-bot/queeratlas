@@ -17,15 +17,15 @@ export default function PageOpeningState({
   const style = TONE_STYLES[tone] || TONE_STYLES.violet;
 
   return (
-    <div className={`w-full max-w-xl rounded-[32px] border p-6 shadow-[0_28px_80px_rgba(0,0,0,0.36)] ${style}`}>
+    <div className={`qa-panel qa-elev-3 w-full max-w-xl rounded-[32px] border p-6 ${style}`}>
       <div className="h-1.5 w-24 rounded-full bg-gradient-to-r from-fuchsia-300/80 via-orange-300/80 to-cyan-300/80" />
-      <p className="text-xs uppercase tracking-[0.22em] text-white/52">{title}</p>
-      <p className="mt-2 text-sm text-white/72">{subtitle}</p>
-      <div className="mt-5 animate-pulse space-y-3" aria-hidden="true">
-        <div className="h-4 w-44 rounded-full bg-white/14" />
-        <div className="h-8 w-60 rounded-full bg-white/12" />
-        <div className="h-3 w-full rounded-full bg-white/8" />
-        <div className="h-3 w-5/6 rounded-full bg-white/8" />
+      <p className="qa-eyebrow text-white/52">{title}</p>
+      <p className="qa-clamp-2 mt-2 text-sm text-white/72">{subtitle}</p>
+      <div className="mt-5 space-y-3" aria-hidden="true">
+        <div className="qa-skeleton-card h-4 w-44 rounded-full" />
+        <div className="qa-skeleton-card h-8 w-60 rounded-full" />
+        <div className="qa-skeleton-card h-3 w-full rounded-full" />
+        <div className="qa-skeleton-card h-3 w-5/6 rounded-full" />
       </div>
     </div>
   );

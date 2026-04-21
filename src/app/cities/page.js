@@ -18,14 +18,6 @@ const COUNTRY_TONES = [
     pill: "border-fuchsia-200/16 bg-fuchsia-200/[0.08] text-fuchsia-100/76",
   },
   {
-    section: "border-amber-300/14 bg-[radial-gradient(circle_at_10%_16%,rgba(251,191,36,0.16),transparent_24%),radial-gradient(circle_at_84%_14%,rgba(45,212,191,0.10),transparent_28%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
-    chip: "border-amber-200/18 bg-amber-200/[0.08] text-amber-100/78",
-    divider: "from-amber-300/22",
-    card: "bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(45,212,191,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
-    hover: "hover:border-amber-200/24 hover:shadow-[0_24px_75px_rgba(251,191,36,0.16),0_18px_45px_rgba(45,212,191,0.10)]",
-    pill: "border-amber-200/16 bg-amber-200/[0.08] text-amber-100/76",
-  },
-  {
     section: "border-cyan-300/14 bg-[radial-gradient(circle_at_16%_14%,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(168,85,247,0.12),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
     chip: "border-cyan-200/18 bg-cyan-200/[0.08] text-cyan-100/80",
     divider: "from-cyan-300/24",
@@ -34,12 +26,12 @@ const COUNTRY_TONES = [
     pill: "border-cyan-200/16 bg-cyan-200/[0.08] text-cyan-100/76",
   },
   {
-    section: "border-emerald-300/14 bg-[radial-gradient(circle_at_12%_16%,rgba(52,211,153,0.14),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(59,130,246,0.10),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
-    chip: "border-emerald-200/18 bg-emerald-200/[0.08] text-emerald-100/80",
-    divider: "from-emerald-300/24",
-    card: "bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(59,130,246,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
-    hover: "hover:border-emerald-200/24 hover:shadow-[0_24px_75px_rgba(52,211,153,0.16),0_18px_45px_rgba(59,130,246,0.10)]",
-    pill: "border-emerald-200/16 bg-emerald-200/[0.08] text-emerald-100/76",
+    section: "border-fuchsia-300/14 bg-[radial-gradient(circle_at_12%_16%,rgba(244,114,182,0.13),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
+    chip: "border-fuchsia-200/18 bg-fuchsia-200/[0.08] text-fuchsia-100/80",
+    divider: "from-fuchsia-300/24",
+    card: "bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(34,211,238,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
+    hover: "hover:border-fuchsia-200/24 hover:shadow-[0_24px_75px_rgba(244,114,182,0.16),0_18px_45px_rgba(34,211,238,0.10)]",
+    pill: "border-fuchsia-200/16 bg-fuchsia-200/[0.08] text-fuchsia-100/76",
   },
 ];
 
@@ -331,41 +323,41 @@ export default function CitiesPage() {
   const totalPlaces = places.length;
 
   return (
-    <main className="min-h-screen bg-[#050505] px-6 py-8 text-white">
-      <div className="relative mx-auto max-w-7xl">
+    <main className="qa-page min-h-screen bg-[#050505] text-white">
+      <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_76%_14%,rgba(96,165,250,0.08),transparent_20%),radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.06),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
 
-        <section className="relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.10),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.10),transparent_24%),linear-gradient(135deg,rgba(29,23,18,0.98),rgba(10,10,10,0.99),rgba(19,24,27,0.97))] p-8 shadow-[0_30px_120px_rgba(0,0,0,0.35)]">
+        <section className="qa-panel relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.10),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.10),transparent_24%),linear-gradient(135deg,rgba(29,23,18,0.98),rgba(10,10,10,0.99),rgba(19,24,27,0.97))] p-8 shadow-[0_30px_120px_rgba(0,0,0,0.35)]">
           <div className="max-w-4xl">
-            <p className="text-xs uppercase tracking-[0.35em] text-white/45">
+            <p className="qa-eyebrow text-white/45">
               Global discovery
             </p>
-            <h1 className="mt-4 text-5xl font-bold tracking-[-0.04em] text-white sm:text-6xl">
+            <h1 className="qa-display qa-h1 mt-4 text-5xl font-bold text-white sm:text-6xl">
               Cities
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/62">
+            <p className="qa-lead mt-5 max-w-2xl text-base text-white/62">
               Browse queer cities by country, scan signal quickly, and jump straight
               into the local atlas. Built to scale globally without turning into chaos.
             </p>
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-3xl border border-amber-200/10 bg-amber-200/[0.06] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-3xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalCities}</p>
             </div>
-            <div className="rounded-3xl border border-sky-200/10 bg-sky-200/[0.05] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Countries</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalCountries}</p>
             </div>
-            <div className="rounded-3xl border border-emerald-200/10 bg-emerald-200/[0.05] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Places</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalPlaces}</p>
             </div>
           </div>
         </section>
 
-        <section className="relative mb-8 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+        <section className="qa-panel relative mb-8 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
           <div className="mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">
@@ -373,7 +365,7 @@ export default function CitiesPage() {
               </p>
               <button
                 onClick={() => setSelectedCountry("All")}
-                className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70 transition hover:border-white/24 hover:text-white"
+                className="qa-action rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70 transition hover:border-white/24 hover:text-white"
               >
                 Show all
               </button>
@@ -416,7 +408,7 @@ export default function CitiesPage() {
                         setSelectedCountry(country);
                         scrollToCountrySection(country);
                       }}
-                      className={`rounded-full border px-4 py-2 text-sm transition ${
+                      className={`qa-action rounded-full border px-4 py-2 text-sm transition ${
                         active
                           ? "border-fuchsia-300/28 bg-fuchsia-300/12 text-white shadow-[0_10px_30px_rgba(217,70,239,0.10)]"
                           : "border-white/8 bg-white/4 text-white/58 hover:border-white/14 hover:text-white/80"
@@ -439,13 +431,13 @@ export default function CitiesPage() {
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div
                     key={`city-skeleton-${index}`}
-                    className="animate-pulse rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5"
+                    className="qa-skeleton-card rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5"
                     aria-hidden="true"
                   >
-                    <div className="h-3 w-20 rounded-full bg-white/14" />
-                    <div className="mt-3 h-6 w-32 rounded-full bg-white/12" />
-                    <div className="mt-5 h-3 w-full rounded-full bg-white/8" />
-                    <div className="mt-2 h-3 w-5/6 rounded-full bg-white/8" />
+                    <div className="qa-skeleton-card h-3 w-20 rounded-full" />
+                    <div className="qa-skeleton-card mt-3 h-6 w-32 rounded-full" />
+                    <div className="qa-skeleton-card mt-5 h-3 w-full rounded-full" />
+                    <div className="qa-skeleton-card mt-2 h-3 w-5/6 rounded-full" />
                   </div>
                 ))}
               </div>
@@ -463,7 +455,7 @@ export default function CitiesPage() {
                     setQuery("");
                     setSelectedCountry("All");
                   }}
-                  className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
+                  className="qa-action rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
                 >
                   Reset filters
                 </button>
@@ -544,10 +536,10 @@ export default function CitiesPage() {
                           <p className="text-xs uppercase tracking-[0.16em] text-white/36">
                             Signal
                           </p>
-                          <p className="mt-2 text-sm capitalize text-white/68">
+                          <p className="qa-clamp-2 mt-2 text-sm capitalize text-white/68">
                             {String(city.vibe || "mixed").replaceAll("_", " ")} atmosphere
                           </p>
-                          <p className="mt-2 text-sm text-white/52">
+                          <p className="qa-clamp-2 mt-2 text-sm text-white/52">
                             {city.topPlace
                               ? `Top place: ${city.topPlace}`
                               : "This city is ready for more local signal."}

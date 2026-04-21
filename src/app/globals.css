@@ -3,6 +3,30 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --qa-font-body:
+    "Avenir Next", "Avenir", "Segoe UI", "Helvetica Neue", "Noto Sans",
+    sans-serif;
+  --qa-font-display:
+    "Inter", "SF Pro Display", "Avenir Next", "Segoe UI", "Helvetica Neue",
+    sans-serif;
+  --qa-font-ui:
+    "Avenir Next", "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
+  --qa-space-1: clamp(0.25rem, 0.22rem + 0.08vw, 0.32rem);
+  --qa-space-2: clamp(0.5rem, 0.42rem + 0.2vw, 0.64rem);
+  --qa-space-3: clamp(0.75rem, 0.65rem + 0.24vw, 0.92rem);
+  --qa-space-4: clamp(1rem, 0.88rem + 0.36vw, 1.28rem);
+  --qa-space-5: clamp(1.5rem, 1.28rem + 0.56vw, 1.92rem);
+  --qa-space-6: clamp(2rem, 1.72rem + 0.88vw, 2.72rem);
+  --qa-dur-fast: 140ms;
+  --qa-dur-base: 180ms;
+  --qa-dur-slow: 260ms;
+  --qa-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --qa-elev-1-border: rgba(255, 255, 255, 0.1);
+  --qa-elev-1-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  --qa-elev-2-border: rgba(255, 255, 255, 0.14);
+  --qa-elev-2-shadow: 0 18px 44px rgba(0, 0, 0, 0.26);
+  --qa-elev-3-border: rgba(255, 255, 255, 0.18);
+  --qa-elev-3-shadow: 0 28px 88px rgba(0, 0, 0, 0.38);
 }
 
 @theme inline {
@@ -24,10 +48,199 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--qa-font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+.qa-page {
+  --qa-section-space: var(--qa-space-6);
+}
+
+.qa-shell {
+  width: min(100%, 80rem);
+  margin-inline: auto;
+  padding-inline: clamp(1.05rem, 1rem + 0.45vw, 1.8rem);
+  padding-block: clamp(1.2rem, 1rem + 0.7vw, 2.1rem);
+}
+
+.qa-panel {
+  border-radius: clamp(1.55rem, 1.42rem + 0.6vw, 2.25rem);
+  padding: clamp(1.2rem, 1rem + 0.78vw, 2rem);
+  box-shadow: var(--qa-elev-3-shadow);
+}
+
+.qa-card {
+  border-radius: clamp(1.12rem, 1.04rem + 0.36vw, 1.5rem);
+  padding: clamp(0.82rem, 0.78rem + 0.36vw, 1.08rem);
+}
+
+.qa-metric-card {
+  min-height: clamp(7.2rem, 6.8rem + 1.1vw, 8.3rem);
+}
+
+.qa-list-card {
+  min-height: clamp(5.6rem, 5.2rem + 0.9vw, 6.4rem);
+}
+
+.qa-card-compact {
+  border-radius: 1rem;
+  padding: clamp(0.7rem, 0.66rem + 0.2vw, 0.9rem);
+}
+
+.qa-mt-section {
+  margin-top: var(--qa-section-space);
+}
+
+.qa-h1 {
+  font-family: var(--qa-font-display);
+  font-size: clamp(2rem, 1.56rem + 2.15vw, 3.7rem);
+  line-height: 1.01;
+  letter-spacing: -0.018em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.qa-h2 {
+  font-family: var(--qa-font-display);
+  font-size: clamp(1.38rem, 1.18rem + 1.05vw, 2.2rem);
+  line-height: 1.11;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.qa-h3 {
+  font-family: var(--qa-font-display);
+  font-size: clamp(1rem, 0.93rem + 0.45vw, 1.28rem);
+  line-height: 1.18;
+  letter-spacing: -0.004em;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.qa-eyebrow {
+  font-family: var(--qa-font-ui);
+  font-size: clamp(0.64rem, 0.58rem + 0.18vw, 0.78rem);
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.qa-display {
+  font-family: var(--qa-font-display);
+  letter-spacing: -0.016em;
+  line-height: 1.01;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.qa-title {
+  font-family: var(--qa-font-display);
+  letter-spacing: -0.008em;
+  line-height: 1.09;
+  font-weight: 600;
+  text-wrap: balance;
+}
+
+.qa-lead {
+  max-width: 68ch;
+  font-size: clamp(0.98rem, 0.92rem + 0.24vw, 1.12rem);
+  line-height: 1.66;
+}
+
+.qa-action {
+  position: relative;
+  isolation: isolate;
+  font-family: var(--qa-font-ui);
+  letter-spacing: 0.01em;
+  box-shadow: var(--qa-elev-1-shadow);
+  transition:
+    border-color var(--qa-dur-base) var(--qa-ease-standard),
+    background-color var(--qa-dur-base) var(--qa-ease-standard),
+    color var(--qa-dur-base) var(--qa-ease-standard),
+    box-shadow var(--qa-dur-base) var(--qa-ease-standard),
+    transform var(--qa-dur-fast) var(--qa-ease-standard),
+    opacity var(--qa-dur-base) var(--qa-ease-standard);
+}
+
+.qa-action::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 45%);
+  opacity: 0.52;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.qa-action:hover {
+  box-shadow: var(--qa-elev-2-shadow);
+}
+
+.qa-action:focus-visible {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 0 0 4px rgba(236, 72, 153, 0.2),
+    0 14px 36px rgba(0, 0, 0, 0.3);
+}
+
+.qa-action-strong {
+  box-shadow: 0 16px 44px rgba(34, 211, 238, 0.18);
+}
+
+.qa-elev-1 {
+  border-color: var(--qa-elev-1-border) !important;
+  box-shadow: var(--qa-elev-1-shadow) !important;
+}
+
+.qa-elev-2 {
+  border-color: var(--qa-elev-2-border) !important;
+  box-shadow: var(--qa-elev-2-shadow) !important;
+}
+
+.qa-elev-3 {
+  border-color: var(--qa-elev-3-border) !important;
+  box-shadow: var(--qa-elev-3-shadow) !important;
+}
+
+.qa-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.qa-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.qa-skeleton-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+}
+
+.qa-skeleton-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.08) 45%, transparent 100%);
+  animation: qaShimmer 1.2s var(--qa-ease-standard) infinite;
+}
+
+@keyframes qaShimmer {
+  to {
+    transform: translateX(100%);
+  }
 }
 
 ::selection {
@@ -69,12 +282,12 @@ body {
 
 :where(a, button, input, select, textarea) {
   transition:
-    border-color 180ms ease,
-    background-color 180ms ease,
-    color 180ms ease,
-    box-shadow 180ms ease,
-    transform 180ms ease,
-    opacity 180ms ease;
+    border-color var(--qa-dur-base) var(--qa-ease-standard),
+    background-color var(--qa-dur-base) var(--qa-ease-standard),
+    color var(--qa-dur-base) var(--qa-ease-standard),
+    box-shadow var(--qa-dur-base) var(--qa-ease-standard),
+    transform var(--qa-dur-base) var(--qa-ease-standard),
+    opacity var(--qa-dur-base) var(--qa-ease-standard);
 }
 
 :where(button, [role="button"], a[href]) {
@@ -251,6 +464,36 @@ body {
   }
   :where(button, [role="button"], a[href]):active {
     transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .qa-shell {
+    padding-inline: clamp(0.78rem, 3.6vw, 1.1rem);
+    padding-block: clamp(0.9rem, 3vw, 1.2rem);
+  }
+
+  .qa-panel {
+    border-radius: 1.25rem;
+    padding: 0.95rem;
+  }
+
+  .qa-card {
+    border-radius: 0.95rem;
+    padding: 0.8rem;
+  }
+
+  .qa-h1 {
+    line-height: 1.04;
+    letter-spacing: -0.014em;
+  }
+
+  .qa-h2 {
+    line-height: 1.12;
+  }
+
+  .qa-lead {
+    line-height: 1.62;
   }
 }
 

@@ -617,15 +617,15 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#050505] text-white">
+    <main className="qa-page min-h-screen overflow-x-hidden bg-[#050505] text-white">
       <div className="relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_10%,rgba(244,114,182,0.09),transparent_23%),radial-gradient(circle_at_86%_14%,rgba(56,189,248,0.08),transparent_24%),linear-gradient(180deg,#050505_0%,#08080a_56%,#050505_100%)]" />
         <div className="pointer-events-none absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-rose-500/6 blur-3xl" />
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/6 blur-3xl" />
 
-        <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-6 sm:px-6 sm:py-8">
+        <div className="qa-shell relative flex min-h-screen w-full flex-col">
           <div className={`mb-8 flex flex-wrap items-center justify-between gap-4 ${introClass()}`} style={introStyle(0)}>
-            <div className="rounded-full border border-white/14 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.24em] text-white/76 backdrop-blur">
+            <div className="qa-eyebrow rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur">
               Global queer discovery
             </div>
 
@@ -639,7 +639,7 @@ export default function Home() {
               {!isMember ? (
                 <button
                   onClick={() => openSignup()}
-                  className="rounded-full bg-gradient-to-r from-rose-300 via-fuchsia-300 to-orange-200 px-5 py-2 text-sm font-semibold text-black shadow-[0_18px_50px_rgba(244,114,182,0.20)] transition hover:scale-[1.01] hover:opacity-95"
+                  className="qa-action qa-action-strong rounded-full bg-gradient-to-r from-rose-300 via-fuchsia-300 to-orange-200 px-5 py-2 text-sm font-semibold text-black shadow-[0_18px_50px_rgba(244,114,182,0.20)] transition hover:scale-[1.01] hover:opacity-95"
                 >
                   Join Queer Atlas
                 </button>
@@ -647,20 +647,20 @@ export default function Home() {
                 <>
                   <button
                     onClick={() => router.push("/favorites")}
-                    className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/45 hover:bg-fuchsia-200/14"
+                    className="qa-action rounded-full border border-fuchsia-200/26 bg-fuchsia-200/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/45 hover:bg-fuchsia-200/14"
                   >
                     Your Atlas
                   </button>
                   <button
                     onClick={() => router.push("/community")}
-                    className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/72 backdrop-blur transition hover:border-white/16 hover:text-white sm:inline-flex"
+                    className="qa-action hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/72 backdrop-blur transition hover:border-white/16 hover:text-white sm:inline-flex"
                   >
                     Community
                   </button>
                   {isAdmin && (
                     <button
                       onClick={() => router.push("/admin")}
-                      className="hidden rounded-full border border-cyan-200/24 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/45 sm:inline-flex"
+                      className="qa-action hidden rounded-full border border-cyan-200/24 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/45 sm:inline-flex"
                     >
                       Admin
                     </button>
@@ -674,7 +674,7 @@ export default function Home() {
                     await signOut();
                     setShowSignup(false);
                   }}
-                  className="rounded-full border border-white/10 bg-transparent px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                  className="qa-action rounded-full border border-white/10 bg-transparent px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
                 >
                   Sign out
                 </button>
@@ -684,7 +684,7 @@ export default function Home() {
 
           <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
             <section className={`pt-1 xl:pt-6 ${introClass()}`} style={introStyle(90)}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-200/18 bg-cyan-200/8 px-4 py-2 text-xs text-white/78 backdrop-blur">
+              <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-cyan-200/18 bg-cyan-200/8 px-4 py-2 text-white/78 backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" />
                 Experience-first queer atlas
               </div>
@@ -697,12 +697,12 @@ export default function Home() {
                   height={96}
                   className="h-16 w-16 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
                 />
-                <h1 className="max-w-5xl text-4xl font-bold leading-[0.95] tracking-[-0.03em] text-white sm:text-6xl xl:text-7xl">
+                <h1 className="qa-display qa-h1 max-w-5xl text-4xl font-bold text-white sm:text-6xl xl:text-7xl">
                   QUEER ATLAS
                 </h1>
               </div>
 
-              <p className="mt-5 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
+              <p className="qa-lead mt-5 max-w-2xl text-base text-white/70 sm:text-lg">
                 Find the city. Feel the signal. The global queer database for discovery,
                 vibe, community, and culture.
               </p>
@@ -802,15 +802,15 @@ export default function Home() {
               </div>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
+                <div className="qa-card qa-metric-card rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{cityCountDisplay}</p>
                 </div>
-                <div className="rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
+                <div className="qa-card qa-metric-card rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Places</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{placeCountDisplay}</p>
                 </div>
-                <div className="rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
+                <div className="qa-card qa-metric-card rounded-3xl border border-white/12 bg-white/[0.045] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Events</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{eventCountDisplay}</p>
                 </div>
@@ -842,7 +842,7 @@ export default function Home() {
                     <button
                       key={item.id}
                       onClick={() => router.push("/now")}
-                      className="w-full rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(32,32,32,0.88),rgba(14,14,14,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-white/26"
+                      className="qa-list-card w-full rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(32,32,32,0.88),rgba(14,14,14,0.96))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-white/26"
                     >
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <p className="rounded-full border border-white/12 bg-white/7 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/82">

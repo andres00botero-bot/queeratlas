@@ -562,8 +562,8 @@ export default function MessagesPage() {
 
   if (!isReady || isAuthLoading) {
     return (
-      <main className="min-h-screen bg-[#050505] px-6 py-8 text-white">
-        <div className="mx-auto max-w-7xl">
+      <main className="qa-page min-h-screen bg-[#050505] text-white">
+        <div className="qa-shell">
           <PageOpeningState
             title="Loading Signal Inbox"
             subtitle="Syncing your threads, unread signal, and active friends."
@@ -574,25 +574,25 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] px-6 py-8 text-white">
-      <div className="mx-auto max-w-7xl">
-        <section className="mb-6 rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_10%_10%,rgba(34,211,238,0.22),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(244,114,182,0.2),transparent_30%),linear-gradient(145deg,rgba(10,34,48,0.98),rgba(10,10,10,1))] p-6 shadow-[0_36px_120px_rgba(0,0,0,0.46)]">
-          <p className="text-xs uppercase tracking-[0.35em] text-cyan-100/75">Signal Inbox</p>
-          <h1 className="mt-3 text-4xl font-bold tracking-[-0.03em] text-white sm:text-5xl">Inbox</h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-white/76">
+    <main className="qa-page min-h-screen bg-[#050505] text-white">
+      <div className="qa-shell">
+        <section className="qa-panel mb-6 rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_10%_10%,rgba(34,211,238,0.22),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(244,114,182,0.2),transparent_30%),linear-gradient(145deg,rgba(10,34,48,0.98),rgba(10,10,10,1))] p-6 shadow-[0_36px_120px_rgba(0,0,0,0.46)]">
+          <p className="qa-eyebrow text-cyan-100/75">Signal Inbox</p>
+          <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Inbox</h1>
+          <p className="qa-lead mt-4 max-w-3xl text-sm text-white/76">
             Email-style private inbox. Browse conversations on the left, read thread history on the right, and reply from one clean reading panel.
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-fuchsia-300/24 bg-fuchsia-300/[0.08] px-4 py-3">
+            <div className="qa-card rounded-2xl border border-fuchsia-300/24 bg-fuchsia-300/[0.08] px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/75">Unread</p>
               <p className="mt-2 text-3xl font-semibold text-white">{metrics.unread}</p>
             </div>
-            <div className="rounded-2xl border border-cyan-300/24 bg-cyan-300/[0.08] px-4 py-3">
+            <div className="qa-card rounded-2xl border border-cyan-300/24 bg-cyan-300/[0.08] px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/75">Active friends</p>
               <p className="mt-2 text-3xl font-semibold text-white">{metrics.active}</p>
             </div>
-            <div className="rounded-2xl border border-emerald-300/24 bg-emerald-300/[0.08] px-4 py-3">
+            <div className="qa-card rounded-2xl border border-emerald-300/24 bg-emerald-300/[0.08] px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-100/75">Threads</p>
               <p className="mt-2 text-3xl font-semibold text-white">{metrics.total}</p>
             </div>
@@ -606,14 +606,14 @@ export default function MessagesPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className={`${mobileThreadOpen ? "hidden lg:block" : "block"} rounded-[30px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(9,30,40,0.68),rgba(10,10,10,0.99))] p-4`}>
+          <div className={`${mobileThreadOpen ? "hidden lg:block" : "block"} qa-panel rounded-[30px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(9,30,40,0.68),rgba(10,10,10,0.99))] p-4`}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-xs uppercase tracking-[0.2em] text-white/45">Conversations</p>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setFilter("all")}
-                  className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                     filter === "all"
                       ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
                       : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
@@ -624,7 +624,7 @@ export default function MessagesPage() {
                 <button
                   type="button"
                   onClick={() => setFilter("unread")}
-                  className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                     filter === "unread"
                       ? "border-fuchsia-200/40 bg-fuchsia-200/16 text-fuchsia-100"
                       : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
@@ -635,7 +635,7 @@ export default function MessagesPage() {
                 <button
                   type="button"
                   onClick={() => setFilter("active")}
-                  className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                     filter === "active"
                       ? "border-emerald-200/40 bg-emerald-200/16 text-emerald-100"
                       : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
@@ -649,7 +649,7 @@ export default function MessagesPage() {
             {isLoadingThreads ? (
               <div className="space-y-3">
                 {[0, 1, 2].map((item) => (
-                  <div key={`inbox-skeleton-${item}`} className="h-24 animate-pulse rounded-2xl border border-white/10 bg-white/5" />
+                  <div key={`inbox-skeleton-${item}`} className="qa-skeleton-card h-24 rounded-2xl border border-white/10 bg-white/5" />
                 ))}
               </div>
             ) : filteredThreads.length > 0 ? (
@@ -662,7 +662,7 @@ export default function MessagesPage() {
                       key={thread.id}
                       type="button"
                       onClick={() => handleSelectThread(thread.id)}
-                      className={`w-full rounded-2xl border p-3 text-left transition ${
+                      className={`qa-list-card w-full rounded-2xl border p-3 text-left transition ${
                         selected
                           ? "border-cyan-200/42 bg-cyan-200/16 shadow-[0_10px_30px_rgba(34,211,238,0.15)]"
                           : "border-white/10 bg-white/[0.03] hover:border-cyan-200/26 hover:bg-white/[0.06]"
@@ -695,11 +695,13 @@ export default function MessagesPage() {
                 tone="violet"
                 title="No threads in this filter"
                 description="Try another filter or start a new message from your friends list in Favorites."
+                primaryActionLabel="Show all threads"
+                onPrimaryAction={() => setFilter("all")}
               />
             )}
           </div>
 
-          <div className={`${mobileThreadOpen ? "block" : "hidden lg:block"} rounded-[30px] border border-fuchsia-300/14 bg-[linear-gradient(180deg,rgba(42,14,38,0.46),rgba(10,10,10,0.99))] p-4`}>
+          <div className={`${mobileThreadOpen ? "block" : "hidden lg:block"} qa-panel rounded-[30px] border border-fuchsia-300/14 bg-[linear-gradient(180deg,rgba(42,14,38,0.46),rgba(10,10,10,0.99))] p-4`}>
             {activeThread ? (
               <>
                 <div className="mb-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-200/[0.06] px-4 py-3">
@@ -717,14 +719,14 @@ export default function MessagesPage() {
                       <button
                         type="button"
                         onClick={() => setMobileThreadOpen(false)}
-                        className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] text-white/80 lg:hidden"
+                        className="qa-action rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] text-white/80 lg:hidden"
                       >
                         Back
                       </button>
                       <button
                         type="button"
                         disabled
-                        className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/45"
+                        className="qa-action rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/45"
                       >
                         Mute
                       </button>
@@ -784,7 +786,7 @@ export default function MessagesPage() {
                     <button
                       type="submit"
                       disabled={sending || !draft.trim()}
-                      className="rounded-xl bg-gradient-to-r from-cyan-200 via-sky-200 to-emerald-200 px-4 py-2 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-55"
+                      className="qa-action qa-action-strong rounded-xl bg-gradient-to-r from-cyan-200 via-sky-200 to-emerald-200 px-4 py-2 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-55"
                     >
                       {sending ? "Sending..." : "Send"}
                     </button>
@@ -796,6 +798,8 @@ export default function MessagesPage() {
                 tone="amber"
                 title="Select a thread"
                 description="Choose a conversation from the inbox list to read and reply."
+                primaryActionLabel="Open Favorites"
+                onPrimaryAction={() => router.push("/favorites")}
               />
             )}
           </div>
