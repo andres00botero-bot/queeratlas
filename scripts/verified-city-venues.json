@@ -986,5 +986,165 @@
       "vibe": "Cafe / brunch",
       "description": "TravelGay-listed Darlinghurst cafe with LGBTQ+ welcoming atmosphere and inclusive menu."
     }
+  ],
+  "sofia": [
+    {
+      "name": "Garage Sauna",
+      "type": "sauna",
+      "location": "10 Bratovan Street, Sofia, Bulgaria",
+      "lat": 42.6975,
+      "lng": 23.3692,
+      "hours": "Thu-Sun 16:00-21:00, Mon-Wed closed.",
+      "link": "https://www.travelgay.com/venue/taragon-steam",
+      "vibe": "Sauna / wellness",
+      "description": "TravelGay-listed gay sauna in Sofia with steam room and private cabins."
+    },
+    {
+      "name": "City Park - Borisova Gradina",
+      "type": "cruising_area",
+      "location": "Borisova gradina, Sofia, Bulgaria",
+      "lat": 42.6849,
+      "lng": 23.3467,
+      "hours": "Late afternoon and evenings.",
+      "link": "https://www.cruisinggays.com/sofia/areas/14153-city-park-borisova-gradina/",
+      "vibe": "Open-air cruising",
+      "description": "Community-listed cruising area in Borisova gradina with activity on park paths and nearby alleys."
+    },
+    {
+      "name": "Central Hotel Sofia",
+      "type": "hotel",
+      "location": "52 Hristo Botev Blvd, 1000 Sofia, Bulgaria",
+      "lat": 42.6957,
+      "lng": 23.3162,
+      "hours": "24/7 hotel operations; check-in/check-out via booking policy.",
+      "link": "https://www.travelgay.com/hotels/central-hotel-sofia",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed central Sofia hotel near Serdika metro and city nightlife."
+    },
+    {
+      "name": "From Barista Coffee and more",
+      "type": "cafe",
+      "location": "ul. Bacho Kiro 26, Sofia Center, 1000 Sofia, Bulgaria",
+      "lat": 42.6992,
+      "lng": 23.3268,
+      "hours": "Mon-Fri 07:30-20:00, Sat-Sun 08:00-20:00.",
+      "link": "https://europeancoffeetrip.com/cafe/frombaristacoffeeandmore-sofia/",
+      "vibe": "Cafe / daytime social",
+      "description": "Specialty coffee cafe in central Sofia with all-day service and workspace-friendly setup."
+    }
+  ],
+  "quito": [
+    {
+      "name": "Sauna Jinetes",
+      "type": "sauna",
+      "location": "Berlin 147 y 9 de Octubre, Quito, Ecuador",
+      "lat": -0.2105,
+      "lng": -78.5001,
+      "hours": "Mon-Thu 13:00-20:00, Fri 13:00-20:30, Sat-Sun 13:00-20:00.",
+      "link": "https://www.travelgay.com/venue/sauna-jinetes-quito-ecuador",
+      "vibe": "Sauna / wellness",
+      "description": "Long-running Quito gay sauna with jacuzzi, sauna, gym, and massage facilities."
+    },
+    {
+      "name": "Club Azul",
+      "type": "cruise_club",
+      "location": "Mariscal Foch E9-36 y Av. 6 de Diciembre, Quito, Ecuador",
+      "lat": -0.2063,
+      "lng": -78.4913,
+      "hours": "Mon-Fri 14:00-20:00, Sat-Sun 12:00-20:00.",
+      "link": "https://www.travelgay.com/venue/sauna-azul-quito-ecuador/",
+      "vibe": "Cruise / sauna",
+      "description": "Gay men venue in Quito with sauna facilities, dark rooms, and social cruising environment."
+    },
+    {
+      "name": "Ejido Park Daytime",
+      "type": "cruising_area",
+      "location": "Avenida 10 de Agosto, Parque El Ejido, Quito, Ecuador",
+      "lat": -0.2119,
+      "lng": -78.5018,
+      "hours": "Daytime; busiest during daytime transit and park traffic.",
+      "link": "https://www.cruisinggays.com/quito/c/areas/",
+      "vibe": "Urban cruising area",
+      "description": "Community-listed Quito cruising area around El Ejido and surrounding daytime routes."
+    },
+    {
+      "name": "Hotel Reina Isabel",
+      "type": "hotel",
+      "location": "Av. Amazonas N23-44 y Veintimilla, Quito, Ecuador",
+      "lat": -0.2068,
+      "lng": -78.4907,
+      "hours": "24/7 hotel operations; check-in/check-out via booking policy.",
+      "link": "https://www.travelgay.com/hotels/hotel-reina-isabel-quito-ecuador",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed hotel in La Mariscal, close to Quito gay nightlife."
+    },
+    {
+      "name": "Juan Valdez Plaza Foch",
+      "type": "cafe",
+      "location": "Reina Victoria 43, Quito 170150, Ecuador",
+      "lat": -0.2075,
+      "lng": -78.4912,
+      "hours": "Daily 06:00-03:00.",
+      "link": "https://www.tripadvisor.com/Restaurant_Review-g294308-d4687551-Reviews-Juan_Valdez_Plaza_Foch-Quito_Pichincha_Province.html",
+      "vibe": "Cafe / central hangout",
+      "description": "Late-opening cafe in Plaza Foch area, useful as a central meetup point near nightlife."
+    }
+  ],
+  "puerto_vallarta": [
+    {
+      "name": "Spartacus Spa & Sauna",
+      "type": "sauna",
+      "location": "Lazaro Cardenas 240, Zona Romantica, Puerto Vallarta, Jalisco, Mexico",
+      "lat": 20.6062,
+      "lng": -105.2364,
+      "hours": "Tue 00:00-06:00 and 14:00-22:00; Wed 14:00-24:00; Thu-Mon 00:00-06:00 and 14:00-24:00.",
+      "link": "https://www.travelgay.com/venue/spartacus-spa-sauna-puerto-vallarta",
+      "vibe": "Sauna / bathhouse",
+      "description": "Large men-only sauna complex in Zona Romantica with steam, jacuzzi, cabins, and rooftop spaces."
+    },
+    {
+      "name": "Wet Dreams",
+      "type": "cruise_club",
+      "location": "Lazaro Cardenas 312, Col. Emiliano Zapata, Puerto Vallarta, Jalisco, Mexico",
+      "lat": 20.6055,
+      "lng": -105.2355,
+      "hours": "Daily 20:00-02:00.",
+      "link": "https://gaypv.com/places/bars/wet-dreams/",
+      "vibe": "Cruise / adult nightlife",
+      "description": "Men-focused adult nightlife venue in Zona Romantica with shower-show format and late-night schedule."
+    },
+    {
+      "name": "Playa Los Muertos (Gay Beach Zone)",
+      "type": "cruising_area",
+      "location": "Playa Los Muertos, Zona Romantica, Puerto Vallarta, Jalisco, Mexico",
+      "lat": 20.6015,
+      "lng": -105.2372,
+      "hours": "Most active daytime through sunset.",
+      "link": "https://www.travelgay.com/venue/playa-los-muertos",
+      "vibe": "Beach social / cruising-adjacent",
+      "description": "Main gay beach zone in Puerto Vallarta around Blue Chairs and Mantamar."
+    },
+    {
+      "name": "Almar Resort LGBT",
+      "type": "hotel",
+      "location": "Amapas 380, Zona Romantica, 48380 Puerto Vallarta, Jalisco, Mexico",
+      "lat": 20.6016,
+      "lng": -105.2369,
+      "hours": "24/7 hotel operations; check-in/check-out via booking policy.",
+      "link": "https://www.almarresort.com/",
+      "vibe": "LGBT beachfront resort",
+      "description": "Adults-only LGBT-focused beachfront resort in Puerto Vallarta's gay neighborhood."
+    },
+    {
+      "name": "Cafe San Angel",
+      "type": "cafe",
+      "location": "Olas Altas 449, Col. Emiliano Zapata, 48380 Puerto Vallarta, Jalisco, Mexico",
+      "lat": 20.6035,
+      "lng": -105.2354,
+      "hours": "Daily 08:00-23:00.",
+      "link": "https://gaypv.com/places/breakfast-brunch/cafe-san-angel/",
+      "vibe": "Cafe / brunch",
+      "description": "Long-running Zona Romantica cafe and brunch spot popular with local and visiting LGBTQ+ travelers."
+    }
   ]
 }
