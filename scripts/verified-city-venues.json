@@ -611,5 +611,266 @@
       "vibe": "Open-air cruising",
       "description": "Known Athens cruising park with activity around interior paths."
     }
+  ],
+  "sao_paulo": [
+    {
+      "name": "Bar Queen",
+      "type": "bar",
+      "location": "Rua Vitoria 826, Santa Ifigenia, Sao Paulo, SP, 01210-002, Brazil",
+      "lat": -23.540729,
+      "lng": -46.644011,
+      "hours": "Mon 22:00-03:30, Thu 22:00-03:00, Fri-Sat 22:00-04:00, Sun 21:30-03:00, Tue-Wed closed.",
+      "link": "https://www.travelgay.com/venue/bar-queen-sao-paulo",
+      "vibe": "Gay bar / nightlife",
+      "description": "Popular and laid-back gay bar in the Largo do Arouche area."
+    },
+    {
+      "name": "Blue Space",
+      "type": "club",
+      "location": "Rua Brigadeiro Galvao 723, Barra Funda, Sao Paulo, SP, 01151-000, Brazil",
+      "lat": -23.529872,
+      "lng": -46.658311,
+      "hours": "Sat 23:00-05:00, Sun 19:00-02:00.",
+      "link": "https://www.travelgay.com/venue/blue-space-sao-paulo",
+      "vibe": "Gay dance club",
+      "description": "Iconic Sao Paulo gay club known for large drag productions and dance nights."
+    },
+    {
+      "name": "RG Bar Club",
+      "type": "cruise_club",
+      "location": "Rua Rio Grande 33, Vila Mariana, Sao Paulo, SP, 04018-000, Brazil",
+      "lat": -23.585182,
+      "lng": -46.644382,
+      "hours": "Tue-Thu 18:00-23:00, Fri 18:00-02:00, Sat 18:00-04:00, Mon/Sun closed.",
+      "link": "https://www.travelgay.com/venue/rg-bar-club",
+      "vibe": "Cruise / fetish",
+      "description": "Long-running men-only naturist and fetish-oriented cruise venue."
+    },
+    {
+      "name": "Parque Ibirapuera (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Avenida Pedro Alvares Cabral 7, Sao Paulo, SP, 04094, Brazil",
+      "lat": -23.581283,
+      "lng": -46.65856,
+      "hours": "Evening and night.",
+      "link": "https://www.gays-cruising.com/en/cruising/parque_ibirapuera_san_paulo_brasil_12552",
+      "vibe": "Open-air cruising",
+      "description": "Known cruising zone in and around Ibirapuera park paths after dark."
+    },
+    {
+      "name": "Melia Paulista",
+      "type": "hotel",
+      "location": "Avenida Paulista 2181, Consolacao, Sao Paulo, SP, 01311-300, Brazil",
+      "lat": -23.558229,
+      "lng": -46.661031,
+      "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
+      "link": "https://www.travelgay.com/hotels/melia-paulista-sao-paulo",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed hotel in central Paulista/Consolacao close to major LGBTQ+ nightlife."
+    },
+    {
+      "name": "Urbe Cafe Bar",
+      "type": "cafe",
+      "location": "Rua Antonio Carlos 404, Consolacao, Sao Paulo, SP, 01309-010, Brazil",
+      "lat": -23.555996,
+      "lng": -46.658342,
+      "hours": "Tue-Thu 12:00-22:00, Fri 12:00-23:00, Sat 09:00-23:00, Sun 09:00-21:00, Mon closed.",
+      "link": "https://www.urbecafe.com.br/pages/urbe-cafe-bar",
+      "vibe": "Cafe / social",
+      "description": "Specialty coffee and brunch cafe-bar in Consolacao with all-day service."
+    }
+  ],
+  "provincetown": [
+    {
+      "name": "Club Purgatory",
+      "type": "club",
+      "location": "9 Carver St, Provincetown, MA 02657, United States",
+      "lat": 42.0534,
+      "lng": -70.1849,
+      "hours": "Open in season, generally nightly around 21:00-01:00.",
+      "link": "https://www.gifford.house/explore/club-purgatory",
+      "vibe": "Queer dance club",
+      "description": "Historic underground dance venue at Gifford House with DJ nights and queer programming."
+    },
+    {
+      "name": "Macho Bar at A-House",
+      "type": "cruise_club",
+      "location": "6 Masonic Pl, Provincetown, MA 02657, United States",
+      "lat": 42.0508,
+      "lng": -70.1869,
+      "hours": "Seasonal nightlife hours, generally evenings to late night.",
+      "link": "https://www.gaymapper.com/gay-guide/gay-provincetown",
+      "vibe": "Cruise / leather",
+      "description": "Cruise-oriented leather and fetish bar environment within the A-House complex."
+    },
+    {
+      "name": "The Yoga Joint Sauna & Cold Plunge",
+      "type": "sauna",
+      "location": "333R Commercial Street Unit 1, Provincetown, MA 02657, United States",
+      "lat": 42.0482,
+      "lng": -70.1922,
+      "hours": "Daily 09:00-18:00.",
+      "link": "https://www.yogajointptown.com/sauna-provincetown",
+      "vibe": "Sauna / wellness",
+      "description": "Beachfront barrel sauna and cold plunge experience in central Provincetown."
+    },
+    {
+      "name": "Herring Cove Beach (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Province Lands Rd, Provincetown, MA 02657, United States",
+      "lat": 42.0363,
+      "lng": -70.2285,
+      "hours": "Public beach hours; cruising activity tends to be daytime to sunset in season.",
+      "link": "https://www.cruisinggays.com/provincetown/areas/934-herring-cove-beach/",
+      "vibe": "Open-air cruising",
+      "description": "Well-known beach and dunes area frequently referenced in P-town cruising guides."
+    },
+    {
+      "name": "Gifford House",
+      "type": "hotel",
+      "location": "9 Carver St, Provincetown, MA 02657, United States",
+      "lat": 42.0534,
+      "lng": -70.1849,
+      "hours": "Open year-round; check-in and booking details on official site.",
+      "link": "https://www.gifford.house/",
+      "vibe": "Queer hotel",
+      "description": "Iconic queer-owned inn and nightlife hub in central Provincetown."
+    },
+    {
+      "name": "Bay Cafe",
+      "type": "cafe",
+      "location": "177 Commercial St, Provincetown, MA 02657, United States",
+      "lat": 42.0489,
+      "lng": -70.1913,
+      "hours": "Open year-round; daily schedule varies by season.",
+      "link": "https://members.ptown.org/directory/Details/bay-cafe-3314534",
+      "vibe": "Cafe / social",
+      "description": "LGBTQ+-owned waterfront cafe and dining spot on Commercial Street."
+    }
+  ],
+  "san_juan": [
+    {
+      "name": "Toxic Nightclub",
+      "type": "club",
+      "location": "613 C. Condado, San Juan, Puerto Rico",
+      "lat": 18.4555,
+      "lng": -66.0709,
+      "hours": "Thu-Sun late-night schedule, typically 22:00-06:00.",
+      "link": "https://www.travelgay.com/puerto-rico-gay-bars/",
+      "vibe": "LGBTQ+ dance club",
+      "description": "Popular San Juan LGBTQ+ nightclub with drag and cabaret programming."
+    },
+    {
+      "name": "SX The Club",
+      "type": "cruise_club",
+      "location": "1204 Ponce de Leon, San Juan, Puerto Rico",
+      "lat": 18.4467,
+      "lng": -66.0727,
+      "hours": "Daily around 20:00-05:00.",
+      "link": "https://www.travelgay.com/puerto-rico-gay-bars/",
+      "vibe": "Cruise / nightlife",
+      "description": "Adult-oriented LGBTQ+ club venue in San Juan's Santurce-Condado nightlife zone."
+    },
+    {
+      "name": "XTEAMWORKS",
+      "type": "sauna",
+      "location": "1752 Av. Manuel Fernandez Juncos, San Juan, Puerto Rico",
+      "lat": 18.4521,
+      "lng": -66.0639,
+      "hours": "Weekdays 18:00-24:00, weekends 18:00-04:00.",
+      "link": "https://www.travelgay.com/puerto-rico-gay-saunas",
+      "vibe": "Sauna / bathhouse",
+      "description": "TravelGay-listed men's sauna with steam, private rooms, and late-night access."
+    },
+    {
+      "name": "Condado Gay Beach (Cruising Area)",
+      "type": "cruising_area",
+      "location": "End of Calle Vendig, Condado, San Juan, Puerto Rico",
+      "lat": 18.4569,
+      "lng": -66.0698,
+      "hours": "Most active on weekends and warm afternoons.",
+      "link": "https://www.cruisinggays.com/san-juan/areas/50480-condado-gay-beach/",
+      "vibe": "Open-air cruising",
+      "description": "Known Condado beach section referenced in local gay cruising guides."
+    },
+    {
+      "name": "Condado Vanderbilt Hotel",
+      "type": "hotel",
+      "location": "1055 Ashford Ave, San Juan, PR 00907, Puerto Rico",
+      "lat": 18.4568,
+      "lng": -66.0719,
+      "hours": "24/7 hotel operations; check-in/check-out via official booking policy.",
+      "link": "https://www.condadovanderbilt.com/hotel/",
+      "vibe": "Gay-friendly hotel",
+      "description": "Historic Condado hotel widely used by LGBTQ+ travelers visiting San Juan."
+    },
+    {
+      "name": "Cafe Regina",
+      "type": "cafe",
+      "location": "1705 Calle Loiza, San Juan, PR 00911, Puerto Rico",
+      "lat": 18.4487,
+      "lng": -66.0602,
+      "hours": "Tue-Sun 08:00-15:30, Mon closed.",
+      "link": "https://www.cafereginapr.com/",
+      "vibe": "Cafe / brunch",
+      "description": "Popular neighborhood coffee cafe in San Juan with a strong local following."
+    }
+  ],
+  "frankfurt": [
+    {
+      "name": "FREUD Club",
+      "type": "club",
+      "location": "Holzgraben 9, 60313 Frankfurt am Main, Germany",
+      "lat": 50.1123,
+      "lng": 8.6824,
+      "hours": "Event-based club schedule; check current nights before visit.",
+      "link": "https://www.travelgay.com/venue/freud-club",
+      "vibe": "Queer dance club",
+      "description": "Industrial-style nightlife venue used for LGBTQ+ dance and party programming."
+    },
+    {
+      "name": "The Stall",
+      "type": "cruise_club",
+      "location": "Stiftstraße 22, 60313 Frankfurt am Main, Germany",
+      "lat": 50.1148,
+      "lng": 8.6849,
+      "hours": "Typical late schedule around 22:00-04:00/06:00 by weekday.",
+      "link": "https://www.thegayagenda.fyi/frankfurt/businesses/the-stall/",
+      "vibe": "Cruise / fetish",
+      "description": "Men-focused leather and cruising venue in central Frankfurt's gay nightlife area."
+    },
+    {
+      "name": "Bockenheimer Warte Underground Station (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Bockenheimer Warte, 60325 Frankfurt am Main, Germany",
+      "lat": 50.1194,
+      "lng": 8.6512,
+      "hours": "Most active in evening/night transit hours.",
+      "link": "https://www.cruisinggays.com/map/?cityid=4006&filter=4",
+      "vibe": "Transit-area cruising",
+      "description": "Frequently referenced Frankfurt cruising point in local community cruising maps."
+    },
+    {
+      "name": "Avani Frankfurt City Hotel",
+      "type": "hotel",
+      "location": "Vilbelerstrasse 2, 60313 Frankfurt am Main, Germany",
+      "lat": 50.1156,
+      "lng": 8.6853,
+      "hours": "24/7 hotel operations; check-in/check-out per official booking policy.",
+      "link": "https://www.travelgay.com/hotels/avani-frankfurt-city",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed central hotel near Zeil and Frankfurt's main gay area."
+    },
+    {
+      "name": "Switchboard",
+      "type": "cafe",
+      "location": "Alte Gasse 36, 60313 Frankfurt am Main, Germany",
+      "lat": 50.1149,
+      "lng": 8.686,
+      "hours": "Weekdays 19:00-00:00, Sat 19:00-01:00, Sun 14:00-18:00.",
+      "link": "https://www.travelgay.com/venue/switchboard",
+      "vibe": "Community cafe bar",
+      "description": "Gay cafe bar and HIV/AIDS support center with social events in central Frankfurt."
+    }
   ]
 }
