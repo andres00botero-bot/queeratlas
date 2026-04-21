@@ -7,7 +7,7 @@
       "lat": 38.7165,
       "lng": -9.1496,
       "hours": "Mon-Thu 18:00-02:00, Fri-Sat 18:00-03:00, Sun 18:00-02:00.",
-      "link": "https://www.travelgay.com/venue/trs3-lisboa",
+      "link": "",
       "vibe": "Queer social bar",
       "description": "Popular Principe Real gay bar with terrace and mixed local/international crowd."
     },
@@ -18,7 +18,7 @@
       "lat": 38.7118,
       "lng": -9.1294,
       "hours": "Mon 10:00-16:00, Tue-Sat 10:00-22:00, Sun closed.",
-      "link": "https://www.travelgay.com/venue/rendezvous-more-than-wine/",
+      "link": "",
       "vibe": "Queer-friendly cafe",
       "description": "Gay-owned, gay-friendly cafe and wine bar known for tapas and relaxed daytime flow."
     },
@@ -29,7 +29,7 @@
       "lat": 38.7249,
       "lng": -9.1458,
       "hours": "Mon-Thu 20:00-02:00, Fri-Sat 15:00-03:00, Sun 15:00-02:00.",
-      "link": "https://www.travelgay.com/venue/drako-club",
+      "link": "",
       "vibe": "Cruise / fetish",
       "description": "Men-only cruise and fetish venue with themed nights, cabins, darkroom, and shop."
     },
@@ -134,7 +134,7 @@
       "lat": 34.09114,
       "lng": -118.283946,
       "hours": "Mon-Fri 16:00-02:00, Sat-Sun 14:00-02:00.",
-      "link": "https://www.travelgay.com/venue/eagle-la",
+      "link": "",
       "vibe": "Leather / cruise",
       "description": "Long-running leather-focused gay venue known for fetish events and cruise-oriented nights."
     },
@@ -145,7 +145,7 @@
       "lat": 34.117023,
       "lng": -118.27169,
       "hours": "Public park hours vary; activity is typically after dark in quieter zones.",
-      "link": "https://www.travelgay.com/venue/griffith-park-los-angeles",
+      "link": "",
       "vibe": "Open-air cruising",
       "description": "Historic and well-known LA cruising area across secluded parts of Griffith Park."
     },
@@ -215,7 +215,7 @@
       "lat": 40.422849,
       "lng": -3.699475,
       "hours": "Daily 09:00-02:00.",
-      "link": "https://www.travelgay.com/venue/lakama-cafe",
+      "link": "",
       "vibe": "Queer cafe / lounge",
       "description": "Chueca gay cafe and lounge with all-day cafe service and evening cocktail flow."
     }
@@ -252,7 +252,7 @@
       "lat": 41.237038,
       "lng": 1.810207,
       "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
-      "link": "https://www.travelgay.com/hotels/hotel-medium-sitges-park",
+      "link": "",
       "vibe": "Gay-friendly hotel",
       "description": "Centrally located gay-popular hotel in Sitges old town near nightlife and beach."
     },
@@ -263,7 +263,7 @@
       "lat": 41.2369,
       "lng": 1.8053,
       "hours": "Daily 08:30-01:00.",
-      "link": "https://www.travelgay.com/venue/montroig-cafe",
+      "link": "",
       "vibe": "Gay-friendly cafe",
       "description": "Gay-popular cafe bar with terrace seating in central Sitges."
     }
@@ -276,7 +276,7 @@
       "lat": 39.478965,
       "lng": -0.378136,
       "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
-      "link": "https://www.travelgay.com/hotels/axel-hotel-valencia",
+      "link": "",
       "vibe": "LGBTQ+ hotel",
       "description": "Adults-only Axel hotel in El Carmen, close to Valencia's gay nightlife."
     },
@@ -300,7 +300,7 @@
       "lat": -34.591028,
       "lng": -58.427417,
       "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
-      "link": "https://www.travelgay.com/hotels/sissi-haz-hotel-buenos-aires",
+      "link": "",
       "vibe": "Gay-friendly boutique hotel",
       "description": "Gay-popular boutique hotel in Palermo with easy access to local LGBTQ+ nightlife."
     },
@@ -335,7 +335,7 @@
       "lat": 44.4309,
       "lng": 26.1033,
       "hours": "Fri-Sat 22:30-05:00.",
-      "link": "https://www.travelgay.com/bucharest-gay-map",
+      "link": "",
       "vibe": "Gay club",
       "description": "Late-night gay club option in central Bucharest."
     },
@@ -368,7 +368,7 @@
       "lat": 44.4357,
       "lng": 26.0926,
       "hours": "Most active Thu-Sun after dark.",
-      "link": "https://www.travelgay.com/bucharest-gay-map",
+      "link": "",
       "vibe": "Open-air cruising",
       "description": "Known after-dark cruising route around central park paths."
     },
@@ -401,9 +401,9 @@
       "lat": 44.452752,
       "lng": 26.096552,
       "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
-      "link": "https://www.travelgay.com/hotels/capital-plaza-bucharest",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "Gay-friendly hotel listed by TravelGay with good access to Bucharest nightlife."
+      "description": "Gay-friendly hotel with good access to Bucharest nightlife."
     }
   ],
   "guadalajara": [
@@ -414,7 +414,7 @@
       "lat": 20.676361,
       "lng": -103.354113,
       "hours": "Fri-Sat 22:00-04:00, Sun-Thu closed.",
-      "link": "https://www.travelgay.com/venue/babel-guadalajara-mexico",
+      "link": "",
       "vibe": "Gay dance club",
       "description": "Two-floor gay club in Zona Centro with terrace, pop room, and electronic room."
     },
@@ -425,7 +425,7 @@
       "lat": 20.682155,
       "lng": -103.344391,
       "hours": "Mon-Fri 12:00-00:00, Sat 11:00-23:00.",
-      "link": "https://www.travelgay.com/venue/riilax-sauna-guadalajara-mexico",
+      "link": "",
       "vibe": "Gay sauna / wellness",
       "description": "Well-known Guadalajara gay sauna with jacuzzi, steam room, private rooms, and bar."
     },
@@ -458,7 +458,7 @@
       "lat": 20.67134,
       "lng": -103.35,
       "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
-      "link": "https://www.travelgay.com/gay-guadalajara-hotels",
+      "link": "",
       "vibe": "Gay hotel",
       "description": "Gay-focused boutique hotel in Centro Historico, close to major LGBTQ+ nightlife."
     },
@@ -482,7 +482,7 @@
       "lat": 60.169571,
       "lng": 24.942834,
       "hours": "Wed-Sat 22:00-04:30, Sun-Tue closed.",
-      "link": "https://www.travelgay.com/venue/hercules-gay-nightclub",
+      "link": "",
       "vibe": "Gay dance club",
       "description": "Large LGBTQ+ nightclub in central Helsinki with multiple floors and dance areas."
     },
@@ -493,7 +493,7 @@
       "lat": 60.193828,
       "lng": 24.956104,
       "hours": "Wed-Sun 16:00-22:00, Mon-Tue closed.",
-      "link": "https://www.travelgay.com/helsinki-gay-saunas",
+      "link": "",
       "vibe": "Gay sauna / wellness",
       "description": "Finland's best-known gay sauna with steam room, dark room, and terrace."
     },
@@ -504,7 +504,7 @@
       "lat": 60.167403,
       "lng": 24.929109,
       "hours": "Mon-Thu 10:00-02:00, Fri 10:00-00:00, Sat open 24h, Sun 12:00-10:00.",
-      "link": "https://www.travelgay.com/venue/oy-u-s-video-ab/",
+      "link": "",
       "vibe": "Cruise / fetish",
       "description": "Cruise-oriented adult venue with cabins and dedicated cruising areas."
     },
@@ -526,9 +526,9 @@
       "lat": 60.167594,
       "lng": 24.9412,
       "hours": "24/7 hotel operations; check-in/check-out policy via booking page.",
-      "link": "https://www.travelgay.com/gay-helsinki-hotels",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed, centrally located Helsinki hotel with sauna and breakfast."
+      "description": "centrally located Helsinki hotel with sauna and breakfast."
     },
     {
       "name": "Ekberg Cafe",
@@ -550,9 +550,9 @@
       "lat": 52.370107,
       "lng": 4.907468,
       "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
-      "link": "https://www.travelgay.com/amsterdam-gay-rated-hotels",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed hotel in central Amsterdam with easy access to bars and nightlife districts."
+      "description": "hotel in central Amsterdam with easy access to bars and nightlife districts."
     },
     {
       "name": "Coffeeshop The Otherside",
@@ -561,7 +561,7 @@
       "lat": 52.366776,
       "lng": 4.889253,
       "hours": "Daily 10:00-00:00.",
-      "link": "https://www.travelgay.com/amsterdam-gay-cafes-restaurants",
+      "link": "",
       "vibe": "Gay-popular cafe",
       "description": "Gay-popular Amsterdam coffeeshop in the Reguliersdwarsstraat area."
     },
@@ -596,9 +596,9 @@
       "lat": 37.977115,
       "lng": 23.725793,
       "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
-      "link": "https://www.travelgay.com/athens-gay-rated-hotels",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed central Athens hotel near Monastiraki with quick access to LGBTQ+ nightlife."
+      "description": "central Athens hotel near Monastiraki with quick access to LGBTQ+ nightlife."
     },
     {
       "name": "Pedion Areos Park (Cruising Area)",
@@ -620,7 +620,7 @@
       "lat": -23.540729,
       "lng": -46.644011,
       "hours": "Mon 22:00-03:30, Thu 22:00-03:00, Fri-Sat 22:00-04:00, Sun 21:30-03:00, Tue-Wed closed.",
-      "link": "https://www.travelgay.com/venue/bar-queen-sao-paulo",
+      "link": "",
       "vibe": "Gay bar / nightlife",
       "description": "Popular and laid-back gay bar in the Largo do Arouche area."
     },
@@ -631,7 +631,7 @@
       "lat": -23.529872,
       "lng": -46.658311,
       "hours": "Sat 23:00-05:00, Sun 19:00-02:00.",
-      "link": "https://www.travelgay.com/venue/blue-space-sao-paulo",
+      "link": "",
       "vibe": "Gay dance club",
       "description": "Iconic Sao Paulo gay club known for large drag productions and dance nights."
     },
@@ -642,7 +642,7 @@
       "lat": -23.585182,
       "lng": -46.644382,
       "hours": "Tue-Thu 18:00-23:00, Fri 18:00-02:00, Sat 18:00-04:00, Mon/Sun closed.",
-      "link": "https://www.travelgay.com/venue/rg-bar-club",
+      "link": "",
       "vibe": "Cruise / fetish",
       "description": "Long-running men-only naturist and fetish-oriented cruise venue."
     },
@@ -664,9 +664,9 @@
       "lat": -23.558229,
       "lng": -46.661031,
       "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
-      "link": "https://www.travelgay.com/hotels/melia-paulista-sao-paulo",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed hotel in central Paulista/Consolacao close to major LGBTQ+ nightlife."
+      "description": "hotel in central Paulista/Consolacao close to major LGBTQ+ nightlife."
     },
     {
       "name": "Urbe Cafe Bar",
@@ -756,7 +756,7 @@
       "lat": 18.4555,
       "lng": -66.0709,
       "hours": "Thu-Sun late-night schedule, typically 22:00-06:00.",
-      "link": "https://www.travelgay.com/puerto-rico-gay-bars/",
+      "link": "",
       "vibe": "LGBTQ+ dance club",
       "description": "Popular San Juan LGBTQ+ nightclub with drag and cabaret programming."
     },
@@ -767,7 +767,7 @@
       "lat": 18.4467,
       "lng": -66.0727,
       "hours": "Daily around 20:00-05:00.",
-      "link": "https://www.travelgay.com/puerto-rico-gay-bars/",
+      "link": "",
       "vibe": "Cruise / nightlife",
       "description": "Adult-oriented LGBTQ+ club venue in San Juan's Santurce-Condado nightlife zone."
     },
@@ -778,9 +778,9 @@
       "lat": 18.4521,
       "lng": -66.0639,
       "hours": "Weekdays 18:00-24:00, weekends 18:00-04:00.",
-      "link": "https://www.travelgay.com/puerto-rico-gay-saunas",
+      "link": "",
       "vibe": "Sauna / bathhouse",
-      "description": "TravelGay-listed men's sauna with steam, private rooms, and late-night access."
+      "description": "men's sauna with steam, private rooms, and late-night access."
     },
     {
       "name": "Condado Gay Beach (Cruising Area)",
@@ -824,7 +824,7 @@
       "lat": 50.1123,
       "lng": 8.6824,
       "hours": "Event-based club schedule; check current nights before visit.",
-      "link": "https://www.travelgay.com/venue/freud-club",
+      "link": "",
       "vibe": "Queer dance club",
       "description": "Industrial-style nightlife venue used for LGBTQ+ dance and party programming."
     },
@@ -857,9 +857,9 @@
       "lat": 50.1156,
       "lng": 8.6853,
       "hours": "24/7 hotel operations; check-in/check-out per official booking policy.",
-      "link": "https://www.travelgay.com/hotels/avani-frankfurt-city",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed central hotel near Zeil and Frankfurt's main gay area."
+      "description": "central hotel near Zeil and Frankfurt's main gay area."
     },
     {
       "name": "Switchboard",
@@ -868,7 +868,7 @@
       "lat": 50.1149,
       "lng": 8.686,
       "hours": "Weekdays 19:00-00:00, Sat 19:00-01:00, Sun 14:00-18:00.",
-      "link": "https://www.travelgay.com/venue/switchboard",
+      "link": "",
       "vibe": "Community cafe bar",
       "description": "Gay cafe bar and HIV/AIDS support center with social events in central Frankfurt."
     }
@@ -892,9 +892,9 @@
       "lat": 19.4328,
       "lng": -99.1396,
       "hours": "Mon-Thu 14:00-22:00, Fri-Sat 15:00-01:00, Sun 13:00-23:00.",
-      "link": "https://www.travelgay.com/mexico-city-gay-cruise-clubs/",
+      "link": "",
       "vibe": "Cruise / fetish",
-      "description": "TravelGay-listed cruise venue in central CDMX with play-focused spaces and late schedule."
+      "description": "cruise venue in central CDMX with play-focused spaces and late schedule."
     },
     {
       "name": "TAPO Bus Station (Cruising Area)",
@@ -914,9 +914,9 @@
       "lat": 19.426,
       "lng": -99.1672,
       "hours": "24/7 hotel operations; check-in/check-out per official booking policy.",
-      "link": "https://www.travelgay.com/gay-mexico-city-hotels",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed hotel near Zona Rosa and key LGBTQ+ nightlife."
+      "description": "hotel near Zona Rosa and key LGBTQ+ nightlife."
     },
     {
       "name": "Cafe Nin",
@@ -949,9 +949,9 @@
       "lat": -33.8144,
       "lng": 151.039,
       "hours": "Open 24 hours daily.",
-      "link": "https://www.travelgay.com/venue/aarows",
+      "link": "",
       "vibe": "Cruise / fetish",
-      "description": "TravelGay-listed gay and bi cruise club with multiple play areas and 24/7 opening."
+      "description": "gay and bi cruise club with multiple play areas and 24/7 opening."
     },
     {
       "name": "Obelisk Beach",
@@ -960,9 +960,9 @@
       "lat": -33.8426,
       "lng": 151.2527,
       "hours": "Best in daylight and warm-weather afternoons.",
-      "link": "https://www.travelgay.com/venue/obelisk-beach/",
+      "link": "",
       "vibe": "Gay-popular nude beach",
-      "description": "TravelGay-listed Sydney harbour beach known for nudist and gay-popular social scene."
+      "description": "Sydney harbour beach known for nudist and gay-popular social scene."
     },
     {
       "name": "Pullman Sydney Hyde Park",
@@ -971,9 +971,9 @@
       "lat": -33.8769,
       "lng": 151.2133,
       "hours": "24/7 hotel operations; check-in/check-out per booking policy.",
-      "link": "https://www.travelgay.com/hotels/pullman-sydney-hyde-park",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed 5-star hotel near Oxford Street nightlife and central Sydney attractions."
+      "description": "5-star hotel near Oxford Street nightlife and central Sydney attractions."
     },
     {
       "name": "The Rusty Rabbit",
@@ -982,9 +982,9 @@
       "lat": -33.8762,
       "lng": 151.2191,
       "hours": "Mon-Fri 07:00-15:30, Sat-Sun 08:00-15:00.",
-      "link": "https://www.travelgay.com/gay-sydney-restaurants-cafes",
+      "link": "",
       "vibe": "Cafe / brunch",
-      "description": "TravelGay-listed Darlinghurst cafe with LGBTQ+ welcoming atmosphere and inclusive menu."
+      "description": "Darlinghurst cafe with LGBTQ+ welcoming atmosphere and inclusive menu."
     }
   ],
   "sofia": [
@@ -995,9 +995,9 @@
       "lat": 42.6975,
       "lng": 23.3692,
       "hours": "Thu-Sun 16:00-21:00, Mon-Wed closed.",
-      "link": "https://www.travelgay.com/venue/taragon-steam",
+      "link": "",
       "vibe": "Sauna / wellness",
-      "description": "TravelGay-listed gay sauna in Sofia with steam room and private cabins."
+      "description": "gay sauna in Sofia with steam room and private cabins."
     },
     {
       "name": "City Park - Borisova Gradina",
@@ -1017,9 +1017,9 @@
       "lat": 42.6957,
       "lng": 23.3162,
       "hours": "24/7 hotel operations; check-in/check-out via booking policy.",
-      "link": "https://www.travelgay.com/hotels/central-hotel-sofia",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed central Sofia hotel near Serdika metro and city nightlife."
+      "description": "central Sofia hotel near Serdika metro and city nightlife."
     },
     {
       "name": "From Barista Coffee and more",
@@ -1041,7 +1041,7 @@
       "lat": -0.2105,
       "lng": -78.5001,
       "hours": "Mon-Thu 13:00-20:00, Fri 13:00-20:30, Sat-Sun 13:00-20:00.",
-      "link": "https://www.travelgay.com/venue/sauna-jinetes-quito-ecuador",
+      "link": "",
       "vibe": "Sauna / wellness",
       "description": "Long-running Quito gay sauna with jacuzzi, sauna, gym, and massage facilities."
     },
@@ -1052,7 +1052,7 @@
       "lat": -0.2063,
       "lng": -78.4913,
       "hours": "Mon-Fri 14:00-20:00, Sat-Sun 12:00-20:00.",
-      "link": "https://www.travelgay.com/venue/sauna-azul-quito-ecuador/",
+      "link": "",
       "vibe": "Cruise / sauna",
       "description": "Gay men venue in Quito with sauna facilities, dark rooms, and social cruising environment."
     },
@@ -1074,9 +1074,9 @@
       "lat": -0.2068,
       "lng": -78.4907,
       "hours": "24/7 hotel operations; check-in/check-out via booking policy.",
-      "link": "https://www.travelgay.com/hotels/hotel-reina-isabel-quito-ecuador",
+      "link": "",
       "vibe": "Gay-friendly hotel",
-      "description": "TravelGay-listed hotel in La Mariscal, close to Quito gay nightlife."
+      "description": "hotel in La Mariscal, close to Quito gay nightlife."
     },
     {
       "name": "Juan Valdez Plaza Foch",
@@ -1098,7 +1098,7 @@
       "lat": 20.6062,
       "lng": -105.2364,
       "hours": "Tue 00:00-06:00 and 14:00-22:00; Wed 14:00-24:00; Thu-Mon 00:00-06:00 and 14:00-24:00.",
-      "link": "https://www.travelgay.com/venue/spartacus-spa-sauna-puerto-vallarta",
+      "link": "",
       "vibe": "Sauna / bathhouse",
       "description": "Large men-only sauna complex in Zona Romantica with steam, jacuzzi, cabins, and rooftop spaces."
     },
@@ -1120,7 +1120,7 @@
       "lat": 20.6015,
       "lng": -105.2372,
       "hours": "Most active daytime through sunset.",
-      "link": "https://www.travelgay.com/venue/playa-los-muertos",
+      "link": "",
       "vibe": "Beach social / cruising-adjacent",
       "description": "Main gay beach zone in Puerto Vallarta around Blue Chairs and Mantamar."
     },

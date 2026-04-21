@@ -3370,7 +3370,7 @@ export const seedPlaces = [
     name: "Banos Turco Chacabuco 33",
     type: "sauna",
     vibe: "central old-school sauna with local churn",
-    description: "Banos Turco Chacabuco 33 is the gay sauna TravelGay centers in Santiago, and it gives the city a direct, practical adult lane that sits outside the drag-and-bar circuit. It is more infrastructure than fantasy: steam, rooms, circulation, and the kind of local working energy that serious queer databases should document even when the decor is not trying to seduce anyone.",
+    description: "Banos Turco Chacabuco 33 is the gay sauna  centers in Santiago, and it gives the city a direct, practical adult lane that sits outside the drag-and-bar circuit. It is more infrastructure than fantasy: steam, rooms, circulation, and the kind of local working energy that serious queer databases should document even when the decor is not trying to seduce anyone.",
     hours: "Daily 11:00-23:00.",
     lat: -33.4334,
     lng: -70.6472,
