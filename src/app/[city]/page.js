@@ -20,6 +20,16 @@ import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
 import { trackKpiEvent } from "@/lib/analytics";
+import {
+  buildLiveVibeHeadline,
+  formatLiveVibeUpdatedAt,
+  getLiveVibeConsensus,
+  getLiveVibeMemberMomentum,
+  getLiveVibePulse,
+  isMissingTableError,
+  LIVE_VIBE_OPTIONS,
+  summarizeLiveVibeSignals,
+} from "@/lib/liveVibe";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
@@ -97,6 +107,7 @@ const TYPE_STYLES = {
     line: "from-yellow-200/75 via-amber-200/45 to-transparent",
   },
 };
+const LIVE_VIBE_COOLDOWN_MS = 30 * 1000;
 
 function humanizeCitySlug(value = "") {
   return String(value)
@@ -485,6 +496,14 @@ export default function CityPage() {
   const [comment, setComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const { toast, showToast } = useActionToast();
+  const [selectedPlaceDbId, setSelectedPlaceDbId] = useState("");
+  const [liveVibeRows, setLiveVibeRows] = useState([]);
+  const [isLoadingLiveVibe, setIsLoadingLiveVibe] = useState(false);
+  const [liveVibeError, setLiveVibeError] = useState("");
+  const [isSubmittingLiveVibe, setIsSubmittingLiveVibe] = useState(false);
+  const [liveVibeTableMissing, setLiveVibeTableMissing] = useState(false);
+  const [liveVibeRefreshTick, setLiveVibeRefreshTick] = useState(0);
+  const [showLiveVibeMomentum, setShowLiveVibeMomentum] = useState(false);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsLoadError, setEventsLoadError] = useState("");
   const [mapError, setMapError] = useState("");
@@ -538,6 +557,7 @@ export default function CityPage() {
   const eventMarkersRef = useRef(new Map());
   const isMapInteractingRef = useRef(false);
   const keepMapViewOnNextCloseRef = useRef(false);
+  const autoCheckinCooldownRef = useRef(new Map());
 
   const openEventContribution = useCallback(() => {
     setAddEventMode(true);
@@ -742,6 +762,49 @@ export default function CityPage() {
   }, [isMember, selectedEvent?.id, user?.id]);
 
   const canReviewSelectedPlace = Boolean(selectedPlace);
+  const liveVibeSummary = useMemo(() => summarizeLiveVibeSignals(liveVibeRows), [liveVibeRows]);
+  const liveVibeHeadline = useMemo(() => buildLiveVibeHeadline(liveVibeSummary), [liveVibeSummary]);
+  const liveVibeUpdatedLabel = useMemo(
+    () => formatLiveVibeUpdatedAt(liveVibeSummary.latestTimestamp),
+    [liveVibeSummary.latestTimestamp]
+  );
+  const liveVibePulse = useMemo(() => getLiveVibePulse(liveVibeSummary), [liveVibeSummary]);
+  const liveVibeConsensus = useMemo(() => getLiveVibeConsensus(liveVibeSummary), [liveVibeSummary]);
+  const liveVibeMemberMomentum = useMemo(
+    () => getLiveVibeMemberMomentum(liveVibeRows, user?.id),
+    [liveVibeRows, user?.id]
+  );
+  const liveVibeMyLastTapMs = useMemo(() => {
+    if (!user?.id) return null;
+    let latest = null;
+    for (const row of Array.isArray(liveVibeRows) ? liveVibeRows : []) {
+      if (String(row?.user_id || "") !== String(user.id)) continue;
+      const ms = new Date(row?.created_at || "").getTime();
+      if (!Number.isFinite(ms)) continue;
+      if (!latest || ms > latest) latest = ms;
+    }
+    return latest;
+  }, [liveVibeRows, user?.id]);
+  const liveVibeCooldownRemainingSec = useMemo(() => {
+    if (!liveVibeMyLastTapMs) return 0;
+    const remaining = LIVE_VIBE_COOLDOWN_MS - (Date.now() - liveVibeMyLastTapMs);
+    if (remaining <= 0) return 0;
+    return Math.ceil(remaining / 1000);
+  }, [liveVibeMyLastTapMs, liveVibeRefreshTick]);
+  const liveVibeStreakNudge = useMemo(() => {
+    if (!isMember) return "";
+    if (liveVibeMemberMomentum.todayTapped) return "Nice. You already locked your streak today.";
+
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const hoursLeft = Math.max(1, Math.ceil((midnight.getTime() - now.getTime()) / (60 * 60 * 1000)));
+    return `No tap today yet. One quick signal in the next ${hoursLeft}h keeps your streak alive.`;
+  }, [isMember, liveVibeMemberMomentum.todayTapped]);
+
+  useEffect(() => {
+    setShowLiveVibeMomentum(false);
+  }, [selectedPlace?.id]);
 
   const selectedPlaceQuality = selectedPlace
     ? getEntityQuality({
@@ -829,9 +892,86 @@ export default function CityPage() {
     return query ? `${pathname}?${query}` : pathname;
   }, [eventId, pathname, placeId, searchParams]);
 
-  const openPlace = (place) => {
+  const autoCheckinFromPlaceTap = useCallback(async (place) => {
+    if (!isMember || !user?.id || !place) return;
+
+    const tapKey = String(place.id || "");
+    const nowMs = Date.now();
+    const lastTapMs = Number(autoCheckinCooldownRef.current.get(tapKey) || 0);
+    if (nowMs - lastTapMs < 90 * 1000) return;
+    autoCheckinCooldownRef.current.set(tapKey, nowMs);
+
+    const resolvePlaceDbIdInline = async (targetPlace) => {
+      const placeId = String(targetPlace?.id || "");
+      const placeName = String(targetPlace?.name || "").trim();
+      const placeCity = String(targetPlace?.city || city).trim();
+      const normalizeCity = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replaceAll("_", " ")
+          .replaceAll("-", " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      if (placeId && !placeId.startsWith("seed-place-")) {
+        return placeId;
+      }
+      if (!placeName || !placeCity) return null;
+
+      const lookup = await supabase
+        .from("places")
+        .select("id, city, name")
+        .ilike("name", placeName)
+        .limit(20);
+      const rows = Array.isArray(lookup?.data) ? lookup.data : [];
+      const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(placeCity));
+      return matched?.id ? String(matched.id) : null;
+    };
+
+    const dbPlaceId = await resolvePlaceDbIdInline(place);
+    if (!dbPlaceId) return;
+
+    const { error } = await supabase
+      .from("qa_member_checkins")
+      .insert([
+        {
+          user_id: user.id,
+          mode: "trip",
+          privacy: "friends",
+          country: null,
+          city: String(place.city || city),
+          label: String(place.name || "Venue"),
+          address: String(place.location || "").trim() || null,
+          note: null,
+          place_id: String(dbPlaceId),
+          event_id: null,
+          lat: Number.isFinite(Number(place.lat)) ? Number(place.lat) : null,
+          lng: Number.isFinite(Number(place.lng)) ? Number(place.lng) : null,
+          checked_in_at: new Date().toISOString(),
+        },
+      ]);
+
+    if (error && isMissingTableError(error)) {
+      showToast("Check-ins table missing. Run latest check-in SQL.", {
+        tone: "warn",
+        duration: 2600,
+      });
+      return;
+    }
+    if (!error) {
+      trackKpiEvent("checkin_saved", {
+        city: String(place.city || city),
+        targetType: "checkin",
+        targetId: String(place.id || ""),
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
+    }
+  }, [city, isMember, memberName, showToast, user?.email, user?.id]);
+
+  const openPlace = useCallback((place) => {
     router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null }));
-  };
+    void autoCheckinFromPlaceTap(place);
+  }, [autoCheckinFromPlaceTap, buildSelectionUrl, router]);
 
   const openEvent = (event) => {
     router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id }));
@@ -1177,6 +1317,128 @@ export default function CityPage() {
       setReviews(data);
     });
   }, [getReviews, selectedPlace]);
+
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(async () => {
+      const resolvePlaceDbIdInline = async (place) => {
+        const placeId = String(place?.id || "");
+        const placeName = String(place?.name || "").trim();
+        const placeCity = String(place?.city || city).trim();
+        const normalizeCity = (value) =>
+          String(value || "")
+            .toLowerCase()
+            .replaceAll("_", " ")
+            .replaceAll("-", " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        if (placeId && !placeId.startsWith("seed-place-")) {
+          return placeId;
+        }
+
+        if (!placeName || !placeCity) return null;
+
+        const lookup = await supabase
+          .from("places")
+          .select("id, city, name")
+          .ilike("name", placeName)
+          .limit(20);
+
+        const rows = Array.isArray(lookup?.data) ? lookup.data : [];
+        const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(placeCity));
+
+        return matched?.id ? String(matched.id) : null;
+      };
+
+      if (!selectedPlace) {
+        if (!active) return;
+        setSelectedPlaceDbId("");
+        setLiveVibeRows([]);
+        setLiveVibeError("");
+        setLiveVibeTableMissing(false);
+        setIsLoadingLiveVibe(false);
+        return;
+      }
+
+      if (active) {
+        setIsLoadingLiveVibe(true);
+        setLiveVibeError("");
+      }
+
+      const dbId = await resolvePlaceDbIdInline(selectedPlace);
+      if (!active) return;
+
+      if (!dbId) {
+        setSelectedPlaceDbId("");
+        setLiveVibeRows([]);
+        setLiveVibeError("");
+        setLiveVibeTableMissing(false);
+        setIsLoadingLiveVibe(false);
+        return;
+      }
+
+      setSelectedPlaceDbId(String(dbId));
+      const lookbackIso = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from("qa_place_vibe_signals")
+        .select("id, place_id, user_id, signal_key, created_at")
+        .eq("place_id", dbId)
+        .gte("created_at", lookbackIso)
+        .order("created_at", { ascending: false })
+        .limit(400);
+
+      if (!active) return;
+
+      if (error) {
+        if (isMissingTableError(error)) {
+          setLiveVibeTableMissing(true);
+          setLiveVibeRows([]);
+          setLiveVibeError("");
+        } else {
+          setLiveVibeError("Live vibe could not load right now.");
+        }
+        setIsLoadingLiveVibe(false);
+        return;
+      }
+
+      setLiveVibeTableMissing(false);
+      setLiveVibeRows(Array.isArray(data) ? data : []);
+      setLiveVibeError("");
+      setIsLoadingLiveVibe(false);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [city, liveVibeRefreshTick, selectedPlace]);
+
+  useEffect(() => {
+    if (!selectedPlaceDbId || liveVibeTableMissing) return undefined;
+
+    const channel = supabase
+      .channel(`qa-place-vibe-${selectedPlaceDbId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "qa_place_vibe_signals" },
+        (payload) => {
+          const changedPlaceId = String(
+            payload?.new?.place_id ??
+            payload?.old?.place_id ??
+            ""
+          );
+          if (changedPlaceId && changedPlaceId === String(selectedPlaceDbId)) {
+            setLiveVibeRefreshTick((value) => value + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [liveVibeTableMissing, selectedPlaceDbId]);
 
   useEffect(() => {
     const target = selectedPlace || selectedEvent;
@@ -1551,6 +1813,107 @@ export default function CityPage() {
     const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(eventCity));
     return matched?.id ? String(matched.id) : null;
   }, [city]);
+
+  const handleSubmitLiveVibe = useCallback(async (signalKey) => {
+    if (!selectedPlace) return;
+
+    if (!isMember || !user?.id) {
+      showToast("Join as member to share live vibe.", { tone: "info", duration: 2200 });
+      const redirectTarget = buildSelectionUrl({
+        nextPlaceId: selectedPlace.id,
+        nextEventId: null,
+      });
+      writeLocalValue("qa_redirect", redirectTarget);
+      writeLocalValue("qa_post_login_target", redirectTarget);
+      router.push("/?join=true");
+      return;
+    }
+
+    if (liveVibeMyLastTapMs && Date.now() - liveVibeMyLastTapMs < LIVE_VIBE_COOLDOWN_MS) {
+      const secondsLeft = Math.ceil((LIVE_VIBE_COOLDOWN_MS - (Date.now() - liveVibeMyLastTapMs)) / 1000);
+      showToast(`Hold for ${secondsLeft}s before sending another live tap.`, {
+        tone: "info",
+        duration: 1800,
+      });
+      return;
+    }
+
+    setIsSubmittingLiveVibe(true);
+    try {
+      const dbId = selectedPlaceDbId || (await resolvePlaceDbId(selectedPlace));
+      if (!dbId) {
+        showToast("Could not resolve this venue for live signal.", {
+          tone: "warn",
+          duration: 2400,
+        });
+        return;
+      }
+
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from("qa_place_vibe_signals")
+        .upsert(
+          [
+            {
+              place_id: Number(dbId),
+              user_id: user.id,
+              signal_key: signalKey,
+              created_at: nowIso,
+            },
+          ],
+          { onConflict: "place_id,user_id" }
+        );
+
+      if (error) {
+        if (isMissingTableError(error)) {
+          setLiveVibeTableMissing(true);
+          showToast("Live vibe is not activated in DB yet.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+
+        showToast("Could not publish live vibe right now.", {
+          tone: "warn",
+          duration: 2400,
+        });
+        return;
+      }
+
+      setLiveVibeTableMissing(false);
+      setSelectedPlaceDbId(String(dbId));
+      setLiveVibeRows((current) => {
+        const next = (Array.isArray(current) ? current : []).filter(
+          (row) => String(row?.user_id || "") !== String(user.id)
+        );
+        return [
+          {
+            id: `local-${nowIso}`,
+            place_id: Number(dbId),
+            user_id: user.id,
+            signal_key: signalKey,
+            created_at: nowIso,
+          },
+          ...next,
+        ];
+      });
+      setLiveVibeRefreshTick((value) => value + 1);
+      showToast("Live vibe shared.", { tone: "ok", duration: 1600 });
+    } finally {
+      setIsSubmittingLiveVibe(false);
+    }
+  }, [
+    buildSelectionUrl,
+    isMember,
+    liveVibeMyLastTapMs,
+    resolvePlaceDbId,
+    router,
+    selectedPlace,
+    selectedPlaceDbId,
+    showToast,
+    user?.id,
+  ]);
 
   const handleAdminSavePlace = useCallback(async () => {
     if (!isAdmin || !selectedPlace) return;
@@ -2756,7 +3119,7 @@ export default function CityPage() {
       )}
 
       {selectedPlace && (
-        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.08),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.08),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[520px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
           <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#0e0e0e]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closePlace}>
             Close
@@ -2805,6 +3168,128 @@ export default function CityPage() {
                 <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Reviews</p>
                 <p className="mt-1 text-sm text-white/84">{selectedPlace.reviewCount || 0}</p>
               </div>
+            </div>
+            <div className="mt-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.07] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/80">Live vibe now</p>
+                <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/80">
+                  {liveVibeSummary.total} signal{liveVibeSummary.total === 1 ? "" : "s"} - 6h
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-fuchsia-50/95">{liveVibeHeadline}</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${liveVibePulse.className}`}
+                >
+                  {liveVibePulse.label}
+                </span>
+                {liveVibeConsensus > 0 && (
+                  <span className="rounded-full border border-white/18 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/80">
+                    {liveVibeConsensus}% consensus
+                  </span>
+                )}
+                <span className="text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/68">
+                  {liveVibePulse.hint}
+                </span>
+              </div>
+              {liveVibeUpdatedLabel && (
+                <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/70">
+                  {liveVibeUpdatedLabel}
+                </p>
+              )}
+              {liveVibeSummary.total === 0 && !liveVibeTableMissing && (
+                <button
+                  type="button"
+                  onClick={() => handleSubmitLiveVibe("packed")}
+                  disabled={isSubmittingLiveVibe}
+                  className="mt-2 rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/48 disabled:opacity-60"
+                >
+                  Be first now
+                </button>
+              )}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {LIVE_VIBE_OPTIONS.map((option) => {
+                  const count = liveVibeSummary.countsByKey?.[option.key] || 0;
+                  return (
+                    <button
+                      key={`live-vibe-${option.key}`}
+                      type="button"
+                      disabled={isSubmittingLiveVibe || liveVibeTableMissing}
+                      onClick={() => {
+                        handleSubmitLiveVibe(option.key);
+                      }}
+                      className={`qa-cinematic-hover rounded-xl border px-3 py-2 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${option.buttonClass}`}
+                    >
+                      <span className="block text-sm font-semibold">
+                        {option.emoji} {option.label}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] uppercase tracking-[0.12em] opacity-85">
+                        {count} tap{count === 1 ? "" : "s"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {isLoadingLiveVibe && (
+                <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/65">Loading live vibe...</p>
+              )}
+              {!!liveVibeError && (
+                <p className="mt-2 text-xs text-rose-100">{liveVibeError}</p>
+              )}
+              {liveVibeTableMissing && (
+                <p className="mt-2 text-xs text-amber-100">
+                  Live vibe table is not activated yet. Run the SQL setup block first.
+                </p>
+              )}
+              <p className="mt-2 text-[11px] text-fuchsia-100/76">
+                One tap updates the room signal for everyone right now.
+              </p>
+              {liveVibeCooldownRemainingSec > 0 && (
+                <p className="mt-1 text-[11px] text-cyan-100/85">
+                  Cooldown active: {liveVibeCooldownRemainingSec}s
+                </p>
+              )}
+              {isMember && (
+                <div className="mt-2 rounded-xl border border-white/12 bg-white/[0.05] p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/62">Your momentum</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowLiveVibeMomentum((value) => !value)}
+                      className="rounded-full border border-white/16 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/28"
+                    >
+                      {showLiveVibeMomentum ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  {showLiveVibeMomentum && (
+                    <>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/82">
+                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5">
+                          {liveVibeMemberMomentum.streakDays}d streak
+                        </span>
+                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5">
+                          {liveVibeMemberMomentum.weekTaps} taps / 7d
+                        </span>
+                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5">
+                          {liveVibeMemberMomentum.todayTapped ? "Tapped today" : "No tap today"}
+                        </span>
+                        {liveVibeMemberMomentum.lastTapLabel && (
+                          <span className="text-white/64">Last: {liveVibeMemberMomentum.lastTapLabel}</span>
+                        )}
+                      </div>
+                      {liveVibeStreakNudge && (
+                        <p
+                          className={`mt-1.5 text-[11px] ${
+                            liveVibeMemberMomentum.todayTapped ? "text-emerald-100/85" : "text-amber-100/88"
+                          }`}
+                        >
+                          {liveVibeStreakNudge}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
             </div>
             {selectedPlaceQuality && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -3105,7 +3590,7 @@ export default function CityPage() {
       )}
 
       {selectedEvent && (
-        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[440px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[520px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
           <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
           <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#111021]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closeEvent}>
             Close
@@ -3467,3 +3952,4 @@ export default function CityPage() {
     </main>
   );
 }
+

@@ -14,6 +14,7 @@ import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
+import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import TripPlannerV2 from "@/components/planner/TripPlannerV2";
@@ -120,6 +121,7 @@ const PLAN_STORAGE_KEY = "qa_trip_plans";
 const FAVORITES_STORAGE_KEY = "qa_favorites";
 const ADDED_STORAGE_KEY = "qa_added";
 const CHECKINS_STORAGE_KEY = "qa_member_checkins";
+const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 const INITIAL_NOW_TS = Date.now();
 
 function mapPlanRow(row) {
@@ -245,6 +247,9 @@ export default function FavoritesPage() {
   const [checkins, setCheckins] = useState([]);
   const [checkinsWarning, setCheckinsWarning] = useState("");
   const [isSavingCheckin, setIsSavingCheckin] = useState(false);
+  const [pendingCheckinVibe, setPendingCheckinVibe] = useState(null);
+  const [isSubmittingCheckinVibe, setIsSubmittingCheckinVibe] = useState(false);
+  const [checkinVibeCooldownUntil, setCheckinVibeCooldownUntil] = useState(0);
   const [followingCheckins, setFollowingCheckins] = useState([]);
   const [followingCheckinsWarning, setFollowingCheckinsWarning] = useState("");
   const [followingPresenceByUserId, setFollowingPresenceByUserId] = useState({});
@@ -1494,6 +1499,88 @@ export default function FavoritesPage() {
     });
   };
 
+  const resolveCheckinPlaceDbId = useCallback(async (entry) => {
+    const rawPlaceId = String(entry?.placeId || "").trim();
+    if (rawPlaceId && !rawPlaceId.startsWith("seed-place-") && /^\d+$/.test(rawPlaceId)) {
+      return Number(rawPlaceId);
+    }
+
+    const cityValue = String(entry?.city || "").trim();
+    const labelValue = String(entry?.label || "").trim();
+    if (!cityValue || !labelValue) return null;
+
+    const normalize = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .replace(/\s+/g, " ");
+
+    const lookup = await supabase
+      .from("places")
+      .select("id, city, name")
+      .ilike("name", labelValue)
+      .limit(20);
+
+    const rows = Array.isArray(lookup?.data) ? lookup.data : [];
+    const matched = rows.find((row) => normalize(row?.city) === normalize(cityValue));
+    const numericId = Number(matched?.id);
+    return Number.isFinite(numericId) ? numericId : null;
+  }, []);
+
+  const submitCheckinVibe = useCallback(async (signalKey) => {
+    if (!pendingCheckinVibe?.placeDbId) return;
+    if (!user?.id) {
+      showToast("Join as member to share live vibe.", { tone: "info", duration: 2200 });
+      return;
+    }
+
+    const now = Date.now();
+    if (now < Number(checkinVibeCooldownUntil || 0)) {
+      const secondsLeft = Math.ceil((Number(checkinVibeCooldownUntil) - now) / 1000);
+      showToast(`Hold for ${secondsLeft}s before sending another vibe tap.`, {
+        tone: "info",
+        duration: 1800,
+      });
+      return;
+    }
+
+    setIsSubmittingCheckinVibe(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from("qa_place_vibe_signals")
+        .upsert(
+          [{
+            place_id: pendingCheckinVibe.placeDbId,
+            user_id: user.id,
+            signal_key: signalKey,
+            created_at: nowIso,
+          }],
+          { onConflict: "place_id,user_id" }
+        );
+
+      if (error) {
+        if (isMissingLiveVibeTableError(error)) {
+          showToast("Live vibe table missing. Run the latest Supabase SQL.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+        showToast("Could not save live vibe right now.", { tone: "warn", duration: 2200 });
+        return;
+      }
+
+      setCheckinVibeCooldownUntil(Date.now() + CHECKIN_VIBE_COOLDOWN_MS);
+      showToast("Live vibe shared.", { tone: "ok", duration: 1600 });
+      setPendingCheckinVibe(null);
+    } finally {
+      setIsSubmittingCheckinVibe(false);
+    }
+  }, [checkinVibeCooldownUntil, pendingCheckinVibe, showToast, user?.id]);
+
   const submitCheckin = async (payload) => {
     const editingId = String(payload?.id || "").trim();
     const isEditing = Boolean(editingId);
@@ -1612,6 +1699,22 @@ export default function FavoritesPage() {
       setSelectedCheckinId(String(savedRow.id || ""));
       if (isEditing) {
         setEditingCheckinId("");
+        setPendingCheckinVibe(null);
+      } else if (user?.id) {
+        try {
+          const placeDbId = await resolveCheckinPlaceDbId(savedRow);
+          if (placeDbId) {
+            setPendingCheckinVibe({
+              placeDbId,
+              label: String(savedRow.label || ""),
+              city: String(savedRow.city || ""),
+            });
+          } else {
+            setPendingCheckinVibe(null);
+          }
+        } catch {
+          setPendingCheckinVibe(null);
+        }
       }
     } finally {
       setIsSavingCheckin(false);
@@ -2498,6 +2601,43 @@ export default function FavoritesPage() {
                   </button>
                 ) : null}
               </form>
+              {pendingCheckinVibe ? (
+                <div className="mt-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-200/10 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-100/80">How is it right now?</p>
+                  <p className="mt-1 text-sm text-fuchsia-50/95">
+                    Share live vibe for {pendingCheckinVibe.label || "this venue"} in {pendingCheckinVibe.city || "this city"}.
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {LIVE_VIBE_OPTIONS.map((option) => (
+                      <button
+                        key={`post-checkin-vibe-${option.key}`}
+                        type="button"
+                        disabled={isSubmittingCheckinVibe}
+                        onClick={() => {
+                          submitCheckinVibe(option.key);
+                        }}
+                        className={`rounded-xl border px-3 py-2 text-left text-xs transition disabled:opacity-60 ${option.buttonClass}`}
+                      >
+                        <span className="block text-sm font-semibold">
+                          {option.emoji} {option.label}
+                        </span>
+                        <span className="mt-0.5 block text-[10px] uppercase tracking-[0.12em] opacity-85">
+                          1 tap
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setPendingCheckinVibe(null)}
+                      className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/75 transition hover:border-white/28"
+                    >
+                      Skip for now
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               {checkinsWarning && (
                 <div className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
                   {checkinsWarning}
