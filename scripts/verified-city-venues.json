@@ -541,5 +541,75 @@
       "vibe": "Cafe",
       "description": "Historic Helsinki cafe on Bulevardi, open daily with breakfast and lunch service."
     }
+  ],
+  "amsterdam": [
+    {
+      "name": "IBIS Amsterdam Centre Stopera",
+      "type": "hotel",
+      "location": "Valkenburgerstraat 68, 1011 LZ Amsterdam, Netherlands",
+      "lat": 52.370107,
+      "lng": 4.907468,
+      "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
+      "link": "https://www.travelgay.com/amsterdam-gay-rated-hotels",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed hotel in central Amsterdam with easy access to bars and nightlife districts."
+    },
+    {
+      "name": "Coffeeshop The Otherside",
+      "type": "cafe",
+      "location": "Reguliersdwarsstraat 6, 1017 BM Amsterdam, Netherlands",
+      "lat": 52.366776,
+      "lng": 4.889253,
+      "hours": "Daily 10:00-00:00.",
+      "link": "https://www.travelgay.com/amsterdam-gay-cafes-restaurants",
+      "vibe": "Gay-popular cafe",
+      "description": "Gay-popular Amsterdam coffeeshop in the Reguliersdwarsstraat area."
+    },
+    {
+      "name": "Oosterpark (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Linnaeusstraat, 1092 CK Amsterdam, Netherlands",
+      "lat": 52.359591,
+      "lng": 4.925574,
+      "hours": "Early evening to late night; busiest after 22:00.",
+      "link": "https://www.cruisinggays.com/amsterdam/areas/14938-oosterpark/",
+      "vibe": "Open-air cruising",
+      "description": "Known Amsterdam cruising area around Oosterpark paths and bridge sections."
+    }
+  ],
+  "athens": [
+    {
+      "name": "Rooster",
+      "type": "cafe",
+      "location": "Agias Eirinis 4, 105 63 Athens, Greece",
+      "lat": 37.977111,
+      "lng": 23.727193,
+      "hours": "Daily 09:00-01:00.",
+      "link": "https://www.roostercafe.gr/",
+      "vibe": "Cafe / social",
+      "description": "Central Athens all-day cafe with coffee, food, and evening drinks."
+    },
+    {
+      "name": "A for Athens",
+      "type": "hotel",
+      "location": "Miaouli 2, 105 54 Athens, Greece",
+      "lat": 37.977115,
+      "lng": 23.725793,
+      "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
+      "link": "https://www.travelgay.com/athens-gay-rated-hotels",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed central Athens hotel near Monastiraki with quick access to LGBTQ+ nightlife."
+    },
+    {
+      "name": "Pedion Areos Park (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Patision and Alexandras Ave, Athens, Greece",
+      "lat": 37.97757,
+      "lng": 23.729275,
+      "hours": "Day and night.",
+      "link": "https://www.cruisinggays.com/athens/areas/11649-pedion-areos-park/",
+      "vibe": "Open-air cruising",
+      "description": "Known Athens cruising park with activity around interior paths."
+    }
   ]
 }
