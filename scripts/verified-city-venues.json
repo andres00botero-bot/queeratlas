@@ -1,0 +1,545 @@
+{
+  "lisbon": [
+    {
+      "name": "TR3S Lisboa",
+      "type": "bar",
+      "location": "Rua Ruben A. Leitao 2A, 1200-392 Lisbon, Portugal",
+      "lat": 38.7165,
+      "lng": -9.1496,
+      "hours": "Mon-Thu 18:00-02:00, Fri-Sat 18:00-03:00, Sun 18:00-02:00.",
+      "link": "https://www.travelgay.com/venue/trs3-lisboa",
+      "vibe": "Queer social bar",
+      "description": "Popular Principe Real gay bar with terrace and mixed local/international crowd."
+    },
+    {
+      "name": "Rendezvous - More Than Wine",
+      "type": "cafe",
+      "location": "Rua de Sao Vicente 16C, 1100-574 Lisbon, Portugal",
+      "lat": 38.7118,
+      "lng": -9.1294,
+      "hours": "Mon 10:00-16:00, Tue-Sat 10:00-22:00, Sun closed.",
+      "link": "https://www.travelgay.com/venue/rendezvous-more-than-wine/",
+      "vibe": "Queer-friendly cafe",
+      "description": "Gay-owned, gay-friendly cafe and wine bar known for tapas and relaxed daytime flow."
+    },
+    {
+      "name": "DRAKO Club",
+      "type": "cruise_club",
+      "location": "Rua Nogueira e Sousa 11, Lisbon, Portugal",
+      "lat": 38.7249,
+      "lng": -9.1458,
+      "hours": "Mon-Thu 20:00-02:00, Fri-Sat 15:00-03:00, Sun 15:00-02:00.",
+      "link": "https://www.travelgay.com/venue/drako-club",
+      "vibe": "Cruise / fetish",
+      "description": "Men-only cruise and fetish venue with themed nights, cabins, darkroom, and shop."
+    },
+    {
+      "name": "Trombeta Bath",
+      "type": "sauna",
+      "location": "Rua do Trombeta 1D, 1200-467 Lisbon, Portugal",
+      "lat": 38.7117,
+      "lng": -9.1472,
+      "hours": "Mon-Thu 12:00-06:00, Fri 12:00-24:00, Sat-Sun open 24h.",
+      "link": "https://www.trombetabath.com/",
+      "vibe": "Sauna / wellness",
+      "description": "Established gay sauna in Bairro Alto with steam, cabins, and late-night crowd."
+    },
+    {
+      "name": "The Late Birds Lisbon - Gay Urban Resort",
+      "type": "hotel",
+      "location": "Travessa Andre Valente 21-21A, 1200-024 Lisbon, Portugal",
+      "lat": 38.711481,
+      "lng": -9.147673,
+      "hours": "Reception and booking via official site.",
+      "link": "https://www.thelatebirdslisbon.com/",
+      "vibe": "Gay urban resort",
+      "description": "All-male gay urban resort in Bairro Alto, close to Lisbon's queer nightlife hubs."
+    },
+    {
+      "name": "Parque Eduardo VII (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Parque Eduardo VII, 1070-051 Lisbon, Portugal",
+      "lat": 38.7292,
+      "lng": -9.1518,
+      "hours": "Most active daytime and after dark.",
+      "link": "https://www.cruisinggays.com/lisbon/areas/13504-park-eduardo-vii/",
+      "vibe": "Open-air cruising",
+      "description": "Known cruising area near Pavilhao dos Desportos and metro access."
+    },
+    {
+      "name": "Finalmente Club",
+      "type": "club",
+      "location": "Praca dos Restauradores 25, 1250-187 Lisbon, Portugal",
+      "lat": 38.7162,
+      "lng": -9.1494,
+      "hours": "Daily around 00:00-06:00.",
+      "link": "https://www.finalmenteclub.com/",
+      "vibe": "Drag / queer nightlife",
+      "description": "Iconic Lisbon queer club with drag-focused late-night programming."
+    }
+  ],
+  "berlin": [
+    {
+      "name": "Tiergarten (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Tiergarten, 10557 Berlin, Germany",
+      "lat": 52.5146,
+      "lng": 13.3501,
+      "hours": "From dusk till dawn (warmer months busiest).",
+      "link": "https://www.cruisinggays.com/berlin/areas/450-tiergarten/",
+      "vibe": "Open-air cruising",
+      "description": "Historic Berlin cruising area with activity around wooded sections after dark."
+    }
+  ],
+  "manchester": [
+    {
+      "name": "Feel Good Club",
+      "type": "cafe",
+      "location": "26-28 Hilton Street, Manchester, M1 2EH, United Kingdom",
+      "lat": 53.4834,
+      "lng": -2.2347,
+      "hours": "Mon-Fri 09:00-17:00, Sat-Sun 10:00-18:00.",
+      "link": "https://www.feelgoodclub.co.uk/",
+      "vibe": "Queer cafe / community space",
+      "description": "Queer-led wellness cafe and social space in Manchester's Northern Quarter."
+    }
+  ],
+  "los_angeles": [
+    {
+      "name": "Precinct",
+      "type": "club",
+      "location": "357 S Broadway, Los Angeles, CA 90013, United States",
+      "lat": 34.049801,
+      "lng": -118.249466,
+      "hours": "Mon-Fri 17:00-02:00, Sat-Sun 15:00-02:00.",
+      "link": "https://downtownla.com/go/precinct",
+      "vibe": "Queer club / nightlife",
+      "description": "Major DTLA queer club-bar with drag, dance nights, and large event programming."
+    },
+    {
+      "name": "FLEXSpas Los Angeles",
+      "type": "sauna",
+      "location": "4424 Melrose Ave, Los Angeles, CA 90029, United States",
+      "lat": 34.083379,
+      "lng": -118.297377,
+      "hours": "Open daily; check current locker and room schedule on official site.",
+      "link": "https://www.flexspas.com/los-angeles",
+      "vibe": "Sauna / wellness",
+      "description": "Established men-only membership spa with lockers, private rooms, and facilities in East Hollywood."
+    },
+    {
+      "name": "EAGLE LA",
+      "type": "cruise_club",
+      "location": "4219 Santa Monica Blvd, Los Angeles, CA 90029, United States",
+      "lat": 34.09114,
+      "lng": -118.283946,
+      "hours": "Mon-Fri 16:00-02:00, Sat-Sun 14:00-02:00.",
+      "link": "https://www.travelgay.com/venue/eagle-la",
+      "vibe": "Leather / cruise",
+      "description": "Long-running leather-focused gay venue known for fetish events and cruise-oriented nights."
+    },
+    {
+      "name": "Griffith Park (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Griffith Park, Los Angeles, CA 90027, United States",
+      "lat": 34.117023,
+      "lng": -118.27169,
+      "hours": "Public park hours vary; activity is typically after dark in quieter zones.",
+      "link": "https://www.travelgay.com/venue/griffith-park-los-angeles",
+      "vibe": "Open-air cruising",
+      "description": "Historic and well-known LA cruising area across secluded parts of Griffith Park."
+    },
+    {
+      "name": "Hotel Ziggy West Hollywood",
+      "type": "hotel",
+      "location": "8462 West Sunset Blvd, West Hollywood, CA 90069, United States",
+      "lat": 34.094565,
+      "lng": -118.374916,
+      "hours": "24/7 hotel operations; check-in/check-out via official booking policy.",
+      "link": "https://hotelziggy.com/",
+      "vibe": "Queer-friendly hotel",
+      "description": "Sunset Strip boutique hotel frequently used by LGBTQ+ travelers due to location and nightlife access."
+    },
+    {
+      "name": "The Ruby Fruit",
+      "type": "cafe",
+      "location": "3510 Sunset Blvd, Los Angeles, CA 90026, United States",
+      "lat": 34.088905,
+      "lng": -118.276907,
+      "hours": "Wed-Fri 17:00-late, Sat-Sun 15:00-late, Mon-Tue closed.",
+      "link": "https://www.therubyfruit.com/",
+      "vibe": "Queer cafe / bar",
+      "description": "Queer- and women-owned neighborhood cafe-bar and grill in Silver Lake."
+    }
+  ],
+  "san_francisco": [
+    {
+      "name": "Parker Guest House",
+      "type": "hotel",
+      "location": "520 Church Street, San Francisco, California 94114, United States",
+      "lat": 37.76241,
+      "lng": -122.42869,
+      "hours": "Hotel check-in/check-out and front-desk policy per official booking page.",
+      "link": "https://www.parkerguesthouse.com/",
+      "vibe": "LGBTQ+ boutique hotel",
+      "description": "Boutique guesthouse beside the Castro/Mission area and popular with LGBTQ+ travelers."
+    },
+    {
+      "name": "Castro Coffee",
+      "type": "cafe",
+      "location": "427 Castro Street, San Francisco, California 94114, United States",
+      "lat": 37.762119,
+      "lng": -122.434972,
+      "hours": "Mon-Fri 07:00-20:00, Sat-Sun 08:00-20:00.",
+      "link": "https://www.castro-coffee.com/",
+      "vibe": "Neighborhood cafe",
+      "description": "Long-running Castro neighborhood coffee and tea spot in the heart of the district."
+    }
+  ],
+  "madrid": [
+    {
+      "name": "Axel Hotel Madrid",
+      "type": "hotel",
+      "location": "Calle De Atocha 49, 28012 Madrid, Madrid, Spain",
+      "lat": 40.413231,
+      "lng": -3.700529,
+      "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
+      "link": "https://www.axelhotels.com/en/axel-hotel-madrid/hotel",
+      "vibe": "LGBTQ+ hotel",
+      "description": "Adults-only Axel Hotel in central Madrid, widely used by LGBTQ+ travelers staying near Chueca."
+    },
+    {
+      "name": "LaKama Cafe",
+      "type": "cafe",
+      "location": "Calle De Augusto Figueroa 17, 28004 Madrid, Madrid, Spain",
+      "lat": 40.422849,
+      "lng": -3.699475,
+      "hours": "Daily 09:00-02:00.",
+      "link": "https://www.travelgay.com/venue/lakama-cafe",
+      "vibe": "Queer cafe / lounge",
+      "description": "Chueca gay cafe and lounge with all-day cafe service and evening cocktail flow."
+    }
+  ],
+  "toronto": [
+    {
+      "name": "Gladstone House",
+      "type": "hotel",
+      "location": "1214 Queen Street West, Toronto, Ontario M6J 1J6, Canada",
+      "lat": 43.642783,
+      "lng": -79.427046,
+      "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
+      "link": "https://www.gladstonehouse.ca/",
+      "vibe": "Queer-friendly hotel",
+      "description": "Boutique Toronto hotel known for arts/culture programming and frequent LGBTQ+ travelers."
+    },
+    {
+      "name": "Understory",
+      "type": "cafe",
+      "location": "505 Church Street, Toronto, Ontario M4Y 2C9, Canada",
+      "lat": 43.665894,
+      "lng": -79.380825,
+      "hours": "Daily 09:00-17:00 (extended events on selected nights).",
+      "link": "https://www.understoryto.com/",
+      "vibe": "Queer / trans-owned cafe",
+      "description": "Trans-owned cafe and community space in Toronto's Church-Wellesley village."
+    }
+  ],
+  "sitges": [
+    {
+      "name": "Hotel Medium Sitges Park",
+      "type": "hotel",
+      "location": "Carrer De Jesús 16, 08870 Sitges, Barcelona, Spain",
+      "lat": 41.237038,
+      "lng": 1.810207,
+      "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
+      "link": "https://www.travelgay.com/hotels/hotel-medium-sitges-park",
+      "vibe": "Gay-friendly hotel",
+      "description": "Centrally located gay-popular hotel in Sitges old town near nightlife and beach."
+    },
+    {
+      "name": "Montroig Cafe",
+      "type": "cafe",
+      "location": "Carrer Marquès De Montroig 11, 08870 Sitges, Barcelona, Spain",
+      "lat": 41.2369,
+      "lng": 1.8053,
+      "hours": "Daily 08:30-01:00.",
+      "link": "https://www.travelgay.com/venue/montroig-cafe",
+      "vibe": "Gay-friendly cafe",
+      "description": "Gay-popular cafe bar with terrace seating in central Sitges."
+    }
+  ],
+  "valencia": [
+    {
+      "name": "Axel Hotel Valencia",
+      "type": "hotel",
+      "location": "Carrer De Roteros 25, 46003 València, Valencia, Spain",
+      "lat": 39.478965,
+      "lng": -0.378136,
+      "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
+      "link": "https://www.travelgay.com/hotels/axel-hotel-valencia",
+      "vibe": "LGBTQ+ hotel",
+      "description": "Adults-only Axel hotel in El Carmen, close to Valencia's gay nightlife."
+    },
+    {
+      "name": "Jardines del Turia (Viveros)",
+      "type": "cruising_area",
+      "location": "Passeig De l'Albereda, 46010 València, Valencia, Spain",
+      "lat": 39.477819,
+      "lng": -0.362027,
+      "hours": "Anytime; after dark is typically busiest.",
+      "link": "https://www.cruisinggays.com/valencia/areas/5074-jardines-del-turia-viveros/",
+      "vibe": "Open-air cruising",
+      "description": "Known cruising area around Turia gardens, especially near Puente del Real."
+    }
+  ],
+  "buenos_aires": [
+    {
+      "name": "Sissi Haz Hotel Buenos Aires",
+      "type": "hotel",
+      "location": "Malabia 1561, Palermo, Buenos Aires, C1414, Argentina",
+      "lat": -34.591028,
+      "lng": -58.427417,
+      "hours": "24/7 hotel operations; check-in/check-out policy on official booking page.",
+      "link": "https://www.travelgay.com/hotels/sissi-haz-hotel-buenos-aires",
+      "vibe": "Gay-friendly boutique hotel",
+      "description": "Gay-popular boutique hotel in Palermo with easy access to local LGBTQ+ nightlife."
+    },
+    {
+      "name": "Bosques de Palermo (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Avenida Del Libertador 3400, Palermo, Buenos Aires, C1425, Argentina",
+      "lat": -34.57552,
+      "lng": -58.414767,
+      "hours": "After dark is typically busiest.",
+      "link": "https://www.cruisinggays.com/buenos-aires/c/areas/",
+      "vibe": "Open-air cruising",
+      "description": "Large park area with known after-dark cruising zones around secluded paths."
+    }
+  ],
+  "bucharest": [
+    {
+      "name": "The Q Club",
+      "type": "club",
+      "location": "Strada Verzișori 20, Bucharest, Romania",
+      "lat": 44.4314,
+      "lng": 26.1011,
+      "hours": "Thu-Sat 23:00-06:00.",
+      "link": "https://www.theqclub.ro/",
+      "vibe": "Gay club",
+      "description": "Main gay nightclub in Bucharest with multi-room dance floors and weekend events."
+    },
+    {
+      "name": "Queens Club Bucharest",
+      "type": "club",
+      "location": "Bucharest, Romania",
+      "lat": 44.4309,
+      "lng": 26.1033,
+      "hours": "Fri-Sat 22:30-05:00.",
+      "link": "https://www.travelgay.com/bucharest-gay-map",
+      "vibe": "Gay club",
+      "description": "Late-night gay club option in central Bucharest."
+    },
+    {
+      "name": "Soho Sauna Bucharest",
+      "type": "sauna",
+      "location": "Bucharest, Romania",
+      "lat": 44.4302,
+      "lng": 26.1008,
+      "hours": "Daily 14:00-23:00.",
+      "link": "https://saunasoho.ro/",
+      "vibe": "Sauna / wellness",
+      "description": "Gay sauna in central Bucharest with spa and relaxation facilities."
+    },
+    {
+      "name": "Soho Labyrinth Nights",
+      "type": "cruise_club",
+      "location": "Bucharest, Romania",
+      "lat": 44.4302,
+      "lng": 26.1008,
+      "hours": "Fri-Sat 20:00-23:30.",
+      "link": "https://saunasoho.ro/",
+      "vibe": "Cruise / fetish",
+      "description": "Cruise-oriented themed nights connected to Soho venue programming."
+    },
+    {
+      "name": "Cismigiu Night Route",
+      "type": "cruising_area",
+      "location": "Cișmigiu Gardens area, Bucharest, Romania",
+      "lat": 44.4357,
+      "lng": 26.0926,
+      "hours": "Most active Thu-Sun after dark.",
+      "link": "https://www.travelgay.com/bucharest-gay-map",
+      "vibe": "Open-air cruising",
+      "description": "Known after-dark cruising route around central park paths."
+    },
+    {
+      "name": "Origo Coffee",
+      "type": "cafe",
+      "location": "Bucharest, Romania",
+      "lat": 44.4339,
+      "lng": 26.0957,
+      "hours": "Mon-Fri 08:00-18:00, Sat-Sun 09:00-18:00.",
+      "link": "https://origocoffee.ro/",
+      "vibe": "Cafe",
+      "description": "Specialty coffee stop used by locals and visitors in central Bucharest."
+    },
+    {
+      "name": "ORSAR",
+      "type": "cafe",
+      "location": "Bucharest, Romania",
+      "lat": 44.4383,
+      "lng": 26.0972,
+      "hours": "Tue-Sun 12:00-23:00.",
+      "link": "https://www.instagram.com/orsar.restaurant/",
+      "vibe": "Queer-friendly cafe",
+      "description": "Queer-friendly social dining and drinks venue in Bucharest."
+    },
+    {
+      "name": "Capital Plaza",
+      "type": "hotel",
+      "location": "Bulevardul Iancu De Hunedoara 54, Bucharest 11745, Romania",
+      "lat": 44.452752,
+      "lng": 26.096552,
+      "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
+      "link": "https://www.travelgay.com/hotels/capital-plaza-bucharest",
+      "vibe": "Gay-friendly hotel",
+      "description": "Gay-friendly hotel listed by TravelGay with good access to Bucharest nightlife."
+    }
+  ],
+  "guadalajara": [
+    {
+      "name": "Babel",
+      "type": "club",
+      "location": "Calle Morelos 741, 44100 Guadalajara, Jalisco, Mexico",
+      "lat": 20.676361,
+      "lng": -103.354113,
+      "hours": "Fri-Sat 22:00-04:00, Sun-Thu closed.",
+      "link": "https://www.travelgay.com/venue/babel-guadalajara-mexico",
+      "vibe": "Gay dance club",
+      "description": "Two-floor gay club in Zona Centro with terrace, pop room, and electronic room."
+    },
+    {
+      "name": "Riilax Sauna",
+      "type": "sauna",
+      "location": "Calle Venustiano Carranza 313, 44200 Guadalajara, Jalisco, Mexico",
+      "lat": 20.682155,
+      "lng": -103.344391,
+      "hours": "Mon-Fri 12:00-00:00, Sat 11:00-23:00.",
+      "link": "https://www.travelgay.com/venue/riilax-sauna-guadalajara-mexico",
+      "vibe": "Gay sauna / wellness",
+      "description": "Well-known Guadalajara gay sauna with jacuzzi, steam room, private rooms, and bar."
+    },
+    {
+      "name": "Club183",
+      "type": "cruise_club",
+      "location": "Calle Mariano de la Barcena 183, 44100 Guadalajara, Jalisco, Mexico",
+      "lat": 20.679166,
+      "lng": -103.352344,
+      "hours": "Late-night schedule; check official channel before visiting.",
+      "link": "https://guadalajara.gaycities.com/bathhouses/310402-club",
+      "vibe": "Cruise / men-only",
+      "description": "Men-only venue described as a cruise bar and sex-club format with themed nights."
+    },
+    {
+      "name": "Zona Centro (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Zona Centro, Guadalajara, Jalisco, Mexico",
+      "lat": 20.674793,
+      "lng": -103.35941,
+      "hours": "Most active late evening and night.",
+      "link": "https://guadalajara.gaycities.com/bars?type=cruising",
+      "vibe": "Urban cruising corridor",
+      "description": "Central nightlife zone with multiple bars tagged for cruising activity."
+    },
+    {
+      "name": "Casa Alebrijes Gay Hotel",
+      "type": "hotel",
+      "location": "Avenida Libertad 1016, 44100 Guadalajara, Jalisco, Mexico",
+      "lat": 20.67134,
+      "lng": -103.35,
+      "hours": "24/7 hotel operations; check-in/check-out policy on booking page.",
+      "link": "https://www.travelgay.com/gay-guadalajara-hotels",
+      "vibe": "Gay hotel",
+      "description": "Gay-focused boutique hotel in Centro Historico, close to major LGBTQ+ nightlife."
+    },
+    {
+      "name": "El Gato Cafe",
+      "type": "cafe",
+      "location": "Calle Francisco I. Madero 833, 44160 Guadalajara, Jalisco, Mexico",
+      "lat": 20.673274,
+      "lng": -103.358374,
+      "hours": "Daily service; check current hours on listing.",
+      "link": "https://www.tripadvisor.com/Restaurant_Review-g150798-d2259508-Reviews-El_Gato_Cafe-Guadalajara_Guadalajara_Metropolitan_Area.html",
+      "vibe": "Cafe",
+      "description": "Central cafe option used as a daytime social stop in Guadalajara."
+    }
+  ],
+  "helsinki": [
+    {
+      "name": "Hercules Gay Nightclub",
+      "type": "club",
+      "location": "Keskuskatu 8, 00100 Helsinki, Finland",
+      "lat": 60.169571,
+      "lng": 24.942834,
+      "hours": "Wed-Sat 22:00-04:30, Sun-Tue closed.",
+      "link": "https://www.travelgay.com/venue/hercules-gay-nightclub",
+      "vibe": "Gay dance club",
+      "description": "Large LGBTQ+ nightclub in central Helsinki with multiple floors and dance areas."
+    },
+    {
+      "name": "Sauna Con Hombres",
+      "type": "sauna",
+      "location": "Sturenkatu 27a, 00510 Helsinki, Finland",
+      "lat": 60.193828,
+      "lng": 24.956104,
+      "hours": "Wed-Sun 16:00-22:00, Mon-Tue closed.",
+      "link": "https://www.travelgay.com/helsinki-gay-saunas",
+      "vibe": "Gay sauna / wellness",
+      "description": "Finland's best-known gay sauna with steam room, dark room, and terrace."
+    },
+    {
+      "name": "Oy U.S Video Ab",
+      "type": "cruise_club",
+      "location": "Malminkatu 24, 00100 Helsinki, Finland",
+      "lat": 60.167403,
+      "lng": 24.929109,
+      "hours": "Mon-Thu 10:00-02:00, Fri 10:00-00:00, Sat open 24h, Sun 12:00-10:00.",
+      "link": "https://www.travelgay.com/venue/oy-u-s-video-ab/",
+      "vibe": "Cruise / fetish",
+      "description": "Cruise-oriented adult venue with cabins and dedicated cruising areas."
+    },
+    {
+      "name": "Laakso Central Park (Cruising Area)",
+      "type": "cruising_area",
+      "location": "Laakarinkatu, 00250 Helsinki, Finland",
+      "lat": 60.192182,
+      "lng": 24.914562,
+      "hours": "Open all day; evening footpaths are typically busiest.",
+      "link": "https://www.cruisinggays.com/helsinki/areas/13435-laakso-central-park/",
+      "vibe": "Open-air cruising",
+      "description": "Known Helsinki cruising area in the Laakso/Central Park zone."
+    },
+    {
+      "name": "Marski by Scandic",
+      "type": "hotel",
+      "location": "Mannerheimintie 10, 00120 Helsinki, Finland",
+      "lat": 60.167594,
+      "lng": 24.9412,
+      "hours": "24/7 hotel operations; check-in/check-out policy via booking page.",
+      "link": "https://www.travelgay.com/gay-helsinki-hotels",
+      "vibe": "Gay-friendly hotel",
+      "description": "TravelGay-listed, centrally located Helsinki hotel with sauna and breakfast."
+    },
+    {
+      "name": "Ekberg Cafe",
+      "type": "cafe",
+      "location": "Bulevardi 9, 00120 Helsinki, Finland",
+      "lat": 60.164897,
+      "lng": 24.9377,
+      "hours": "Mon-Fri 07:30-19:00, Sat-Sun 09:00-18:00.",
+      "link": "https://www.ekberg.fi/en/cafe/",
+      "vibe": "Cafe",
+      "description": "Historic Helsinki cafe on Bulevardi, open daily with breakfast and lunch service."
+    }
+  ]
+}
