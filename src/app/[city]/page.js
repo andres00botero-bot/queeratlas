@@ -793,12 +793,9 @@ export default function CityPage() {
 
   const cityPrivateEvents = useMemo(() => {
     const normalizedCity = normalizeCityKey(city);
-    const currentUserId = String(user?.id || "");
     return privateEvents
       .filter((event) => normalizeCityKey(event.city) === normalizedCity)
       .filter((event) => {
-        const isHost = String(event.host_user_id || "") === currentUserId;
-        if (isHost) return true;
         if (String(event.status || "active") !== "active") return false;
         const expiresAt = new Date(event.expires_at || "").getTime();
         return !Number.isFinite(expiresAt) || expiresAt > Date.now();
@@ -810,7 +807,7 @@ export default function CityPage() {
         if (rank[statusA] !== rank[statusB]) return rank[statusA] - rank[statusB];
         return new Date(a.start_at || 0).getTime() - new Date(b.start_at || 0).getTime();
       });
-  }, [city, privateEvents, liveVibeRefreshTick, user?.id]);
+  }, [city, privateEvents, liveVibeRefreshTick]);
 
   const qualityMap = getQualityMap();
 
@@ -1510,18 +1507,27 @@ export default function CityPage() {
         throw invitesError;
       }
 
-      const { data: deletedEvents, error: eventDeleteError } = await supabase
+      const { error: eventDeleteError } = await supabase
         .from("qa_private_events")
         .delete()
         .eq("id", eventId)
-        .eq("host_user_id", user.id)
-        .select("id");
+        .eq("host_user_id", user.id);
 
       if (eventDeleteError) throw eventDeleteError;
-      if (!Array.isArray(deletedEvents) || deletedEvents.length === 0) {
-        showToast("Delete failed. You can only delete events you host from this account.", {
+
+      const { data: stillThereRows, error: verifyError } = await supabase
+        .from("qa_private_events")
+        .select("id")
+        .eq("id", eventId)
+        .limit(1);
+
+      if (verifyError) throw verifyError;
+      const removed = !Array.isArray(stillThereRows) || stillThereRows.length === 0;
+
+      if (!removed) {
+        showToast("Delete failed. Event is still in database.", {
           tone: "warn",
-          duration: 2600,
+          duration: 3000,
         });
         return;
       }
@@ -1551,8 +1557,13 @@ export default function CityPage() {
       ]);
 
       showToast("VIP event deleted.", { tone: "ok", duration: 1800 });
-    } catch {
-      showToast("Could not delete VIP event right now.", { tone: "warn", duration: 2200 });
+    } catch (error) {
+      showToast(
+        error?.message
+          ? `Could not delete VIP event: ${error.message}`
+          : "Could not delete VIP event right now.",
+        { tone: "warn", duration: 3200 },
+      );
     } finally {
       setDeletingPrivateEventId("");
     }
