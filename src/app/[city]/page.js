@@ -596,6 +596,7 @@ export default function CityPage() {
   const [isSubmittingPrivateInvite, setIsSubmittingPrivateInvite] = useState(false);
   const [isUpdatingPrivateInviteStatus, setIsUpdatingPrivateInviteStatus] = useState(false);
   const [deletingPrivateEventId, setDeletingPrivateEventId] = useState("");
+  const [vipRealtimeHealthy, setVipRealtimeHealthy] = useState(false);
   const [privateFeedNowTick, setPrivateFeedNowTick] = useState(Date.now());
   const [tonightFeedTab, setTonightFeedTab] = useState("public");
   const [hostPrivateEventOpen, setHostPrivateEventOpen] = useState(false);
@@ -1669,6 +1670,14 @@ export default function CityPage() {
     user?.id,
   ]);
 
+  const refreshVipFeed = useCallback(async ({ silent = true } = {}) => {
+    await fetchPrivateEvents({ silent });
+    await Promise.all([
+      fetchMyPrivateInvites(cityPrivateEvents),
+      fetchPrivateInviteRequests(cityPrivateEvents),
+    ]);
+  }, [cityPrivateEvents, fetchMyPrivateInvites, fetchPrivateEvents, fetchPrivateInviteRequests]);
+
   const geocodeAddress = useCallback(async (value) => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) {
@@ -1725,15 +1734,59 @@ export default function CityPage() {
 
   useEffect(() => {
     if (!isMember) return undefined;
+    if (vipRealtimeHealthy) return undefined;
 
     const id = setInterval(() => {
-      fetchPrivateEvents({ silent: true });
-      fetchMyPrivateInvites(cityPrivateEvents);
-      fetchPrivateInviteRequests(cityPrivateEvents);
-    }, 15000);
+      refreshVipFeed({ silent: true });
+    }, 45000);
 
     return () => clearInterval(id);
-  }, [cityPrivateEvents, fetchMyPrivateInvites, fetchPrivateEvents, fetchPrivateInviteRequests, isMember]);
+  }, [isMember, refreshVipFeed, vipRealtimeHealthy]);
+
+  useEffect(() => {
+    if (!isMember) return undefined;
+
+    const channel = supabase
+      .channel(`qa-city-vip-${String(city || "").trim()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "qa_private_events",
+          filter: `city=eq.${String(city || "").trim()}`,
+        },
+        () => {
+          refreshVipFeed({ silent: true });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "qa_private_event_invites",
+        },
+        () => {
+          refreshVipFeed({ silent: true });
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setVipRealtimeHealthy(true);
+          refreshVipFeed({ silent: true });
+          return;
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setVipRealtimeHealthy(false);
+        }
+      });
+
+    return () => {
+      setVipRealtimeHealthy(false);
+      supabase.removeChannel(channel);
+    };
+  }, [city, isMember, refreshVipFeed]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -3222,7 +3275,7 @@ export default function CityPage() {
               className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
             >
               <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
-              <p className="mt-1 font-semibold">Tonight</p>
+              <p className="mt-1 font-semibold">Events</p>
             </button>
             <button
               type="button"
@@ -3246,8 +3299,11 @@ export default function CityPage() {
         <div ref={tonightSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-fuchsia-300/12 bg-[linear-gradient(180deg,rgba(38,20,44,0.84),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(217,70,239,0.08)]" style={{ animationDelay: "195ms" }}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/65">Tonight in {cityName}</p>
-              <h2 className="mt-1 text-xl tracking-[0.02em] text-fuchsia-100">Live plans from the community</h2>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/65">Events in {cityName}</p>
+              <h2 className="mt-1 text-xl tracking-[0.02em] text-fuchsia-100">Events</h2>
+              <p className="mt-1 text-xs text-white/62">
+                Choose <span className="text-violet-100">Public</span> for official city events, or <span className="text-fuchsia-100">VIP / Invites</span> for private member plans.
+              </p>
             </div>
             <div className="inline-flex rounded-full border border-white/12 bg-black/35 p-1 text-xs">
               <button
@@ -3276,31 +3332,152 @@ export default function CityPage() {
           </div>
 
           {tonightFeedTab === "public" ? (
-            <div className="rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5">
-              <p className="text-sm text-white/74">
-                Browse the city's public events feed for club nights, Pride blocks, and official listings.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
+            <div className="space-y-3 rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5">
+              {eventsLoadError ? (
+                <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
+                  <p>{eventsLoadError}</p>
+                  <button
+                    onClick={fetchEvents}
+                    className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : null}
+
+              {eventsLoading ? (
+                <div className="rounded-2xl border border-violet-200/10 bg-violet-200/[0.03] p-4">
+                  <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">Loading events</p>
+                  <SectionSkeleton tone="violet" rows={2} />
+                </div>
+              ) : null}
+
+              {featuredEvent ? (
+                <div
+                  onClick={() => openEvent(featuredEvent)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open event details for ${featuredEvent.name}`}
+                  onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
+                  onMouseLeave={() => setHoveredEventId(null)}
+                  onKeyDown={(keyEvent) => {
+                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+                      keyEvent.preventDefault();
+                      openEvent(featuredEvent);
+                    }
+                  }}
+                  className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                    String(hoveredEventId) === String(featuredEvent.id)
+                      ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
+                      : ""
+                  } ${
+                    isFocusMode && String(selectedEvent?.id) !== String(featuredEvent.id)
+                      ? "opacity-55 saturate-75"
+                      : ""
+                  }`}
+                >
+                  <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-violet-300/18 blur-3xl" />
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">{featuredEvent.name}</h3>
+                    {normalizeEventRange(featuredEvent).startDate ? (
+                      <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
+                        {formatEventDateLabel(featuredEvent)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="line-clamp-2 text-sm leading-6 text-white/72">
+                    {polishEventDescription(featuredEvent, cityName)}
+                  </p>
+                </div>
+              ) : null}
+
+              {!eventsLoading && remainingEvents.slice(0, 8).map((event) => (
+                <div
+                  key={event.id}
+                  onClick={() => openEvent(event)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open event details for ${event.name}`}
+                  onMouseEnter={() => setHoveredEventId(String(event.id))}
+                  onMouseLeave={() => setHoveredEventId(null)}
+                  onKeyDown={(keyEvent) => {
+                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+                      keyEvent.preventDefault();
+                      openEvent(event);
+                    }
+                  }}
+                  className={`qa-cinematic-hover animate-rise-in cursor-pointer rounded-[20px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                    String(selectedEvent?.id) === String(event.id)
+                      ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
+                      : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${
+                        isFocusMode ? "opacity-55 saturate-75" : ""
+                      }`
+                  } ${
+                    String(hoveredEventId) === String(event.id)
+                      ? "border-violet-200/45 shadow-[0_18px_48px_rgba(139,92,246,0.18)]"
+                      : ""
+                  }`}
+                >
+                  <div className="mb-1 flex items-center justify-between">
+                    <h3 className="font-semibold">{event.name}</h3>
+                    {normalizeEventRange(event).startDate ? (
+                      <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
+                        {formatEventDateLabel(event)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="line-clamp-2 text-sm leading-6 text-white/70">
+                    {polishEventDescription(event, cityName)}
+                  </p>
+                </div>
+              ))}
+
+              {!eventsLoading && !featuredEvent && remainingEvents.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.16),rgba(18,18,18,0.96))] px-5 py-8 text-center">
+                  <p className="text-xs uppercase tracking-[0.2em] text-violet-200/70">Event signal</p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">Event pulse is warming up</h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
+                    This city's event lane is being refreshed. Check back soon, or add the first trusted event to kickstart the pulse.
+                  </p>
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                    {isMember ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          openEventContribution();
+                        }}
+                        className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
+                      >
+                        Publish first event
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          writeLocalValue("qa_redirect", pathname);
+                          router.push("/?join=true");
+                        }}
+                        className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
+                      >
+                        Join to publish
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
+              {isMember ? (
                 <button
                   type="button"
-                  onClick={() => scrollToSection(eventsSectionRef)}
-                  className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
+                  onClick={() => {
+                    setTonightFeedTab("vip");
+                    setHostPrivateEventOpen(true);
+                  }}
+                  className="qa-cinematic-hover rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/40"
                 >
-                  Open public events
+                  Host tonight (VIP)
                 </button>
-                {isMember ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTonightFeedTab("vip");
-                      setHostPrivateEventOpen(true);
-                    }}
-                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/40"
-                  >
-                    Host tonight (VIP)
-                  </button>
-                ) : null}
-              </div>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-3">
@@ -3390,7 +3567,7 @@ export default function CityPage() {
                             ))}
                             className={`qa-cinematic-hover rounded-full border px-3 py-1 text-[11px] transition ${
                               pendingRequestsCount > 0
-                                ? "animate-pulse border-amber-200/40 bg-amber-200/14 text-amber-100 hover:border-amber-200/60"
+                                ? "qa-attn-soft border-amber-200/40 bg-amber-200/14 text-amber-100 hover:border-amber-200/60"
                                 : "border-cyan-200/26 bg-cyan-200/12 text-cyan-100 hover:border-cyan-200/45"
                             }`}
                           >
@@ -3614,7 +3791,7 @@ export default function CityPage() {
           )}
         </div>
 
-        <div ref={eventsSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]" style={{ animationDelay: "210ms" }}>
+        <div ref={eventsSectionRef} className="hidden animate-cinematic-in mb-10 rounded-[32px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]" style={{ animationDelay: "210ms" }}>
           <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-violet-300/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-violet-200 backdrop-blur">
             Events
           </h2>
