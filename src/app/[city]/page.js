@@ -3379,7 +3379,7 @@ export default function CityPage() {
                               onClick={() => {
                                 const hostId = encodeURIComponent(String(item.host_user_id || "").trim());
                                 const hostName = encodeURIComponent(String(item.host_alias || "Host").trim() || "Host");
-                                router.push(`/messages?user=${hostId}&name=${hostName}`);
+                                router.push(`/messages?user=${hostId}&name=${hostName}&compose=1`);
                               }}
                               className="qa-cinematic-hover rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
                             >

@@ -106,6 +106,13 @@ export default function MessagesPage() {
     const params = new URLSearchParams(window.location.search || "");
     return String(params.get("name") || "").trim();
   });
+  const [startCompose, setStartCompose] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search || "");
+    return String(params.get("compose") || "").trim() === "1";
+  });
+  const [directComposeBody, setDirectComposeBody] = useState("");
+  const [isDirectComposeSending, setIsDirectComposeSending] = useState(false);
   const [filter, setFilter] = useState("all");
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
   const [vipInviteRows, setVipInviteRows] = useState([]);
@@ -562,10 +569,10 @@ export default function MessagesPage() {
     setSending(false);
   }, [activeThreadId, draft, sending, showToast, userId]);
 
-  const openOrCreateThreadForUser = useCallback(
+  const getOrCreateThreadForUser = useCallback(
     async (targetUserId) => {
       const normalized = String(targetUserId || "").trim();
-      if (!normalized || !userId || normalized === userId) return;
+      if (!normalized || !userId || normalized === userId) return "";
 
       const { data, error } = await supabase.rpc("qa_get_or_create_dm_thread", {
         target_user_id: normalized,
@@ -578,7 +585,7 @@ export default function MessagesPage() {
           setWarning(error.message || "Could not open this message thread right now.");
           showToast(error.message || "Could not open this message thread right now.", { tone: "warn" });
         }
-        return;
+        return "";
       }
 
       const threadId = Array.isArray(data)
@@ -587,20 +594,75 @@ export default function MessagesPage() {
 
       if (!threadId) {
         showToast("Could not open this message thread right now.", { tone: "warn" });
-        return;
+        return "";
       }
+
+      return threadId;
+    },
+    [showToast, userId]
+  );
+
+  const openOrCreateThreadForUser = useCallback(
+    async (targetUserId) => {
+      const threadId = await getOrCreateThreadForUser(targetUserId);
+      if (!threadId) return;
 
       await loadThreads();
       setActiveThreadId(threadId);
+      setStartUserId("");
+      setStartUserName("");
+      setStartCompose(false);
+      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+        setMobileThreadOpen(true);
+      }
+      router.replace("/messages");
+    },
+    [getOrCreateThreadForUser, loadThreads, router]
+  );
+
+  const sendDirectComposeMessage = useCallback(async () => {
+    const targetUserId = String(startUserId || "").trim();
+    const body = String(directComposeBody || "").trim();
+    if (!targetUserId || !body || !userId || isDirectComposeSending) return;
+
+    setIsDirectComposeSending(true);
+    try {
+      const threadId = await getOrCreateThreadForUser(targetUserId);
+      if (!threadId) return;
+
+      const { error } = await supabase.from("qa_dm_messages").insert({
+        thread_id: threadId,
+        sender_id: userId,
+        body,
+      });
+      if (error) throw error;
+
+      await loadThreads();
+      setActiveThreadId(threadId);
+      setStartCompose(false);
+      setDirectComposeBody("");
       setStartUserId("");
       setStartUserName("");
       if (typeof window !== "undefined" && window.innerWidth < 1024) {
         setMobileThreadOpen(true);
       }
       router.replace("/messages");
-    },
-    [loadThreads, router, showToast, userId]
-  );
+      showToast("Message sent to host.", { tone: "ok", duration: 1600 });
+    } catch (error) {
+      showToast(error?.message || "Could not send host message right now.", { tone: "warn" });
+    } finally {
+      setIsDirectComposeSending(false);
+    }
+  }, [
+    directComposeBody,
+    getOrCreateThreadForUser,
+    isDirectComposeSending,
+    loadThreads,
+    router,
+    showToast,
+    startUserId,
+    userId,
+  ]);
 
   useEffect(() => {
     activeThreadRef.current = activeThreadId;
@@ -664,11 +726,11 @@ export default function MessagesPage() {
   }, [isMember, isReady, loadVipInvites, userId]);
 
   useEffect(() => {
-    if (!isReady || !isMember || !startUserId || !userId) return;
+    if (!isReady || !isMember || !startUserId || !userId || startCompose) return;
     queueMicrotask(() => {
       openOrCreateThreadForUser(startUserId);
     });
-  }, [isReady, isMember, openOrCreateThreadForUser, startUserId, userId]);
+  }, [isReady, isMember, openOrCreateThreadForUser, startCompose, startUserId, userId]);
 
   useEffect(() => {
     if (!userId || !isMember) return;
@@ -909,6 +971,44 @@ export default function MessagesPage() {
             </p>
           )}
         </section>
+
+        {startCompose && startUserId ? (
+          <section className="qa-panel mb-6 rounded-[24px] border border-cyan-300/18 bg-[linear-gradient(155deg,rgba(15,52,67,0.58),rgba(10,10,10,0.96))] p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/75">Contact Host</p>
+                <h2 className="mt-1 text-base font-semibold text-white">Message {startUserName || "Host"} directly</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setStartCompose(false);
+                  setDirectComposeBody("");
+                  router.replace("/messages");
+                }}
+                className="qa-action rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] text-white/80"
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <textarea
+                value={directComposeBody}
+                onChange={(event) => setDirectComposeBody(event.target.value)}
+                placeholder={`Write your first message to ${startUserName || "the host"}`}
+                className="min-h-[84px] w-full resize-y rounded-2xl border border-white/14 bg-black/35 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/44"
+              />
+              <button
+                type="button"
+                onClick={sendDirectComposeMessage}
+                disabled={isDirectComposeSending || !directComposeBody.trim()}
+                className="qa-action qa-action-strong h-fit rounded-xl bg-gradient-to-r from-cyan-200 via-sky-200 to-emerald-200 px-4 py-2 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-55"
+              >
+                {isDirectComposeSending ? "Sending..." : "Send to host"}
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className={`${mobileThreadOpen ? "hidden lg:block" : "block"} qa-panel rounded-[30px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(9,30,40,0.68),rgba(10,10,10,0.99))] p-4`}>
