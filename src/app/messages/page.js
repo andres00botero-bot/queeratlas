@@ -147,6 +147,18 @@ export default function MessagesPage() {
     return threads;
   }, [filter, threads]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search || "");
+    const nextUserId = String(params.get("user") || "").trim();
+    const nextUserName = String(params.get("name") || "").trim();
+    const nextCompose = String(params.get("compose") || "").trim() === "1";
+
+    if (nextUserId) setStartUserId(nextUserId);
+    if (nextUserName) setStartUserName(nextUserName);
+    setStartCompose(nextCompose);
+  }, []);
+
   const vipInviteCounts = useMemo(() => {
     const rows = Array.isArray(vipInviteRows) ? vipInviteRows : [];
     return {
