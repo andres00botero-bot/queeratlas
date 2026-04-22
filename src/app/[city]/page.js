@@ -548,6 +548,7 @@ export default function CityPage() {
   const [privateInvitesTableMissing, setPrivateInvitesTableMissing] = useState(false);
   const [isSubmittingPrivateInvite, setIsSubmittingPrivateInvite] = useState(false);
   const [isUpdatingPrivateInviteStatus, setIsUpdatingPrivateInviteStatus] = useState(false);
+  const [deletingPrivateEventId, setDeletingPrivateEventId] = useState("");
   const [privateFeedNowTick, setPrivateFeedNowTick] = useState(Date.now());
   const [tonightFeedTab, setTonightFeedTab] = useState("public");
   const [hostPrivateEventOpen, setHostPrivateEventOpen] = useState(false);
@@ -1462,6 +1463,52 @@ export default function CityPage() {
       setIsUpdatingPrivateInviteStatus(false);
     }
   }, [cityPrivateEvents, fetchMyPrivateInvites, fetchPrivateInviteRequests, showToast]);
+
+  const deletePrivateEvent = useCallback(async (eventRow) => {
+    const eventId = String(eventRow?.id || "").trim();
+    if (!eventId || !user?.id) return;
+    if (String(eventRow?.host_user_id || "") !== String(user.id)) return;
+
+    const confirmed = typeof window === "undefined"
+      ? true
+      : window.confirm("Delete this VIP event? This also removes all invite requests for it.");
+    if (!confirmed) return;
+
+    setDeletingPrivateEventId(eventId);
+    try {
+      const { error } = await supabase
+        .from("qa_private_events")
+        .delete()
+        .eq("id", eventId)
+        .eq("host_user_id", user.id);
+
+      if (error) throw error;
+
+      if (String(expandedPrivateHostEventId) === eventId) {
+        setExpandedPrivateHostEventId("");
+      }
+
+      await Promise.all([
+        fetchPrivateEvents(),
+        fetchMyPrivateInvites(cityPrivateEvents),
+        fetchPrivateInviteRequests(cityPrivateEvents),
+      ]);
+
+      showToast("VIP event deleted.", { tone: "ok", duration: 1800 });
+    } catch {
+      showToast("Could not delete VIP event right now.", { tone: "warn", duration: 2200 });
+    } finally {
+      setDeletingPrivateEventId("");
+    }
+  }, [
+    cityPrivateEvents,
+    expandedPrivateHostEventId,
+    fetchMyPrivateInvites,
+    fetchPrivateEvents,
+    fetchPrivateInviteRequests,
+    showToast,
+    user?.id,
+  ]);
 
   const requestPrivateInvite = useCallback(async (eventRow) => {
     if (!isMember || !user?.id) {
@@ -3237,6 +3284,14 @@ export default function CityPage() {
                             className="qa-cinematic-hover rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
                           >
                             Requests ({requestRows.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deletePrivateEvent(item)}
+                            disabled={deletingPrivateEventId === String(item.id)}
+                            className="qa-cinematic-hover rounded-full border border-rose-200/28 bg-rose-200/12 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/45 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {deletingPrivateEventId === String(item.id) ? "Deleting..." : "Delete event"}
                           </button>
                         </>
                       ) : inviteStatus ? (
