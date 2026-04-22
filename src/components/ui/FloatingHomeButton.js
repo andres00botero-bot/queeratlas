@@ -11,6 +11,7 @@ export default function FloatingHomeButton() {
   const pathname = usePathname();
   const { isMember, user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [vipRequestCount, setVipRequestCount] = useState(0);
 
   useEffect(() => {
     if (!isMember || !user?.id) {
@@ -25,10 +26,38 @@ export default function FloatingHomeButton() {
       setUnreadCount(Number(data || 0));
     };
 
+    const refreshVipRequests = async () => {
+      const { data: hostedRows, error: hostedError } = await supabase
+        .from("qa_private_events")
+        .select("id")
+        .eq("host_user_id", user.id)
+        .eq("status", "active")
+        .limit(200);
+
+      if (!active || hostedError) return;
+
+      const hostedIds = (hostedRows || []).map((row) => String(row.id || "")).filter(Boolean);
+      if (hostedIds.length === 0) {
+        setVipRequestCount(0);
+        return;
+      }
+
+      const { count, error: invitesError } = await supabase
+        .from("qa_private_event_invites")
+        .select("id", { count: "exact", head: true })
+        .in("event_id", hostedIds)
+        .eq("status", "requested");
+
+      if (!active || invitesError) return;
+      setVipRequestCount(Number(count || 0));
+    };
+
     refreshUnread();
+    refreshVipRequests();
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         refreshUnread();
+        refreshVipRequests();
       }
     };
 
@@ -36,6 +65,12 @@ export default function FloatingHomeButton() {
       .channel(`qa-floating-unread-${user.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "qa_dm_messages" }, () => {
         refreshUnread();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "qa_private_event_invites" }, () => {
+        refreshVipRequests();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "qa_private_events" }, () => {
+        refreshVipRequests();
       })
       .on(
         "postgres_changes",
@@ -143,6 +178,17 @@ export default function FloatingHomeButton() {
                 <span className="absolute -right-1 -top-1 rounded-full border border-fuchsia-200/35 bg-fuchsia-300 px-1.5 py-0.5 text-[10px] font-bold text-black">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
+              ) : null}
+              {item.href === "/messages" && unreadCount <= 0 && vipRequestCount > 0 ? (
+                <span className="absolute -right-1 -top-1 rounded-full border border-cyan-200/35 bg-cyan-300 px-1.5 py-0.5 text-[10px] font-bold text-black">
+                  {vipRequestCount > 99 ? "99+" : vipRequestCount}
+                </span>
+              ) : null}
+              {item.href === "/messages" && unreadCount > 0 && vipRequestCount > 0 ? (
+                <span
+                  className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border border-cyan-100/60 bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.85)]"
+                  aria-hidden="true"
+                />
               ) : null}
             </Link>
           );

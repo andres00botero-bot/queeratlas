@@ -1573,6 +1573,18 @@ export default function CityPage() {
   }, []);
 
   useEffect(() => {
+    if (!isMember) return undefined;
+
+    const id = setInterval(() => {
+      fetchPrivateEvents();
+      fetchMyPrivateInvites(cityPrivateEvents);
+      fetchPrivateInviteRequests(cityPrivateEvents);
+    }, 15000);
+
+    return () => clearInterval(id);
+  }, [cityPrivateEvents, fetchMyPrivateInvites, fetchPrivateEvents, fetchPrivateInviteRequests, isMember]);
+
+  useEffect(() => {
     queueMicrotask(() => {
       const stored = localStorage.getItem("qa_favorites");
       if (stored) {

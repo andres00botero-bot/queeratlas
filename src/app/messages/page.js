@@ -640,9 +640,27 @@ export default function MessagesPage() {
 
     const timer = setInterval(() => {
       loadVipInvites();
-    }, 60000);
+    }, 15000);
 
     return () => clearInterval(timer);
+  }, [isMember, isReady, loadVipInvites, userId]);
+
+  useEffect(() => {
+    if (!isReady || !isMember || !userId) return undefined;
+
+    const channel = supabase
+      .channel(`qa-vip-invites-inbox-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "qa_private_event_invites" }, () => {
+        loadVipInvites();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "qa_private_events" }, () => {
+        loadVipInvites();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isMember, isReady, loadVipInvites, userId]);
 
   useEffect(() => {
