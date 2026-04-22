@@ -1501,20 +1501,51 @@ export default function CityPage() {
 
     setDeletingPrivateEventId(eventId);
     try {
-      const { error } = await supabase
+      const { error: invitesError } = await supabase
+        .from("qa_private_event_invites")
+        .delete()
+        .eq("event_id", eventId);
+
+      if (invitesError && !isMissingTableError(invitesError)) {
+        throw invitesError;
+      }
+
+      const { data: deletedEvents, error: eventDeleteError } = await supabase
         .from("qa_private_events")
         .delete()
         .eq("id", eventId)
-        .eq("host_user_id", user.id);
+        .eq("host_user_id", user.id)
+        .select("id");
 
-      if (error) throw error;
+      if (eventDeleteError) throw eventDeleteError;
+      if (!Array.isArray(deletedEvents) || deletedEvents.length === 0) {
+        showToast("Delete failed. You can only delete events you host from this account.", {
+          tone: "warn",
+          duration: 2600,
+        });
+        return;
+      }
+
+      setPrivateEvents((current) => current.filter((row) => String(row?.id || "") !== eventId));
+      setPrivateEventInvites((current) => {
+        if (!current || typeof current !== "object") return {};
+        const next = { ...current };
+        delete next[eventId];
+        return next;
+      });
+      setPrivateInviteRequestsByEvent((current) => {
+        if (!current || typeof current !== "object") return {};
+        const next = { ...current };
+        delete next[eventId];
+        return next;
+      });
 
       if (String(expandedPrivateHostEventId) === eventId) {
         setExpandedPrivateHostEventId("");
       }
 
       await Promise.all([
-        fetchPrivateEvents(),
+        fetchPrivateEvents({ silent: true }),
         fetchMyPrivateInvites(cityPrivateEvents),
         fetchPrivateInviteRequests(cityPrivateEvents),
       ]);
