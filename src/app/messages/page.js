@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useActionToast } from "@/lib/useActionToast";
 import { writeLocalValue } from "@/lib/storage";
+import { cityHref, formatInviteTimeline, inviteStatusLabel } from "@/lib/vipInvites";
 import ActionToast from "@/components/ui/ActionToast";
 import EmptyState from "@/components/ui/EmptyState";
 import PageOpeningState from "@/components/ui/PageOpeningState";
@@ -55,18 +56,22 @@ function displayNameFor(profile, fallback = "Member") {
   return raw || fallback;
 }
 
-function inviteStatusLabel(value) {
-  const key = String(value || "").trim().toLowerCase();
-  if (key === "accepted") return "Accepted";
-  if (key === "declined") return "Declined";
-  if (key === "cancelled") return "Cancelled";
-  return "Requested";
-}
-
-function cityHref(value) {
-  const slug = String(value || "").trim().toLowerCase();
-  if (!slug) return "/cities";
-  return `/${slug}`;
+function areVipInviteRowsEquivalent(nextRows = [], prevRows = []) {
+  const next = Array.isArray(nextRows) ? nextRows : [];
+  const prev = Array.isArray(prevRows) ? prevRows : [];
+  if (next.length !== prev.length) return false;
+  for (let index = 0; index < next.length; index += 1) {
+    const a = next[index] || {};
+    const b = prev[index] || {};
+    if (String(a.id || "") !== String(b.id || "")) return false;
+    if (String(a.status || "") !== String(b.status || "")) return false;
+    if (String(a.kind || "") !== String(b.kind || "")) return false;
+    if (String(a.createdAt || "") !== String(b.createdAt || "")) return false;
+    if (String(a.decidedAt || "") !== String(b.decidedAt || "")) return false;
+    if (String(a.title || "") !== String(b.title || "")) return false;
+    if (String(a.city || "") !== String(b.city || "")) return false;
+  }
+  return true;
 }
 
 function normalizeMessageRow(row) {
@@ -87,6 +92,8 @@ export default function MessagesPage() {
   const { toast, showToast } = useActionToast();
   const messageEndRef = useRef(null);
   const activeThreadRef = useRef("");
+  const vipPanelRef = useRef(null);
+  const composePanelRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
   const [isLoadingThreads, setIsLoadingThreads] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
@@ -119,6 +126,9 @@ export default function MessagesPage() {
   const [isLoadingVipInvites, setIsLoadingVipInvites] = useState(false);
   const [vipInvitesWarning, setVipInvitesWarning] = useState("");
   const [vipFilter, setVipFilter] = useState("all");
+  const [vipPanelCollapsed, setVipPanelCollapsed] = useState(true);
+  const [vipRealtimeHealthy, setVipRealtimeHealthy] = useState(false);
+  const [vipInvitesLoadedOnce, setVipInvitesLoadedOnce] = useState(false);
 
   const activeThread = useMemo(
     () => threads.find((thread) => String(thread.id) === String(activeThreadId)) || null,
@@ -170,6 +180,14 @@ export default function MessagesPage() {
     };
   }, [vipInviteRows]);
 
+  const pendingHostActions = useMemo(
+    () =>
+      (vipInviteRows || []).filter(
+        (row) => row.kind === "host_request" && String(row.status || "").toLowerCase() === "requested"
+      ).length,
+    [vipInviteRows]
+  );
+
   const filteredVipInvites = useMemo(() => {
     const rows = Array.isArray(vipInviteRows) ? vipInviteRows : [];
     if (vipFilter === "requested") {
@@ -186,6 +204,19 @@ export default function MessagesPage() {
     }
     return rows;
   }, [vipFilter, vipInviteRows]);
+
+  const vipHostResponseSla = useMemo(() => {
+    const responded = (vipInviteRows || [])
+      .filter((row) => row.kind === "host_request")
+      .map((row) => Number(row.responseMinutes || 0))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (responded.length === 0) return "No response data yet";
+    const avgMinutes = Math.round(responded.reduce((sum, value) => sum + value, 0) / responded.length);
+    if (avgMinutes < 60) return `Avg host response: ~${avgMinutes}m`;
+    const hours = (avgMinutes / 60).toFixed(1);
+    return `Avg host response: ~${hours}h`;
+  }, [vipInviteRows]);
 
   const loadThreads = useCallback(async () => {
     if (!userId) return;
@@ -332,14 +363,16 @@ export default function MessagesPage() {
     setIsLoadingThreads(false);
   }, [startUserId, startUserName, userId]);
 
-  const loadVipInvites = useCallback(async () => {
+  const loadVipInvites = useCallback(async ({ silent = false } = {}) => {
     if (!userId) {
       setVipInviteRows([]);
       setVipInvitesWarning("");
       return;
     }
 
-    setIsLoadingVipInvites(true);
+    if (!silent && !vipInvitesLoadedOnce) {
+      setIsLoadingVipInvites(true);
+    }
     setVipInvitesWarning("");
 
     const eventFields = "id,city,title,event_type,host_alias,host_user_id,start_at,expires_at,status,approx_area";
@@ -438,10 +471,14 @@ export default function MessagesPage() {
         title: String(event.title || "Private event").trim(),
         eventType: String(event.event_type || "").trim(),
         hostAlias: String(event.host_alias || "Host").trim() || "Host",
+        hostUserId: String(event.host_user_id || "").trim(),
         status: String(row.status || "requested"),
         message: String(row.message || "").trim(),
         createdAt: row.created_at || null,
         decidedAt: row.updated_at || null,
+        responseMinutes: row.updated_at && row.created_at
+          ? Math.max(0, Math.round((new Date(row.updated_at).getTime() - new Date(row.created_at).getTime()) / 60000))
+          : 0,
       };
     });
 
@@ -457,10 +494,14 @@ export default function MessagesPage() {
         title: String(event.title || "Private event").trim(),
         eventType: String(event.event_type || "").trim(),
         requesterAlias,
+        requesterUserId: requesterId,
         status: String(row.status || "requested"),
         message: String(row.message || "").trim(),
         createdAt: row.created_at || null,
         decidedAt: row.updated_at || null,
+        responseMinutes: row.updated_at && row.created_at
+          ? Math.max(0, Math.round((new Date(row.updated_at).getTime() - new Date(row.created_at).getTime()) / 60000))
+          : 0,
       };
     });
 
@@ -470,9 +511,13 @@ export default function MessagesPage() {
       return bTs - aTs;
     });
 
-    setVipInviteRows(merged.slice(0, 12));
+    const trimmed = merged.slice(0, 24);
+    setVipInviteRows((current) => (
+      areVipInviteRowsEquivalent(trimmed, current) ? current : trimmed
+    ));
+    setVipInvitesLoadedOnce(true);
     setIsLoadingVipInvites(false);
-  }, [userId]);
+  }, [userId, vipInvitesLoadedOnce]);
 
   const markThreadRead = useCallback(
     async (threadId) => {
@@ -676,6 +721,18 @@ export default function MessagesPage() {
     userId,
   ]);
 
+  const openComposeWithUser = useCallback((targetUserId, targetName = "Member") => {
+    const normalizedUserId = String(targetUserId || "").trim();
+    if (!normalizedUserId) return;
+    setStartUserId(normalizedUserId);
+    setStartUserName(String(targetName || "Member").trim() || "Member");
+    setStartCompose(true);
+    setDirectComposeBody("");
+    queueMicrotask(() => {
+      composePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
   useEffect(() => {
     activeThreadRef.current = activeThreadId;
   }, [activeThreadId]);
@@ -711,13 +768,14 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!isReady || !isMember || !userId) return undefined;
+    if (vipRealtimeHealthy) return undefined;
 
     const timer = setInterval(() => {
-      loadVipInvites();
-    }, 15000);
+      loadVipInvites({ silent: true });
+    }, 45000);
 
     return () => clearInterval(timer);
-  }, [isMember, isReady, loadVipInvites, userId]);
+  }, [isMember, isReady, loadVipInvites, userId, vipRealtimeHealthy]);
 
   useEffect(() => {
     if (!isReady || !isMember || !userId) return undefined;
@@ -725,14 +783,24 @@ export default function MessagesPage() {
     const channel = supabase
       .channel(`qa-vip-invites-inbox-${userId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "qa_private_event_invites" }, () => {
-        loadVipInvites();
+        loadVipInvites({ silent: true });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "qa_private_events" }, () => {
-        loadVipInvites();
+        loadVipInvites({ silent: true });
       })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setVipRealtimeHealthy(true);
+          loadVipInvites({ silent: true });
+          return;
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setVipRealtimeHealthy(false);
+        }
+      });
 
     return () => {
+      setVipRealtimeHealthy(false);
       supabase.removeChannel(channel);
     };
   }, [isMember, isReady, loadVipInvites, userId]);
@@ -743,6 +811,16 @@ export default function MessagesPage() {
       openOrCreateThreadForUser(startUserId);
     });
   }, [isReady, isMember, openOrCreateThreadForUser, startCompose, startUserId, userId]);
+
+  useEffect(() => {
+    if (!vipInvitesLoadedOnce) return;
+    if (pendingHostActions > 0 && vipFilter === "all") {
+      setVipFilter("host");
+    }
+    if (pendingHostActions > 0) {
+      setVipPanelCollapsed(false);
+    }
+  }, [pendingHostActions, vipFilter, vipInvitesLoadedOnce]);
 
   useEffect(() => {
     if (!userId || !isMember) return;
@@ -874,6 +952,29 @@ export default function MessagesPage() {
             Email-style private inbox. Browse conversations on the left, read thread history on the right, and reply from one clean reading panel.
           </p>
 
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/72">
+              Pending host actions: {pendingHostActions}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setVipFilter("host");
+                setVipPanelCollapsed(false);
+                queueMicrotask(() => {
+                  vipPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+              }}
+              className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                pendingHostActions > 0
+                  ? "qa-attn-soft border-amber-200/35 bg-amber-200/15 text-amber-100 hover:border-amber-200/55"
+                  : "border-white/14 bg-white/8 text-white/72 hover:border-white/28"
+              }`}
+            >
+              Review requests
+            </button>
+          </div>
+
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             <div className="qa-card rounded-2xl border border-fuchsia-300/24 bg-fuchsia-300/[0.08] px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/75">Unread</p>
@@ -896,21 +997,36 @@ export default function MessagesPage() {
           ) : null}
         </section>
 
-        <section className="qa-panel mb-6 rounded-[28px] border border-fuchsia-300/16 bg-[linear-gradient(155deg,rgba(48,15,56,0.66),rgba(10,10,10,0.98))] p-4 sm:p-5">
+        <section
+          ref={vipPanelRef}
+          className="qa-panel mb-6 rounded-[28px] border border-fuchsia-300/16 bg-[linear-gradient(155deg,rgba(48,15,56,0.66),rgba(10,10,10,0.98))] p-4 sm:p-5"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">VIP Invites</p>
               <h2 className="mt-1 text-lg font-semibold text-white">Invite requests and decisions</h2>
+              <p className="mt-1 text-[11px] text-white/58">{vipHostResponseSla}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => loadVipInvites()}
-              className="qa-action rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
-            >
-              Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setVipPanelCollapsed((current) => !current)}
+                className="qa-action rounded-full border border-white/16 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30"
+              >
+                {vipPanelCollapsed ? "Expand" : "Collapse"}
+              </button>
+              <button
+                type="button"
+                onClick={() => loadVipInvites()}
+                className="qa-action rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
 
+          {!vipPanelCollapsed ? (
+            <>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {[
               { key: "all", label: "All", count: vipInviteCounts.all, tone: "border-white/24 bg-white/10 text-white" },
@@ -952,27 +1068,58 @@ export default function MessagesPage() {
                 <article key={item.id} className="rounded-2xl border border-white/12 bg-black/25 px-3 py-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-semibold text-white">
-                      {item.kind === "host_request" ? `${item.requesterAlias} requested access` : `Your request · ${item.hostAlias}`}
+                      {item.kind === "host_request" ? `${item.requesterAlias} requested access` : `Your request - ${item.hostAlias}`}
                     </p>
                     <span className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80">
                       {inviteStatusLabel(item.status)}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-white/68">
-                    {item.title} · {item.city ? item.city.replace(/_/g, " ") : "City TBA"}
+                    {item.title} - {item.city ? item.city.replace(/_/g, " ") : "City TBA"}{item.eventType ? ` - ${item.eventType.replace(/_/g, " ")}` : ""}
                   </p>
                   {item.message ? (
                     <p className="mt-1 line-clamp-1 text-xs text-white/58">{item.message}</p>
                   ) : null}
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-[11px] text-white/52">{timeAgo(item.decidedAt || item.createdAt)}</p>
-                    <button
-                      type="button"
-                      onClick={() => router.push(cityHref(item.city))}
-                      className="qa-action rounded-full border border-cyan-200/26 bg-cyan-200/12 px-2.5 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
-                    >
-                      Open city
-                    </button>
+                    <div>
+                      <p className="text-[11px] text-white/52">{timeAgo(item.decidedAt || item.createdAt)}</p>
+                      <p className="text-[10px] text-white/42">{formatInviteTimeline({
+                        requestedAt: item.createdAt,
+                        decidedAt: item.decidedAt,
+                        status: item.status,
+                      })}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {item.kind === "host_request" &&
+                      String(item.status || "").toLowerCase() === "requested" &&
+                      item.requesterUserId ? (
+                        <button
+                          type="button"
+                          onClick={() => openComposeWithUser(item.requesterUserId, item.requesterAlias)}
+                          className="qa-action rounded-full border border-amber-200/30 bg-amber-200/14 px-2.5 py-1 text-[11px] text-amber-100 transition hover:border-amber-200/54"
+                        >
+                          Reply now
+                        </button>
+                      ) : null}
+                      {item.kind === "my_request" &&
+                      String(item.status || "").toLowerCase() === "accepted" &&
+                      item.hostUserId ? (
+                        <button
+                          type="button"
+                          onClick={() => openComposeWithUser(item.hostUserId, item.hostAlias)}
+                          className="qa-action rounded-full border border-emerald-200/30 bg-emerald-200/14 px-2.5 py-1 text-[11px] text-emerald-100 transition hover:border-emerald-200/50"
+                        >
+                          Contact host
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        onClick={() => router.push(cityHref(item.city))}
+                        className="qa-action rounded-full border border-cyan-200/26 bg-cyan-200/12 px-2.5 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
+                      >
+                        Open city
+                      </button>
+                    </div>
                   </div>
                 </article>
               ))}
@@ -982,10 +1129,19 @@ export default function MessagesPage() {
               No VIP invite activity in this filter.
             </p>
           )}
+            </>
+          ) : (
+            <p className="mt-3 text-xs text-white/58">
+              VIP panel collapsed to keep conversations in focus.
+            </p>
+          )}
         </section>
 
         {startCompose && startUserId ? (
-          <section className="qa-panel mb-6 rounded-[24px] border border-cyan-300/18 bg-[linear-gradient(155deg,rgba(15,52,67,0.58),rgba(10,10,10,0.96))] p-4 sm:p-5">
+          <section
+            ref={composePanelRef}
+            className="qa-panel mb-6 rounded-[24px] border border-cyan-300/18 bg-[linear-gradient(155deg,rgba(15,52,67,0.58),rgba(10,10,10,0.96))] p-4 sm:p-5"
+          >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/75">Contact Host</p>
@@ -1227,3 +1383,4 @@ export default function MessagesPage() {
     </main>
   );
 }
+
