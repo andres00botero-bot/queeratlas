@@ -350,14 +350,14 @@ export default function MessagesPage() {
     const [{ data: myInviteRows, error: myInviteError }, { data: hostInviteRows, error: hostInviteError }] = await Promise.all([
       supabase
         .from("qa_private_event_invites")
-        .select("id,event_id,status,message,created_at,decided_at,requester_user_id")
+        .select("id,event_id,status,message,created_at,updated_at,requester_user_id")
         .eq("requester_user_id", userId)
         .order("created_at", { ascending: false })
         .limit(120),
       hostedEventIds.length > 0
         ? supabase
           .from("qa_private_event_invites")
-          .select("id,event_id,status,message,created_at,decided_at,requester_user_id")
+          .select("id,event_id,status,message,created_at,updated_at,requester_user_id")
           .in("event_id", hostedEventIds)
           .order("created_at", { ascending: false })
           .limit(200)
@@ -422,7 +422,7 @@ export default function MessagesPage() {
         status: String(row.status || "requested"),
         message: String(row.message || "").trim(),
         createdAt: row.created_at || null,
-        decidedAt: row.decided_at || null,
+        decidedAt: row.updated_at || null,
       };
     });
 
@@ -441,7 +441,7 @@ export default function MessagesPage() {
         status: String(row.status || "requested"),
         message: String(row.message || "").trim(),
         createdAt: row.created_at || null,
-        decidedAt: row.decided_at || null,
+        decidedAt: row.updated_at || null,
       };
     });
 
