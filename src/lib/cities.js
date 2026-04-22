@@ -1049,4 +1049,43 @@ export const cityConfig = {
       cost: "Great value for the amount of nightlife output you get. Covers and drinks are typically lower than North American and Western European capitals, making the city very attractive for long queer weekends.",
     }),
   },
+  panama_city: {
+    center: [-79.5199, 8.9824],
+    title: "Queer Panama City",
+    country: "Panama",
+    vibe: "humid skyline",
+    guide: buildGuide({
+      about: "Panama City mixes tropical heat, business-district polish, and a compact queer night orbit that feels very weekend-friendly. The scene is smaller than Mexico City or Bogota, but it is active, social, and easy to route when you know the key stops.",
+      district: "Most queer nightlife momentum sits around central city lanes connected by short rides between El Cangrejo, Bella Vista, and nearby nightlife corridors. Casco Viejo is better for pregame views and dinners before switching into queer-specific venues.",
+      safety: "Use rides at night between stops and avoid long improvised walks in low-traffic streets after venue hours. Keep phones and wallets close in crowded exits. Core nightlife venues are usually straightforward if you keep movement intentional.",
+      nightlife: "Panama City nights often start late and peak around drag, dance-floor reggaeton/pop blocks, and social bar warmups that turn club-heavy after midnight. The scene is compact, so one good route can cover multiple moods in a single night.",
+      cost: "Mid-range for the region. Entry fees and drinks are usually manageable, but transport and weekend demand can add up. Staying near your nightlife orbit makes the whole trip feel smoother and better value.",
+    }),
+  },
+  caracas: {
+    center: [-66.9036, 10.4806],
+    title: "Queer Caracas",
+    country: "Venezuela",
+    vibe: "resilient nightlife",
+    guide: buildGuide({
+      about: "Caracas queer life is community-driven and resilient, with nightlife and organizing spaces that matter deeply to locals. It is less about polished tourism and more about trusted venues, social networks, and cultural persistence.",
+      district: "Sabana Grande and nearby central lanes are practical anchors for queer bars and sauna routes. The city works best when you build a direct sequence of known addresses instead of improvising across long distances late at night.",
+      safety: "Plan transport in advance, move with trusted local routing, and avoid drifting into unfamiliar areas after peak hours. Keep movement simple and venue-targeted. In Caracas, preparation is part of a good night.",
+      nightlife: "The scene leans on high-energy dance bars, drag moments, and long-running men-only sauna infrastructure. Nights are often social-first, then escalate into dance-floor pressure and late crowd turnover.",
+      cost: "Variable. Venue spend can stay moderate, but transport and logistics should be budgeted clearly. Prioritizing short hop routes and central accommodation usually gives the best experience-to-cost ratio.",
+    }),
+  },
+  asuncion: {
+    center: [-57.6359, -25.2637],
+    title: "Queer Asuncion",
+    country: "Paraguay",
+    vibe: "community core",
+    guide: buildGuide({
+      about: "Asuncion has a smaller queer nightlife map, but strong community infrastructure and visible Pride organizing. The city is best approached as a curated mix of trusted venues plus movement around community-led spaces.",
+      district: "Centro Historico corridors and nearby downtown streets remain important for queer social movement, especially around long-running venues and community hubs linked to local organizing.",
+      safety: "Use direct rides after midnight, stay on known venue paths, and avoid carrying unnecessary valuables during late transitions. The scene is workable when routing stays clear and intentional.",
+      nightlife: "Expect compact but lively dance/bar energy, men-focused sauna/cruising options, and periodic spikes around Pride and activist-calendar events. Asuncion rewards people who follow local signal instead of chasing big-city volume.",
+      cost: "Generally budget-friendly compared with larger regional capitals. A full weekend with multiple venue stops is usually accessible if you stay central and keep transport efficient.",
+    }),
+  },
 };
