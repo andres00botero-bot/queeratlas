@@ -1525,9 +1525,9 @@ export default function CityPage() {
       const removed = !Array.isArray(stillThereRows) || stillThereRows.length === 0;
 
       if (!removed) {
-        showToast("Delete failed. Event is still in database.", {
+        showToast("Delete blocked by database policy. Run VIP delete RLS fix SQL, then retry.", {
           tone: "warn",
-          duration: 3000,
+          duration: 4200,
         });
         return;
       }
@@ -3293,6 +3293,9 @@ export default function CityPage() {
                   ? String(item.exact_location || item.approx_area || "TBA")
                   : String(item.approx_area || "TBA");
                 const requestRows = privateInviteRequestsByEvent[String(item.id)] || [];
+                const pendingRequestsCount = requestRows.filter(
+                  (row) => String(row?.status || "requested") === "requested",
+                ).length;
                 const isExpandedHostCard = String(expandedPrivateHostEventId) === String(item.id);
                 const endsInLabel = formatEndsIn(item.expires_at, privateFeedNowTick);
                 const inviteLabelMap = {
@@ -3348,7 +3351,11 @@ export default function CityPage() {
                             onClick={() => setExpandedPrivateHostEventId((current) => (
                               String(current) === String(item.id) ? "" : String(item.id)
                             ))}
-                            className="qa-cinematic-hover rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
+                            className={`qa-cinematic-hover rounded-full border px-3 py-1 text-[11px] transition ${
+                              pendingRequestsCount > 0
+                                ? "animate-pulse border-amber-200/40 bg-amber-200/14 text-amber-100 hover:border-amber-200/60"
+                                : "border-cyan-200/26 bg-cyan-200/12 text-cyan-100 hover:border-cyan-200/45"
+                            }`}
                           >
                             Requests ({requestRows.length})
                           </button>
@@ -3362,9 +3369,24 @@ export default function CityPage() {
                           </button>
                         </>
                       ) : inviteStatus ? (
-                        <span className="rounded-full border border-violet-200/26 bg-violet-200/12 px-3 py-1 text-[11px] text-violet-100">
-                          {inviteLabelMap[inviteStatus] || "Invite status"}
-                        </span>
+                        <>
+                          <span className="rounded-full border border-violet-200/26 bg-violet-200/12 px-3 py-1 text-[11px] text-violet-100">
+                            {inviteLabelMap[inviteStatus] || "Invite status"}
+                          </span>
+                          {inviteStatus === "accepted" && String(item.host_user_id || "").trim() ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const hostId = encodeURIComponent(String(item.host_user_id || "").trim());
+                                const hostName = encodeURIComponent(String(item.host_alias || "Host").trim() || "Host");
+                                router.push(`/messages?user=${hostId}&name=${hostName}`);
+                              }}
+                              className="qa-cinematic-hover rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
+                            >
+                              Contact host
+                            </button>
+                          ) : null}
+                        </>
                       ) : (
                         <button
                           type="button"
