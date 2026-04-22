@@ -173,6 +173,22 @@ function fallbackMemberAlias(value = "") {
   return `${raw.slice(0, 8)}...`;
 }
 
+function arePrivateEventsEquivalent(nextRows = [], prevRows = []) {
+  const next = Array.isArray(nextRows) ? nextRows : [];
+  const prev = Array.isArray(prevRows) ? prevRows : [];
+  if (next.length !== prev.length) return false;
+
+  for (let index = 0; index < next.length; index += 1) {
+    const a = next[index] || {};
+    const b = prev[index] || {};
+    if (String(a.id || "") !== String(b.id || "")) return false;
+    if (String(a.status || "") !== String(b.status || "")) return false;
+    if (String(a.updated_at || "") !== String(b.updated_at || "")) return false;
+    if (String(a.expires_at || "") !== String(b.expires_at || "")) return false;
+  }
+  return true;
+}
+
 function humanizeCitySlug(value = "") {
   return String(value)
     .split("_")
@@ -777,10 +793,13 @@ export default function CityPage() {
 
   const cityPrivateEvents = useMemo(() => {
     const normalizedCity = normalizeCityKey(city);
+    const currentUserId = String(user?.id || "");
     return privateEvents
       .filter((event) => normalizeCityKey(event.city) === normalizedCity)
-      .filter((event) => String(event.status || "active") === "active")
       .filter((event) => {
+        const isHost = String(event.host_user_id || "") === currentUserId;
+        if (isHost) return true;
+        if (String(event.status || "active") !== "active") return false;
         const expiresAt = new Date(event.expires_at || "").getTime();
         return !Number.isFinite(expiresAt) || expiresAt > Date.now();
       })
@@ -791,7 +810,7 @@ export default function CityPage() {
         if (rank[statusA] !== rank[statusB]) return rank[statusA] - rank[statusB];
         return new Date(a.start_at || 0).getTime() - new Date(b.start_at || 0).getTime();
       });
-  }, [city, privateEvents, liveVibeRefreshTick]);
+  }, [city, privateEvents, liveVibeRefreshTick, user?.id]);
 
   const qualityMap = getQualityMap();
 
@@ -1177,15 +1196,16 @@ export default function CityPage() {
     }
   }, []);
 
-  const fetchPrivateEvents = useCallback(async () => {
-    setPrivateEventsLoading(true);
+  const fetchPrivateEvents = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setPrivateEventsLoading(true);
+    }
     setPrivateEventsError("");
     try {
       const { data, error } = await supabase
         .from("qa_private_events")
         .select("*")
         .eq("city", String(city || "").trim())
-        .eq("status", "active")
         .order("start_at", { ascending: true });
 
       if (error) {
@@ -1201,12 +1221,17 @@ export default function CityPage() {
       }
 
       setPrivateEventsTableMissing(false);
-      setPrivateEvents(Array.isArray(data) ? data : []);
+      const normalized = Array.isArray(data) ? data : [];
+      setPrivateEvents((current) => (
+        arePrivateEventsEquivalent(normalized, current) ? current : normalized
+      ));
     } catch {
       setPrivateEventsError("Could not load VIP invites right now.");
-      setPrivateEvents([]);
+      setPrivateEvents((current) => (current.length === 0 ? current : []));
     } finally {
-      setPrivateEventsLoading(false);
+      if (!silent) {
+        setPrivateEventsLoading(false);
+      }
     }
   }, [city]);
 
@@ -1623,7 +1648,7 @@ export default function CityPage() {
     if (!isMember) return undefined;
 
     const id = setInterval(() => {
-      fetchPrivateEvents();
+      fetchPrivateEvents({ silent: true });
       fetchMyPrivateInvites(cityPrivateEvents);
       fetchPrivateInviteRequests(cityPrivateEvents);
     }, 15000);
