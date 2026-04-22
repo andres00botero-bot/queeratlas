@@ -4,7 +4,6 @@ export default function robots() {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/contribute", "/community"],
       },
     ],
     host: "https://www.queeratlas.app",

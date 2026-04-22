@@ -3,35 +3,35 @@ import Link from "next/link";
 export const metadata = {
   title: "HBTQ Guide",
   description:
-    "HBTQ guide for globala stader, queer venues, events och tryggare discovery med community-signal.",
+    "Global HBTQ guide for cities, queer venues, events, and safer discovery powered by community signal.",
   alternates: {
     canonical: "/hbtq-guide",
   },
 };
 
 const QUICK_LINKS = [
-  { href: "/cities", label: "Alla stader" },
-  { href: "/events", label: "Kommande events" },
-  { href: "/search", label: "Sok venues" },
+  { href: "/cities", label: "All cities" },
+  { href: "/events", label: "Upcoming events" },
+  { href: "/search", label: "Search venues" },
   { href: "/community", label: "Community stories" },
 ];
 
 export default function HbtqGuidePage() {
   const faqs = [
     {
-      question: "Vad ar Queer Atlas HBTQ guide?",
+      question: "What is the Queer Atlas HBTQ Guide?",
       answer:
-        "Det ar en global HBTQ guide for stader, venues, events och community-signal i en och samma plattform.",
+        "It is a global HBTQ guide for cities, venues, events, and community signal in one platform.",
     },
     {
-      question: "Kan jag hitta HBTQ vanliga platser i varje stad?",
+      question: "Can I find HBTQ-friendly places in each city?",
       answer:
-        "Ja. City-sidorna samlar bars, clubs, saunas, cruising spots, cafes, hotell och event nar data finns.",
+        "Yes. City pages organize bars, clubs, saunas, cruising spots, cafes, hotels, and events when data is available.",
     },
     {
-      question: "Ar detta bra for reseplanering?",
+      question: "Is this good for travel planning?",
       answer:
-        "Ja. Du kan jamfora stader, upptacka vibe, folja events och skapa en smartare queer resrutt.",
+        "Yes. You can compare cities, discover vibe, follow events, and build a smarter queer travel route.",
     },
   ];
 
@@ -56,11 +56,11 @@ export default function HbtqGuidePage() {
       />
       <div className="mx-auto max-w-6xl">
         <section className="rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_16%_10%,rgba(251,191,36,0.14),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(160deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/45">Sok Guide</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.03em]">HBTQ Guide: Platser, Events, Kultur</h1>
+          <p className="text-xs uppercase tracking-[0.3em] text-white/45">Search Guide</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-[-0.03em]">HBTQ Guide: Places, Events, Culture</h1>
           <p className="mt-4 max-w-4xl text-sm leading-7 text-white/78 sm:text-[15px]">
-            Queer Atlas ar en modern HBTQ guide for dig som vill hitta ratt vibe i nya stader. Upptack klubbar, barer,
-            hotell och events med fokus pa energi, trygghet, community och verklig lokal signal.
+            Queer Atlas is a modern HBTQ guide for people who want the right vibe in new cities. Discover clubs, bars,
+            hotels, and events with a focus on energy, safety, community, and real local signal.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {QUICK_LINKS.map((item) => (
@@ -76,11 +76,11 @@ export default function HbtqGuidePage() {
         </section>
 
         <section className="mt-8 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(22,22,22,0.94),rgba(10,10,10,0.98))] p-6">
-          <h2 className="text-xl font-semibold tracking-[-0.01em]">Varfor denna HBTQ guide fungerar</h2>
+          <h2 className="text-xl font-semibold tracking-[-0.01em]">Why this HBTQ guide works</h2>
           <ul className="mt-3 space-y-2 text-sm leading-7 text-white/72">
-            <li>Community-driven innehall som fokuserar pa kvalitet over brus.</li>
-            <li>Vibe-first beskrivningar som forklarar kansla, crowd och energi.</li>
-            <li>Global city discovery med tydlig navigering mellan venues och events.</li>
+            <li>Community-driven content focused on quality over noise.</li>
+            <li>Vibe-first descriptions that explain crowd and energy quickly.</li>
+            <li>Global city discovery with clear navigation between venues and events.</li>
           </ul>
         </section>
 

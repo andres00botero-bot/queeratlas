@@ -15,6 +15,12 @@ export const metadata = {
   },
   description:
     "Global queer discovery atlas for venues, events, guides, and member community signal.",
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  },
+  alternates: {
+    canonical: "/",
+  },
   applicationName: "Queer Atlas",
   manifest: "/manifest.webmanifest",
   icons: {
@@ -84,23 +90,28 @@ export default function RootLayout({ children }) {
       name: "Queer Atlas",
       url: baseUrl,
     },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${baseUrl}/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
   };
 
   return (
     <html lang="en">
-    <body>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <AuthProvider>
-        {children}
-        <FloatingHomeButton />
-        <MessageAlertGate />
-        <PwaInstallGate />
-      </AuthProvider>
-      <Analytics />
-    </body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <AuthProvider>
+          {children}
+          <FloatingHomeButton />
+          <MessageAlertGate />
+          <PwaInstallGate />
+        </AuthProvider>
+        <Analytics />
+      </body>
     </html>
   );
 }
