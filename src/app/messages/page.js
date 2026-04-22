@@ -55,6 +55,20 @@ function displayNameFor(profile, fallback = "Member") {
   return raw || fallback;
 }
 
+function inviteStatusLabel(value) {
+  const key = String(value || "").trim().toLowerCase();
+  if (key === "accepted") return "Accepted";
+  if (key === "declined") return "Declined";
+  if (key === "cancelled") return "Cancelled";
+  return "Requested";
+}
+
+function cityHref(value) {
+  const slug = String(value || "").trim().toLowerCase();
+  if (!slug) return "/cities";
+  return `/${slug}`;
+}
+
 function normalizeMessageRow(row) {
   return {
     id: String(row.id),
@@ -94,6 +108,10 @@ export default function MessagesPage() {
   });
   const [filter, setFilter] = useState("all");
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false);
+  const [vipInviteRows, setVipInviteRows] = useState([]);
+  const [isLoadingVipInvites, setIsLoadingVipInvites] = useState(false);
+  const [vipInvitesWarning, setVipInvitesWarning] = useState("");
+  const [vipFilter, setVipFilter] = useState("all");
 
   const activeThread = useMemo(
     () => threads.find((thread) => String(thread.id) === String(activeThreadId)) || null,
@@ -121,6 +139,34 @@ export default function MessagesPage() {
     }
     return threads;
   }, [filter, threads]);
+
+  const vipInviteCounts = useMemo(() => {
+    const rows = Array.isArray(vipInviteRows) ? vipInviteRows : [];
+    return {
+      all: rows.length,
+      requested: rows.filter((row) => String(row.status || "").toLowerCase() === "requested").length,
+      accepted: rows.filter((row) => String(row.status || "").toLowerCase() === "accepted").length,
+      host: rows.filter((row) => String(row.kind || "") === "host_request").length,
+      mine: rows.filter((row) => String(row.kind || "") === "my_request").length,
+    };
+  }, [vipInviteRows]);
+
+  const filteredVipInvites = useMemo(() => {
+    const rows = Array.isArray(vipInviteRows) ? vipInviteRows : [];
+    if (vipFilter === "requested") {
+      return rows.filter((row) => String(row.status || "").toLowerCase() === "requested");
+    }
+    if (vipFilter === "accepted") {
+      return rows.filter((row) => String(row.status || "").toLowerCase() === "accepted");
+    }
+    if (vipFilter === "host") {
+      return rows.filter((row) => String(row.kind || "") === "host_request");
+    }
+    if (vipFilter === "mine") {
+      return rows.filter((row) => String(row.kind || "") === "my_request");
+    }
+    return rows;
+  }, [vipFilter, vipInviteRows]);
 
   const loadThreads = useCallback(async () => {
     if (!userId) return;
@@ -266,6 +312,148 @@ export default function MessagesPage() {
     });
     setIsLoadingThreads(false);
   }, [startUserId, startUserName, userId]);
+
+  const loadVipInvites = useCallback(async () => {
+    if (!userId) {
+      setVipInviteRows([]);
+      setVipInvitesWarning("");
+      return;
+    }
+
+    setIsLoadingVipInvites(true);
+    setVipInvitesWarning("");
+
+    const eventFields = "id,city,title,event_type,host_alias,host_user_id,start_at,expires_at,status,approx_area";
+    const { data: hostedEvents, error: hostedEventsError } = await supabase
+      .from("qa_private_events")
+      .select(eventFields)
+      .eq("host_user_id", userId)
+      .order("start_at", { ascending: false })
+      .limit(80);
+
+    if (hostedEventsError) {
+      if (isMissingTableError(hostedEventsError)) {
+        setVipInvitesWarning("VIP invites are not enabled yet.");
+      } else {
+        setVipInvitesWarning("Could not load VIP invites right now.");
+      }
+      setVipInviteRows([]);
+      setIsLoadingVipInvites(false);
+      return;
+    }
+
+    const hostedMap = new Map(
+      (hostedEvents || []).map((event) => [String(event.id), event]),
+    );
+    const hostedEventIds = (hostedEvents || []).map((event) => String(event.id)).filter(Boolean);
+
+    const [{ data: myInviteRows, error: myInviteError }, { data: hostInviteRows, error: hostInviteError }] = await Promise.all([
+      supabase
+        .from("qa_private_event_invites")
+        .select("id,event_id,status,message,created_at,decided_at,requester_user_id")
+        .eq("requester_user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(120),
+      hostedEventIds.length > 0
+        ? supabase
+          .from("qa_private_event_invites")
+          .select("id,event_id,status,message,created_at,decided_at,requester_user_id")
+          .in("event_id", hostedEventIds)
+          .order("created_at", { ascending: false })
+          .limit(200)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (myInviteError || hostInviteError) {
+      const candidateError = myInviteError || hostInviteError;
+      if (isMissingTableError(candidateError)) {
+        setVipInvitesWarning("VIP invites are not enabled yet.");
+      } else {
+        setVipInvitesWarning("Could not load VIP invites right now.");
+      }
+      setVipInviteRows([]);
+      setIsLoadingVipInvites(false);
+      return;
+    }
+
+    const requestedEventIds = [...new Set((myInviteRows || [])
+      .map((row) => String(row.event_id || "").trim())
+      .filter(Boolean))];
+
+    const missingRequestedEventIds = requestedEventIds.filter((eventId) => !hostedMap.has(eventId));
+    if (missingRequestedEventIds.length > 0) {
+      const { data: requestedEvents } = await supabase
+        .from("qa_private_events")
+        .select(eventFields)
+        .in("id", missingRequestedEventIds)
+        .limit(120);
+
+      for (const event of requestedEvents || []) {
+        hostedMap.set(String(event.id), event);
+      }
+    }
+
+    const requesterIds = [...new Set((hostInviteRows || [])
+      .map((row) => String(row.requester_user_id || "").trim())
+      .filter(Boolean))];
+    const requesterAliasMap = new Map();
+    if (requesterIds.length > 0) {
+      const { data: requesterProfiles } = await supabase
+        .from("member_profiles")
+        .select("user_id,display_name")
+        .in("user_id", requesterIds);
+
+      for (const profile of requesterProfiles || []) {
+        const key = String(profile.user_id || "").trim();
+        if (!key) continue;
+        requesterAliasMap.set(key, String(profile.display_name || "").trim() || "Member");
+      }
+    }
+
+    const myRows = (myInviteRows || []).map((row) => {
+      const event = hostedMap.get(String(row.event_id || "")) || {};
+      return {
+        id: `mine-${row.id}`,
+        kind: "my_request",
+        city: String(event.city || "").trim(),
+        title: String(event.title || "Private event").trim(),
+        eventType: String(event.event_type || "").trim(),
+        hostAlias: String(event.host_alias || "Host").trim() || "Host",
+        status: String(row.status || "requested"),
+        message: String(row.message || "").trim(),
+        createdAt: row.created_at || null,
+        decidedAt: row.decided_at || null,
+      };
+    });
+
+    const hostRows = (hostInviteRows || []).map((row) => {
+      const event = hostedMap.get(String(row.event_id || "")) || {};
+      const requesterId = String(row.requester_user_id || "").trim();
+      const requesterAlias = requesterAliasMap.get(requesterId)
+        || (requesterId ? `${requesterId.slice(0, 8)}...` : "Member");
+      return {
+        id: `host-${row.id}`,
+        kind: "host_request",
+        city: String(event.city || "").trim(),
+        title: String(event.title || "Private event").trim(),
+        eventType: String(event.event_type || "").trim(),
+        requesterAlias,
+        status: String(row.status || "requested"),
+        message: String(row.message || "").trim(),
+        createdAt: row.created_at || null,
+        decidedAt: row.decided_at || null,
+      };
+    });
+
+    const merged = [...myRows, ...hostRows].sort((a, b) => {
+      const aTs = new Date(a.decidedAt || a.createdAt || 0).getTime();
+      const bTs = new Date(b.decidedAt || b.createdAt || 0).getTime();
+      return bTs - aTs;
+    });
+
+    setVipInviteRows(merged.slice(0, 12));
+    setIsLoadingVipInvites(false);
+  }, [userId]);
 
   const markThreadRead = useCallback(
     async (threadId) => {
@@ -435,9 +623,10 @@ export default function MessagesPage() {
       }
 
       await loadThreads();
+      await loadVipInvites();
       setIsReady(true);
     });
-  }, [isAuthLoading, isMember, loadThreads, router]);
+  }, [isAuthLoading, isMember, loadThreads, loadVipInvites, router]);
 
   useEffect(() => {
     if (!activeThreadId || !isReady) return;
@@ -445,6 +634,16 @@ export default function MessagesPage() {
       loadMessages(activeThreadId);
     });
   }, [activeThreadId, isReady, loadMessages]);
+
+  useEffect(() => {
+    if (!isReady || !isMember || !userId) return undefined;
+
+    const timer = setInterval(() => {
+      loadVipInvites();
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, [isMember, isReady, loadVipInvites, userId]);
 
   useEffect(() => {
     if (!isReady || !isMember || !startUserId || !userId) return;
@@ -603,6 +802,94 @@ export default function MessagesPage() {
               {warning}
             </p>
           ) : null}
+        </section>
+
+        <section className="qa-panel mb-6 rounded-[28px] border border-fuchsia-300/16 bg-[linear-gradient(155deg,rgba(48,15,56,0.66),rgba(10,10,10,0.98))] p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">VIP Invites</p>
+              <h2 className="mt-1 text-lg font-semibold text-white">Invite requests and decisions</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => loadVipInvites()}
+              className="qa-action rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
+            >
+              Refresh
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {[
+              { key: "all", label: "All", count: vipInviteCounts.all, tone: "border-white/24 bg-white/10 text-white" },
+              { key: "requested", label: "Requested", count: vipInviteCounts.requested, tone: "border-amber-200/28 bg-amber-200/12 text-amber-100" },
+              { key: "accepted", label: "Accepted", count: vipInviteCounts.accepted, tone: "border-emerald-200/28 bg-emerald-200/12 text-emerald-100" },
+              { key: "host", label: "Host", count: vipInviteCounts.host, tone: "border-cyan-200/28 bg-cyan-200/12 text-cyan-100" },
+              { key: "mine", label: "Mine", count: vipInviteCounts.mine, tone: "border-fuchsia-200/28 bg-fuchsia-200/12 text-fuchsia-100" },
+            ].map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setVipFilter(option.key)}
+                className={`qa-action rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] transition ${
+                  vipFilter === option.key
+                    ? option.tone
+                    : "border-white/12 bg-white/6 text-white/68 hover:border-white/24"
+                }`}
+              >
+                {option.label} ({option.count})
+              </button>
+            ))}
+          </div>
+
+          {vipInvitesWarning ? (
+            <p className="mt-3 rounded-xl border border-amber-200/24 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+              {vipInvitesWarning}
+            </p>
+          ) : null}
+
+          {isLoadingVipInvites ? (
+            <div className="mt-3 space-y-2">
+              {[0, 1].map((item) => (
+                <div key={`vip-invite-skeleton-${item}`} className="h-20 rounded-2xl border border-white/10 bg-white/5" />
+              ))}
+            </div>
+          ) : filteredVipInvites.length > 0 ? (
+            <div className="mt-3 grid gap-2">
+              {filteredVipInvites.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-white/12 bg-black/25 px-3 py-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-white">
+                      {item.kind === "host_request" ? `${item.requesterAlias} requested access` : `Your request · ${item.hostAlias}`}
+                    </p>
+                    <span className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80">
+                      {inviteStatusLabel(item.status)}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-white/68">
+                    {item.title} · {item.city ? item.city.replace(/_/g, " ") : "City TBA"}
+                  </p>
+                  {item.message ? (
+                    <p className="mt-1 line-clamp-1 text-xs text-white/58">{item.message}</p>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[11px] text-white/52">{timeAgo(item.decidedAt || item.createdAt)}</p>
+                    <button
+                      type="button"
+                      onClick={() => router.push(cityHref(item.city))}
+                      className="qa-action rounded-full border border-cyan-200/26 bg-cyan-200/12 px-2.5 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
+                    >
+                      Open city
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-xs text-white/58">
+              No VIP invite activity in this filter.
+            </p>
+          )}
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">

@@ -108,6 +108,70 @@ const TYPE_STYLES = {
   },
 };
 const LIVE_VIBE_COOLDOWN_MS = 30 * 1000;
+const PRIVATE_EVENT_TYPES = [
+  { value: "afterparty", label: "Afterparty" },
+  { value: "chill", label: "Chill" },
+  { value: "private_party", label: "Private party" },
+];
+const PRIVATE_EVENT_TYPE_LABELS = Object.fromEntries(
+  PRIVATE_EVENT_TYPES.map((entry) => [entry.value, entry.label]),
+);
+
+function formatDateTime(value) {
+  if (!value) return "Time TBA";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Time TBA";
+  return parsed.toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getPrivateEventStatus(event = {}, now = Date.now()) {
+  const startTs = new Date(event.start_at || event.startAt || "").getTime();
+  const endTs = new Date(event.end_at || event.endAt || event.expires_at || event.expiresAt || "").getTime();
+
+  if (Number.isFinite(startTs) && startTs > now) {
+    return { key: "upcoming", label: "Starting soon" };
+  }
+  if (Number.isFinite(endTs) && endTs <= now) {
+    return { key: "ended", label: "Ended" };
+  }
+  return { key: "live", label: "Live now" };
+}
+
+function combineDateAndTime(dateValue = "", timeValue = "") {
+  const datePart = String(dateValue || "").trim();
+  const timePart = String(timeValue || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
+  if (!/^\d{2}:\d{2}$/.test(timePart)) return null;
+  const parsed = new Date(`${datePart}T${timePart}:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function formatEndsIn(value, now = Date.now()) {
+  const expiresTs = new Date(value || "").getTime();
+  if (!Number.isFinite(expiresTs)) return "";
+  const diffMs = expiresTs - now;
+  if (diffMs <= 0) return "Ended";
+  const totalMinutes = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours <= 0) return `Ends in ${minutes}m`;
+  if (hours >= 24) return `Ends in ${hours}h`;
+  return `Ends in ${hours}h ${minutes}m`;
+}
+
+function fallbackMemberAlias(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "Member";
+  if (raw.includes("@")) return raw.split("@")[0] || "Member";
+  if (raw.length <= 8) return raw;
+  return `${raw.slice(0, 8)}...`;
+}
 
 function humanizeCitySlug(value = "") {
   return String(value)
@@ -473,6 +537,30 @@ export default function CityPage() {
     reloadPlaces,
   } = usePlaces();
   const [eventsData, setEventsData] = useState([]);
+  const [privateEvents, setPrivateEvents] = useState([]);
+  const [privateEventsLoading, setPrivateEventsLoading] = useState(true);
+  const [privateEventsError, setPrivateEventsError] = useState("");
+  const [privateEventsTableMissing, setPrivateEventsTableMissing] = useState(false);
+  const [privateEventInvites, setPrivateEventInvites] = useState({});
+  const [privateInviteRequestsByEvent, setPrivateInviteRequestsByEvent] = useState({});
+  const [privateInviteRequesterProfiles, setPrivateInviteRequesterProfiles] = useState({});
+  const [expandedPrivateHostEventId, setExpandedPrivateHostEventId] = useState("");
+  const [privateInvitesTableMissing, setPrivateInvitesTableMissing] = useState(false);
+  const [isSubmittingPrivateInvite, setIsSubmittingPrivateInvite] = useState(false);
+  const [isUpdatingPrivateInviteStatus, setIsUpdatingPrivateInviteStatus] = useState(false);
+  const [privateFeedNowTick, setPrivateFeedNowTick] = useState(Date.now());
+  const [tonightFeedTab, setTonightFeedTab] = useState("public");
+  const [hostPrivateEventOpen, setHostPrivateEventOpen] = useState(false);
+  const [isSubmittingPrivateEvent, setIsSubmittingPrivateEvent] = useState(false);
+  const [privateEventForm, setPrivateEventForm] = useState({
+    title: "",
+    eventType: PRIVATE_EVENT_TYPES[0].value,
+    startDate: "",
+    startTime: "",
+    approxArea: "",
+    exactLocation: "",
+    notes: "",
+  });
   const [reviews, setReviews] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [addMode, setAddMode] = useState(false);
@@ -547,6 +635,7 @@ export default function CityPage() {
   const mapWrapperRef = useRef(null);
   const mainScrollRef = useRef(null);
   const eventsSectionRef = useRef(null);
+  const tonightSectionRef = useRef(null);
   const guideSectionRef = useRef(null);
   const placesSectionRef = useRef(null);
   const addEventFormRef = useRef(null);
@@ -684,6 +773,24 @@ export default function CityPage() {
     },
     [blockedItems, city, eventsData]
   );
+
+  const cityPrivateEvents = useMemo(() => {
+    const normalizedCity = normalizeCityKey(city);
+    return privateEvents
+      .filter((event) => normalizeCityKey(event.city) === normalizedCity)
+      .filter((event) => String(event.status || "active") === "active")
+      .filter((event) => {
+        const expiresAt = new Date(event.expires_at || "").getTime();
+        return !Number.isFinite(expiresAt) || expiresAt > Date.now();
+      })
+      .sort((a, b) => {
+        const statusA = getPrivateEventStatus(a).key;
+        const statusB = getPrivateEventStatus(b).key;
+        const rank = { live: 0, upcoming: 1, ended: 2 };
+        if (rank[statusA] !== rank[statusB]) return rank[statusA] - rank[statusB];
+        return new Date(a.start_at || 0).getTime() - new Date(b.start_at || 0).getTime();
+      });
+  }, [city, privateEvents, liveVibeRefreshTick]);
 
   const qualityMap = getQualityMap();
 
@@ -869,6 +976,14 @@ export default function CityPage() {
     : cityEventCount > 0
       ? `${cityEventCount} events`
       : "Events incoming";
+  const privateEventStartPreview = useMemo(
+    () => combineDateAndTime(privateEventForm.startDate, privateEventForm.startTime),
+    [privateEventForm.startDate, privateEventForm.startTime],
+  );
+  const privateEventExpiresPreview = useMemo(() => {
+    if (!privateEventStartPreview) return null;
+    return new Date(privateEventStartPreview.getTime() + (24 * 60 * 60 * 1000));
+  }, [privateEventStartPreview]);
 
   const buildSelectionUrl = useCallback(({ nextPlaceId = placeId, nextEventId = eventId } = {}) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -1061,6 +1176,348 @@ export default function CityPage() {
     }
   }, []);
 
+  const fetchPrivateEvents = useCallback(async () => {
+    setPrivateEventsLoading(true);
+    setPrivateEventsError("");
+    try {
+      const { data, error } = await supabase
+        .from("qa_private_events")
+        .select("*")
+        .eq("city", String(city || "").trim())
+        .eq("status", "active")
+        .order("start_at", { ascending: true });
+
+      if (error) {
+        if (isMissingTableError(error)) {
+          setPrivateEventsTableMissing(true);
+          setPrivateEvents([]);
+          setPrivateEventsError("");
+        } else {
+          setPrivateEventsError("Could not load VIP invites right now.");
+          setPrivateEvents([]);
+        }
+        return;
+      }
+
+      setPrivateEventsTableMissing(false);
+      setPrivateEvents(Array.isArray(data) ? data : []);
+    } catch {
+      setPrivateEventsError("Could not load VIP invites right now.");
+      setPrivateEvents([]);
+    } finally {
+      setPrivateEventsLoading(false);
+    }
+  }, [city]);
+
+  const fetchMyPrivateInvites = useCallback(async (eventRows = []) => {
+    if (!isMember || !user?.id) {
+      setPrivateEventInvites({});
+      return;
+    }
+
+    const eventIds = (Array.isArray(eventRows) ? eventRows : [])
+      .map((row) => String(row?.id || "").trim())
+      .filter(Boolean);
+
+    if (eventIds.length === 0) {
+      setPrivateEventInvites({});
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("qa_private_event_invites")
+        .select("event_id,status")
+        .eq("requester_user_id", user.id)
+        .in("event_id", eventIds);
+
+      if (error) {
+        if (isMissingTableError(error)) {
+          setPrivateInvitesTableMissing(true);
+        }
+        setPrivateEventInvites({});
+        return;
+      }
+
+      setPrivateInvitesTableMissing(false);
+      const nextMap = {};
+      for (const row of Array.isArray(data) ? data : []) {
+        const key = String(row?.event_id || "").trim();
+        if (!key) continue;
+        nextMap[key] = String(row?.status || "requested");
+      }
+      setPrivateEventInvites(nextMap);
+    } catch {
+      setPrivateEventInvites({});
+    }
+  }, [isMember, user?.id]);
+
+  const fetchPrivateInviteRequests = useCallback(async (eventRows = []) => {
+    if (!isMember || !user?.id) {
+      setPrivateInviteRequestsByEvent({});
+      setPrivateInviteRequesterProfiles({});
+      return;
+    }
+
+    const hostEventIds = (Array.isArray(eventRows) ? eventRows : [])
+      .filter((row) => String(row?.host_user_id || "") === String(user.id))
+      .map((row) => String(row?.id || "").trim())
+      .filter(Boolean);
+
+    if (hostEventIds.length === 0) {
+      setPrivateInviteRequestsByEvent({});
+      setPrivateInviteRequesterProfiles({});
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("qa_private_event_invites")
+        .select("id,event_id,requester_user_id,status,message,created_at")
+        .in("event_id", hostEventIds)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        if (isMissingTableError(error)) {
+          setPrivateInvitesTableMissing(true);
+        }
+        setPrivateInviteRequestsByEvent({});
+        setPrivateInviteRequesterProfiles({});
+        return;
+      }
+
+      const nextMap = {};
+      for (const row of Array.isArray(data) ? data : []) {
+        const eventId = String(row?.event_id || "").trim();
+        if (!eventId) continue;
+        if (!nextMap[eventId]) nextMap[eventId] = [];
+        nextMap[eventId].push(row);
+      }
+      setPrivateInviteRequestsByEvent(nextMap);
+
+      const requesterIds = [...new Set(
+        (Array.isArray(data) ? data : [])
+          .map((row) => String(row?.requester_user_id || "").trim())
+          .filter(Boolean),
+      )];
+
+      if (requesterIds.length === 0) {
+        setPrivateInviteRequesterProfiles({});
+        return;
+      }
+
+      const { data: profileRows, error: profileError } = await supabase
+        .from("member_profiles")
+        .select("user_id,display_name")
+        .in("user_id", requesterIds);
+
+      if (profileError) {
+        setPrivateInviteRequesterProfiles({});
+        return;
+      }
+
+      const profileMap = {};
+      for (const row of Array.isArray(profileRows) ? profileRows : []) {
+        const key = String(row?.user_id || "").trim();
+        if (!key) continue;
+        profileMap[key] = String(row?.display_name || "").trim();
+      }
+      setPrivateInviteRequesterProfiles(profileMap);
+    } catch {
+      setPrivateInviteRequestsByEvent({});
+      setPrivateInviteRequesterProfiles({});
+    }
+  }, [isMember, user?.id]);
+
+  const submitPrivateEvent = useCallback(async (submitEvent) => {
+    submitEvent.preventDefault();
+    if (!isMember || !user?.id) {
+      writeLocalValue("qa_redirect", pathname);
+      router.push("/?join=true");
+      return;
+    }
+    if (privateEventsTableMissing) {
+      showToast("Run VIP invites SQL first.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    const title = String(privateEventForm.title || "").trim();
+    const approxArea = String(privateEventForm.approxArea || "").trim();
+    const exactLocation = String(privateEventForm.exactLocation || "").trim();
+    const startDateRaw = String(privateEventForm.startDate || "").trim();
+    const startTimeRaw = String(privateEventForm.startTime || "").trim();
+
+    if (!title || !approxArea || !startDateRaw || !startTimeRaw) {
+      showToast("Title, start time, and area are required.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const startAt = combineDateAndTime(startDateRaw, startTimeRaw);
+    if (!startAt) {
+      showToast("Start time is invalid.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const expiresAt = new Date(startAt.getTime() + (24 * 60 * 60 * 1000));
+    setIsSubmittingPrivateEvent(true);
+    try {
+      const payload = {
+        city: String(city || "").trim(),
+        host_user_id: user.id,
+        host_alias: String(memberName || user.email || "Member").trim().slice(0, 80),
+        title,
+        event_type: String(privateEventForm.eventType || PRIVATE_EVENT_TYPES[0].value),
+        visibility: "invite_only",
+        approx_area: approxArea,
+        exact_location: exactLocation || null,
+        notes: String(privateEventForm.notes || "").trim() || null,
+        start_at: startAt.toISOString(),
+        expires_at: expiresAt.toISOString(),
+        status: "active",
+      };
+
+      const { error } = await supabase.from("qa_private_events").insert([payload]);
+      if (error) {
+        if (isMissingTableError(error)) {
+          setPrivateEventsTableMissing(true);
+          showToast("VIP invites table missing. Run SQL setup first.", {
+            tone: "warn",
+            duration: 2500,
+          });
+          return;
+        }
+        throw error;
+      }
+
+      setPrivateEventForm({
+        title: "",
+        eventType: PRIVATE_EVENT_TYPES[0].value,
+        startDate: "",
+        startTime: "",
+        approxArea: "",
+        exactLocation: "",
+        notes: "",
+      });
+      setHostPrivateEventOpen(false);
+      await fetchPrivateEvents();
+      showToast("Private event posted.", { tone: "ok", duration: 1800 });
+    } catch {
+      showToast("Could not post private event right now.", { tone: "warn", duration: 2200 });
+    } finally {
+      setIsSubmittingPrivateEvent(false);
+    }
+  }, [
+    city,
+    fetchPrivateEvents,
+    isMember,
+    memberName,
+    pathname,
+    privateEventForm.approxArea,
+    privateEventForm.exactLocation,
+    privateEventForm.eventType,
+    privateEventForm.notes,
+    privateEventForm.startDate,
+    privateEventForm.startTime,
+    privateEventForm.title,
+    privateEventsTableMissing,
+    router,
+    showToast,
+    user?.email,
+    user?.id,
+  ]);
+
+  const respondPrivateInviteRequest = useCallback(async (inviteRow, nextStatus) => {
+    const inviteId = String(inviteRow?.id || "").trim();
+    const status = String(nextStatus || "").trim();
+    const allowed = new Set(["accepted", "declined"]);
+    if (!inviteId || !allowed.has(status)) return;
+
+    setIsUpdatingPrivateInviteStatus(true);
+    try {
+      const { error } = await supabase
+        .from("qa_private_event_invites")
+        .update({ status })
+        .eq("id", inviteId);
+
+      if (error) {
+        if (isMissingTableError(error)) {
+          setPrivateInvitesTableMissing(true);
+          showToast("Invites are not activated yet.", { tone: "warn", duration: 2200 });
+          return;
+        }
+        throw error;
+      }
+
+      await Promise.all([
+        fetchPrivateInviteRequests(cityPrivateEvents),
+        fetchMyPrivateInvites(cityPrivateEvents),
+      ]);
+      showToast(status === "accepted" ? "Invite accepted." : "Invite declined.", {
+        tone: "ok",
+        duration: 1800,
+      });
+    } catch {
+      showToast("Could not update invite right now.", { tone: "warn", duration: 2200 });
+    } finally {
+      setIsUpdatingPrivateInviteStatus(false);
+    }
+  }, [cityPrivateEvents, fetchMyPrivateInvites, fetchPrivateInviteRequests, showToast]);
+
+  const requestPrivateInvite = useCallback(async (eventRow) => {
+    if (!isMember || !user?.id) {
+      writeLocalValue("qa_redirect", pathname);
+      router.push("/?join=true");
+      return;
+    }
+    if (!eventRow?.id || privateInvitesTableMissing) {
+      showToast("Invites are not activated yet.", { tone: "warn", duration: 2200 });
+      return;
+    }
+    if (String(eventRow.host_user_id || "") === String(user.id)) {
+      showToast("You are hosting this event.", { tone: "info", duration: 1800 });
+      return;
+    }
+
+    setIsSubmittingPrivateInvite(true);
+    try {
+      const { error } = await supabase.from("qa_private_event_invites").insert([
+        {
+          event_id: eventRow.id,
+          requester_user_id: user.id,
+          status: "requested",
+        },
+      ]);
+
+      if (error) {
+        if (String(error.code || "") === "23505") {
+          showToast("Invite already requested.", { tone: "info", duration: 1800 });
+        } else if (isMissingTableError(error)) {
+          setPrivateInvitesTableMissing(true);
+          showToast("Invites are not activated yet.", { tone: "warn", duration: 2200 });
+        } else {
+          throw error;
+        }
+      } else {
+        showToast("Invite request sent.", { tone: "ok", duration: 1800 });
+      }
+
+      await fetchMyPrivateInvites(cityPrivateEvents);
+    } catch {
+      showToast("Could not send invite request.", { tone: "warn", duration: 2200 });
+    } finally {
+      setIsSubmittingPrivateInvite(false);
+    }
+  }, [
+    cityPrivateEvents,
+    fetchMyPrivateInvites,
+    isMember,
+    pathname,
+    privateInvitesTableMissing,
+    router,
+    showToast,
+    user?.id,
+  ]);
+
   const geocodeAddress = useCallback(async (value) => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
     if (!token) {
@@ -1089,6 +1546,31 @@ export default function CityPage() {
       fetchEvents();
     });
   }, [fetchEvents]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchPrivateEvents();
+    });
+  }, [fetchPrivateEvents]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchMyPrivateInvites(cityPrivateEvents);
+    });
+  }, [cityPrivateEvents, fetchMyPrivateInvites, liveVibeRefreshTick]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      fetchPrivateInviteRequests(cityPrivateEvents);
+    });
+  }, [cityPrivateEvents, fetchPrivateInviteRequests, liveVibeRefreshTick]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPrivateFeedNowTick(Date.now());
+    }, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -2573,11 +3055,11 @@ export default function CityPage() {
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <button
               type="button"
-              onClick={() => scrollToSection(eventsSectionRef)}
+              onClick={() => scrollToSection(tonightSectionRef)}
               className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
             >
               <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
-              <p className="mt-1 font-semibold">Events</p>
+              <p className="mt-1 font-semibold">Tonight</p>
             </button>
             <button
               type="button"
@@ -2596,6 +3078,347 @@ export default function CityPage() {
               <p className="mt-1 font-semibold">Venues</p>
             </button>
           </div>
+        </div>
+
+        <div ref={tonightSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-fuchsia-300/12 bg-[linear-gradient(180deg,rgba(38,20,44,0.84),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(217,70,239,0.08)]" style={{ animationDelay: "195ms" }}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/65">Tonight in {cityName}</p>
+              <h2 className="mt-1 text-xl tracking-[0.02em] text-fuchsia-100">Live plans from the community</h2>
+            </div>
+            <div className="inline-flex rounded-full border border-white/12 bg-black/35 p-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setTonightFeedTab("public")}
+                className={`rounded-full px-3 py-1.5 transition ${
+                  tonightFeedTab === "public"
+                    ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
+                    : "text-white/65 hover:text-white"
+                }`}
+              >
+                Public
+              </button>
+              <button
+                type="button"
+                onClick={() => setTonightFeedTab("vip")}
+                className={`rounded-full px-3 py-1.5 transition ${
+                  tonightFeedTab === "vip"
+                    ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
+                    : "text-white/65 hover:text-white"
+                }`}
+              >
+                VIP / Invites
+              </button>
+            </div>
+          </div>
+
+          {tonightFeedTab === "public" ? (
+            <div className="rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5">
+              <p className="text-sm text-white/74">
+                Browse the city's public events feed for club nights, Pride blocks, and official listings.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => scrollToSection(eventsSectionRef)}
+                  className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
+                >
+                  Open public events
+                </button>
+                {isMember ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTonightFeedTab("vip");
+                      setHostPrivateEventOpen(true);
+                    }}
+                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/40"
+                  >
+                    Host tonight (VIP)
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {privateEventsTableMissing ? (
+                <div className="rounded-2xl border border-amber-300/24 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+                  VIP invites are not activated in DB yet. Run <code>supabase/vip-invites-v1.sql</code> first.
+                </div>
+              ) : null}
+              {privateEventsError ? (
+                <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
+                  {privateEventsError}
+                </div>
+              ) : null}
+              {privateEventsLoading ? (
+                <div className="rounded-2xl border border-fuchsia-200/10 bg-fuchsia-200/[0.03] p-4">
+                  <p className="mb-3 text-xs uppercase tracking-[0.16em] text-fuchsia-100/60">Loading VIP feed</p>
+                  <SectionSkeleton tone="fuchsia" rows={2} />
+                </div>
+              ) : null}
+
+              {!privateEventsLoading && cityPrivateEvents.map((item) => {
+                const status = getPrivateEventStatus(item);
+                const isHost = String(item.host_user_id || "") === String(user?.id || "");
+                const inviteStatus = String(privateEventInvites[String(item.id)] || "");
+                const canSeeExactLocation = isHost || inviteStatus === "accepted";
+                const displayArea = canSeeExactLocation
+                  ? String(item.exact_location || item.approx_area || "TBA")
+                  : String(item.approx_area || "TBA");
+                const requestRows = privateInviteRequestsByEvent[String(item.id)] || [];
+                const isExpandedHostCard = String(expandedPrivateHostEventId) === String(item.id);
+                const endsInLabel = formatEndsIn(item.expires_at, privateFeedNowTick);
+                const inviteLabelMap = {
+                  requested: "Invite requested",
+                  accepted: "Invite accepted",
+                  declined: "Invite declined",
+                  cancelled: "Invite cancelled",
+                };
+
+                return (
+                  <article key={String(item.id)} className="qa-cinematic-hover rounded-[22px] border border-fuchsia-200/18 bg-[linear-gradient(160deg,rgba(86,15,96,0.22),rgba(18,18,18,0.96))] p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100">
+                        Invite-only
+                      </span>
+                      <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] ${
+                        status.key === "live"
+                          ? "border-emerald-200/30 bg-emerald-200/14 text-emerald-100"
+                          : "border-cyan-200/30 bg-cyan-200/14 text-cyan-100"
+                      }`}>
+                        {status.label}
+                      </span>
+                      <span className="rounded-full border border-white/15 bg-white/7 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/80">
+                        {PRIVATE_EVENT_TYPE_LABELS[String(item.event_type || "")] || "Private event"}
+                      </span>
+                      {endsInLabel ? (
+                        <span className="rounded-full border border-amber-200/24 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
+                          {endsInLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3 className="mt-3 text-base font-semibold text-white">{item.title}</h3>
+                    <p className="mt-1 text-sm text-white/70">
+                      {canSeeExactLocation ? "Location" : "Area"}: {displayArea}
+                    </p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-white/55">
+                      Starts {formatDateTime(item.start_at)} · Ends {formatDateTime(item.expires_at)}
+                    </p>
+                    {item.notes ? (
+                      <p className="mt-2 line-clamp-2 text-sm text-white/64">{item.notes}</p>
+                    ) : null}
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] text-white/78">
+                        Host: {String(item.host_alias || "Member").trim() || "Member"}
+                      </span>
+                      {isHost ? (
+                        <>
+                          <span className="rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100">
+                            You host this
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedPrivateHostEventId((current) => (
+                              String(current) === String(item.id) ? "" : String(item.id)
+                            ))}
+                            className="qa-cinematic-hover rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
+                          >
+                            Requests ({requestRows.length})
+                          </button>
+                        </>
+                      ) : inviteStatus ? (
+                        <span className="rounded-full border border-violet-200/26 bg-violet-200/12 px-3 py-1 text-[11px] text-violet-100">
+                          {inviteLabelMap[inviteStatus] || "Invite status"}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => requestPrivateInvite(item)}
+                          disabled={!isMember || isSubmittingPrivateInvite || privateInvitesTableMissing}
+                          className="qa-cinematic-hover rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] text-fuchsia-100 transition hover:border-fuchsia-200/50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Request invite
+                        </button>
+                      )}
+                    </div>
+                    {isHost && isExpandedHostCard ? (
+                      <div className="mt-3 rounded-2xl border border-cyan-200/20 bg-cyan-200/[0.06] p-3">
+                        {requestRows.length === 0 ? (
+                          <p className="text-xs text-white/62">No invite requests yet.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {requestRows.map((request) => {
+                              const requestStatus = String(request.status || "requested");
+                              const requesterId = String(request.requester_user_id || "").trim();
+                              const requesterAlias = String(privateInviteRequesterProfiles[requesterId] || "").trim()
+                                || fallbackMemberAlias(requesterId);
+                              const requesterInitial = requesterAlias.charAt(0).toUpperCase() || "M";
+                              return (
+                                <div key={String(request.id)} className="rounded-xl border border-white/12 bg-black/25 p-2.5">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-cyan-200/30 bg-cyan-200/12 text-[11px] font-semibold text-cyan-100">
+                                        {requesterInitial}
+                                      </span>
+                                      <p className="text-xs text-white/75">
+                                        {requesterAlias} · {formatDate(request.created_at)}
+                                      </p>
+                                    </div>
+                                    <span className="rounded-full border border-white/16 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/80">
+                                      {requestStatus}
+                                    </span>
+                                  </div>
+                                  {request.message ? (
+                                    <p className="mt-1 text-xs text-white/65 line-clamp-2">{request.message}</p>
+                                  ) : null}
+                                  {requestStatus === "requested" ? (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => respondPrivateInviteRequest(request, "accepted")}
+                                        disabled={isUpdatingPrivateInviteStatus}
+                                        className="rounded-full border border-emerald-200/28 bg-emerald-200/12 px-2.5 py-1 text-[11px] text-emerald-100 transition hover:border-emerald-200/45 disabled:cursor-not-allowed disabled:opacity-50"
+                                      >
+                                        Accept
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => respondPrivateInviteRequest(request, "declined")}
+                                        disabled={isUpdatingPrivateInviteStatus}
+                                        className="rounded-full border border-rose-200/28 bg-rose-200/12 px-2.5 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/45 disabled:cursor-not-allowed disabled:opacity-50"
+                                      >
+                                        Decline
+                                      </button>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+
+              {!privateEventsLoading && cityPrivateEvents.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(67,20,69,0.35),rgba(14,14,14,0.96))] px-5 py-8 text-center">
+                  <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-200/70">VIP signal</p>
+                  <h3 className="mt-2 text-lg font-semibold text-white">No invite-only plans yet</h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
+                    Be first to host a private afterparty, chill session, or invite-only gathering for tonight.
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="flex flex-wrap items-center gap-2">
+                {isMember ? (
+                  <button
+                    type="button"
+                    onClick={() => setHostPrivateEventOpen((current) => !current)}
+                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/46"
+                  >
+                    {hostPrivateEventOpen ? "Close host form" : "Host tonight"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      writeLocalValue("qa_redirect", pathname);
+                      router.push("/?join=true");
+                    }}
+                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/46"
+                  >
+                    Join to host
+                  </button>
+                )}
+              </div>
+
+              {hostPrivateEventOpen && isMember ? (
+                <form onSubmit={submitPrivateEvent} className="rounded-[24px] border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(50,18,56,0.55),rgba(14,14,14,0.98))] p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-fuchsia-100/70">Host a private plan</p>
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    <input
+                      value={privateEventForm.title}
+                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, title: event.target.value }))}
+                      placeholder="Title (e.g. Rooftop afterparty)"
+                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45"
+                      maxLength={120}
+                      required
+                    />
+                    <select
+                      value={privateEventForm.eventType}
+                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, eventType: event.target.value }))}
+                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
+                    >
+                      {PRIVATE_EVENT_TYPES.map((entry) => (
+                        <option key={entry.value} value={entry.value}>{entry.label}</option>
+                      ))}
+                    </select>
+                    <DateInput
+                      value={privateEventForm.startDate}
+                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, startDate: event.target.value }))}
+                      className="w-full"
+                      tone="violet"
+                      required
+                      min={new Date().toISOString().slice(0, 10)}
+                    />
+                    <div className="relative">
+                      <input
+                        type="time"
+                        value={privateEventForm.startTime}
+                        onChange={(event) => setPrivateEventForm((current) => ({ ...current, startTime: event.target.value }))}
+                        className="w-full rounded-2xl border border-white/12 bg-black/30 p-3 pr-20 text-sm text-white outline-none focus:border-fuchsia-200/45"
+                        required
+                      />
+                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-xl border border-white/14 bg-white/8 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90">
+                        Time
+                      </span>
+                    </div>
+                    <input
+                      value={privateEventForm.approxArea}
+                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, approxArea: event.target.value }))}
+                      placeholder="Approx area (not exact address)"
+                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45"
+                      maxLength={120}
+                      required
+                    />
+                    <input
+                      value={privateEventForm.exactLocation}
+                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, exactLocation: event.target.value }))}
+                      placeholder="Exact location (visible only to accepted)"
+                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45 md:col-span-2"
+                      maxLength={180}
+                    />
+                  </div>
+                  <textarea
+                    value={privateEventForm.notes}
+                    onChange={(event) => setPrivateEventForm((current) => ({ ...current, notes: event.target.value }))}
+                    placeholder="Optional notes"
+                    className="mt-3 min-h-[84px] w-full rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45"
+                    maxLength={320}
+                  />
+                  <p className="mt-2 text-[11px] text-white/55">
+                    Invite-only. Event auto-expires 24h after your selected start.
+                  </p>
+                  {privateEventStartPreview ? (
+                    <p className="mt-1 text-[11px] text-fuchsia-100/80">
+                      Starts {formatDateTime(privateEventStartPreview)} · Expires {formatDateTime(privateEventExpiresPreview)}
+                    </p>
+                  ) : null}
+                  <button
+                    type="submit"
+                    disabled={isSubmittingPrivateEvent || privateEventsTableMissing}
+                    className="qa-cinematic-hover mt-3 rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-4 py-2 text-xs text-fuchsia-100 transition hover:border-fuchsia-200/50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSubmittingPrivateEvent ? "Posting..." : "Post private event"}
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          )}
         </div>
 
         <div ref={eventsSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]" style={{ animationDelay: "210ms" }}>
