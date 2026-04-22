@@ -189,6 +189,37 @@ function arePrivateEventsEquivalent(nextRows = [], prevRows = []) {
   return true;
 }
 
+function areStringMapsEqual(nextMap = {}, prevMap = {}) {
+  const nextKeys = Object.keys(nextMap || {});
+  const prevKeys = Object.keys(prevMap || {});
+  if (nextKeys.length !== prevKeys.length) return false;
+  for (const key of nextKeys) {
+    if (String(nextMap[key] || "") !== String(prevMap[key] || "")) return false;
+  }
+  return true;
+}
+
+function areRequestMapsEqual(nextMap = {}, prevMap = {}) {
+  const nextKeys = Object.keys(nextMap || {});
+  const prevKeys = Object.keys(prevMap || {});
+  if (nextKeys.length !== prevKeys.length) return false;
+
+  for (const key of nextKeys) {
+    const nextRows = Array.isArray(nextMap[key]) ? nextMap[key] : [];
+    const prevRows = Array.isArray(prevMap[key]) ? prevMap[key] : [];
+    if (nextRows.length !== prevRows.length) return false;
+
+    for (let idx = 0; idx < nextRows.length; idx += 1) {
+      const a = nextRows[idx] || {};
+      const b = prevRows[idx] || {};
+      if (String(a.id || "") !== String(b.id || "")) return false;
+      if (String(a.status || "") !== String(b.status || "")) return false;
+      if (String(a.updated_at || a.created_at || "") !== String(b.updated_at || b.created_at || "")) return false;
+    }
+  }
+  return true;
+}
+
 function humanizeCitySlug(value = "") {
   return String(value)
     .split("_")
@@ -1269,7 +1300,9 @@ export default function CityPage() {
         if (!key) continue;
         nextMap[key] = String(row?.status || "requested");
       }
-      setPrivateEventInvites(nextMap);
+      setPrivateEventInvites((current) => (
+        areStringMapsEqual(nextMap, current) ? current : nextMap
+      ));
     } catch {
       setPrivateEventInvites({});
     }
@@ -1316,7 +1349,9 @@ export default function CityPage() {
         if (!nextMap[eventId]) nextMap[eventId] = [];
         nextMap[eventId].push(row);
       }
-      setPrivateInviteRequestsByEvent(nextMap);
+      setPrivateInviteRequestsByEvent((current) => (
+        areRequestMapsEqual(nextMap, current) ? current : nextMap
+      ));
 
       const requesterIds = [...new Set(
         (Array.isArray(data) ? data : [])
@@ -1345,7 +1380,9 @@ export default function CityPage() {
         if (!key) continue;
         profileMap[key] = String(row?.display_name || "").trim();
       }
-      setPrivateInviteRequesterProfiles(profileMap);
+      setPrivateInviteRequesterProfiles((current) => (
+        areStringMapsEqual(profileMap, current) ? current : profileMap
+      ));
     } catch {
       setPrivateInviteRequestsByEvent({});
       setPrivateInviteRequesterProfiles({});
