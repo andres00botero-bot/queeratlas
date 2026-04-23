@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useActionToast } from "@/lib/useActionToast";
+import { showActionFeedback } from "@/lib/actionFeedback";
 import { writeLocalValue } from "@/lib/storage";
 import { cityHref, formatInviteTimeline, inviteStatusLabel } from "@/lib/vipInvites";
 import ActionToast from "@/components/ui/ActionToast";
@@ -622,7 +623,7 @@ export default function MessagesPage() {
     }
 
     setDraft("");
-    showToast("Message sent.", { tone: "ok", duration: 1200 });
+    showActionFeedback(showToast, "messageSent");
     setSending(false);
   }, [activeThreadId, draft, sending, showToast, userId]);
 
@@ -704,7 +705,7 @@ export default function MessagesPage() {
         setMobileThreadOpen(true);
       }
       router.replace("/messages");
-      showToast("Message sent to host.", { tone: "ok", duration: 1600 });
+      showActionFeedback(showToast, "messageSent");
     } catch (error) {
       showToast(error?.message || "Could not send host message right now.", { tone: "warn" });
     } finally {

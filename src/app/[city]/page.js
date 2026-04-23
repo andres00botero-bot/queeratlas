@@ -20,6 +20,7 @@ import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
 import { trackKpiEvent } from "@/lib/analytics";
+import { showActionFeedback } from "@/lib/actionFeedback";
 import {
   buildLiveVibeHeadline,
   formatLiveVibeUpdatedAt,
@@ -1082,7 +1083,7 @@ export default function CityPage() {
       });
       setHostPrivateEventOpen(false);
       await fetchPrivateEvents();
-      showToast("Private event posted.", { tone: "ok", duration: 1800 });
+      showActionFeedback(showToast, "privateEventPosted");
     } catch {
       showToast("Could not post private event right now.", { tone: "warn", duration: 2200 });
     } finally {
@@ -1134,10 +1135,7 @@ export default function CityPage() {
         fetchPrivateInviteRequests(cityPrivateEvents),
         fetchMyPrivateInvites(cityPrivateEvents),
       ]);
-      showToast(status === "accepted" ? "Invite accepted." : "Invite declined.", {
-        tone: "ok",
-        duration: 1800,
-      });
+      showActionFeedback(showToast, status === "accepted" ? "inviteAccepted" : "inviteDeclined");
     } catch {
       showToast("Could not update invite right now.", { tone: "warn", duration: 2200 });
     } finally {
@@ -1263,7 +1261,7 @@ export default function CityPage() {
 
       if (error) {
         if (String(error.code || "") === "23505") {
-          showToast("Invite already requested.", { tone: "info", duration: 1800 });
+          showActionFeedback(showToast, "inviteAlreadyRequested");
         } else if (isMissingTableError(error)) {
           setPrivateInvitesTableMissing(true);
           showToast("Invites are not activated yet.", { tone: "warn", duration: 2200 });
@@ -1271,7 +1269,7 @@ export default function CityPage() {
           throw error;
         }
       } else {
-        showToast("Invite request sent.", { tone: "ok", duration: 1800 });
+        showActionFeedback(showToast, "inviteRequested");
       }
 
       await fetchMyPrivateInvites(cityPrivateEvents);
@@ -2929,29 +2927,76 @@ export default function CityPage() {
                 Choose <span className="text-violet-100">Public</span> for official city events, or <span className="text-fuchsia-100">VIP / Invites</span> for private member plans.
               </p>
             </div>
-            <div className="inline-flex rounded-full border border-white/12 bg-black/35 p-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setTonightFeedTab("public")}
-                className={`rounded-full px-3 py-1.5 transition ${
-                  tonightFeedTab === "public"
-                    ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
-                    : "text-white/65 hover:text-white"
-                }`}
-              >
-                Public
-              </button>
-              <button
-                type="button"
-                onClick={() => setTonightFeedTab("vip")}
-                className={`rounded-full px-3 py-1.5 transition ${
-                  tonightFeedTab === "vip"
-                    ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
-                    : "text-white/65 hover:text-white"
-                }`}
-              >
-                VIP / Invites
-              </button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="inline-flex rounded-full border border-white/12 bg-black/35 p-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setTonightFeedTab("public")}
+                  className={`rounded-full px-3 py-1.5 transition ${
+                    tonightFeedTab === "public"
+                      ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
+                      : "text-white/65 hover:text-white"
+                  }`}
+                >
+                  Public
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTonightFeedTab("vip")}
+                  className={`rounded-full px-3 py-1.5 transition ${
+                    tonightFeedTab === "vip"
+                      ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
+                      : "text-white/65 hover:text-white"
+                  }`}
+                >
+                  VIP / Invites
+                </button>
+              </div>
+
+              {tonightFeedTab === "public" ? (
+                isMember ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTonightFeedTab("vip");
+                      setHostPrivateEventOpen(true);
+                    }}
+                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+                  >
+                    Host private plan
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      writeLocalValue("qa_redirect", pathname);
+                      router.push("/?join=true");
+                    }}
+                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+                  >
+                    Join to host
+                  </button>
+                )
+              ) : isMember ? (
+                <button
+                  type="button"
+                  onClick={() => setHostPrivateEventOpen((current) => !current)}
+                  className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+                >
+                  {hostPrivateEventOpen ? "Close host form" : "Host tonight"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    writeLocalValue("qa_redirect", pathname);
+                    router.push("/?join=true");
+                  }}
+                  className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+                >
+                  Join to host
+                </button>
+              )}
             </div>
           </div>
 
@@ -3069,18 +3114,6 @@ export default function CityPage() {
                 />
               ) : null}
 
-              {isMember ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTonightFeedTab("vip");
-                    setHostPrivateEventOpen(true);
-                  }}
-                  className="qa-cinematic-hover rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/40"
-                >
-                  Host tonight (VIP)
-                </button>
-              ) : null}
             </div>
           ) : (
             <div className="space-y-3">
@@ -3279,29 +3312,6 @@ export default function CityPage() {
                   </p>
                 </div>
               ) : null}
-
-              <div className="flex flex-wrap items-center gap-2">
-                {isMember ? (
-                  <button
-                    type="button"
-                    onClick={() => setHostPrivateEventOpen((current) => !current)}
-                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/46"
-                  >
-                    {hostPrivateEventOpen ? "Close host form" : "Host tonight"}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      writeLocalValue("qa_redirect", pathname);
-                      router.push("/?join=true");
-                    }}
-                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-100 hover:border-fuchsia-200/46"
-                  >
-                    Join to host
-                  </button>
-                )}
-              </div>
 
               {hostPrivateEventOpen && isMember ? (
                 <form onSubmit={submitPrivateEvent} className="rounded-[24px] border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(50,18,56,0.55),rgba(14,14,14,0.98))] p-4">

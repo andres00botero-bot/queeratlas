@@ -14,6 +14,7 @@ import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
+import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
@@ -1347,6 +1348,68 @@ export default function FavoritesPage() {
     };
   }, [allCities, events, followingFeedItems, nowTs, totalCities]);
 
+  const momentumMilestones = useMemo(() => {
+    const checkinCount = checkins.length;
+    const checkinCityCount = new Set(
+      checkins.map((item) => normalizeCityKey(item.city)).filter(Boolean)
+    ).size;
+    const weekendActivityCount = new Set(
+      checkins
+        .map((item) => {
+          const date = new Date(item.checkedInAt || item.createdAt || "");
+          if (Number.isNaN(date.getTime())) return "";
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+          const day = String(date.getUTCDate()).padStart(2, "0");
+          return `${year}-${month}-${day}`;
+        })
+        .filter(Boolean)
+    ).size;
+
+    const items = [
+      {
+        id: "first-checkin",
+        label: "First check-in",
+        current: checkinCount,
+        target: 1,
+      },
+      {
+        id: "cities-5",
+        label: "5 cities explored",
+        current: checkinCityCount,
+        target: 5,
+      },
+      {
+        id: "venues-10",
+        label: "10 places saved",
+        current: totalPlaces,
+        target: 10,
+      },
+      {
+        id: "weekends-3",
+        label: "3 active days",
+        current: weekendActivityCount,
+        target: 3,
+      },
+    ].map((item) => ({
+      ...item,
+      done: item.current >= item.target,
+      progress: Math.max(0, Math.min(1, item.current / item.target)),
+    }));
+
+    const completed = items.filter((item) => item.done).length;
+    const overallProgress = items.length ? completed / items.length : 0;
+    const nextMilestone = items.find((item) => !item.done) || null;
+
+    return {
+      items,
+      completed,
+      total: items.length,
+      overallProgress,
+      nextMilestone,
+    };
+  }, [checkins, totalPlaces]);
+
   const contributionCounts = useMemo(() => {
     if (typeof window === "undefined") {
       return {
@@ -1441,14 +1504,14 @@ export default function FavoritesPage() {
       }
     }
 
-    showToast(`${label} removed from favorites.`, { tone: "info", duration: 2200 });
+    showActionFeedback(showToast, "favoriteRemoved", { label });
   };
 
   const addFavoriteFromNetwork = async (favoriteId, label = "Item") => {
     const normalized = String(favoriteId || "");
     if (!normalized) return;
     if (favorites.includes(normalized)) {
-      showToast(`${label} is already in your atlas.`, { tone: "info", duration: 2000 });
+      showActionFeedback(showToast, "favoriteAlreadySaved", { label });
       return;
     }
 
@@ -1481,7 +1544,7 @@ export default function FavoritesPage() {
       }
     }
 
-    showToast(`${label} saved to your atlas.`, { tone: "ok", duration: 2200 });
+    showActionFeedback(showToast, "favoriteSaved", { label });
     trackKpiEvent("favorite_saved", {
       targetType: normalized.startsWith("event-") ? "event" : "place",
       targetId: normalized,
@@ -1685,7 +1748,7 @@ export default function FavoritesPage() {
         targetId: String(savedRow.id || ""),
         memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
       });
-      showToast(isEditing ? "Check-in updated." : "Check-in saved to your atlas.", { tone: "ok", duration: 2100 });
+      showActionFeedback(showToast, isEditing ? "checkinUpdated" : "checkinSaved");
       setSelectedCheckinId(String(savedRow.id || ""));
       if (isEditing) {
         setEditingCheckinId("");
@@ -1760,7 +1823,7 @@ export default function FavoritesPage() {
     if (selectedCheckinId === id) {
       setSelectedCheckinId("");
     }
-    showToast("Check-in deleted.", { tone: "info", duration: 2000 });
+    showActionFeedback(showToast, "checkinDeleted");
   };
 
   const focusCheckinOnMap = useCallback(
@@ -2219,6 +2282,48 @@ export default function FavoritesPage() {
                 <div className="rounded-2xl border border-white/10 bg-black/22 p-4">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/75">Cities touched</p>
                   <p className="mt-2 text-3xl font-semibold text-white">{allCities.length}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200/75">Momentum milestones</p>
+                  <span className="text-[11px] text-white/58">
+                    {momentumMilestones.completed}/{momentumMilestones.total}
+                  </span>
+                </div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-emerald-300 transition-[width] duration-500"
+                    style={{ width: `${Math.max(8, Math.round(momentumMilestones.overallProgress * 100))}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-white/58">
+                  {momentumMilestones.nextMilestone
+                    ? `Next: ${momentumMilestones.nextMilestone.label} (${Math.min(
+                        momentumMilestones.nextMilestone.current,
+                        momentumMilestones.nextMilestone.target
+                      )}/${momentumMilestones.nextMilestone.target})`
+                    : "All core milestones completed. Keep your signal active this week."}
+                </p>
+                <div className="mt-3 grid gap-2">
+                  {momentumMilestones.items.map((item) => (
+                    <div
+                      key={item.id}
+                      className={`rounded-xl border px-3 py-2 text-xs ${
+                        item.done
+                          ? "border-emerald-200/30 bg-emerald-200/10 text-emerald-100"
+                          : "border-white/10 bg-black/20 text-white/72"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <span>{item.label}</span>
+                        <span className="text-[11px]">
+                          {Math.min(item.current, item.target)}/{item.target}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
