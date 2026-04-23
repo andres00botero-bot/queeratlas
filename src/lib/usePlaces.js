@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { mergeSeedPlacesAsync } from "./seedMerge";
 import { captureOperationalError } from "./monitoring";
-
-const isDev = process.env.NODE_ENV !== "production";
+import { logDevError } from "./devLogger";
 
 function formatSupabaseError(error) {
   if (!error) return "Unknown error";
@@ -14,12 +13,6 @@ function formatSupabaseError(error) {
     hint: error.hint || "",
   };
   return JSON.stringify(details);
-}
-
-function logDevError(...args) {
-  if (isDev && typeof console !== "undefined") {
-    console.error(...args);
-  }
 }
 
 function toOperationalError(error) {

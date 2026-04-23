@@ -6,202 +6,45 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { addReport, getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
-import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
-import { mergeSeedEventsAsync } from "@/lib/seedMerge";
+import { logDevError } from "@/lib/devLogger";
+import {
+  fetchEventsData,
+  fetchGlobalEventsData,
+  migrateLegacyGlobalEventsToSupabase,
+} from "@/features/events/eventDataApi";
+import {
+  buildGlobalEventPayloadFromForm,
+  buildGlobalFormFromEvent,
+  EMPTY_GLOBAL_FORM,
+} from "@/features/events/eventGlobalFormUtils";
+import {
+  insertGlobalEventRecord,
+  updateGlobalEventRecord,
+} from "@/features/events/eventGlobalApiUtils";
+import { updateCityEventRecord } from "@/features/events/eventCityApiUtils";
+import {
+  eventOverlapsDate,
+  eventOverlapsMonth,
+  formatCityLabel,
+  formatDateLabel,
+  formatEventDateLabel,
+  normalizeCityKey,
+} from "@/features/events/eventDateUtils";
+import {
+  createInitialQualityModal,
+  createInitialReportDraft,
+  createQualityModalFromEvent,
+  createReportDraftFromEvent,
+} from "@/features/events/eventModalStateUtils";
+import { REPORT_REASONS, TRUST_ACTIONS } from "@/features/events/eventPageConstants";
+import { normalizeEventRange } from "@/features/events/eventFormatUtils";
+import { qualityPillClass } from "@/features/events/eventViewUtils";
+import EventSkeletonCard from "@/components/events/EventSkeletonCard";
 import EmptyState from "@/components/ui/EmptyState";
 import DateInput from "@/components/ui/DateInput";
 import ActionToast from "@/components/ui/ActionToast";
-
-const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
-const REPORT_REASONS = [
-  { value: "safety", label: "Safety issue", helper: "Unsafe behavior, consent issues, harassment, or risky conditions." },
-  { value: "wrong_info", label: "Wrong info", helper: "Date, location, link, or event details are incorrect." },
-  { value: "spam", label: "Spam or scam", helper: "Misleading promos, fake listings, or low-trust content." },
-  { value: "abuse", label: "Abuse or hate", helper: "Hate speech, threats, discrimination, or abusive language." },
-  { value: "other", label: "Other issue", helper: "Anything else that should be reviewed by admin." },
-];
-const TRUST_ACTIONS = [
-  { value: "1", label: "Verified now" },
-  { value: "2", label: "Needs refresh" },
-  { value: "3", label: "Closed or moved" },
-];
-const isDev = process.env.NODE_ENV !== "production";
-
-function logDevError(...args) {
-  if (isDev && typeof console !== "undefined") {
-    console.error(...args);
-  }
-}
-
-function splitLegacyVibe(description = "") {
-  const raw = String(description || "");
-  const match = raw.match(/^\[Vibe:\s*([^\]]+)\]\s*(?:\n\n)?([\s\S]*)$/i);
-  if (!match) {
-    return {
-      vibe: "",
-      description: raw,
-    };
-  }
-
-  return {
-    vibe: String(match[1] || "").trim(),
-    description: String(match[2] || "").trim(),
-  };
-}
-
-function mergeVibeIntoDescription(vibe = "", description = "") {
-  const cleanVibe = String(vibe || "").trim();
-  const cleanDescription = String(description || "").trim();
-  if (!cleanVibe) return cleanDescription || null;
-  return `[Vibe: ${cleanVibe}]${cleanDescription ? `\n\n${cleanDescription}` : ""}`;
-}
-
-function normalizeIsoDate(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const iso = raw.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
-}
-
-function normalizeEventRange(event = {}) {
-  const startDate = normalizeIsoDate(event.startDate || event.start_date || event.date);
-  const endDateRaw = normalizeIsoDate(event.endDate || event.end_date || event.date);
-  const endDate = endDateRaw && endDateRaw >= startDate ? endDateRaw : startDate;
-
-  return {
-    ...event,
-    startDate,
-    endDate,
-    // Backward-compatible key still used in some views/components.
-    date: startDate,
-  };
-}
-
-function formatEventDateLabel(event = {}) {
-  const normalized = normalizeEventRange(event);
-  if (!normalized.startDate) return "Date TBA";
-  if (!normalized.endDate || normalized.endDate === normalized.startDate) {
-    return formatDateLabel(normalized.startDate);
-  }
-
-  const start = new Date(normalized.startDate);
-  const end = new Date(normalized.endDate);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return formatDateLabel(normalized.startDate);
-  }
-
-  const sameYear = start.getFullYear() === end.getFullYear();
-  const sameMonth = sameYear && start.getMonth() === end.getMonth();
-
-  if (sameMonth) {
-    return `${start.getDate()}-${end.getDate()} ${start.toLocaleDateString("en-GB", { month: "short" })} ${start.getFullYear()}`;
-  }
-
-  if (sameYear) {
-    return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${start.getFullYear()}`;
-  }
-
-  return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
-}
-
-function eventOverlapsDate(event = {}, targetDate = "") {
-  const normalized = normalizeEventRange(event);
-  const date = normalizeIsoDate(targetDate);
-  if (!normalized.startDate || !date) return false;
-  return date >= normalized.startDate && date <= (normalized.endDate || normalized.startDate);
-}
-
-function eventOverlapsMonth(event = {}, year, month) {
-  const normalized = normalizeEventRange(event);
-  if (!normalized.startDate) return false;
-  const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
-  const monthEnd = `${year}-${String(month + 1).padStart(2, "0")}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, "0")}`;
-  const end = normalized.endDate || normalized.startDate;
-  return normalized.startDate <= monthEnd && end >= monthStart;
-}
-
-function formatDateLabel(value) {
-  if (!value) return "Date TBA";
-
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function formatCityLabel(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "City";
-  if (raw.toLowerCase() === "global") return "Global";
-
-  return raw
-    .replaceAll("_", " ")
-    .replaceAll("-", " ")
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
-function normalizeCityKey(value) {
-  const raw = String(value || "").trim().toLowerCase();
-  if (!raw) return "other";
-  return raw.replace(/[\s-]+/g, "_");
-}
-
-function qualityPillClass(tone) {
-  if (tone === "verified") {
-    return "border-emerald-200/24 bg-emerald-200/12 text-emerald-100";
-  }
-
-  if (tone === "stale") {
-    return "border-amber-200/24 bg-amber-200/12 text-amber-100";
-  }
-
-  if (tone === "community") {
-    return "border-cyan-200/24 bg-cyan-200/12 text-cyan-100";
-  }
-
-  return "border-white/16 bg-white/7 text-white/70";
-}
-
-function mapGlobalEventRow(row) {
-  const parsed = splitLegacyVibe(row.description || "");
-  return normalizeEventRange({
-    id: String(row.id),
-    name: row.name || "",
-    date: row.start_date || row.date || "",
-    start_date: row.start_date || row.date || "",
-    end_date: row.end_date || row.start_date || row.date || "",
-    location: row.location || "",
-    vibe: row.vibe || parsed.vibe || "",
-    description: parsed.description || "",
-    link: row.link || "",
-    source: row.source || "",
-    lastChecked: row.last_checked || "",
-    city: "Global",
-    isGlobal: true,
-  });
-}
-
-function EventSkeletonCard({ tone = "orange" }) {
-  const toneStyle =
-    tone === "cyan"
-      ? "border-cyan-200/14 bg-[linear-gradient(180deg,rgba(34,211,238,0.10),rgba(12,12,12,0.94))]"
-      : "border-orange-200/14 bg-[linear-gradient(180deg,rgba(251,146,60,0.12),rgba(12,12,12,0.94))]";
-
-  return (
-    <div className={`qa-skeleton-card rounded-2xl border p-4 ${toneStyle}`} aria-hidden="true">
-      <div className="qa-skeleton-card h-3 w-40 rounded-full" />
-      <div className="qa-skeleton-card mt-3 h-5 w-3/4 rounded-full" />
-      <div className="qa-skeleton-card mt-4 h-3 w-full rounded-full" />
-      <div className="qa-skeleton-card mt-2 h-3 w-5/6 rounded-full" />
-    </div>
-  );
-}
 
 export default function EventsPage() {
   const router = useRouter();
@@ -215,7 +58,19 @@ export default function EventsPage() {
   const [showGlobalForm, setShowGlobalForm] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingGlobalEventId, setEditingGlobalEventId] = useState("");
-  const [globalForm, setGlobalForm] = useState({
+  const [globalForm, setGlobalForm] = useState(EMPTY_GLOBAL_FORM);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [globalError, setGlobalError] = useState("");
+  const [isSavingGlobal, setIsSavingGlobal] = useState(false);
+  const [cityEditOpen, setCityEditOpen] = useState(false);
+  const [isSavingCityEdit, setIsSavingCityEdit] = useState(false);
+  const [cityEditError, setCityEditError] = useState("");
+  const [cityEditDraft, setCityEditDraft] = useState({
+    id: "",
+    city: "",
     name: "",
     startDate: "",
     endDate: "",
@@ -223,32 +78,11 @@ export default function EventsPage() {
     vibe: "",
     description: "",
     link: "",
-    source: "",
-    lastChecked: "",
   });
-  const [selectedDate, setSelectedDate] = useState("");
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [globalError, setGlobalError] = useState("");
-  const [isSavingGlobal, setIsSavingGlobal] = useState(false);
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportDraft, setReportDraft] = useState({
-    targetId: "",
-    title: "",
-    city: "",
-    reasonKey: REPORT_REASONS[0].value,
-    details: "",
-  });
-  const [qualityModal, setQualityModal] = useState({
-    open: false,
-    eventId: "",
-    action: "1",
-    sourceInput: "",
-    fallbackSource: "",
-    isGlobal: false,
-  });
+  const [reportDraft, setReportDraft] = useState(() => createInitialReportDraft(REPORT_REASONS[0].value));
+  const [qualityModal, setQualityModal] = useState(() => createInitialQualityModal());
   const [offgridEventParam, setOffgridEventParam] = useState(() => {
     if (typeof window === "undefined") return "";
     return String(new URLSearchParams(window.location.search).get("offgridEventId") || "").trim();
@@ -353,14 +187,7 @@ export default function EventsPage() {
       map: qualityMap,
     });
     const fallbackSource = (existing?.source || event.link || "").trim();
-    setQualityModal({
-      open: true,
-      eventId: String(event.id || ""),
-      action: "1",
-      sourceInput: fallbackSource,
-      fallbackSource,
-      isGlobal: Boolean(event?.isGlobal),
-    });
+    setQualityModal(createQualityModalFromEvent(event, fallbackSource));
   };
 
   const closeQualityModal = () => {
@@ -435,71 +262,12 @@ export default function EventsPage() {
     closeQualityModal();
   };
 
-  const fetchEvents = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("date", { ascending: true });
-
-    return {
-      data: (await mergeSeedEventsAsync(data || [])).map((event) => normalizeEventRange(event)),
-      error,
-    };
-  }, []);
-
-  const fetchGlobalEvents = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("global_events")
-      .select("*")
-      .order("date", { ascending: true })
-      .order("created_at", { ascending: false });
-
-    return {
-      data: (data || []).map(mapGlobalEventRow),
-      error,
-    };
-  }, []);
-
-  const migrateLegacyGlobalEvents = useCallback(async () => {
-    const legacy = readLocalJson(LEGACY_GLOBAL_EVENTS_KEY, []);
-    if (!Array.isArray(legacy) || legacy.length === 0) return;
-
-    const payload = legacy
-      .filter((item) => item?.name && item?.date && item?.location)
-      .map((item) => ({
-        name: item.name,
-        date: item.date,
-        location: item.location,
-        description: item.description || null,
-        link: item.link || null,
-        source: item.source || null,
-        last_checked: item.lastChecked || null,
-      }));
-
-    if (payload.length === 0) {
-      writeLocalJson(LEGACY_GLOBAL_EVENTS_KEY, []);
-      return;
-    }
-
-    const { error } = await supabase
-      .from("global_events")
-      .insert(payload);
-
-    if (error) return;
-
-    writeLocalJson(LEGACY_GLOBAL_EVENTS_KEY, []);
-    const refreshed = await fetchGlobalEvents();
-    if (!refreshed.error) {
-      setGlobalEvents(refreshed.data);
-    }
-  }, [fetchGlobalEvents]);
-
   const loadAllEvents = useCallback(async () => {
     setIsLoading(true);
     setLoadError("");
     setGlobalError("");
 
-    const [eventsRes, globalRes] = await Promise.all([fetchEvents(), fetchGlobalEvents()]);
+    const [eventsRes, globalRes] = await Promise.all([fetchEventsData(), fetchGlobalEventsData()]);
 
     setEvents(eventsRes.data || []);
     if (eventsRes.error) {
@@ -511,11 +279,14 @@ export default function EventsPage() {
       setGlobalError("Off-grid sync is unavailable right now.");
     } else {
       setGlobalEvents(globalRes.data || []);
-      await migrateLegacyGlobalEvents();
+      const migration = await migrateLegacyGlobalEventsToSupabase();
+      if (migration.migrated && !migration.error && Array.isArray(migration.data)) {
+        setGlobalEvents(migration.data);
+      }
     }
 
     setIsLoading(false);
-  }, [fetchEvents, fetchGlobalEvents, migrateLegacyGlobalEvents]);
+  }, []);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -620,13 +391,7 @@ export default function EventsPage() {
 
   const handleReport = (event, clickEvent) => {
     clickEvent?.stopPropagation();
-    setReportDraft({
-      targetId: String(event?.id || ""),
-      title: String(event?.name || "Reported event"),
-      city: String(event?.city || "Global"),
-      reasonKey: REPORT_REASONS[0].value,
-      details: "",
-    });
+    setReportDraft(createReportDraftFromEvent(event, REPORT_REASONS[0].value));
     setReportModalOpen(true);
   };
 
@@ -664,111 +429,18 @@ export default function EventsPage() {
     showToast("Report sent to admin inbox.", { tone: "info", duration: 2400 });
   };
 
-  const insertGlobalEvent = async (payload) => {
-    const withVibe = {
-      ...payload,
-      vibe: payload.vibe || null,
-    };
-
-    const tryInsert = async (insertPayload) => (
-      supabase.from("global_events").insert([insertPayload]).select("*").single()
-    );
-
-    let attempt = await tryInsert(withVibe);
-    if (!attempt.error) return attempt;
-
-    const errorText = `${attempt.error?.code || ""} ${attempt.error?.message || ""}`.toLowerCase();
-    const missingVibeColumn = errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
-    const missingStartOrEnd =
-      (errorText.includes("start_date") || errorText.includes("end_date")) &&
-      (errorText.includes("column") || errorText.includes("schema cache"));
-
-    let fallbackPayload = { ...payload };
-    if (missingVibeColumn) {
-      fallbackPayload = {
-        ...fallbackPayload,
-        description: mergeVibeIntoDescription(payload.vibe, payload.description),
-      };
-      delete fallbackPayload.vibe;
-    }
-    if (missingStartOrEnd) {
-      delete fallbackPayload.start_date;
-      delete fallbackPayload.end_date;
-    }
-
-    attempt = await tryInsert(fallbackPayload);
-    return attempt;
-  };
-
-  const updateGlobalEvent = async (eventId, payload) => {
-    const withVibe = {
-      ...payload,
-      vibe: payload.vibe || null,
-    };
-
-    const tryUpdate = async (updatePayload) => (
-      supabase.from("global_events").update(updatePayload).eq("id", String(eventId)).select("*").single()
-    );
-
-    let attempt = await tryUpdate(withVibe);
-    if (!attempt.error) return attempt;
-
-    const errorText = `${attempt.error?.code || ""} ${attempt.error?.message || ""}`.toLowerCase();
-    const missingVibeColumn = errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
-    const missingStartOrEnd =
-      (errorText.includes("start_date") || errorText.includes("end_date")) &&
-      (errorText.includes("column") || errorText.includes("schema cache"));
-
-    let fallbackPayload = { ...payload };
-    if (missingVibeColumn) {
-      fallbackPayload = {
-        ...fallbackPayload,
-        description: mergeVibeIntoDescription(payload.vibe, payload.description),
-      };
-      delete fallbackPayload.vibe;
-    }
-    if (missingStartOrEnd) {
-      delete fallbackPayload.start_date;
-      delete fallbackPayload.end_date;
-    }
-
-    attempt = await tryUpdate(fallbackPayload);
-    return attempt;
-  };
-
   const startEditGlobalEvent = (event, clickEvent) => {
     clickEvent?.stopPropagation();
     if (!isAdmin) return;
-    const normalized = normalizeEventRange(event || {});
 
     setEditingGlobalEventId(String(event?.id || ""));
-    setGlobalForm({
-      name: String(event?.name || ""),
-      startDate: String(normalized.startDate || ""),
-      endDate: String(normalized.endDate || ""),
-      location: String(event?.location || ""),
-      vibe: String(event?.vibe || ""),
-      description: String(event?.description || ""),
-      link: String(event?.link || ""),
-      source: String(event?.source || ""),
-      lastChecked: String(event?.lastChecked || ""),
-    });
+    setGlobalForm(buildGlobalFormFromEvent(event));
     setShowGlobalForm(true);
   };
 
   const resetGlobalForm = () => {
     setEditingGlobalEventId("");
-    setGlobalForm({
-      name: "",
-      startDate: "",
-      endDate: "",
-      location: "",
-      vibe: "",
-      description: "",
-      link: "",
-      source: "",
-      lastChecked: "",
-    });
+    setGlobalForm(EMPTY_GLOBAL_FORM);
   };
 
   const saveGlobalEvent = async (submitEvent) => {
@@ -777,9 +449,7 @@ export default function EventsPage() {
       setGlobalError("Admin access required to add or edit off-grid events.");
       return;
     }
-    const startDate = normalizeIsoDate(globalForm.startDate);
-    const endDateCandidate = normalizeIsoDate(globalForm.endDate);
-    const endDate = endDateCandidate && endDateCandidate >= startDate ? endDateCandidate : startDate;
+    const { startDate, endDateCandidate, payload } = buildGlobalEventPayloadFromForm(globalForm);
 
     if (!globalForm.name || !startDate || !globalForm.location) return;
     if (endDateCandidate && endDateCandidate < startDate) {
@@ -789,22 +459,9 @@ export default function EventsPage() {
     setIsSavingGlobal(true);
     setGlobalError("");
 
-    const payload = {
-      name: globalForm.name,
-      date: startDate,
-      start_date: startDate,
-      end_date: endDate || startDate,
-      location: globalForm.location,
-      vibe: globalForm.vibe || null,
-      description: globalForm.description || null,
-      link: globalForm.link || null,
-      source: globalForm.source || null,
-      last_checked: globalForm.lastChecked || null,
-    };
-
     const { data, error } = editingGlobalEventId
-      ? await updateGlobalEvent(editingGlobalEventId, payload)
-      : await insertGlobalEvent(payload);
+      ? await updateGlobalEventRecord(editingGlobalEventId, payload)
+      : await insertGlobalEventRecord(payload);
 
     if (error || !data) {
       const code = String(error?.code || "").trim();
@@ -845,6 +502,90 @@ export default function EventsPage() {
     resetGlobalForm();
     setShowGlobalForm(false);
     setIsSavingGlobal(false);
+  };
+
+  const openCityEdit = (event, clickEvent) => {
+    clickEvent?.stopPropagation();
+    if (!isAdmin || event?.isGlobal) return;
+
+    const normalized = normalizeEventRange(event || {});
+    setCityEditError("");
+    setCityEditDraft({
+      id: String(event?.id || ""),
+      city: String(event?.city || ""),
+      name: String(event?.name || ""),
+      startDate: String(normalized.startDate || ""),
+      endDate: String(normalized.endDate || ""),
+      location: String(event?.location || ""),
+      vibe: String(event?.vibe || ""),
+      description: String(event?.description || ""),
+      link: String(event?.link || ""),
+    });
+    setCityEditOpen(true);
+  };
+
+  const closeCityEdit = () => {
+    if (isSavingCityEdit) return;
+    setCityEditOpen(false);
+    setCityEditError("");
+  };
+
+  const saveCityEdit = async (submitEvent) => {
+    submitEvent.preventDefault();
+    if (!isAdmin) {
+      setCityEditError("Admin access required to edit events.");
+      return;
+    }
+
+    const startDate = String(cityEditDraft.startDate || "").trim();
+    const endDateCandidate = String(cityEditDraft.endDate || "").trim();
+    const endDate = endDateCandidate && endDateCandidate >= startDate ? endDateCandidate : startDate;
+
+    if (!cityEditDraft.id || !cityEditDraft.name || !startDate) {
+      setCityEditError("Name and start date are required.");
+      return;
+    }
+    if (endDateCandidate && endDateCandidate < startDate) {
+      setCityEditError("End date must be the same day or after start date.");
+      return;
+    }
+
+    setIsSavingCityEdit(true);
+    setCityEditError("");
+
+    const payload = {
+      name: cityEditDraft.name,
+      date: startDate,
+      start_date: startDate,
+      end_date: endDate || startDate,
+      location: cityEditDraft.location || null,
+      vibe: cityEditDraft.vibe || null,
+      description: cityEditDraft.description || null,
+      link: cityEditDraft.link || null,
+    };
+
+    const { data, error } = await updateCityEventRecord(cityEditDraft.id, payload);
+    if (error || !data) {
+      const code = String(error?.code || "").trim();
+      const message = String(error?.message || error?.details || "Unknown error").trim();
+      const hint = String(error?.hint || "").trim();
+      const suffix = [code ? `[${code}]` : "", message, hint].filter(Boolean).join(" ");
+      setCityEditError(`Could not save event changes yet. ${suffix}`);
+      logDevError("City event save failed", { error, payload, cityEditId: cityEditDraft.id });
+      setIsSavingCityEdit(false);
+      return;
+    }
+
+    const normalized = normalizeEventRange(data);
+    setEvents((current) => current.map((item) => (
+      String(item.id) === String(cityEditDraft.id)
+        ? { ...item, ...normalized }
+        : item
+    )));
+
+    setIsSavingCityEdit(false);
+    setCityEditOpen(false);
+    showToast("Event updated.", { tone: "success", duration: 1900 });
   };
 
   const openEvent = (event) => {
@@ -1257,6 +998,15 @@ export default function EventsPage() {
                                 </button>
                               )}
 
+                              {!event.isGlobal && isAdmin && (
+                                <button
+                                  onClick={(eventClick) => openCityEdit(event, eventClick)}
+                                  className="rounded-2xl border border-emerald-200/24 bg-emerald-200/10 px-4 py-3 text-sm text-emerald-100 transition hover:border-emerald-200/36 hover:bg-emerald-200/16"
+                                >
+                                  Edit event
+                                </button>
+                              )}
+
                               <button
                                 onClick={(eventClick) => handleReport(event, eventClick)}
                                 className="rounded-2xl border border-rose-200/24 bg-rose-200/10 px-4 py-3 text-sm text-rose-100 transition hover:border-rose-200/36 hover:bg-rose-200/16"
@@ -1547,6 +1297,98 @@ export default function EventsPage() {
           </section>
         </div>
       </div>
+      {cityEditOpen && (
+        <div className="fixed inset-0 z-[90] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
+          <div className="flex min-h-full items-center justify-center">
+            <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-emerald-200/22 bg-[linear-gradient(165deg,rgba(8,44,30,0.9),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
+              <div className="border-b border-white/10 px-5 py-4">
+                <p className="text-[11px] uppercase tracking-[0.22em] text-emerald-100/75">Admin edit</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">Edit event</h3>
+                <p className="mt-1 text-sm text-white/70">{cityEditDraft.city || "City event"}</p>
+              </div>
+
+              <form onSubmit={saveCityEdit} className="space-y-4 px-5 py-5">
+                <input
+                  value={cityEditDraft.name}
+                  onChange={(event) => setCityEditDraft((current) => ({ ...current, name: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
+                  placeholder="Event name *"
+                  required
+                />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">From</p>
+                    <DateInput
+                      value={cityEditDraft.startDate}
+                      onChange={(event) => setCityEditDraft((current) => ({ ...current, startDate: event.target.value }))}
+                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-300/30"
+                      required
+                      tone="cyan"
+                    />
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">To</p>
+                    <DateInput
+                      value={cityEditDraft.endDate}
+                      onChange={(event) => setCityEditDraft((current) => ({ ...current, endDate: event.target.value }))}
+                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-300/30"
+                      tone="cyan"
+                    />
+                  </div>
+                </div>
+
+                <input
+                  value={cityEditDraft.location}
+                  onChange={(event) => setCityEditDraft((current) => ({ ...current, location: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
+                  placeholder="Location (optional)"
+                />
+                <input
+                  value={cityEditDraft.vibe}
+                  onChange={(event) => setCityEditDraft((current) => ({ ...current, vibe: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
+                  placeholder="Vibe (optional)"
+                />
+                <textarea
+                  value={cityEditDraft.description}
+                  onChange={(event) => setCityEditDraft((current) => ({ ...current, description: event.target.value }))}
+                  className="min-h-[110px] w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
+                  placeholder="Description"
+                />
+                <input
+                  value={cityEditDraft.link}
+                  onChange={(event) => setCityEditDraft((current) => ({ ...current, link: event.target.value }))}
+                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
+                  placeholder="External link (optional)"
+                />
+
+                {cityEditError && (
+                  <p className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
+                    {cityEditError}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-end gap-2 border-t border-white/10 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeCityEdit}
+                    className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingCityEdit}
+                    className="rounded-full border border-emerald-200/34 bg-emerald-200/16 px-4 py-2 text-sm font-semibold text-emerald-50 transition hover:border-emerald-200/55 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSavingCityEdit ? "Saving..." : "Save changes"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
       {reportModalOpen && (
         <div className="fixed inset-0 z-[91] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
           <div className="flex min-h-full items-center justify-center">

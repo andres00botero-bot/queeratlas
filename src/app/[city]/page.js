@@ -36,6 +36,7 @@ import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
+import SectionSkeleton from "@/components/city/SectionSkeleton";
 import VipFeedStatusAlerts from "@/components/city/VipFeedStatusAlerts";
 import { buildEventAdminDraft, buildPlaceAdminDraft, getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
@@ -60,125 +61,13 @@ import {
   PRIVATE_EVENT_TYPES,
   PRIVATE_EVENT_TYPE_LABELS,
 } from "@/features/city/vipFeature";
-
-const TYPES = [
-  { value: "club", label: "Clubs", color: "#ef4444" },
-  { value: "bar", label: "Bars", color: "#3b82f6" },
-  { value: "restaurant", label: "Restaurants", color: "#14b8a6" },
-  { value: "sauna", label: "Saunas", color: "#a855f7" },
-  { value: "cruise_club", label: "Cruise Clubs", color: "#111111" },
-  { value: "cruising_area", label: "Cruising Areas", color: "#f97316" },
-  { value: "cafe", label: "Cafes", color: "#22c55e" },
-  { value: "hotel", label: "Hotels", color: "#eab308" },
-];
-
-const TYPE_LABELS = {
-  club: "Club",
-  bar: "Bar",
-  restaurant: "Restaurant",
-  sauna: "Sauna",
-  cruise_club: "Cruise Club",
-  cruising_area: "Cruising Area",
-  cafe: "Cafe",
-  hotel: "Hotel",
-};
-
-const TYPE_STYLES = {
-  club: {
-    card: "border-rose-300/12 bg-[linear-gradient(180deg,rgba(76,12,30,0.34),rgba(15,15,15,0.96))]",
-    selected: "border-rose-200/30 bg-[linear-gradient(180deg,rgba(190,24,93,0.20),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(244,63,94,0.12)]",
-    label: "text-rose-200",
-    line: "from-rose-300/75 via-pink-300/45 to-transparent",
-  },
-  bar: {
-    card: "border-sky-300/12 bg-[linear-gradient(180deg,rgba(10,35,72,0.34),rgba(15,15,15,0.96))]",
-    selected: "border-sky-200/30 bg-[linear-gradient(180deg,rgba(14,116,244,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(59,130,246,0.12)]",
-    label: "text-sky-200",
-    line: "from-sky-300/75 via-cyan-300/45 to-transparent",
-  },
-  restaurant: {
-    card: "border-teal-300/12 bg-[linear-gradient(180deg,rgba(8,64,58,0.34),rgba(15,15,15,0.96))]",
-    selected: "border-teal-200/30 bg-[linear-gradient(180deg,rgba(20,184,166,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(20,184,166,0.12)]",
-    label: "text-teal-200",
-    line: "from-teal-300/75 via-cyan-300/45 to-transparent",
-  },
-  sauna: {
-    card: "border-fuchsia-300/12 bg-[linear-gradient(180deg,rgba(78,18,90,0.34),rgba(15,15,15,0.96))]",
-    selected: "border-fuchsia-200/30 bg-[linear-gradient(180deg,rgba(192,38,211,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(217,70,239,0.12)]",
-    label: "text-fuchsia-200",
-    line: "from-fuchsia-300/75 via-violet-300/45 to-transparent",
-  },
-  cruise_club: {
-    card: "border-red-950/40 bg-[linear-gradient(180deg,rgba(30,6,6,0.78),rgba(10,10,10,0.98))]",
-    selected: "border-red-700/40 bg-[linear-gradient(180deg,rgba(91,11,11,0.42),rgba(12,12,12,0.98))] shadow-[0_18px_50px_rgba(127,29,29,0.18)]",
-    label: "text-red-200",
-    line: "from-red-500/60 via-red-300/35 to-transparent",
-  },
-  cruising_area: {
-    card: "border-amber-300/12 bg-[linear-gradient(180deg,rgba(84,44,7,0.34),rgba(15,15,15,0.96))]",
-    selected: "border-amber-200/30 bg-[linear-gradient(180deg,rgba(217,119,6,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(245,158,11,0.12)]",
-    label: "text-amber-200",
-    line: "from-amber-300/75 via-orange-300/45 to-transparent",
-  },
-  cafe: {
-    card: "border-emerald-300/12 bg-[linear-gradient(180deg,rgba(8,63,46,0.34),rgba(15,15,15,0.96))]",
-    selected: "border-emerald-200/30 bg-[linear-gradient(180deg,rgba(5,150,105,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(16,185,129,0.12)]",
-    label: "text-emerald-200",
-    line: "from-emerald-300/75 via-teal-300/45 to-transparent",
-  },
-  hotel: {
-    card: "border-yellow-200/12 bg-[linear-gradient(180deg,rgba(90,68,10,0.32),rgba(15,15,15,0.96))]",
-    selected: "border-yellow-100/30 bg-[linear-gradient(180deg,rgba(202,138,4,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(234,179,8,0.12)]",
-    label: "text-yellow-100",
-    line: "from-yellow-200/75 via-amber-200/45 to-transparent",
-  },
-};
-const REPORT_REASONS = [
-  { value: "safety", label: "Safety issue", helper: "Unsafe behavior, consent issues, harassment or risky conditions." },
-  { value: "wrong_info", label: "Wrong info", helper: "Hours, location, link, category, or details are incorrect." },
-  { value: "spam", label: "Spam or scam", helper: "Misleading promos, fake listings, or low-trust content." },
-  { value: "abuse", label: "Abuse or hate", helper: "Hate speech, threats, discrimination, or abusive language." },
-  { value: "other", label: "Other issue", helper: "Anything else that should be reviewed by admin." },
-];
-const TRUST_ACTIONS = [
-  { value: "1", label: "Verified now" },
-  { value: "2", label: "Needs refresh" },
-  { value: "3", label: "Closed or moved" },
-];
-
-function SectionSkeleton({ tone = "violet", rows = 3 }) {
-  const toneMap = {
-    violet: {
-      outer: "border-violet-200/14 bg-[linear-gradient(180deg,rgba(109,40,217,0.14),rgba(10,10,10,0.86))]",
-      glow: "bg-violet-300/12",
-    },
-    amber: {
-      outer: "border-amber-200/14 bg-[linear-gradient(180deg,rgba(217,119,6,0.12),rgba(10,10,10,0.86))]",
-      glow: "bg-amber-300/12",
-    },
-  };
-
-  const selectedTone = toneMap[tone] || toneMap.violet;
-
-  return (
-    <div className="space-y-3" aria-hidden="true">
-      {Array.from({ length: rows }).map((_, index) => (
-        <div
-          key={`skeleton-${tone}-${index}`}
-          className={`relative overflow-hidden rounded-[24px] border p-4 ${selectedTone.outer} animate-pulse`}
-        >
-          <div className={`pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full blur-3xl ${selectedTone.glow}`} />
-          <div className="h-4 w-44 rounded-full bg-white/14" />
-          <div className="mt-3 h-3 w-28 rounded-full bg-white/10" />
-          <div className="mt-4 space-y-2">
-            <div className="h-3 w-full rounded-full bg-white/8" />
-            <div className="h-3 w-5/6 rounded-full bg-white/8" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+import {
+  REPORT_REASONS,
+  TRUST_ACTIONS,
+  TYPE_LABELS,
+  TYPES,
+  TYPE_STYLES,
+} from "@/features/city/cityPageConstants";
 
 export default function CityPage() {
   const { city } = useParams();
