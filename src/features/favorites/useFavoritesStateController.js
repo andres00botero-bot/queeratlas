@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { getBlockedItems } from "@/lib/moderation";
-
-const INITIAL_NOW_TS = Date.now();
+import { createInitialCheckinForm } from "@/features/favorites/favoritesStateDefaults";
 
 export function useFavoritesStateController() {
   const [isReady, setIsReady] = useState(false);
@@ -31,7 +30,7 @@ export function useFavoritesStateController() {
   const [networkWarning, setNetworkWarning] = useState("");
   const [recommendationMode, setRecommendationMode] = useState("balanced");
   const [showSignalDeck, setShowSignalDeck] = useState(false);
-  const [nowTs, setNowTs] = useState(INITIAL_NOW_TS);
+  const [nowTs, setNowTs] = useState(() => Date.now());
   const [checkins, setCheckins] = useState([]);
   const [checkinsWarning, setCheckinsWarning] = useState("");
   const [isSavingCheckin, setIsSavingCheckin] = useState(false);
@@ -51,17 +50,7 @@ export function useFavoritesStateController() {
   const checkinFormRef = useRef(null);
   const checkinMapRef = useRef(null);
   const checkinMapMarkersRef = useRef([]);
-  const [checkinForm, setCheckinForm] = useState({
-    mode: "trip",
-    privacy: "friends",
-    country: "",
-    city: "",
-    sourceType: "manual",
-    sourceId: "",
-    label: "",
-    address: "",
-    note: "",
-  });
+  const [checkinForm, setCheckinForm] = useState(() => createInitialCheckinForm());
 
   return {
     isReady, setIsReady,

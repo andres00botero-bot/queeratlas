@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { cityConfig } from "@/lib/cities";
-import { getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
+import { subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getMemberProfile } from "@/lib/memberProfile";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
@@ -16,6 +16,29 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
+import { isMissingTableError } from "@/lib/supabaseErrors";
+import {
+  formatCheckinTime,
+  formatCityLabel,
+  formatDate,
+  formatSavedTime,
+  formatWeekRange,
+  geocodeCheckinFromCityAndLabel,
+  isPresenceActiveNow,
+  isWithinDays,
+  mapCheckinRow,
+  mapPlanRow,
+  normalizeCityKey,
+  normalizeLooseText,
+  stopQuickContext,
+  timeAgo,
+} from "@/features/favorites/favoritesUtils";
+import {
+  ADDED_STORAGE_KEY,
+  CHECKINS_STORAGE_KEY,
+  FAVORITES_STORAGE_KEY,
+  PLAN_STORAGE_KEY,
+} from "@/features/favorites/favoritesStateDefaults";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import TripPlannerV2 from "@/components/planner/TripPlannerV2";
@@ -23,180 +46,8 @@ import SavedEventsPanel from "@/components/favorites/SavedEventsPanel";
 import SavedPlacesPanel from "@/components/favorites/SavedPlacesPanel";
 import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
 
-function timeAgo(value) {
-  if (!value) return "Recently";
-  const diffHours = Math.round((new Date() - new Date(value)) / 3600000);
-  if (diffHours < 1) return "Just now";
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${Math.round(diffHours / 24)}d ago`;
-}
-
-function formatDate(value) {
-  if (!value) return "Date TBA";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
-function formatSavedTime(value) {
-  if (!value) return "Not saved yet";
-  return new Date(value).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatCheckinTime(value) {
-  if (!value) return "Unknown time";
-  return new Date(value).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function isWithinDays(value, days) {
-  if (!value) return false;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return false;
-  const now = Date.now();
-  const diff = date.getTime() - now;
-  const windowMs = days * 24 * 60 * 60 * 1000;
-  return diff >= 0 && diff <= windowMs;
-}
-
-function formatWeekRange(reference = new Date()) {
-  const current = new Date(reference);
-  const day = current.getDay();
-  const diffToMonday = (day + 6) % 7;
-  const start = new Date(current);
-  start.setDate(current.getDate() - diffToMonday);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-
-  return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} - ${end.toLocaleDateString(
-    "en-GB",
-    { day: "numeric", month: "short" }
-  )}`;
-}
-
-function stopQuickContext(stop) {
-  const explicitReason = String(stop?.reason || "").trim();
-  if (explicitReason) return explicitReason;
-
-  const slot = String(stop?.slotLabel || "").trim();
-  const kind = String(stop?.type || stop?.itemType || "").trim().toLowerCase();
-  const kindLabel = kind ? kind.replaceAll("_", " ") : "spot";
-
-  if (slot) return `${slot} energy in the flow.`;
-  return `Selected as a ${kindLabel} stop for this plan arc.`;
-}
-
-function normalizeCityKey(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replaceAll("_", " ")
-    .replaceAll("-", " ")
-    .replace(/\s+/g, " ");
-}
-
-function formatCityLabel(value) {
-  const compact = String(value || "")
-    .trim()
-    .replaceAll("_", " ")
-    .replaceAll("-", " ");
-  if (!compact) return "";
-  return compact.replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function isMissingTableError(error) {
-  if (!error) return false;
-  const code = String(error.code || "");
-  const message = String(error.message || "").toLowerCase();
-  return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
-}
-
-const PLAN_STORAGE_KEY = "qa_trip_plans";
-const FAVORITES_STORAGE_KEY = "qa_favorites";
-const ADDED_STORAGE_KEY = "qa_added";
-const CHECKINS_STORAGE_KEY = "qa_member_checkins";
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
-const INITIAL_NOW_TS = Date.now();
 
-function mapPlanRow(row) {
-  return {
-    id: row.client_id || String(row.id),
-    title: row.title || "",
-    city: row.city || "",
-    date: row.date || null,
-    placeIds: Array.isArray(row.place_ids) ? row.place_ids : [],
-    eventIds: Array.isArray(row.event_ids) ? row.event_ids : [],
-    stops: Array.isArray(row.stops) ? row.stops : [],
-    note: row.note || "",
-    createdAt: row.created_at || new Date().toISOString(),
-  };
-}
-
-function mapCheckinRow(row) {
-  return {
-    id: String(row.id || `${row.user_id || "local"}-${row.checked_in_at || row.created_at || Date.now()}`),
-    mode: String(row.mode || "trip"),
-    privacy: String(row.privacy || "private"),
-    country: String(row.country || "").trim(),
-    city: String(row.city || "").trim(),
-    label: String(row.label || "").trim(),
-    address: String(row.address || "").trim(),
-    note: String(row.note || "").trim(),
-    placeId: row.place_id ? String(row.place_id) : "",
-    eventId: row.event_id ? String(row.event_id) : "",
-    lat: Number.isFinite(Number(row.lat)) ? Number(row.lat) : null,
-    lng: Number.isFinite(Number(row.lng)) ? Number(row.lng) : null,
-    checkedInAt: row.checked_in_at || row.created_at || new Date().toISOString(),
-    createdAt: row.created_at || row.checked_in_at || new Date().toISOString(),
-  };
-}
-
-function isPresenceActiveNow(presence) {
-  if (!presence?.lastSeenAt) return false;
-  return new Date(presence.lastSeenAt).getTime() >= Date.now() - 5 * 60 * 1000;
-}
-
-function normalizeLooseText(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replaceAll("_", " ")
-    .replaceAll("-", " ")
-    .replace(/\s+/g, " ");
-}
-
-async function geocodeCheckinFromCityAndLabel({ city, country, label, address, token }) {
-  const cityValue = String(city || "").trim();
-  const countryValue = String(country || "").trim();
-  const labelValue = String(label || "").trim();
-  const addressValue = String(address || "").trim();
-  if (!cityValue || !labelValue || !token) return null;
-
-  const query = [labelValue, addressValue, cityValue, countryValue].filter(Boolean).join(", ");
-  const url =
-    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
-    `?limit=1&types=poi,address,neighborhood,locality,place&language=en&access_token=${encodeURIComponent(token)}`;
-
-  const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store" });
-  if (!response.ok) return null;
-  const data = await response.json();
-  const first = Array.isArray(data?.features) ? data.features[0] : null;
-  const center = Array.isArray(first?.center) ? first.center : null;
-  const lng = Number(center?.[0]);
-  const lat = Number(center?.[1]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng };
-}
 
 function FavoritesCardSkeleton() {
   return (
