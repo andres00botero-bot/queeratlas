@@ -1,4 +1,5 @@
 import { cityConfig } from "@/lib/cities";
+import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
@@ -16,16 +17,18 @@ export async function generateMetadata({ params }) {
 
   const cityName = String(config.title || "").replace(/^Queer\s+/i, "").trim() || city;
   const canonical = `/${city}`;
+  const ownership = getCityKeywordOwnership(cityName);
 
   return {
-    title: `Queer ${cityName}`,
-    description: `Discover queer venues, events, and local guide signal in ${cityName}.`,
+    title: `Gay Bars in ${cityName} | Queer Atlas`,
+    description: `Queer nightlife guide for ${cityName}: bars, clubs, saunas, events, and trusted local signal.`,
+    keywords: [ownership.primary, ...ownership.secondary],
     alternates: {
       canonical,
     },
     openGraph: {
-      title: `Queer ${cityName} | Queer Atlas`,
-      description: `Explore trusted queer places and events in ${cityName}.`,
+      title: `Gay Bars in ${cityName} & Queer Nightlife | Queer Atlas`,
+      description: `Explore trusted queer places, nightlife, and events in ${cityName}.`,
       url: canonical,
       type: "website",
     },

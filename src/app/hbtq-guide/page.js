@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 
 export const metadata = {
   title: "HBTQ Guide",
   description:
     "Global HBTQ guide for cities, queer venues, events, and safer discovery powered by community signal.",
+  keywords: [
+    keywordOwnership.hbtqGuide.primary,
+    ...keywordOwnership.hbtqGuide.secondary,
+  ],
   alternates: {
     canonical: "/hbtq-guide",
   },

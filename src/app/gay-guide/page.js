@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 
 export const metadata = {
-  title: "Gay Guide",
+  title: "Gay Travel Guide",
   description:
-    "Global gay guide for cities, nightlife, events, and trusted queer travel signal in one atlas.",
+    "Gay travel guide for cities, nightlife, venues, and events with trusted queer community signal.",
+  keywords: [
+    keywordOwnership.gayGuide.primary,
+    ...keywordOwnership.gayGuide.secondary,
+  ],
   alternates: {
     canonical: "/gay-guide",
   },

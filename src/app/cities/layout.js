@@ -1,7 +1,13 @@
+import { keywordOwnership } from "@/lib/seo/keywordOwnership";
+
 export const metadata = {
-  title: "Cities",
+  title: "Gay Travel Cities",
   description:
     "Explore queer city guides with verified venues, events, and local signal across the Queer Atlas network.",
+  keywords: [
+    keywordOwnership.cities.primary,
+    ...keywordOwnership.cities.secondary,
+  ],
   alternates: {
     canonical: "/cities",
   },
