@@ -1244,4 +1244,30 @@ export const cityConfig = {
       cost: "Generally high for central nightlife and accommodation, but efficient short-distance planning keeps nights smooth.",
     }),
   },
+  zagreb: {
+    center: [15.9819, 45.815],
+    title: "Queer Zagreb",
+    country: "Croatia",
+    vibe: "compact underground",
+    guide: buildGuide({
+      about: "Zagreb has a smaller but real queer scene: community-led, nightlife-focused, and culturally active through Pride organizing and independent collectives. It is less about mega-club scale and more about knowing the right rooms and people.",
+      district: "The practical route is Lower Town (Donji Grad), especially around Petrinjska, Amruseva, and nearby central streets. Most queer movement happens in compact nighttime hops rather than in one giant district.",
+      safety: "Central Zagreb is generally manageable, but queer nightlife density is limited, so route planning matters. Use direct transfers late at night and avoid drifting into quiet side streets after venues close.",
+      nightlife: "Expect a concentrated scene: one or two core clubs, mixed bars, drag-art collectives, and periodic spikes around Pride and themed nights. The payoff is intimacy and strong local character.",
+      cost: "Usually better value than many Western European capitals. You can build a strong weekend route with moderate spend if you stay central and keep transitions short.",
+    }),
+  },
+  belgrade: {
+    center: [20.4489, 44.7866],
+    title: "Queer Belgrade",
+    country: "Serbia",
+    vibe: "late-hour resilience",
+    guide: buildGuide({
+      about: "Belgrade's queer community is visible, resilient, and event-driven. The city mixes established Pride organizing with late-night social spaces that feel local-first rather than tourist-scripted.",
+      district: "Most movement is in and around Terazije, Makedonska, and adjacent central corridors. It is a city where short-distance venue sequencing beats long cross-city hops.",
+      safety: "Belgrade Pride has continued annually, but the broader environment can still be uneven. Keep nightlife movement intentional, avoid unnecessary late detours, and prefer trusted transport after peak hours.",
+      nightlife: "Belgrade nights can run very late, with compact clubs, karaoke-heavy bars, and men-focused sauna/cruise formats. The scene is less polished than larger EU capitals but often more socially direct.",
+      cost: "Generally affordable for nightlife compared with many EU hubs. Central lodging plus tight routing gives high experience-per-euro for queer weekend travelers.",
+    }),
+  },
 };
