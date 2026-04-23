@@ -36,10 +36,19 @@ import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
+import CityQualityModal from "@/components/city/CityQualityModal";
+import CityReportModal from "@/components/city/CityReportModal";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import VipFeedStatusAlerts from "@/components/city/VipFeedStatusAlerts";
 import { buildEventAdminDraft, buildPlaceAdminDraft, getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
+import {
+  createCityQualityModalFromTarget,
+  createCityReportDraftFromTarget,
+  createInitialCityQualityModal,
+  createInitialCityReportDraft,
+} from "@/features/city/cityModalStateUtils";
+import { getQualityToastConfig, resolveQualityUpdate } from "@/features/city/qualityModalFeature";
 import { formatDate, formatEventDateLabel, isEventVisibleOnCityPage, normalizeEventRange, normalizeIsoDate } from "@/features/city/eventRailFeature";
 import {
   buildCityHeroText,
@@ -173,21 +182,8 @@ export default function CityPage() {
   const [trustedPlaceSavesCount, setTrustedPlaceSavesCount] = useState(0);
   const [trustedEventSavesCount, setTrustedEventSavesCount] = useState(0);
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportDraft, setReportDraft] = useState({
-    targetType: "place",
-    targetId: "",
-    title: "",
-    reasonKey: REPORT_REASONS[0].value,
-    details: "",
-  });
-  const [qualityModal, setQualityModal] = useState({
-    open: false,
-    targetType: "place",
-    targetId: "",
-    action: "1",
-    sourceInput: "",
-    fallbackSource: "",
-  });
+  const [reportDraft, setReportDraft] = useState(() => createInitialCityReportDraft(REPORT_REASONS[0].value));
+  const [qualityModal, setQualityModal] = useState(() => createInitialCityQualityModal());
 
   const mapContainerRef = useRef(null);
   const mapWrapperRef = useRef(null);
@@ -1848,13 +1844,11 @@ export default function CityPage() {
   };
 
   const handleReport = ({ targetType, targetId, title }) => {
-    setReportDraft({
-      targetType: String(targetType || "place"),
-      targetId: String(targetId || ""),
-      title: String(title || "Reported item"),
-      reasonKey: REPORT_REASONS[0].value,
-      details: "",
-    });
+    setReportDraft(createCityReportDraftFromTarget({
+      targetType,
+      targetId,
+      title,
+    }, REPORT_REASONS[0].value));
     setReportModalOpen(true);
   };
 
@@ -1897,14 +1891,10 @@ export default function CityPage() {
 
     const existing = getEntityQuality({ targetType, targetId, entity: { source: fallbackSource }, map: qualityMap });
     const knownSource = (existing?.source || fallbackSource || "").trim();
-    setQualityModal({
-      open: true,
+    setQualityModal(createCityQualityModalFromTarget({
       targetType,
-      targetId: String(targetId || ""),
-      action: "1",
-      sourceInput: knownSource,
-      fallbackSource: knownSource,
-    });
+      targetId,
+    }, knownSource));
   };
 
   const closeQualityModal = () => {
@@ -1918,16 +1908,11 @@ export default function CityPage() {
       return;
     }
 
-    const today = new Date().toISOString().slice(0, 10);
-    const sourceDefaultByAction =
-      action === "1"
-        ? qualityModal.fallbackSource || "Community verified"
-        : action === "2"
-          ? qualityModal.fallbackSource || "Community flagged: needs review"
-          : qualityModal.fallbackSource || "Community flagged: closed or moved";
-    const sourceByAction = String(qualityModal.sourceInput || "").trim() || sourceDefaultByAction;
-    const verified = action === "1";
-    const lastChecked = action === "1" ? today : "";
+    const { sourceByAction, verified, lastChecked } = resolveQualityUpdate(
+      action,
+      qualityModal.fallbackSource,
+      qualityModal.sourceInput
+    );
 
     upsertQuality({
       targetType: qualityModal.targetType,
@@ -1938,20 +1923,8 @@ export default function CityPage() {
     });
 
     setQualityTick((value) => value + 1);
-
-    if (action === "1") {
-      showToast("Trust status updated: verified.", { tone: "ok", duration: 2000 });
-      closeQualityModal();
-      return;
-    }
-
-    if (action === "2") {
-      showToast("Trust status updated: needs refresh.", { tone: "info", duration: 2200 });
-      closeQualityModal();
-      return;
-    }
-
-    showToast("Trust status updated: closed or moved.", { tone: "warn", duration: 2300 });
+    const toastConfig = getQualityToastConfig(action);
+    showToast(toastConfig.message, { tone: toastConfig.tone, duration: toastConfig.duration });
     closeQualityModal();
   };
 
@@ -4481,137 +4454,22 @@ export default function CityPage() {
         </div>
       )}
 
-      {reportModalOpen && (
-        <div className="fixed inset-0 z-[91] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-rose-200/22 bg-[linear-gradient(165deg,rgba(64,18,38,0.88),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
-            <div className="border-b border-white/10 px-5 py-4">
-              <p className="text-[11px] uppercase tracking-[0.22em] text-rose-100/75">Safety report</p>
-              <h3 className="mt-2 text-xl font-semibold text-white">Report {reportDraft.targetType}</h3>
-              <p className="mt-1 text-sm text-white/70 line-clamp-1">{reportDraft.title}</p>
-            </div>
-
-            <div className="max-h-[65vh] space-y-4 overflow-y-auto px-5 py-5 sm:max-h-[70vh]">
-              <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-white/58">Reason</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {REPORT_REASONS.map((item) => {
-                    const active = reportDraft.reasonKey === item.value;
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setReportDraft((current) => ({ ...current, reasonKey: item.value }))}
-                        className={`rounded-2xl border px-3 py-2 text-left transition ${
-                          active
-                            ? "border-rose-200/42 bg-rose-200/16 text-rose-50 shadow-[0_8px_28px_rgba(244,63,94,0.18)]"
-                            : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
-                        }`}
-                      >
-                        <p className="text-sm font-semibold">{item.label}</p>
-                        <p className="mt-1 text-xs text-white/65">{item.helper}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="report-details">
-                  What is wrong?
-                </label>
-                <textarea
-                  id="report-details"
-                  value={reportDraft.details}
-                  onChange={(event) => setReportDraft((current) => ({ ...current, details: event.target.value }))}
-                  placeholder="Example: venue is closed, link is dead, or safety issue happened around 01:30 near entrance..."
-                  className="mt-2 min-h-[116px] w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-3 text-sm leading-6 text-white outline-none focus:border-rose-200/45"
-                />
-                <p className="mt-2 text-xs text-white/52">This note goes directly to admin moderation inbox.</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
-              <button
-                type="button"
-                onClick={closeReportModal}
-                className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={submitReport}
-                className="rounded-full border border-rose-200/34 bg-rose-200/16 px-4 py-2 text-sm font-semibold text-rose-50 transition hover:border-rose-200/55"
-              >
-                Send report
-              </button>
-            </div>
-          </div>
-          </div>
-        </div>
-      )}
-      {qualityModal.open && (
-        <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-cyan-200/22 bg-[linear-gradient(165deg,rgba(7,38,44,0.9),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
-              <div className="border-b border-white/10 px-5 py-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">Trust status</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Update quality</h3>
-              </div>
-              <div className="space-y-4 px-5 py-5">
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {TRUST_ACTIONS.map((item) => {
-                    const active = qualityModal.action === item.value;
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setQualityModal((current) => ({ ...current, action: item.value }))}
-                        className={`rounded-2xl border px-3 py-2 text-sm transition ${
-                          active
-                            ? "border-cyan-200/42 bg-cyan-200/18 text-cyan-50"
-                            : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="city-quality-source">
-                    Source note (optional)
-                  </label>
-                  <input
-                    id="city-quality-source"
-                    value={qualityModal.sourceInput}
-                    onChange={(event) => setQualityModal((current) => ({ ...current, sourceInput: event.target.value }))}
-                    placeholder="Official URL/name or internal verification note"
-                    className="mt-2 w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-cyan-200/45"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
-                <button
-                  type="button"
-                  onClick={closeQualityModal}
-                  className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={submitQualityModal}
-                  className="rounded-full border border-cyan-200/34 bg-cyan-200/16 px-4 py-2 text-sm font-semibold text-cyan-50 transition hover:border-cyan-200/55"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CityReportModal
+        open={reportModalOpen}
+        reportDraft={reportDraft}
+        setReportDraft={setReportDraft}
+        reportReasons={REPORT_REASONS}
+        onClose={closeReportModal}
+        onSubmit={submitReport}
+      />
+      <CityQualityModal
+        open={qualityModal.open}
+        qualityModal={qualityModal}
+        setQualityModal={setQualityModal}
+        trustActions={TRUST_ACTIONS}
+        onClose={closeQualityModal}
+        onSubmit={submitQualityModal}
+      />
     </main>
   );
 }

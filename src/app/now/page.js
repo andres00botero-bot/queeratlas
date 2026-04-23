@@ -326,16 +326,12 @@ export default function NowPage() {
     () => [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))].sort(),
     [events, places]
   );
-  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
   const currentEmail = String(user?.email || "").toLowerCase();
-  const isAdminByEnv = isMember && adminEmails.includes(currentEmail);
-  const isAdmin = isAdminByEnv || isAdminByTable;
+  const isAdmin = isAdminByTable;
 
   useEffect(() => {
     if (!isMember || !currentEmail) {
+      setIsAdminByTable(false);
       return;
     }
 
