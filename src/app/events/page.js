@@ -249,7 +249,10 @@ export default function EventsPage() {
     fallbackSource: "",
     isGlobal: false,
   });
-  const [offgridEventParam, setOffgridEventParam] = useState("");
+  const [offgridEventParam, setOffgridEventParam] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return String(new URLSearchParams(window.location.search).get("offgridEventId") || "").trim();
+  });
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -263,12 +266,6 @@ export default function EventsPage() {
     () => offgridEventParam.replace(/^global-/i, ""),
     [offgridEventParam]
   );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const value = String(new URLSearchParams(window.location.search).get("offgridEventId") || "").trim();
-    setOffgridEventParam(value);
-  }, []);
 
   useEffect(() => {
     let active = true;
