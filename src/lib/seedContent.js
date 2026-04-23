@@ -1,3 +1,5 @@
+import { MODULAR_CITY_SLUGS, modularSeedEvents, modularSeedPlaces } from "./seed/regions/emergingLatinAndBalkans.js";
+
 const OFFICIAL_VENUE_LINKS = {
   "seed-place-sydney-universal": "https://universal.sydney/",
   "seed-place-sydney-arq": "https://arq.com.au/",
@@ -4085,17 +4087,6 @@ export const seedPlaces = [
     hours: "Tue-Thu 14:00-00:00, Fri-Sat 14:00-02:00, Sun 14:00-22:00, Mon closed.",
     lat: 50.1434,
     lng: 8.6718,
-  }),
-  createPlace({
-    id: "seed-place-chicago-sidetrack",
-    city: "chicago",
-    name: "Sidetrack",
-    type: "bar",
-    vibe: "boystown mega-icon",
-    description: "One of Chicago's most iconic queer bars with multiple spaces, rooftop deck, and nonstop social gravity that pulls locals and visitors together.",
-    hours: "Daily 13:00-02:00.",
-    lat: 41.9439,
-    lng: -87.6545,
   }),
   createPlace({
     id: "seed-place-chicago-scarlet",
@@ -8874,6 +8865,10 @@ export const seedEvents = [
 ];
 
 export function mergeSeedPlaces(databasePlaces = []) {
+  const baseSeedPlaces = seedPlaces.filter(
+    (place) => !MODULAR_CITY_SLUGS.has(String(place.city || "")),
+  );
+  const effectiveSeedPlaces = [...baseSeedPlaces, ...modularSeedPlaces];
   const normalizedDatabasePlaces = databasePlaces.map((place) => applyVenueOverride(place));
 
   const seenIds = new Set(normalizedDatabasePlaces.map((place) => String(place.id)));
@@ -8884,7 +8879,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
   );
   const uniqueSeedPlaces = [];
 
-  seedPlaces.forEach((place) => {
+  effectiveSeedPlaces.forEach((place) => {
     const id = String(place.id);
     const venueKey = `${normalizeSeedKey(place.city)}::${normalizeSeedKey(place.name)}`;
     if (seenIds.has(id) || seenVenueKeys.has(venueKey)) return;
@@ -8901,6 +8896,10 @@ export function mergeSeedPlaces(databasePlaces = []) {
 }
 
 export function mergeSeedEvents(databaseEvents = []) {
+  const baseSeedEvents = seedEvents.filter(
+    (event) => !MODULAR_CITY_SLUGS.has(String(event.city || "")),
+  );
+  const effectiveSeedEvents = [...baseSeedEvents, ...modularSeedEvents];
   const seenIds = new Set(databaseEvents.map((event) => String(event.id)));
   const seenEventKeys = new Set(
     databaseEvents.map((event) =>
@@ -8909,7 +8908,7 @@ export function mergeSeedEvents(databaseEvents = []) {
   );
   const uniqueSeedEvents = [];
 
-  seedEvents.forEach((event) => {
+  effectiveSeedEvents.forEach((event) => {
     const id = String(event.id);
     const eventKey = `${normalizeSeedKey(event.city)}::${normalizeSeedKey(event.name)}`;
     if (seenIds.has(id) || seenEventKeys.has(eventKey)) return;

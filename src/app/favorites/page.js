@@ -18,6 +18,9 @@ import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError }
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import TripPlannerV2 from "@/components/planner/TripPlannerV2";
+import SavedEventsPanel from "@/components/favorites/SavedEventsPanel";
+import SavedPlacesPanel from "@/components/favorites/SavedPlacesPanel";
+import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
 
 function timeAgo(value) {
   if (!value) return "Recently";
@@ -207,24 +210,51 @@ function FavoritesCardSkeleton() {
 
 export default function FavoritesPage() {
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
-  const [memberName, setMemberName] = useState("");
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({
-    displayName: "",
-    pronouns: "",
-    homeCity: "",
-    residentCountry: "",
-  });
-  const [favorites, setFavorites] = useState([]);
-  const [added, setAdded] = useState([]);
-  const [places, setPlaces] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [isAtlasLoading, setIsAtlasLoading] = useState(false);
-  const [atlasLoadError, setAtlasLoadError] = useState("");
-  const [plans, setPlans] = useState([]);
-  const [expandedPlanId, setExpandedPlanId] = useState(null);
-  const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
+  const {
+    isReady, setIsReady,
+    memberName, setMemberName,
+    isEditingProfile, setIsEditingProfile,
+    profileForm, setProfileForm,
+    favorites, setFavorites,
+    added, setAdded,
+    places, setPlaces,
+    events, setEvents,
+    isAtlasLoading, setIsAtlasLoading,
+    atlasLoadError, setAtlasLoadError,
+    plans, setPlans,
+    expandedPlanId, setExpandedPlanId,
+    blockedItems, setBlockedItems,
+    syncWarning, setSyncWarning,
+    memberRank, setMemberRank,
+    networkMembers, setNetworkMembers,
+    followingUserIds, setFollowingUserIds,
+    followingFeedRows, setFollowingFeedRows,
+    networkLoading, setNetworkLoading,
+    networkWarning, setNetworkWarning,
+    recommendationMode, setRecommendationMode,
+    showSignalDeck, setShowSignalDeck,
+    nowTs, setNowTs,
+    checkins, setCheckins,
+    checkinsWarning, setCheckinsWarning,
+    isSavingCheckin, setIsSavingCheckin,
+    pendingCheckinVibe, setPendingCheckinVibe,
+    isSubmittingCheckinVibe, setIsSubmittingCheckinVibe,
+    checkinVibeCooldownUntil, setCheckinVibeCooldownUntil,
+    followingCheckins, setFollowingCheckins,
+    followingCheckinsWarning, setFollowingCheckinsWarning,
+    followingPresenceByUserId, setFollowingPresenceByUserId,
+    checkinMapLoadFailed, setCheckinMapLoadFailed,
+    checkinStaticFallbackFailed, setCheckinStaticFallbackFailed,
+    editingCheckinId, setEditingCheckinId,
+    selectedCheckinId, setSelectedCheckinId,
+    checkinViewFilter, setCheckinViewFilter,
+    checkinMapContainerRef,
+    checkinMapCardRef,
+    checkinFormRef,
+    checkinMapRef,
+    checkinMapMarkersRef,
+    checkinForm, setCheckinForm,
+  } = useFavoritesStateController();
   const {
     isMember,
     isLoading: isAuthLoading,
@@ -234,46 +264,6 @@ export default function FavoritesPage() {
     updateMemberProfile,
   } = useAuth();
   const { toast, showToast } = useActionToast();
-  const [syncWarning, setSyncWarning] = useState("");
-  const [memberRank, setMemberRank] = useState(null);
-  const [networkMembers, setNetworkMembers] = useState([]);
-  const [followingUserIds, setFollowingUserIds] = useState([]);
-  const [followingFeedRows, setFollowingFeedRows] = useState([]);
-  const [networkLoading, setNetworkLoading] = useState(false);
-  const [networkWarning, setNetworkWarning] = useState("");
-  const [recommendationMode, setRecommendationMode] = useState("balanced");
-  const [showSignalDeck, setShowSignalDeck] = useState(false);
-  const [nowTs, setNowTs] = useState(INITIAL_NOW_TS);
-  const [checkins, setCheckins] = useState([]);
-  const [checkinsWarning, setCheckinsWarning] = useState("");
-  const [isSavingCheckin, setIsSavingCheckin] = useState(false);
-  const [pendingCheckinVibe, setPendingCheckinVibe] = useState(null);
-  const [isSubmittingCheckinVibe, setIsSubmittingCheckinVibe] = useState(false);
-  const [checkinVibeCooldownUntil, setCheckinVibeCooldownUntil] = useState(0);
-  const [followingCheckins, setFollowingCheckins] = useState([]);
-  const [followingCheckinsWarning, setFollowingCheckinsWarning] = useState("");
-  const [followingPresenceByUserId, setFollowingPresenceByUserId] = useState({});
-  const [checkinMapLoadFailed, setCheckinMapLoadFailed] = useState(false);
-  const [checkinStaticFallbackFailed, setCheckinStaticFallbackFailed] = useState(false);
-  const [editingCheckinId, setEditingCheckinId] = useState("");
-  const [selectedCheckinId, setSelectedCheckinId] = useState("");
-  const [checkinViewFilter, setCheckinViewFilter] = useState("all");
-  const checkinMapContainerRef = useRef(null);
-  const checkinMapCardRef = useRef(null);
-  const checkinFormRef = useRef(null);
-  const checkinMapRef = useRef(null);
-  const checkinMapMarkersRef = useRef([]);
-  const [checkinForm, setCheckinForm] = useState({
-    mode: "trip",
-    privacy: "friends",
-    country: "",
-    city: "",
-    sourceType: "manual",
-    sourceId: "",
-    label: "",
-    address: "",
-    note: "",
-  });
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -349,7 +339,7 @@ export default function FavoritesPage() {
     writeLocalJson(FAVORITES_STORAGE_KEY, mergedFavorites);
     writeLocalJson(ADDED_STORAGE_KEY, remoteAdded);
     writeLocalJson(PLAN_STORAGE_KEY, remotePlans.length > 0 ? remotePlans : localPlans || []);
-  }, []);
+  }, [setAdded, setFavorites, setPlans, setSyncWarning]);
 
   const loadAtlasData = useCallback(async () => {
     setIsAtlasLoading(true);
@@ -367,7 +357,7 @@ export default function FavoritesPage() {
     setPlaces(await mergeSeedPlacesAsync(placesData || []));
     setEvents(await mergeSeedEventsAsync(eventsData || []));
     setIsAtlasLoading(false);
-  }, []);
+  }, [setAtlasLoadError, setEvents, setIsAtlasLoading, setPlaces]);
 
   const loadCheckins = useCallback(async () => {
     if (!user?.id) {
@@ -400,7 +390,7 @@ export default function FavoritesPage() {
     setCheckins(mapped);
     writeLocalJson(CHECKINS_STORAGE_KEY, mapped);
     setCheckinsWarning("");
-  }, [user?.id]);
+  }, [setCheckins, setCheckinsWarning, user?.id]);
 
   const loadFollowingCheckins = useCallback(async () => {
     if (!user?.id || !Array.isArray(followingUserIds) || followingUserIds.length === 0) {
@@ -476,7 +466,7 @@ export default function FavoritesPage() {
 
     setFollowingCheckins(mapped);
     setFollowingCheckinsWarning("");
-  }, [followingUserIds, user?.id]);
+  }, [followingUserIds, setFollowingCheckins, setFollowingCheckinsWarning, setFollowingPresenceByUserId, user?.id]);
 
   const blocked = useMemo(() => {
     return {
@@ -506,13 +496,13 @@ export default function FavoritesPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [setBlockedItems]);
 
   useEffect(() => {
     return subscribeBlockedItems((items) => {
       setBlockedItems(items || []);
     });
-  }, []);
+  }, [setBlockedItems]);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -562,7 +552,7 @@ export default function FavoritesPage() {
       await loadCheckins();
       setIsReady(true);
     });
-  }, [authMemberName, isAuthLoading, isMember, loadAtlasData, loadCheckins, loadMemberCollections, memberProfile, router, user?.id]);
+  }, [authMemberName, isAuthLoading, isMember, loadAtlasData, loadCheckins, loadMemberCollections, memberProfile, router, setAdded, setFavorites, setIsReady, setMemberName, setPlans, setProfileForm, setSyncWarning, user?.id]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -574,7 +564,7 @@ export default function FavoritesPage() {
       setNowTs(Date.now());
     }, 60000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [setNowTs]);
 
   useEffect(() => {
     if (!isReady || !isMember || !user?.id) return;
@@ -598,7 +588,7 @@ export default function FavoritesPage() {
     return () => {
       active = false;
     };
-  }, [isReady, isMember, user?.id]);
+  }, [isReady, isMember, setMemberRank, user?.id]);
 
   const loadTrustNetwork = useCallback(async () => {
     if (!isMember || !user?.id) return;
@@ -647,7 +637,7 @@ export default function FavoritesPage() {
     );
     setFollowingFeedRows(feedRows);
     setNetworkLoading(false);
-  }, [isMember, user?.id]);
+  }, [isMember, setFollowingFeedRows, setFollowingUserIds, setNetworkLoading, setNetworkMembers, setNetworkWarning, user?.id]);
 
   useEffect(() => {
     if (!isReady || !isMember || !user?.id) return;
@@ -769,7 +759,7 @@ export default function FavoritesPage() {
     if (checkinCountryOptions.length > 0) {
       setCheckinForm((current) => ({ ...current, country: String(checkinCountryOptions[0]) }));
     }
-  }, [checkinCountryOptions, checkinForm.country, cityCountryLookup, memberProfile?.homeCity, memberProfile?.residentCountry]);
+  }, [checkinCountryOptions, checkinForm.country, cityCountryLookup, memberProfile?.homeCity, memberProfile?.residentCountry, setCheckinForm]);
 
   useEffect(() => {
     if (String(checkinForm.city || "").trim()) return;
@@ -780,7 +770,7 @@ export default function FavoritesPage() {
     if (checkinCityOptions.length > 0) {
       setCheckinForm((current) => ({ ...current, city: String(checkinCityOptions[0]) }));
     }
-  }, [checkinCityOptions, checkinForm.city, memberProfile?.homeCity]);
+  }, [checkinCityOptions, checkinForm.city, memberProfile?.homeCity, setCheckinForm]);
 
   useEffect(() => {
     if (!checkinForm.city) return;
@@ -792,7 +782,7 @@ export default function FavoritesPage() {
       label: "",
       address: "",
     }));
-  }, [checkinCityOptions, checkinForm.city]);
+  }, [checkinCityOptions, checkinForm.city, setCheckinForm]);
 
   const vibeCount = savedPlaces.reduce((acc, place) => {
     const vibe = place.vibe || place.type || "Mixed";
@@ -1036,7 +1026,7 @@ export default function FavoritesPage() {
       map.remove();
       checkinMapRef.current = null;
     };
-  }, [checkinMapCenter, mapboxToken]);
+  }, [checkinMapCenter, checkinMapContainerRef, checkinMapMarkersRef, checkinMapRef, mapboxToken]);
 
   useEffect(() => {
     const map = checkinMapRef.current;
@@ -1101,15 +1091,15 @@ export default function FavoritesPage() {
       }
       map.fitBounds(bounds, { padding: 44, maxZoom: 11, duration: 650 });
     }
-  }, [checkinMapCenter, interactiveCheckinPoints, selectedCheckinId]);
+  }, [checkinMapCenter, checkinMapMarkersRef, checkinMapRef, interactiveCheckinPoints, selectedCheckinId, setSelectedCheckinId]);
 
   useEffect(() => {
     setCheckinMapLoadFailed(false);
-  }, [staticMapUrl]);
+  }, [setCheckinMapLoadFailed, staticMapUrl]);
 
   useEffect(() => {
     setCheckinStaticFallbackFailed(false);
-  }, [openStreetMapStaticUrl]);
+  }, [openStreetMapStaticUrl, setCheckinStaticFallbackFailed]);
 
   const followingIdSet = useMemo(
     () => new Set((followingUserIds || []).map((id) => String(id))),
@@ -1579,7 +1569,7 @@ export default function FavoritesPage() {
     } finally {
       setIsSubmittingCheckinVibe(false);
     }
-  }, [checkinVibeCooldownUntil, pendingCheckinVibe, showToast, user?.id]);
+  }, [checkinVibeCooldownUntil, pendingCheckinVibe, setCheckinVibeCooldownUntil, setIsSubmittingCheckinVibe, setPendingCheckinVibe, showToast, user?.id]);
 
   const submitCheckin = async (payload) => {
     const editingId = String(payload?.id || "").trim();
@@ -1792,7 +1782,7 @@ export default function FavoritesPage() {
         checkinMapCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     },
-    []
+    [checkinMapCardRef, checkinMapRef, setSelectedCheckinId]
   );
 
   const quickCheckinFromItem = async (item, itemType = "place") => {
@@ -3494,204 +3484,26 @@ export default function FavoritesPage() {
         </>
         ) : null}
 
-        <section className="mb-8 rounded-[34px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                Saved places
-              </h2>
-              <p className="mt-1 text-xs uppercase tracking-[0.22em] text-rose-200/70">
-                Places with gravity
-              </p>
-              <p className="mt-3 text-sm leading-6 text-white/56">
-                Your core saved venues, ready to open fast when you plan your next move.
-              </p>
-            </div>
-          </div>
+        <SavedPlacesPanel
+          isAtlasLoading={isAtlasLoading}
+          savedPlaces={savedPlaces}
+          onOpenPlace={(place) => router.push(`/${place.city?.toLowerCase()}?placeId=${place.id}`)}
+          onQuickCheckin={(place) => quickCheckinFromItem(place, "place")}
+          onRemoveFavorite={removeFavorite}
+          onExploreCities={() => router.push("/cities")}
+          renderSkeleton={() => <FavoritesCardSkeleton />}
+        />
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {isAtlasLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <FavoritesCardSkeleton key={`place-skeleton-${index}`} />
-              ))
-            ) : savedPlaces.length > 0 ? (
-              savedPlaces.map((place) => (
-                <div
-                  key={place.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => router.push(`/${place.city?.toLowerCase()}?placeId=${place.id}`)}
-                  onKeyDown={(keyEvent) => {
-                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                      keyEvent.preventDefault();
-                      router.push(`/${place.city?.toLowerCase()}?placeId=${place.id}`);
-                    }
-                  }}
-                  className="animate-rise-in cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5 transition duration-300 hover:-translate-y-[2px] hover:border-rose-200/18 hover:shadow-[0_24px_70px_rgba(0,0,0,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/45"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-white/36">
-                        {place.city}
-                      </p>
-                      <h3 className="mt-2 text-xl font-semibold text-white">{place.name}</h3>
-                    </div>
-                    <div className="rounded-full border border-rose-200/10 bg-rose-200/[0.06] px-3 py-1 text-xs text-white/60">
-                      ★ {place.avgRating?.toFixed(1) || "-"}
-                    </div>
-                  </div>
-
-                  <p className="mt-3 text-sm capitalize text-rose-100/72">
-                    {String(place.vibe || place.type || "signal").replaceAll("_", " ")}
-                  </p>
-
-                  {place.description && (
-                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/46">
-                      {place.description}
-                    </p>
-                  )}
-
-                  <div className="mt-5 flex items-center justify-between gap-2 text-xs text-white/52">
-                    <span>{place.reviewCount || 0} reviews</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          quickCheckinFromItem(place, "place");
-                        }}
-                        className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
-                      >
-                        Check in
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          removeFavorite(place.id, place.name);
-                        }}
-                        className="rounded-full border border-rose-200/14 bg-rose-200/[0.08] px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/30"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-                            <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/48 md:col-span-2 xl:col-span-3">
-                <p>No saved places yet.</p>
-                <button
-                  type="button"
-                  onClick={() => router.push("/cities")}
-                  className="mt-3 rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
-                >
-                  Explore cities
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="rounded-[34px] border border-violet-200/10 bg-[radial-gradient(circle_at_top_right,rgba(167,139,250,0.12),transparent_28%),linear-gradient(180deg,rgba(26,18,46,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                Saved events
-              </h2>
-              <p className="mt-1 text-xs uppercase tracking-[0.22em] text-violet-200/70">
-                Time-based queer signal
-              </p>
-              <p className="mt-3 text-sm leading-6 text-white/56">
-                Upcoming moments you saved, organized for timing and quick navigation.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {isAtlasLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <FavoritesCardSkeleton key={`event-skeleton-${index}`} />
-              ))
-            ) : savedEvents.length > 0 ? (
-              savedEvents.map((event) => (
-                <div
-                  key={event.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`)}
-                  onKeyDown={(keyEvent) => {
-                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                      keyEvent.preventDefault();
-                      router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`);
-                    }
-                  }}
-                  className="animate-rise-in cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5 transition duration-300 hover:-translate-y-[2px] hover:border-violet-200/18 hover:shadow-[0_24px_70px_rgba(0,0,0,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-white/36">
-                        {event.city}
-                      </p>
-                      <h3 className="mt-2 text-xl font-semibold text-white">{event.name}</h3>
-                    </div>
-                    <div className="rounded-full border border-violet-200/10 bg-violet-200/[0.06] px-3 py-1 text-xs text-white/60">
-                      {formatDate(event.date)}
-                    </div>
-                  </div>
-
-                  <p className="mt-3 text-sm text-violet-100/72">
-                    Community event
-                  </p>
-
-                  {event.description && (
-                    <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/46">
-                      {event.description}
-                    </p>
-                  )}
-
-                  <div className="mt-5 flex items-center justify-between gap-2 text-xs text-white/52">
-                    <span>{event.link ? "External link available" : "Open on map"}</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={(itemEvent) => {
-                          itemEvent.stopPropagation();
-                          quickCheckinFromItem(event, "event");
-                        }}
-                        className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
-                      >
-                        Check in
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(itemEvent) => {
-                          itemEvent.stopPropagation();
-                          removeFavorite(`event-${event.id}`, event.name);
-                        }}
-                        className="rounded-full border border-violet-200/14 bg-violet-200/[0.08] px-3 py-1 text-[11px] text-violet-100/90 transition hover:border-violet-200/30"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-                            <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/48 md:col-span-2 xl:col-span-3">
-                <p>No saved events yet.</p>
-                <button
-                  type="button"
-                  onClick={() => router.push("/events")}
-                  className="mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
-                >
-                  Browse events
-                </button>
-              </div>
-            )}
-          </div>
-        </section>
-
+        <SavedEventsPanel
+          isAtlasLoading={isAtlasLoading}
+          savedEvents={savedEvents}
+          formatDate={formatDate}
+          onOpenEvent={(event) => router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`)}
+          onQuickCheckin={(event) => quickCheckinFromItem(event, "event")}
+          onRemoveFavorite={removeFavorite}
+          onBrowseEvents={() => router.push("/events")}
+          renderSkeleton={() => <FavoritesCardSkeleton />}
+        />
         <section className="mt-8 rounded-[34px] border border-cyan-200/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_80%_15%,rgba(244,114,182,0.10),transparent_26%),linear-gradient(180deg,rgba(10,28,38,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>

@@ -34,6 +34,31 @@ import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
+import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
+import VipFeedStatusAlerts from "@/components/city/VipFeedStatusAlerts";
+import { buildEventAdminDraft, buildPlaceAdminDraft, getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
+import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
+import { formatDate, formatEventDateLabel, isEventVisibleOnCityPage, normalizeEventRange, normalizeIsoDate } from "@/features/city/eventRailFeature";
+import {
+  buildCityHeroText,
+  LIVE_VIBE_COOLDOWN_MS,
+  parseCityHeroText,
+  polishEventDescription,
+  polishGuideText,
+  polishVenueDescription,
+} from "@/features/city/liveVibeFeature";
+import {
+  arePrivateEventsEquivalent,
+  areRequestMapsEqual,
+  areStringMapsEqual,
+  combineDateAndTime,
+  fallbackMemberAlias,
+  formatDateTime,
+  formatEndsIn,
+  getPrivateEventStatus,
+  PRIVATE_EVENT_TYPES,
+  PRIVATE_EVENT_TYPE_LABELS,
+} from "@/features/city/vipFeature";
 
 const TYPES = [
   { value: "club", label: "Clubs", color: "#ef4444" },
@@ -107,153 +132,6 @@ const TYPE_STYLES = {
     line: "from-yellow-200/75 via-amber-200/45 to-transparent",
   },
 };
-const LIVE_VIBE_COOLDOWN_MS = 30 * 1000;
-const PRIVATE_EVENT_TYPES = [
-  { value: "afterparty", label: "Afterparty" },
-  { value: "chill", label: "Chill" },
-  { value: "private_party", label: "Private party" },
-];
-const PRIVATE_EVENT_TYPE_LABELS = Object.fromEntries(
-  PRIVATE_EVENT_TYPES.map((entry) => [entry.value, entry.label]),
-);
-
-function formatDateTime(value) {
-  if (!value) return "Time TBA";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Time TBA";
-  return parsed.toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function getPrivateEventStatus(event = {}, now = Date.now()) {
-  const startTs = new Date(event.start_at || event.startAt || "").getTime();
-  const endTs = new Date(event.end_at || event.endAt || event.expires_at || event.expiresAt || "").getTime();
-
-  if (Number.isFinite(startTs) && startTs > now) {
-    return { key: "upcoming", label: "Starting soon" };
-  }
-  if (Number.isFinite(endTs) && endTs <= now) {
-    return { key: "ended", label: "Ended" };
-  }
-  return { key: "live", label: "Live now" };
-}
-
-function combineDateAndTime(dateValue = "", timeValue = "") {
-  const datePart = String(dateValue || "").trim();
-  const timePart = String(timeValue || "").trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
-  if (!/^\d{2}:\d{2}$/.test(timePart)) return null;
-  const parsed = new Date(`${datePart}T${timePart}:00`);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return parsed;
-}
-
-function formatEndsIn(value, now = Date.now()) {
-  const expiresTs = new Date(value || "").getTime();
-  if (!Number.isFinite(expiresTs)) return "";
-  const diffMs = expiresTs - now;
-  if (diffMs <= 0) return "Ended";
-  const totalMinutes = Math.max(1, Math.floor(diffMs / (60 * 1000)));
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours <= 0) return `Ends in ${minutes}m`;
-  if (hours >= 24) return `Ends in ${hours}h`;
-  return `Ends in ${hours}h ${minutes}m`;
-}
-
-function fallbackMemberAlias(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) return "Member";
-  if (raw.includes("@")) return raw.split("@")[0] || "Member";
-  if (raw.length <= 8) return raw;
-  return `${raw.slice(0, 8)}...`;
-}
-
-function arePrivateEventsEquivalent(nextRows = [], prevRows = []) {
-  const next = Array.isArray(nextRows) ? nextRows : [];
-  const prev = Array.isArray(prevRows) ? prevRows : [];
-  if (next.length !== prev.length) return false;
-
-  for (let index = 0; index < next.length; index += 1) {
-    const a = next[index] || {};
-    const b = prev[index] || {};
-    if (String(a.id || "") !== String(b.id || "")) return false;
-    if (String(a.status || "") !== String(b.status || "")) return false;
-    if (String(a.updated_at || "") !== String(b.updated_at || "")) return false;
-    if (String(a.expires_at || "") !== String(b.expires_at || "")) return false;
-  }
-  return true;
-}
-
-function areStringMapsEqual(nextMap = {}, prevMap = {}) {
-  const nextKeys = Object.keys(nextMap || {});
-  const prevKeys = Object.keys(prevMap || {});
-  if (nextKeys.length !== prevKeys.length) return false;
-  for (const key of nextKeys) {
-    if (String(nextMap[key] || "") !== String(prevMap[key] || "")) return false;
-  }
-  return true;
-}
-
-function areRequestMapsEqual(nextMap = {}, prevMap = {}) {
-  const nextKeys = Object.keys(nextMap || {});
-  const prevKeys = Object.keys(prevMap || {});
-  if (nextKeys.length !== prevKeys.length) return false;
-
-  for (const key of nextKeys) {
-    const nextRows = Array.isArray(nextMap[key]) ? nextMap[key] : [];
-    const prevRows = Array.isArray(prevMap[key]) ? prevMap[key] : [];
-    if (nextRows.length !== prevRows.length) return false;
-
-    for (let idx = 0; idx < nextRows.length; idx += 1) {
-      const a = nextRows[idx] || {};
-      const b = prevRows[idx] || {};
-      if (String(a.id || "") !== String(b.id || "")) return false;
-      if (String(a.status || "") !== String(b.status || "")) return false;
-      if (String(a.updated_at || a.created_at || "") !== String(b.updated_at || b.created_at || "")) return false;
-    }
-  }
-  return true;
-}
-
-function humanizeCitySlug(value = "") {
-  return String(value)
-    .split("_")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function normalizeCityKey(value = "") {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/[-\s]+/g, "_")
-    .replace(/_+/g, "_")
-    .trim();
-}
-
-function cityNameFromConfig(config, citySlug) {
-  const titleName = String(config?.title || "").replace(/^Queer\s+/i, "").trim();
-  return titleName || humanizeCitySlug(citySlug) || "this city";
-}
-
-function getEntityAddressLabel(entity) {
-  const directAddress = String(entity?.location || entity?.address || "").trim();
-  if (directAddress) return directAddress;
-
-  const lat = Number(entity?.lat);
-  const lng = Number(entity?.lng);
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
-    return `${lat.toFixed(4)}, ${lng.toFixed(4)} (map coordinates)`;
-  }
-
-  return "Address not available yet.";
-}
-
 const REPORT_REASONS = [
   { value: "safety", label: "Safety issue", helper: "Unsafe behavior, consent issues, harassment or risky conditions." },
   { value: "wrong_info", label: "Wrong info", helper: "Hours, location, link, category, or details are incorrect." },
@@ -266,265 +144,6 @@ const TRUST_ACTIONS = [
   { value: "2", label: "Needs refresh" },
   { value: "3", label: "Closed or moved" },
 ];
-
-const CITY_HERO_COPY = {
-  berlin: 'Hook: Raw and magnetic, Berlin rewards curiosity after dark. Queer status: Deeply alive and historically foundational, with strong visibility across scenes. Crowd: Club kids, leather, artists, trans community, and global nightlife pilgrims. "Not the loudest scene in Europe, but one of the deepest."',
-  madrid: 'Hook: Warm, social, and addictive from terrace hour to sunrise. Queer status: Very visible and highly lived-in, especially in Chueca and nearby lanes. Crowd: Drag lovers, late-night flirts, stylish locals, and first-timers who quickly become regulars. "Come for one night, stay for the rhythm."',
-  copenhagen: 'Hook: Clean design city with low-noise confidence. Queer status: Safe and progressive, with a smaller but reliable community pulse. Crowd: Creative locals, bike-city romantics, and quality-over-chaos travelers. "Soft volume, strong signal."',
-  paris: 'Hook: Cinematic, sensual, and precise in its nightlife choices. Queer status: Le Marais remains highly active, with strong visibility and cultural depth. Crowd: Fashion minds, cocktail crowd, art-world drifters, and intentional daters. "Less noise, more seduction."',
-  amsterdam: 'Hook: Canal-soft by day, playful and social by night. Queer status: Historically progressive and consistently welcoming across central zones. Crowd: Mixed global travelers, locals, party crews, and easy-entry social groups. "Freedom without friction."',
-  london: 'Hook: Massive and layered, with a lane for every mood. Queer status: Highly active and diverse, from Soho heritage to East London edge. Crowd: Drag fans, kink scenes, queer creatives, finance gays, and everyone in between. "A thousand scenes in one city."',
-  barcelona: 'Hook: Sun-soaked and flirt-first, built for movement. Queer status: Strong visibility around Eixample and beach-party circuits. Crowd: International summer crowd, locals with style, and party-forward travelers. "Heat, skin, and instant chemistry."',
-  lisbon: 'Hook: Hilltop glow and soft-start nights that escalate late. Queer status: Increasingly visible and traveler-friendly with strong city energy. Crowd: Creative nomads, romantic weekenders, and terrace-to-club roamers. "Slow burn, high reward."',
-  torremolinos: 'Hook: Full holiday mode with zero identity apology. Queer status: Very visible, especially near La Nogalera and beachfront routes. Crowd: Resort regulars, pride-week veterans, and beach-to-bar marathoners. "Sun by day, sparkle by night."',
-  sitges: 'Hook: Compact queer fantasy by the sea. Queer status: Exceptionally visible in central nightlife and beach zones. Crowd: International regulars, couples, event-week crowds, and social bar-hoppers. "Tiny town, giant energy."',
-  gran_canaria: 'Hook: Resort circuit built for freedom and stamina. Queer status: One of Europe\'s most visible queer holiday ecosystems. Crowd: Pool-party crews, resort loyalists, circuit travelers, and winter-escape regulars. "Where vacation becomes lifestyle."',
-  cologne: 'Hook: Friendly, social, and built for community nights. Queer status: Strong and welcoming with major festival credibility. Crowd: Bears, club crews, karaoke lovers, and warm regulars. "Less attitude, more belonging."',
-  brighton: 'Hook: Coastal queer capital with easy charm. Queer status: Highly visible and culturally embedded, especially in Kemptown. Crowd: Local creatives, drag crowd, queer couples, and London escapees. "Sea air, safe vibe, real community."',
-  prague: 'Hook: Gothic beauty with an increasingly bold queer layer. Queer status: Smaller scene, but active and growing around key venues. Crowd: City-break travelers, nightlife seekers, and curation-first explorers. "Pick the right room and it clicks."',
-  vienna: 'Hook: Elegant city breaks with curated nightlife moments. Queer status: Stable and welcoming, with selective but quality scene options. Crowd: Culture lovers, polished locals, and intimate social circles. "Grace first, chaos optional."',
-  stockholm: 'Hook: Crisp, modern, and confidence-led. Queer status: Safe and progressive, with a focused event-driven nightlife scene. Crowd: Design-minded locals, music lovers, and weekend travelers. "Minimal drama, maximum ease."',
-  manchester: 'Hook: Fast, loud, and emotionally direct. Queer status: Very active around Canal Street with strong legacy and nightlife depth. Crowd: Party groups, drag devotees, football gays, and friendly regulars. "No pretense, just pulse."',
-  brussels: 'Hook: Compact European mix with multilingual energy. Queer status: Visible and social, with central scene lanes that stay active. Crowd: EU crowd, locals, art students, and crossover nightlife roamers. "Small map, big mix."',
-  athens: 'Hook: Hot, textured, and gloriously imperfect. Queer status: Growing visibility with strong nightlife pull in key areas. Crowd: Local night owls, terrace lovers, queer creatives, and summer visitors. "Messy in the best way."',
-  rome: 'Hook: Monumental backdrop, intimate queer flow. Queer status: Visible and active through selected venues and event nights. Crowd: Stylish locals, curious travelers, and late-start social groups. "History outside, desire inside."',
-  milano: 'Hook: Sharp silhouettes and curated after-dark decisions. Queer status: Solid and modern, especially around Porta Venezia circuits. Crowd: Fashion crowd, design people, nightlife editors, and polished locals. "Dress good, move smart."',
-  oslo: 'Hook: Calm city comfort with a quietly loyal scene. Queer status: Very safe and progressive with reliable venue anchors. Crowd: Community regulars, low-drama travelers, and quality-night seekers. "Small scene, clear heart."',
-  dublin: 'Hook: Big social warmth packed into a compact city. Queer status: Welcoming and visible with strong drag and pub culture roots. Crowd: Friendly locals, students, weekenders, and singalong energy. "It starts as a pint, ends as a memory."',
-  mykonos: 'Hook: Luxury sun, sunset drama, and nonstop temptation. Queer status: Extremely visible in high season with iconic gay travel pull. Crowd: Global circuit crowd, beach-club regulars, glam couples, and high-energy crews. "Come rested, leave legendary."',
-  warsaw: 'Hook: Urban intensity with a rising queer confidence. Queer status: Growing and increasingly visible, especially in progressive circles. Crowd: Young locals, expats, party crews, and culture-forward travelers. "New energy, real momentum."',
-  malta: 'Hook: Mediterranean escape with compact social routes. Queer status: Friendly and increasingly visible, with seasonal nightlife spikes. Crowd: Beach travelers, couples, weekend groups, and event-led visitors. "Small island, big release."',
-  toronto: 'Hook: Big-city comfort with strong community backbone. Queer status: Highly visible and institutionally strong in the Village and beyond. Crowd: Drag fans, leather community, queer professionals, and global migrants. "Inclusive by design, wild by choice."',
-  montreal: 'Hook: Bilingual nightlife with fearless performance culture. Queer status: Very alive in the Village with deep queer infrastructure. Crowd: Drag lovers, nightlife pros, terrace socialites, and art-school edge. "Camp, confidence, and late hours."',
-  vancouver: 'Hook: Mountain-air calm meets Davie nightlife glow. Queer status: Welcoming and visible with a stable local community scene. Crowd: Outdoor queers, cocktail crowd, bears, and sunset terrace roamers. "Soft city, strong signal."',
-  bangkok: 'Hook: Neon heat and nonstop movement. Queer status: Highly active with major nightlife density and broad LGBTQ visibility. Crowd: International party travelers, local regulars, drag fans, and late-night explorers. "You do not chase the night, you ride it."',
-  phuket: 'Hook: Tropical party routes with beach-first freedom. Queer status: Visible and active around core nightlife strips and resorts. Crowd: Holiday groups, circuit visitors, couples, and bar-hopping travelers. "Saltwater by day, strobe light by night."',
-  sydney: 'Hook: Harbour glamour with polished queer nightlife. Queer status: Strong and visible, especially around Oxford Street and seasonal events. Crowd: Locals with pace, beach-fit social circles, and global visitors. "Sunrise city, after-dark heart."',
-  san_francisco: 'Hook: Legendary queer ground with modern tech-city edge. Queer status: Deeply rooted, highly visible, and culturally foundational. Crowd: Leather elders, startup gays, activists, artists, and neighborhood regulars. "History still dances here."',
-  new_york: 'Hook: Maximum options, maximum identity range. Queer status: Intensely active across boroughs with global cultural influence. Crowd: Every subculture, every style, every schedule. "If it exists, it exists here."',
-  buenos_aires: 'Hook: Seductive nights, deep emotions, and dance-floor tension. Queer status: Strong and socially alive with visible nightlife flow. Crowd: Local party culture, travelers, drag fans, and late-night romantics. "Drama, desire, and no early bedtime."',
-  sao_paulo: 'Hook: Mega-city scale with serious queer horsepower. Queer status: Very active and globally relevant for parties and pride culture. Crowd: Circuit crowds, underground selectors, fashion energy, and local legends. "Big city, bigger appetite."',
-  rio_de_janeiro: 'Hook: Beach confidence and nightlife sparkle under tropical heat. Queer status: Visible and lively, especially in key beach and party zones. Crowd: Beach crowd, party travelers, locals, and carnival-influenced nightlife lovers. "Body positive, sun powered."',
-  mexico_city: 'Hook: Huge urban energy with layered queer neighborhoods. Queer status: Very alive and increasingly international across nightlife circuits. Crowd: Creative locals, expats, club kids, and culture-first travelers. "Chaos, culture, and connection."',
-  puerto_vallarta: 'Hook: Seafront queer holiday machine with easy flow. Queer status: Exceptionally visible around Zona Romantica and beach strips. Crowd: Resort regulars, retirement glam, party groups, and weekend escapes. "Vacation mode, fully unlocked."',
-  bogota: 'Hook: High-altitude city nights with sharp social energy. Queer status: Growing and active, with major nightlife anchors and community life. Crowd: Young locals, underground music lovers, and adventurous travelers. "Cool air, hot rooms."',
-  medellin: 'Hook: Warm weather and nightlife that builds fast. Queer status: Increasingly visible with strong venue clusters and local momentum. Crowd: Stylish locals, digital nomads, party travelers, and terrace social circles. "Easy smile, late finish."',
-  taipei: 'Hook: Tech-modern city with one of Asia\'s strongest queer signals. Queer status: Highly progressive and visible, especially around Ximen and pride culture. Crowd: Local regulars, queer youth, travelers, and nightlife explorers. "Safe, bright, and genuinely alive."',
-  zurich: 'Hook: Precision city with surprisingly hot nightlife pockets. Queer status: Stable and welcoming with quality venues and clear social flow. Crowd: Finance polish, creative circles, and curated weekenders. "Clean lines, dirty little nights."',
-  geneva: 'Hook: International calm with selective queer nightlife. Queer status: Smaller scene but reliable and socially welcoming. Crowd: Diplomat crowd, expats, local regulars, and elegant weekender energy. "Quiet city, quality signal."',
-  tel_aviv: 'Hook: Beach city intensity with fearless queer expression. Queer status: Very visible and community-strong in nightlife and daytime life. Crowd: Locals, global travelers, party crews, and culture-mix social circles. "Heat, freedom, and zero half-measures."',
-  los_angeles: 'Hook: Spread-out city, high-impact queer islands. Queer status: Strong and diverse across WeHo, Eastside, and event circuits. Crowd: Industry people, performers, fitness crowd, and after-hours regulars. "Choose your lane, own your night."',
-  miami: 'Hook: Tropical glamour and nightlife built for excess. Queer status: Highly visible in key districts with strong event culture. Crowd: Beach bodies, nightlife tourists, local creators, and festival travelers. "Humidity, high heels, and high energy."',
-  tokyo: 'Hook: Neon precision with deep nightlife density. Queer status: Strong and concentrated in key queer streets and bars. Crowd: Local regulars, international travelers, karaoke lovers, and style-forward night owls. "Tiny bars, massive personality."',
-  palm_springs: 'Hook: Desert luxury and pool-party ease. Queer status: Extremely welcoming and deeply integrated into local culture. Crowd: Resort regulars, weekend groups, retirees, and festival crowds. "Sun, shade, and no judgment."',
-  provincetown: 'Hook: Seaside queer pilgrimage with full summer magic. Queer status: Exceptionally visible and community-centered all season. Crowd: Bears, artists, drag lovers, couples, and returning regulars. "A small town where everyone can be loud."',
-  cape_town: 'Hook: Epic landscapes with a growing queer city pulse. Queer status: Visible in key nightlife corridors and travel-friendly zones. Crowd: Local creatives, global travelers, beach lovers, and nightlife crews. "One city, five different moods."',
-  seoul: 'Hook: High-speed city energy with rising queer nightlife. Queer status: Scene is concentrated but alive, with strong community pockets. Crowd: Local regulars, expats, students, and after-hours explorers. "Subtle by day, electric by night."',
-  ibiza: 'Hook: Island hedonism where sunset becomes strategy. Queer status: Very visible in season with iconic party and beach circuits. Crowd: Global party travelers, DJs, style crowd, and holiday groups. "No casual nights here."',
-  santiago: 'Hook: Urban Andes backdrop with increasingly bold queer flow. Queer status: Growing visibility and active nightlife in key neighborhoods. Crowd: Local creatives, social groups, and culture-forward travelers. "Rising city, rising signal."',
-  lima: 'Hook: Coastal capital with a late-night social arc. Queer status: Active and growing, especially across curated nightlife lanes. Crowd: Local party circles, travelers, drag fans, and weekend explorers. "Understated start, strong finish."',
-  quito: 'Hook: High-altitude city heat with late-night queer momentum. Queer status: Active and resilient, with visible nightlife lanes and a growing community pulse. Crowd: Local regulars, drag-night lovers, party travelers, and social bar hoppers. "Altitude by day, release by night."',
-  bucharest: 'Hook: Grit, glamour, and late-night queer voltage in one city loop. Queer status: Compact but alive, with resilient community spaces and rising visibility. Crowd: Local regulars, alt-club lovers, drag-night travelers, and weekend social crews. "Smaller scene, sharper chemistry."',
-  sofia: 'Hook: Balkan city edge with emerging queer confidence. Queer status: Smaller but resilient and increasingly visible community scene. Crowd: Local regulars, students, creatives, and intentional travelers. "Not huge, but absolutely real."',
-  montevideo: 'Hook: Relaxed coastal capital with loyal nightlife pockets. Queer status: Visible and welcoming, especially around core social venues. Crowd: Local regulars, South American travelers, and low-drama bar hoppers. "Calm pace, strong connection."',
-  hamburg: 'Hook: Port-city grit with polished nightlife options. Queer status: Active and welcoming, with strong bar and club routes. Crowd: Music lovers, locals, leather crowd, and weekend travelers. "Salt, steel, and after-dark glow."',
-  munich: 'Hook: Classic city form with modern queer confidence. Queer status: Stable and visible, especially around event-led nightlife. Crowd: Locals, professionals, travelers, and social bar regulars. "Tradition outside, freedom inside."',
-  frankfurt: 'Hook: Skyline speed and compact nightlife precision. Queer status: Solid and active with reliable scene anchors. Crowd: Finance crowd, locals, expats, and weekend city-break visitors. "Fast city, focused scene."',
-  chicago: 'Hook: Big-room nightlife and neighborhood soul. Queer status: Strongly visible with deep history and active community lanes. Crowd: House music faithful, drag fans, leather scene, and social locals. "Windy city, heavy pull."',
-  las_vegas: 'Hook: Spectacle-first nights and no-off-switch weekends. Queer status: Visible and event-heavy, especially around parties and festivals. Crowd: Weekend blowout crews, performers, travelers, and nightlife loyalists. "Go big or go home tired."',
-  san_diego: 'Hook: Coastal chill with nightlife that still hits hard. Queer status: Welcoming and active, especially around Hillcrest circuits. Crowd: Beach crowd, military locals, students, and social weekenders. "Easy day, spicy night."',
-  philadelphia: 'Hook: Historic city grit with loyal queer neighborhoods. Queer status: Strong and community-driven, especially in the Gayborhood. Crowd: Locals, artists, students, and nightlife regulars. "Real people, real scene."',
-  new_orleans: 'Hook: Ritual nightlife city with queer flair built in. Queer status: Visible and culturally embedded in major social zones. Crowd: Drag lovers, party tourists, locals, and music-night wanderers. "Jazz, joy, and beautiful chaos."',
-  orlando: 'Hook: Theme-park city by day, queer takeover by night. Queer status: Highly active during major event weekends and local circuit nights. Crowd: Festival travelers, local crews, and pool-party regulars. "Magic, but make it queer."',
-  melbourne: 'Hook: Artsy city depth with smart nightlife curation. Queer status: Strong and progressive, with visible community and events. Crowd: Creatives, students, culture lovers, and late-bar roamers. "Coffee first, chaos later."',
-  budapest: 'Hook: Grand city architecture with rising queer momentum. Queer status: Smaller but active scene with resilient community energy. Crowd: Travelers, local regulars, and event-night seekers. "Beautiful city, brave nights."',
-  valencia: 'Hook: Mediterranean ease and warm nightlife flow. Queer status: Growing and increasingly visible with strong seasonal energy. Crowd: Beach lovers, local social circles, and weekend travelers. "Sunset city, social nights."',
-  seville: 'Hook: Andalusian heat with intimate queer nightlife lanes. Queer status: Friendly and active in selected core zones. Crowd: Locals, visitors, dance lovers, and terrace-first groups. "Slow start, blazing finish."',
-};
-
-function buildCityHeroText({ config, citySlug }) {
-  const key = String(citySlug || "").toLowerCase();
-  const direct = CITY_HERO_COPY[key];
-  if (direct) return direct;
-
-  const cityName = cityNameFromConfig(config, citySlug);
-  return `Hook: ${cityName} has strong queer momentum. Queer status: Visible and evolving with active community routes. Crowd: Mixed locals and travelers shaping the night together. "${cityName} rewards intention."`;
-}
-
-function parseCityHeroText(copy = "") {
-  const text = String(copy || "");
-  const extract = (label) => {
-    const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const match = text.match(new RegExp(`${escaped}:\\s*([\\s\\S]*?)(?=\\s*(Hook|Queer status|Crowd):|\\s*\"[^\"]+\"\\s*$|$)`, "i"));
-    return match?.[1]?.trim() || "";
-  };
-
-  const taglineMatch = text.match(/"([^"]+)"\s*$/);
-
-  return {
-    hook: extract("Hook"),
-    status: extract("Queer status"),
-    crowd: extract("Crowd"),
-    tagline: taglineMatch?.[1]?.trim() || "",
-  };
-}
-
-function polishGuideText(text, { sectionTitle = "", cityName = "this city", vibe = "" } = {}) {
-  const clean = String(text || "").trim();
-  if (!clean) return "";
-  if (clean.length >= 340) return clean;
-
-  const key = String(sectionTitle).toLowerCase();
-  const additions = {
-    about: `${cityName} rewards travelers who mix curiosity with intention: start with one iconic lane, then follow community signal into the rooms locals actually return to.`,
-    districts: `The best version of ${cityName} is usually route-based, not random: pick one anchor zone, then move out in layers as the energy builds.`,
-    safety: `Treat pacing as part of safety, especially on big nights: charged phone, clear route, and one trusted fallback always make the night better.`,
-    nightlife: `Use a two-phase flow for stronger nights: social warm-up first, then commit to one room with real pull instead of chasing every option.`,
-    cost: `Spend for position and vibe, save on everything else. In ${cityName}, location and timing usually matter more than flashy upgrades.`,
-  };
-
-  const generic = `${cityName} has ${vibe || "strong"} queer momentum, and the best experiences usually come from layered choices instead of rushed checklists.`;
-  const addition = additions[key] || generic;
-  return `${clean} ${addition}`;
-}
-
-function polishVenueDescription(place, cityName = "this city") {
-  const existing = String(place?.description || "").trim();
-  if (existing.length >= 240) return existing;
-
-  const typeLabel = TYPE_LABELS[place?.type] || "venue";
-  const vibeText = place?.vibe ? `${place.vibe}` : `distinct ${typeLabel.toLowerCase()} energy`;
-
-  if (!existing) {
-    return `${place?.name || "This venue"} is a community-facing ${typeLabel.toLowerCase()} in ${cityName} with ${vibeText}. It works best as a strong stop in your night route, especially when you want social momentum with local signal instead of generic tourist flow.`;
-  }
-
-  return `${existing} In ${cityName}, this spot stands out for ${vibeText} and works best when you use it as a deliberate part of your route, not just a random pass-through.`;
-}
-
-function polishEventDescription(event, cityName = "this city") {
-  const existing = String(event?.description || "").trim();
-  if (existing.length >= 220) return existing;
-
-  if (!existing) {
-    return `${event?.name || "This event"} is part of ${cityName}'s live queer pulse and is best treated as a momentum anchor for your night: start social, arrive with intention, and let the crowd chemistry do the rest.`;
-  }
-
-  return `${existing} Expect a mixed crowd, strong community energy, and the kind of night that lands best when you arrive early enough to catch the room build.`;
-}
-
-function formatDate(value) {
-  if (!value) return "Date TBA";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function normalizeIsoDate(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const iso = raw.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
-}
-
-function normalizeEventRange(event = {}) {
-  const startDate = normalizeIsoDate(event.startDate || event.start_date || event.date);
-  const endDateRaw = normalizeIsoDate(event.endDate || event.end_date || event.date);
-  const endDate = endDateRaw && endDateRaw >= startDate ? endDateRaw : startDate;
-  return {
-    ...event,
-    startDate,
-    endDate: endDate || startDate,
-    date: startDate,
-  };
-}
-
-function formatEventDateLabel(event = {}) {
-  const normalized = normalizeEventRange(event);
-  if (!normalized.startDate) return "Date TBA";
-  if (!normalized.endDate || normalized.endDate === normalized.startDate) {
-    return formatDate(normalized.startDate);
-  }
-
-  const start = new Date(normalized.startDate);
-  const end = new Date(normalized.endDate);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return formatDate(normalized.startDate);
-  }
-
-  const sameYear = start.getFullYear() === end.getFullYear();
-  const sameMonth = sameYear && start.getMonth() === end.getMonth();
-
-  if (sameMonth) {
-    return `${start.getDate()}-${end.getDate()} ${start.toLocaleDateString("en-GB", { month: "short" })} ${start.getFullYear()}`;
-  }
-
-  if (sameYear) {
-    return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} ${start.getFullYear()}`;
-  }
-
-  return `${start.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}-${end.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
-}
-
-function normalizeExternalUrl(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  if (/^https?:\/\//i.test(raw)) return raw;
-  return `https://${raw}`;
-}
-
-function isEventVisibleOnCityPage(event) {
-  const normalized = normalizeEventRange(event || {});
-  if (!normalized.startDate) return false;
-
-  const parsedEnd = new Date(normalized.endDate || normalized.startDate);
-  if (Number.isNaN(parsedEnd.getTime())) return true;
-  const endOfDay = new Date(parsedEnd.getFullYear(), parsedEnd.getMonth(), parsedEnd.getDate(), 23, 59, 59, 999);
-  return endOfDay.getTime() >= Date.now();
-}
-
-function qualityPillClass(tone) {
-  if (tone === "verified") {
-    return "border-emerald-200/24 bg-emerald-200/12 text-emerald-100";
-  }
-
-  if (tone === "stale") {
-    return "border-amber-200/24 bg-amber-200/12 text-amber-100";
-  }
-
-  if (tone === "community") {
-    return "border-cyan-200/24 bg-cyan-200/12 text-cyan-100";
-  }
-
-  return "border-white/16 bg-white/7 text-white/70";
-}
-
-function buildPlaceAdminDraft(place) {
-  return {
-    name: String(place?.name || ""),
-    type: String(place?.type || "bar"),
-    description: String(place?.description || ""),
-    vibe: String(place?.vibe || ""),
-    location: String(place?.location || ""),
-    hours: String(place?.hours || ""),
-    link: String(place?.link || ""),
-  };
-}
-
-function buildEventAdminDraft(event) {
-  const normalized = normalizeEventRange(event || {});
-  return {
-    name: String(event?.name || ""),
-    startDate: String(normalized.startDate || ""),
-    endDate: String(normalized.endDate || ""),
-    location: String(event?.location || ""),
-    vibe: String(event?.vibe || ""),
-    description: String(event?.description || ""),
-    link: String(event?.link || ""),
-  };
-}
 
 function SectionSkeleton({ tone = "violet", rows = 3 }) {
   const toneMap = {
@@ -825,12 +444,13 @@ export default function CityPage() {
 
   const cityPrivateEvents = useMemo(() => {
     const normalizedCity = normalizeCityKey(city);
+    const nowMs = privateFeedNowTick;
     return privateEvents
       .filter((event) => normalizeCityKey(event.city) === normalizedCity)
       .filter((event) => {
         if (String(event.status || "active") !== "active") return false;
         const expiresAt = new Date(event.expires_at || "").getTime();
-        return !Number.isFinite(expiresAt) || expiresAt > Date.now();
+        return !Number.isFinite(expiresAt) || expiresAt > nowMs;
       })
       .sort((a, b) => {
         const statusA = getPrivateEventStatus(a).key;
@@ -839,7 +459,7 @@ export default function CityPage() {
         if (rank[statusA] !== rank[statusB]) return rank[statusA] - rank[statusB];
         return new Date(a.start_at || 0).getTime() - new Date(b.start_at || 0).getTime();
       });
-  }, [city, privateEvents, liveVibeRefreshTick]);
+  }, [city, privateEvents, privateFeedNowTick]);
 
   const qualityMap = getQualityMap();
 
@@ -942,11 +562,12 @@ export default function CityPage() {
     return latest;
   }, [liveVibeRows, user?.id]);
   const liveVibeCooldownRemainingSec = useMemo(() => {
+    const nowMs = privateFeedNowTick;
     if (!liveVibeMyLastTapMs) return 0;
-    const remaining = LIVE_VIBE_COOLDOWN_MS - (Date.now() - liveVibeMyLastTapMs);
+    const remaining = LIVE_VIBE_COOLDOWN_MS - (nowMs - liveVibeMyLastTapMs);
     if (remaining <= 0) return 0;
     return Math.ceil(remaining / 1000);
-  }, [liveVibeMyLastTapMs, liveVibeRefreshTick]);
+  }, [liveVibeMyLastTapMs, privateFeedNowTick]);
   const liveVibeStreakNudge = useMemo(() => {
     if (!isMember) return "";
     if (liveVibeMemberMomentum.todayTapped) return "Nice. You already locked your streak today.";
@@ -3436,37 +3057,16 @@ export default function CityPage() {
               ))}
 
               {!eventsLoading && !featuredEvent && remainingEvents.length === 0 ? (
-                <div className="rounded-[24px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.16),rgba(18,18,18,0.96))] px-5 py-8 text-center">
-                  <p className="text-xs uppercase tracking-[0.2em] text-violet-200/70">Event signal</p>
-                  <h3 className="mt-2 text-lg font-semibold text-white">Event pulse is warming up</h3>
-                  <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-                    This city's event lane is being refreshed. Check back soon, or add the first trusted event to kickstart the pulse.
-                  </p>
-                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                    {isMember ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          openEventContribution();
-                        }}
-                        className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
-                      >
-                        Publish first event
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          writeLocalValue("qa_redirect", pathname);
-                          router.push("/?join=true");
-                        }}
-                        className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
-                      >
-                        Join to publish
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <EventPulseEmptyState
+                  isMember={isMember}
+                  onPublishFirstEvent={() => {
+                    openEventContribution();
+                  }}
+                  onJoinToPublish={() => {
+                    writeLocalValue("qa_redirect", pathname);
+                    router.push("/?join=true");
+                  }}
+                />
               ) : null}
 
               {isMember ? (
@@ -3484,16 +3084,10 @@ export default function CityPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {privateEventsTableMissing ? (
-                <div className="rounded-2xl border border-amber-300/24 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
-                  VIP invites are not activated in DB yet. Run <code>supabase/vip-invites-v1.sql</code> first.
-                </div>
-              ) : null}
-              {privateEventsError ? (
-                <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
-                  {privateEventsError}
-                </div>
-              ) : null}
+              <VipFeedStatusAlerts
+                privateEventsTableMissing={privateEventsTableMissing}
+                privateEventsError={privateEventsError}
+              />
               {privateEventsLoading ? (
                 <div className="rounded-2xl border border-fuchsia-200/10 bg-fuchsia-200/[0.03] p-4">
                   <p className="mb-3 text-xs uppercase tracking-[0.16em] text-fuchsia-100/60">Loading VIP feed</p>
@@ -3974,44 +3568,18 @@ export default function CityPage() {
             })()
           ))}
           {!eventsLoading && !featuredEvent && remainingEvents.length === 0 && (
-            <div className="rounded-[24px] border border-dashed border-violet-200/22 bg-[linear-gradient(160deg,rgba(76,29,149,0.16),rgba(18,18,18,0.96))] px-5 py-8 text-center">
-              <p className="text-xs uppercase tracking-[0.2em] text-violet-200/70">Event signal</p>
-              <h3 className="mt-2 text-lg font-semibold text-white">Event pulse is warming up</h3>
-              <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-                This city&apos;s event lane is being refreshed. Check back soon, or add the first trusted event to kickstart the pulse.
-              </p>
-              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => scrollToSection(guideSectionRef)}
-                  className="qa-cinematic-hover rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/80 hover:border-white/30 hover:text-white"
-                >
-                  Open guide lane
-                </button>
-                {isMember ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      openEventContribution();
-                    }}
-                    className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
-                  >
-                    Publish first event
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      writeLocalValue("qa_redirect", pathname);
-                      router.push("/?join=true");
-                    }}
-                    className="qa-cinematic-hover rounded-full border border-violet-200/28 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 hover:border-violet-200/46"
-                  >
-                    Join to publish
-                  </button>
-                )}
-              </div>
-            </div>
+            <EventPulseEmptyState
+              isMember={isMember}
+              secondaryActionLabel="Open guide lane"
+              onSecondaryAction={() => scrollToSection(guideSectionRef)}
+              onPublishFirstEvent={() => {
+                openEventContribution();
+              }}
+              onJoinToPublish={() => {
+                writeLocalValue("qa_redirect", pathname);
+                router.push("/?join=true");
+              }}
+            />
           )}
         </div>
 
@@ -4239,10 +3807,10 @@ export default function CityPage() {
                       </div>
                     </div>
 
-                    {polishVenueDescription(place, cityName) && (
+                      {polishVenueDescription(place, cityName, TYPE_LABELS) && (
                       <div className="mb-4 rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(0,0,0,0.34),rgba(0,0,0,0.52))] p-4">
                         <p className={`${index === 0 ? "line-clamp-4 text-sm leading-7" : "line-clamp-3 text-sm leading-6"} text-white/68`}>
-                          {polishVenueDescription(place, cityName)}
+                          {polishVenueDescription(place, cityName, TYPE_LABELS)}
                         </p>
                       </div>
                     )}
@@ -4334,9 +3902,9 @@ export default function CityPage() {
               Address: {getEntityAddressLabel(selectedPlace)}
             </p>
             <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-fuchsia-300" />
-            {polishVenueDescription(selectedPlace, cityName) && (
+                  {polishVenueDescription(selectedPlace, cityName, TYPE_LABELS) && (
               <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <p className="text-sm leading-relaxed text-white/68">{polishVenueDescription(selectedPlace, cityName)}</p>
+                    <p className="text-sm leading-relaxed text-white/68">{polishVenueDescription(selectedPlace, cityName, TYPE_LABELS)}</p>
               </div>
             )}
             <div className="mb-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
