@@ -3102,8 +3102,11 @@ export default function CityPage() {
                 height={64}
                 className="h-12 w-12 shrink-0 sm:h-14 sm:w-14"
               />
-              <h1 className="text-4xl font-bold tracking-[-0.03em]">{config.title}</h1>
+              <h1 className="text-4xl font-bold tracking-[-0.03em]">{`Queer ${cityName} Guide`}</h1>
             </div>
+            <p className="mb-4 max-w-3xl text-sm leading-7 text-white/76 sm:text-[15px]">
+              Gay clubs, queer bars, LGBT nightlife, and gay sauna signal in {cityName}.
+            </p>
             <div className="mb-4 flex flex-wrap gap-2">
               <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/90">
                 {placesChipLabel}

@@ -20,15 +20,15 @@ export async function generateMetadata({ params }) {
   const ownership = getCityKeywordOwnership(cityName);
 
   return {
-    title: `Gay Bars in ${cityName} | Queer Atlas`,
-    description: `Queer nightlife guide for ${cityName}: bars, clubs, saunas, events, and trusted local signal.`,
+    title: `Queer ${cityName} Guide (2026): Bars, Clubs, Saunas & Events`,
+    description: `${ownership.primary} and queer nightlife in ${cityName}: discover bars, clubs, saunas, events, and trusted local signal. Updated for 2026.`,
     keywords: [ownership.primary, ...ownership.secondary],
     alternates: {
       canonical,
     },
     openGraph: {
-      title: `Gay Bars in ${cityName} & Queer Nightlife | Queer Atlas`,
-      description: `Explore trusted queer places, nightlife, and events in ${cityName}.`,
+      title: `Queer ${cityName} Guide (2026): Bars, Clubs, Saunas & Events`,
+      description: `Explore trusted queer places, nightlife, and events in ${cityName}. Updated for 2026.`,
       url: canonical,
       type: "website",
     },
