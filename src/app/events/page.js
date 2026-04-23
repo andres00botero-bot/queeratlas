@@ -41,9 +41,12 @@ import {
 import { REPORT_REASONS, TRUST_ACTIONS } from "@/features/events/eventPageConstants";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
 import { qualityPillClass } from "@/features/events/eventViewUtils";
+import CityEventEditModal from "@/components/events/CityEventEditModal";
 import EventSkeletonCard from "@/components/events/EventSkeletonCard";
+import EventReportModal from "@/components/events/EventReportModal";
+import EventQualityModal from "@/components/events/EventQualityModal";
+import GlobalEventForm from "@/components/events/GlobalEventForm";
 import EmptyState from "@/components/ui/EmptyState";
-import DateInput from "@/components/ui/DateInput";
 import ActionToast from "@/components/ui/ActionToast";
 
 export default function EventsPage() {
@@ -1088,101 +1091,15 @@ export default function EventsPage() {
               </p>
             )}
 
-            {isAdmin && showGlobalForm && (
-              <form onSubmit={saveGlobalEvent} className="mt-6 grid gap-3 md:grid-cols-2">
-                {editingGlobalEventId && (
-                  <p className="rounded-2xl border border-emerald-200/24 bg-emerald-200/10 px-4 py-3 text-xs uppercase tracking-[0.18em] text-emerald-100 md:col-span-2">
-                    Editing off-grid event
-                  </p>
-                )}
-                <input
-                  value={globalForm.name}
-                  onChange={(event) => setGlobalForm((current) => ({ ...current, name: event.target.value }))}
-                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30"
-                  placeholder="Event name *"
-                  required
-                />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">From</p>
-                    <DateInput
-                      value={globalForm.startDate}
-                      onChange={(event) => setGlobalForm((current) => ({ ...current, startDate: event.target.value }))}
-                      className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
-                      required
-                      tone="cyan"
-                    />
-                  </div>
-                  <div>
-                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">To</p>
-                    <DateInput
-                      value={globalForm.endDate}
-                      onChange={(event) => setGlobalForm((current) => ({ ...current, endDate: event.target.value }))}
-                      className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
-                      tone="cyan"
-                    />
-                  </div>
-                </div>
-                <p className="text-[11px] text-white/50 md:col-span-2">
-                  Use a single-day event by leaving <span className="font-medium text-white/70">To</span> empty.
-                </p>
-                <input
-                  value={globalForm.location}
-                  onChange={(event) => setGlobalForm((current) => ({ ...current, location: event.target.value }))}
-                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
-                  placeholder="Location (e.g. Mediterranean Sea, Alps, Desert Camp) *"
-                  required
-                />
-                <input
-                  value={globalForm.vibe}
-                  onChange={(event) => setGlobalForm((current) => ({ ...current, vibe: event.target.value }))}
-                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
-                  placeholder="Vibe (e.g. circuit, beach, queer arts, cozy social)"
-                />
-                <textarea
-                  value={globalForm.description}
-                  onChange={(event) => setGlobalForm((current) => ({ ...current, description: event.target.value }))}
-                  className="min-h-[110px] rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
-                  placeholder="Description (vibe, crowd, format, what makes it special)"
-                />
-                <input
-                  value={globalForm.link}
-                  onChange={(event) => setGlobalForm((current) => ({ ...current, link: event.target.value }))}
-                  className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
-                  placeholder="External link (optional)"
-                />
-                <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
-                  <input
-                    value={globalForm.source}
-                    onChange={(event) => setGlobalForm((current) => ({ ...current, source: event.target.value }))}
-                    className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30"
-                    placeholder="Source URL or name (optional)"
-                  />
-                  <DateInput
-                    value={globalForm.lastChecked}
-                    onChange={(event) => setGlobalForm((current) => ({ ...current, lastChecked: event.target.value }))}
-                    className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
-                    tone="cyan"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSavingGlobal}
-                  className="rounded-2xl bg-gradient-to-r from-cyan-300 via-teal-300 to-emerald-300 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 md:col-span-2"
-                >
-                  {isSavingGlobal ? "Saving..." : editingGlobalEventId ? "Save changes" : "Save to calendar"}
-                </button>
-                {editingGlobalEventId && (
-                  <button
-                    type="button"
-                    onClick={resetGlobalForm}
-                    className="rounded-2xl border border-white/16 bg-white/7 px-4 py-3 text-sm text-white/82 transition hover:border-white/28 md:col-span-2"
-                  >
-                    Cancel edit
-                  </button>
-                )}
-              </form>
-            )}
+            <GlobalEventForm
+              open={isAdmin && showGlobalForm}
+              editingGlobalEventId={editingGlobalEventId}
+              globalForm={globalForm}
+              setGlobalForm={setGlobalForm}
+              isSavingGlobal={isSavingGlobal}
+              onSubmit={saveGlobalEvent}
+              onCancelEdit={resetGlobalForm}
+            />
 
             {globalError && (
               <div className="mt-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
@@ -1297,229 +1214,31 @@ export default function EventsPage() {
           </section>
         </div>
       </div>
-      {cityEditOpen && (
-        <div className="fixed inset-0 z-[90] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-emerald-200/22 bg-[linear-gradient(165deg,rgba(8,44,30,0.9),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
-              <div className="border-b border-white/10 px-5 py-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-emerald-100/75">Admin edit</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Edit event</h3>
-                <p className="mt-1 text-sm text-white/70">{cityEditDraft.city || "City event"}</p>
-              </div>
-
-              <form onSubmit={saveCityEdit} className="space-y-4 px-5 py-5">
-                <input
-                  value={cityEditDraft.name}
-                  onChange={(event) => setCityEditDraft((current) => ({ ...current, name: event.target.value }))}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
-                  placeholder="Event name *"
-                  required
-                />
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">From</p>
-                    <DateInput
-                      value={cityEditDraft.startDate}
-                      onChange={(event) => setCityEditDraft((current) => ({ ...current, startDate: event.target.value }))}
-                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-300/30"
-                      required
-                      tone="cyan"
-                    />
-                  </div>
-                  <div>
-                    <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">To</p>
-                    <DateInput
-                      value={cityEditDraft.endDate}
-                      onChange={(event) => setCityEditDraft((current) => ({ ...current, endDate: event.target.value }))}
-                      className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-300/30"
-                      tone="cyan"
-                    />
-                  </div>
-                </div>
-
-                <input
-                  value={cityEditDraft.location}
-                  onChange={(event) => setCityEditDraft((current) => ({ ...current, location: event.target.value }))}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
-                  placeholder="Location (optional)"
-                />
-                <input
-                  value={cityEditDraft.vibe}
-                  onChange={(event) => setCityEditDraft((current) => ({ ...current, vibe: event.target.value }))}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
-                  placeholder="Vibe (optional)"
-                />
-                <textarea
-                  value={cityEditDraft.description}
-                  onChange={(event) => setCityEditDraft((current) => ({ ...current, description: event.target.value }))}
-                  className="min-h-[110px] w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
-                  placeholder="Description"
-                />
-                <input
-                  value={cityEditDraft.link}
-                  onChange={(event) => setCityEditDraft((current) => ({ ...current, link: event.target.value }))}
-                  className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
-                  placeholder="External link (optional)"
-                />
-
-                {cityEditError && (
-                  <p className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
-                    {cityEditError}
-                  </p>
-                )}
-
-                <div className="flex items-center justify-end gap-2 border-t border-white/10 pt-4">
-                  <button
-                    type="button"
-                    onClick={closeCityEdit}
-                    className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingCityEdit}
-                    className="rounded-full border border-emerald-200/34 bg-emerald-200/16 px-4 py-2 text-sm font-semibold text-emerald-50 transition hover:border-emerald-200/55 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSavingCityEdit ? "Saving..." : "Save changes"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-      {reportModalOpen && (
-        <div className="fixed inset-0 z-[91] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-rose-200/22 bg-[linear-gradient(165deg,rgba(64,18,38,0.88),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
-              <div className="border-b border-white/10 px-5 py-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-rose-100/75">Safety report</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Report event</h3>
-                <p className="mt-1 line-clamp-1 text-sm text-white/70">{reportDraft.title}</p>
-              </div>
-
-              <div className="max-h-[65vh] space-y-4 overflow-y-auto px-5 py-5 sm:max-h-[70vh]">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/58">Reason</p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    {REPORT_REASONS.map((item) => {
-                      const active = reportDraft.reasonKey === item.value;
-                      return (
-                        <button
-                          key={item.value}
-                          type="button"
-                          onClick={() => setReportDraft((current) => ({ ...current, reasonKey: item.value }))}
-                          className={`rounded-2xl border px-3 py-2 text-left transition ${
-                            active
-                              ? "border-rose-200/42 bg-rose-200/16 text-rose-50 shadow-[0_8px_28px_rgba(244,63,94,0.18)]"
-                              : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
-                          }`}
-                        >
-                          <p className="text-sm font-semibold">{item.label}</p>
-                          <p className="mt-1 text-xs text-white/60">{item.helper}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="event-report-details">
-                    What is wrong?
-                  </label>
-                  <textarea
-                    id="event-report-details"
-                    value={reportDraft.details}
-                    onChange={(event) => setReportDraft((current) => ({ ...current, details: event.target.value }))}
-                    placeholder="Example: wrong date, broken link, inaccurate location, or safety concern around venue access..."
-                    className="mt-2 min-h-[116px] w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-3 text-sm leading-6 text-white outline-none focus:border-rose-200/45"
-                  />
-                  <p className="mt-2 text-xs text-white/52">This note goes directly to admin moderation inbox.</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
-                <button
-                  type="button"
-                  onClick={closeReportModal}
-                  className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={submitReport}
-                  className="rounded-full border border-rose-200/34 bg-rose-200/16 px-4 py-2 text-sm font-semibold text-rose-50 transition hover:border-rose-200/55"
-                >
-                  Send report
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {qualityModal.open && (
-        <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-cyan-200/22 bg-[linear-gradient(165deg,rgba(7,38,44,0.9),rgba(11,11,11,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
-              <div className="border-b border-white/10 px-5 py-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">Trust status</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Update quality</h3>
-              </div>
-              <div className="space-y-4 px-5 py-5">
-                <div className="grid gap-2 sm:grid-cols-3">
-                  {TRUST_ACTIONS.map((item) => {
-                    const active = qualityModal.action === item.value;
-                    return (
-                      <button
-                        key={item.value}
-                        type="button"
-                        onClick={() => setQualityModal((current) => ({ ...current, action: item.value }))}
-                        className={`rounded-2xl border px-3 py-2 text-sm transition ${
-                          active
-                            ? "border-cyan-200/42 bg-cyan-200/18 text-cyan-50"
-                            : "border-white/12 bg-white/[0.03] text-white/82 hover:border-white/24"
-                        }`}
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div>
-                  <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="events-quality-source">
-                    Source note (optional)
-                  </label>
-                  <input
-                    id="events-quality-source"
-                    value={qualityModal.sourceInput}
-                    onChange={(event) => setQualityModal((current) => ({ ...current, sourceInput: event.target.value }))}
-                    placeholder="Official URL/name or internal verification note"
-                    className="mt-2 w-full rounded-2xl border border-white/14 bg-black/40 px-3 py-2 text-sm text-white outline-none focus:border-cyan-200/45"
-                  />
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-2 border-t border-white/10 px-5 py-4">
-                <button
-                  type="button"
-                  onClick={closeQualityModal}
-                  className="rounded-full border border-white/16 bg-white/7 px-4 py-2 text-sm text-white/78 transition hover:border-white/30"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={submitQualityModal}
-                  className="rounded-full border border-cyan-200/34 bg-cyan-200/16 px-4 py-2 text-sm font-semibold text-cyan-50 transition hover:border-cyan-200/55"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <CityEventEditModal
+        open={cityEditOpen}
+        draft={cityEditDraft}
+        setDraft={setCityEditDraft}
+        error={cityEditError}
+        isSaving={isSavingCityEdit}
+        onClose={closeCityEdit}
+        onSubmit={saveCityEdit}
+      />
+      <EventReportModal
+        open={reportModalOpen}
+        draft={reportDraft}
+        setDraft={setReportDraft}
+        reasons={REPORT_REASONS}
+        onClose={closeReportModal}
+        onSubmit={submitReport}
+      />
+      <EventQualityModal
+        open={qualityModal.open}
+        modal={qualityModal}
+        setModal={setQualityModal}
+        actions={TRUST_ACTIONS}
+        onClose={closeQualityModal}
+        onSubmit={submitQualityModal}
+      />
       <ActionToast toast={toast} />
     </main>
   );
