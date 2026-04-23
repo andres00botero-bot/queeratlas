@@ -56,7 +56,7 @@ export default function EventsPage() {
   const offgridSectionRef = useRef(null);
 
   const [events, setEvents] = useState([]);
-  const [, setQualityTick] = useState(0);
+  const [qualityTick, setQualityTick] = useState(0);
   const [globalEvents, setGlobalEvents] = useState([]);
   const [showGlobalForm, setShowGlobalForm] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -361,6 +361,44 @@ export default function EventsPage() {
     ))
   ), [eventsByCity]);
 
+  const sortedEventsByCity = useMemo(
+    () =>
+      sortedCities.reduce((acc, cityKey) => {
+        const cityGroup = eventsByCity[cityKey];
+        const cityEvents = (cityGroup?.events || []).slice().sort((a, b) => {
+          const aStart = normalizeEventRange(a).startDate;
+          const bStart = normalizeEventRange(b).startDate;
+          return String(aStart || "").localeCompare(String(bStart || ""));
+        });
+        if (cityEvents.length > 0) {
+          acc[cityKey] = cityEvents;
+        }
+        return acc;
+      }, {}),
+    [eventsByCity, sortedCities]
+  );
+
+  const qualityByEventKey = useMemo(
+    () => {
+      const currentQualityMap = qualityTick >= 0 ? getQualityMap() : {};
+      return filteredEvents.reduce((acc, event) => {
+        const eventKey = `${event.isGlobal ? "global" : "city"}-${event.id}`;
+        const quality = getEntityQuality({
+          targetType: "event",
+          targetId: event.id,
+          entity: event,
+          map: currentQualityMap,
+        });
+        acc[eventKey] = {
+          quality,
+          qualityStatus: getQualityStatus(quality),
+        };
+        return acc;
+      }, {});
+    },
+    [filteredEvents, qualityTick]
+  );
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const firstDay = new Date(year, month, 1).getDay();
@@ -370,27 +408,75 @@ export default function EventsPage() {
     month: "long",
   });
 
+  const dayEventCounts = useMemo(() => {
+    const viewYear = currentDate.getFullYear();
+    const viewMonth = currentDate.getMonth();
+    const viewDaysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const counts = {};
+    if (calendarEvents.length === 0) return counts;
+
+    for (let day = 1; day <= viewDaysInMonth; day += 1) {
+      const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      let count = 0;
+
+      for (const event of calendarEvents) {
+        if (eventOverlapsDate(event, dateStr)) {
+          count += 1;
+        }
+      }
+
+      if (count > 0) {
+        counts[dateStr] = count;
+      }
+    }
+
+    return counts;
+  }, [calendarEvents, currentDate]);
+
   const upcomingEvents = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayMs = today.getTime();
 
-    const dated = calendarEvents.filter((event) => event.startDate);
+    const dated = calendarEvents.reduce((acc, event) => {
+      const startDate = String(event.startDate || "");
+      if (!startDate) return acc;
+      const startMs = new Date(startDate).getTime();
+      if (!Number.isFinite(startMs)) return acc;
+      acc.push({ event, startMs });
+      return acc;
+    }, []);
+
     const futureFirst = dated
-      .filter((event) => new Date(event.startDate) >= today)
-      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      .filter((entry) => entry.startMs >= todayMs)
+      .sort((a, b) => a.startMs - b.startMs)
+      .map((entry) => entry.event);
 
     if (futureFirst.length >= 3) return futureFirst.slice(0, 3);
 
     const fallbackPast = dated
-      .filter((event) => new Date(event.startDate) < today)
-      .sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+      .filter((entry) => entry.startMs < todayMs)
+      .sort((a, b) => b.startMs - a.startMs)
+      .map((entry) => entry.event);
 
     return [...futureFirst, ...fallbackPast].slice(0, 3);
   }, [calendarEvents]);
-  const activeCities = new Set(events.map((event) => event.city).filter(Boolean)).size;
-  const eventsThisMonth = calendarEvents.filter((event) => {
-    return eventOverlapsMonth(event, year, month);
-  }).length;
+  const activeCities = useMemo(
+    () => new Set(events.map((event) => event.city).filter(Boolean)).size,
+    [events]
+  );
+  const eventsThisMonth = useMemo(
+    () => {
+      const viewYear = currentDate.getFullYear();
+      const viewMonth = currentDate.getMonth();
+      return (
+      calendarEvents.filter((event) => {
+          return eventOverlapsMonth(event, viewYear, viewMonth);
+        }).length
+      );
+    },
+    [calendarEvents, currentDate]
+  );
 
   const handleReport = (event, clickEvent) => {
     clickEvent?.stopPropagation();
@@ -814,7 +900,7 @@ export default function EventsPage() {
                 {[...Array(daysInMonth)].map((_, index) => {
                   const day = index + 1;
                   const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                  const eventsCount = calendarEvents.filter((event) => eventOverlapsDate(event, dateStr)).length;
+                  const eventsCount = dayEventCounts[dateStr] || 0;
                   const isSelected = selectedDate === dateStr;
 
                   return (
@@ -883,11 +969,7 @@ export default function EventsPage() {
                 )}
                 {sortedCities.map((cityKey) => {
                   const cityGroup = eventsByCity[cityKey];
-                  const cityEvents = (cityGroup?.events || []).slice().sort((a, b) => {
-                    const aStart = normalizeEventRange(a).startDate;
-                    const bStart = normalizeEventRange(b).startDate;
-                    return String(aStart || "").localeCompare(String(bStart || ""));
-                  });
+                  const cityEvents = sortedEventsByCity[cityKey] || [];
                   const cityLabel = cityGroup?.label || formatCityLabel(cityKey);
 
                   if (!cityEvents || cityEvents.length === 0) return null;
@@ -902,19 +984,15 @@ export default function EventsPage() {
                       </div>
 
                       <div className="space-y-3">
-                        {cityEvents.map((event) => (
-                          (() => {
-                            const quality = getEntityQuality({
-                              targetType: "event",
-                              targetId: event.id,
-                              entity: event,
-                              map: qualityMap,
-                            });
-                            const qualityStatus = getQualityStatus(quality);
+                        {cityEvents.map((event) => {
+                          const eventKey = `${event.isGlobal ? "global" : "city"}-${event.id}`;
+                          const qualityEntry = qualityByEventKey[eventKey];
+                          const quality = qualityEntry?.quality;
+                          const qualityStatus = qualityEntry?.qualityStatus || getQualityStatus(quality);
 
-                            return (
+                          return (
                           <div
-                            key={`${event.isGlobal ? "global" : "city"}-${event.id}`}
+                            key={eventKey}
                             role="button"
                             tabIndex={0}
                             onClick={() => openEvent(event)}
@@ -1018,9 +1096,8 @@ export default function EventsPage() {
                               </button>
                             </div>
                           </div>
-                            );
-                          })()
-                        ))}
+                          );
+                        })}
                       </div>
                     </section>
                   );

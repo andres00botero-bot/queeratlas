@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useState } from "react";
+import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -138,7 +138,7 @@ export default function Home() {
 
   const isSavedResult = (item) => favorites.includes(getResultKey(item));
 
-  const openSignup = (redirect = "") => {
+  const openSignup = useCallback((redirect = "") => {
     setAuthMessage("");
     setAuthMode("signin");
     setPasswordInput("");
@@ -152,7 +152,7 @@ export default function Home() {
       writeLocalValue("qa_post_login_target", "/");
     }
     setShowSignup(true);
-  };
+  }, []);
 
   const takeAllowedRedirect = () => {
     if (typeof window === "undefined") return "";
@@ -376,7 +376,7 @@ export default function Home() {
       openSignup();
       window.history.replaceState({}, "", "/");
     });
-  }, []);
+  }, [openSignup]);
 
   useEffect(() => {
     if (isAuthLoading || !isMember) return;
@@ -508,39 +508,49 @@ export default function Home() {
         qualityMap: getQualityMap(),
       }).all;
 
-      setResults(merged);
-      setShowResults(true);
+      startTransition(() => {
+        setResults(merged);
+        setShowResults(true);
+      });
     }, 300);
 
     return () => clearTimeout(timeout);
   }, [deferredQuery, events, favorites, places]);
 
-  const homeNewsItems = [...worldNews]
-    .sort(compareNewsRecency)
-    .slice(0, 3);
+  const homeNewsItems = useMemo(
+    () => [...worldNews].sort(compareNewsRecency).slice(0, 3),
+    [worldNews]
+  );
 
-  const topCities = Object.values(
-    places.reduce((acc, place) => {
-      const city = place.city || "Unknown";
+  const topCities = useMemo(
+    () =>
+      Object.values(
+        places.reduce((acc, place) => {
+          const city = place.city || "Unknown";
 
-      if (!acc[city]) {
-        acc[city] = {
-          city,
-          count: 0,
-          reviews: 0,
-        };
-      }
+          if (!acc[city]) {
+            acc[city] = {
+              city,
+              count: 0,
+              reviews: 0,
+            };
+          }
 
-      acc[city].count += 1;
-      acc[city].reviews += place.reviewCount || 0;
+          acc[city].count += 1;
+          acc[city].reviews += place.reviewCount || 0;
 
-      return acc;
-    }, {})
-  )
-    .sort((a, b) => b.reviews - a.reviews)
-    .slice(0, 3);
+          return acc;
+        }, {})
+      )
+        .sort((a, b) => b.reviews - a.reviews)
+        .slice(0, 3),
+    [places]
+  );
 
-  const cityCount = new Set(places.map((place) => place.city).filter(Boolean)).size;
+  const cityCount = useMemo(
+    () => new Set(places.map((place) => place.city).filter(Boolean)).size,
+    [places]
+  );
   const eventCount = events.length;
   const placeCount = places.length;
   const formatMetric = (value) => (value > 0 ? String(value) : "—");

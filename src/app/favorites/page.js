@@ -16,7 +16,6 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
-import { isMissingTableError } from "@/lib/supabaseErrors";
 import {
   formatCheckinTime,
   formatCityLabel,
@@ -30,9 +29,10 @@ import {
   mapPlanRow,
   normalizeCityKey,
   normalizeLooseText,
+  isMissingTableError,
   stopQuickContext,
   timeAgo,
-} from "@/features/favorites/favoritesUtils";
+} from "@/features/favorites/favoritesPageUtils";
 import {
   ADDED_STORAGE_KEY,
   CHECKINS_STORAGE_KEY,
