@@ -49,6 +49,18 @@ import GlobalEventForm from "@/components/events/GlobalEventForm";
 import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
 
+function dedupeById(items = []) {
+  const seen = new Set();
+  const result = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const key = String(item?.id || "").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
+
 export default function EventsPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
@@ -270,25 +282,30 @@ export default function EventsPage() {
     setLoadError("");
     setGlobalError("");
 
-    const [eventsRes, globalRes] = await Promise.all([fetchEventsData(), fetchGlobalEventsData()]);
+    try {
+      const [eventsRes, globalRes] = await Promise.all([fetchEventsData(), fetchGlobalEventsData()]);
 
-    setEvents(eventsRes.data || []);
-    if (eventsRes.error) {
-      setLoadError("Could not load events right now.");
-    }
-
-    if (globalRes.error) {
-      setGlobalEvents([]);
-      setGlobalError("Off-grid sync is unavailable right now.");
-    } else {
-      setGlobalEvents(globalRes.data || []);
-      const migration = await migrateLegacyGlobalEventsToSupabase();
-      if (migration.migrated && !migration.error && Array.isArray(migration.data)) {
-        setGlobalEvents(migration.data);
+      setEvents(dedupeById(eventsRes.data || []));
+      if (eventsRes.error) {
+        setLoadError("Could not load events right now.");
       }
-    }
 
-    setIsLoading(false);
+      if (globalRes.error) {
+        setGlobalEvents([]);
+        setGlobalError("Off-grid sync is unavailable right now.");
+      } else {
+        setGlobalEvents(dedupeById(globalRes.data || []));
+        const migration = await migrateLegacyGlobalEventsToSupabase();
+        if (migration.migrated && !migration.error && Array.isArray(migration.data)) {
+          setGlobalEvents(dedupeById(migration.data));
+        }
+      }
+    } catch {
+      setLoadError("Could not load events right now.");
+      setGlobalError("Off-grid sync is unavailable right now.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -366,8 +383,8 @@ export default function EventsPage() {
       sortedCities.reduce((acc, cityKey) => {
         const cityGroup = eventsByCity[cityKey];
         const cityEvents = (cityGroup?.events || []).slice().sort((a, b) => {
-          const aStart = normalizeEventRange(a).startDate;
-          const bStart = normalizeEventRange(b).startDate;
+          const aStart = String(a?.startDate || a?.date || "");
+          const bStart = String(b?.startDate || b?.date || "");
           return String(aStart || "").localeCompare(String(bStart || ""));
         });
         if (cityEvents.length > 0) {
@@ -547,50 +564,51 @@ export default function EventsPage() {
     }
     setIsSavingGlobal(true);
     setGlobalError("");
+    try {
+      const { data, error } = editingGlobalEventId
+        ? await updateGlobalEventRecord(editingGlobalEventId, payload)
+        : await insertGlobalEventRecord(payload);
 
-    const { data, error } = editingGlobalEventId
-      ? await updateGlobalEventRecord(editingGlobalEventId, payload)
-      : await insertGlobalEventRecord(payload);
-
-    if (error || !data) {
-      const code = String(error?.code || "").trim();
-      const message = String(error?.message || error?.details || "Unknown error").trim();
-      const hint = String(error?.hint || "").trim();
-      const suffix = [code ? `[${code}]` : "", message, hint].filter(Boolean).join(" ");
-      setGlobalError(`Could not save off-grid event to Supabase yet. ${suffix}`);
-      logDevError("Off-grid save failed", { error, payload, editingGlobalEventId });
-      setIsSavingGlobal(false);
-      return;
-    }
-
-    const createdId = String(data.id);
-    setGlobalEvents((current) => {
-      const mapped = mapGlobalEventRow(data);
-      if (editingGlobalEventId) {
-        return current.map((item) => (String(item.id) === createdId ? mapped : item));
+      if (error || !data) {
+        const code = String(error?.code || "").trim();
+        const message = String(error?.message || error?.details || "Unknown error").trim();
+        const hint = String(error?.hint || "").trim();
+        const suffix = [code ? `[${code}]` : "", message, hint].filter(Boolean).join(" ");
+        setGlobalError(`Could not save off-grid event to Supabase yet. ${suffix}`);
+        logDevError("Off-grid save failed", { error, payload, editingGlobalEventId });
+        return;
       }
-      return [mapped, ...current];
-    });
 
-    if (!editingGlobalEventId) {
-      trackKpiEvent("event_added", {
-        city: "Global",
+      const createdId = String(data.id);
+      setGlobalEvents((current) => {
+        const mapped = mapGlobalEventRow(data);
+        if (editingGlobalEventId) {
+          return current.map((item) => (String(item.id) === createdId ? mapped : item));
+        }
+        return [mapped, ...current];
+      });
+
+      if (!editingGlobalEventId) {
+        trackKpiEvent("event_added", {
+          city: "Global",
+          targetType: "event",
+          targetId: createdId,
+        });
+      }
+
+      upsertQuality({
         targetType: "event",
         targetId: createdId,
+        source: globalForm.source,
+        lastChecked: globalForm.lastChecked,
+        verified: Boolean(globalForm.source && globalForm.lastChecked),
       });
+
+      resetGlobalForm();
+      setShowGlobalForm(false);
+    } finally {
+      setIsSavingGlobal(false);
     }
-
-    upsertQuality({
-      targetType: "event",
-      targetId: createdId,
-      source: globalForm.source,
-      lastChecked: globalForm.lastChecked,
-      verified: Boolean(globalForm.source && globalForm.lastChecked),
-    });
-
-    resetGlobalForm();
-    setShowGlobalForm(false);
-    setIsSavingGlobal(false);
   };
 
   const openCityEdit = (event, clickEvent) => {
@@ -653,28 +671,30 @@ export default function EventsPage() {
       link: cityEditDraft.link || null,
     };
 
-    const { data, error } = await updateCityEventRecord(cityEditDraft.id, payload);
-    if (error || !data) {
-      const code = String(error?.code || "").trim();
-      const message = String(error?.message || error?.details || "Unknown error").trim();
-      const hint = String(error?.hint || "").trim();
-      const suffix = [code ? `[${code}]` : "", message, hint].filter(Boolean).join(" ");
-      setCityEditError(`Could not save event changes yet. ${suffix}`);
-      logDevError("City event save failed", { error, payload, cityEditId: cityEditDraft.id });
+    try {
+      const { data, error } = await updateCityEventRecord(cityEditDraft.id, payload);
+      if (error || !data) {
+        const code = String(error?.code || "").trim();
+        const message = String(error?.message || error?.details || "Unknown error").trim();
+        const hint = String(error?.hint || "").trim();
+        const suffix = [code ? `[${code}]` : "", message, hint].filter(Boolean).join(" ");
+        setCityEditError(`Could not save event changes yet. ${suffix}`);
+        logDevError("City event save failed", { error, payload, cityEditId: cityEditDraft.id });
+        return;
+      }
+
+      const normalized = normalizeEventRange(data);
+      setEvents((current) => current.map((item) => (
+        String(item.id) === String(cityEditDraft.id)
+          ? { ...item, ...normalized }
+          : item
+      )));
+
+      setCityEditOpen(false);
+      showToast("Event updated.", { tone: "success", duration: 1900 });
+    } finally {
       setIsSavingCityEdit(false);
-      return;
     }
-
-    const normalized = normalizeEventRange(data);
-    setEvents((current) => current.map((item) => (
-      String(item.id) === String(cityEditDraft.id)
-        ? { ...item, ...normalized }
-        : item
-    )));
-
-    setIsSavingCityEdit(false);
-    setCityEditOpen(false);
-    showToast("Event updated.", { tone: "success", duration: 1900 });
   };
 
   const openEvent = (event) => {
@@ -685,7 +705,12 @@ export default function EventsPage() {
       return;
     }
 
-    router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`);
+    const citySlug = normalizeCityKey(event.city || "");
+    if (!citySlug) {
+      router.push("/events");
+      return;
+    }
+    router.push(`/${citySlug}?eventId=${event.id}`);
   };
 
   return (

@@ -49,6 +49,13 @@ const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
 const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
 const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
 const NOW_EDITORIAL_CACHE_TTL_MS = 5 * 60 * 1000;
+const NOW_EVENTS_FETCH_LIMIT = 1500;
+const NOW_PLACES_FETCH_LIMIT = 1500;
+const NOW_NEWS_FETCH_LIMIT = 300;
+const NOW_HIDDEN_FEED_FETCH_LIMIT = 2000;
+const NOW_RANKING_FETCH_LIMIT = 500;
+const SYNC_WARNING_CLOUD_BACKUP = "Cloud sync failed. Using local backup.";
+const SYNC_WARNING_OFFGRID = "Off-grid sync is unavailable right now.";
 const ATLAS_DESTINATION_RANKINGS = {
   2026: [
     { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
@@ -138,6 +145,36 @@ function createClientId(prefix) {
   return `${prefix}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
+function uniqueByKey(items = [], keyForItem) {
+  const seen = new Set();
+  const result = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const key = String(keyForItem(item) || "").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
+
+function dedupeStringArray(values = []) {
+  return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value)))];
+}
+
+function eventIdentity(event = {}) {
+  return String(
+    event?.id ||
+    `${event?.name || ""}|${event?.city || ""}|${event?.date || event?.start_date || ""}`
+  ).trim();
+}
+
+function placeIdentity(place = {}) {
+  return String(
+    place?.id ||
+    `${place?.name || ""}|${place?.city || ""}|${place?.type || ""}|${place?.location || ""}`
+  ).trim();
+}
+
 function PulseSkeletonCard({ tone = "orange" }) {
   const toneClass =
     tone === "emerald"
@@ -187,6 +224,24 @@ export default function NowPage() {
     date: "",
   });
 
+  const persistEditorialState = useCallback(({
+    nextAdminNews = adminNews,
+    nextHiddenNewsIds = hiddenNewsIds,
+    nextRankingOverrides = rankingOverrides,
+    nextSyncWarning = syncWarning,
+  } = {}) => {
+    const normalizedHiddenIds = dedupeStringArray(nextHiddenNewsIds);
+    writeLocalJson(ADMIN_NEWS_KEY, nextAdminNews);
+    writeLocalJson(HIDDEN_NEWS_KEY, normalizedHiddenIds);
+    writeLocalJson(RANKING_OVERRIDES_KEY, nextRankingOverrides);
+    writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
+      adminNews: nextAdminNews,
+      hiddenNewsIds: normalizedHiddenIds,
+      rankingOverrides: nextRankingOverrides,
+      syncWarning: nextSyncWarning,
+    });
+  }, [adminNews, hiddenNewsIds, rankingOverrides, syncWarning]);
+
   const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
     setToday(now);
@@ -205,16 +260,23 @@ export default function NowPage() {
     }
 
     const [{ data: eventsData, error: eventsError }, { data: placesData, error: placesError }] = await Promise.all([
-      supabase.from("events").select("*").order("date", { ascending: true }),
-      supabase.from("places_with_stats").select("*"),
+      supabase
+        .from("events")
+        .select("id,name,city,date,start_date,end_date,address,description,vibe,link,lat,lng")
+        .order("date", { ascending: true })
+        .limit(NOW_EVENTS_FETCH_LIMIT),
+      supabase
+        .from("places_with_stats")
+        .select("id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount")
+        .limit(NOW_PLACES_FETCH_LIMIT),
     ]);
 
     if (eventsError || placesError) {
       setLoadError("Live pulse could not fully load. Showing available data.");
     }
 
-    const nextEvents = await mergeSeedEventsAsync(eventsData || []);
-    const nextPlaces = await mergeSeedPlacesAsync(placesData || []);
+    const nextEvents = uniqueByKey(await mergeSeedEventsAsync(eventsData || []), eventIdentity);
+    const nextPlaces = uniqueByKey(await mergeSeedPlacesAsync(placesData || []), placeIdentity);
     setEvents(nextEvents);
     setPlaces(nextPlaces);
     writeRuntimeCache(NOW_PULSE_CACHE_KEY, {
@@ -244,9 +306,19 @@ export default function NowPage() {
     }
 
     const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
-      supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
-      supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
-      supabase.from(RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
+      supabase
+        .from(NEWS_TABLE)
+        .select("id,title,city,category,date,summary,why_it_matters,source_name,created_at")
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(NOW_NEWS_FETCH_LIMIT),
+      supabase.from(NEWS_HIDDEN_TABLE).select("feed_id").limit(NOW_HIDDEN_FEED_FETCH_LIMIT),
+      supabase
+        .from(RANKING_TABLE)
+        .select("year,rank,city,country,signal")
+        .order("year", { ascending: false })
+        .order("rank", { ascending: true })
+        .limit(NOW_RANKING_FETCH_LIMIT),
     ]);
 
     const warnings = [];
@@ -270,7 +342,7 @@ export default function NowPage() {
       }
       setHiddenNewsIds([]);
     } else {
-      const remoteHidden = (hiddenResponse.data || []).map((row) => String(row.feed_id));
+      const remoteHidden = dedupeStringArray((hiddenResponse.data || []).map((row) => String(row.feed_id)));
       setHiddenNewsIds(remoteHidden);
       writeLocalJson(HIDDEN_NEWS_KEY, remoteHidden);
     }
@@ -288,13 +360,13 @@ export default function NowPage() {
 
     const nextSyncWarning = warnings.join(" ") || "";
     setSyncWarning(nextSyncWarning);
-    writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
-      adminNews: newsResponse.error ? [] : (newsResponse.data || []).map(mapNewsRowToItem),
-      hiddenNewsIds: hiddenResponse.error ? [] : (hiddenResponse.data || []).map((row) => String(row.feed_id)),
-      rankingOverrides: rankingResponse.error ? {} : groupRankingRows(rankingResponse.data || []),
-      syncWarning: nextSyncWarning,
+    persistEditorialState({
+      nextAdminNews: newsResponse.error ? [] : (newsResponse.data || []).map(mapNewsRowToItem),
+      nextHiddenNewsIds: hiddenResponse.error ? [] : dedupeStringArray((hiddenResponse.data || []).map((row) => String(row.feed_id))),
+      nextRankingOverrides: rankingResponse.error ? {} : groupRankingRows(rankingResponse.data || []),
+      nextSyncWarning,
     });
-  }, []);
+  }, [persistEditorialState]);
 
   useEffect(() => {
     queueMicrotask(loadEditorialData);
@@ -467,6 +539,11 @@ export default function NowPage() {
     [thisWeekEvents]
   );
 
+  const hiddenNewsIdSet = useMemo(
+    () => new Set((hiddenNewsIds || []).map((value) => String(value))),
+    [hiddenNewsIds]
+  );
+
   const worldNewsItems = useMemo(() => {
     const combined = [
       ...adminNews,
@@ -476,10 +553,10 @@ export default function NowPage() {
     ];
 
     return combined
-      .filter((item) => !hiddenNewsIds.includes(String(item.id)))
+      .filter((item) => !hiddenNewsIdSet.has(String(item.id)))
       .sort(compareNewsRecency)
       .slice(0, 12);
-  }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
+  }, [adminNews, hiddenNewsIdSet, majorEventNews, risingSpotsNews]);
   const displayedNewsItems = worldNewsItems.slice(0, 8);
 
   const updateRankingDraftField = (index, field, value) => {
@@ -510,24 +587,33 @@ export default function NowPage() {
     }));
 
     const { error: deleteError } = await supabase.from(RANKING_TABLE).delete().eq("year", year);
+    let nextWarning = "";
     if (deleteError && !isMissingTableError(deleteError)) {
-      setSyncWarning("Cloud sync failed. Using local backup.");
+      nextWarning = SYNC_WARNING_CLOUD_BACKUP;
+      setSyncWarning(nextWarning);
     } else {
       const { error: insertError } = rows.length
         ? await supabase.from(RANKING_TABLE).insert(rows)
         : { error: null };
 
       if (insertError && !isMissingTableError(insertError)) {
-        setSyncWarning("Cloud sync failed. Using local backup.");
+        nextWarning = SYNC_WARNING_CLOUD_BACKUP;
+        setSyncWarning(nextWarning);
       } else if (insertError && isMissingTableError(insertError)) {
-        setSyncWarning("Off-grid sync is unavailable right now.");
+        nextWarning = SYNC_WARNING_OFFGRID;
+        setSyncWarning(nextWarning);
       } else {
+        nextWarning = "";
         setSyncWarning("");
       }
     }
-
+    
     setRankingOverrides(next);
     writeLocalJson(RANKING_OVERRIDES_KEY, next);
+    persistEditorialState({
+      nextRankingOverrides: next,
+      nextSyncWarning: nextWarning,
+    });
     setIsRankingEditorOpen(false);
   };
 
@@ -538,16 +624,23 @@ export default function NowPage() {
     delete next[selectedRankingYear];
 
     const { error } = await supabase.from(RANKING_TABLE).delete().eq("year", Number(selectedRankingYear));
+    let nextWarning = "";
     if (error && !isMissingTableError(error)) {
-      setSyncWarning("Cloud sync failed. Using local backup.");
+      nextWarning = SYNC_WARNING_CLOUD_BACKUP;
+      setSyncWarning(nextWarning);
     } else if (error && isMissingTableError(error)) {
-      setSyncWarning("Off-grid sync is unavailable right now.");
+      nextWarning = SYNC_WARNING_OFFGRID;
+      setSyncWarning(nextWarning);
     } else {
       setSyncWarning("");
     }
 
     setRankingOverrides(next);
     writeLocalJson(RANKING_OVERRIDES_KEY, next);
+    persistEditorialState({
+      nextRankingOverrides: next,
+      nextSyncWarning: nextWarning,
+    });
     setIsRankingEditorOpen(false);
   };
   const rankingRenderItems = isRankingEditorOpen ? rankingDraft : rankingItems;
@@ -610,11 +703,17 @@ export default function NowPage() {
       }
 
       if (error && isMissingTableError(error)) {
-        setSyncWarning("Off-grid sync is unavailable right now.");
+        setSyncWarning(SYNC_WARNING_OFFGRID);
         return;
       }
 
-      await loadEditorialData({ forceRefresh: true });
+      const nextAdminNews = uniqueByKey([item, ...adminNews], (entry) => entry?.id);
+      setAdminNews(nextAdminNews);
+      setSyncWarning("");
+      persistEditorialState({
+        nextAdminNews,
+        nextSyncWarning: "",
+      });
 
       setAdminForm({
         title: "",
@@ -636,7 +735,7 @@ export default function NowPage() {
 
     const { error: deleteNewsError } = await supabase.from(NEWS_TABLE).delete().eq("id", key);
     if (deleteNewsError && !isMissingTableError(deleteNewsError)) {
-      setSyncWarning("Cloud sync failed. Using local backup.");
+      setSyncWarning(SYNC_WARNING_CLOUD_BACKUP);
     }
 
     let { error: hideError } = await supabase
@@ -662,29 +761,31 @@ export default function NowPage() {
     }
 
     if (hideError && !isMissingTableError(hideError)) {
-      setSyncWarning("Cloud sync failed. Using local backup.");
+      setSyncWarning(SYNC_WARNING_CLOUD_BACKUP);
     } else if (
       (deleteNewsError && isMissingTableError(deleteNewsError)) ||
       (hideError && isMissingTableError(hideError))
     ) {
-      setSyncWarning("Off-grid sync is unavailable right now.");
+      setSyncWarning(SYNC_WARNING_OFFGRID);
     } else if (!deleteNewsError && !hideError) {
       setSyncWarning("");
     }
 
-    setAdminNews((current) => {
-      const next = current.filter((item) => String(item.id) !== key);
-      if (next.length !== current.length) {
-        writeLocalJson(ADMIN_NEWS_KEY, next);
-      }
-      return next;
-    });
+    const nextAdminNews = adminNews.filter((item) => String(item.id) !== key);
+    const nextHiddenNewsIds = dedupeStringArray([key, ...hiddenNewsIds]);
+    const nextWarning =
+      (hideError && !isMissingTableError(hideError)) || (deleteNewsError && !isMissingTableError(deleteNewsError))
+        ? SYNC_WARNING_CLOUD_BACKUP
+        : (deleteNewsError && isMissingTableError(deleteNewsError)) || (hideError && isMissingTableError(hideError))
+          ? SYNC_WARNING_OFFGRID
+          : "";
 
-    setHiddenNewsIds((current) => {
-      if (current.includes(key)) return current;
-      const next = [key, ...current];
-      writeLocalJson(HIDDEN_NEWS_KEY, next);
-      return next;
+    setAdminNews(nextAdminNews);
+    setHiddenNewsIds(nextHiddenNewsIds);
+    persistEditorialState({
+      nextAdminNews,
+      nextHiddenNewsIds,
+      nextSyncWarning: nextWarning,
     });
   };
 

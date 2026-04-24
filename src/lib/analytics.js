@@ -1,4 +1,7 @@
+import { supabase } from "@/lib/supabase";
+
 const KPI_EVENTS_KEY = "qa_kpi_events";
+const KPI_EVENTS_TABLE = "qa_kpi_events";
 const MAX_KPI_EVENTS = 4000;
 
 function safeParse(raw, fallback) {
@@ -8,6 +11,27 @@ function safeParse(raw, fallback) {
   } catch {
     return fallback;
   }
+}
+
+function createEmptySummary(rangeDays) {
+  return {
+    rangeDays,
+    totalEvents: 0,
+    activeMembers: 0,
+    counts: {
+      loginCompleted: 0,
+      signupCompleted: 0,
+      favoriteSaved: 0,
+      planSaved: 0,
+      reviewSubmitted: 0,
+      placeAdded: 0,
+      eventAdded: 0,
+      reportSubmitted: 0,
+      searchOpened: 0,
+    },
+    topCities: [],
+    lastEventAt: "",
+  };
 }
 
 function readEvents() {
@@ -20,35 +44,31 @@ function writeEvents(rows) {
   window.localStorage.setItem(KPI_EVENTS_KEY, JSON.stringify(rows));
 }
 
-export function trackKpiEvent(name, payload = {}) {
-  if (typeof window === "undefined" || !name) return;
-
-  const next = {
-    id:
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : `kpi-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    name: String(name),
-    createdAt: new Date().toISOString(),
-    city: String(payload.city || ""),
-    targetType: String(payload.targetType || ""),
-    targetId: String(payload.targetId || ""),
-    memberKey: String(payload.memberKey || ""),
-    meta: payload.meta && typeof payload.meta === "object" ? payload.meta : {},
+function normalizeEventRow(row) {
+  return {
+    id: String(row?.id || ""),
+    name: String(row?.name || ""),
+    createdAt: String(row?.createdAt || row?.created_at || ""),
+    city: String(row?.city || ""),
+    targetType: String(row?.targetType || row?.target_type || ""),
+    targetId: String(row?.targetId || row?.target_id || ""),
+    memberKey: String(row?.memberKey || row?.member_key || ""),
+    meta: row?.meta && typeof row.meta === "object" ? row.meta : {},
   };
-
-  const existing = readEvents();
-  const merged = [...existing, next].slice(-MAX_KPI_EVENTS);
-  writeEvents(merged);
 }
 
-export function getKpiSummary(days = 7) {
-  const safeDays = Number.isFinite(Number(days)) ? Number(days) : 7;
-  const since = Date.now() - safeDays * 24 * 60 * 60 * 1000;
-  const events = readEvents().filter((item) => {
+function summarizeEvents(rows = [], rangeDays = 7) {
+  const safeRange = Number.isFinite(Number(rangeDays)) ? Number(rangeDays) : 7;
+  const since = Date.now() - safeRange * 24 * 60 * 60 * 1000;
+  const normalizedRows = Array.isArray(rows) ? rows.map(normalizeEventRow) : [];
+  const events = normalizedRows.filter((item) => {
     const ts = new Date(item.createdAt || "").getTime();
     return Number.isFinite(ts) && ts >= since;
   });
+
+  if (events.length === 0) {
+    return createEmptySummary(safeRange);
+  }
 
   const counts = events.reduce((acc, item) => {
     const key = String(item.name || "unknown");
@@ -73,7 +93,7 @@ export function getKpiSummary(days = 7) {
     .map(([city, count]) => ({ city, count }));
 
   return {
-    rangeDays: safeDays,
+    rangeDays: safeRange,
     totalEvents: events.length,
     activeMembers,
     counts: {
@@ -88,6 +108,102 @@ export function getKpiSummary(days = 7) {
       searchOpened: Number(counts.search_opened || 0),
     },
     topCities,
-    lastEventAt: events.length > 0 ? events[events.length - 1].createdAt : "",
+    lastEventAt: events[events.length - 1].createdAt,
   };
+}
+
+function isMissingTableError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
+}
+
+function isPermissionError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42501" || message.includes("permission denied");
+}
+
+export function trackKpiEvent(name, payload = {}) {
+  if (typeof window === "undefined" || !name) return;
+
+  const next = {
+    id:
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `kpi-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: String(name),
+    createdAt: new Date().toISOString(),
+    city: String(payload.city || ""),
+    targetType: String(payload.targetType || ""),
+    targetId: String(payload.targetId || ""),
+    memberKey: String(payload.memberKey || ""),
+    meta: payload.meta && typeof payload.meta === "object" ? payload.meta : {},
+  };
+
+  const existing = readEvents();
+  const merged = [...existing, next].slice(-MAX_KPI_EVENTS);
+  writeEvents(merged);
+
+  queueMicrotask(async () => {
+    try {
+      await supabase.from(KPI_EVENTS_TABLE).insert({
+        name: next.name,
+        city: next.city || null,
+        target_type: next.targetType || null,
+        target_id: next.targetId || null,
+        member_key: next.memberKey || null,
+        meta: next.meta,
+        client_created_at: next.createdAt,
+      });
+    } catch {
+      // Local buffer already contains the event.
+    }
+  });
+}
+
+export function getInitialKpiSummary(days = 7) {
+  return summarizeEvents(readEvents(), days);
+}
+
+export async function getKpiSummary(days = 7) {
+  const safeDays = Number.isFinite(Number(days)) ? Number(days) : 7;
+  const localSummary = summarizeEvents(readEvents(), safeDays);
+
+  try {
+    const sinceIso = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await supabase
+      .from(KPI_EVENTS_TABLE)
+      .select("id,name,created_at,city,target_type,target_id,member_key,meta,client_created_at")
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: true })
+      .limit(MAX_KPI_EVENTS);
+
+    if (error) {
+      if (isMissingTableError(error) || isPermissionError(error)) {
+        return localSummary;
+      }
+      return localSummary;
+    }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return localSummary;
+    }
+
+    const cloudRows = data.map((row) => ({
+      id: row.id,
+      name: row.name,
+      createdAt: row.client_created_at || row.created_at,
+      city: row.city,
+      targetType: row.target_type,
+      targetId: row.target_id,
+      memberKey: row.member_key,
+      meta: row.meta,
+    }));
+    return summarizeEvents(cloudRows, safeDays);
+  } catch {
+    return localSummary;
+  }
 }

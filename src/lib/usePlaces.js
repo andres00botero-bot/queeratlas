@@ -36,14 +36,20 @@ export function usePlaces(city) {
     let placesRes = null;
 
     try {
-      const [statsRes, rawPlacesRes] = await Promise.all([
-        supabase
-          .from("places_with_stats")
-          .select("*"),
-        supabase
-          .from("places")
-          .select("id, name, city, link, location"),
-      ]);
+      const cityKey = String(city || "").trim();
+      let statsQuery = supabase
+        .from("places_with_stats")
+        .select("*");
+      let rawPlacesQuery = supabase
+        .from("places")
+        .select("id, name, city, link, location");
+
+      if (cityKey) {
+        statsQuery = statsQuery.eq("city", cityKey);
+        rawPlacesQuery = rawPlacesQuery.eq("city", cityKey);
+      }
+
+      const [statsRes, rawPlacesRes] = await Promise.all([statsQuery, rawPlacesQuery]);
       data = statsRes?.data ?? null;
       error = statsRes?.error ?? null;
       placesRes = rawPlacesRes ?? null;
@@ -63,10 +69,16 @@ export function usePlaces(city) {
         city: String(city || ""),
       });
 
+      const cityKey = String(city || "").trim();
+      let fallbackPlacesQuery = supabase
+        .from("places")
+        .select("id, name, type, city, lat, lng, description, vibe, hours, link, location");
+      if (cityKey) {
+        fallbackPlacesQuery = fallbackPlacesQuery.eq("city", cityKey);
+      }
+
       const [{ data: fallbackPlaces, error: fallbackPlacesError }, { data: fallbackReviews, error: fallbackReviewsError }] = await Promise.all([
-        supabase
-          .from("places")
-          .select("id, name, type, city, lat, lng, description, vibe, hours, link, location"),
+        fallbackPlacesQuery,
         supabase
           .from("reviews")
           .select("place_id, rating"),

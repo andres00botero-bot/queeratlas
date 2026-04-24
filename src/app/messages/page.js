@@ -86,6 +86,8 @@ function normalizeMessageRow(row) {
   };
 }
 
+const DM_THREAD_FETCH_LIMIT = 200;
+
 export default function MessagesPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user } = useAuth();
@@ -229,7 +231,8 @@ export default function MessagesPage() {
       .from("qa_dm_threads")
       .select("id, user_a, user_b, created_at, updated_at, last_message_at")
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
-      .order("last_message_at", { ascending: false });
+      .order("last_message_at", { ascending: false })
+      .limit(DM_THREAD_FETCH_LIMIT);
 
     if (threadError) {
       if (isMissingTableError(threadError)) {
@@ -295,13 +298,19 @@ export default function MessagesPage() {
     });
 
     if (threadIds.length > 0) {
+      const hasUnreadCoverageFromMomentum =
+        normalizedThreads.length > 0 &&
+        normalizedThreads.every((thread) => friendMetaMap.has(thread.otherUserId));
+
       const [{ data: unreadRows }, { data: recentRows }] = await Promise.all([
-        supabase
-          .from("qa_dm_messages")
-          .select("thread_id")
-          .in("thread_id", threadIds)
-          .neq("sender_id", userId)
-          .is("read_at", null),
+        hasUnreadCoverageFromMomentum
+          ? Promise.resolve({ data: [] })
+          : supabase
+            .from("qa_dm_messages")
+            .select("thread_id")
+            .in("thread_id", threadIds)
+            .neq("sender_id", userId)
+            .is("read_at", null),
         supabase
           .from("qa_dm_messages")
           .select("id, thread_id, sender_id, body, created_at")

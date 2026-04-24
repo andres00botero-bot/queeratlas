@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
@@ -12,6 +12,7 @@ import { subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderati
 import { getMemberProfile } from "@/lib/memberProfile";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
@@ -41,13 +42,25 @@ import {
 } from "@/features/favorites/favoritesStateDefaults";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
-import TripPlannerV2 from "@/components/planner/TripPlannerV2";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
-import SavedEventsPanel from "@/components/favorites/SavedEventsPanel";
-import SavedPlacesPanel from "@/components/favorites/SavedPlacesPanel";
 import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
 
+const TripPlannerV2 = dynamic(() => import("@/components/planner/TripPlannerV2"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+      Loading planner...
+    </div>
+  ),
+});
+const SavedEventsPanel = dynamic(() => import("@/components/favorites/SavedEventsPanel"));
+const SavedPlacesPanel = dynamic(() => import("@/components/favorites/SavedPlacesPanel"));
+
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
+const MY_CHECKIN_PREVIEW_COUNT = 3;
+const FRIEND_CHECKIN_PREVIEW_COUNT = 3;
+const FAVORITES_ATLAS_CACHE_KEY = "qa_favorites_atlas_v1";
+const FAVORITES_ATLAS_CACHE_TTL_MS = 2 * 60 * 1000;
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -105,6 +118,10 @@ export default function FavoritesPage() {
     updateMemberProfile,
   } = useAuth();
   const { toast, showToast } = useActionToast();
+  const mapboxLibRef = useRef(null);
+  const [checkinSidebarHeight, setCheckinSidebarHeight] = useState(null);
+  const [showAllMyCheckins, setShowAllMyCheckins] = useState(false);
+  const [showAllFriendCheckins, setShowAllFriendCheckins] = useState(false);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -170,15 +187,15 @@ export default function FavoritesPage() {
 
     const mergedFavorites = [...new Set([...remoteFavorites, ...localFavsNormalized])];
     setFavorites(mergedFavorites);
-    setAdded(
+    const mergedAdded =
       remoteAdded.length > 0
         ? remoteAdded
-        : mergedFavorites.map((id) => ({ id, date: new Date().toISOString() }))
-    );
+        : mergedFavorites.map((id) => ({ id, date: new Date().toISOString() }));
+    setAdded(mergedAdded);
     setPlans(remotePlans.length > 0 ? remotePlans : localPlans || []);
 
     writeLocalJson(FAVORITES_STORAGE_KEY, mergedFavorites);
-    writeLocalJson(ADDED_STORAGE_KEY, remoteAdded);
+    writeLocalJson(ADDED_STORAGE_KEY, mergedAdded);
     writeLocalJson(PLAN_STORAGE_KEY, remotePlans.length > 0 ? remotePlans : localPlans || []);
   }, [setAdded, setFavorites, setPlans, setSyncWarning]);
 
@@ -186,17 +203,35 @@ export default function FavoritesPage() {
     setIsAtlasLoading(true);
     setAtlasLoadError("");
 
+    const cached = readRuntimeCache(FAVORITES_ATLAS_CACHE_KEY, FAVORITES_ATLAS_CACHE_TTL_MS);
+    if (cached.hit && cached.data) {
+      setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
+      setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
+      setIsAtlasLoading(false);
+      if (!cached.stale) return;
+    }
+
     const [{ data: placesData, error: placesError }, { data: eventsData, error: eventsError }] = await Promise.all([
-      supabase.from("places_with_stats").select("*"),
-      supabase.from("events").select("*"),
+      supabase
+        .from("places_with_stats")
+        .select("id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount"),
+      supabase
+        .from("events")
+        .select("id,name,city,date,start_date,end_date,address,description,vibe,link,lat,lng"),
     ]);
 
     if (placesError || eventsError) {
       setAtlasLoadError("Could not load some live atlas data. Showing available signal.");
     }
 
-    setPlaces(await mergeSeedPlacesAsync(placesData || []));
-    setEvents(await mergeSeedEventsAsync(eventsData || []));
+    const nextPlaces = await mergeSeedPlacesAsync(placesData || []);
+    const nextEvents = await mergeSeedEventsAsync(eventsData || []);
+    setPlaces(nextPlaces);
+    setEvents(nextEvents);
+    writeRuntimeCache(FAVORITES_ATLAS_CACHE_KEY, {
+      places: nextPlaces,
+      events: nextEvents,
+    });
     setIsAtlasLoading(false);
   }, [setAtlasLoadError, setEvents, setIsAtlasLoading, setPlaces]);
 
@@ -689,6 +724,67 @@ export default function FavoritesPage() {
     [followingCheckins]
   );
 
+  const visibleRecentCheckins = useMemo(() => {
+    if (showAllMyCheckins) return filteredRecentCheckins;
+    return filteredRecentCheckins.slice(0, MY_CHECKIN_PREVIEW_COUNT);
+  }, [filteredRecentCheckins, showAllMyCheckins]);
+
+  const visibleRecentFollowingCheckins = useMemo(() => {
+    if (showAllFriendCheckins) return recentFollowingCheckins;
+    return recentFollowingCheckins.slice(0, FRIEND_CHECKIN_PREVIEW_COUNT);
+  }, [recentFollowingCheckins, showAllFriendCheckins]);
+
+  const hasMoreMyCheckins = filteredRecentCheckins.length > MY_CHECKIN_PREVIEW_COUNT;
+  const hasMoreFriendCheckins = recentFollowingCheckins.length > FRIEND_CHECKIN_PREVIEW_COUNT;
+
+  const checkinSidebarStyle = useMemo(() => {
+    if (!Number.isFinite(checkinSidebarHeight) || checkinSidebarHeight <= 0) return undefined;
+    const value = `${Math.round(checkinSidebarHeight)}px`;
+    return { height: value, maxHeight: value };
+  }, [checkinSidebarHeight]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const leftPanel = checkinMapCardRef.current;
+    if (!leftPanel) return;
+
+    let frame = 0;
+    const syncHeight = () => {
+      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+      if (!isDesktop) {
+        setCheckinSidebarHeight(null);
+        return;
+      }
+      const nextHeight = Math.round(leftPanel.getBoundingClientRect().height || 0);
+      setCheckinSidebarHeight(nextHeight > 0 ? nextHeight : null);
+    };
+
+    const scheduleSync = () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(syncHeight);
+    };
+
+    scheduleSync();
+    const onResize = () => scheduleSync();
+    window.addEventListener("resize", onResize);
+
+    let observer = null;
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(() => scheduleSync());
+      observer.observe(leftPanel);
+    }
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      if (observer) observer.disconnect();
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [checkinMapCardRef]);
+
+  useEffect(() => {
+    setShowAllMyCheckins(false);
+  }, [checkinViewFilter]);
+
   const checkinCities = useMemo(
     () => [...new Set(checkins.map((item) => String(item.city || "").trim()).filter(Boolean))],
     [checkins]
@@ -763,6 +859,13 @@ export default function FavoritesPage() {
   );
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+
+  const loadMapbox = useCallback(async () => {
+    if (mapboxLibRef.current) return mapboxLibRef.current;
+    const mapboxModule = await import("mapbox-gl");
+    mapboxLibRef.current = mapboxModule.default;
+    return mapboxLibRef.current;
+  }, []);
 
   const interactiveCheckinPoints = useMemo(() => {
     const mine = checkinMarkers.map((item) => ({
@@ -845,33 +948,53 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
+    let cancelled = false;
+    let mapInstance = null;
 
-    mapboxgl.accessToken = mapboxToken;
-    const center = checkinMapCenter
-      ? [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)]
-      : [11, 20];
-    const zoom = checkinMapCenter ? 4.2 : 2;
-    const map = new mapboxgl.Map({
-      container: checkinMapContainerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
-      center,
-      zoom,
-      attributionControl: false,
-    });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-    checkinMapRef.current = map;
+    const initializeMap = async () => {
+      const mapboxgl = await loadMapbox();
+      if (cancelled || checkinMapRef.current) return;
+
+      mapboxgl.accessToken = mapboxToken;
+      const center = checkinMapCenter
+        ? [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)]
+        : [11, 20];
+      const zoom = checkinMapCenter ? 4.2 : 2;
+      mapInstance = new mapboxgl.Map({
+        container: checkinMapContainerRef.current,
+        style: "mapbox://styles/mapbox/dark-v11",
+        center,
+        zoom,
+        attributionControl: false,
+      });
+      mapInstance.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+      checkinMapRef.current = mapInstance;
+    };
+
+    initializeMap();
 
     return () => {
+      cancelled = true;
       checkinMapMarkersRef.current.forEach((marker) => marker.remove());
       checkinMapMarkersRef.current = [];
-      map.remove();
+      mapInstance?.remove();
+      mapInstance = null;
       checkinMapRef.current = null;
     };
-  }, [checkinMapCenter, checkinMapContainerRef, checkinMapMarkersRef, checkinMapRef, mapboxToken]);
+  }, [
+    checkinMapCenter,
+    checkinMapContainerRef,
+    checkinMapMarkersRef,
+    checkinMapRef,
+    loadMapbox,
+    mapboxToken,
+  ]);
 
   useEffect(() => {
     const map = checkinMapRef.current;
     if (!map) return;
+    const mapboxgl = mapboxLibRef.current;
+    if (!mapboxgl) return;
 
     checkinMapMarkersRef.current.forEach((marker) => marker.remove());
     checkinMapMarkersRef.current = [];
@@ -2676,7 +2799,10 @@ export default function FavoritesPage() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4">
+            <div
+              style={checkinSidebarStyle}
+              className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 lg:self-start lg:flex lg:flex-col lg:overflow-hidden"
+            >
               <p className="text-xs uppercase tracking-[0.18em] text-white/42">Your check-ins</p>
               <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                 <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
@@ -2703,9 +2829,31 @@ export default function FavoritesPage() {
                   </button>
                 ))}
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-white/52">
+                <span>
+                  Showing {visibleRecentCheckins.length} of {filteredRecentCheckins.length}
+                </span>
                 {filteredRecentCheckins.length > 0 ? (
-                  filteredRecentCheckins.map((entry) => (
+                  <button
+                    type="button"
+                    disabled={!hasMoreMyCheckins}
+                    onClick={() => {
+                      if (hasMoreMyCheckins) setShowAllMyCheckins((current) => !current);
+                    }}
+                    className={`rounded-full border px-3 py-1 uppercase tracking-[0.11em] transition ${
+                      hasMoreMyCheckins
+                        ? "border-white/16 bg-white/7 text-white/72 hover:border-white/24 hover:text-white"
+                        : "cursor-default border-white/10 bg-white/5 text-white/40"
+                    }`}
+                    title={hasMoreMyCheckins ? "Expand or collapse this list" : "No more items to expand"}
+                  >
+                    {hasMoreMyCheckins ? (showAllMyCheckins ? "Collapse" : "Show all") : "All visible"}
+                  </button>
+                ) : null}
+              </div>
+              <div className={`mt-3 space-y-2 pr-1 ${showAllMyCheckins ? "max-h-[320px] overflow-y-auto lg:max-h-[360px]" : ""}`}>
+                {visibleRecentCheckins.length > 0 ? (
+                  visibleRecentCheckins.map((entry) => (
                     <article
                       key={entry.id}
                       onClick={() => focusCheckinOnMap(entry)}
@@ -2769,11 +2917,33 @@ export default function FavoritesPage() {
                   {followingCheckinsWarning}
                 </div>
               )}
-              <div className="mt-4 border-t border-white/10 pt-4">
+              <div className="mt-4 border-t border-white/10 pt-4 lg:mt-3 lg:flex lg:min-h-0 lg:flex-col">
                 <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friends check-ins</p>
-                <div className="mt-2 space-y-2">
+                <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-white/52">
+                  <span>
+                    Showing {visibleRecentFollowingCheckins.length} of {recentFollowingCheckins.length}
+                  </span>
                   {recentFollowingCheckins.length > 0 ? (
-                    recentFollowingCheckins.map((entry) => {
+                    <button
+                      type="button"
+                      disabled={!hasMoreFriendCheckins}
+                      onClick={() => {
+                        if (hasMoreFriendCheckins) setShowAllFriendCheckins((current) => !current);
+                      }}
+                      className={`rounded-full border px-3 py-1 uppercase tracking-[0.11em] transition ${
+                        hasMoreFriendCheckins
+                          ? "border-white/16 bg-white/7 text-white/72 hover:border-white/24 hover:text-white"
+                          : "cursor-default border-white/10 bg-white/5 text-white/40"
+                      }`}
+                      title={hasMoreFriendCheckins ? "Expand or collapse this list" : "No more items to expand"}
+                    >
+                      {hasMoreFriendCheckins ? (showAllFriendCheckins ? "Collapse" : "Show all") : "All visible"}
+                    </button>
+                  ) : null}
+                </div>
+                <div className={`mt-2 space-y-2 pr-1 ${showAllFriendCheckins ? "max-h-[320px] overflow-y-auto lg:max-h-[360px]" : ""}`}>
+                  {visibleRecentFollowingCheckins.length > 0 ? (
+                    visibleRecentFollowingCheckins.map((entry) => {
                       const presence = followingPresenceByUserId[String(entry.ownerUserId || "")] || null;
                       const activeNow = isPresenceActiveNow(presence);
                       return (

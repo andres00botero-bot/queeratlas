@@ -10,30 +10,36 @@ create table if not exists public.qa_admin_users (
   created_by uuid references auth.users(id)
 );
 
-create or replace function public.qa_is_admin()
-returns boolean
-language plpgsql
-stable
-security definer
-set search_path = public
-as $$
-declare
-  has_admin_table boolean := false;
-  is_admin boolean := false;
+do $$
 begin
-  has_admin_table := to_regclass('public.qa_admin_users') is not null;
-  if not has_admin_table then
-    return false;
+  if to_regprocedure('public.qa_is_admin()') is null then
+    create function public.qa_is_admin()
+    returns boolean
+    language plpgsql
+    stable
+    security definer
+    set search_path = public
+    as $fn$
+    declare
+      has_admin_table boolean := false;
+      is_admin boolean := false;
+    begin
+      has_admin_table := to_regclass('public.qa_admin_users') is not null;
+      if not has_admin_table then
+        return false;
+      end if;
+
+      select exists (
+        select 1
+        from public.qa_admin_users admin
+        where lower(admin.email) = lower(coalesce(auth.jwt()->>'email', ''))
+      )
+      into is_admin;
+
+      return is_admin;
+    end;
+    $fn$;
   end if;
-
-  select exists (
-    select 1
-    from public.qa_admin_users admin
-    where lower(admin.email) = lower(coalesce(auth.jwt()->>'email', ''))
-  )
-  into is_admin;
-
-  return is_admin;
 end;
 $$;
 
@@ -104,6 +110,7 @@ drop policy if exists qa_blocked_items_read_all on public.qa_blocked_items;
 create policy qa_blocked_items_read_all
 on public.qa_blocked_items
 for select
+to authenticated
 using (true);
 
 drop policy if exists qa_blocked_items_insert_admin_only on public.qa_blocked_items;

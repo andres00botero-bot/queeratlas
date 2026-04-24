@@ -12,6 +12,7 @@ import { getQualityMap } from "@/lib/quality";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
+import { sanitizePostLoginTarget } from "@/lib/redirects";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { ArrowUpRight, Search } from "lucide-react";
 
@@ -157,24 +158,10 @@ export default function Home() {
   const takeAllowedRedirect = () => {
     if (typeof window === "undefined") return "";
 
-    const rawRedirect = (localStorage.getItem("qa_redirect") || "").trim();
+    const rawRedirect = localStorage.getItem("qa_redirect");
     localStorage.removeItem("qa_redirect");
 
-    if (!rawRedirect) return "";
-    if (
-      rawRedirect === "/favorites" ||
-      rawRedirect === "/favorites/" ||
-      rawRedirect.startsWith("/favorites?")
-    ) {
-      return "";
-    }
-
-    const allowedPrefixes = ["/community", "/contribute", "/search", "/admin"];
-    return allowedPrefixes.some(
-      (prefix) => rawRedirect === prefix || rawRedirect.startsWith(`${prefix}?`)
-    )
-      ? rawRedirect
-      : "";
+    return sanitizePostLoginTarget(rawRedirect, "");
   };
 
   const openResult = (item) => {
@@ -234,11 +221,11 @@ export default function Home() {
     const [eventsRes, globalRes] = await Promise.all([
       supabase
         .from("events")
-        .select("*")
+        .select("id,name,city,date,start_date,end_date,address,description,vibe,link,lat,lng")
         .order("date", { ascending: true }),
       supabase
         .from("global_events")
-        .select("*")
+        .select("id,name,date,start_date,end_date,description,vibe,location,link,created_at")
         .order("date", { ascending: true })
         .order("created_at", { ascending: false }),
     ]);
@@ -254,7 +241,7 @@ export default function Home() {
   const fetchPlaces = async () => {
     const { data, error } = await supabase
       .from("places_with_stats")
-      .select("*");
+      .select("id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount");
 
     return { error, data: await mergeSeedPlacesAsync(data || []) };
   };
@@ -262,7 +249,7 @@ export default function Home() {
   const fetchWorldNews = async () => {
     const { data, error } = await supabase
       .from("qa_world_news")
-      .select("*")
+      .select("id,title,city,category,date,summary,why_it_matters,source_name,created_at")
       .order("date", { ascending: false })
       .order("created_at", { ascending: false });
 

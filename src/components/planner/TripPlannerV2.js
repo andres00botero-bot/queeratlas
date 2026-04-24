@@ -205,9 +205,10 @@ function chooseFromPool(
   fallback = null,
   preferredFavoriteIds = null,
   itemPrefix = "",
-  scoreFn = null
+  scoreFn = null,
+  usedKeyPrefix = ""
 ) {
-  const available = pool.filter((item) => !usedIds.has(String(item.id)));
+  const available = pool.filter((item) => !usedIds.has(`${usedKeyPrefix}${String(item.id)}`));
   if (available.length === 0) return fallback;
 
   if (scoreFn) {
@@ -234,7 +235,7 @@ function chooseFromPool(
 }
 
 function chooseEventFromPool(eventsPool, usedIds, preferredFavoriteIds = null, scoreFn = null) {
-  return chooseFromPool(eventsPool, usedIds, null, preferredFavoriteIds, "event-", scoreFn);
+  return chooseFromPool(eventsPool, usedIds, null, preferredFavoriteIds, "event-", scoreFn, "event:");
 }
 
 function mapStop(item, stopType, slotLabel, time, reason) {
@@ -427,6 +428,97 @@ function createTrustedStop({
   };
 }
 
+function pickRandomItem(pool = []) {
+  if (!Array.isArray(pool) || pool.length === 0) return null;
+  return pool[Math.floor(Math.random() * pool.length)] || null;
+}
+
+function chooseStopForSlot({
+  slot,
+  currentDate,
+  dayEvents,
+  used,
+  allPlacesFallback,
+  preferredFavoriteIds,
+  trustedFavoriteStats,
+  qualityMap,
+  budget,
+  energy,
+}) {
+  if (!slot) return null;
+
+  if (slot.eventPreferred) {
+    const pickedEvent = chooseEventFromPool(
+      dayEvents,
+      used,
+      preferredFavoriteIds,
+      (candidate) =>
+        computePlannerScore({
+          item: candidate,
+          itemType: "event",
+          timeLabel: slot.time,
+          date: currentDate,
+          slotLabel: slot.slotLabel,
+          trustedFavoriteStats,
+          qualityMap,
+          budget,
+          energy,
+        }) + Number(slot.eventBoost || 12)
+    );
+    if (pickedEvent) {
+      used.add(`event:${String(pickedEvent.id)}`);
+      return createTrustedStop({
+        item: pickedEvent,
+        stopType: "event",
+        slotLabel: slot.slotLabel,
+        time: slot.time,
+        reason: slot.eventReason || slot.reason,
+        date: currentDate,
+        trustedFavoriteStats,
+        qualityMap,
+      });
+    }
+  }
+
+  const placePool = Array.isArray(slot.placePool) && slot.placePool.length > 0
+    ? slot.placePool
+    : allPlacesFallback;
+  const openPool = filterPlacesOpenAt(placePool, currentDate, slot.time);
+  const fallbackPlace = pickRandomItem(openPool.length > 0 ? openPool : placePool);
+  const pickedPlace = chooseFromPool(
+    openPool,
+    used,
+    fallbackPlace,
+    preferredFavoriteIds,
+    "",
+    (candidate) =>
+      computePlannerScore({
+        item: candidate,
+        itemType: "place",
+        timeLabel: slot.time,
+        date: currentDate,
+        slotLabel: slot.slotLabel,
+        trustedFavoriteStats,
+        qualityMap,
+        budget,
+        energy,
+      }),
+    "place:"
+  );
+  if (!pickedPlace) return null;
+  used.add(`place:${String(pickedPlace.id)}`);
+  return createTrustedStop({
+    item: pickedPlace,
+    stopType: "place",
+    slotLabel: slot.slotLabel,
+    time: slot.time,
+    reason: slot.reason,
+    date: currentDate,
+    trustedFavoriteStats,
+    qualityMap,
+  });
+}
+
 function buildItinerary({
   city,
   places,
@@ -455,9 +547,13 @@ function buildItinerary({
   const bars = placeRows.filter((p) => p.type === "bar");
   const clubs = placeRows.filter((p) => p.type === "club");
   const saunas = placeRows.filter((p) => p.type === "sauna");
+  const hotels = placeRows.filter((p) => p.type === "hotel");
+  const restaurants = placeRows.filter((p) => p.type === "restaurant");
+  const cruiseClubs = placeRows.filter((p) => p.type === "cruise_club");
   const chill = placeRows.filter((p) => ["cafe", "bar", "hotel", "restaurant"].includes(p.type));
   const dark = placeRows.filter((p) => ["sauna", "cruise_club", "club"].includes(p.type));
-  const safeLean = placeRows.filter((p) => ["cafe", "bar", "restaurant"].includes(p.type));
+  const safeLean = placeRows.filter((p) => ["cafe", "bar", "restaurant", "hotel"].includes(p.type));
+  const allPlacesFallback = placeRows.length > 0 ? placeRows : places;
 
   const used = new Set();
 
@@ -465,308 +561,155 @@ function buildItinerary({
     const currentDate = addDays(startDate, dayIndex);
     const dayEvents = eventRows.filter((event) => isSameDay(event, currentDate));
     const stops = [];
+    const isSunday = currentDate.getDay() === 0;
+    const isArrival = dayIndex === 0 && daysCount > 1;
+    const isTonightOnly = dayIndex === 0 && daysCount === 1;
+    const isLastDay = dayIndex === daysCount - 1 && daysCount > 1;
 
-    if (dayIndex === 0 && daysCount > 1) {
-      const landingPoolRaw = soloSafe ? [...safeLean, ...cafes, ...bars] : [...cafes, ...bars, ...safeLean];
-      const introPlacePoolRaw = vibe === "soft" ? [...bars, ...cafes] : [...bars, ...clubs];
-      const landingPool = filterPlacesOpenAt(landingPoolRaw, currentDate, "18:30");
-      const introPlacePool = filterPlacesOpenAt(introPlacePoolRaw, currentDate, "21:30");
+    const socialWarmPool = soloSafe ? [...safeLean, ...cafes, ...bars] : [...bars, ...cafes, ...restaurants];
+    const vibeNightPool =
+      vibe === "soft"
+        ? [...bars, ...cafes, ...restaurants]
+        : vibe === "dark"
+          ? [...clubs, ...cruiseClubs, ...saunas, ...bars]
+          : [...clubs, ...bars, ...saunas];
+    const sundayResetPool = vibe === "dark" ? [...saunas, ...bars, ...restaurants] : [...bars, ...saunas, ...cafes];
 
-      const s1 = chooseFromPool(
-        landingPool,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "18:30",
-            date: currentDate,
-            slotLabel: "Soft landing",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
+    const slots = [];
+    if (isArrival) {
+      slots.push(
+        {
+          slotLabel: "Hotel check-in",
+          time: "15:00",
+          placePool: hotels.length > 0 ? hotels : [...safeLean, ...chill],
+          reason: "Start from a stable base before the city run begins.",
+        },
+        {
+          slotLabel: "Early cafe",
+          time: "17:30",
+          placePool: [...cafes, ...restaurants, ...safeLean],
+          reason: "Low-friction reset before evening signal.",
+        },
+        {
+          slotLabel: "City event signal",
+          time: "21:00",
+          placePool: socialWarmPool,
+          eventPreferred: true,
+          eventBoost: 22,
+          eventReason: "Live event prioritized for this day and city window.",
+          reason: "Social momentum before peak hours.",
+        }
       );
-      if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(
-        dayEvents,
-        used,
-        preferredFavoriteIds,
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "event",
-            timeLabel: "21:30",
-            date: currentDate,
-            slotLabel: "Intro signal",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      const s2 =
-        forcedEvent ||
-        chooseFromPool(
-          introPlacePool,
-          used,
-          null,
-          preferredFavoriteIds,
-          "",
-          (candidate) =>
-            computePlannerScore({
-              item: candidate,
-              itemType: "place",
-              timeLabel: "21:30",
-              date: currentDate,
-              slotLabel: "Intro signal",
-              trustedFavoriteStats,
-              qualityMap,
-              budget,
-              energy,
-            })
-        );
-      if (s2) used.add(String(s2.id));
-
-      stops.push(
-        createTrustedStop({
-          item: s1,
-          stopType: "place",
-          slotLabel: "Soft landing",
-          time: "18:30",
-          reason: "Easy entry to read local energy.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
-          item: s2,
-          stopType: forcedEvent ? "event" : "place",
-          slotLabel: "Intro signal",
-          time: "21:30",
-          reason: forcedEvent
-            ? "Date-matched event anchored into your selected plan window."
-            : "Warm social momentum before peak.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        })
-      );
-    } else if (dayIndex === 1 || (dayIndex === 0 && daysCount === 1)) {
-      const warmPoolRaw = vibe === "dark" ? [...dark, ...bars] : [...bars, ...clubs];
-      const peakPlacePoolRaw = [...clubs, ...(vibe === "dark" ? dark : [])];
-      const latePoolRaw = vibe === "soft" ? [...bars, ...chill] : [...clubs, ...bars, ...saunas];
-
-      const warmPool = filterPlacesOpenAt(warmPoolRaw, currentDate, "20:30");
-      const peakPlacePool = filterPlacesOpenAt(peakPlacePoolRaw, currentDate, "01:00");
-      const latePool = filterPlacesOpenAt(latePoolRaw, currentDate, "03:00");
-      const s1 = chooseFromPool(
-        warmPool,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "20:30",
-            date: currentDate,
-            slotLabel: "Warmup",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(
-        dayEvents,
-        used,
-        preferredFavoriteIds,
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "event",
-            timeLabel: "01:00",
-            date: currentDate,
-            slotLabel: "Peak",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      const s2 =
-        forcedEvent ||
-        chooseFromPool(
-          peakPlacePool,
-          used,
-          null,
-          preferredFavoriteIds,
-          "",
-          (candidate) =>
-            computePlannerScore({
-              item: candidate,
-              itemType: "place",
-              timeLabel: "01:00",
-              date: currentDate,
-              slotLabel: "Peak",
-              trustedFavoriteStats,
-              qualityMap,
-              budget,
-              energy,
-            })
-        );
-      if (s2) used.add(String(s2.id));
-      const s3 = chooseFromPool(
-        latePool,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "03:00",
-            date: currentDate,
-            slotLabel: "Late drift",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      if (s3) used.add(String(s3.id));
-
-      stops.push(
-        createTrustedStop({
-          item: s1,
-          stopType: "place",
+      if (energy >= 35) {
+        slots.push({
+          slotLabel: "Late-night core",
+          time: "00:30",
+          placePool: vibeNightPool,
+          eventPreferred: dayEvents.length > 1,
+          eventBoost: 16,
+          eventReason: "Second live event captured when available.",
+          reason: "High-fit late option based on your selected vibe.",
+        });
+      }
+    } else if (isTonightOnly) {
+      slots.push(
+        {
           slotLabel: "Warmup",
           time: "20:30",
-          reason: "Set baseline before the rush.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
-          item: s2,
-          stopType: forcedEvent ? "event" : "place",
-          slotLabel: "Peak",
-          time: "01:00",
-          reason: forcedEvent
-            ? "Date-matched event in your selected window."
-            : "Core nightlife pressure point.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
-          item: s3,
-          stopType: "place",
-          slotLabel: "Late drift",
-          time: "03:00",
-          reason: "Post-peak continuation with lower friction.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        })
+          placePool: socialWarmPool,
+          reason: "Set baseline before the main night push.",
+        },
+        {
+          slotLabel: "Night highlight",
+          time: "23:30",
+          placePool: vibeNightPool,
+          eventPreferred: true,
+          eventBoost: 24,
+          eventReason: "Date-matched event prioritized as the main highlight.",
+          reason: "Strong nightlife anchor for your selected vibe.",
+        }
+      );
+      if (energy >= 45) {
+        slots.push({
+          slotLabel: "After-hours",
+          time: "02:00",
+          placePool: [...vibeNightPool, ...bars],
+          reason: "Continue only where timing and energy still match.",
+        });
+      }
+    } else if (isSunday) {
+      slots.push(
+        {
+          slotLabel: "Sunday brunch",
+          time: "11:00",
+          placePool: [...cafes, ...restaurants, ...safeLean],
+          reason: "Gentle weekend close with daytime social energy.",
+        },
+        {
+          slotLabel: "Sunday reset",
+          time: "15:30",
+          placePool: sundayResetPool,
+          reason: "Sunday mix of bar + sauna style reset.",
+        },
+        {
+          slotLabel: "Sunday highlight",
+          time: "21:30",
+          placePool: energy < 45 ? [...bars, ...restaurants, ...saunas] : [...bars, ...saunas, ...clubs],
+          eventPreferred: true,
+          eventBoost: 20,
+          eventReason: "Sunday event prioritized when available.",
+          reason: "Close the day with the best-fit city signal.",
+        }
       );
     } else {
-      const recoveryPoolRaw = [...chill, ...cafes, ...bars];
-      const recoveryPoolEarly = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "11:30");
-      const recoveryPoolLate = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "16:00");
-      const s1 = chooseFromPool(
-        recoveryPoolEarly,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "11:30",
-            date: currentDate,
-            slotLabel: "Recovery",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
+      slots.push(
+        {
+          slotLabel: "Morning cafe",
+          time: "10:30",
+          placePool: [...cafes, ...hotels, ...restaurants],
+          reason: "Day-start recovery and planning checkpoint.",
+        },
+        {
+          slotLabel: "Golden hour",
+          time: "18:00",
+          placePool: [...bars, ...restaurants, ...cafes],
+          reason: "Bridge daytime into nightlife smoothly.",
+        },
+        {
+          slotLabel: "Prime signal",
+          time: "22:30",
+          placePool: vibeNightPool,
+          eventPreferred: true,
+          eventBoost: 22,
+          eventReason: "Event-first prime-time pick for this date.",
+          reason: "Main nightlife anchor driven by your vibe.",
+        }
       );
-      if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(
+      if (!isLastDay || energy >= 55) {
+        slots.push({
+          slotLabel: "Late drift",
+          time: "01:30",
+          placePool: energy < 40 ? [...bars, ...chill] : [...vibeNightPool, ...bars],
+          reason: "Optional late continuation with lower friction.",
+        });
+      }
+    }
+
+    slots.forEach((slot) => {
+      const stop = chooseStopForSlot({
+        slot,
+        currentDate,
         dayEvents,
         used,
+        allPlacesFallback,
         preferredFavoriteIds,
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "event",
-            timeLabel: "21:30",
-            date: currentDate,
-            slotLabel: "Night highlight",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      const s2 =
-        forcedEvent ||
-        chooseFromPool(
-          recoveryPoolLate,
-          used,
-          null,
-          preferredFavoriteIds,
-          "",
-          (candidate) =>
-            computePlannerScore({
-              item: candidate,
-              itemType: "place",
-              timeLabel: "16:00",
-              date: currentDate,
-              slotLabel: "Golden hour",
-              trustedFavoriteStats,
-              qualityMap,
-              budget,
-              energy,
-            })
-        );
-      if (s2) used.add(String(s2.id));
-
-      stops.push(
-        createTrustedStop({
-          item: s1,
-          stopType: "place",
-          slotLabel: "Recovery",
-          time: "11:30",
-          reason: "Slow restart and social reset.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
-          item: s2,
-          stopType: forcedEvent ? "event" : "place",
-          slotLabel: forcedEvent ? "Night highlight" : "Golden hour",
-          time: forcedEvent ? "21:30" : "16:00",
-          reason: forcedEvent
-            ? "Date-matched event added for this plan day."
-            : "Chill close to the trip arc.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        })
-      );
-    }
+        trustedFavoriteStats,
+        qualityMap,
+        budget,
+        energy,
+      });
+      if (stop) stops.push(stop);
+    });
 
     return {
       dayKey: `${city}-${dayIndex}`,

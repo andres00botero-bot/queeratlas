@@ -4,9 +4,9 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
 import { captureOperationalError } from "@/lib/monitoring";
+import { sanitizePostLoginTarget } from "@/lib/redirects";
 
 const AuthContext = createContext(null);
-const ALLOWED_POST_LOGIN_PREFIXES = ["/", "/community", "/contribute", "/search"];
 
 function getMemberName(user) {
   if (!user) return "Explorer";
@@ -22,23 +22,11 @@ function getMemberName(user) {
 function consumePostLoginTarget() {
   if (typeof window === "undefined") return "";
 
-  const raw = (localStorage.getItem("qa_post_login_target") || "").trim();
+  const raw = localStorage.getItem("qa_post_login_target");
   if (!raw) return "";
   localStorage.removeItem("qa_post_login_target");
 
-  if (
-    raw === "/favorites" ||
-    raw === "/favorites/" ||
-    raw.startsWith("/favorites?")
-  ) {
-    return "/";
-  }
-
-  const allowed = ALLOWED_POST_LOGIN_PREFIXES.some(
-    (prefix) => raw === prefix || raw.startsWith(`${prefix}?`)
-  );
-
-  return allowed ? raw : "/";
+  return sanitizePostLoginTarget(raw, "/");
 }
 
 export function AuthProvider({ children }) {

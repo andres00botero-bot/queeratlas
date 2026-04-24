@@ -5,12 +5,35 @@ import { normalizeEventRange } from "@/features/events/eventFormatUtils";
 import { mapGlobalEventRow } from "@/features/events/eventViewUtils";
 
 const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
+const CITY_EVENT_SELECT_FIELDS =
+  "id,name,city,date,start_date,end_date,location,address,vibe,description,link,lat,lng,created_at";
+const CITY_EVENT_LEGACY_SELECT_FIELDS =
+  "id,name,city,date,location,address,description,link,lat,lng,created_at";
+const GLOBAL_EVENT_SELECT_FIELDS =
+  "id,name,date,start_date,end_date,location,vibe,description,link,source,last_checked,created_at";
+const GLOBAL_EVENT_LEGACY_SELECT_FIELDS =
+  "id,name,date,location,description,link,created_at";
+
+function isMissingColumnError(error) {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  return code === "42703" || code === "PGRST204" || message.includes("column");
+}
 
 export async function fetchEventsData() {
-  const { data, error } = await supabase
+  let queryResult = await supabase
     .from("events")
-    .select("*")
+    .select(CITY_EVENT_SELECT_FIELDS)
     .order("date", { ascending: true });
+  if (queryResult.error && isMissingColumnError(queryResult.error)) {
+    queryResult = await supabase
+      .from("events")
+      .select(CITY_EVENT_LEGACY_SELECT_FIELDS)
+      .order("date", { ascending: true });
+  }
+
+  const { data, error } = queryResult;
 
   return {
     data: (await mergeSeedEventsAsync(data || [])).map((event) => normalizeEventRange(event)),
@@ -19,11 +42,20 @@ export async function fetchEventsData() {
 }
 
 export async function fetchGlobalEventsData() {
-  const { data, error } = await supabase
+  let queryResult = await supabase
     .from("global_events")
-    .select("*")
+    .select(GLOBAL_EVENT_SELECT_FIELDS)
     .order("date", { ascending: true })
     .order("created_at", { ascending: false });
+  if (queryResult.error && isMissingColumnError(queryResult.error)) {
+    queryResult = await supabase
+      .from("global_events")
+      .select(GLOBAL_EVENT_LEGACY_SELECT_FIELDS)
+      .order("date", { ascending: true })
+      .order("created_at", { ascending: false });
+  }
+
+  const { data, error } = queryResult;
 
   return {
     data: (data || []).map(mapGlobalEventRow),

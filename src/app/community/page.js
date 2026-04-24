@@ -71,6 +71,18 @@ function readStored(key, fallback) {
 const MAX_MESSAGES_PER_TOPIC = 100;
 const MAX_TOPICS = 120;
 const TOPIC_RETENTION_DAYS = 365;
+const COMMUNITY_STORY_FETCH_LIMIT = 160;
+const COMMUNITY_GUIDE_FETCH_LIMIT = 160;
+const COMMUNITY_TOPIC_FETCH_LIMIT = 220;
+const COMMUNITY_MESSAGE_FETCH_LIMIT = 3000;
+const COMMUNITY_IDEA_FETCH_LIMIT = 220;
+const COMMUNITY_LEADERBOARD_FETCH_LIMIT = 200;
+const COMMUNITY_STORY_SELECT_FIELDS = "id,title,city,author,category,excerpt,body,created_at";
+const COMMUNITY_GUIDE_SELECT_FIELDS = "id,title,city,author,focus,summary,content,created_at";
+const COMMUNITY_TOPIC_SELECT_FIELDS = "id,name,mood,description,author,user_id,created_by_email,created_at";
+const COMMUNITY_MESSAGE_SELECT_FIELDS = "id,topic_id,author,text,created_at";
+const COMMUNITY_IDEA_SELECT_FIELDS = "id,text,votes,author,created_at";
+const COMMUNITY_LEADERBOARD_SELECT_FIELDS = "user_id,display_name,rank,title";
 const REPORT_REASON_OPTIONS = [
   { value: "1", label: "Safety issue" },
   { value: "2", label: "Wrong info" },
@@ -292,12 +304,36 @@ export default function CommunityPage() {
     const localArchive = readStored(KEYS.messageArchive, {});
 
     const [storiesRes, guidesRes, topicsRes, messagesRes, ideasRes, leaderboardRes] = await Promise.all([
-      supabase.from("community_stories").select("*").order("created_at", { ascending: false }),
-      supabase.from("community_guides").select("*").order("created_at", { ascending: false }),
-      supabase.from("community_topics").select("*").order("created_at", { ascending: false }),
-      supabase.from("community_messages").select("*").order("created_at", { ascending: true }),
-      supabase.from("community_ideas").select("*").order("created_at", { ascending: false }),
-      supabase.from("qa_member_leaderboard").select("*").order("rank", { ascending: true }).limit(200),
+      supabase
+        .from("community_stories")
+        .select(COMMUNITY_STORY_SELECT_FIELDS)
+        .order("created_at", { ascending: false })
+        .limit(COMMUNITY_STORY_FETCH_LIMIT),
+      supabase
+        .from("community_guides")
+        .select(COMMUNITY_GUIDE_SELECT_FIELDS)
+        .order("created_at", { ascending: false })
+        .limit(COMMUNITY_GUIDE_FETCH_LIMIT),
+      supabase
+        .from("community_topics")
+        .select(COMMUNITY_TOPIC_SELECT_FIELDS)
+        .order("created_at", { ascending: false })
+        .limit(COMMUNITY_TOPIC_FETCH_LIMIT),
+      supabase
+        .from("community_messages")
+        .select(COMMUNITY_MESSAGE_SELECT_FIELDS)
+        .order("created_at", { ascending: true })
+        .limit(COMMUNITY_MESSAGE_FETCH_LIMIT),
+      supabase
+        .from("community_ideas")
+        .select(COMMUNITY_IDEA_SELECT_FIELDS)
+        .order("created_at", { ascending: false })
+        .limit(COMMUNITY_IDEA_FETCH_LIMIT),
+      supabase
+        .from("qa_member_leaderboard")
+        .select(COMMUNITY_LEADERBOARD_SELECT_FIELDS)
+        .order("rank", { ascending: true })
+        .limit(COMMUNITY_LEADERBOARD_FETCH_LIMIT),
     ]);
 
     const errorParts = [];
@@ -444,7 +480,7 @@ export default function CommunityPage() {
     queueMicrotask(async () => {
       const { data, error } = await supabase
         .from("qa_member_leaderboard")
-        .select("*")
+        .select(COMMUNITY_LEADERBOARD_SELECT_FIELDS)
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -675,7 +711,7 @@ export default function CommunityPage() {
         excerpt: storyForm.excerpt || storyForm.body.slice(0, 120),
         body: storyForm.body,
       }])
-      .select("*")
+      .select(COMMUNITY_STORY_SELECT_FIELDS)
       .single();
 
     const item = error || !data ? fallbackItem : mapStoryRow(data);
@@ -702,7 +738,7 @@ export default function CommunityPage() {
         summary: guideForm.summary || guideForm.content.slice(0, 120),
         content: guideForm.content,
       }])
-      .select("*")
+      .select(COMMUNITY_GUIDE_SELECT_FIELDS)
       .single();
 
     const item = error || !data ? fallbackItem : mapGuideRow(data);
@@ -727,7 +763,7 @@ export default function CommunityPage() {
         author: memberName || "Member",
         text: messageForm.text.trim(),
       }])
-      .select("*")
+      .select(COMMUNITY_MESSAGE_SELECT_FIELDS)
       .single();
 
     const item = error || !data
@@ -775,7 +811,7 @@ export default function CommunityPage() {
         description: topicForm.description,
         author: memberName || "Member",
       }])
-      .select("*")
+      .select(COMMUNITY_TOPIC_SELECT_FIELDS)
       .single();
 
     const item =
@@ -808,7 +844,7 @@ export default function CommunityPage() {
         author: memberName || "Member",
         votes: 1,
       }])
-      .select("*")
+      .select(COMMUNITY_IDEA_SELECT_FIELDS)
       .single();
 
     const item = error || !data ? fallbackItem : mapIdeaRow(data);

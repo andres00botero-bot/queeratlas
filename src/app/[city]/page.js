@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { cityConfig } from "@/lib/cities";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -83,10 +82,20 @@ export default function CityPage() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const cityKey = String(city || "").trim().toLowerCase();
+  const isKnownCity = Boolean(cityConfig[cityKey]);
+  const fallbackCityName = cityKey ? cityKey.replaceAll("_", " ") : "city";
+  const fallbackConfig = {
+    center: [13.405, 52.52],
+    title: `Queer ${fallbackCityName}`,
+    country: "",
+    vibe: "mixed",
+    guide: [],
+  };
 
-  const config = cityConfig[city] || cityConfig.berlin;
-  const cityName = cityNameFromConfig(config, city);
-  const cityHeroText = buildCityHeroText({ config, citySlug: city });
+  const config = cityConfig[cityKey] || fallbackConfig;
+  const cityName = cityNameFromConfig(config, cityKey);
+  const cityHeroText = buildCityHeroText({ config, citySlug: cityKey });
   const cityHero = parseCityHeroText(cityHeroText);
   const placeId = searchParams.get("placeId");
   const eventId = searchParams.get("eventId");
@@ -100,7 +109,7 @@ export default function CityPage() {
     isLoading: placesLoading,
     loadError: placesLoadError,
     reloadPlaces,
-  } = usePlaces();
+  } = usePlaces(cityKey);
   const [eventsData, setEventsData] = useState([]);
   const [privateEvents, setPrivateEvents] = useState([]);
   const [privateEventsLoading, setPrivateEventsLoading] = useState(true);
@@ -195,6 +204,7 @@ export default function CityPage() {
   const placesSectionRef = useRef(null);
   const addEventFormRef = useRef(null);
   const mapRef = useRef(null);
+  const mapboxLibRef = useRef(null);
   const hoverPopupRef = useRef(null);
   const markersRef = useRef([]);
   const placeMarkersRef = useRef(new Map());
@@ -236,9 +246,22 @@ export default function CityPage() {
     window.scrollBy({ top: event.deltaY, left: 0, behavior: "auto" });
   }, []);
 
+  const loadMapbox = useCallback(async () => {
+    if (mapboxLibRef.current) return mapboxLibRef.current;
+    const mapboxModule = await import("mapbox-gl");
+    mapboxLibRef.current = mapboxModule.default;
+    return mapboxLibRef.current;
+  }, []);
+
   useEffect(() => {
     isMapInteractingRef.current = isMapInteracting;
   }, [isMapInteracting]);
+
+  useEffect(() => {
+    if (!isKnownCity) {
+      router.replace("/cities");
+    }
+  }, [isKnownCity, router]);
 
   useEffect(() => {
     let active = true;
@@ -771,10 +794,16 @@ export default function CityPage() {
     setEventsLoading(true);
     setEventsLoadError("");
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("events")
         .select("*")
         .order("date", { ascending: true });
+
+      if (cityKey) {
+        query = query.in("city", [cityKey, "global"]);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         setEventsLoadError("Could not load city events right now.");
@@ -789,7 +818,7 @@ export default function CityPage() {
     } finally {
       setEventsLoading(false);
     }
-  }, []);
+  }, [cityKey]);
 
   const fetchPrivateEvents = useCallback(async ({ silent = false } = {}) => {
     if (!silent) {
@@ -800,7 +829,7 @@ export default function CityPage() {
       const { data, error } = await supabase
         .from("qa_private_events")
         .select("*")
-        .eq("city", String(city || "").trim())
+        .eq("city", cityKey)
         .order("start_at", { ascending: true });
 
       if (error) {
@@ -828,7 +857,7 @@ export default function CityPage() {
         setPrivateEventsLoading(false);
       }
     }
-  }, [city]);
+  }, [cityKey]);
 
   const fetchMyPrivateInvites = useCallback(async (eventRows = []) => {
     if (!isMember || !user?.id) {
@@ -1387,34 +1416,8 @@ export default function CityPage() {
       setMapError("");
     });
 
-    try {
-      mapboxgl.accessToken = token;
-      mapRef.current = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/dark-v11",
-        center: config.center,
-        zoom: 11,
-      });
-      hoverPopupRef.current = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        closeOnMove: false,
-        anchor: "top",
-        offset: 22,
-        className: "qa-map-hover-popup",
-      });
-    } catch {
-      queueMicrotask(() => {
-        setMapError("Map failed to initialize. You can still browse venues and events below.");
-      });
-      return;
-    }
-
-    mapRef.current.on("error", () => {
-      queueMicrotask(() => {
-        setMapError("Map had trouble loading. Venue and event lists are still fully available.");
-      });
-    });
+    let cancelled = false;
+    let mapInstance = null;
 
     const beginInteraction = () => {
       isMapInteractingRef.current = true;
@@ -1425,44 +1428,84 @@ export default function CityPage() {
       isMapInteractingRef.current = false;
       setIsMapInteracting(false);
     };
-
-    mapRef.current.on("dragstart", beginInteraction);
-    mapRef.current.on("dragend", endInteraction);
-    mapRef.current.on("zoomstart", beginInteraction);
-    mapRef.current.on("zoomend", endInteraction);
-    mapRef.current.on("rotatestart", beginInteraction);
-    mapRef.current.on("rotateend", endInteraction);
-    mapRef.current.on("pitchstart", beginInteraction);
-    mapRef.current.on("pitchend", endInteraction);
-
     const handleResize = () => mapRef.current?.resize();
-    window.addEventListener("resize", handleResize);
+    const handleMapError = () => {
+      queueMicrotask(() => {
+        setMapError("Map had trouble loading. Venue and event lists are still fully available.");
+      });
+    };
 
-    queueMicrotask(() => {
-      mapRef.current?.resize();
-    });
+    const initializeMap = async () => {
+      try {
+        const mapboxgl = await loadMapbox();
+        if (cancelled || mapRef.current) return;
+
+        mapboxgl.accessToken = token;
+        mapInstance = new mapboxgl.Map({
+          container: mapContainerRef.current,
+          style: "mapbox://styles/mapbox/dark-v11",
+          center: config.center,
+          zoom: 11,
+        });
+        mapRef.current = mapInstance;
+        hoverPopupRef.current = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          closeOnMove: false,
+          anchor: "top",
+          offset: 22,
+          className: "qa-map-hover-popup",
+        });
+
+        mapInstance.on("error", handleMapError);
+        mapInstance.on("dragstart", beginInteraction);
+        mapInstance.on("dragend", endInteraction);
+        mapInstance.on("zoomstart", beginInteraction);
+        mapInstance.on("zoomend", endInteraction);
+        mapInstance.on("rotatestart", beginInteraction);
+        mapInstance.on("rotateend", endInteraction);
+        mapInstance.on("pitchstart", beginInteraction);
+        mapInstance.on("pitchend", endInteraction);
+
+        window.addEventListener("resize", handleResize);
+        queueMicrotask(() => {
+          mapRef.current?.resize();
+        });
+      } catch {
+        queueMicrotask(() => {
+          setMapError("Map failed to initialize. You can still browse venues and events below.");
+        });
+      }
+    };
+
+    initializeMap();
 
     return () => {
-      mapRef.current?.off("dragstart", beginInteraction);
-      mapRef.current?.off("dragend", endInteraction);
-      mapRef.current?.off("zoomstart", beginInteraction);
-      mapRef.current?.off("zoomend", endInteraction);
-      mapRef.current?.off("rotatestart", beginInteraction);
-      mapRef.current?.off("rotateend", endInteraction);
-      mapRef.current?.off("pitchstart", beginInteraction);
-      mapRef.current?.off("pitchend", endInteraction);
+      cancelled = true;
+      mapInstance?.off("error", handleMapError);
+      mapInstance?.off("dragstart", beginInteraction);
+      mapInstance?.off("dragend", endInteraction);
+      mapInstance?.off("zoomstart", beginInteraction);
+      mapInstance?.off("zoomend", endInteraction);
+      mapInstance?.off("rotatestart", beginInteraction);
+      mapInstance?.off("rotateend", endInteraction);
+      mapInstance?.off("pitchstart", beginInteraction);
+      mapInstance?.off("pitchend", endInteraction);
       window.removeEventListener("resize", handleResize);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
-      mapRef.current?.remove();
+      mapInstance?.remove();
+      mapInstance = null;
       mapRef.current = null;
       hoverPopupRef.current?.remove();
       hoverPopupRef.current = null;
     };
-  }, [config.center]);
+  }, [config.center, loadMapbox]);
 
   useEffect(() => {
     if (!mapRef.current) return;
+    const mapboxgl = mapboxLibRef.current;
+    if (!mapboxgl) return;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];

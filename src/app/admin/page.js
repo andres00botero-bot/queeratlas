@@ -15,7 +15,7 @@ import {
   syncModerationFromCloud,
 } from "@/lib/moderation";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
-import { getKpiSummary } from "@/lib/analytics";
+import { getInitialKpiSummary, getKpiSummary } from "@/lib/analytics";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
@@ -109,7 +109,7 @@ export default function AdminPage() {
   const [diagRows, setDiagRows] = useState([]);
   const [diagTestEmail, setDiagTestEmail] = useState("");
   const [diagMailState, setDiagMailState] = useState("");
-  const [kpiSummary, setKpiSummary] = useState(() => getKpiSummary(7));
+  const [kpiSummary, setKpiSummary] = useState(() => getInitialKpiSummary(7));
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
@@ -211,11 +211,22 @@ export default function AdminPage() {
   }, [weeklyRoutine]);
 
   useEffect(() => {
-    setKpiSummary(getKpiSummary(7));
+    let active = true;
+    const refreshKpi = async () => {
+      const nextSummary = await getKpiSummary(7);
+      if (active) {
+        setKpiSummary(nextSummary);
+      }
+    };
+
+    refreshKpi();
     const timer = window.setInterval(() => {
-      setKpiSummary(getKpiSummary(7));
+      refreshKpi();
     }, 30000);
-    return () => window.clearInterval(timer);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
   }, []);
 
   const refreshQueue = useMemo(() => {

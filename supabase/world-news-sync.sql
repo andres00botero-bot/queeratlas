@@ -45,18 +45,37 @@ create table if not exists public.qa_admin_users (
 -- insert into public.qa_admin_users (email) values ('you@gmail.com')
 -- on conflict (email) do nothing;
 
-create or replace function public.qa_is_admin()
-returns boolean
-language sql
-stable
-security definer
-set search_path = public
-as $$
-  select exists (
-    select 1
-    from public.qa_admin_users admin
-    where lower(admin.email) = lower(coalesce(auth.jwt()->>'email', ''))
-  );
+do $$
+begin
+  if to_regprocedure('public.qa_is_admin()') is null then
+    create function public.qa_is_admin()
+    returns boolean
+    language plpgsql
+    stable
+    security definer
+    set search_path = public
+    as $fn$
+    declare
+      has_admin_table boolean := false;
+      is_admin boolean := false;
+    begin
+      has_admin_table := to_regclass('public.qa_admin_users') is not null;
+      if not has_admin_table then
+        return false;
+      end if;
+
+      select exists (
+        select 1
+        from public.qa_admin_users admin
+        where lower(admin.email) = lower(coalesce(auth.jwt()->>'email', ''))
+      )
+      into is_admin;
+
+      return is_admin;
+    end;
+    $fn$;
+  end if;
+end;
 $$;
 
 grant execute on function public.qa_is_admin() to anon, authenticated;
