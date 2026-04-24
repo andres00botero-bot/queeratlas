@@ -77,6 +77,14 @@ import {
   TYPE_STYLES,
 } from "@/features/city/cityPageConstants";
 
+function isMissingColumnError(error, columnName = "") {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  const column = String(columnName || "").toLowerCase();
+  return code === "42703" || code === "PGRST204" || (column ? message.includes(column) : message.includes("column"));
+}
+
 export default function CityPage() {
   const { city } = useParams();
   const pathname = usePathname();
@@ -684,25 +692,34 @@ export default function CityPage() {
     const dbPlaceId = await resolvePlaceDbIdInline(place);
     if (!dbPlaceId) return;
 
-    const { error } = await supabase
+    const basePayload = {
+      user_id: user.id,
+      mode: "trip",
+      privacy: "friends",
+      country: null,
+      city: String(place.city || city),
+      label: String(place.name || "Venue"),
+      address: String(place.location || "").trim() || null,
+      note: null,
+      place_id: String(dbPlaceId),
+      event_id: null,
+      lat: Number.isFinite(Number(place.lat)) ? Number(place.lat) : null,
+      lng: Number.isFinite(Number(place.lng)) ? Number(place.lng) : null,
+      checked_in_at: new Date().toISOString(),
+    };
+
+    let { error } = await supabase
       .from("qa_member_checkins")
-      .insert([
-        {
-          user_id: user.id,
-          mode: "trip",
-          privacy: "friends",
-          country: null,
-          city: String(place.city || city),
-          label: String(place.name || "Venue"),
-          address: String(place.location || "").trim() || null,
-          note: null,
-          place_id: String(dbPlaceId),
-          event_id: null,
-          lat: Number.isFinite(Number(place.lat)) ? Number(place.lat) : null,
-          lng: Number.isFinite(Number(place.lng)) ? Number(place.lng) : null,
-          checked_in_at: new Date().toISOString(),
-        },
-      ]);
+      .insert([basePayload]);
+
+    if (error && isMissingColumnError(error, "country")) {
+      const legacyPayload = { ...basePayload };
+      delete legacyPayload.country;
+      const fallbackRes = await supabase
+        .from("qa_member_checkins")
+        .insert([legacyPayload]);
+      error = fallbackRes.error || null;
+    }
 
     if (error && isMissingTableError(error)) {
       showToast("Check-ins table missing. Run latest check-in SQL.", {

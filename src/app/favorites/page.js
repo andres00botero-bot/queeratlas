@@ -71,6 +71,30 @@ const CHECKIN_SELECT_FIELDS_LEGACY =
   "id,user_id,mode,privacy,city,label,address,note,place_id,event_id,lat,lng,checked_in_at,created_at";
 const MEMBER_RANK_SELECT_FIELDS = "user_id,display_name,title,rank";
 
+function getCheckinsStorageKey(userId) {
+  const normalized = String(userId || "").trim();
+  if (!normalized) return CHECKINS_STORAGE_KEY;
+  return `${CHECKINS_STORAGE_KEY}:${normalized}`;
+}
+
+function readCachedCheckins(userId) {
+  const scopedRows = readLocalJson(getCheckinsStorageKey(userId), []);
+  const scopedMapped = Array.isArray(scopedRows) ? scopedRows.map(mapCheckinRow) : [];
+  const scopedSorted = scopedMapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0));
+  if (scopedSorted.length > 0) return scopedSorted;
+
+  const legacyRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
+  const legacyMapped = Array.isArray(legacyRows) ? legacyRows.map(mapCheckinRow) : [];
+  return legacyMapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0));
+}
+
+function writeCachedCheckins(userId, rows) {
+  writeLocalJson(getCheckinsStorageKey(userId), rows);
+  if (!userId) {
+    writeLocalJson(CHECKINS_STORAGE_KEY, rows);
+  }
+}
+
 function dedupeById(items = []) {
   const seen = new Set();
   const result = [];
@@ -268,10 +292,13 @@ export default function FavoritesPage() {
   }, [setAtlasLoadError, setEvents, setIsAtlasLoading, setPlaces]);
 
   const loadCheckins = useCallback(async () => {
+    const localSorted = readCachedCheckins(user?.id);
+    if (localSorted.length > 0) {
+      setCheckins(localSorted);
+    }
+
     if (!user?.id) {
-      const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
-      const mapped = Array.isArray(localRows) ? localRows.map(mapCheckinRow) : [];
-      setCheckins(mapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0)));
+      setCheckins(localSorted);
       return;
     }
 
@@ -299,15 +326,18 @@ export default function FavoritesPage() {
       } else {
         setCheckinsWarning("Cloud check-ins unavailable. Showing local check-ins.");
       }
-      const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
-      const mapped = Array.isArray(localRows) ? localRows.map(mapCheckinRow) : [];
-      setCheckins(mapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0)));
+      setCheckins(localSorted);
       return;
     }
 
     const mapped = (Array.isArray(data) ? data : []).map(mapCheckinRow);
-    setCheckins(mapped);
-    writeLocalJson(CHECKINS_STORAGE_KEY, mapped);
+    if (mapped.length > 0) {
+      setCheckins(mapped);
+      writeCachedCheckins(user?.id, mapped);
+    } else if (localSorted.length === 0) {
+      setCheckins([]);
+      writeCachedCheckins(user?.id, []);
+    }
     setCheckinsWarning("");
   }, [setCheckins, setCheckinsWarning, user?.id]);
 
@@ -1011,24 +1041,25 @@ export default function FavoritesPage() {
       if (cancelled || checkinMapRef.current) return;
 
       mapboxgl.accessToken = mapboxToken;
-      const center = checkinMapCenter
-        ? [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)]
-        : [11, 20];
-      const zoom = checkinMapCenter ? 4.2 : 2;
       mapInstance = new mapboxgl.Map({
         container: checkinMapContainerRef.current,
         style: "mapbox://styles/mapbox/dark-v11",
-        center,
-        zoom,
+        center: [11, 20],
+        zoom: 2,
         attributionControl: false,
       });
       mapInstance.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
       checkinMapRef.current = mapInstance;
-      mapInstance.once("load", () => {
+      const markReady = () => {
         if (cancelled || !checkinMapRef.current) return;
         mapInstance.resize();
         setIsCheckinMapReady(true);
-      });
+      };
+      if (typeof mapInstance.loaded === "function" && mapInstance.loaded()) {
+        markReady();
+      } else {
+        mapInstance.once("load", markReady);
+      }
     };
 
     initializeMap();
@@ -1043,7 +1074,6 @@ export default function FavoritesPage() {
       setIsCheckinMapReady(false);
     };
   }, [
-    checkinMapCenter,
     checkinMapContainerRef,
     checkinMapMarkersRef,
     checkinMapRef,
@@ -1057,65 +1087,78 @@ export default function FavoritesPage() {
     const mapboxgl = mapboxLibRef.current;
     if (!mapboxgl) return;
 
-    checkinMapMarkersRef.current.forEach((marker) => marker.remove());
-    checkinMapMarkersRef.current = [];
+    let cancelled = false;
 
-    if (!interactiveCheckinPoints.length) {
-      if (checkinMapCenter) {
-        map.flyTo({
-          center: [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)],
-          zoom: Math.max(map.getZoom(), 4.2),
-          essential: true,
-        });
-      }
-      return;
-    }
+    const renderMarkers = () => {
+      if (cancelled) return;
+      map.resize();
 
-    const bounds = new mapboxgl.LngLatBounds();
-    interactiveCheckinPoints.forEach((point) => {
-      const lat = Number(point.markerLat);
-      const lng = Number(point.markerLng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      checkinMapMarkersRef.current.forEach((marker) => marker.remove());
+      checkinMapMarkersRef.current = [];
 
-      const markerEl = document.createElement("button");
-      markerEl.type = "button";
-      markerEl.style.width = "14px";
-      markerEl.style.height = "14px";
-      markerEl.style.borderRadius = "9999px";
-      markerEl.style.border = "2px solid rgba(255,255,255,0.85)";
-      markerEl.style.background = point.markerKind === "friend" ? "#22d3ee" : "#f472b6";
-      markerEl.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.42)";
-      markerEl.style.cursor = "pointer";
-      markerEl.style.transform = String(selectedCheckinId) === String(point.id) ? "scale(1.2)" : "scale(1)";
-      markerEl.title = String(point.label || point.ownerName || "Check-in");
-      markerEl.addEventListener("click", () => {
-        if (point.markerKind === "mine") {
-          setSelectedCheckinId(String(point.id || ""));
-        }
-        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 12), essential: true });
-      });
-
-      const marker = new mapboxgl.Marker({ element: markerEl, anchor: "center" })
-        .setLngLat([lng, lat])
-        .addTo(map);
-      checkinMapMarkersRef.current.push(marker);
-      bounds.extend([lng, lat]);
-    });
-
-    if (!bounds.isEmpty()) {
-      if (selectedCheckinId) {
-        const selected = interactiveCheckinPoints.find((item) => String(item.id) === String(selectedCheckinId));
-        if (selected && Number.isFinite(Number(selected.markerLat)) && Number.isFinite(Number(selected.markerLng))) {
+      if (!interactiveCheckinPoints.length) {
+        if (checkinMapCenter) {
           map.flyTo({
-            center: [Number(selected.markerLng), Number(selected.markerLat)],
-            zoom: Math.max(map.getZoom(), 12),
+            center: [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)],
+            zoom: Math.max(map.getZoom(), 4.2),
             essential: true,
           });
-          return;
         }
+        return;
       }
-      map.fitBounds(bounds, { padding: 44, maxZoom: 11, duration: 650 });
-    }
+
+      const bounds = new mapboxgl.LngLatBounds();
+      interactiveCheckinPoints.forEach((point) => {
+        const lat = Number(point.markerLat);
+        const lng = Number(point.markerLng);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        const markerEl = document.createElement("button");
+        markerEl.type = "button";
+        markerEl.style.width = "14px";
+        markerEl.style.height = "14px";
+        markerEl.style.borderRadius = "9999px";
+        markerEl.style.border = "2px solid rgba(255,255,255,0.85)";
+        markerEl.style.background = point.markerKind === "friend" ? "#22d3ee" : "#f472b6";
+        markerEl.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.42)";
+        markerEl.style.cursor = "pointer";
+        markerEl.style.transform = String(selectedCheckinId) === String(point.id) ? "scale(1.2)" : "scale(1)";
+        markerEl.title = String(point.label || point.ownerName || "Check-in");
+        markerEl.addEventListener("click", () => {
+          if (point.markerKind === "mine") {
+            setSelectedCheckinId(String(point.id || ""));
+          }
+          map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 12), essential: true });
+        });
+
+        const marker = new mapboxgl.Marker({ element: markerEl, anchor: "center" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+        checkinMapMarkersRef.current.push(marker);
+        bounds.extend([lng, lat]);
+      });
+
+      if (!bounds.isEmpty()) {
+        if (selectedCheckinId) {
+          const selected = interactiveCheckinPoints.find((item) => String(item.id) === String(selectedCheckinId));
+          if (selected && Number.isFinite(Number(selected.markerLat)) && Number.isFinite(Number(selected.markerLng))) {
+            map.flyTo({
+              center: [Number(selected.markerLng), Number(selected.markerLat)],
+              zoom: Math.max(map.getZoom(), 12),
+              essential: true,
+            });
+            return;
+          }
+        }
+        map.fitBounds(bounds, { padding: 44, maxZoom: 11, duration: 650 });
+      }
+    };
+
+    renderMarkers();
+
+    return () => {
+      cancelled = true;
+    };
   }, [checkinMapCenter, checkinMapMarkersRef, checkinMapRef, interactiveCheckinPoints, isCheckinMapReady, selectedCheckinId, setSelectedCheckinId]);
 
   useEffect(() => {
@@ -1771,7 +1814,7 @@ export default function FavoritesPage() {
         const merged = isEditing
           ? current.map((entry) => (String(entry.id) === String(savedRow.id) ? savedRow : entry))
           : [savedRow, ...current].slice(0, 300);
-        writeLocalJson(CHECKINS_STORAGE_KEY, merged);
+        writeCachedCheckins(user?.id, merged);
         return merged;
       });
 
@@ -1847,7 +1890,7 @@ export default function FavoritesPage() {
 
     setCheckins((current) => {
       const next = current.filter((item) => String(item.id) !== id);
-      writeLocalJson(CHECKINS_STORAGE_KEY, next);
+      writeCachedCheckins(user?.id, next);
       return next;
     });
     if (editingCheckinId === id) {
