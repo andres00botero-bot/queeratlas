@@ -313,12 +313,11 @@ export default function CityPage() {
     [blockedItems, city, places]
   );
 
-  const cityEvents = useMemo(
+  const cityEventsAll = useMemo(
     () => {
       const normalizedCity = normalizeCityKey(city);
       return eventsData.filter((event) => (
         normalizeCityKey(event.city) === normalizedCity
-        && isEventVisibleOnCityPage(event)
         && !blockedItems.some(
           (item) =>
             item.targetType === "event" &&
@@ -327,6 +326,11 @@ export default function CityPage() {
       ));
     },
     [blockedItems, city, eventsData]
+  );
+
+  const cityEvents = useMemo(
+    () => cityEventsAll.filter((event) => isEventVisibleOnCityPage(event)),
+    [cityEventsAll]
   );
 
   const cityPrivateEvents = useMemo(() => {
@@ -357,8 +361,8 @@ export default function CityPage() {
 
   const selectedEvent = useMemo(() => {
     if (!eventId) return null;
-    return cityEvents.find((event) => String(event.id) === String(eventId)) || null;
-  }, [cityEvents, eventId]);
+    return cityEventsAll.find((event) => String(event.id) === String(eventId)) || null;
+  }, [cityEventsAll, eventId]);
 
   useEffect(() => {
     if (!selectedPlace) {

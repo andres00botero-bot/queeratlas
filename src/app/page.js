@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { buildAtlasSearchResults } from "@/lib/search";
 import { getQualityMap } from "@/lib/quality";
+import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
@@ -179,13 +180,13 @@ export default function Home() {
 
   const openResult = (item) => {
     if (item.type === "city") {
-      router.push(`/${item.key || item.id}`);
+      router.push(cityPath(item.key || item.id));
       return;
     }
 
-    const cityValue = String(item?.city || "").trim().toLowerCase();
+    const cityValue = cityPath(item?.city, "");
 
-    if (!cityValue || (item.type === "event" && cityValue === "global")) {
+    if (!cityValue || (item.type === "event" && cityValue === "/global")) {
       if (item?.type === "event") {
         const offgridEventId = String(item?.id || "").trim();
         const query = offgridEventId ? `?offgridEventId=${encodeURIComponent(offgridEventId)}` : "";
@@ -197,11 +198,11 @@ export default function Home() {
     }
 
     if (item.type === "place") {
-      router.push(`/${cityValue}?placeId=${item.id}`);
+      router.push(citySelectionPath(item.city, { placeId: item.id }));
       return;
     }
 
-    router.push(`/${cityValue}?eventId=${item.id}`);
+    router.push(citySelectionPath(item.city, { eventId: item.id }));
   };
 
   const saveResult = (item) => {
@@ -977,7 +978,7 @@ export default function Home() {
                 {topCities.map((city, index) => (
                   <button
                     key={city.city}
-                    onClick={() => router.push(`/${city.city.toLowerCase()}`)}
+                    onClick={() => router.push(cityPath(city.city))}
                     className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-4 text-left transition hover:border-white/16 hover:bg-white/6"
                     style={introStyle(610 + (index * 45))}
                   >

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { citySelectionPath } from "@/lib/cityRouting";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import {
   blockItem,
@@ -433,12 +434,11 @@ export default function AdminPage() {
 
   const openQueueItem = (item) => {
     if (!item?.city || !item?.targetId) return;
-    const slug = String(item.city).toLowerCase();
     if (item.targetType === "event") {
-      router.push(`/${slug}?eventId=${item.targetId}`);
+      router.push(citySelectionPath(item.city, { eventId: item.targetId }));
       return;
     }
-    router.push(`/${slug}?placeId=${item.targetId}`);
+    router.push(citySelectionPath(item.city, { placeId: item.targetId }));
   };
 
   const quickVerifyFirstStale = () => {

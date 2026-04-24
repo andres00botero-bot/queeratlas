@@ -4,6 +4,8 @@ import { mergeSeedPlacesAsync } from "./seedMerge";
 import { captureOperationalError } from "./monitoring";
 import { logDevError } from "./devLogger";
 
+let skipPlacesWithStatsView = false;
+
 function formatSupabaseError(error) {
   if (!error) return "Unknown error";
   const details = {
@@ -21,6 +23,12 @@ function toOperationalError(error) {
   return new Error(formatSupabaseError(error));
 }
 
+function isMissingPlacesWithStatsLocation(error) {
+  const code = String(error?.code || "").trim();
+  const message = String(error?.message || "").toLowerCase();
+  return code === "42703" && message.includes("places_with_stats.location");
+}
+
 export function usePlaces(city) {
   const [places, setPlaces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,22 +39,40 @@ export function usePlaces(city) {
     setIsLoading(true);
     setLoadError("");
 
-    let data = null;
-    let error = null;
-    let placesRes = null;
+    let placeRows = [];
+    let reviewRows = [];
+    let statsRows = null;
+    let statsError = null;
 
     try {
-      const [statsRes, rawPlacesRes] = await Promise.all([
-        supabase
-          .from("places_with_stats")
-          .select("*"),
+      const [{ data: placesData, error: placesError }, { data: reviewsData, error: reviewsError }] = await Promise.all([
         supabase
           .from("places")
-          .select("id, name, city, link, location"),
+          .select("id, name, type, city, lat, lng, description, vibe, hours, link, location"),
+        supabase
+          .from("reviews")
+          .select("place_id, rating"),
       ]);
-      data = statsRes?.data ?? null;
-      error = statsRes?.error ?? null;
-      placesRes = rawPlacesRes ?? null;
+
+      if (placesError) {
+        logDevError("Places query error:", formatSupabaseError(placesError));
+        captureOperationalError("places_query_fail", toOperationalError(placesError), {
+          city: String(city || ""),
+        });
+        setLoadError("Could not load places right now.");
+        setIsLoading(false);
+        return;
+      }
+
+      if (reviewsError) {
+        logDevError("Reviews query error:", formatSupabaseError(reviewsError));
+        captureOperationalError("reviews_query_fail", toOperationalError(reviewsError), {
+          city: String(city || ""),
+        });
+      }
+
+      placeRows = Array.isArray(placesData) ? placesData : [];
+      reviewRows = Array.isArray(reviewsData) ? reviewsData : [];
     } catch (networkError) {
       logDevError("Network error while loading places:", networkError);
       captureOperationalError("places_network_fail", toOperationalError(networkError), {
@@ -57,71 +83,27 @@ export function usePlaces(city) {
       return;
     }
 
-    if (error) {
-      logDevError("Fetch places_with_stats error:", formatSupabaseError(error));
-      captureOperationalError("places_view_fail", toOperationalError(error), {
-        city: String(city || ""),
-      });
+    if (!skipPlacesWithStatsView) {
+      const statsRes = await supabase
+        .from("places_with_stats")
+        .select("*");
 
-      const [{ data: fallbackPlaces, error: fallbackPlacesError }, { data: fallbackReviews, error: fallbackReviewsError }] = await Promise.all([
-        supabase
-          .from("places")
-          .select("id, name, type, city, lat, lng, description, vibe, hours, link, location"),
-        supabase
-          .from("reviews")
-          .select("place_id, rating"),
-      ]);
+      statsRows = Array.isArray(statsRes?.data) ? statsRes.data : null;
+      statsError = statsRes?.error ?? null;
 
-      if (fallbackPlacesError) {
-        logDevError("Fallback places query error:", formatSupabaseError(fallbackPlacesError));
-        captureOperationalError("places_fallback_fail", toOperationalError(fallbackPlacesError), {
-          city: String(city || ""),
-        });
-        setLoadError("Could not load places right now.");
-        setIsLoading(false);
-        return;
-      }
-
-      if (fallbackReviewsError) {
-        logDevError("Fallback reviews query error:", formatSupabaseError(fallbackReviewsError));
-        captureOperationalError("reviews_fallback_fail", toOperationalError(fallbackReviewsError), {
-          city: String(city || ""),
-        });
-      }
-
-      const reviewRows = Array.isArray(fallbackReviews) ? fallbackReviews : [];
-      const statsByPlaceId = reviewRows.reduce((acc, row) => {
-        const placeId = String(row?.place_id || "");
-        if (!placeId) return acc;
-        if (!acc[placeId]) {
-          acc[placeId] = { total: 0, count: 0 };
+      if (statsError) {
+        if (isMissingPlacesWithStatsLocation(statsError)) {
+          skipPlacesWithStatsView = true;
+        } else {
+          logDevError("Fetch places_with_stats error:", formatSupabaseError(statsError));
+          captureOperationalError("places_view_fail", toOperationalError(statsError), {
+            city: String(city || ""),
+          });
+          setLoadError("Live stats view is unavailable. Showing direct place data.");
         }
-        const numericRating = Number(row?.rating);
-        if (Number.isFinite(numericRating) && numericRating > 0) {
-          acc[placeId].total += numericRating;
-          acc[placeId].count += 1;
-        }
-        return acc;
-      }, {});
-
-      const fallbackRows = (Array.isArray(fallbackPlaces) ? fallbackPlaces : []).map((place) => {
-        const stat = statsByPlaceId[String(place.id)] || { total: 0, count: 0 };
-        const avgRating = stat.count > 0 ? Number((stat.total / stat.count).toFixed(1)) : null;
-        return {
-          ...place,
-          avgRating,
-          reviewCount: stat.count,
-        };
-      });
-
-      const mergedWithSeedFallback = await mergeSeedPlacesAsync(fallbackRows);
-      setPlaces(mergedWithSeedFallback);
-      setLoadError("Live stats view is unavailable. Showing direct place data.");
-      setIsLoading(false);
-      return;
+      }
     }
 
-    const placeRows = Array.isArray(placesRes?.data) ? placesRes.data : [];
     const placeLinkById = new Map(
       placeRows
         .filter((row) => row?.id && row?.link)
@@ -149,7 +131,32 @@ export function usePlaces(city) {
         ]),
     );
 
-    const mergedViewRows = (data || []).map((row) => {
+    const statsByPlaceId = reviewRows.reduce((acc, row) => {
+      const placeId = String(row?.place_id || "");
+      if (!placeId) return acc;
+      if (!acc[placeId]) {
+        acc[placeId] = { total: 0, count: 0 };
+      }
+      const numericRating = Number(row?.rating);
+      if (Number.isFinite(numericRating) && numericRating > 0) {
+        acc[placeId].total += numericRating;
+        acc[placeId].count += 1;
+      }
+      return acc;
+    }, {});
+
+    const fallbackRows = placeRows.map((place) => {
+      const stat = statsByPlaceId[String(place.id)] || { total: 0, count: 0 };
+      const avgRating = stat.count > 0 ? Number((stat.total / stat.count).toFixed(1)) : null;
+      return {
+        ...place,
+        avgRating,
+        reviewCount: stat.count,
+      };
+    });
+
+    const sourceRows = Array.isArray(statsRows) && statsRows.length > 0 ? statsRows : fallbackRows;
+    const mergedRows = sourceRows.map((row) => {
       const byId = placeLinkById.get(String(row.id || ""));
       const byCityName = placeLinkByCityName.get(
         `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
@@ -166,7 +173,7 @@ export function usePlaces(city) {
       };
     });
 
-    const mergedWithSeed = await mergeSeedPlacesAsync(mergedViewRows);
+    const mergedWithSeed = await mergeSeedPlacesAsync(mergedRows);
     setPlaces(mergedWithSeed);
     setIsLoading(false);
   }, [city]);

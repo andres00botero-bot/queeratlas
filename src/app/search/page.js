@@ -10,6 +10,7 @@ import { buildAtlasSearchResults } from "@/lib/search";
 import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
 import { getEntityQuality, getQualityMap, getQualityStatus } from "@/lib/quality";
+import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
 import EmptyState from "@/components/ui/EmptyState";
@@ -202,16 +203,16 @@ export default function SearchPage() {
 
   const openResult = (item) => {
     if (item.type === "city") {
-      router.push(`/${item.key || item.id}`);
+      router.push(cityPath(item.key || item.id));
       return;
     }
 
     if (item.type === "place") {
-      router.push(`/${item.city?.toLowerCase()}?placeId=${item.id}`);
+      router.push(citySelectionPath(item.city, { placeId: item.id }));
       return;
     }
 
-    router.push(`/${item.city?.toLowerCase()}?eventId=${item.id}`);
+    router.push(citySelectionPath(item.city, { eventId: item.id }));
   };
 
   const submitSearch = (event) => {

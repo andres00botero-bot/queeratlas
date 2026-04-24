@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { addReport, getBlockedItems, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
+import { citySelectionPath } from "@/lib/cityRouting";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { logDevError } from "@/lib/devLogger";
@@ -677,15 +678,34 @@ export default function EventsPage() {
     showToast("Event updated.", { tone: "success", duration: 1900 });
   };
 
+  const focusOffgridEvent = useCallback((eventId) => {
+    const id = String(eventId || "").trim();
+    if (!id) return;
+
+    setOffgridEventParam(id);
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search || "");
+      params.set("offgridEventId", `global-${id}`);
+      const query = params.toString();
+      const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+      window.history.replaceState({}, "", url);
+    }
+
+    requestAnimationFrame(() => {
+      offgridSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const card = document.getElementById(`offgrid-event-${id}`);
+      card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, []);
+
   const openEvent = (event) => {
     if (event.isGlobal) {
-      if (event.link) {
-        window.open(event.link, "_blank", "noopener,noreferrer");
-      }
+      focusOffgridEvent(event.id);
       return;
     }
 
-    router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`);
+    router.push(citySelectionPath(event.city, { eventId: event.id }));
   };
 
   return (
@@ -1071,7 +1091,12 @@ export default function EventsPage() {
                                 <button
                                   onClick={(eventClick) => {
                                     eventClick.stopPropagation();
-                                    router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}&lat=${event.lat}&lng=${event.lng}`);
+                                    router.push(
+                                      citySelectionPath(event.city, {
+                                        eventId: event.id,
+                                        extraParams: { lat: event.lat, lng: event.lng },
+                                      })
+                                    );
                                   }}
                                   className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/72 transition hover:border-white/16 hover:bg-white/8 hover:text-white"
                                 >

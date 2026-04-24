@@ -1,3 +1,5 @@
+import { cityPath } from "@/lib/cityRouting";
+
 export function inviteStatusLabel(value) {
   const key = String(value || "").trim().toLowerCase();
   if (key === "accepted") return "Accepted";
@@ -7,9 +9,7 @@ export function inviteStatusLabel(value) {
 }
 
 export function cityHref(value) {
-  const slug = String(value || "").trim().toLowerCase();
-  if (!slug) return "/cities";
-  return `/${slug}`;
+  return cityPath(value);
 }
 
 export function formatInviteTimeline({ requestedAt, decidedAt, status }) {

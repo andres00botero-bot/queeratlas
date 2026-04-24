@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
+import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
@@ -993,7 +994,7 @@ export default function ContributePage() {
                     {qaFindings.cityCounts.map((item) => (
                       <button
                         key={item.city}
-                        onClick={() => router.push(item.city ? `/${item.city}` : "/cities")}
+                        onClick={() => router.push(cityPath(item.city))}
                         className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-xs text-white/80 transition hover:border-cyan-200/30 hover:text-cyan-100"
                       >
                         {formatCityLabel(item.city)}: {item.count}
@@ -1012,9 +1013,7 @@ export default function ContributePage() {
                       {qaFindings.places.map((item) => (
                         <button
                           key={`qa-place-${item.id}`}
-                          onClick={() =>
-                            router.push(item.city ? `/${item.city}?placeId=${item.id}` : "/cities")
-                          }
+                          onClick={() => router.push(citySelectionPath(item.city, { placeId: item.id }))}
                           className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-cyan-200/30"
                         >
                           <p className="text-sm font-semibold text-white">{item.name}</p>
@@ -1060,9 +1059,7 @@ export default function ContributePage() {
                             router.push(
                               item.entityType === "event"
                                 ? "/events"
-                                : item.city
-                                  ? `/${item.city}`
-                                  : "/cities"
+                                : cityPath(item.city)
                             )
                           }
                           className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-amber-200/30"

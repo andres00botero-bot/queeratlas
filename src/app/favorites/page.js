@@ -16,6 +16,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
+import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import {
   formatCheckinTime,
   formatCityLabel,
@@ -719,18 +720,22 @@ export default function FavoritesPage() {
     const eventById = new Map(
       savedEvents.map((event) => [String(event.id), event])
     );
-    const placeByCityName = new Map(
-      savedPlaces.map((place) => [
-        `${normalizeLooseText(place.city)}::${normalizeLooseText(place.name)}`,
-        place,
-      ])
-    );
-    const eventByCityName = new Map(
-      savedEvents.map((event) => [
-        `${normalizeLooseText(event.city)}::${normalizeLooseText(event.name)}`,
-        event,
-      ])
-    );
+    const placeByCityName = new Map();
+    savedPlaces.forEach((place) => {
+      const key = `${normalizeLooseText(place.city)}::${normalizeLooseText(place.name)}`;
+      if (!key || key === "::") return;
+      const current = placeByCityName.get(key) || [];
+      current.push(place);
+      placeByCityName.set(key, current);
+    });
+    const eventByCityName = new Map();
+    savedEvents.forEach((event) => {
+      const key = `${normalizeLooseText(event.city)}::${normalizeLooseText(event.name)}`;
+      if (!key || key === "::") return;
+      const current = eventByCityName.get(key) || [];
+      current.push(event);
+      eventByCityName.set(key, current);
+    });
 
     return checkins
       .map((entry) => {
@@ -738,11 +743,31 @@ export default function FavoritesPage() {
           return { ...entry, markerLat: Number(entry.lat), markerLng: Number(entry.lng) };
         }
 
+        const hasCoords = (item) => (
+          Number.isFinite(Number(item?.lat)) && Number.isFinite(Number(item?.lng))
+        );
         const placeMatch = entry.placeId ? placeById.get(String(entry.placeId)) : null;
         const eventMatch = entry.eventId ? eventById.get(String(entry.eventId)) : null;
+        const explicitMatch = [placeMatch, eventMatch].find((item) => hasCoords(item)) || null;
+
         const key = `${normalizeLooseText(entry.city)}::${normalizeLooseText(entry.label)}`;
-        const byName = placeByCityName.get(key) || eventByCityName.get(key) || null;
-        const match = placeMatch || eventMatch || byName;
+        const byNameCandidates = [...(placeByCityName.get(key) || []), ...(eventByCityName.get(key) || [])]
+          .filter((candidate) => hasCoords(candidate));
+        let byNameMatch = null;
+        if (byNameCandidates.length === 1) {
+          byNameMatch = byNameCandidates[0];
+        } else if (byNameCandidates.length > 1) {
+          const addressKey = normalizeLooseText(entry.address);
+          if (addressKey) {
+            const addressMatches = byNameCandidates.filter((candidate) => (
+              normalizeLooseText(candidate.location || candidate.address) === addressKey
+            ));
+            if (addressMatches.length === 1) {
+              byNameMatch = addressMatches[0];
+            }
+          }
+        }
+        const match = explicitMatch || byNameMatch;
 
         if (match && Number.isFinite(Number(match.lat)) && Number.isFinite(Number(match.lng))) {
           return { ...entry, markerLat: Number(match.lat), markerLng: Number(match.lng) };
@@ -782,6 +807,11 @@ export default function FavoritesPage() {
     if (!selectedCheckinId) return null;
     return checkinMarkers.find((item) => String(item.id) === String(selectedCheckinId)) || null;
   }, [checkinMarkers, selectedCheckinId]);
+
+  const checkinMarkerById = useMemo(
+    () => new Map(checkinMarkers.map((item) => [String(item.id), item])),
+    [checkinMarkers]
+  );
 
   const checkinMapCenter = useMemo(() => {
     const centerSource =
@@ -1672,9 +1702,12 @@ export default function FavoritesPage() {
       setSelectedCheckinId(String(entry.id));
 
       const map = checkinMapRef.current;
-      if (map && Number.isFinite(Number(entry.markerLat)) && Number.isFinite(Number(entry.markerLng))) {
+      const markerEntry = checkinMarkerById.get(String(entry.id));
+      const targetLat = Number(markerEntry?.markerLat ?? entry.markerLat ?? entry.lat);
+      const targetLng = Number(markerEntry?.markerLng ?? entry.markerLng ?? entry.lng);
+      if (map && Number.isFinite(targetLat) && Number.isFinite(targetLng)) {
         map.flyTo({
-          center: [Number(entry.markerLng), Number(entry.markerLat)],
+          center: [targetLng, targetLat],
           zoom: Math.max(map.getZoom(), 12.5),
           essential: true,
         });
@@ -1685,7 +1718,7 @@ export default function FavoritesPage() {
         checkinMapCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     },
-    [checkinMapCardRef, checkinMapRef, setSelectedCheckinId]
+    [checkinMapCardRef, checkinMapRef, checkinMarkerById, setSelectedCheckinId]
   );
 
   const quickCheckinFromItem = async (item, itemType = "place") => {
@@ -1771,12 +1804,11 @@ export default function FavoritesPage() {
 
   const openPlannerStopOnMap = (stop) => {
     if (!stop?.city || !stop?.id) return;
-    const citySlug = String(stop.city).toLowerCase();
     if (stop.itemType === "event") {
-      router.push(`/${citySlug}?eventId=${stop.id}`);
+      router.push(citySelectionPath(stop.city, { eventId: stop.id }));
       return;
     }
-    router.push(`/${citySlug}?placeId=${stop.id}`);
+    router.push(citySelectionPath(stop.city, { placeId: stop.id }));
   };
 
   const saveV2Plan = async (payload) => {
@@ -2290,7 +2322,7 @@ export default function FavoritesPage() {
                     allCities.map((city) => (
                       <button
                         key={city}
-                        onClick={() => router.push(`/${city.toLowerCase()}`)}
+                        onClick={() => router.push(cityPath(city))}
                         className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
                       >
                         {city}
@@ -2313,9 +2345,10 @@ export default function FavoritesPage() {
                       key={`${item.type}-${item.id}`}
                       onClick={() =>
                         router.push(
-                          item.type === "place"
-                            ? `/${item.city.toLowerCase()}?placeId=${item.id}`
-                            : `/${item.city.toLowerCase()}?eventId=${item.id}`
+                          citySelectionPath(item.city, {
+                            placeId: item.type === "place" ? item.id : "",
+                            eventId: item.type === "event" ? item.id : "",
+                          })
                         )
                       }
                       className="animate-rise-in w-full rounded-[18px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-white/24 md:flex md:items-center md:justify-between"
@@ -3080,9 +3113,10 @@ export default function FavoritesPage() {
                               type="button"
                               onClick={() =>
                                 router.push(
-                                  stop.type === "place"
-                                    ? `/${stop.city?.toLowerCase()}?placeId=${stop.id}`
-                                    : `/${stop.city?.toLowerCase()}?eventId=${stop.id}`
+                                  citySelectionPath(stop.city, {
+                                    placeId: stop.type === "place" ? stop.id : "",
+                                    eventId: stop.type === "event" ? stop.id : "",
+                                  })
                                 )
                               }
                               className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-white/75 transition hover:border-white/18 hover:text-white"
@@ -3395,9 +3429,10 @@ export default function FavoritesPage() {
                       type="button"
                       onClick={() =>
                         router.push(
-                          item.kind === "event"
-                            ? `/${String(item.city || "").toLowerCase()}?eventId=${item.id}`
-                            : `/${String(item.city || "").toLowerCase()}?placeId=${item.id}`
+                          citySelectionPath(item.city, {
+                            placeId: item.kind === "place" ? item.id : "",
+                            eventId: item.kind === "event" ? item.id : "",
+                          })
                         )
                       }
                       className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/85 transition hover:border-white/30"
@@ -3432,7 +3467,7 @@ export default function FavoritesPage() {
         <SavedPlacesPanel
           isAtlasLoading={isAtlasLoading}
           savedPlaces={savedPlaces}
-          onOpenPlace={(place) => router.push(`/${place.city?.toLowerCase()}?placeId=${place.id}`)}
+          onOpenPlace={(place) => router.push(citySelectionPath(place.city, { placeId: place.id }))}
           onQuickCheckin={(place) => quickCheckinFromItem(place, "place")}
           onRemoveFavorite={removeFavorite}
           onExploreCities={() => router.push("/cities")}
@@ -3443,7 +3478,7 @@ export default function FavoritesPage() {
           isAtlasLoading={isAtlasLoading}
           savedEvents={savedEvents}
           formatDate={formatDate}
-          onOpenEvent={(event) => router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`)}
+          onOpenEvent={(event) => router.push(citySelectionPath(event.city, { eventId: event.id }))}
           onQuickCheckin={(event) => quickCheckinFromItem(event, "event")}
           onRemoveFavorite={removeFavorite}
           onBrowseEvents={() => router.push("/events")}

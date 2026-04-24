@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
+import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
@@ -1210,7 +1211,7 @@ export default function NowPage() {
                       type="button"
                       onClick={(clickEvent) => {
                         clickEvent.stopPropagation();
-                        router.push(`/${event.city?.toLowerCase()}?eventId=${event.id}`);
+                        router.push(citySelectionPath(event.city, { eventId: event.id }));
                       }}
                       className="rounded-full border border-orange-200/22 bg-orange-200/10 px-3 py-1 text-xs text-orange-100 transition hover:border-orange-200/40"
                     >
@@ -1248,7 +1249,7 @@ export default function NowPage() {
               {cityMomentum.map((city) => (
                 <button
                   key={city.city}
-                  onClick={() => router.push(`/${city.city.toLowerCase()}`)}
+                  onClick={() => router.push(cityPath(city.city))}
                   className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(22,44,56,0.72),rgba(11,11,11,0.96))] px-4 py-4 text-left transition hover:border-cyan-200/30"
                 >
                   <div>
@@ -1360,7 +1361,7 @@ export default function NowPage() {
                     type="button"
                     onClick={(clickEvent) => {
                       clickEvent.stopPropagation();
-                      router.push(`/${place.city?.toLowerCase()}?placeId=${place.id}`);
+                      router.push(citySelectionPath(place.city, { placeId: place.id }));
                     }}
                     className="rounded-full border border-emerald-200/35 bg-emerald-300/12 px-3 py-1 text-xs font-medium text-emerald-100 transition hover:bg-emerald-300/20"
                   >
