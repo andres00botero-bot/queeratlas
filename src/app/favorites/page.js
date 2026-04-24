@@ -63,6 +63,13 @@ const FAVORITES_ATLAS_CACHE_KEY = "qa_favorites_atlas_v1";
 const FAVORITES_ATLAS_CACHE_TTL_MS = 2 * 60 * 1000;
 const FAVORITES_ATLAS_PLACE_FETCH_LIMIT = 1500;
 const FAVORITES_ATLAS_EVENT_FETCH_LIMIT = 1500;
+const MEMBER_PLAN_SELECT_FIELDS =
+  "id,client_id,title,city,date,place_ids,event_ids,stops,note,created_at";
+const CHECKIN_SELECT_FIELDS =
+  "id,user_id,mode,privacy,country,city,label,address,note,place_id,event_id,lat,lng,checked_in_at,created_at";
+const CHECKIN_SELECT_FIELDS_LEGACY =
+  "id,user_id,mode,privacy,city,label,address,note,place_id,event_id,lat,lng,checked_in_at,created_at";
+const MEMBER_RANK_SELECT_FIELDS = "user_id,display_name,title,rank";
 
 function dedupeById(items = []) {
   const seen = new Set();
@@ -74,6 +81,14 @@ function dedupeById(items = []) {
     result.push(item);
   }
   return result;
+}
+
+function isMissingColumnError(error, columnName = "") {
+  if (!error) return false;
+  const code = String(error.code || "");
+  const message = String(error.message || "").toLowerCase();
+  const column = String(columnName || "").toLowerCase();
+  return code === "42703" || code === "PGRST204" || (column ? message.includes(column) : message.includes("column"));
 }
 
 export default function FavoritesPage() {
@@ -136,6 +151,7 @@ export default function FavoritesPage() {
   const [checkinSidebarHeight, setCheckinSidebarHeight] = useState(null);
   const [showAllMyCheckins, setShowAllMyCheckins] = useState(false);
   const [showAllFriendCheckins, setShowAllFriendCheckins] = useState(false);
+  const [isCheckinMapReady, setIsCheckinMapReady] = useState(false);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -146,7 +162,7 @@ export default function FavoritesPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("member_plans")
-        .select("*")
+        .select(MEMBER_PLAN_SELECT_FIELDS)
         .eq("user_id", userId)
         .order("created_at", { ascending: false }),
     ]);
@@ -259,12 +275,23 @@ export default function FavoritesPage() {
       return;
     }
 
-    const { data, error } = await supabase
+    let response = await supabase
       .from("qa_member_checkins")
-      .select("*")
+      .select(CHECKIN_SELECT_FIELDS)
       .eq("user_id", user.id)
       .order("checked_in_at", { ascending: false })
       .limit(300);
+
+    if (response.error && isMissingColumnError(response.error, "country")) {
+      response = await supabase
+        .from("qa_member_checkins")
+        .select(CHECKIN_SELECT_FIELDS_LEGACY)
+        .eq("user_id", user.id)
+        .order("checked_in_at", { ascending: false })
+        .limit(300);
+    }
+
+    const { data, error } = response;
 
     if (error) {
       if (isMissingTableError(error)) {
@@ -300,14 +327,7 @@ export default function FavoritesPage() {
       return;
     }
 
-    const [checkinsRes, profilesRes, presenceRes] = await Promise.all([
-      supabase
-        .from("qa_member_checkins")
-        .select("id, user_id, mode, privacy, country, city, label, address, note, place_id, event_id, lat, lng, checked_in_at, created_at")
-        .in("user_id", targetIds)
-        .neq("privacy", "private")
-        .order("checked_in_at", { ascending: false })
-        .limit(150),
+    const [profilesRes, presenceRes] = await Promise.all([
       supabase
         .from("member_profiles")
         .select("user_id, display_name")
@@ -317,6 +337,24 @@ export default function FavoritesPage() {
         .select("user_id, is_online, last_seen_at")
         .in("user_id", targetIds),
     ]);
+
+    let checkinsRes = await supabase
+      .from("qa_member_checkins")
+      .select("id, user_id, mode, privacy, country, city, label, address, note, place_id, event_id, lat, lng, checked_in_at, created_at")
+      .in("user_id", targetIds)
+      .neq("privacy", "private")
+      .order("checked_in_at", { ascending: false })
+      .limit(150);
+
+    if (checkinsRes.error && isMissingColumnError(checkinsRes.error, "country")) {
+      checkinsRes = await supabase
+        .from("qa_member_checkins")
+        .select("id, user_id, mode, privacy, city, label, address, note, place_id, event_id, lat, lng, checked_in_at, created_at")
+        .in("user_id", targetIds)
+        .neq("privacy", "private")
+        .order("checked_in_at", { ascending: false })
+        .limit(150);
+    }
 
     if (checkinsRes.error) {
       if (isMissingTableError(checkinsRes.error)) {
@@ -465,7 +503,7 @@ export default function FavoritesPage() {
     queueMicrotask(async () => {
       const { data, error } = await supabase
         .from("qa_member_leaderboard")
-        .select("*")
+        .select(MEMBER_RANK_SELECT_FIELDS)
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -966,6 +1004,7 @@ export default function FavoritesPage() {
     if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
     let cancelled = false;
     let mapInstance = null;
+    setIsCheckinMapReady(false);
 
     const initializeMap = async () => {
       const mapboxgl = await loadMapbox();
@@ -985,6 +1024,11 @@ export default function FavoritesPage() {
       });
       mapInstance.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
       checkinMapRef.current = mapInstance;
+      mapInstance.once("load", () => {
+        if (cancelled || !checkinMapRef.current) return;
+        mapInstance.resize();
+        setIsCheckinMapReady(true);
+      });
     };
 
     initializeMap();
@@ -996,6 +1040,7 @@ export default function FavoritesPage() {
       mapInstance?.remove();
       mapInstance = null;
       checkinMapRef.current = null;
+      setIsCheckinMapReady(false);
     };
   }, [
     checkinMapCenter,
@@ -1008,7 +1053,7 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     const map = checkinMapRef.current;
-    if (!map) return;
+    if (!map || !isCheckinMapReady) return;
     const mapboxgl = mapboxLibRef.current;
     if (!mapboxgl) return;
 
@@ -1071,7 +1116,7 @@ export default function FavoritesPage() {
       }
       map.fitBounds(bounds, { padding: 44, maxZoom: 11, duration: 650 });
     }
-  }, [checkinMapCenter, checkinMapMarkersRef, checkinMapRef, interactiveCheckinPoints, selectedCheckinId, setSelectedCheckinId]);
+  }, [checkinMapCenter, checkinMapMarkersRef, checkinMapRef, interactiveCheckinPoints, isCheckinMapReady, selectedCheckinId, setSelectedCheckinId]);
 
   useEffect(() => {
     setCheckinMapLoadFailed(false);
@@ -1681,21 +1726,30 @@ export default function FavoritesPage() {
           lng: nextCheckin.lng,
           checked_in_at: nextCheckin.checkedInAt,
         };
-        const query = isEditing
-          ? supabase
-              .from("qa_member_checkins")
-              .update(writePayload)
-              .eq("id", editingId)
-              .eq("user_id", user.id)
-              .select("*")
-              .single()
-          : supabase
-              .from("qa_member_checkins")
-              .insert([writePayload])
-              .select("*")
-              .single();
+        const runWrite = async (payload, selectFields) => (
+          isEditing
+            ? supabase
+                .from("qa_member_checkins")
+                .update(payload)
+                .eq("id", editingId)
+                .eq("user_id", user.id)
+                .select(selectFields)
+                .single()
+            : supabase
+                .from("qa_member_checkins")
+                .insert([payload])
+                .select(selectFields)
+                .single()
+        );
 
-        const { data, error } = await query;
+        let writeRes = await runWrite(writePayload, CHECKIN_SELECT_FIELDS);
+        if (writeRes.error && isMissingColumnError(writeRes.error, "country")) {
+          const legacyPayload = { ...writePayload };
+          delete legacyPayload.country;
+          writeRes = await runWrite(legacyPayload, CHECKIN_SELECT_FIELDS_LEGACY);
+        }
+
+        const { data, error } = writeRes;
 
         if (error) {
           if (isMissingTableError(error)) {
@@ -1978,7 +2032,7 @@ export default function FavoritesPage() {
           stops: draftPlan.stops,
           note: draftPlan.note,
         }])
-        .select("*")
+        .select(MEMBER_PLAN_SELECT_FIELDS)
         .single();
 
       if (error || !data) {
