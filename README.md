@@ -71,3 +71,17 @@ Use this endpoint in UptimeRobot / Better Stack / Pingdom with a 1-minute check.
 8. Block/unblock content reflects across city/community/events/favorites.
 9. `/terms`, `/privacy`, `/community-policy` open without errors.
 10. `/api/health`, `/sitemap.xml`, and `/robots.txt` return 200.
+
+## Release routine (locked)
+
+Before each push, run:
+
+```bash
+npm run verify:release
+```
+
+To enforce this automatically via git pre-push hook (one-time setup per clone):
+
+```bash
+npm run setup:githooks
+```

@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test:smoke": "node scripts/test-smoke.mjs",
+    "verify:release": "node scripts/verify-release.mjs",
+    "push:safe": "npm run verify:release && git push",
+    "setup:githooks": "git config core.hooksPath .githooks",
     "backfill:place-locations": "node scripts/backfill-place-locations.mjs",
     "seed:city-reviews": "node scripts/seed-city-reviews.mjs"
   },

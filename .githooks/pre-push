@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+set -e
+
+echo "[pre-push] Running release checks: lint + smoke + build"
+npm run verify:release
