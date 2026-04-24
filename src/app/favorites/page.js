@@ -70,6 +70,11 @@ const CHECKIN_SELECT_FIELDS =
 const CHECKIN_SELECT_FIELDS_LEGACY =
   "id,user_id,mode,privacy,city,label,address,note,place_id,event_id,lat,lng,checked_in_at,created_at";
 const MEMBER_RANK_SELECT_FIELDS = "user_id,display_name,title,rank";
+const CHECKIN_MAP_PHASE = Object.freeze({
+  IDLE: "idle",
+  INITIALIZING: "initializing",
+  READY: "ready",
+});
 
 function getCheckinsStorageKey(userId) {
   const normalized = String(userId || "").trim();
@@ -197,7 +202,7 @@ export default function FavoritesPage() {
   const [checkinSidebarHeight, setCheckinSidebarHeight] = useState(null);
   const [showAllMyCheckins, setShowAllMyCheckins] = useState(false);
   const [showAllFriendCheckins, setShowAllFriendCheckins] = useState(false);
-  const [isCheckinMapReady, setIsCheckinMapReady] = useState(false);
+  const [checkinMapPhase, setCheckinMapPhase] = useState(CHECKIN_MAP_PHASE.IDLE);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -1053,11 +1058,16 @@ export default function FavoritesPage() {
     return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat.toFixed(6)},${lng.toFixed(6)}&zoom=${zoom}&size=1200x620&markers=${marker}`;
   }, [checkinMapCenter]);
 
+  const clearCheckinMapMarkers = useCallback(() => {
+    checkinMapMarkersRef.current.forEach((marker) => marker.remove());
+    checkinMapMarkersRef.current = [];
+  }, [checkinMapMarkersRef]);
+
   useEffect(() => {
     if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
     let cancelled = false;
     let mapInstance = null;
-    setIsCheckinMapReady(false);
+    setCheckinMapPhase(CHECKIN_MAP_PHASE.INITIALIZING);
 
     const initializeMap = async () => {
       const mapboxgl = await loadMapbox();
@@ -1076,7 +1086,7 @@ export default function FavoritesPage() {
       const markReady = () => {
         if (cancelled || !checkinMapRef.current) return;
         mapInstance.resize();
-        setIsCheckinMapReady(true);
+        setCheckinMapPhase(CHECKIN_MAP_PHASE.READY);
       };
       if (typeof mapInstance.loaded === "function" && mapInstance.loaded()) {
         markReady();
@@ -1089,24 +1099,23 @@ export default function FavoritesPage() {
 
     return () => {
       cancelled = true;
-      checkinMapMarkersRef.current.forEach((marker) => marker.remove());
-      checkinMapMarkersRef.current = [];
+      clearCheckinMapMarkers();
       mapInstance?.remove();
       mapInstance = null;
       checkinMapRef.current = null;
-      setIsCheckinMapReady(false);
+      setCheckinMapPhase(CHECKIN_MAP_PHASE.IDLE);
     };
   }, [
     checkinMapContainerRef,
-    checkinMapMarkersRef,
     checkinMapRef,
+    clearCheckinMapMarkers,
     loadMapbox,
     mapboxToken,
   ]);
 
   useEffect(() => {
     const map = checkinMapRef.current;
-    if (!map || !isCheckinMapReady) return;
+    if (!map || checkinMapPhase !== CHECKIN_MAP_PHASE.READY) return;
     const mapboxgl = mapboxLibRef.current;
     if (!mapboxgl) return;
 
@@ -1116,8 +1125,7 @@ export default function FavoritesPage() {
       if (cancelled) return;
       map.resize();
 
-      checkinMapMarkersRef.current.forEach((marker) => marker.remove());
-      checkinMapMarkersRef.current = [];
+      clearCheckinMapMarkers();
 
       if (!interactiveCheckinPoints.length) {
         if (checkinMapCenter) {
@@ -1182,7 +1190,16 @@ export default function FavoritesPage() {
     return () => {
       cancelled = true;
     };
-  }, [checkinMapCenter, checkinMapMarkersRef, checkinMapRef, interactiveCheckinPoints, isCheckinMapReady, selectedCheckinId, setSelectedCheckinId]);
+  }, [
+    checkinMapCenter,
+    checkinMapPhase,
+    checkinMapRef,
+    checkinMapMarkersRef,
+    clearCheckinMapMarkers,
+    interactiveCheckinPoints,
+    selectedCheckinId,
+    setSelectedCheckinId,
+  ]);
 
   useEffect(() => {
     setCheckinMapLoadFailed(false);

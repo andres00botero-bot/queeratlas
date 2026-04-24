@@ -777,6 +777,34 @@ export default function AdminPage() {
       pushRow("Member profile table", "warn", error?.message || "Read failed");
     }
 
+    try {
+      const countRes = await supabase
+        .from("qa_member_checkins")
+        .select("id", { count: "exact", head: true });
+      if (countRes.error) {
+        pushRow("Check-ins table", "fail", countRes.error.message || "Read failed");
+      } else {
+        pushRow("Check-ins table", "ok", `Reachable. Rows: ${Number(countRes.count || 0)}`);
+      }
+    } catch (error) {
+      pushRow("Check-ins table", "fail", error?.message || "Read failed");
+    }
+
+    try {
+      const schemaProbe = await supabase
+        .from("qa_member_checkins")
+        .select("id,country,checked_in_at")
+        .order("checked_in_at", { ascending: false })
+        .limit(1);
+      if (schemaProbe.error) {
+        pushRow("Check-ins schema", "warn", schemaProbe.error.message || "Could not verify columns");
+      } else {
+        pushRow("Check-ins schema", "ok", "country + checked_in_at columns readable");
+      }
+    } catch (error) {
+      pushRow("Check-ins schema", "warn", error?.message || "Could not verify columns");
+    }
+
     pushRow(
       "Confirm-email route",
       "info",
