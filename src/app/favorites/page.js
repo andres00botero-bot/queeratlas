@@ -95,6 +95,28 @@ function writeCachedCheckins(userId, rows) {
   }
 }
 
+function mergeHydratedCheckins(localRows = [], remoteRows = []) {
+  const seen = new Set();
+  const result = [];
+  const pushUnique = (row) => {
+    const idKey = String(row?.id || "").trim();
+    const fallbackKey = [
+      String(row?.city || "").trim().toLowerCase(),
+      String(row?.label || "").trim().toLowerCase(),
+      String(row?.checkedInAt || row?.createdAt || "").trim(),
+    ].join("::");
+    const key = idKey || fallbackKey;
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    result.push(row);
+  };
+
+  (Array.isArray(remoteRows) ? remoteRows : []).forEach(pushUnique);
+  (Array.isArray(localRows) ? localRows : []).forEach(pushUnique);
+
+  return result.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0));
+}
+
 function dedupeById(items = []) {
   const seen = new Set();
   const result = [];
@@ -332,8 +354,9 @@ export default function FavoritesPage() {
 
     const mapped = (Array.isArray(data) ? data : []).map(mapCheckinRow);
     if (mapped.length > 0) {
-      setCheckins(mapped);
-      writeCachedCheckins(user?.id, mapped);
+      const merged = mergeHydratedCheckins(localSorted, mapped).slice(0, 300);
+      setCheckins(merged);
+      writeCachedCheckins(user?.id, merged);
     } else if (localSorted.length === 0) {
       setCheckins([]);
       writeCachedCheckins(user?.id, []);
@@ -1812,7 +1835,7 @@ export default function FavoritesPage() {
 
       setCheckins((current) => {
         const merged = isEditing
-          ? current.map((entry) => (String(entry.id) === String(savedRow.id) ? savedRow : entry))
+          ? current.map((entry) => (String(entry.id) === String(editingId) ? savedRow : entry))
           : [savedRow, ...current].slice(0, 300);
         writeCachedCheckins(user?.id, merged);
         return merged;
