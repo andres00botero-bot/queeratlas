@@ -4,6 +4,19 @@ import { mergeSeedPlacesAsync } from "./seedMerge";
 import { captureOperationalError } from "./monitoring";
 import { logDevError } from "./devLogger";
 
+const PLACES_VIEW_SELECT_FIELDS =
+  "id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount";
+const PLACE_LINK_SELECT_FIELDS = "id,name,city,link,location";
+const PLACE_FALLBACK_SELECT_FIELDS =
+  "id,name,type,city,lat,lng,description,vibe,hours,link,location";
+const PLACE_MUTATION_SELECT_FIELDS =
+  "id,name,type,city,lat,lng,description,vibe,hours,link,location,created_at";
+const REVIEW_SELECT_FIELDS =
+  "id,place_id,rating,comment,safety,created_at,created_by";
+const PLACE_FETCH_LIMIT = 2000;
+const REVIEW_FALLBACK_LIMIT = 6000;
+const PLACE_REVIEW_FETCH_LIMIT = 400;
+
 function formatSupabaseError(error) {
   if (!error) return "Unknown error";
   const details = {
@@ -39,10 +52,12 @@ export function usePlaces(city) {
       const cityKey = String(city || "").trim();
       let statsQuery = supabase
         .from("places_with_stats")
-        .select("*");
+        .select(PLACES_VIEW_SELECT_FIELDS)
+        .limit(PLACE_FETCH_LIMIT);
       let rawPlacesQuery = supabase
         .from("places")
-        .select("id, name, city, link, location");
+        .select(PLACE_LINK_SELECT_FIELDS)
+        .limit(PLACE_FETCH_LIMIT);
 
       if (cityKey) {
         statsQuery = statsQuery.eq("city", cityKey);
@@ -72,17 +87,26 @@ export function usePlaces(city) {
       const cityKey = String(city || "").trim();
       let fallbackPlacesQuery = supabase
         .from("places")
-        .select("id, name, type, city, lat, lng, description, vibe, hours, link, location");
+        .select(PLACE_FALLBACK_SELECT_FIELDS)
+        .limit(PLACE_FETCH_LIMIT);
       if (cityKey) {
         fallbackPlacesQuery = fallbackPlacesQuery.eq("city", cityKey);
       }
+      const fallbackPlacesRes = await fallbackPlacesQuery;
+      const fallbackPlaces = Array.isArray(fallbackPlacesRes.data) ? fallbackPlacesRes.data : [];
+      const fallbackPlacesError = fallbackPlacesRes.error;
 
-      const [{ data: fallbackPlaces, error: fallbackPlacesError }, { data: fallbackReviews, error: fallbackReviewsError }] = await Promise.all([
-        fallbackPlacesQuery,
-        supabase
+      const fallbackPlaceIds = fallbackPlaces
+        .map((place) => String(place?.id || "").trim())
+        .filter(Boolean);
+
+      const { data: fallbackReviews, error: fallbackReviewsError } = fallbackPlaceIds.length > 0
+        ? await supabase
           .from("reviews")
-          .select("place_id, rating"),
-      ]);
+          .select("place_id, rating")
+          .in("place_id", fallbackPlaceIds)
+          .limit(REVIEW_FALLBACK_LIMIT)
+        : { data: [], error: null };
 
       if (fallbackPlacesError) {
         logDevError("Fallback places query error:", formatSupabaseError(fallbackPlacesError));
@@ -225,7 +249,7 @@ export function usePlaces(city) {
     const { data, error } = await supabase
       .from("places")
       .insert([basePayload])
-      .select("*")
+      .select(PLACE_MUTATION_SELECT_FIELDS)
       .single();
 
     if (error) {
@@ -351,9 +375,10 @@ export function usePlaces(city) {
 
     const { data, error } = await supabase
       .from("reviews")
-      .select("*")
+      .select(REVIEW_SELECT_FIELDS)
       .eq("place_id", resolvedPlaceId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(PLACE_REVIEW_FETCH_LIMIT);
 
     if (error) {
       logDevError("Get reviews error:", error);

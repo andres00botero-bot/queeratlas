@@ -61,6 +61,20 @@ const MY_CHECKIN_PREVIEW_COUNT = 3;
 const FRIEND_CHECKIN_PREVIEW_COUNT = 3;
 const FAVORITES_ATLAS_CACHE_KEY = "qa_favorites_atlas_v1";
 const FAVORITES_ATLAS_CACHE_TTL_MS = 2 * 60 * 1000;
+const FAVORITES_ATLAS_PLACE_FETCH_LIMIT = 1500;
+const FAVORITES_ATLAS_EVENT_FETCH_LIMIT = 1500;
+
+function dedupeById(items = []) {
+  const seen = new Set();
+  const result = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const key = String(item?.id || "").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -214,18 +228,20 @@ export default function FavoritesPage() {
     const [{ data: placesData, error: placesError }, { data: eventsData, error: eventsError }] = await Promise.all([
       supabase
         .from("places_with_stats")
-        .select("id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount"),
+        .select("id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount")
+        .limit(FAVORITES_ATLAS_PLACE_FETCH_LIMIT),
       supabase
         .from("events")
-        .select("id,name,city,date,start_date,end_date,address,description,vibe,link,lat,lng"),
+        .select("id,name,city,date,start_date,end_date,address,description,vibe,link,lat,lng")
+        .limit(FAVORITES_ATLAS_EVENT_FETCH_LIMIT),
     ]);
 
     if (placesError || eventsError) {
       setAtlasLoadError("Could not load some live atlas data. Showing available signal.");
     }
 
-    const nextPlaces = await mergeSeedPlacesAsync(placesData || []);
-    const nextEvents = await mergeSeedEventsAsync(eventsData || []);
+    const nextPlaces = dedupeById(await mergeSeedPlacesAsync(placesData || []));
+    const nextEvents = dedupeById(await mergeSeedEventsAsync(eventsData || []));
     setPlaces(nextPlaces);
     setEvents(nextEvents);
     writeRuntimeCache(FAVORITES_ATLAS_CACHE_KEY, {

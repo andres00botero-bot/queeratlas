@@ -7,6 +7,12 @@ const BLOCKED_TABLE = "qa_blocked_items";
 const BLOCKED_UPDATED_EVENT = "qa:blocked-updated";
 const REPORTS_UPDATED_EVENT = "qa:reports-updated";
 const REPORT_REASON_DETAIL_SEPARATOR = "\n\nDetails: ";
+const MODERATION_REPORT_SELECT_FIELDS =
+  "id,target_type,target_id,city,title,reason,status,created_at,resolved_at";
+const MODERATION_BLOCKED_SELECT_FIELDS =
+  "id,target_type,target_id,title,city,blocked_at";
+const MODERATION_REPORT_FETCH_LIMIT = 1200;
+const MODERATION_BLOCKED_FETCH_LIMIT = 1200;
 
 function safeParse(raw, fallback) {
   if (!raw) return fallback;
@@ -119,8 +125,9 @@ export async function syncBlockedItemsFromCloud() {
   const localBlocked = getBlockedItems();
   const blockedRes = await supabase
     .from(BLOCKED_TABLE)
-    .select("*")
-    .order("blocked_at", { ascending: false });
+    .select(MODERATION_BLOCKED_SELECT_FIELDS)
+    .order("blocked_at", { ascending: false })
+    .limit(MODERATION_BLOCKED_FETCH_LIMIT);
 
   if (isMissingTableError(blockedRes.error)) {
     return {
@@ -166,8 +173,9 @@ export async function syncModerationFromCloud(options = {}) {
 
   const reportsRes = await supabase
     .from(REPORTS_TABLE)
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select(MODERATION_REPORT_SELECT_FIELDS)
+    .order("created_at", { ascending: false })
+    .limit(MODERATION_REPORT_FETCH_LIMIT);
 
   if (isMissingTableError(reportsRes.error)) {
     return {

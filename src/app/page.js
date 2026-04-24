@@ -19,6 +19,22 @@ import { ArrowUpRight, Search } from "lucide-react";
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
 const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
+const HOME_EVENTS_FETCH_LIMIT = 1500;
+const HOME_GLOBAL_EVENTS_FETCH_LIMIT = 500;
+const HOME_PLACES_FETCH_LIMIT = 1500;
+const HOME_WORLD_NEWS_FETCH_LIMIT = 200;
+
+function dedupeByKey(items = [], getKey) {
+  const seen = new Set();
+  const result = [];
+  for (const item of Array.isArray(items) ? items : []) {
+    const key = String(getKey(item) || "").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+}
 
 function splitLegacyVibe(description = "") {
   const raw = String(description || "");
@@ -222,28 +238,34 @@ export default function Home() {
       supabase
         .from("events")
         .select("id,name,city,date,start_date,end_date,address,description,vibe,link,lat,lng")
-        .order("date", { ascending: true }),
+        .order("date", { ascending: true })
+        .limit(HOME_EVENTS_FETCH_LIMIT),
       supabase
         .from("global_events")
         .select("id,name,date,start_date,end_date,description,vibe,location,link,created_at")
         .order("date", { ascending: true })
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(HOME_GLOBAL_EVENTS_FETCH_LIMIT),
     ]);
 
-    const mergedEvents = await mergeSeedEventsAsync(eventsRes?.data || []);
+    const mergedEvents = dedupeByKey(await mergeSeedEventsAsync(eventsRes?.data || []), (item) => item?.id);
     const globalEvents = Array.isArray(globalRes?.data)
-      ? globalRes.data.map(mapGlobalEventForSearch).filter((event) => event.name)
+      ? dedupeByKey(globalRes.data.map(mapGlobalEventForSearch).filter((event) => event.name), (item) => item?.id)
       : [];
 
-    return { error: eventsRes?.error || globalRes?.error, data: [...mergedEvents, ...globalEvents] };
+    return {
+      error: eventsRes?.error || globalRes?.error,
+      data: dedupeByKey([...mergedEvents, ...globalEvents], (item) => `${item?.isGlobal ? "g" : "c"}-${item?.id}`),
+    };
   };
 
   const fetchPlaces = async () => {
     const { data, error } = await supabase
       .from("places_with_stats")
-      .select("id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount");
+      .select("id,name,type,city,lat,lng,description,vibe,hours,link,location,avgRating,reviewCount")
+      .limit(HOME_PLACES_FETCH_LIMIT);
 
-    return { error, data: await mergeSeedPlacesAsync(data || []) };
+    return { error, data: dedupeByKey(await mergeSeedPlacesAsync(data || []), (item) => item?.id) };
   };
 
   const fetchWorldNews = async () => {
@@ -251,7 +273,8 @@ export default function Home() {
       .from("qa_world_news")
       .select("id,title,city,category,date,summary,why_it_matters,source_name,created_at")
       .order("date", { ascending: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(HOME_WORLD_NEWS_FETCH_LIMIT);
 
     if (error) {
       const fallback = [...EDITORIAL_PULSE_ITEMS].sort(compareNewsRecency);
@@ -264,13 +287,10 @@ export default function Home() {
       categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
     }));
 
-    const merged = [...withCategoryLabel, ...EDITORIAL_PULSE_ITEMS].reduce((acc, item) => {
-      const key = String(item.id || `${item.title}-${item.date}`);
-      if (!acc.some((existing) => String(existing.id || `${existing.title}-${existing.date}`) === key)) {
-        acc.push(item);
-      }
-      return acc;
-    }, []);
+    const merged = dedupeByKey(
+      [...withCategoryLabel, ...EDITORIAL_PULSE_ITEMS],
+      (item) => item?.id || `${item?.title || ""}-${item?.date || ""}`
+    );
 
     return { error: null, data: merged.sort(compareNewsRecency) };
   };

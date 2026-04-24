@@ -7,6 +7,8 @@ import { captureOperationalError } from "@/lib/monitoring";
 import { sanitizePostLoginTarget } from "@/lib/redirects";
 
 const AuthContext = createContext(null);
+const MEMBER_PROFILE_SELECT_FIELDS =
+  "user_id,display_name,pronouns,home_city,resident_country,updated_at";
 
 function getMemberName(user) {
   if (!user) return "Explorer";
@@ -40,7 +42,7 @@ export function AuthProvider({ children }) {
 
     const { data, error } = await supabase
       .from("member_profiles")
-      .select("*")
+      .select(MEMBER_PROFILE_SELECT_FIELDS)
       .eq("user_id", userId)
       .maybeSingle();
 
