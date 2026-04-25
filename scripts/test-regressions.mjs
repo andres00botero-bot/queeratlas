@@ -224,8 +224,8 @@ function testPlacesWithStatsMissingLocationGuard() {
 function testNowNewsAdminControls() {
   const source = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
   assert(
-    source.includes('const rpcRes = await supabase.rpc("qa_is_admin");'),
-    "now news admin: now page should resolve admin state via qa_is_admin rpc"
+    source.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
+    "now news admin: now page should use shared admin access helper"
   );
   assert(
     source.includes("openEditNewsComposer(item);"),
@@ -234,6 +234,14 @@ function testNowNewsAdminControls() {
   assert(
     source.includes('? "Update news"'),
     "now news admin: composer should support update mode"
+  );
+  assert(
+    source.includes("item.createdAt || item.date"),
+    "now news admin: admin news cards should display createdAt before date for consistency"
+  );
+  assert(
+    source.includes("adminForm.date || preservedEditDate"),
+    "now news admin: editing should preserve existing article date when date input is empty"
   );
 }
 
@@ -269,6 +277,77 @@ function testPlacesAtlasNormalizesRatingFields() {
   );
 }
 
+function testSharedAdminAccessResolverUsage() {
+  const resolverSource = readFileSync(new URL("../src/lib/adminAccess.js", import.meta.url), "utf8");
+  const homeSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
+  const contributeSource = readFileSync(new URL("../src/app/contribute/page.js", import.meta.url), "utf8");
+  const eventsSource = readFileSync(new URL("../src/app/events/page.js", import.meta.url), "utf8");
+  const communitySource = readFileSync(new URL("../src/app/community/page.js", import.meta.url), "utf8");
+  const citySource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const adminSource = readFileSync(new URL("../src/app/admin/page.js", import.meta.url), "utf8");
+
+  assert(
+    resolverSource.includes('client.rpc("qa_is_admin")'),
+    "admin resolver: shared helper should check qa_is_admin first"
+  );
+  assert(
+    resolverSource.includes('.from("qa_admin_users")'),
+    "admin resolver: shared helper should include qa_admin_users fallback"
+  );
+  assert(
+    homeSource.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
+    "admin resolver: home page should use shared admin access helper"
+  );
+  assert(
+    contributeSource.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
+    "admin resolver: contribute page should use shared admin access helper"
+  );
+  assert(
+    eventsSource.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
+    "admin resolver: events page should use shared admin access helper"
+  );
+  assert(
+    communitySource.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
+    "admin resolver: community page should use shared admin access helper"
+  );
+  assert(
+    citySource.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
+    "admin resolver: city page should use shared admin access helper"
+  );
+  assert(
+    adminSource.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
+    "admin resolver: admin page should use shared admin access helper"
+  );
+}
+
+function testSharedDateDisplayUsage() {
+  const dateDisplaySource = readFileSync(new URL("../src/lib/dateDisplay.js", import.meta.url), "utf8");
+  const nowSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+  const homeSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
+  const eventDateSource = readFileSync(new URL("../src/features/events/eventDateUtils.js", import.meta.url), "utf8");
+
+  assert(
+    dateDisplaySource.includes("export function formatDateShort"),
+    "date display: shared utility should export formatDateShort"
+  );
+  assert(
+    dateDisplaySource.includes("export function formatDateLong"),
+    "date display: shared utility should export formatDateLong"
+  );
+  assert(
+    nowSource.includes('import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";'),
+    "date display: now page should use shared date utility"
+  );
+  assert(
+    homeSource.includes('import { formatDateShort } from "@/lib/dateDisplay";'),
+    "date display: home page should use shared date utility"
+  );
+  assert(
+    eventDateSource.includes('import { formatDateLong } from "@/lib/dateDisplay";'),
+    "date display: event date utils should use shared date utility"
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -282,6 +361,8 @@ function run() {
   testNowNewsAdminControls();
   testNowRankingAdminControls();
   testPlacesAtlasNormalizesRatingFields();
+  testSharedAdminAccessResolverUsage();
+  testSharedDateDisplayUsage();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");

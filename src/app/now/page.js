@@ -10,13 +10,9 @@ import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
+import { resolveAdminAccess } from "@/lib/adminAccess";
+import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
 import EmptyState from "@/components/ui/EmptyState";
-
-function formatDate(value) {
-  if (!value) return "Date TBA";
-  const date = new Date(value);
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
 
 function isThisWeek(value, now) {
   const date = new Date(value);
@@ -43,6 +39,7 @@ function normalizeRankingDraftItem(item) {
     signal: (item?.signal || "").trim(),
   };
 }
+
 
 function compareNewsRecency(a, b) {
   const byCreatedAt =
@@ -361,28 +358,9 @@ export default function NowPage() {
     let active = true;
 
     queueMicrotask(async () => {
-      let adminState = false;
-      try {
-        const rpcRes = await supabase.rpc("qa_is_admin");
-        if (!rpcRes.error) {
-          adminState = Boolean(rpcRes.data);
-        }
-      } catch {
-        adminState = false;
-      }
-
-      if (!adminState && currentEmail) {
-        try {
-          const { data, error } = await supabase
-            .from("qa_admin_users")
-            .select("email")
-            .ilike("email", currentEmail)
-            .limit(1);
-          adminState = !error && (data || []).length > 0;
-        } catch {
-          adminState = false;
-        }
-      }
+      const { isAdmin: adminState } = await resolveAdminAccess({
+        email: currentEmail,
+      });
 
       if (!active) return;
       setIsAdminByTable(adminState);
@@ -541,7 +519,7 @@ export default function NowPage() {
       category: String(item.category || "culture_tip"),
       summary: String(item.summary || ""),
       whyItMatters: String(item.whyItMatters || ""),
-      date: String(item.date || ""),
+      date: toDateInputValue(item.date || item.createdAt),
     });
   }, []);
 
@@ -661,12 +639,21 @@ export default function NowPage() {
     if (!adminForm.title || !adminForm.summary || !adminForm.whyItMatters) return;
 
     const nextId = isEditingNews ? String(editingNewsId) : createClientId("admin-news");
+    const existingNewsItem = isEditingNews
+      ? adminNews.find((entry) => String(entry.id) === nextId)
+      : null;
+    const preservedEditDate =
+      toDateInputValue(existingNewsItem?.date || existingNewsItem?.createdAt) ||
+      new Date().toISOString().slice(0, 10);
+    const effectiveDate = isEditingNews
+      ? adminForm.date || preservedEditDate
+      : adminForm.date || new Date().toISOString().slice(0, 10);
     const item = {
       id: nextId,
       title: adminForm.title,
       city: adminForm.city || "Global",
       category: adminForm.category || "culture_tip",
-      date: adminForm.date || new Date().toISOString().slice(0, 10),
+      date: effectiveDate,
       summary: adminForm.summary,
       whyItMatters: adminForm.whyItMatters,
       sourceName: `${memberName || "Admin"} | Atlas admin`,
@@ -1000,6 +987,9 @@ export default function NowPage() {
                 {displayedNewsItems.length > 0 ? (
                   displayedNewsItems.map((item) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
+                    const itemDateForDisplay = canEditAdminNews
+                      ? item.createdAt || item.date
+                      : item.date;
                     return (
                     <article
                       key={item.id}
@@ -1024,7 +1014,7 @@ export default function NowPage() {
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-xs uppercase tracking-[0.16em] text-white/45">{item.city || "Global"}</p>
                         <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
-                          {formatDate(item.date)}
+                          {formatDateShort(itemDateForDisplay)}
                         </span>
                       </div>
                       <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
@@ -1378,7 +1368,7 @@ export default function NowPage() {
                 >
                   <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-orange-200/90 via-amber-200/65 to-transparent" />
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-orange-200/80">{event.city || "City"} | {formatDate(event.date)}</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-orange-200/80">{event.city || "City"} | {formatDateShort(event.date)}</p>
                     <span className="rounded-full border border-orange-200/15 bg-orange-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-orange-100">
                       {String(expandedSoonEventId) === String(event.id) ? "Expanded" : "Live now"}
                     </span>

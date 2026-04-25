@@ -10,6 +10,7 @@ import { citySelectionPath } from "@/lib/cityRouting";
 import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { logDevError } from "@/lib/devLogger";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   fetchEventsData,
   fetchGlobalEventsData,
@@ -141,28 +142,9 @@ export default function EventsPage() {
     let active = true;
 
     queueMicrotask(async () => {
-      let adminState = false;
-      try {
-        const rpcRes = await supabase.rpc("qa_is_admin");
-        if (!rpcRes.error) {
-          adminState = Boolean(rpcRes.data);
-        }
-      } catch {
-        adminState = false;
-      }
-
-      if (!adminState && user?.email) {
-        try {
-          const { data, error } = await supabase
-            .from("qa_admin_users")
-            .select("email")
-            .ilike("email", String(user.email).trim().toLowerCase())
-            .limit(1);
-          adminState = !error && (data || []).length > 0;
-        } catch {
-          adminState = false;
-        }
-      }
+      const { isAdmin: adminState } = await resolveAdminAccess({
+        email: user?.email,
+      });
 
       if (!active) return;
       setIsAdmin(adminState);

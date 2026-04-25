@@ -18,6 +18,7 @@ import {
 } from "@/lib/moderation";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { getKpiSummary } from "@/lib/analytics";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
@@ -168,19 +169,9 @@ export default function AdminPage() {
     }
 
     queueMicrotask(async () => {
-      let adminAccess = false;
-      try {
-        const rpcRes = await supabase.rpc("qa_is_admin");
-        adminAccess = Boolean(rpcRes.data);
-      } catch {
-        const email = String(user?.email || "").trim().toLowerCase();
-        const { data, error } = await supabase
-          .from("qa_admin_users")
-          .select("email")
-          .eq("email", email)
-          .maybeSingle();
-        adminAccess = !error && Boolean(data);
-      }
+      const { isAdmin: adminAccess } = await resolveAdminAccess({
+        email: user?.email,
+      });
 
       setIsAdmin(adminAccess);
       setAdminChecked(true);

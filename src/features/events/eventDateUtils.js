@@ -1,13 +1,8 @@
 import { normalizeEventRange, normalizeIsoDate } from "@/features/events/eventFormatUtils";
+import { formatDateLong } from "@/lib/dateDisplay";
 
 export function formatDateLabel(value) {
-  if (!value) return "Date TBA";
-
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDateLong(value);
 }
 
 export function formatEventDateLabel(event = {}) {

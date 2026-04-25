@@ -10,6 +10,7 @@ import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   blockItem,
   getBlockedItems,
@@ -177,25 +178,11 @@ export default function ContributePage() {
 
         let adminAccess = false;
         const notices = [];
-        const currentEmail = String(user?.email || "").trim().toLowerCase();
-        if (currentEmail) {
-          const { data, error } = await supabase
-            .from("qa_admin_users")
-            .select("email")
-            .ilike("email", currentEmail)
-            .limit(1);
-
-          if (!error) {
-            adminAccess = (data || []).length > 0;
-            setIsAdmin(adminAccess);
-          } else {
-            setIsAdmin(false);
-            if (isMissingTableError(error)) {
-              notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
-            }
-          }
-        } else {
-          setIsAdmin(false);
+        const adminAccessRes = await resolveAdminAccess({ email: user?.email });
+        adminAccess = Boolean(adminAccessRes.isAdmin);
+        setIsAdmin(adminAccess);
+        if (adminAccessRes.error && isMissingTableError(adminAccessRes.error)) {
+          notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
         }
 
         const synced = adminAccess

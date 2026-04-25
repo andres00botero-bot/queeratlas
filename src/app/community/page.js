@@ -15,6 +15,7 @@ import {
 import { useActionToast } from "@/lib/useActionToast";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 
@@ -466,20 +467,9 @@ export default function CommunityPage() {
     let active = true;
 
     queueMicrotask(async () => {
-      let adminState = false;
-      try {
-        const rpcRes = await supabase.rpc("qa_is_admin");
-        if (rpcRes.error) throw rpcRes.error;
-        adminState = Boolean(rpcRes.data);
-      } catch {
-        const email = String(user.email || "").trim().toLowerCase();
-        const { data, error } = await supabase
-          .from("qa_admin_users")
-          .select("email")
-          .eq("email", email)
-          .maybeSingle();
-        adminState = !error && Boolean(data);
-      }
+      const { isAdmin: adminState } = await resolveAdminAccess({
+        email: user?.email,
+      });
 
       if (!active) return;
       setIsAdmin(adminState);

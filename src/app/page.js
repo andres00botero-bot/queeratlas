@@ -15,6 +15,8 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
+import { resolveAdminAccess } from "@/lib/adminAccess";
+import { formatDateShort } from "@/lib/dateDisplay";
 import { ArrowUpRight, Search } from "lucide-react";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
@@ -55,14 +57,6 @@ function mapGlobalEventForSearch(row = {}) {
     link: String(row.link || "").trim(),
     isGlobal: true,
   };
-}
-
-function formatDate(value) {
-  if (!value) return "Date TBA";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
 }
 
 function getResultMeta(result) {
@@ -130,7 +124,9 @@ export default function Home() {
     signUpWithPassword,
     updateMemberProfile,
     signOut,
+    user,
   } = useAuth();
+  const currentEmail = String(user?.email || "").trim().toLowerCase();
   const needsEmailConfirmation =
     Boolean(pendingEmailConfirmation) || authMessage.toLowerCase().includes("confirm your email");
 
@@ -470,13 +466,9 @@ export default function Home() {
     let active = true;
 
     queueMicrotask(async () => {
-      let adminState = false;
-      try {
-        const rpcRes = await supabase.rpc("qa_is_admin");
-        adminState = Boolean(rpcRes.data);
-      } catch {
-        adminState = false;
-      }
+      const { isAdmin: adminState } = await resolveAdminAccess({
+        email: currentEmail,
+      });
 
       if (!active) return;
       setIsAdmin(adminState);
@@ -485,7 +477,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [isAuthLoading, isMember]);
+  }, [currentEmail, isAuthLoading, isMember]);
 
   useEffect(() => {
     if (!deferredQuery) {
@@ -855,7 +847,7 @@ export default function Home() {
                     >
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <p className="rounded-full border border-white/12 bg-white/7 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/82">
-                          {[item.city || "Global", formatDate(item.date)].join(" | ")}
+                          {[item.city || "Global", formatDateShort(item.date)].join(" | ")}
                         </p>
                         <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
                           {item.categoryLabel || "news"}

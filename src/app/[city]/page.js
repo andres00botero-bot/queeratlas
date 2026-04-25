@@ -21,6 +21,7 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
 import { trackKpiEvent } from "@/lib/analytics";
 import { showActionFeedback } from "@/lib/actionFeedback";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   buildLiveVibeHeadline,
   formatLiveVibeUpdatedAt,
@@ -254,23 +255,9 @@ export default function CityPage() {
         return;
       }
 
-      let adminState = false;
-      try {
-        const rpcRes = await supabase.rpc("qa_is_admin");
-        if (!rpcRes.error) {
-          adminState = Boolean(rpcRes.data);
-        } else {
-          const { data, error } = await supabase
-            .from("qa_admin_users")
-            .select("email")
-            .ilike("email", String(user.email).trim().toLowerCase())
-            .limit(1);
-
-          adminState = !error && (data || []).length > 0;
-        }
-      } catch {
-        adminState = false;
-      }
+      const { isAdmin: adminState } = await resolveAdminAccess({
+        email: user?.email,
+      });
 
       if (active) {
         setIsAdmin(adminState);
