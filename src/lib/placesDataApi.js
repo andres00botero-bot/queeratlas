@@ -5,32 +5,63 @@ import { shouldFallbackFromPlacesWithStats } from "./supabaseErrorGuards";
 const PLACES_FALLBACK_SELECT =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
 
-export async function fetchPlacesForAtlas({ client = supabase } = {}) {
-  const statsRes = await client.from("places_with_stats").select("*");
+function selectPlaces(client, table, select, options) {
+  const query = client.from(table);
+  return options ? query.select(select, options) : query.select(select);
+}
+
+function normalizeRows(data) {
+  return Array.isArray(data) ? data : [];
+}
+
+async function maybeMergeSeedRows(rows, mergeSeed) {
+  if (!mergeSeed) return rows;
+  return mergeSeedPlacesAsync(rows);
+}
+
+export async function fetchPlacesQueryWithFallback({
+  client = supabase,
+  select = "*",
+  options,
+  mergeSeed = false,
+} = {}) {
+  const statsRes = await selectPlaces(client, "places_with_stats", select, options);
   const statsError = statsRes?.error ?? null;
 
   if (!statsError) {
+    const rows = normalizeRows(statsRes?.data);
     return {
-      data: await mergeSeedPlacesAsync(statsRes?.data || []),
+      data: await maybeMergeSeedRows(rows, mergeSeed),
       error: null,
+      count: statsRes?.count ?? null,
       source: "places_with_stats",
     };
   }
 
   if (!shouldFallbackFromPlacesWithStats(statsError)) {
+    const rows = normalizeRows(statsRes?.data);
     return {
-      data: await mergeSeedPlacesAsync(statsRes?.data || []),
+      data: await maybeMergeSeedRows(rows, mergeSeed),
       error: statsError,
+      count: statsRes?.count ?? null,
       source: "places_with_stats",
     };
   }
 
-  const placesRes = await client.from("places").select(PLACES_FALLBACK_SELECT);
-  const placesError = placesRes?.error ?? null;
-
+  const placesRes = await selectPlaces(client, "places", select, options);
+  const rows = normalizeRows(placesRes?.data);
   return {
-    data: await mergeSeedPlacesAsync(placesRes?.data || []),
-    error: placesError,
+    data: await maybeMergeSeedRows(rows, mergeSeed),
+    error: placesRes?.error ?? null,
+    count: placesRes?.count ?? null,
     source: "places",
   };
+}
+
+export async function fetchPlacesForAtlas({ client = supabase } = {}) {
+  return fetchPlacesQueryWithFallback({
+    client,
+    select: PLACES_FALLBACK_SELECT,
+    mergeSeed: true,
+  });
 }

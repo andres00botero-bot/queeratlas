@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { citySelectionPath } from "@/lib/cityRouting";
+import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import {
   blockItem,
@@ -117,11 +118,11 @@ export default function AdminPage() {
     setWarning("");
     try {
       const [placesCountRes, eventsCountRes, globalEventsRes, moderationRes, placesRes, eventsRes] = await Promise.all([
-        supabase.from("places_with_stats").select("*", { count: "exact", head: true }),
+        fetchPlacesQueryWithFallback({ select: "*", options: { count: "exact", head: true } }),
         supabase.from("events").select("*", { count: "exact", head: true }),
         supabase.from("global_events").select("*", { count: "exact", head: true }),
         syncModerationFromCloud(),
-        supabase.from("places_with_stats").select("id,name,city,type"),
+        fetchPlacesQueryWithFallback({ select: "id,name,city,type" }),
         supabase.from("events").select("id,name,city,date"),
       ]);
 
@@ -139,7 +140,7 @@ export default function AdminPage() {
         current.filter((id) => reportsRows.some((row) => String(row.id) === String(id)))
       );
       setStats({
-        places: Number(placesCountRes.count || 0),
+        places: Number(placesCountRes?.count || 0),
         events: Number(eventsCountRes.count || 0),
         globalEvents: Number(globalEventsRes.count || 0),
         openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,

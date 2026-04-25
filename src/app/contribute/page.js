@@ -9,6 +9,7 @@ import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
+import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
 import {
   blockItem,
   getBlockedItems,
@@ -240,15 +241,17 @@ export default function ContributePage() {
     queueMicrotask(async () => {
       try {
         setQaSnapshot((current) => ({ ...current, loading: true, error: "" }));
-        const [{ data: placesData, error: placesError }, { data: eventsData, error: eventsError }] =
+        const [placesRes, { data: eventsData, error: eventsError }] =
           await Promise.all([
-            supabase
-              .from("places_with_stats")
-              .select("id, name, city, type, vibe, description, hours, link, lat, lng, source, lastChecked, verified"),
+            fetchPlacesQueryWithFallback({
+              select: "id, name, city, type, vibe, description, hours, link, lat, lng, source, lastChecked, verified",
+            }),
             supabase
               .from("events")
               .select("id, name, city, description, date, link, lat, lng, source, lastChecked, verified"),
           ]);
+        const placesData = placesRes?.data || [];
+        const placesError = placesRes?.error || null;
 
         if (!active) return;
 

@@ -147,6 +147,29 @@ function testFavoritesUsesPlacesFallbackLoader() {
   );
 }
 
+function testAdminAndContributeUsePlacesFallbackLoader() {
+  const adminSource = readFileSync(new URL("../src/app/admin/page.js", import.meta.url), "utf8");
+  const contributeSource = readFileSync(new URL("../src/app/contribute/page.js", import.meta.url), "utf8");
+
+  assert(
+    adminSource.includes('import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";'),
+    "admin places loader: page should import fetchPlacesQueryWithFallback"
+  );
+  assert(
+    adminSource.includes("fetchPlacesQueryWithFallback({"),
+    "admin places loader: page should use fetchPlacesQueryWithFallback"
+  );
+
+  assert(
+    contributeSource.includes('import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";'),
+    "contribute places loader: page should import fetchPlacesQueryWithFallback"
+  );
+  assert(
+    contributeSource.includes("fetchPlacesQueryWithFallback({"),
+    "contribute places loader: page should use fetchPlacesQueryWithFallback"
+  );
+}
+
 function testPlacesWithStatsMissingLocationGuard() {
   const directError = {
     code: "42703",
@@ -193,6 +216,7 @@ function run() {
   testCityEventSelectionUsesAllCityEventsForDeepLink();
   testFavoritesCheckinListsHaveStableScrollContainers();
   testFavoritesUsesPlacesFallbackLoader();
+  testAdminAndContributeUsePlacesFallbackLoader();
   testPlacesWithStatsMissingLocationGuard();
 
   if (failures.length > 0) {
