@@ -135,6 +135,18 @@ function testFavoritesCheckinListsHaveStableScrollContainers() {
   );
 }
 
+function testFavoritesUsesPlacesFallbackLoader() {
+  const source = readFileSync(new URL("../src/app/favorites/page.js", import.meta.url), "utf8");
+  assert(
+    source.includes('import { fetchPlacesForAtlas } from "@/lib/placesDataApi";'),
+    "favorites places loader: page should import fetchPlacesForAtlas"
+  );
+  assert(
+    source.includes("fetchPlacesForAtlas()"),
+    "favorites places loader: page should load places through fetchPlacesForAtlas"
+  );
+}
+
 function testPlacesWithStatsMissingLocationGuard() {
   const directError = {
     code: "42703",
@@ -180,6 +192,7 @@ function run() {
   testEventOpenIntent();
   testCityEventSelectionUsesAllCityEventsForDeepLink();
   testFavoritesCheckinListsHaveStableScrollContainers();
+  testFavoritesUsesPlacesFallbackLoader();
   testPlacesWithStatsMissingLocationGuard();
 
   if (failures.length > 0) {

@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { supabase } from "@/lib/supabase";
-import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { cityConfig } from "@/lib/cities";
+import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getMemberProfile } from "@/lib/memberProfile";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
@@ -192,16 +193,18 @@ export default function FavoritesPage() {
     setIsAtlasLoading(true);
     setAtlasLoadError("");
 
-    const [{ data: placesData, error: placesError }, { data: eventsData, error: eventsError }] = await Promise.all([
-      supabase.from("places_with_stats").select("*"),
+    const [placesRes, { data: eventsData, error: eventsError }] = await Promise.all([
+      fetchPlacesForAtlas(),
       supabase.from("events").select("*"),
     ]);
+    const placesData = placesRes?.data || [];
+    const placesError = placesRes?.error || null;
 
     if (placesError || eventsError) {
       setAtlasLoadError("Could not load some live atlas data. Showing available signal.");
     }
 
-    setPlaces(await mergeSeedPlacesAsync(placesData || []));
+    setPlaces(placesData);
     setEvents(await mergeSeedEventsAsync(eventsData || []));
     setIsAtlasLoading(false);
   }, [setAtlasLoadError, setEvents, setIsAtlasLoading, setPlaces]);
