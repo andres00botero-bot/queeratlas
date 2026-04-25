@@ -3,9 +3,7 @@ import { supabase } from "./supabase";
 import { mergeSeedPlacesAsync } from "./seedMerge";
 import { captureOperationalError } from "./monitoring";
 import { logDevError } from "./devLogger";
-import { isMissingPlacesWithStatsLocation } from "./supabaseErrorGuards";
-
-let skipPlacesWithStatsView = false;
+import { fetchPlacesQueryWithFallback } from "./placesDataApi";
 
 function formatSupabaseError(error) {
   if (!error) return "Unknown error";
@@ -78,24 +76,22 @@ export function usePlaces(city) {
       return;
     }
 
-    if (!skipPlacesWithStatsView) {
-      const statsRes = await supabase
-        .from("places_with_stats")
-        .select("*");
-
-      statsRows = Array.isArray(statsRes?.data) ? statsRes.data : null;
+    {
+      const statsRes = await fetchPlacesQueryWithFallback({
+        select: "*",
+      });
+      statsRows =
+        statsRes?.source === "places_with_stats" && Array.isArray(statsRes?.data)
+          ? statsRes.data
+          : null;
       statsError = statsRes?.error ?? null;
 
       if (statsError) {
-        if (isMissingPlacesWithStatsLocation(statsError)) {
-          skipPlacesWithStatsView = true;
-        } else {
-          logDevError("Fetch places_with_stats error:", formatSupabaseError(statsError));
-          captureOperationalError("places_view_fail", toOperationalError(statsError), {
-            city: String(city || ""),
-          });
-          setLoadError("Live stats view is unavailable. Showing direct place data.");
-        }
+        logDevError("Fetch places_with_stats error:", formatSupabaseError(statsError));
+        captureOperationalError("places_view_fail", toOperationalError(statsError), {
+          city: String(city || ""),
+        });
+        setLoadError("Live stats view is unavailable. Showing direct place data.");
       }
     }
 

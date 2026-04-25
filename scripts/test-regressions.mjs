@@ -170,6 +170,18 @@ function testAdminAndContributeUsePlacesFallbackLoader() {
   );
 }
 
+function testUsePlacesUsesFallbackLoader() {
+  const usePlacesSource = readFileSync(new URL("../src/lib/usePlaces.js", import.meta.url), "utf8");
+  assert(
+    usePlacesSource.includes('import { fetchPlacesQueryWithFallback } from "./placesDataApi";'),
+    "usePlaces loader: hook should import fetchPlacesQueryWithFallback"
+  );
+  assert(
+    usePlacesSource.includes("fetchPlacesQueryWithFallback({"),
+    "usePlaces loader: hook should use fetchPlacesQueryWithFallback"
+  );
+}
+
 function testPlacesWithStatsMissingLocationGuard() {
   const directError = {
     code: "42703",
@@ -217,6 +229,7 @@ function run() {
   testFavoritesCheckinListsHaveStableScrollContainers();
   testFavoritesUsesPlacesFallbackLoader();
   testAdminAndContributeUsePlacesFallbackLoader();
+  testUsePlacesUsesFallbackLoader();
   testPlacesWithStatsMissingLocationGuard();
 
   if (failures.length > 0) {

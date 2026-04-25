@@ -4,6 +4,7 @@ import { shouldFallbackFromPlacesWithStats } from "./supabaseErrorGuards";
 
 const PLACES_FALLBACK_SELECT =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
+let skipPlacesWithStatsView = false;
 
 function selectPlaces(client, table, select, options) {
   const query = client.from(table);
@@ -25,6 +26,17 @@ export async function fetchPlacesQueryWithFallback({
   options,
   mergeSeed = false,
 } = {}) {
+  if (skipPlacesWithStatsView) {
+    const placesRes = await selectPlaces(client, "places", select, options);
+    const rows = normalizeRows(placesRes?.data);
+    return {
+      data: await maybeMergeSeedRows(rows, mergeSeed),
+      error: placesRes?.error ?? null,
+      count: placesRes?.count ?? null,
+      source: "places",
+    };
+  }
+
   const statsRes = await selectPlaces(client, "places_with_stats", select, options);
   const statsError = statsRes?.error ?? null;
 
@@ -48,6 +60,7 @@ export async function fetchPlacesQueryWithFallback({
     };
   }
 
+  skipPlacesWithStatsView = true;
   const placesRes = await selectPlaces(client, "places", select, options);
   const rows = normalizeRows(placesRes?.data);
   return {
