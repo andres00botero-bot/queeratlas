@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
+import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import EmptyState from "@/components/ui/EmptyState";
 
 function formatDate(value) {
@@ -205,17 +206,19 @@ export default function NowPage() {
       if (!cached.stale) return;
     }
 
-    const [{ data: eventsData, error: eventsError }, { data: placesData, error: placesError }] = await Promise.all([
+    const [{ data: eventsData, error: eventsError }, placesRes] = await Promise.all([
       supabase.from("events").select("*").order("date", { ascending: true }),
-      supabase.from("places_with_stats").select("*"),
+      fetchPlacesForAtlas(),
     ]);
+    const placesData = placesRes?.data || [];
+    const placesError = placesRes?.error || null;
 
     if (eventsError || placesError) {
       setLoadError("Live pulse could not fully load. Showing available data.");
     }
 
     const nextEvents = await mergeSeedEventsAsync(eventsData || []);
-    const nextPlaces = await mergeSeedPlacesAsync(placesData || []);
+    const nextPlaces = placesData;
     setEvents(nextEvents);
     setPlaces(nextPlaces);
     writeRuntimeCache(NOW_PULSE_CACHE_KEY, {

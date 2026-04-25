@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { buildAtlasSearchResults } from "@/lib/search";
 import { getQualityMap } from "@/lib/quality";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
@@ -14,6 +14,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
+import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { ArrowUpRight, Search } from "lucide-react";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
@@ -253,11 +254,8 @@ export default function Home() {
   };
 
   const fetchPlaces = async () => {
-    const { data, error } = await supabase
-      .from("places_with_stats")
-      .select("*");
-
-    return { error, data: await mergeSeedPlacesAsync(data || []) };
+    const { data, error } = await fetchPlacesForAtlas();
+    return { error, data };
   };
 
   const fetchWorldNews = async () => {

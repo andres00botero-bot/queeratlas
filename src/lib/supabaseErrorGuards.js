@@ -49,3 +49,17 @@ export function isMissingPlacesWithStatsLocation(error) {
   if (!hasMissingLocationMessage) return false;
   return codes.has("42703") || messages.some((message) => message.includes("42703"));
 }
+
+export function isMissingPlacesWithStatsView(error) {
+  const code = String(error?.code || "").trim();
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    code === "42P01" ||
+    code === "PGRST205" ||
+    (message.includes("places_with_stats") && message.includes("does not exist"))
+  );
+}
+
+export function shouldFallbackFromPlacesWithStats(error) {
+  return isMissingPlacesWithStatsLocation(error) || isMissingPlacesWithStatsView(error);
+}

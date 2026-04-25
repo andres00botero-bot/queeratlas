@@ -5,7 +5,10 @@ import {
 } from "../src/features/favorites/checkinMapGuards.js";
 import { readFileSync } from "node:fs";
 import { resolveEventOpenIntent } from "../src/features/events/eventOpenGuards.js";
-import { isMissingPlacesWithStatsLocation } from "../src/lib/supabaseErrorGuards.js";
+import {
+  isMissingPlacesWithStatsLocation,
+  shouldFallbackFromPlacesWithStats,
+} from "../src/lib/supabaseErrorGuards.js";
 import {
   selectCityEventById,
   selectCityEventsAll,
@@ -159,6 +162,15 @@ function testPlacesWithStatsMissingLocationGuard() {
   assert(
     isMissingPlacesWithStatsLocation(unrelatedError) === false,
     "places_with_stats guard: unrelated errors must not be treated as missing location"
+  );
+
+  const missingViewError = {
+    code: "42P01",
+    message: "relation places_with_stats does not exist",
+  };
+  assert(
+    shouldFallbackFromPlacesWithStats(missingViewError) === true,
+    "places_with_stats guard: missing view errors should trigger fallback"
   );
 }
 
