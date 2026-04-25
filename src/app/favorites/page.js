@@ -18,6 +18,7 @@ import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
 import { resolvePrimaryVibeKey, resolvePrimaryVibeLabel } from "@/lib/vibeDisplay";
+import { formatVibeTagLabel, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import {
   formatCheckinTime,
@@ -1791,8 +1792,17 @@ export default function FavoritesPage() {
     const uniquePlaceIds = [...new Set(flatStops.filter((s) => s.type === "place").map((s) => String(s.id)))];
     const uniqueEventIds = [...new Set(flatStops.filter((s) => s.type === "event").map((s) => String(s.id)))];
 
-    const title = `${cityName} · ${String(payload?.horizon || "trip").replaceAll("_", " ")} · ${String(payload?.vibe || "mixed")}`;
-    const note = `V2 plan · budget: ${payload?.budget || "balanced"} · energy: ${payload?.energy || 70} · solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
+    const selectedVibeTags = normalizeVibeTags(
+      Array.isArray(payload?.vibeTags) && payload.vibeTags.length > 0
+        ? payload.vibeTags
+        : [payload?.vibe || "mixed"],
+      { max: 3 }
+    );
+    const vibeLabel = selectedVibeTags.length > 0
+      ? selectedVibeTags.map((tag) => formatVibeTagLabel(tag) || tag).join(" + ")
+      : "Mixed";
+    const title = `${cityName} · ${String(payload?.horizon || "trip").replaceAll("_", " ")} · ${vibeLabel}`;
+    const note = `V2 plan · vibes: ${selectedVibeTags.join(", ") || "mixed"} · budget: ${payload?.budget || "balanced"} · energy: ${payload?.energy || 70} · solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
 
     const draftPlan = {
       id: `plan-v2-${Date.now()}`,

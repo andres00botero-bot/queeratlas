@@ -1,16 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DateInput from "@/components/ui/DateInput";
 import { getEntityQuality, getQualityStatus } from "@/lib/quality";
+import { resolveVibeTagsForEntity } from "@/lib/vibeDisplay";
+import { STANDARD_VIBE_TAGS, normalizeVibeTag, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 
-const VIBES = [
-  { value: "soft", label: "Soft" },
-  { value: "social", label: "Social" },
-  { value: "wild", label: "Wild" },
-  { value: "dark", label: "Dark" },
-  { value: "mixed", label: "Mixed" },
-];
+const MAX_PLANNER_VIBE_TAGS = 3;
 
 const BUDGETS = [
   { value: "low", label: "Low" },
@@ -199,6 +195,21 @@ function dayLabel(index, horizon) {
   return `Day ${index + 1}`;
 }
 
+function formatIsoDateLabel(isoDate) {
+  const parsed = parseIsoDate(isoDate);
+  if (!parsed) return String(isoDate || "");
+  return parsed.toLocaleDateString("sv-SE", { day: "numeric", month: "short" });
+}
+
+function formatEventRangeLabel(event) {
+  const range = getEventRange(event);
+  if (!range.startDate) return "";
+  if (!range.endDate || range.endDate === range.startDate) {
+    return formatIsoDateLabel(range.startDate);
+  }
+  return `${formatIsoDateLabel(range.startDate)} - ${formatIsoDateLabel(range.endDate)}`;
+}
+
 function chooseFromPool(
   pool,
   usedIds,
@@ -207,7 +218,7 @@ function chooseFromPool(
   itemPrefix = "",
   scoreFn = null
 ) {
-  const available = pool.filter((item) => !usedIds.has(String(item.id)));
+  const available = pool.filter((item) => !usedIds.has(`${itemPrefix}${item.id}`));
   if (available.length === 0) return fallback;
 
   if (scoreFn) {
@@ -312,7 +323,7 @@ function computeTrustMeta({
 
   return {
     score: Math.max(20, Math.min(99, Math.round(score))),
-    reason: reason.length > 0 ? reason.join(" · ") : "Balanced trust signal.",
+    reason: reason.length > 0 ? reason.join(" | ") : "Balanced trust signal.",
   };
 }
 
@@ -364,6 +375,43 @@ function computeEnergyAdjustment({ itemType, venueType, energy, slotLabel, timeL
   return 0;
 }
 
+function getEntityVibeTags(entity) {
+  return resolveVibeTagsForEntity(entity, {
+    max: MAX_PLANNER_VIBE_TAGS,
+    includeTypeFallback: true,
+    includeMixedFallback: true,
+  });
+}
+
+function isAfterpartyEntity(entity) {
+  const tags = getEntityVibeTags(entity);
+  if (tags.includes("after")) return true;
+
+  const type = normalize(entity?.type);
+  if (type === "afterparty" || type === "after") return true;
+
+  const name = normalize(entity?.name);
+  return /after[\s-]*party|after[\s-]*hours/.test(name);
+}
+
+function computeVibeAdjustment({ item, selectedVibeTags }) {
+  const targetTags = normalizeVibeTags(selectedVibeTags, { max: MAX_PLANNER_VIBE_TAGS });
+  if (targetTags.length === 0) return 0;
+
+  const itemTags = getEntityVibeTags(item);
+  if (itemTags.length === 0) return -2;
+
+  const targetSet = new Set(targetTags);
+  const overlap = itemTags.filter((tag) => targetSet.has(tag));
+  if (overlap.length > 0) {
+    const primaryBoost = targetSet.has(itemTags[0]) ? 2 : 0;
+    return 6 + overlap.length * 4 + primaryBoost;
+  }
+
+  if (targetSet.has("mixed")) return 1;
+  return -5;
+}
+
 function computePlannerScore({
   item,
   itemType,
@@ -374,6 +422,7 @@ function computePlannerScore({
   qualityMap,
   budget,
   energy,
+  selectedVibeTags,
 }) {
   const trust = computeTrustMeta({
     item,
@@ -396,8 +445,12 @@ function computePlannerScore({
     slotLabel,
     timeLabel,
   });
+  const vibeAdjustment = computeVibeAdjustment({
+    item,
+    selectedVibeTags,
+  });
 
-  return trust.score + budgetAdjustment + energyAdjustment;
+  return trust.score + budgetAdjustment + energyAdjustment + vibeAdjustment;
 }
 
 function createTrustedStop({
@@ -431,7 +484,7 @@ function buildItinerary({
   city,
   places,
   events,
-  vibe,
+  vibeTags = [],
   horizon,
   soloSafe,
   budget,
@@ -442,325 +495,211 @@ function buildItinerary({
   qualityMap = {},
 }) {
   const placeRows = places.filter((row) => normalize(row.city) === normalize(city));
+  const nonHotelPlaces = placeRows.filter((row) => normalize(row.type) !== "hotel");
   const daysCount = horizon === "tonight" ? 1 : horizon === "weekend" ? 2 : 3;
   const startDate = startOfDay(parseIsoDate(planDate) || new Date());
   const endDate = endOfDay(addDays(startDate, daysCount - 1));
+  const selectedTags = normalizeVibeTags(vibeTags, { max: MAX_PLANNER_VIBE_TAGS });
+
   const eventRows = events.filter(
     (row) =>
       normalize(row.city) === normalize(city) &&
       isEventInWindow(row, startDate, endDate)
   );
 
-  const cafes = placeRows.filter((p) => p.type === "cafe");
-  const bars = placeRows.filter((p) => p.type === "bar");
-  const clubs = placeRows.filter((p) => p.type === "club");
-  const saunas = placeRows.filter((p) => p.type === "sauna");
-  const chill = placeRows.filter((p) => ["cafe", "bar", "hotel", "restaurant"].includes(p.type));
-  const dark = placeRows.filter((p) => ["sauna", "cruise_club", "club"].includes(p.type));
-  const safeLean = placeRows.filter((p) => ["cafe", "bar", "restaurant"].includes(p.type));
+  const cafes = nonHotelPlaces.filter((p) => p.type === "cafe");
+  const bars = nonHotelPlaces.filter((p) => p.type === "bar");
+  const clubs = nonHotelPlaces.filter((p) => p.type === "club");
+  const saunas = nonHotelPlaces.filter((p) => ["sauna", "cruise_club"].includes(normalize(p.type)));
+  const socialPlaces = nonHotelPlaces.filter((p) => {
+    const tags = getEntityVibeTags(p);
+    return (
+      ["cafe", "bar", "restaurant"].includes(normalize(p.type)) ||
+      tags.includes("social") ||
+      tags.includes("cozy") ||
+      tags.includes("chill")
+    );
+  });
+  const afterPlaces = nonHotelPlaces.filter((p) => {
+    const tags = getEntityVibeTags(p);
+    return (
+      tags.includes("after") ||
+      tags.includes("electronic") ||
+      tags.includes("techno") ||
+      ["bar", "club"].includes(normalize(p.type))
+    );
+  });
+  const relaxPlaces = nonHotelPlaces.filter((p) => {
+    const tags = getEntityVibeTags(p);
+    return tags.includes("relax") || ["sauna", "cruise_club", "spa"].includes(normalize(p.type));
+  });
+
+  const scoreCandidate = (candidate, itemType, timeLabel, slotLabel, date) =>
+    computePlannerScore({
+      item: candidate,
+      itemType,
+      timeLabel,
+      date,
+      slotLabel,
+      trustedFavoriteStats,
+      qualityMap,
+      budget,
+      energy,
+      selectedVibeTags: selectedTags,
+    });
 
   const used = new Set();
+
+  const pickPlace = (pool, date, timeLabel, slotLabel) =>
+    chooseFromPool(
+      filterPlacesOpenAt(pool, date, timeLabel),
+      used,
+      null,
+      preferredFavoriteIds,
+      "place-",
+      (candidate) => scoreCandidate(candidate, "place", timeLabel, slotLabel, date)
+    );
 
   return Array.from({ length: daysCount }).map((_, dayIndex) => {
     const currentDate = addDays(startDate, dayIndex);
     const dayEvents = eventRows.filter((event) => isSameDay(event, currentDate));
+    const isLastDay = dayIndex === daysCount - 1;
+    const isSunday = currentDate.getDay() === 0;
     const stops = [];
 
-    if (dayIndex === 0 && daysCount > 1) {
-      const landingPoolRaw = soloSafe ? [...safeLean, ...cafes, ...bars] : [...cafes, ...bars, ...safeLean];
-      const introPlacePoolRaw = vibe === "soft" ? [...bars, ...cafes] : [...bars, ...clubs];
-      const landingPool = filterPlacesOpenAt(landingPoolRaw, currentDate, "18:30");
-      const introPlacePool = filterPlacesOpenAt(introPlacePoolRaw, currentDate, "21:30");
+    if (isLastDay && isSunday) {
+      const sundayCafe = pickPlace(cafes.length > 0 ? cafes : socialPlaces, currentDate, "11:00", "Sunday reset");
+      if (sundayCafe) used.add(`place-${sundayCafe.id}`);
 
-      const s1 = chooseFromPool(
-        landingPool,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "18:30",
-            date: currentDate,
-            slotLabel: "Soft landing",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(
-        dayEvents,
+      const sundayAfterpartyEvents = dayEvents.filter((event) => isAfterpartyEntity(event));
+      const sundayAfterEvent = chooseEventFromPool(
+        sundayAfterpartyEvents.length > 0 ? sundayAfterpartyEvents : dayEvents,
         used,
         preferredFavoriteIds,
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "event",
-            timeLabel: "21:30",
-            date: currentDate,
-            slotLabel: "Intro signal",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
+        (candidate) => scoreCandidate(candidate, "event", "17:30", "Sunday afterparty", currentDate)
       );
-      const s2 =
-        forcedEvent ||
-        chooseFromPool(
-          introPlacePool,
-          used,
-          null,
-          preferredFavoriteIds,
-          "",
-          (candidate) =>
-            computePlannerScore({
-              item: candidate,
-              itemType: "place",
-              timeLabel: "21:30",
-              date: currentDate,
-              slotLabel: "Intro signal",
-              trustedFavoriteStats,
-              qualityMap,
-              budget,
-              energy,
-            })
-        );
-      if (s2) used.add(String(s2.id));
+      if (sundayAfterEvent) used.add(`event-${sundayAfterEvent.id}`);
+      const sundayAfterPlace =
+        sundayAfterEvent ||
+        pickPlace(afterPlaces.length > 0 ? afterPlaces : [...bars, ...clubs], currentDate, "17:30", "Sunday afterparty");
+      if (!sundayAfterEvent && sundayAfterPlace) used.add(`place-${sundayAfterPlace.id}`);
+
+      const sundayWindDown = pickPlace(
+        saunas.length > 0 ? [...saunas, ...relaxPlaces] : relaxPlaces,
+        currentDate,
+        "21:30",
+        "Wind-down"
+      );
+      if (sundayWindDown) used.add(`place-${sundayWindDown.id}`);
 
       stops.push(
         createTrustedStop({
-          item: s1,
+          item: sundayCafe,
           stopType: "place",
-          slotLabel: "Soft landing",
-          time: "18:30",
-          reason: "Easy entry to read local energy.",
+          slotLabel: "Sunday reset",
+          time: "11:00",
+          reason: "Start soft with coffee and local orientation.",
           date: currentDate,
           trustedFavoriteStats,
           qualityMap,
         }),
         createTrustedStop({
-          item: s2,
-          stopType: forcedEvent ? "event" : "place",
-          slotLabel: "Intro signal",
+          item: sundayAfterPlace,
+          stopType: sundayAfterEvent ? "event" : "place",
+          slotLabel: "Sunday afterparty",
+          time: "17:30",
+          reason: sundayAfterEvent
+            ? "Afterparty-style Sunday event selected in the active window."
+            : "Afterparty-oriented venue before wind-down.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        }),
+        createTrustedStop({
+          item: sundayWindDown,
+          stopType: "place",
+          slotLabel: "Wind-down",
           time: "21:30",
-          reason: forcedEvent
-            ? "Date-matched event anchored into your selected plan window."
-            : "Warm social momentum before peak.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        })
-      );
-    } else if (dayIndex === 1 || (dayIndex === 0 && daysCount === 1)) {
-      const warmPoolRaw = vibe === "dark" ? [...dark, ...bars] : [...bars, ...clubs];
-      const peakPlacePoolRaw = [...clubs, ...(vibe === "dark" ? dark : [])];
-      const latePoolRaw = vibe === "soft" ? [...bars, ...chill] : [...clubs, ...bars, ...saunas];
-
-      const warmPool = filterPlacesOpenAt(warmPoolRaw, currentDate, "20:30");
-      const peakPlacePool = filterPlacesOpenAt(peakPlacePoolRaw, currentDate, "01:00");
-      const latePool = filterPlacesOpenAt(latePoolRaw, currentDate, "03:00");
-      const s1 = chooseFromPool(
-        warmPool,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "20:30",
-            date: currentDate,
-            slotLabel: "Warmup",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(
-        dayEvents,
-        used,
-        preferredFavoriteIds,
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "event",
-            timeLabel: "01:00",
-            date: currentDate,
-            slotLabel: "Peak",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      const s2 =
-        forcedEvent ||
-        chooseFromPool(
-          peakPlacePool,
-          used,
-          null,
-          preferredFavoriteIds,
-          "",
-          (candidate) =>
-            computePlannerScore({
-              item: candidate,
-              itemType: "place",
-              timeLabel: "01:00",
-              date: currentDate,
-              slotLabel: "Peak",
-              trustedFavoriteStats,
-              qualityMap,
-              budget,
-              energy,
-            })
-        );
-      if (s2) used.add(String(s2.id));
-      const s3 = chooseFromPool(
-        latePool,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "03:00",
-            date: currentDate,
-            slotLabel: "Late drift",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      if (s3) used.add(String(s3.id));
-
-      stops.push(
-        createTrustedStop({
-          item: s1,
-          stopType: "place",
-          slotLabel: "Warmup",
-          time: "20:30",
-          reason: "Set baseline before the rush.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
-          item: s2,
-          stopType: forcedEvent ? "event" : "place",
-          slotLabel: "Peak",
-          time: "01:00",
-          reason: forcedEvent
-            ? "Date-matched event in your selected window."
-            : "Core nightlife pressure point.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
-          item: s3,
-          stopType: "place",
-          slotLabel: "Late drift",
-          time: "03:00",
-          reason: "Post-peak continuation with lower friction.",
+          reason: "Finish with sauna or relax-focused recovery.",
           date: currentDate,
           trustedFavoriteStats,
           qualityMap,
         })
       );
     } else {
-      const recoveryPoolRaw = [...chill, ...cafes, ...bars];
-      const recoveryPoolEarly = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "11:30");
-      const recoveryPoolLate = filterPlacesOpenAt(recoveryPoolRaw, currentDate, "16:00");
-      const s1 = chooseFromPool(
-        recoveryPoolEarly,
-        used,
-        null,
-        preferredFavoriteIds,
-        "",
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "place",
-            timeLabel: "11:30",
-            date: currentDate,
-            slotLabel: "Recovery",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
-      );
-      if (s1) used.add(String(s1.id));
-      const forcedEvent = chooseEventFromPool(
+      const firstTime = dayIndex === 0 ? "17:00" : "12:00";
+      const firstSlot = dayIndex === 0 ? "Arrival cafe" : "Day-start cafe";
+      const cafeStart = pickPlace(cafes.length > 0 ? cafes : socialPlaces, currentDate, firstTime, firstSlot);
+      if (cafeStart) used.add(`place-${cafeStart.id}`);
+
+      const barWarmup = pickPlace(bars.length > 0 ? bars : socialPlaces, currentDate, "20:00", "Bar warmup");
+      if (barWarmup) used.add(`place-${barWarmup.id}`);
+
+      const nightSignalEvent = chooseEventFromPool(
         dayEvents,
         used,
         preferredFavoriteIds,
-        (candidate) =>
-          computePlannerScore({
-            item: candidate,
-            itemType: "event",
-            timeLabel: "21:30",
-            date: currentDate,
-            slotLabel: "Night highlight",
-            trustedFavoriteStats,
-            qualityMap,
-            budget,
-            energy,
-          })
+        (candidate) => scoreCandidate(candidate, "event", "22:30", "Night signal", currentDate)
       );
-      const s2 =
-        forcedEvent ||
-        chooseFromPool(
-          recoveryPoolLate,
-          used,
-          null,
-          preferredFavoriteIds,
-          "",
-          (candidate) =>
-            computePlannerScore({
-              item: candidate,
-              itemType: "place",
-              timeLabel: "16:00",
-              date: currentDate,
-              slotLabel: "Golden hour",
-              trustedFavoriteStats,
-              qualityMap,
-              budget,
-              energy,
-            })
-        );
-      if (s2) used.add(String(s2.id));
+      if (nightSignalEvent) used.add(`event-${nightSignalEvent.id}`);
+      const secondBar = nightSignalEvent
+        ? null
+        : pickPlace([...bars, ...afterPlaces], currentDate, "22:30", "Night signal");
+      if (secondBar) used.add(`place-${secondBar.id}`);
+
+      const peakEvent = chooseEventFromPool(
+        dayEvents,
+        used,
+        preferredFavoriteIds,
+        (candidate) => scoreCandidate(candidate, "event", "01:00", "Club peak", currentDate)
+      );
+      if (peakEvent) used.add(`event-${peakEvent.id}`);
+      const clubPeak = peakEvent
+        ? null
+        : pickPlace(clubs.length > 0 ? clubs : afterPlaces, currentDate, "01:00", "Club peak");
+      if (clubPeak) used.add(`place-${clubPeak.id}`);
 
       stops.push(
         createTrustedStop({
-          item: s1,
+          item: cafeStart,
           stopType: "place",
-          slotLabel: "Recovery",
-          time: "11:30",
-          reason: "Slow restart and social reset.",
+          slotLabel: firstSlot,
+          time: firstTime,
+          reason: "Start early with a low-friction social anchor.",
           date: currentDate,
           trustedFavoriteStats,
           qualityMap,
         }),
         createTrustedStop({
-          item: s2,
-          stopType: forcedEvent ? "event" : "place",
-          slotLabel: forcedEvent ? "Night highlight" : "Golden hour",
-          time: forcedEvent ? "21:30" : "16:00",
-          reason: forcedEvent
-            ? "Date-matched event added for this plan day."
-            : "Chill close to the trip arc.",
+          item: barWarmup,
+          stopType: "place",
+          slotLabel: "Bar warmup",
+          time: "20:00",
+          reason: "Build momentum through local bars.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        }),
+        createTrustedStop({
+          item: nightSignalEvent || secondBar,
+          stopType: nightSignalEvent ? "event" : "place",
+          slotLabel: "Night signal",
+          time: "22:30",
+          reason: nightSignalEvent
+            ? "Event anchor in tonight's active window."
+            : "Second bar pass before peak club pressure.",
+          date: currentDate,
+          trustedFavoriteStats,
+          qualityMap,
+        }),
+        createTrustedStop({
+          item: peakEvent || clubPeak,
+          stopType: peakEvent ? "event" : "place",
+          slotLabel: "Club peak",
+          time: "01:00",
+          reason: peakEvent
+            ? "Peak event timing matched for this night."
+            : "Main club stop to close the night arc.",
           date: currentDate,
           trustedFavoriteStats,
           qualityMap,
@@ -774,6 +713,41 @@ function buildItinerary({
       stops: stops.filter(Boolean),
     };
   });
+}
+
+function buildHotelSuggestions({
+  city,
+  places,
+  selectedVibeTags = [],
+  planDate,
+  trustedFavoriteStats = {},
+  qualityMap = {},
+}) {
+  const cityHotels = places.filter(
+    (row) => normalize(row.city) === normalize(city) && normalize(row.type) === "hotel"
+  );
+  if (cityHotels.length === 0) return [];
+
+  const baseDate = startOfDay(parseIsoDate(planDate) || new Date());
+
+  return cityHotels
+    .map((hotel) => {
+      const score = computePlannerScore({
+        item: hotel,
+        itemType: "place",
+        timeLabel: "16:00",
+        date: baseDate,
+        slotLabel: "Stay base",
+        trustedFavoriteStats,
+        qualityMap,
+        budget: "balanced",
+        energy: 60,
+        selectedVibeTags,
+      });
+      return { ...hotel, plannerScore: score };
+    })
+    .sort((a, b) => b.plannerScore - a.plannerScore)
+    .slice(0, 3);
 }
 
 export default function TripPlannerV2({
@@ -790,13 +764,18 @@ export default function TripPlannerV2({
   const [city, setCity] = useState(plannerCities[0] || "");
   const [note, setNote] = useState("");
   const [horizon, setHorizon] = useState("three_days");
-  const [vibe, setVibe] = useState("mixed");
+  const [selectedVibeTags, setSelectedVibeTags] = useState(["mixed"]);
   const [budget, setBudget] = useState("balanced");
   const [energy, setEnergy] = useState(70);
   const [soloSafe, setSoloSafe] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [itinerary, setItinerary] = useState([]);
   const [locks, setLocks] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const plannerTopRef = useRef(null);
+  const itinerarySectionRef = useRef(null);
+  const shouldScrollToItineraryRef = useRef(false);
   const qualityMap = useMemo(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -808,6 +787,58 @@ export default function TripPlannerV2({
   const trustedFavoritesSet = useMemo(
     () => new Set((trustedFavoriteIds || []).map((item) => String(item))),
     [trustedFavoriteIds]
+  );
+  const selectedVibeTagSet = useMemo(
+    () => new Set(normalizeVibeTags(selectedVibeTags, { max: MAX_PLANNER_VIBE_TAGS })),
+    [selectedVibeTags]
+  );
+  const selectedVibeLabels = useMemo(
+    () =>
+      STANDARD_VIBE_TAGS
+        .filter((tag) => selectedVibeTagSet.has(tag.key))
+        .map((tag) => tag.label),
+    [selectedVibeTagSet]
+  );
+  const lockedStopsCount = useMemo(
+    () => Object.values(locks).filter(Boolean).length,
+    [locks]
+  );
+  const matchedWindowEvents = useMemo(() => {
+    const parsedStart = parseIsoDate(planDate);
+    if (!city || !parsedStart) return [];
+    const daysCount = horizon === "tonight" ? 1 : horizon === "weekend" ? 2 : 3;
+    const start = startOfDay(parsedStart);
+    const end = endOfDay(addDays(start, daysCount - 1));
+    return events
+      .filter(
+        (eventRow) =>
+          normalize(eventRow.city) === normalize(city) &&
+          isEventInWindow(eventRow, start, end)
+      )
+      .sort((a, b) => {
+        const aStart = getEventRange(a).startDate || "";
+        const bStart = getEventRange(b).startDate || "";
+        return aStart.localeCompare(bStart);
+      });
+  }, [city, planDate, horizon, events]);
+  const highlightedWindowEvent = useMemo(() => {
+    if (matchedWindowEvents.length === 0) return null;
+    const priority = matchedWindowEvents.find((eventRow) =>
+      /pride|orgullo|fiert|rainbow|csd/i.test(String(eventRow.name || ""))
+    );
+    return priority || matchedWindowEvents[0];
+  }, [matchedWindowEvents]);
+  const hotelSuggestions = useMemo(
+    () =>
+      buildHotelSuggestions({
+        city,
+        places,
+        selectedVibeTags,
+        planDate,
+        trustedFavoriteStats,
+        qualityMap,
+      }),
+    [city, places, selectedVibeTags, planDate, trustedFavoriteStats, qualityMap]
   );
 
   const canBuild = Boolean(city);
@@ -824,11 +855,12 @@ export default function TripPlannerV2({
 
   const generate = () => {
     if (!canBuild) return;
+    shouldScrollToItineraryRef.current = true;
     const next = buildItinerary({
       city,
       places,
       events,
-      vibe,
+      vibeTags: selectedVibeTags,
       horizon,
       soloSafe,
       budget,
@@ -842,13 +874,20 @@ export default function TripPlannerV2({
     setLocks({});
   };
 
+  useEffect(() => {
+    if (!shouldScrollToItineraryRef.current) return;
+    if (!itinerarySectionRef.current || itinerary.length === 0) return;
+    itinerarySectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    shouldScrollToItineraryRef.current = false;
+  }, [itinerary]);
+
   const shuffleUnlocked = () => {
     if (!itinerary.length) return;
     const fresh = buildItinerary({
       city,
       places,
       events,
-      vibe,
+      vibeTags: selectedVibeTags,
       horizon,
       soloSafe,
       budget,
@@ -877,6 +916,23 @@ export default function TripPlannerV2({
 
   const energyLabel = energy < 35 ? "Low pulse" : energy < 70 ? "Balanced" : "Peak hunt";
 
+  const toggleVibeTag = (rawTag) => {
+    const tag = normalizeVibeTag(rawTag);
+    if (!tag) return;
+
+    setSelectedVibeTags((current) => {
+      const normalizedCurrent = normalizeVibeTags(current, { max: MAX_PLANNER_VIBE_TAGS });
+      if (normalizedCurrent.includes(tag)) {
+        return normalizedCurrent.filter((entry) => entry !== tag);
+      }
+
+      if (normalizedCurrent.length >= MAX_PLANNER_VIBE_TAGS) {
+        return [...normalizedCurrent.slice(1), tag];
+      }
+      return [...normalizedCurrent, tag];
+    });
+  };
+
   const handleSave = async () => {
     if (!onSavePlan || itinerary.length === 0 || isSaving) return;
     setIsSaving(true);
@@ -885,7 +941,8 @@ export default function TripPlannerV2({
         planTitle,
         city,
         horizon,
-        vibe,
+        vibe: selectedVibeTags[0] || "mixed",
+        vibeTags: selectedVibeTags,
         budget,
         energy,
         soloSafe,
@@ -903,42 +960,198 @@ export default function TripPlannerV2({
   };
 
   return (
-    <div className="mb-6 rounded-[28px] border border-fuchsia-200/16 bg-[radial-gradient(circle_at_top_left,rgba(217,70,239,0.16),transparent_30%),linear-gradient(180deg,rgba(28,14,36,0.95),rgba(10,10,10,0.98))] p-5">
+    <div
+      ref={plannerTopRef}
+      className="mb-5 rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(165deg,rgba(12,18,26,0.96),rgba(8,8,10,0.99))] p-4 shadow-[0_22px_56px_rgba(0,0,0,0.38)]"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/78">Trip planner</p>
-          <h3 className="mt-1 text-xl font-semibold text-white">Queer Atlas flow for queer nights</h3>
-          {trustedFavoritesSet.size > 0 && (
-            <p className="mt-1 text-xs text-fuchsia-100/72">
-              Trusted signal active · planning with your network saves.
-            </p>
-          )}
-          <p className="mt-1 text-[11px] text-white/55">
-            Trust score blends network signal, quality status, and time-fit.
-          </p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/70">Flow Engine</p>
+          <h3 className="mt-1 text-lg font-semibold text-white">Trip planner that feels fast</h3>
+          <p className="mt-1 text-xs text-white/60">Pick city, horizon, and vibe tags. Build in one tap.</p>
         </div>
-        <div className="rounded-full border border-fuchsia-200/16 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
-          {cityPlacesCount} places · {cityEventsCount} events
+        <div className="rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] text-cyan-100/90">
+          {cityPlacesCount} places | {cityEventsCount} events
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3 md:col-span-2 xl:col-span-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Plan title</p>
-          <input
-            value={planTitle}
-            onChange={(event) => setPlanTitle(event.target.value)}
-            placeholder="ex. Berlin peak weekend"
-            className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-          />
-          <div className="mt-3 rounded-xl border border-violet-200/18 bg-violet-300/[0.08] p-3">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-violet-100/80">
-              Trip date (optional)
+      <div className="mt-3 grid gap-3 xl:grid-cols-[1.45fr_1fr]">
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-[11px] text-white/55">City</p>
+              <select
+                value={city}
+                onChange={(event) => setCity(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+              >
+                {plannerCities.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p className="text-[11px] text-white/55">Horizon</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {HORIZONS.map((item) => (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setHorizon(item.value)}
+                    className={`rounded-full border px-3 py-1 text-xs transition ${
+                      horizon === item.value
+                        ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
+                        : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 rounded-xl border border-cyan-200/16 bg-cyan-200/[0.05] p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] text-cyan-100/80">Vibe tags (up to 3)</p>
+              <p className="text-[10px] text-cyan-100/65">{selectedVibeLabels.length}/3 selected</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {STANDARD_VIBE_TAGS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => toggleVibeTag(item.key)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
+                    selectedVibeTagSet.has(item.key)
+                      ? "border-cyan-200/46 bg-cyan-200/18 text-cyan-50"
+                      : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-white/58">
+              {selectedVibeLabels.length > 0
+                ? `Selected: ${selectedVibeLabels.join(" | ")}`
+                : "No vibe filter selected. Planner keeps a balanced mix."}
             </p>
-            <p className="mt-1 text-xs text-violet-100/60">
-              Pick your start date for this plan.
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <p className="text-[11px] text-white/55">Actions</p>
+          <div className="mt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={generate}
+              disabled={!canBuild}
+              className="rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-105 disabled:opacity-60"
+            >
+              Build itinerary
+            </button>
+            <button
+              type="button"
+              onClick={shuffleUnlocked}
+              disabled={itinerary.length === 0}
+              className="rounded-full border border-white/14 bg-white/6 px-4 py-2 text-sm text-white/80 transition hover:border-white/24 disabled:opacity-60"
+            >
+              Shuffle unlocked
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={itinerary.length === 0 || isSaving}
+              className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 py-2 text-sm text-emerald-100 transition hover:border-emerald-200/48 disabled:opacity-60"
+            >
+              {isSaving ? "Saving..." : "Save plan"}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowAdvanced((current) => !current)}
+            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold transition ${
+              showAdvanced
+                ? "border-white/18 bg-white/8 text-white/80 hover:border-white/30"
+                : "border-cyan-200/48 bg-gradient-to-r from-cyan-300/28 via-sky-300/22 to-fuchsia-300/26 text-cyan-50 shadow-[0_10px_28px_rgba(56,189,248,0.2)] hover:brightness-110"
+            }`}
+          >
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
+                showAdvanced
+                  ? "bg-white/10 text-white/70"
+                  : "bg-cyan-100/20 text-cyan-50"
+              }`}
+            >
+              Pro
+            </span>
+            {showAdvanced ? "Hide advanced controls" : "Show advanced controls"}
+          </button>
+          {!showAdvanced && (
+            <p className="mt-1 text-center text-[10px] text-cyan-100/78">
+              Budget, energy, solo-safe och plan notes
             </p>
-            <div className="mt-2 max-w-sm">
+          )}
+          {trustedFavoritesSet.size > 0 && (
+            <p className="mt-2 text-[11px] text-cyan-100/72">Trusted network signal active.</p>
+          )}
+        </section>
+      </div>
+
+      {planDate && matchedWindowEvents.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-fuchsia-200/52 bg-gradient-to-r from-fuchsia-300/22 via-pink-300/14 to-violet-300/22 px-3 py-3 text-fuchsia-50 shadow-[0_14px_32px_rgba(217,70,239,0.2)] animate-pulse">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-fuchsia-200 animate-pulse" />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em]">Dates Match Live Events</p>
+          </div>
+          <p className="mt-1 text-[13px] text-fuchsia-50/92">
+            {matchedWindowEvents.length} event{matchedWindowEvents.length > 1 ? "s" : ""} in {city} during your trip window.
+          </p>
+
+          <div className="mt-2 grid gap-2 md:grid-cols-2">
+            {matchedWindowEvents.slice(0, 4).map((eventItem) => (
+              <div
+                key={`window-event-${eventItem.id}`}
+                className={`rounded-xl border px-3 py-2 ${
+                  highlightedWindowEvent?.id === eventItem.id
+                    ? "border-fuchsia-100/52 bg-fuchsia-100/16"
+                    : "border-white/18 bg-black/20"
+                }`}
+              >
+                <p className="text-base font-semibold leading-tight text-white">{eventItem.name}</p>
+                {formatEventRangeLabel(eventItem) && (
+                  <p className="mt-1 text-[12px] text-fuchsia-100/88">{formatEventRangeLabel(eventItem)}</p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {matchedWindowEvents.length > 4 && (
+            <p className="mt-2 text-[11px] text-fuchsia-100/82">
+              +{matchedWindowEvents.length - 4} more matching events in this date range.
+            </p>
+          )}
+        </div>
+      )}
+
+      {showAdvanced && (
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3 md:col-span-2 xl:col-span-2">
+            <p className="text-[11px] text-white/55">Plan title</p>
+            <input
+              value={planTitle}
+              onChange={(event) => setPlanTitle(event.target.value)}
+              placeholder="ex. Berlin peak weekend"
+              className="mt-1 w-full rounded-lg border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+            />
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+            <p className="text-[11px] text-white/55">Start date (optional)</p>
+            <div className="mt-1">
               <DateInput
                 value={planDate}
                 onChange={(event) => setPlanDate(event.target.value)}
@@ -948,210 +1161,214 @@ export default function TripPlannerV2({
               />
             </div>
           </div>
-        </div>
 
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">City</p>
-          <select
-            value={city}
-            onChange={(event) => setCity(event.target.value)}
-            className="mt-2 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-          >
-            {plannerCities.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Horizon</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {HORIZONS.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => setHorizon(item.value)}
-                className={`rounded-full border px-3 py-1 text-xs ${
-                  horizon === item.value
-                    ? "border-fuchsia-200/36 bg-fuchsia-200/16 text-fuchsia-100"
-                    : "border-white/12 bg-white/6 text-white/65"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+            <p className="text-[11px] text-white/55">Budget</p>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {BUDGETS.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setBudget(item.value)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
+                    budget === item.value
+                      ? "border-amber-200/40 bg-amber-200/16 text-amber-100"
+                      : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Vibe</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {VIBES.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => setVibe(item.value)}
-                className={`rounded-full border px-3 py-1 text-xs ${
-                  vibe === item.value
-                    ? "border-cyan-200/36 bg-cyan-200/16 text-cyan-100"
-                    : "border-white/12 bg-white/6 text-white/65"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Budget</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {BUDGETS.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => setBudget(item.value)}
-                className={`rounded-full border px-3 py-1 text-xs ${
-                  budget === item.value
-                    ? "border-amber-200/36 bg-amber-200/16 text-amber-100"
-                    : "border-white/12 bg-white/6 text-white/65"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3 md:col-span-2 xl:col-span-1">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Energy</p>
-          <input
-            type="range"
-            min="10"
-            max="100"
-            step="5"
-            value={energy}
-            onChange={(event) => setEnergy(Number(event.target.value))}
-            className="mt-2 w-full"
-          />
-          <p className="mt-1 text-xs text-white/60">{energyLabel}</p>
-        </div>
-
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3 md:col-span-2 xl:col-span-1">
-          <label className="inline-flex items-center gap-2 text-sm text-white/78">
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3 md:col-span-2 xl:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] text-white/55">Energy</p>
+              <p className="text-[11px] text-white/62">{energyLabel}</p>
+            </div>
             <input
-              type="checkbox"
-              checked={soloSafe}
-              onChange={(event) => setSoloSafe(event.target.checked)}
-              className="h-4 w-4 rounded border-white/20 bg-black/30"
+              type="range"
+              min="10"
+              max="100"
+              step="5"
+              value={energy}
+              onChange={(event) => setEnergy(Number(event.target.value))}
+              className="mt-2 w-full"
             />
-            Solo-safe mode
-          </label>
-        </div>
+            <label className="mt-2 inline-flex items-center gap-2 text-[12px] text-white/78">
+              <input
+                type="checkbox"
+                checked={soloSafe}
+                onChange={(event) => setSoloSafe(event.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-black/30"
+              />
+              Solo-safe mode
+            </label>
+          </div>
 
-        <div className="rounded-2xl border border-white/12 bg-black/25 p-3 md:col-span-2 xl:col-span-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Optional notes</p>
-          <textarea
-            value={note}
-            onChange={(event) => setNote(event.target.value)}
-            placeholder="Add your personal intent, people, pacing, or must-hit spots."
-            className="mt-2 h-20 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-          />
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3 md:col-span-2 xl:col-span-2">
+            <button
+              type="button"
+              onClick={() => setShowNotes((current) => !current)}
+              className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/75 transition hover:border-white/22"
+            >
+              {showNotes ? "Hide notes" : "Add notes"}
+            </button>
+            {showNotes && (
+              <textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Add intent, pacing, or must-hit stops."
+                className="mt-2 h-20 w-full rounded-lg border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          onClick={generate}
-          disabled={!canBuild}
-          className="rounded-full bg-gradient-to-r from-fuchsia-200 via-pink-200 to-cyan-200 px-4 py-2 text-sm font-semibold text-black disabled:opacity-60"
-        >
-          Build itinerary
-        </button>
-        <button
-          type="button"
-          onClick={shuffleUnlocked}
-          disabled={itinerary.length === 0}
-          className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-sm text-white/75 disabled:opacity-60"
-        >
-          Shuffle unlocked
-        </button>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={itinerary.length === 0 || isSaving}
-          className="rounded-full border border-emerald-200/26 bg-emerald-200/12 px-4 py-2 text-sm text-emerald-100 disabled:opacity-60"
-        >
-          {isSaving ? "Saving..." : "Save plan"}
-        </button>
-      </div>
+      {hotelSuggestions.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.04] p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold text-cyan-100">Suggested hotels</p>
+            <span className="text-[10px] text-cyan-100/70">Picked before itinerary flow</span>
+          </div>
+          <div className="grid gap-2 md:grid-cols-3">
+            {hotelSuggestions.map((hotel) => (
+              <article key={`hotel-${hotel.id}`} className="rounded-xl border border-white/10 bg-black/25 p-2.5">
+                <p className="truncate text-sm font-medium text-white">{hotel.name}</p>
+                <p className="mt-1 text-[11px] text-white/62 capitalize">{hotel.city} stay base</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-[10px] text-cyan-50">
+                    Score {hotel.plannerScore}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onOpenStop?.({
+                        id: hotel.id,
+                        name: hotel.name,
+                        city: hotel.city,
+                        itemType: "place",
+                        slotLabel: "Suggested hotel",
+                        time: "16:00",
+                        reason: "Recommended stay base before itinerary flow.",
+                      })
+                    }
+                    className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] text-cyan-100 transition hover:border-cyan-200/40"
+                  >
+                    Open
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
 
       {itinerary.length > 0 && (
-        <div className="mt-5 grid gap-3 lg:grid-cols-3">
-          {itinerary.map((day, dayIdx) => (
-            <article key={day.dayKey} className="rounded-2xl border border-white/12 bg-white/[0.04] p-3">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/56">{day.dayLabel}</p>
-              <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-white/42">
-                Energy curve: soft → peak → recover
-              </p>
-              <div className="mt-3 space-y-2">
-                {day.stops.length === 0 && (
-                  <p className="text-xs text-white/52">No matched stops. Try another vibe/city.</p>
-                )}
-                {day.stops.map((stop, stopIdx) => {
-                  const lockKey = `${dayIdx}-${stopIdx}`;
-                  const isLocked = Boolean(locks[lockKey]);
-                  return (
-                    <div key={stop.key} className="rounded-xl border border-white/10 bg-black/25 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                            {stop.time} · {stop.slotLabel}
-                          </p>
-                          <p className="mt-1 text-sm font-medium text-white">{stop.name}</p>
-                          <p className="mt-1 text-xs text-white/55">{stop.reason}</p>
-                          {typeof stop.trustScore === "number" && (
-                            <p className="mt-1 text-[11px] text-cyan-100/75">
-                              Trust {stop.trustScore} · {stop.trustReason || "network + quality + timing"}
-                            </p>
-                          )}
-                          {String(stop.trustReason || "").includes("opening unclear") && (
-                            <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-amber-100/80">
-                              Check opening hours before you go
-                            </p>
-                          )}
+        <div ref={itinerarySectionRef} className="mt-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.05] px-3 py-2">
+            <p className="text-xs font-semibold text-cyan-100">Itinerary ready</p>
+            <p className="text-[11px] text-white/68">
+              {lockedStopsCount} locked stop{lockedStopsCount === 1 ? "" : "s"} | tap Open for details
+            </p>
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-3">
+            {itinerary.map((day, dayIdx) => (
+              <article key={day.dayKey} className="rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.03] p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold text-cyan-100">{day.dayLabel}</p>
+                  <span className="rounded-full border border-white/14 bg-white/6 px-2 py-0.5 text-[10px] text-white/75">
+                    {day.stops.length} stops
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {day.stops.length === 0 && (
+                    <p className="text-xs text-white/58">No matched stops. Try other vibe tags or city.</p>
+                  )}
+                  {day.stops.map((stop, stopIdx) => {
+                    const lockKey = `${dayIdx}-${stopIdx}`;
+                    const isLocked = Boolean(locks[lockKey]);
+                    return (
+                      <div key={stop.key} className="rounded-xl border border-white/10 bg-black/25 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-[10px] text-cyan-50">
+                                {stop.time}
+                              </span>
+                              <span className="text-[11px] text-white/62">{stop.slotLabel}</span>
+                            </div>
+                            <p className="mt-1 truncate text-sm font-medium text-white">{stop.name}</p>
+                            <p className="mt-1 text-xs text-white/58">{stop.reason}</p>
+                            {typeof stop.trustScore === "number" && (
+                              <p className="mt-1 text-[11px] text-cyan-100/78">
+                                Trust {stop.trustScore} | {stop.trustReason || "network + quality + timing"}
+                              </p>
+                            )}
+                            {String(stop.trustReason || "").includes("opening unclear") && (
+                              <p className="mt-1 text-[10px] text-amber-100/82">Check opening hours before you go.</p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleLock(dayIdx, stopIdx)}
+                            className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] transition ${
+                              isLocked
+                                ? "border-amber-200/38 bg-amber-200/20 text-amber-100"
+                                : "border-white/12 bg-white/6 text-white/72 hover:border-white/24"
+                            }`}
+                          >
+                            {isLocked ? "Locked" : "Lock"}
+                          </button>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => toggleLock(dayIdx, stopIdx)}
-                          className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${
-                            isLocked
-                              ? "border-amber-200/35 bg-amber-200/18 text-amber-100"
-                              : "border-white/12 bg-white/6 text-white/65"
-                          }`}
-                        >
-                          {isLocked ? "Locked" : "Lock"}
-                        </button>
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-[11px] text-white/50 capitalize">
+                            {stop.itemType === "event" ? "Event stop" : "Venue stop"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onOpenStop?.(stop)}
+                            className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] text-cyan-100 transition hover:border-cyan-200/40"
+                          >
+                            Open
+                          </button>
+                        </div>
                       </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-[11px] text-white/45 capitalize">{stop.itemType}</span>
-                        <button
-                          type="button"
-                          onClick={() => onOpenStop?.(stop)}
-                          className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100"
-                        >
-                          Open on map
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </article>
-          ))}
+                    );
+                  })}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-white/10 bg-black/20 p-2.5">
+            <button
+              type="button"
+              onClick={shuffleUnlocked}
+              disabled={itinerary.length === 0}
+              className="rounded-full border border-white/14 bg-white/6 px-3 py-1.5 text-[11px] text-white/80 transition hover:border-white/24 disabled:opacity-60"
+            >
+              Shuffle unlocked
+            </button>
+            <button
+              type="button"
+              onClick={() => plannerTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1.5 text-[11px] text-cyan-100 transition hover:border-cyan-200/40"
+            >
+              Back to controls
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={itinerary.length === 0 || isSaving}
+              className="rounded-full border border-emerald-200/34 bg-emerald-200/14 px-3 py-1.5 text-[11px] font-semibold text-emerald-100 transition hover:border-emerald-200/54 disabled:opacity-60"
+            >
+              {isSaving ? "Saving..." : "Save plan"}
+            </button>
+          </div>
         </div>
       )}
     </div>
