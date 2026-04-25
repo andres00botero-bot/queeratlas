@@ -41,6 +41,7 @@ import {
 } from "@/features/events/eventModalStateUtils";
 import { REPORT_REASONS, TRUST_ACTIONS } from "@/features/events/eventPageConstants";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
+import { resolveEventOpenIntent } from "@/features/events/eventOpenGuards";
 import { qualityPillClass } from "@/features/events/eventViewUtils";
 import CityEventEditModal from "@/components/events/CityEventEditModal";
 import EventSkeletonCard from "@/components/events/EventSkeletonCard";
@@ -700,12 +701,14 @@ export default function EventsPage() {
   }, []);
 
   const openEvent = (event) => {
-    if (event.isGlobal) {
-      focusOffgridEvent(event.id);
+    const intent = resolveEventOpenIntent(event);
+    if (intent.kind === "offgrid") {
+      focusOffgridEvent(intent.id);
       return;
     }
-
-    router.push(citySelectionPath(event.city, { eventId: event.id }));
+    if (intent.kind === "city") {
+      router.push(citySelectionPath(intent.city, { eventId: intent.id }));
+    }
   };
 
   return (

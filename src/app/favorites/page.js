@@ -40,6 +40,11 @@ import {
   FAVORITES_STORAGE_KEY,
   PLAN_STORAGE_KEY,
 } from "@/features/favorites/favoritesStateDefaults";
+import {
+  buildCheckinMarkerById,
+  buildCheckinMarkers,
+  resolveCheckinFocusCoordinates,
+} from "@/features/favorites/checkinMapGuards";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import TripPlannerV2 from "@/components/planner/TripPlannerV2";
@@ -713,70 +718,10 @@ export default function FavoritesPage() {
     [events, selectedCheckinCityKey]
   );
 
-  const checkinMarkers = useMemo(() => {
-    const placeById = new Map(
-      savedPlaces.map((place) => [String(place.id), place])
-    );
-    const eventById = new Map(
-      savedEvents.map((event) => [String(event.id), event])
-    );
-    const placeByCityName = new Map();
-    savedPlaces.forEach((place) => {
-      const key = `${normalizeLooseText(place.city)}::${normalizeLooseText(place.name)}`;
-      if (!key || key === "::") return;
-      const current = placeByCityName.get(key) || [];
-      current.push(place);
-      placeByCityName.set(key, current);
-    });
-    const eventByCityName = new Map();
-    savedEvents.forEach((event) => {
-      const key = `${normalizeLooseText(event.city)}::${normalizeLooseText(event.name)}`;
-      if (!key || key === "::") return;
-      const current = eventByCityName.get(key) || [];
-      current.push(event);
-      eventByCityName.set(key, current);
-    });
-
-    return checkins
-      .map((entry) => {
-        if (Number.isFinite(entry.lat) && Number.isFinite(entry.lng)) {
-          return { ...entry, markerLat: Number(entry.lat), markerLng: Number(entry.lng) };
-        }
-
-        const hasCoords = (item) => (
-          Number.isFinite(Number(item?.lat)) && Number.isFinite(Number(item?.lng))
-        );
-        const placeMatch = entry.placeId ? placeById.get(String(entry.placeId)) : null;
-        const eventMatch = entry.eventId ? eventById.get(String(entry.eventId)) : null;
-        const explicitMatch = [placeMatch, eventMatch].find((item) => hasCoords(item)) || null;
-
-        const key = `${normalizeLooseText(entry.city)}::${normalizeLooseText(entry.label)}`;
-        const byNameCandidates = [...(placeByCityName.get(key) || []), ...(eventByCityName.get(key) || [])]
-          .filter((candidate) => hasCoords(candidate));
-        let byNameMatch = null;
-        if (byNameCandidates.length === 1) {
-          byNameMatch = byNameCandidates[0];
-        } else if (byNameCandidates.length > 1) {
-          const addressKey = normalizeLooseText(entry.address);
-          if (addressKey) {
-            const addressMatches = byNameCandidates.filter((candidate) => (
-              normalizeLooseText(candidate.location || candidate.address) === addressKey
-            ));
-            if (addressMatches.length === 1) {
-              byNameMatch = addressMatches[0];
-            }
-          }
-        }
-        const match = explicitMatch || byNameMatch;
-
-        if (match && Number.isFinite(Number(match.lat)) && Number.isFinite(Number(match.lng))) {
-          return { ...entry, markerLat: Number(match.lat), markerLng: Number(match.lng) };
-        }
-        return null;
-      })
-      .filter(Boolean)
-      .sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0));
-  }, [checkins, savedEvents, savedPlaces]);
+  const checkinMarkers = useMemo(
+    () => buildCheckinMarkers({ checkins, savedPlaces, savedEvents }),
+    [checkins, savedEvents, savedPlaces]
+  );
 
   const followingCheckinMarkers = useMemo(
     () =>
@@ -808,10 +753,7 @@ export default function FavoritesPage() {
     return checkinMarkers.find((item) => String(item.id) === String(selectedCheckinId)) || null;
   }, [checkinMarkers, selectedCheckinId]);
 
-  const checkinMarkerById = useMemo(
-    () => new Map(checkinMarkers.map((item) => [String(item.id), item])),
-    [checkinMarkers]
-  );
+  const checkinMarkerById = useMemo(() => buildCheckinMarkerById(checkinMarkers), [checkinMarkers]);
 
   const checkinMapCenter = useMemo(() => {
     const centerSource =
@@ -1702,12 +1644,10 @@ export default function FavoritesPage() {
       setSelectedCheckinId(String(entry.id));
 
       const map = checkinMapRef.current;
-      const markerEntry = checkinMarkerById.get(String(entry.id));
-      const targetLat = Number(markerEntry?.markerLat ?? entry.markerLat ?? entry.lat);
-      const targetLng = Number(markerEntry?.markerLng ?? entry.markerLng ?? entry.lng);
-      if (map && Number.isFinite(targetLat) && Number.isFinite(targetLng)) {
+      const target = resolveCheckinFocusCoordinates(entry, checkinMarkerById);
+      if (map && target) {
         map.flyTo({
-          center: [targetLng, targetLat],
+          center: [target.lng, target.lat],
           zoom: Math.max(map.getZoom(), 12.5),
           essential: true,
         });
@@ -2736,7 +2676,10 @@ export default function FavoritesPage() {
                   </button>
                 ))}
               </div>
-              <div className="mt-3 space-y-2">
+              <div
+                className="mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]"
+                style={{ scrollbarGutter: "stable" }}
+              >
                 {filteredRecentCheckins.length > 0 ? (
                   filteredRecentCheckins.map((entry) => (
                     <article
@@ -2804,7 +2747,10 @@ export default function FavoritesPage() {
               )}
               <div className="mt-4 border-t border-white/10 pt-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friends check-ins</p>
-                <div className="mt-2 space-y-2">
+                <div
+                  className="mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]"
+                  style={{ scrollbarGutter: "stable" }}
+                >
                   {recentFollowingCheckins.length > 0 ? (
                     recentFollowingCheckins.map((entry) => {
                       const presence = followingPresenceByUserId[String(entry.ownerUserId || "")] || null;

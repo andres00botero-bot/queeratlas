@@ -51,6 +51,11 @@ import {
 import { getQualityToastConfig, resolveQualityUpdate } from "@/features/city/qualityModalFeature";
 import { formatDate, formatEventDateLabel, isEventVisibleOnCityPage, normalizeEventRange, normalizeIsoDate } from "@/features/city/eventRailFeature";
 import {
+  selectCityEventById,
+  selectCityEventsAll,
+  selectVisibleCityEvents,
+} from "@/features/city/cityEventGuards";
+import {
   buildCityHeroText,
   LIVE_VIBE_COOLDOWN_MS,
   parseCityHeroText,
@@ -314,22 +319,12 @@ export default function CityPage() {
   );
 
   const cityEventsAll = useMemo(
-    () => {
-      const normalizedCity = normalizeCityKey(city);
-      return eventsData.filter((event) => (
-        normalizeCityKey(event.city) === normalizedCity
-        && !blockedItems.some(
-          (item) =>
-            item.targetType === "event" &&
-            String(item.targetId) === String(event.id)
-        )
-      ));
-    },
+    () => selectCityEventsAll({ eventsData, city, blockedItems, normalizeCityKey }),
     [blockedItems, city, eventsData]
   );
 
   const cityEvents = useMemo(
-    () => cityEventsAll.filter((event) => isEventVisibleOnCityPage(event)),
+    () => selectVisibleCityEvents(cityEventsAll, isEventVisibleOnCityPage),
     [cityEventsAll]
   );
 
@@ -360,8 +355,7 @@ export default function CityPage() {
   }, [cityPlaces, placeId]);
 
   const selectedEvent = useMemo(() => {
-    if (!eventId) return null;
-    return cityEventsAll.find((event) => String(event.id) === String(eventId)) || null;
+    return selectCityEventById(cityEventsAll, eventId);
   }, [cityEventsAll, eventId]);
 
   useEffect(() => {
