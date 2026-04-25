@@ -2677,7 +2677,7 @@ export default function FavoritesPage() {
                 ))}
               </div>
               <div
-                className="mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]"
+                className="qa-guides-scroll mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]"
                 style={{ scrollbarGutter: "stable" }}
               >
                 {filteredRecentCheckins.length > 0 ? (
@@ -2748,7 +2748,7 @@ export default function FavoritesPage() {
               <div className="mt-4 border-t border-white/10 pt-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friends check-ins</p>
                 <div
-                  className="mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]"
+                  className="qa-guides-scroll mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]"
                   style={{ scrollbarGutter: "stable" }}
                 >
                   {recentFollowingCheckins.length > 0 ? (

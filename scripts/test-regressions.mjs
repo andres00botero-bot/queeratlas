@@ -3,6 +3,7 @@ import {
   buildCheckinMarkers,
   resolveCheckinFocusCoordinates,
 } from "../src/features/favorites/checkinMapGuards.js";
+import { readFileSync } from "node:fs";
 import { resolveEventOpenIntent } from "../src/features/events/eventOpenGuards.js";
 import {
   selectCityEventById,
@@ -117,11 +118,25 @@ function testCityEventSelectionUsesAllCityEventsForDeepLink() {
   assert(selected?.id === "event-old", "city event selection: deep-link eventId must resolve from all city events");
 }
 
+function testFavoritesCheckinListsHaveStableScrollContainers() {
+  const source = readFileSync(new URL("../src/app/favorites/page.js", import.meta.url), "utf8");
+
+  assert(
+    source.includes("className=\"qa-guides-scroll mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]\""),
+    "favorites check-in list: primary list should keep explicit scroll container classes"
+  );
+  assert(
+    source.includes("className=\"qa-guides-scroll mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]\""),
+    "favorites check-in list: friends list should keep explicit scroll container classes"
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
   testEventOpenIntent();
   testCityEventSelectionUsesAllCityEventsForDeepLink();
+  testFavoritesCheckinListsHaveStableScrollContainers();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");
