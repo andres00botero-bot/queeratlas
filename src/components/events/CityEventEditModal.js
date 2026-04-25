@@ -1,4 +1,5 @@
 import DateInput from "@/components/ui/DateInput";
+import VibeTagPicker from "@/components/ui/VibeTagPicker";
 
 export default function CityEventEditModal({
   open,
@@ -57,11 +58,18 @@ export default function CityEventEditModal({
               className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
               placeholder="Location (optional)"
             />
+            <VibeTagPicker
+              value={draft.vibe_tags}
+              onChange={(nextTags) => setDraft((current) => ({ ...current, vibe_tags: nextTags }))}
+              tone="emerald"
+              title="Event vibe tags"
+              hint="Pick up to 3 tags. These power filters and discovery."
+            />
             <input
               value={draft.vibe}
               onChange={(event) => setDraft((current) => ({ ...current, vibe: event.target.value }))}
               className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
-              placeholder="Vibe (optional)"
+              placeholder="Legacy vibe label (optional)"
             />
             <textarea
               value={draft.description}

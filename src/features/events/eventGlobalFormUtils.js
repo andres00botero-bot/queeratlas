@@ -1,4 +1,5 @@
 import { normalizeEventRange, normalizeIsoDate } from "@/features/events/eventFormatUtils";
+import { buildVibeDualWriteFields, inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 
 export const EMPTY_GLOBAL_FORM = {
   name: "",
@@ -6,6 +7,7 @@ export const EMPTY_GLOBAL_FORM = {
   endDate: "",
   location: "",
   vibe: "",
+  vibe_tags: [],
   description: "",
   link: "",
   source: "",
@@ -14,12 +16,20 @@ export const EMPTY_GLOBAL_FORM = {
 
 export function buildGlobalFormFromEvent(event = {}) {
   const normalized = normalizeEventRange(event || {});
+  const vibeLabel = String(event?.vibe || "");
+  const vibeTags = normalizeVibeTags(
+    Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
+      ? event.vibe_tags
+      : inferVibeTagsFromLegacyVibe(vibeLabel),
+    { max: 3 }
+  );
   return {
     name: String(event?.name || ""),
     startDate: String(normalized.startDate || ""),
     endDate: String(normalized.endDate || ""),
     location: String(event?.location || ""),
-    vibe: String(event?.vibe || ""),
+    vibe: vibeLabel,
+    vibe_tags: vibeTags,
     description: String(event?.description || ""),
     link: String(event?.link || ""),
     source: String(event?.source || ""),
@@ -31,6 +41,10 @@ export function buildGlobalEventPayloadFromForm(globalForm = {}) {
   const startDate = normalizeIsoDate(globalForm.startDate);
   const endDateCandidate = normalizeIsoDate(globalForm.endDate);
   const endDate = endDateCandidate && endDateCandidate >= startDate ? endDateCandidate : startDate;
+  const vibeFields = buildVibeDualWriteFields({
+    vibe: globalForm.vibe,
+    vibeTags: globalForm.vibe_tags,
+  });
 
   return {
     startDate,
@@ -42,7 +56,7 @@ export function buildGlobalEventPayloadFromForm(globalForm = {}) {
       start_date: startDate,
       end_date: endDate || startDate,
       location: globalForm.location,
-      vibe: globalForm.vibe || null,
+      ...vibeFields,
       description: globalForm.description || null,
       link: globalForm.link || null,
       source: globalForm.source || null,

@@ -1,5 +1,7 @@
 "use client";
 
+import VibeTagChips from "@/components/ui/VibeTagChips";
+
 export default function SavedEventsPanel({
   isAtlasLoading = false,
   savedEvents = [],
@@ -61,6 +63,7 @@ export default function SavedEventsPanel({
               <p className="mt-3 text-sm text-violet-100/72">
                 Community event
               </p>
+              <VibeTagChips entity={event} tone="violet" className="mt-2" includeMixedFallback />
 
               {event.description && (
                 <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/46">

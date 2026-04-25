@@ -1,4 +1,10 @@
 import { cityConfig } from "@/lib/cities";
+import {
+  formatVibeTagLabel,
+  inferVibeTagsFromLegacyVibe,
+  normalizeVibeTag,
+  normalizeVibeTags,
+} from "@/lib/vibeTaxonomy";
 
 function scoreMatch(text, query) {
   if (!text) return 0;
@@ -16,6 +22,23 @@ function aggregateScore(parts, query) {
 
 function normalizeValue(value = "") {
   return String(value || "").trim().toLowerCase();
+}
+
+function resolveEntityVibeTags(entity = {}, fallbackText = "") {
+  const directTags = Array.isArray(entity?.vibe_tags) ? entity.vibe_tags : [];
+  if (directTags.length > 0) {
+    return normalizeVibeTags(directTags, { max: 3 });
+  }
+
+  const fallbackTags = inferVibeTagsFromLegacyVibe(String(fallbackText || entity?.vibe || ""), { max: 3 });
+  return normalizeVibeTags(fallbackTags, { max: 3 });
+}
+
+function buildVibeSearchTerms(tags = [], legacyVibe = "") {
+  const normalizedTags = normalizeVibeTags(tags, { max: 3 });
+  const tagLabels = normalizedTags.map((tag) => formatVibeTagLabel(tag)).filter(Boolean);
+  const legacyValue = String(legacyVibe || "").trim();
+  return [...normalizedTags, ...tagLabels, legacyValue].filter(Boolean);
 }
 
 function qualityBoost(targetType, targetId, qualityMap = {}) {
@@ -68,8 +91,11 @@ export function buildAtlasSearchResults({
 
   const cityResults = Object.entries(cityConfig)
     .map(([key, city]) => {
+      const cityVibeKey = normalizeVibeTag(city.vibe || "");
+      const cityVibeTags = cityVibeKey ? [cityVibeKey] : [];
+      const cityVibeTerms = buildVibeSearchTerms(cityVibeTags, city.vibe);
       const baseScore = aggregateScore(
-        [key, city.title, city.country, city.vibe],
+        [key, city.title, city.country, ...cityVibeTerms],
         normalized
       );
       const cityName = city.title.replace("Queer ", "");
@@ -82,6 +108,7 @@ export function buildAtlasSearchResults({
         title: city.title,
         country: city.country || "",
         vibe: city.vibe || "",
+        vibe_tags: cityVibeTags,
         type: "city",
         score: baseScore + cityAffinity,
       };
@@ -92,8 +119,10 @@ export function buildAtlasSearchResults({
 
   const placeResults = places
     .map((place) => {
+      const placeVibeTags = resolveEntityVibeTags(place, place.vibe);
+      const placeVibeTerms = buildVibeSearchTerms(placeVibeTags, place.vibe);
       const baseScore = aggregateScore(
-        [place.name, place.city, place.vibe, place.type],
+        [place.name, place.city, place.type, ...placeVibeTerms],
         normalized
       );
       const cityAffinity =
@@ -105,7 +134,7 @@ export function buildAtlasSearchResults({
       const score = Math.round(
         baseScore + cityAffinity + socialProof + ratingBoost + qualityScore + noveltyPenalty
       );
-      return { ...place, type: "place", score };
+      return { ...place, type: "place", vibe_tags: placeVibeTags, score };
     })
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -113,8 +142,10 @@ export function buildAtlasSearchResults({
 
   const eventResults = events
     .map((event) => {
+      const eventVibeTags = resolveEntityVibeTags(event, event.vibe);
+      const eventVibeTerms = buildVibeSearchTerms(eventVibeTags, event.vibe);
       const baseScore = aggregateScore(
-        [event.name, event.city, event.description],
+        [event.name, event.city, event.description, ...eventVibeTerms],
         normalized
       );
       const cityAffinity =
@@ -123,7 +154,7 @@ export function buildAtlasSearchResults({
       const qualityScore = qualityBoost("event", event.id, qualityMap);
       const noveltyPenalty = favoriteSet.has(`event-${event.id}`) ? -15 : 0;
       const score = Math.round(baseScore + cityAffinity + freshness + qualityScore + noveltyPenalty);
-      return { ...event, type: "event", score };
+      return { ...event, type: "event", vibe_tags: eventVibeTags, score };
     })
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)

@@ -4,6 +4,25 @@ import { mergeSeedPlacesAsync } from "./seedMerge";
 import { captureOperationalError } from "./monitoring";
 import { logDevError } from "./devLogger";
 import { fetchPlacesQueryWithFallback } from "./placesDataApi";
+import {
+  buildVibeDualWriteFields,
+  inferVibeTagsFromLegacyVibe,
+  isMissingVibeTagsColumnError,
+  normalizeVibeTags,
+} from "./vibeTaxonomy";
+
+const PLACE_SELECT_FIELDS =
+  "id, name, type, city, lat, lng, description, vibe, vibe_tags, hours, link, location";
+const PLACE_SELECT_FIELDS_LEGACY =
+  "id, name, type, city, lat, lng, description, vibe, hours, link, location";
+
+async function fetchPlacesRows(client) {
+  let response = await client.from("places").select(PLACE_SELECT_FIELDS);
+  if (response?.error && isMissingVibeTagsColumnError(response.error)) {
+    response = await client.from("places").select(PLACE_SELECT_FIELDS_LEGACY);
+  }
+  return response;
+}
 
 function formatSupabaseError(error) {
   if (!error) return "Unknown error";
@@ -20,6 +39,67 @@ function toOperationalError(error) {
   if (error instanceof Error) return error;
   if (!error) return new Error("Unknown error");
   return new Error(formatSupabaseError(error));
+}
+
+function normalizeLookupToken(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function toFiniteNumber(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
+function resolveBestPlaceCandidate(candidates = [], place = {}) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+  const targetCity = normalizeLookupToken(place?.city || "");
+  const targetName = normalizeLookupToken(place?.name || "");
+  const targetType = normalizeLookupToken(place?.type || "");
+  const targetLat = toFiniteNumber(place?.lat);
+  const targetLng = toFiniteNumber(place?.lng);
+
+  if (!targetCity || !targetName) return null;
+
+  let best = null;
+  for (const candidate of candidates) {
+    const candidateCity = normalizeLookupToken(candidate?.city || "");
+    const candidateName = normalizeLookupToken(candidate?.name || "");
+    if (candidateCity !== targetCity || candidateName !== targetName) continue;
+
+    let score = 2;
+    const candidateType = normalizeLookupToken(candidate?.type || "");
+    if (targetType && candidateType === targetType) score += 2;
+
+    const candidateLat = toFiniteNumber(candidate?.lat);
+    const candidateLng = toFiniteNumber(candidate?.lng);
+    if (
+      targetLat !== null &&
+      targetLng !== null &&
+      candidateLat !== null &&
+      candidateLng !== null &&
+      Math.abs(candidateLat - targetLat) < 0.0002 &&
+      Math.abs(candidateLng - targetLng) < 0.0002
+    ) {
+      score += 1;
+    }
+
+    if (
+      !best ||
+      score > best.score ||
+      (score === best.score && String(candidate?.id || "").localeCompare(String(best.id || "")) < 0)
+    ) {
+      best = { id: candidate?.id, score };
+    }
+  }
+
+  return best?.id || null;
 }
 
 export function usePlaces(city) {
@@ -39,9 +119,7 @@ export function usePlaces(city) {
 
     try {
       const [{ data: placesData, error: placesError }, { data: reviewsData, error: reviewsError }] = await Promise.all([
-        supabase
-          .from("places")
-          .select("id, name, type, city, lat, lng, description, vibe, hours, link, location"),
+        fetchPlacesRows(supabase),
         supabase
           .from("reviews")
           .select("place_id, rating"),
@@ -121,6 +199,32 @@ export function usePlaces(city) {
           String(row.location),
         ]),
     );
+    const placeVibeTagsById = new Map(
+      placeRows
+        .filter((row) => row?.id)
+        .map((row) => [
+          String(row.id),
+          normalizeVibeTags(
+            Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
+              ? row.vibe_tags
+              : inferVibeTagsFromLegacyVibe(String(row?.vibe || "")),
+            { max: 3 }
+          ),
+        ]),
+    );
+    const placeVibeTagsByCityName = new Map(
+      placeRows
+        .filter((row) => row?.name && row?.city)
+        .map((row) => [
+          `${String(row.city).toLowerCase()}::${String(row.name).trim().toLowerCase()}`,
+          normalizeVibeTags(
+            Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
+              ? row.vibe_tags
+              : inferVibeTagsFromLegacyVibe(String(row?.vibe || "")),
+            { max: 3 }
+          ),
+        ]),
+    );
 
     const statsByPlaceId = reviewRows.reduce((acc, row) => {
       const placeId = String(row?.place_id || "");
@@ -156,11 +260,21 @@ export function usePlaces(city) {
       const locationByCityName = placeLocationByCityName.get(
         `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
       );
+      const vibeTagsById = placeVibeTagsById.get(String(row.id || ""));
+      const vibeTagsByCityName = placeVibeTagsByCityName.get(
+        `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
+      );
       return {
         ...row,
         hours: String(row.hours || "").trim(),
         location: String(row.location || locationById || locationByCityName || "").trim(),
         link: String(row.link || byId || byCityName || "").trim(),
+        vibe_tags: normalizeVibeTags(
+          Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
+            ? row.vibe_tags
+            : vibeTagsById || vibeTagsByCityName || inferVibeTagsFromLegacyVibe(String(row?.vibe || "")),
+          { max: 3 }
+        ),
       };
     });
 
@@ -196,11 +310,15 @@ export function usePlaces(city) {
 
   /* ---------------- ADD PLACE ---------------- */
   const addPlace = useCallback(async (place) => {
+    const vibeFields = buildVibeDualWriteFields({
+      vibe: place.vibe,
+      vibeTags: place.vibe_tags,
+    });
     const basePayload = {
       name: place.name,
       type: place.type,
       description: place.description,
-      vibe: place.vibe,
+      ...vibeFields,
       hours: place.hours,
       link: place.link,
       location: String(place.location || place.address || "").trim() || null,
@@ -208,11 +326,23 @@ export function usePlaces(city) {
       lng: place.lng,
       city: place.city,
     };
-    const { data, error } = await supabase
+    let insertResult = await supabase
       .from("places")
       .insert([basePayload])
       .select("*")
       .single();
+
+    if (insertResult.error && isMissingVibeTagsColumnError(insertResult.error)) {
+      const legacyPayload = { ...basePayload };
+      delete legacyPayload.vibe_tags;
+      insertResult = await supabase
+        .from("places")
+        .insert([legacyPayload])
+        .select("*")
+        .single();
+    }
+
+    const { data, error } = insertResult;
 
     if (error) {
       logDevError("Add place error:", error);
@@ -241,16 +371,28 @@ export function usePlaces(city) {
       const placeName = String(place?.name || "").trim();
       if (!cityName || !placeName) return null;
 
-      const existing = await supabase
+      const exactExisting = await supabase
         .from("places")
-        .select("id")
-        .ilike("city", cityName)
-        .ilike("name", placeName)
+        .select("id, name, city, type, lat, lng")
+        .eq("city", cityName)
+        .eq("name", placeName)
         .limit(1)
         .maybeSingle();
 
-      if (existing?.data?.id) {
-        return existing.data.id;
+      if (exactExisting?.data?.id) {
+        return exactExisting.data.id;
+      }
+
+      const broadCandidates = await supabase
+        .from("places")
+        .select("id, name, city, type, lat, lng");
+
+      if (!broadCandidates?.error) {
+        const candidateId = resolveBestPlaceCandidate(
+          Array.isArray(broadCandidates?.data) ? broadCandidates.data : [],
+          place
+        );
+        if (candidateId) return candidateId;
       }
 
       if (!createIfMissing) return null;
@@ -259,7 +401,10 @@ export function usePlaces(city) {
         name: placeName,
         type: String(place?.type || "bar"),
         description: String(place?.description || "").trim(),
-        vibe: String(place?.vibe || "").trim(),
+        ...buildVibeDualWriteFields({
+          vibe: String(place?.vibe || "").trim(),
+          vibeTags: place?.vibe_tags,
+        }),
         hours: String(place?.hours || "").trim(),
         link: String(place?.link || "").trim(),
         location: String(place?.location || place?.address || "").trim() || null,
@@ -268,11 +413,21 @@ export function usePlaces(city) {
         city: cityName,
       };
 
-      const inserted = await supabase
+      let inserted = await supabase
         .from("places")
         .insert([insertPayload])
         .select("id")
         .single();
+
+      if (inserted?.error && isMissingVibeTagsColumnError(inserted.error)) {
+        const legacyPayload = { ...insertPayload };
+        delete legacyPayload.vibe_tags;
+        inserted = await supabase
+          .from("places")
+          .insert([legacyPayload])
+          .select("id")
+          .single();
+      }
 
       if (inserted?.data?.id) {
         return inserted.data.id;

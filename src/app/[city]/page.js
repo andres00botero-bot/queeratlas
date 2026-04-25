@@ -23,6 +23,11 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
+  buildVibeDualWriteFields,
+  isMissingVibeTagsColumnError,
+  normalizeVibeTags,
+} from "@/lib/vibeTaxonomy";
+import {
   buildLiveVibeHeadline,
   formatLiveVibeUpdatedAt,
   getLiveVibeConsensus,
@@ -36,6 +41,8 @@ import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
+import VibeTagChips from "@/components/ui/VibeTagChips";
+import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import CityQualityModal from "@/components/city/CityQualityModal";
 import CityReportModal from "@/components/city/CityReportModal";
@@ -143,6 +150,7 @@ export default function CityPage() {
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
   const [vibe, setVibe] = useState("");
+  const [vibeTags, setVibeTags] = useState([]);
   const [placeHours, setPlaceHours] = useState("");
   const [placeLink, setPlaceLink] = useState("");
   const [eventName, setEventName] = useState("");
@@ -150,6 +158,7 @@ export default function CityPage() {
   const [eventStartDate, setEventStartDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
   const [eventVibe, setEventVibe] = useState("");
+  const [eventVibeTags, setEventVibeTags] = useState([]);
   const [eventDescription, setEventDescription] = useState("");
   const [eventLink, setEventLink] = useState("");
   const [rating, setRating] = useState(5);
@@ -1786,6 +1795,7 @@ export default function CityPage() {
         type,
         description,
         vibe,
+        vibe_tags: normalizeVibeTags(vibeTags, { max: 3 }),
         hours: placeHours,
         link: placeLink,
         location: address,
@@ -1813,6 +1823,7 @@ export default function CityPage() {
       setAddress("");
       setDescription("");
       setVibe("");
+      setVibeTags([]);
       setPlaceHours("");
       setPlaceLink("");
       setAddMode(false);
@@ -1858,7 +1869,10 @@ export default function CityPage() {
         start_date: startDate,
         end_date: endDate || startDate,
         location: eventAddress,
-        vibe: eventVibe.trim() || null,
+        ...buildVibeDualWriteFields({
+          vibe: eventVibe,
+          vibeTags: normalizeVibeTags(eventVibeTags, { max: 3 }),
+        }),
         description: eventDescription,
         link: eventLink,
       };
@@ -1871,11 +1885,12 @@ export default function CityPage() {
           (errorText.includes("start_date") || errorText.includes("end_date")) &&
           (errorText.includes("column") || errorText.includes("schema cache"));
         const missingVibe =
-          errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+          /\bvibe\b/.test(errorText) && (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
         const missingLocation =
           errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingDateRange || missingVibe || missingLocation) {
+        if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
           const legacyPayload = {
             name: eventName,
             city,
@@ -1887,6 +1902,12 @@ export default function CityPage() {
           };
           if (!missingVibe) {
             legacyPayload.vibe = eventVibe.trim() || null;
+          }
+          if (!missingVibeTags) {
+            legacyPayload.vibe_tags = buildVibeDualWriteFields({
+              vibe: eventVibe,
+              vibeTags: normalizeVibeTags(eventVibeTags, { max: 3 }),
+            }).vibe_tags;
           }
           insertResult = await supabase.from("events").insert([legacyPayload]).select("*").single();
         }
@@ -1920,6 +1941,7 @@ export default function CityPage() {
       setEventStartDate("");
       setEventEndDate("");
       setEventVibe("");
+      setEventVibeTags([]);
       setEventDescription("");
       setEventLink("");
       setAddEventMode(false);
@@ -2231,7 +2253,10 @@ export default function CityPage() {
         name: placeAdminDraft.name.trim(),
         type: placeAdminDraft.type,
         description: placeAdminDraft.description.trim(),
-        vibe: placeAdminDraft.vibe.trim(),
+        ...buildVibeDualWriteFields({
+          vibe: placeAdminDraft.vibe,
+          vibeTags: normalizeVibeTags(placeAdminDraft.vibe_tags, { max: 3 }),
+        }),
         location: locationValue || null,
         hours: placeAdminDraft.hours.trim(),
         link: placeAdminDraft.link.trim() || null,
@@ -2251,10 +2276,16 @@ export default function CityPage() {
           const errorText = `${updateResult.error?.code || ""} ${updateResult.error?.message || ""}`.toLowerCase();
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVibeTags = isMissingVibeTagsColumnError(updateResult.error);
 
-          if (missingLocation) {
+          if (missingLocation || missingVibeTags) {
             const fallbackPayload = { ...payload };
-            delete fallbackPayload.location;
+            if (missingLocation) {
+              delete fallbackPayload.location;
+            }
+            if (missingVibeTags) {
+              delete fallbackPayload.vibe_tags;
+            }
             updateResult = await supabase
               .from("places")
               .update(fallbackPayload)
@@ -2284,10 +2315,16 @@ export default function CityPage() {
           const errorText = `${insertResult.error?.code || ""} ${insertResult.error?.message || ""}`.toLowerCase();
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
 
-          if (missingLocation) {
+          if (missingLocation || missingVibeTags) {
             insertPayload = { ...insertPayload };
-            delete insertPayload.location;
+            if (missingLocation) {
+              delete insertPayload.location;
+            }
+            if (missingVibeTags) {
+              delete insertPayload.vibe_tags;
+            }
             insertResult = await supabase
               .from("places")
               .insert([insertPayload])
@@ -2452,7 +2489,10 @@ export default function CityPage() {
         location: locationValue,
         lat: nextLat,
         lng: nextLng,
-        vibe: eventAdminDraft.vibe.trim() || null,
+        ...buildVibeDualWriteFields({
+          vibe: eventAdminDraft.vibe,
+          vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags, { max: 3 }),
+        }),
         description: eventAdminDraft.description.trim(),
         link: eventAdminDraft.link.trim() || null,
       };
@@ -2471,11 +2511,12 @@ export default function CityPage() {
             (errorText.includes("start_date") || errorText.includes("end_date")) &&
             (errorText.includes("column") || errorText.includes("schema cache"));
           const missingVibe =
-            errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+            /\bvibe\b/.test(errorText) && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVibeTags = isMissingVibeTagsColumnError(updateResult.error);
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingLocation) {
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
             const legacyPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -2486,6 +2527,12 @@ export default function CityPage() {
             };
             if (!missingVibe) {
               legacyPayload.vibe = eventAdminDraft.vibe.trim() || null;
+            }
+            if (!missingVibeTags) {
+              legacyPayload.vibe_tags = buildVibeDualWriteFields({
+                vibe: eventAdminDraft.vibe,
+                vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags, { max: 3 }),
+              }).vibe_tags;
             }
             updateResult = await supabase
               .from("events")
@@ -2524,11 +2571,12 @@ export default function CityPage() {
             (errorText.includes("start_date") || errorText.includes("end_date")) &&
             (errorText.includes("column") || errorText.includes("schema cache"));
           const missingVibe =
-            errorText.includes("vibe") && (errorText.includes("column") || errorText.includes("schema cache"));
+            /\bvibe\b/.test(errorText) && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingLocation) {
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
             const legacyInsertPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -2540,6 +2588,12 @@ export default function CityPage() {
             };
             if (!missingVibe) {
               legacyInsertPayload.vibe = eventAdminDraft.vibe.trim() || null;
+            }
+            if (!missingVibeTags) {
+              legacyInsertPayload.vibe_tags = buildVibeDualWriteFields({
+                vibe: eventAdminDraft.vibe,
+                vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags, { max: 3 }),
+              }).vibe_tags;
             }
             insertResult = await supabase
               .from("events")
@@ -2797,7 +2851,19 @@ export default function CityPage() {
           <div className="mb-6 space-y-3 rounded-[28px] border border-emerald-300/12 bg-[linear-gradient(180deg,rgba(9,36,30,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(16,185,129,0.08)]">
             <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Place name" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (vibe, crowd, energy...)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <input value={vibe} onChange={(event) => setVibe(event.target.value)} placeholder="Vibe (for example Chill, Techno, Luxury)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+            <VibeTagPicker
+              value={vibeTags}
+              onChange={setVibeTags}
+              tone="emerald"
+              title="Venue vibe tags"
+              hint="Choose up to 3 tags for standardized discovery."
+            />
+            <input
+              value={vibe}
+              onChange={(event) => setVibe(event.target.value)}
+              placeholder="Legacy vibe label (optional)"
+              className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
+            />
             <input value={placeHours} onChange={(event) => setPlaceHours(event.target.value)} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={placeLink} onChange={(event) => setPlaceLink(event.target.value)} placeholder="Official link (website, Instagram, Facebook) - optional" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
@@ -2818,7 +2884,19 @@ export default function CityPage() {
           <div ref={addEventFormRef} className="mb-6 space-y-3 rounded-[28px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(28,19,56,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(139,92,246,0.08)]">
             <input value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="Event name" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <textarea value={eventDescription} onChange={(event) => setEventDescription(event.target.value)} placeholder="Description (what is this event?)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <input value={eventVibe} onChange={(event) => setEventVibe(event.target.value)} placeholder="Vibe (for example Festival, Circuit, Queer arts)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+            <VibeTagPicker
+              value={eventVibeTags}
+              onChange={setEventVibeTags}
+              tone="violet"
+              title="Event vibe tags"
+              hint="Choose up to 3 tags for search and trip planner."
+            />
+            <input
+              value={eventVibe}
+              onChange={(event) => setEventVibe(event.target.value)}
+              placeholder="Legacy vibe label (optional)"
+              className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
+            />
             <input value={eventLink} onChange={(event) => setEventLink(event.target.value)} placeholder="Event link (Instagram, RA, etc)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
             <div className="grid gap-3 sm:grid-cols-2">
@@ -3437,11 +3515,7 @@ export default function CityPage() {
                 <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/72">
                   {polishEventDescription(featuredEvent, cityName)}
                 </p>
-                {featuredEvent.vibe && (
-                  <p className="mb-2 inline-flex rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
-                    Vibe: {featuredEvent.vibe}
-                  </p>
-                )}
+                <VibeTagChips entity={featuredEvent} tone="amber" className="mb-2" includeMixedFallback />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-purple-200/90">Next notable event in this city</p>
                   <button
@@ -3517,11 +3591,7 @@ export default function CityPage() {
                   <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/70">
                     {polishEventDescription(event, cityName)}
                   </p>
-                  {event.vibe && (
-                    <p className="mb-2 inline-flex rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
-                      Vibe: {event.vibe}
-                    </p>
-                  )}
+                  <VibeTagChips entity={event} tone="amber" className="mb-2" includeMixedFallback />
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs text-purple-400">Community event</p>
                     <button
@@ -3755,11 +3825,7 @@ export default function CityPage() {
                           <span className={`rounded-full border border-white/16 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${style.label}`}>
                             {TYPE_LABELS[place.type] || "Place"}
                           </span>
-                          {place.vibe && (
-                            <span className="rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
-                              {place.vibe}
-                            </span>
-                          )}
+                          <VibeTagChips entity={place} className="" includeTypeFallback includeMixedFallback />
                         </div>
                       </div>
 
@@ -3877,6 +3943,13 @@ export default function CityPage() {
               </span>
             </div>
             <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedPlace.name}</h2>
+            <VibeTagChips
+              entity={selectedPlace}
+              tone="cyan"
+              className="mb-2"
+              includeTypeFallback
+              includeMixedFallback
+            />
             <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
               Address: {getEntityAddressLabel(selectedPlace)}
             </p>
@@ -4120,10 +4193,19 @@ export default function CityPage() {
                       placeholder="Description"
                       className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
+                    <VibeTagPicker
+                      value={placeAdminDraft.vibe_tags}
+                      onChange={(nextTags) =>
+                        setPlaceAdminDraft((current) => ({ ...current, vibe_tags: nextTags }))
+                      }
+                      tone="amber"
+                      title="Venue vibe tags"
+                      hint="Choose up to 3 tags."
+                    />
                     <input
                       value={placeAdminDraft.vibe}
                       onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
-                      placeholder="Vibe"
+                      placeholder="Legacy vibe label (optional)"
                       className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
                     <input
@@ -4369,11 +4451,7 @@ export default function CityPage() {
               )}
             </div>
             <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedEvent.name}</h2>
-            {selectedEvent.vibe && (
-              <p className="mb-2 inline-flex rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
-                Vibe: {selectedEvent.vibe}
-              </p>
-            )}
+            <VibeTagChips entity={selectedEvent} tone="amber" className="mb-2" includeMixedFallback />
             <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
               Address: {getEntityAddressLabel(selectedEvent)}
             </p>
@@ -4462,10 +4540,19 @@ export default function CityPage() {
                         placeholder="To"
                       />
                     </div>
+                    <VibeTagPicker
+                      value={eventAdminDraft.vibe_tags}
+                      onChange={(nextTags) =>
+                        setEventAdminDraft((current) => ({ ...current, vibe_tags: nextTags }))
+                      }
+                      tone="amber"
+                      title="Event vibe tags"
+                      hint="Choose up to 3 tags."
+                    />
                     <input
                       value={eventAdminDraft.vibe}
                       onChange={(event) => setEventAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
-                      placeholder="Vibe"
+                      placeholder="Legacy vibe label (optional)"
                       className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
                     />
                     <input

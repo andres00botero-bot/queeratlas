@@ -25,9 +25,16 @@ import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
+import {
+  buildVibeDualWriteFields,
+  inferVibeTagsFromLegacyVibe,
+  isMissingVibeTagsColumnError,
+  normalizeVibeTags,
+} from "@/lib/vibeTaxonomy";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
 import PageOpeningState from "@/components/ui/PageOpeningState";
+import VibeTagPicker from "@/components/ui/VibeTagPicker";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -132,6 +139,7 @@ export default function ContributePage() {
     hours: "",
     link: "",
     vibe: "",
+    vibe_tags: [],
     source: "",
     lastChecked: "",
   });
@@ -142,6 +150,8 @@ export default function ContributePage() {
     date: "",
     description: "",
     link: "",
+    vibe: "",
+    vibe_tags: [],
     source: "",
     lastChecked: "",
   });
@@ -231,11 +241,11 @@ export default function ContributePage() {
         const [placesRes, { data: eventsData, error: eventsError }] =
           await Promise.all([
             fetchPlacesQueryWithFallback({
-              select: "id, name, city, type, vibe, description, hours, link, lat, lng, source, lastChecked, verified",
+              select: "id, name, city, type, vibe, vibe_tags, description, hours, link, lat, lng, source, lastChecked, verified",
             }),
             supabase
               .from("events")
-              .select("id, name, city, description, date, link, lat, lng, source, lastChecked, verified"),
+              .select("id, name, city, vibe, vibe_tags, description, date, link, lat, lng, source, lastChecked, verified"),
           ]);
         const placesData = placesRes?.data || [];
         const placesError = placesRes?.error || null;
@@ -370,6 +380,7 @@ export default function ContributePage() {
         hours: placeForm.hours,
         link: placeForm.link,
         vibe: placeForm.vibe,
+        vibe_tags: normalizeVibeTags(placeForm.vibe_tags, { max: 3 }),
         lat: coords.lat,
         lng: coords.lng,
         city: cityName,
@@ -394,6 +405,7 @@ export default function ContributePage() {
         hours: "",
         link: "",
         vibe: "",
+        vibe_tags: [],
         source: "",
         lastChecked: "",
       });
@@ -429,21 +441,71 @@ export default function ContributePage() {
         return;
       }
 
-      const { data: createdEvent, error } = await supabase
+      const startDate = String(eventForm.date || "").trim();
+      const insertBasePayload = {
+        name: eventForm.name,
+        city: cityName,
+        lat: coords.lat,
+        lng: coords.lng,
+        date: startDate,
+        start_date: startDate,
+        end_date: startDate,
+        location: eventForm.address,
+        ...buildVibeDualWriteFields({
+          vibe: eventForm.vibe,
+          vibeTags: normalizeVibeTags(eventForm.vibe_tags, { max: 3 }),
+        }),
+        description: eventForm.description,
+        link: eventForm.link,
+      };
+
+      let insertResult = await supabase
         .from("events")
-        .insert([
-          {
+        .insert([insertBasePayload])
+        .select("*")
+        .single();
+
+      if (insertResult.error) {
+        const errorText = `${insertResult.error?.code || ""} ${insertResult.error?.message || ""}`.toLowerCase();
+        const missingDateRange =
+          (errorText.includes("start_date") || errorText.includes("end_date")) &&
+          (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingVibe =
+          /\bvibe\b/.test(errorText) &&
+          (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
+        const missingLocation =
+          errorText.includes("location") &&
+          (errorText.includes("column") || errorText.includes("schema cache"));
+
+        if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
+          const legacyPayload = {
             name: eventForm.name,
             city: cityName,
             lat: coords.lat,
             lng: coords.lng,
-            date: eventForm.date,
+            date: startDate,
             description: eventForm.description,
             link: eventForm.link,
-          },
-        ])
-        .select("*")
-        .single();
+          };
+          if (!missingVibe) {
+            legacyPayload.vibe = eventForm.vibe.trim() || null;
+          }
+          if (!missingVibeTags) {
+            legacyPayload.vibe_tags = buildVibeDualWriteFields({
+              vibe: eventForm.vibe,
+              vibeTags: normalizeVibeTags(eventForm.vibe_tags, { max: 3 }),
+            }).vibe_tags;
+          }
+          insertResult = await supabase
+            .from("events")
+            .insert([legacyPayload])
+            .select("*")
+            .single();
+        }
+      }
+
+      const { data: createdEvent, error } = insertResult;
 
       if (error) {
         captureOperationalError("save_event_fail", error, {
@@ -473,6 +535,8 @@ export default function ContributePage() {
         date: "",
         description: "",
         link: "",
+        vibe: "",
+        vibe_tags: [],
         source: "",
         lastChecked: "",
       });
@@ -582,9 +646,15 @@ export default function ContributePage() {
     const placeIssues = qaSnapshot.places
       .map((place) => {
         const issues = [];
+        const placeVibeTags = normalizeVibeTags(
+          Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
+            ? place.vibe_tags
+            : inferVibeTagsFromLegacyVibe(String(place?.vibe || "")),
+          { max: 3 }
+        );
         if (!String(place.description || "").trim()) issues.push("Missing description");
         if (String(place.description || "").trim().length < 140) issues.push("Description is short");
-        if (!String(place.vibe || "").trim()) issues.push("Missing vibe");
+        if (!String(place.vibe || "").trim() && placeVibeTags.length === 0) issues.push("Missing vibe");
         if (!String(place.hours || "").trim()) issues.push("Missing opening hours");
         if (!Number.isFinite(Number(place.lat)) || !Number.isFinite(Number(place.lng))) issues.push("Missing coordinates");
         return {
@@ -600,9 +670,16 @@ export default function ContributePage() {
     const eventIssues = qaSnapshot.events
       .map((event) => {
         const issues = [];
+        const eventVibeTags = normalizeVibeTags(
+          Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
+            ? event.vibe_tags
+            : inferVibeTagsFromLegacyVibe(String(event?.vibe || "")),
+          { max: 3 }
+        );
         if (!String(event.description || "").trim()) issues.push("Missing description");
         if (String(event.description || "").trim().length < 120) issues.push("Description is short");
         if (!String(event.date || "").trim()) issues.push("Missing date");
+        if (!String(event.vibe || "").trim() && eventVibeTags.length === 0) issues.push("Missing vibe");
         if (!String(event.link || "").trim()) issues.push("No official link");
         if (!Number.isFinite(Number(event.lat)) || !Number.isFinite(Number(event.lng))) issues.push("Missing coordinates");
         return {
@@ -768,23 +845,34 @@ export default function ContributePage() {
               <div className="mt-4 space-y-3 rounded-2xl border border-emerald-300/20 bg-emerald-300/6 p-4">
                 <Field value={placeForm.name} onChange={(event) => setPlaceForm((current) => ({ ...current, name: event.target.value }))} placeholder="Place name" />
                 <Field value={placeForm.city} onChange={(event) => setPlaceForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <select
-                    value={placeForm.type}
-                    onChange={(event) => setPlaceForm((current) => ({ ...current, type: event.target.value }))}
-                    className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <select
+                      value={placeForm.type}
+                      onChange={(event) => setPlaceForm((current) => ({ ...current, type: event.target.value }))}
+                      className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
                   >
                     {PLACE_TYPES.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                  <Field value={placeForm.vibe} onChange={(event) => setPlaceForm((current) => ({ ...current, vibe: event.target.value }))} placeholder="Vibe" />
-                </div>
-                <Field value={placeForm.address} onChange={(event) => setPlaceForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
-                <Field value={placeForm.hours} onChange={(event) => setPlaceForm((current) => ({ ...current, hours: event.target.value }))} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" />
-                <Field value={placeForm.link} onChange={(event) => setPlaceForm((current) => ({ ...current, link: event.target.value }))} placeholder="Official link (website, Instagram, Facebook) - optional" />
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Field
+                      value={placeForm.vibe}
+                      onChange={(event) => setPlaceForm((current) => ({ ...current, vibe: event.target.value }))}
+                      placeholder="Legacy vibe label (optional)"
+                    />
+                  </div>
+                  <VibeTagPicker
+                    value={placeForm.vibe_tags}
+                    onChange={(nextTags) => setPlaceForm((current) => ({ ...current, vibe_tags: nextTags }))}
+                    title="Place vibe tags"
+                    hint="Pick up to 3 standardized tags."
+                    tone="emerald"
+                  />
+                  <Field value={placeForm.address} onChange={(event) => setPlaceForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
+                  <Field value={placeForm.hours} onChange={(event) => setPlaceForm((current) => ({ ...current, hours: event.target.value }))} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" />
+                  <Field value={placeForm.link} onChange={(event) => setPlaceForm((current) => ({ ...current, link: event.target.value }))} placeholder="Official link (website, Instagram, Facebook) - optional" />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field value={placeForm.source} onChange={(event) => setPlaceForm((current) => ({ ...current, source: event.target.value }))} placeholder="Source URL or name (optional)" />
                   <DateInput
@@ -808,20 +896,32 @@ export default function ContributePage() {
             )}
 
             {addEventMode && (
-              <div className="mt-4 space-y-3 rounded-2xl border border-violet-300/20 bg-violet-300/6 p-4">
-                <Field value={eventForm.name} onChange={(event) => setEventForm((current) => ({ ...current, name: event.target.value }))} placeholder="Event name" />
-                <Field value={eventForm.city} onChange={(event) => setEventForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
-                <Field value={eventForm.address} onChange={(event) => setEventForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
+                <div className="mt-4 space-y-3 rounded-2xl border border-violet-300/20 bg-violet-300/6 p-4">
+                  <Field value={eventForm.name} onChange={(event) => setEventForm((current) => ({ ...current, name: event.target.value }))} placeholder="Event name" />
+                  <Field value={eventForm.city} onChange={(event) => setEventForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                  <Field value={eventForm.address} onChange={(event) => setEventForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
                 <DateInput
                   value={eventForm.date}
                   onChange={(event) => setEventForm((current) => ({ ...current, date: event.target.value }))}
                   className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
                   tone="violet"
-                />
-                <Field value={eventForm.link} onChange={(event) => setEventForm((current) => ({ ...current, link: event.target.value }))} placeholder="Event link (optional)" />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field value={eventForm.source} onChange={(event) => setEventForm((current) => ({ ...current, source: event.target.value }))} placeholder="Source URL or name (optional)" />
-                  <DateInput
+                  />
+                  <Field value={eventForm.link} onChange={(event) => setEventForm((current) => ({ ...current, link: event.target.value }))} placeholder="Event link (optional)" />
+                  <Field
+                    value={eventForm.vibe}
+                    onChange={(event) => setEventForm((current) => ({ ...current, vibe: event.target.value }))}
+                    placeholder="Legacy vibe label (optional)"
+                  />
+                  <VibeTagPicker
+                    value={eventForm.vibe_tags}
+                    onChange={(nextTags) => setEventForm((current) => ({ ...current, vibe_tags: nextTags }))}
+                    title="Event vibe tags"
+                    hint="Pick up to 3 standardized tags."
+                    tone="violet"
+                  />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field value={eventForm.source} onChange={(event) => setEventForm((current) => ({ ...current, source: event.target.value }))} placeholder="Source URL or name (optional)" />
+                    <DateInput
                     value={eventForm.lastChecked}
                     onChange={(event) => setEventForm((current) => ({ ...current, lastChecked: event.target.value }))}
                     className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"

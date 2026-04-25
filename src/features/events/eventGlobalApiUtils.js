@@ -1,11 +1,13 @@
 import { supabase } from "@/lib/supabase";
 import { mergeVibeIntoDescription } from "@/features/events/eventFormatUtils";
+import { buildVibeDualWriteFields, isMissingVibeTagsColumnError } from "@/lib/vibeTaxonomy";
 
 function buildFallbackPayload(payload, error) {
   const errorText = `${error?.code || ""} ${error?.message || ""}`.toLowerCase();
   const missingVibeColumn =
-    errorText.includes("vibe") &&
+    /\bvibe\b/.test(errorText) &&
     (errorText.includes("column") || errorText.includes("schema cache"));
+  const missingVibeTagsColumn = isMissingVibeTagsColumnError(error);
   const missingStartOrEnd =
     (errorText.includes("start_date") || errorText.includes("end_date")) &&
     (errorText.includes("column") || errorText.includes("schema cache"));
@@ -19,6 +21,10 @@ function buildFallbackPayload(payload, error) {
     delete fallbackPayload.vibe;
   }
 
+  if (missingVibeTagsColumn) {
+    delete fallbackPayload.vibe_tags;
+  }
+
   if (missingStartOrEnd) {
     delete fallbackPayload.start_date;
     delete fallbackPayload.end_date;
@@ -28,9 +34,13 @@ function buildFallbackPayload(payload, error) {
 }
 
 export async function insertGlobalEventRecord(payload) {
+  const vibeFields = buildVibeDualWriteFields({
+    vibe: payload.vibe,
+    vibeTags: payload.vibe_tags,
+  });
   const withVibe = {
     ...payload,
-    vibe: payload.vibe || null,
+    ...vibeFields,
   };
 
   const tryInsert = async (insertPayload) => (
@@ -46,9 +56,13 @@ export async function insertGlobalEventRecord(payload) {
 }
 
 export async function updateGlobalEventRecord(eventId, payload) {
+  const vibeFields = buildVibeDualWriteFields({
+    vibe: payload.vibe,
+    vibeTags: payload.vibe_tags,
+  });
   const withVibe = {
     ...payload,
-    vibe: payload.vibe || null,
+    ...vibeFields,
   };
 
   const tryUpdate = async (updatePayload) => (

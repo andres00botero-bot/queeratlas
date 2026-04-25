@@ -1,4 +1,5 @@
 import { normalizeEventRange, splitLegacyVibe } from "@/features/events/eventFormatUtils";
+import { inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 
 export function qualityPillClass(tone) {
   if (tone === "verified") {
@@ -18,6 +19,13 @@ export function qualityPillClass(tone) {
 
 export function mapGlobalEventRow(row) {
   const parsed = splitLegacyVibe(row.description || "");
+  const vibeValue = String(row.vibe || parsed.vibe || "").trim();
+  const vibeTags = normalizeVibeTags(
+    Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
+      ? row.vibe_tags
+      : inferVibeTagsFromLegacyVibe(vibeValue),
+    { max: 3 }
+  );
   return normalizeEventRange({
     id: String(row.id),
     name: row.name || "",
@@ -25,7 +33,8 @@ export function mapGlobalEventRow(row) {
     start_date: row.start_date || row.date || "",
     end_date: row.end_date || row.start_date || row.date || "",
     location: row.location || "",
-    vibe: row.vibe || parsed.vibe || "",
+    vibe: vibeValue,
+    vibe_tags: vibeTags,
     description: parsed.description || "",
     link: row.link || "",
     source: row.source || "",

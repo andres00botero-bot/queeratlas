@@ -11,6 +11,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { logDevError } from "@/lib/devLogger";
 import { resolveAdminAccess } from "@/lib/adminAccess";
+import { inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 import {
   fetchEventsData,
   fetchGlobalEventsData,
@@ -51,6 +52,7 @@ import EventQualityModal from "@/components/events/EventQualityModal";
 import GlobalEventForm from "@/components/events/GlobalEventForm";
 import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
+import VibeTagChips from "@/components/ui/VibeTagChips";
 
 export default function EventsPage() {
   const router = useRouter();
@@ -82,6 +84,7 @@ export default function EventsPage() {
     endDate: "",
     location: "",
     vibe: "",
+    vibe_tags: [],
     description: "",
     link: "",
   });
@@ -583,6 +586,13 @@ export default function EventsPage() {
 
     const normalized = normalizeEventRange(event || {});
     setCityEditError("");
+    const eventVibe = String(event?.vibe || "");
+    const eventVibeTags = normalizeVibeTags(
+      Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
+        ? event.vibe_tags
+        : inferVibeTagsFromLegacyVibe(eventVibe),
+      { max: 3 }
+    );
     setCityEditDraft({
       id: String(event?.id || ""),
       city: String(event?.city || ""),
@@ -590,7 +600,8 @@ export default function EventsPage() {
       startDate: String(normalized.startDate || ""),
       endDate: String(normalized.endDate || ""),
       location: String(event?.location || ""),
-      vibe: String(event?.vibe || ""),
+      vibe: eventVibe,
+      vibe_tags: eventVibeTags,
       description: String(event?.description || ""),
       link: String(event?.link || ""),
     });
@@ -633,6 +644,7 @@ export default function EventsPage() {
       end_date: endDate || startDate,
       location: cityEditDraft.location || null,
       vibe: cityEditDraft.vibe || null,
+      vibe_tags: normalizeVibeTags(cityEditDraft.vibe_tags, { max: 3 }),
       description: cityEditDraft.description || null,
       link: cityEditDraft.link || null,
     };
@@ -797,11 +809,7 @@ export default function EventsPage() {
                         </button>
                       </div>
                       <p className="mt-3 text-base font-semibold text-white">{event.name}</p>
-                      {event.vibe && (
-                        <p className="mt-2 inline-flex rounded-full border border-amber-200/25 bg-amber-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
-                          Vibe: {event.vibe}
-                        </p>
-                      )}
+                      <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
                       {quality.lastChecked && (
                         <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
                           Checked {formatDateLabel(quality.lastChecked)}
@@ -1047,11 +1055,7 @@ export default function EventsPage() {
                               <p className="mt-3 text-sm leading-7 text-white/68">
                                 {event.description || "No description yet."}
                               </p>
-                              {event.vibe && (
-                                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-amber-200/75">
-                                  Vibe: {event.vibe}
-                                </p>
-                              )}
+                              <VibeTagChips entity={event} tone="amber" className="mt-3" includeMixedFallback />
                               {event.isGlobal && event.location && (
                                 <p className="mt-3 text-xs uppercase tracking-[0.18em] text-cyan-200/75">
                                   Location: {event.location}
@@ -1258,11 +1262,7 @@ export default function EventsPage() {
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-cyan-200/72">
                       {event.location}
                     </p>
-                    {event.vibe && (
-                      <p className="mt-2 text-xs uppercase tracking-[0.18em] text-amber-200/75">
-                        Vibe: {event.vibe}
-                      </p>
-                    )}
+                    <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
                     {event.description && (
                       <p className="mt-3 text-sm leading-7 text-white/66">{event.description}</p>
                     )}

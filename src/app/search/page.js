@@ -13,6 +13,9 @@ import { getEntityQuality, getQualityMap, getQualityStatus } from "@/lib/quality
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
+import { formatVibeTagLabel, normalizeVibeTag } from "@/lib/vibeTaxonomy";
+import { resolveVibeTagsForEntity } from "@/lib/vibeDisplay";
+import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
 
 const TYPE_FILTERS = ["all", "city", "place", "event"];
@@ -20,6 +23,14 @@ const QUALITY_FILTERS = ["all", "verified", "needs_refresh", "unverified"];
 
 function normalizeValue(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function resolveItemVibeTags(item = {}) {
+  if (item?.type === "city") {
+    const cityKey = normalizeVibeTag(item?.vibe || "");
+    return cityKey ? [cityKey] : [];
+  }
+  return resolveVibeTagsForEntity(item, { max: 3 });
 }
 
 function SearchResultSkeleton({ tone = "rose" }) {
@@ -122,15 +133,18 @@ export default function SearchPage() {
   }, [events, places]);
 
   const vibeOptions = useMemo(() => {
-    const configVibes = Object.values(cityConfig).map((city) => city.vibe || "").filter(Boolean);
-    const placeVibes = places.map((item) => item.vibe || item.type || "").filter(Boolean);
-    const eventVibes = events.map((item) => item.vibe || "").filter(Boolean);
-
-    const vibes = [...configVibes, ...placeVibes, ...eventVibes]
-      .map((item) => String(item || "").trim())
+    const configVibeTags = Object.values(cityConfig)
+      .map((city) => normalizeVibeTag(city.vibe || ""))
       .filter(Boolean);
-
-    return ["all", ...new Set(vibes)].sort((a, b) => a.localeCompare(b));
+    const placeVibeTags = places.flatMap((item) => resolveItemVibeTags(item));
+    const eventVibeTags = events.flatMap((item) => resolveItemVibeTags(item));
+    const keys = [...new Set([...configVibeTags, ...placeVibeTags, ...eventVibeTags])].sort((a, b) =>
+      String(formatVibeTagLabel(a) || a).localeCompare(String(formatVibeTagLabel(b) || b))
+    );
+    return [
+      { value: "all", label: "All vibes" },
+      ...keys.map((key) => ({ value: key, label: formatVibeTagLabel(key) || key })),
+    ];
   }, [events, places]);
 
   const filteredAll = useMemo(() => {
@@ -143,8 +157,8 @@ export default function SearchPage() {
       }
 
       if (vibeFilter !== "all") {
-        const itemVibe = item.vibe || item.type || "";
-        if (normalizeValue(itemVibe) !== normalizeValue(vibeFilter)) return false;
+        const itemVibeTags = resolveItemVibeTags(item);
+        if (!itemVibeTags.includes(vibeFilter)) return false;
       }
 
       if (qualityFilter !== "all" && (item.type === "place" || item.type === "event")) {
@@ -284,8 +298,8 @@ export default function SearchPage() {
                 className="mt-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm outline-none"
               >
                 {vibeOptions.map((vibe) => (
-                  <option key={vibe} value={vibe}>
-                    {vibe === "all" ? "All vibes" : vibe}
+                  <option key={vibe.value} value={vibe.value}>
+                    {vibe.label}
                   </option>
                 ))}
               </select>
@@ -383,12 +397,12 @@ export default function SearchPage() {
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {filteredResults.cities.map((city) => (
                 <button key={city.id} onClick={() => openResult(city)} className="rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition hover:border-cyan-200/30">
-                  <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">{city.country}</p>
-                  <p className="mt-2 text-base font-semibold">{city.title}</p>
-                  <p className="mt-2 text-xs text-white/45">Vibe: {city.vibe || "mixed"}</p>
-                </button>
-              ))}
-            </div>
+                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">{city.country}</p>
+                <p className="mt-2 text-base font-semibold">{city.title}</p>
+                <VibeTagChips entity={city} tone="cyan" className="mt-2" includeMixedFallback />
+              </button>
+            ))}
+          </div>
           </section>
         )}
 
@@ -450,6 +464,7 @@ export default function SearchPage() {
                         {qualityStatus.label}
                       </span>
                     </div>
+                    <VibeTagChips entity={place} tone="rose" className="mt-2" includeTypeFallback includeMixedFallback />
                   </div>
                 );
               })}
@@ -515,6 +530,7 @@ export default function SearchPage() {
                         {qualityStatus.label}
                       </span>
                     </div>
+                    <VibeTagChips entity={event} tone="violet" className="mt-2" includeMixedFallback />
                   </div>
                 );
               })}

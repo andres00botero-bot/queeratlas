@@ -12,6 +12,7 @@ import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
+import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
 
 function isThisWeek(value, now) {
@@ -1529,7 +1530,7 @@ export default function NowPage() {
                   <p className="text-xs text-white/55">Rating {formatRatingValue(place.avgRating)}</p>
                 </div>
                 <h3 className="mt-2 text-lg font-semibold text-white">{place.name}</h3>
-                <p className="mt-2 text-sm text-emerald-100/85">{place.vibe || place.type || "Queer signal"}</p>
+                <VibeTagChips entity={place} tone="emerald" className="mt-2" includeTypeFallback includeMixedFallback />
                 <p className={`mt-3 text-sm leading-6 text-white/65 ${isExpanded ? "" : "line-clamp-2"}`}>
                   {place.description || "A place drawing real community attention right now."}
                 </p>

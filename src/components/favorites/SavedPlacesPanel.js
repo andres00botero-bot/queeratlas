@@ -1,5 +1,7 @@
 "use client";
 
+import VibeTagChips from "@/components/ui/VibeTagChips";
+
 export default function SavedPlacesPanel({
   isAtlasLoading = false,
   savedPlaces = [],
@@ -57,9 +59,13 @@ export default function SavedPlacesPanel({
                 </div>
               </div>
 
-              <p className="mt-3 text-sm capitalize text-rose-100/72">
-                {String(place.vibe || place.type || "signal").replaceAll("_", " ")}
-              </p>
+              <VibeTagChips
+                entity={place}
+                tone="rose"
+                className="mt-3"
+                includeTypeFallback
+                includeMixedFallback
+              />
 
               {place.description && (
                 <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/46">

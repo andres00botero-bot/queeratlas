@@ -1,4 +1,5 @@
 import DateInput from "@/components/ui/DateInput";
+import VibeTagPicker from "@/components/ui/VibeTagPicker";
 
 export default function GlobalEventForm({
   open,
@@ -56,11 +57,20 @@ export default function GlobalEventForm({
         placeholder="Location (e.g. Mediterranean Sea, Alps, Desert Camp) *"
         required
       />
+      <div className="md:col-span-2">
+        <VibeTagPicker
+          value={globalForm.vibe_tags}
+          onChange={(nextTags) => setGlobalForm((current) => ({ ...current, vibe_tags: nextTags }))}
+          tone="cyan"
+          title="Event vibe tags"
+          hint="Pick up to 3 tags. This keeps global events searchable."
+        />
+      </div>
       <input
         value={globalForm.vibe}
         onChange={(event) => setGlobalForm((current) => ({ ...current, vibe: event.target.value }))}
         className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
-        placeholder="Vibe (e.g. circuit, beach, queer arts, cozy social)"
+        placeholder="Legacy vibe label (optional)"
       />
       <textarea
         value={globalForm.description}

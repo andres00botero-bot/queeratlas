@@ -17,6 +17,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
+import { resolvePrimaryVibeKey, resolvePrimaryVibeLabel } from "@/lib/vibeDisplay";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import {
   formatCheckinTime,
@@ -640,13 +641,14 @@ export default function FavoritesPage() {
   }, [checkinCityOptions, checkinForm.city, setCheckinForm]);
 
   const vibeCount = savedPlaces.reduce((acc, place) => {
-    const vibe = place.vibe || place.type || "Mixed";
-    acc[vibe] = (acc[vibe] || 0) + 1;
+    const vibeKey = resolvePrimaryVibeKey(place, { includeTypeFallback: true }) || "mixed";
+    acc[vibeKey] = (acc[vibeKey] || 0) + 1;
     return acc;
   }, {});
 
-  const topVibe =
-    Object.entries(vibeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "Open";
+  const topVibeKey =
+    Object.entries(vibeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "mixed";
+  const topVibe = resolvePrimaryVibeLabel({ vibe_tags: [topVibeKey] }, { fallback: "Mixed" });
 
   const recentSaves = [...added]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -1040,7 +1042,7 @@ export default function FavoritesPage() {
         savedCityCounts.set(cityKey, (savedCityCounts.get(cityKey) || 0) + 1);
       }
 
-      const vibeKey = String(place.vibe || place.type || "").trim().toLowerCase();
+      const vibeKey = resolvePrimaryVibeKey(place, { includeTypeFallback: true });
       if (vibeKey) {
         savedVibeCounts.set(vibeKey, (savedVibeCounts.get(vibeKey) || 0) + 1);
       }
@@ -1060,7 +1062,7 @@ export default function FavoritesPage() {
       .filter((place) => !favoriteIdSet.has(String(place.id)) && !blocked.places.has(String(place.id)))
       .map((place) => {
         const cityKey = normalizeCityKey(place.city);
-        const placeVibe = String(place.vibe || place.type || "").trim().toLowerCase();
+        const placeVibe = resolvePrimaryVibeKey(place, { includeTypeFallback: true });
         const placeType = String(place.type || "").trim().toLowerCase();
         let score = 0;
         if (cityKey && cityKey === topSavedCity) score += modeWeights.savedCity;
@@ -1076,7 +1078,7 @@ export default function FavoritesPage() {
           id: String(place.id),
           city: place.city || "",
           name: place.name || "Place",
-          subtitle: String(place.vibe || place.type || "Venue").replaceAll("_", " "),
+          subtitle: resolvePrimaryVibeLabel(place, { includeTypeFallback: true, fallback: "Venue" }),
           score,
           reasonBase:
             cityKey && cityKey === topSavedCity
@@ -1921,7 +1923,7 @@ export default function FavoritesPage() {
             <div className="qa-card qa-metric-card rounded-3xl border border-amber-200/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.16),rgba(251,191,36,0.06))] p-5 backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Top vibe</p>
               <p className="mt-3 text-3xl font-semibold capitalize text-white">
-                {String(topVibe).replaceAll("_", " ")}
+                {topVibe}
               </p>
             </div>
           </div>

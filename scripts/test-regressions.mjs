@@ -10,6 +10,17 @@ import {
   shouldFallbackFromPlacesWithStats,
 } from "../src/lib/supabaseErrorGuards.js";
 import {
+  buildVibeDualWriteFields,
+  STANDARD_VIBE_TAGS,
+  formatVibeTagLabel,
+  inferVibeTagsFromLegacyVibe,
+  isMissingVibeTagsColumnError,
+  normalizeVibeTag,
+  normalizeVibeTags,
+  primaryVibeFromTags,
+  validateVibeTags,
+} from "../src/lib/vibeTaxonomy.js";
+import {
   selectCityEventById,
   selectCityEventsAll,
   selectVisibleCityEvents,
@@ -358,6 +369,222 @@ function testSharedDateDisplayUsage() {
   );
 }
 
+function testVibeTaxonomyContract() {
+  const expectedVibes = [
+    "techno",
+    "pop",
+    "mixed",
+    "electronic",
+    "men_only",
+    "after",
+    "chill",
+    "cultural",
+    "fetish",
+    "social",
+    "cozy",
+    "massive",
+    "luxury",
+    "festival",
+    "underground",
+    "cruise",
+    "relax",
+    "drag",
+    "industrial",
+  ];
+
+  const definedKeys = STANDARD_VIBE_TAGS.map((item) => item.key);
+  assert(
+    definedKeys.length === expectedVibes.length,
+    "vibe taxonomy: should expose the full standardized vibe list"
+  );
+  assert(
+    expectedVibes.every((key) => definedKeys.includes(key)),
+    "vibe taxonomy: standardized vibe keys should match expected set"
+  );
+
+  assert(
+    normalizeVibeTag("Men-only") === "men_only",
+    "vibe taxonomy: Men-only alias should normalize correctly"
+  );
+  assert(
+    normalizeVibeTag("afterhours") === "after",
+    "vibe taxonomy: afterhours alias should normalize correctly"
+  );
+
+  const normalized = normalizeVibeTags(["Techno", "techno", "POP", "Afterhours", "unknown"], { max: 3 });
+  assert(
+    JSON.stringify(normalized) === JSON.stringify(["techno", "pop", "after"]),
+    "vibe taxonomy: normalization should dedupe, canonicalize, and enforce max=3"
+  );
+
+  const validation = validateVibeTags(["Techno", "Pop", "afterhours", "underground"], { max: 3 });
+  assert(
+    validation.isValid === false && validation.errors.some((item) => item.includes("maximum of 3")),
+    "vibe taxonomy: validation should block more than three selected tags"
+  );
+
+  const legacy = inferVibeTagsFromLegacyVibe("Leather warehouse afterhours night with drag show", { max: 3 });
+  assert(
+    legacy.length > 0 && legacy.includes("fetish"),
+    "vibe taxonomy: legacy inference should detect fetish-related keywords"
+  );
+
+  assert(
+    primaryVibeFromTags(["Pop", "Techno"]) === "pop",
+    "vibe taxonomy: primary vibe should resolve from normalized tag order"
+  );
+  assert(
+    formatVibeTagLabel("men_only") === "Men-only",
+    "vibe taxonomy: label formatter should return canonical display label"
+  );
+
+  const dualWriteFields = buildVibeDualWriteFields({ vibe: "afterhours techno" });
+  assert(
+    Array.isArray(dualWriteFields.vibe_tags) && dualWriteFields.vibe_tags.length > 0,
+    "vibe taxonomy: dual-write fields should infer vibe_tags from legacy vibe text"
+  );
+
+  const wrappedMissingColumn = {
+    message:
+      "{\"message\":\"column events.vibe_tags does not exist\",\"code\":\"42703\",\"details\":\"\",\"hint\":\"\"}",
+  };
+  assert(
+    isMissingVibeTagsColumnError(wrappedMissingColumn) === true,
+    "vibe taxonomy: missing vibe_tags column should be detected from wrapped errors"
+  );
+}
+
+function testVibeTagsDualWriteWiring() {
+  const cityEventsApiSource = readFileSync(new URL("../src/features/events/eventCityApiUtils.js", import.meta.url), "utf8");
+  const globalEventsApiSource = readFileSync(new URL("../src/features/events/eventGlobalApiUtils.js", import.meta.url), "utf8");
+  const usePlacesSource = readFileSync(new URL("../src/lib/usePlaces.js", import.meta.url), "utf8");
+  const cityPageSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const eventsPageSource = readFileSync(new URL("../src/app/events/page.js", import.meta.url), "utf8");
+  const cityEventEditModalSource = readFileSync(new URL("../src/components/events/CityEventEditModal.js", import.meta.url), "utf8");
+  const globalEventFormSource = readFileSync(new URL("../src/components/events/GlobalEventForm.js", import.meta.url), "utf8");
+  const globalFormUtilsSource = readFileSync(new URL("../src/features/events/eventGlobalFormUtils.js", import.meta.url), "utf8");
+  const migrationSource = readFileSync(new URL("../supabase/vibe-tags-v1.sql", import.meta.url), "utf8");
+  const backfillSource = readFileSync(new URL("../supabase/vibe-tags-backfill-v1.sql", import.meta.url), "utf8");
+
+  assert(
+    cityEventsApiSource.includes("buildVibeDualWriteFields") &&
+      cityEventsApiSource.includes("vibe_tags"),
+    "vibe dual-write wiring: city events API should write vibe_tags with fallback helper"
+  );
+  assert(
+    globalEventsApiSource.includes("buildVibeDualWriteFields") &&
+      globalEventsApiSource.includes("vibe_tags"),
+    "vibe dual-write wiring: global events API should write vibe_tags with fallback helper"
+  );
+  assert(
+    usePlacesSource.includes("buildVibeDualWriteFields") &&
+      usePlacesSource.includes("isMissingVibeTagsColumnError"),
+    "vibe dual-write wiring: places data hook should dual-write and fallback on missing vibe_tags"
+  );
+  assert(
+    cityPageSource.includes("vibeTags: normalizeVibeTags(eventVibeTags") &&
+      cityPageSource.includes("vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags") &&
+      cityPageSource.includes("<VibeTagPicker"),
+    "vibe dual-write wiring: city page should bind standardized vibe tag state in event flows"
+  );
+  assert(
+    eventsPageSource.includes("vibe_tags: normalizeVibeTags(cityEditDraft.vibe_tags") &&
+      eventsPageSource.includes("inferVibeTagsFromLegacyVibe"),
+    "vibe dual-write wiring: events page city edit flow should preserve and write vibe_tags"
+  );
+  assert(
+    cityEventEditModalSource.includes("<VibeTagPicker") &&
+      globalEventFormSource.includes("<VibeTagPicker"),
+    "vibe dual-write wiring: city/global event forms should render standardized vibe picker UI"
+  );
+  assert(
+    globalFormUtilsSource.includes("vibe_tags: []") &&
+      globalFormUtilsSource.includes("vibeTags: globalForm.vibe_tags"),
+    "vibe dual-write wiring: global form helpers should carry vibe_tags through state and payload"
+  );
+  assert(
+    migrationSource.includes("add column if not exists vibe_tags text[]") &&
+      migrationSource.includes("qa_events_vibe_tags_allowed"),
+    "vibe dual-write wiring: migration should add vibe_tags columns and whitelist constraints"
+  );
+  assert(
+    backfillSource.includes("create or replace function public.qa_infer_vibe_tags") &&
+      backfillSource.includes("update public.places") &&
+      backfillSource.includes("update public.events") &&
+      backfillSource.includes("update public.global_events"),
+    "vibe dual-write wiring: backfill migration should infer and populate vibe_tags for existing rows"
+  );
+}
+
+function testContributeAndSearchUseStandardizedVibeTags() {
+  const contributeSource = readFileSync(new URL("../src/app/contribute/page.js", import.meta.url), "utf8");
+  const searchPageSource = readFileSync(new URL("../src/app/search/page.js", import.meta.url), "utf8");
+  const searchLibSource = readFileSync(new URL("../src/lib/search.js", import.meta.url), "utf8");
+
+  assert(
+    contributeSource.includes('import VibeTagPicker from "@/components/ui/VibeTagPicker";') &&
+      contributeSource.includes("vibe_tags: []"),
+    "vibe standardization: contribute page should expose vibe_tags state and picker UI"
+  );
+  assert(
+    contributeSource.includes("buildVibeDualWriteFields") &&
+      contributeSource.includes("isMissingVibeTagsColumnError"),
+    "vibe standardization: contribute event submit should dual-write vibe_tags with fallback handling"
+  );
+  assert(
+    searchPageSource.includes("resolveItemVibeTags") &&
+      searchPageSource.includes("itemVibeTags.includes(vibeFilter)"),
+    "vibe standardization: search page should filter by normalized vibe tags"
+  );
+  assert(
+    searchLibSource.includes("resolveEntityVibeTags") &&
+      searchLibSource.includes("vibe_tags: placeVibeTags") &&
+      searchLibSource.includes("vibe_tags: eventVibeTags"),
+    "vibe standardization: search index builder should rank and return normalized vibe tags"
+  );
+}
+
+function testVibeTagChipsRenderingWiring() {
+  const vibeDisplaySource = readFileSync(new URL("../src/lib/vibeDisplay.js", import.meta.url), "utf8");
+  const vibeTagChipsSource = readFileSync(new URL("../src/components/ui/VibeTagChips.js", import.meta.url), "utf8");
+  const searchPageSource = readFileSync(new URL("../src/app/search/page.js", import.meta.url), "utf8");
+  const nowPageSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+  const cityPageSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const savedPlacesPanelSource = readFileSync(new URL("../src/components/favorites/SavedPlacesPanel.js", import.meta.url), "utf8");
+  const savedEventsPanelSource = readFileSync(new URL("../src/components/favorites/SavedEventsPanel.js", import.meta.url), "utf8");
+
+  assert(
+    vibeDisplaySource.includes("resolveVibeTagsForEntity") &&
+      vibeDisplaySource.includes("resolvePrimaryVibeLabel"),
+    "vibe chips: display helper should expose normalized vibe tag and label resolvers"
+  );
+  assert(
+    vibeTagChipsSource.includes("resolveVibeTagLabelsForEntity") &&
+      vibeTagChipsSource.includes("includeMixedFallback"),
+    "vibe chips: shared chip component should render normalized labels with fallback options"
+  );
+  assert(
+    searchPageSource.includes('import VibeTagChips from "@/components/ui/VibeTagChips";') &&
+      searchPageSource.includes("<VibeTagChips"),
+    "vibe chips: search page should render vibe chips"
+  );
+  assert(
+    nowPageSource.includes('import VibeTagChips from "@/components/ui/VibeTagChips";') &&
+      nowPageSource.includes("<VibeTagChips"),
+    "vibe chips: now page should render vibe chips for trending places"
+  );
+  assert(
+    cityPageSource.includes('import VibeTagChips from "@/components/ui/VibeTagChips";') &&
+      cityPageSource.includes("<VibeTagChips"),
+    "vibe chips: city page should render vibe chips in events and places"
+  );
+  assert(
+    savedPlacesPanelSource.includes("<VibeTagChips") &&
+      savedEventsPanelSource.includes("<VibeTagChips"),
+    "vibe chips: favorites panels should render vibe chips"
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -373,6 +600,10 @@ function run() {
   testPlacesAtlasNormalizesRatingFields();
   testSharedAdminAccessResolverUsage();
   testSharedDateDisplayUsage();
+  testVibeTaxonomyContract();
+  testVibeTagsDualWriteWiring();
+  testContributeAndSearchUseStandardizedVibeTags();
+  testVibeTagChipsRenderingWiring();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");

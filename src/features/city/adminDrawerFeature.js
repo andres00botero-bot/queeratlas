@@ -1,4 +1,5 @@
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
+import { inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 
 export function normalizeExternalUrl(value = "") {
   const raw = String(value || "").trim();
@@ -37,11 +38,19 @@ export function getEntityAddressLabel(entity) {
 }
 
 export function buildPlaceAdminDraft(place) {
+  const vibeValue = String(place?.vibe || "");
+  const vibeTags = normalizeVibeTags(
+    Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
+      ? place.vibe_tags
+      : inferVibeTagsFromLegacyVibe(vibeValue),
+    { max: 3 }
+  );
   return {
     name: String(place?.name || ""),
     type: String(place?.type || "bar"),
     description: String(place?.description || ""),
-    vibe: String(place?.vibe || ""),
+    vibe: vibeValue,
+    vibe_tags: vibeTags,
     location: String(place?.location || ""),
     hours: String(place?.hours || ""),
     link: String(place?.link || ""),
@@ -50,12 +59,20 @@ export function buildPlaceAdminDraft(place) {
 
 export function buildEventAdminDraft(event) {
   const normalized = normalizeEventRange(event || {});
+  const vibeValue = String(event?.vibe || "");
+  const vibeTags = normalizeVibeTags(
+    Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
+      ? event.vibe_tags
+      : inferVibeTagsFromLegacyVibe(vibeValue),
+    { max: 3 }
+  );
   return {
     name: String(event?.name || ""),
     startDate: String(normalized.startDate || ""),
     endDate: String(normalized.endDate || ""),
     location: String(event?.location || ""),
-    vibe: String(event?.vibe || ""),
+    vibe: vibeValue,
+    vibe_tags: vibeTags,
     description: String(event?.description || ""),
     link: String(event?.link || ""),
   };

@@ -19,9 +19,16 @@ import {
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { getKpiSummary } from "@/lib/analytics";
 import { resolveAdminAccess } from "@/lib/adminAccess";
+import {
+  buildVibeDualWriteFields,
+  isMissingVibeTagsColumnError,
+  normalizeVibeTags,
+} from "@/lib/vibeTaxonomy";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
+import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import VibeTagChips from "@/components/ui/VibeTagChips";
 
 const FIXED_LOG_KEY = "qa_admin_fixed_log";
 const AUDIT_LOG_KEY = "qa_admin_audit_log";
@@ -69,6 +76,20 @@ function formatDbError(error) {
   return message;
 }
 
+function isMissingRelationError(error) {
+  if (!error) return false;
+  const code = String(error.code || "").toUpperCase();
+  const text = `${error.message || ""} ${error.details || ""} ${error.hint || ""}`.toLowerCase();
+  return code === "42P01" || text.includes("relation") && text.includes("does not exist");
+}
+
+function formatPercent(part, total) {
+  const numerator = Number(part || 0);
+  const denominator = Number(total || 0);
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return "0%";
+  return `${Math.round((numerator / denominator) * 100)}%`;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
@@ -88,6 +109,7 @@ export default function AdminPage() {
   const [blockedItems, setBlockedItems] = useState([]);
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
+  const [globalEvents, setGlobalEvents] = useState([]);
   const [qualityMap, setQualityMap] = useState({});
   const [fixedLog, setFixedLog] = useState(() => readLocalJson(FIXED_LOG_KEY, {}));
   const [queueCityFilter, setQueueCityFilter] = useState("all");
@@ -95,6 +117,12 @@ export default function AdminPage() {
   const [queueEntityFilter, setQueueEntityFilter] = useState("all");
   const [selectedReportIds, setSelectedReportIds] = useState([]);
   const [selectedQueueKeys, setSelectedQueueKeys] = useState([]);
+  const [selectedVibeKeys, setSelectedVibeKeys] = useState([]);
+  const [vibeDraftTags, setVibeDraftTags] = useState([]);
+  const [vibeEntityFilter, setVibeEntityFilter] = useState("all");
+  const [vibeCityFilter, setVibeCityFilter] = useState("all");
+  const [vibeStatusFilter, setVibeStatusFilter] = useState("all");
+  const [latestVibeMigrationRun, setLatestVibeMigrationRun] = useState(null);
   const [auditLog, setAuditLog] = useState(() => readLocalJson(AUDIT_LOG_KEY, []));
   const [weeklyRoutine, setWeeklyRoutine] = useState(() =>
     readLocalJson(ROUTINE_KEY, {
@@ -118,24 +146,46 @@ export default function AdminPage() {
     setIsRefreshing(true);
     setWarning("");
     try {
-      const [placesCountRes, eventsCountRes, globalEventsRes, moderationRes, placesRes, eventsRes] = await Promise.all([
+      const [placesCountRes, eventsCountRes, globalEventsRes, moderationRes, placesRes, eventsRes, globalListRes] =
+        await Promise.all([
         fetchPlacesQueryWithFallback({ select: "*", options: { count: "exact", head: true } }),
         supabase.from("events").select("*", { count: "exact", head: true }),
         supabase.from("global_events").select("*", { count: "exact", head: true }),
         syncModerationFromCloud(),
-        fetchPlacesQueryWithFallback({ select: "id,name,city,type" }),
-        supabase.from("events").select("id,name,city,date"),
+        fetchPlacesQueryWithFallback({ select: "id,name,city,type,vibe,vibe_tags" }),
+        supabase.from("events").select("id,name,city,date,vibe,vibe_tags"),
+        supabase.from("global_events").select("id,name,city,date,vibe,vibe_tags"),
       ]);
 
       const reportsRows = moderationRes?.reports || getReports();
       const blockedRows = moderationRes?.blockedItems || getBlockedItems();
       const placesRows = Array.isArray(placesRes.data) ? placesRes.data : [];
       const eventsRows = Array.isArray(eventsRes.data) ? eventsRes.data : [];
+      const globalRows = Array.isArray(globalListRes.data) ? globalListRes.data : [];
+      let migrationRunWarning = "";
+      let nextLatestRun = null;
+
+      const latestRunRes = await supabase
+        .from("qa_vibe_migration_runs")
+        .select("run_id,status,created_at,staged_at,applied_at,reverted_at,updated_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestRunRes.error && !isMissingRelationError(latestRunRes.error)) {
+        migrationRunWarning = `Vibe migration run status unavailable: ${formatDbError(
+          latestRunRes.error
+        )}`;
+      } else {
+        nextLatestRun = latestRunRes.data || null;
+      }
 
       setReports(reportsRows);
       setBlockedItems(blockedRows);
       setPlaces(placesRows);
       setEvents(eventsRows);
+      setGlobalEvents(globalRows);
+      setLatestVibeMigrationRun(nextLatestRun);
       setQualityMap(getQualityMap());
       setSelectedReportIds((current) =>
         current.filter((id) => reportsRows.some((row) => String(row.id) === String(id)))
@@ -148,8 +198,8 @@ export default function AdminPage() {
         blockedItems: blockedRows.length,
       });
 
-      if (moderationRes?.warning) {
-        setWarning(moderationRes.warning);
+      if (moderationRes?.warning || migrationRunWarning) {
+        setWarning([moderationRes?.warning, migrationRunWarning].filter(Boolean).join(" "));
       }
 
       setLastSyncedAt(new Date().toISOString());
@@ -289,10 +339,224 @@ export default function AdminPage() {
   const firstStaleQueueItem = useMemo(() => filteredRefreshQueue[0] || null, [filteredRefreshQueue]);
   const firstOpenReport = useMemo(() => openReports[0] || null, [openReports]);
 
+  const vibeQueue = useMemo(() => {
+    const placeItems = places.map((item) => ({
+      key: `place:${item.id}`,
+      targetType: "place",
+      targetId: String(item.id),
+      city: String(item.city || ""),
+      type: String(item.type || ""),
+      name: item.name || "Place",
+      vibe: String(item.vibe || ""),
+      vibe_tags: normalizeVibeTags(item.vibe_tags, { max: 3 }),
+    }));
+
+    const eventItems = events.map((item) => ({
+      key: `event:${item.id}`,
+      targetType: "event",
+      targetId: String(item.id),
+      city: String(item.city || ""),
+      type: "event",
+      name: item.name || "Event",
+      vibe: String(item.vibe || ""),
+      vibe_tags: normalizeVibeTags(item.vibe_tags, { max: 3 }),
+    }));
+
+    const globalEventItems = globalEvents.map((item) => ({
+      key: `global_event:${item.id}`,
+      targetType: "global_event",
+      targetId: String(item.id),
+      city: String(item.city || ""),
+      type: "off-grid event",
+      name: item.name || "Off-grid event",
+      vibe: String(item.vibe || ""),
+      vibe_tags: normalizeVibeTags(item.vibe_tags, { max: 3 }),
+    }));
+
+    return [...placeItems, ...eventItems, ...globalEventItems].sort((a, b) => {
+      const cityCompare = String(a.city || "").localeCompare(String(b.city || ""));
+      if (cityCompare !== 0) return cityCompare;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+  }, [events, globalEvents, places]);
+
+  const vibeCityOptions = useMemo(
+    () =>
+      [...new Set(vibeQueue.map((item) => item.city).filter(Boolean))].sort((a, b) =>
+        String(a).localeCompare(String(b))
+      ),
+    [vibeQueue]
+  );
+
+  const filteredVibeQueue = useMemo(() => {
+    const filtered = vibeQueue.filter((item) => {
+      const cityOk = vibeCityFilter === "all" || item.city === vibeCityFilter;
+      const entityOk = vibeEntityFilter === "all" || item.targetType === vibeEntityFilter;
+      const statusOk =
+        vibeStatusFilter === "all" ||
+        (vibeStatusFilter === "missing" && item.vibe_tags.length === 0) ||
+        (vibeStatusFilter === "tagged" && item.vibe_tags.length > 0);
+      return cityOk && entityOk && statusOk;
+    });
+
+    if (vibeStatusFilter !== "all") return filtered;
+
+    return filtered.slice().sort((a, b) => {
+      const aMissing = a.vibe_tags.length === 0 ? 1 : 0;
+      const bMissing = b.vibe_tags.length === 0 ? 1 : 0;
+      if (aMissing !== bMissing) return bMissing - aMissing;
+
+      const cityCompare = String(a.city || "").localeCompare(String(b.city || ""));
+      if (cityCompare !== 0) return cityCompare;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+  }, [vibeCityFilter, vibeEntityFilter, vibeQueue, vibeStatusFilter]);
+
+  const filteredMissingVibeQueue = useMemo(
+    () => filteredVibeQueue.filter((item) => item.vibe_tags.length === 0),
+    [filteredVibeQueue]
+  );
+  const missingVibeRowsForCsv = useMemo(
+    () =>
+      filteredMissingVibeQueue.map((item) => ({
+        key: item.key,
+        target_type: item.targetType,
+        target_id: item.targetId,
+        city: item.city || "",
+        entity_type: item.type || "",
+        name: item.name || "",
+        legacy_vibe: item.vibe || "",
+      })),
+    [filteredMissingVibeQueue]
+  );
+  const legacyVibeRowsForCsv = useMemo(
+    () =>
+      filteredVibeQueue
+        .filter((item) => String(item.vibe || "").trim() !== "")
+        .map((item) => {
+          const legacyMappedTags = normalizeVibeTags([item.vibe], { max: 3 });
+          return {
+            key: item.key,
+            target_type: item.targetType,
+            target_id: item.targetId,
+            city: item.city || "",
+            entity_type: item.type || "",
+            name: item.name || "",
+            legacy_vibe: item.vibe || "",
+            current_vibe_tags: Array.isArray(item.vibe_tags) ? item.vibe_tags.join("|") : "",
+            legacy_maps_to_tags: legacyMappedTags.join("|"),
+            needs_manual_review: legacyMappedTags.length === 0 ? "yes" : "no",
+          };
+        }),
+    [filteredVibeQueue]
+  );
+
+  const vibeCoverageCards = useMemo(() => {
+    const buildCard = (key, label, rows) => {
+      const total = Array.isArray(rows) ? rows.length : 0;
+      const tagged = (Array.isArray(rows) ? rows : []).filter(
+        (row) => normalizeVibeTags(row?.vibe_tags, { max: 3 }).length > 0
+      ).length;
+      const missing = Math.max(total - tagged, 0);
+      return {
+        key,
+        label,
+        total,
+        tagged,
+        missing,
+        percentLabel: formatPercent(tagged, total),
+      };
+    };
+
+    const cards = [
+      buildCard("places", "Places", places),
+      buildCard("events", "City events", events),
+      buildCard("global_events", "Off-grid events", globalEvents),
+    ];
+
+    const totals = cards.reduce(
+      (acc, card) => ({
+        total: acc.total + card.total,
+        tagged: acc.tagged + card.tagged,
+        missing: acc.missing + card.missing,
+      }),
+      { total: 0, tagged: 0, missing: 0 }
+    );
+
+    return {
+      cards,
+      totals: {
+        ...totals,
+        percentLabel: formatPercent(totals.tagged, totals.total),
+      },
+    };
+  }, [events, globalEvents, places]);
+
+  const vibeMigrationHealth = useMemo(() => {
+    const missing = Number(vibeCoverageCards?.totals?.missing || 0);
+    const allClear = missing === 0;
+    return {
+      allClear,
+      label: allClear ? "Migration healthy" : "Migration needs attention",
+      detail: allClear
+        ? "No rows are missing vibe tags."
+        : `${missing} row${missing === 1 ? "" : "s"} still missing tags.`,
+      toneClass: allClear
+        ? "border-emerald-200/20 bg-emerald-200/10 text-emerald-100"
+        : "border-amber-200/24 bg-amber-200/12 text-amber-100",
+    };
+  }, [vibeCoverageCards]);
+
+  const vibeMigrationRunSummary = useMemo(() => {
+    if (!latestVibeMigrationRun) {
+      return {
+        label: "No run metadata",
+        detail: "No migration run found yet in this environment.",
+        toneClass: "border-white/12 bg-black/25 text-white/85",
+      };
+    }
+
+    const status = String(latestVibeMigrationRun.status || "unknown").toLowerCase();
+    const statusLabel =
+      status === "completed" || status === "applied"
+        ? "Applied"
+        : status === "staged"
+          ? "Staged"
+          : status === "reverted"
+            ? "Reverted"
+            : "Created";
+
+    const toneClass =
+      status === "completed" || status === "applied"
+        ? "border-emerald-200/20 bg-emerald-200/10 text-emerald-100"
+        : status === "staged"
+          ? "border-cyan-200/20 bg-cyan-200/10 text-cyan-100"
+          : status === "reverted"
+            ? "border-amber-200/24 bg-amber-200/12 text-amber-100"
+            : "border-white/12 bg-black/25 text-white/85";
+
+    const updatedAt =
+      latestVibeMigrationRun.updated_at ||
+      latestVibeMigrationRun.applied_at ||
+      latestVibeMigrationRun.staged_at ||
+      latestVibeMigrationRun.created_at;
+
+    return {
+      label: `Latest run: ${statusLabel}`,
+      detail: `${latestVibeMigrationRun.run_id || "unknown"} · ${timeAgo(updatedAt)}`,
+      toneClass,
+    };
+  }, [latestVibeMigrationRun]);
+
   useEffect(() => {
     const allowed = new Set(filteredRefreshQueue.map((item) => String(item.key)));
     setSelectedQueueKeys((current) => current.filter((key) => allowed.has(String(key))));
   }, [filteredRefreshQueue]);
+
+  useEffect(() => {
+    const allowed = new Set(filteredVibeQueue.map((item) => String(item.key)));
+    setSelectedVibeKeys((current) => current.filter((key) => allowed.has(String(key))));
+  }, [filteredVibeQueue]);
 
   const appendAuditLog = (action, detail = "") => {
     const actor = String(memberName || user?.email || "admin");
@@ -318,6 +582,13 @@ export default function AdminPage() {
   const toggleQueueSelection = (queueKey) => {
     const key = String(queueKey);
     setSelectedQueueKeys((current) =>
+      current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
+    );
+  };
+
+  const toggleVibeSelection = (queueKey) => {
+    const key = String(queueKey);
+    setSelectedVibeKeys((current) =>
       current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
     );
   };
@@ -431,6 +702,15 @@ export default function AdminPage() {
       return;
     }
     router.push(citySelectionPath(item.city, { placeId: item.targetId }));
+  };
+
+  const openVibeItem = (item) => {
+    if (!item?.targetType || !item?.targetId) return;
+    if (item.targetType === "global_event") {
+      router.push(`/events?offgridEventId=global-${encodeURIComponent(String(item.targetId))}`);
+      return;
+    }
+    openQueueItem(item);
   };
 
   const quickVerifyFirstStale = () => {
@@ -673,6 +953,162 @@ export default function AdminPage() {
       showToast(`Deleted ${deleted}. Skipped ${skipped}.`, { tone: "ok", duration: 2300 });
     }
     await loadAdminState();
+  };
+
+  const updateEntityVibeTags = async (item, nextTags) => {
+    if (!item?.targetType || !item?.targetId) {
+      return { error: { message: "Missing target metadata." } };
+    }
+
+    const tableMap = {
+      place: "places",
+      event: "events",
+      global_event: "global_events",
+    };
+    const tableName = tableMap[item.targetType];
+    if (!tableName) {
+      return { error: { message: "Unsupported target type." } };
+    }
+
+    const normalizedTags = normalizeVibeTags(nextTags, { max: 3 });
+    const vibeFields = buildVibeDualWriteFields({
+      vibe: item.vibe,
+      vibeTags: normalizedTags,
+    });
+
+    const targetIdValue =
+      item.targetType === "place" && Number.isFinite(Number(item.targetId))
+        ? Number(item.targetId)
+        : String(item.targetId);
+
+    const tryUpdate = async (payload) =>
+      supabase.from(tableName).update(payload).eq("id", targetIdValue).select("id,vibe,vibe_tags").single();
+
+    let attempt = await tryUpdate(vibeFields);
+    if (!attempt.error) return attempt;
+
+    const errorText = `${attempt.error?.code || ""} ${attempt.error?.message || ""}`.toLowerCase();
+    const missingVibeColumn =
+      /\bvibe\b/.test(errorText) &&
+      (errorText.includes("column") || errorText.includes("schema cache"));
+    const missingVibeTagsColumn = isMissingVibeTagsColumnError(attempt.error);
+
+    if (!missingVibeColumn && !missingVibeTagsColumn) return attempt;
+
+    const fallbackPayload = { ...vibeFields };
+    if (missingVibeColumn) delete fallbackPayload.vibe;
+    if (missingVibeTagsColumn) delete fallbackPayload.vibe_tags;
+    if (Object.keys(fallbackPayload).length === 0) return attempt;
+
+    attempt = await tryUpdate(fallbackPayload);
+    return attempt;
+  };
+
+  const runBulkApplyVibeTags = async (selectedItems, actionName, context = {}) => {
+    const normalizedTags = normalizeVibeTags(vibeDraftTags, { max: 3 });
+    if (normalizedTags.length === 0) {
+      showToast("Pick at least one vibe tag.", { tone: "info", duration: 1700 });
+      return;
+    }
+
+    if (selectedItems.length === 0) {
+      showToast("No matching items for current filters.", { tone: "info", duration: 1800 });
+      return;
+    }
+
+    const busyKey = "bulk-vibe-apply";
+    setBusyMap((current) => ({ ...current, [busyKey]: true }));
+    let updated = 0;
+    let failed = 0;
+
+    try {
+      for (const item of selectedItems) {
+        const result = await updateEntityVibeTags(item, normalizedTags);
+        if (result?.error) {
+          failed += 1;
+          continue;
+        }
+        updated += 1;
+      }
+
+      const entityFilterLabel = context.entityFilter || "all";
+      const cityFilterLabel = context.cityFilter || "all";
+      const statusFilterLabel = context.statusFilter || "all";
+      const modeLabel = context.mode || "selected";
+      const detail = [
+        `mode=${modeLabel}`,
+        `tags=[${normalizedTags.join(",")}]`,
+        `filters(entity=${entityFilterLabel},city=${cityFilterLabel},status=${statusFilterLabel})`,
+        `targeted=${selectedItems.length}`,
+        `updated=${updated}`,
+        `failed=${failed}`,
+      ].join(" | ");
+      appendAuditLog(actionName, detail);
+      if (failed > 0) {
+        showToast(`Updated ${updated}. Failed ${failed}.`, { tone: "warn", duration: 2600 });
+      } else {
+        showToast(`Updated ${updated} item${updated === 1 ? "" : "s"} vibe tags.`, {
+          tone: "ok",
+          duration: 2200,
+        });
+      }
+      setSelectedVibeKeys([]);
+      await loadAdminState();
+    } finally {
+      setBusyMap((current) => ({ ...current, [busyKey]: false }));
+    }
+  };
+
+  const bulkApplyVibeTags = async () => {
+    if (selectedVibeKeys.length === 0) {
+      showToast("Select items first.", { tone: "info", duration: 1700 });
+      return;
+    }
+    const selectedSet = new Set(selectedVibeKeys.map(String));
+    const selectedItems = filteredVibeQueue.filter((item) => selectedSet.has(String(item.key)));
+    await runBulkApplyVibeTags(selectedItems, "bulk_vibe_tags_set", {
+      mode: "selected",
+      entityFilter: vibeEntityFilter,
+      cityFilter: vibeCityFilter,
+      statusFilter: vibeStatusFilter,
+    });
+  };
+
+  const bulkApplyVibeTagsToMissingVisible = async () => {
+    if (filteredMissingVibeQueue.length === 0) {
+      showToast("No missing-tag rows in current filter.", { tone: "info", duration: 1800 });
+      return;
+    }
+    await runBulkApplyVibeTags(filteredMissingVibeQueue, "bulk_vibe_tags_set_missing_visible", {
+      mode: "missing_visible",
+      entityFilter: vibeEntityFilter,
+      cityFilter: vibeCityFilter,
+      statusFilter: vibeStatusFilter,
+    });
+  };
+
+  const focusMissingVibeCoverage = () => {
+    setVibeEntityFilter("all");
+    setVibeCityFilter("all");
+    setVibeStatusFilter("missing");
+    setSelectedVibeKeys([]);
+    showToast("Filtered to rows missing vibe tags.", { tone: "info", duration: 1700 });
+  };
+
+  const exportMissingVibeRowsCsv = () => {
+    if (missingVibeRowsForCsv.length === 0) {
+      showToast("No missing-tag rows in current filter.", { tone: "info", duration: 1700 });
+      return;
+    }
+    exportCsv(missingVibeRowsForCsv, `vibe-missing-rows-${Date.now()}.csv`);
+  };
+
+  const exportLegacyVibeRowsCsv = () => {
+    if (legacyVibeRowsForCsv.length === 0) {
+      showToast("No legacy vibe rows in current filter.", { tone: "info", duration: 1700 });
+      return;
+    }
+    exportCsv(legacyVibeRowsForCsv, `vibe-legacy-review-${Date.now()}.csv`);
   };
 
   const markRoutineDone = (key) => {
@@ -1269,6 +1705,212 @@ export default function AdminPage() {
             ) : (
               <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
                 Queue is clear for current filters.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-emerald-300/16 bg-[linear-gradient(180deg,rgba(6,42,30,0.84),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-100/80">Taxonomy ops</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Bulk vibe tags</h2>
+              <p className="mt-1 text-xs text-white/60">
+                Standardize vibe tags across places, city events, and off-grid events.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-xs text-emerald-100">
+                {filteredVibeQueue.length} items
+              </span>
+              <button
+                type="button"
+                onClick={focusMissingVibeCoverage}
+                disabled={vibeCoverageCards.totals.missing === 0}
+                className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-200/40 disabled:opacity-60"
+              >
+                Missing tags: {vibeCoverageCards.totals.missing}
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <article className={`rounded-2xl border p-3 ${vibeMigrationRunSummary.toneClass}`}>
+              <p className="text-[11px] uppercase tracking-[0.14em] opacity-85">Latest run</p>
+              <p className="mt-1 text-lg font-semibold text-white">{vibeMigrationRunSummary.label}</p>
+              <p className="mt-1 text-[11px] text-white/75">{vibeMigrationRunSummary.detail}</p>
+            </article>
+            <article className={`rounded-2xl border p-3 ${vibeMigrationHealth.toneClass}`}>
+              <p className="text-[11px] uppercase tracking-[0.14em] opacity-85">Migration health</p>
+              <p className="mt-1 text-lg font-semibold text-white">{vibeMigrationHealth.label}</p>
+              <p className="mt-1 text-[11px] text-white/75">{vibeMigrationHealth.detail}</p>
+            </article>
+            <article className="rounded-2xl border border-emerald-200/20 bg-emerald-200/10 p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-100/80">Total coverage</p>
+              <p className="mt-1 text-lg font-semibold text-white">{vibeCoverageCards.totals.percentLabel}</p>
+              <p className="mt-1 text-[11px] text-white/65">
+                tagged {vibeCoverageCards.totals.tagged}/{vibeCoverageCards.totals.total}
+              </p>
+            </article>
+            {vibeCoverageCards.cards.map((card) => (
+              <article key={`vibe-kpi-${card.key}`} className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/60">{card.label}</p>
+                <p className="mt-1 text-lg font-semibold text-white">{card.percentLabel}</p>
+                <p className="mt-1 text-[11px] text-white/60">
+                  missing {card.missing} of {card.total}
+                </p>
+              </article>
+            ))}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
+            <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+              <VibeTagPicker
+                value={vibeDraftTags}
+                onChange={setVibeDraftTags}
+                title="Vibe tags to apply"
+                hint="Pick up to 3 tags, then apply to selected rows."
+                tone="emerald"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={bulkApplyVibeTags}
+                  disabled={selectedVibeKeys.length === 0 || Boolean(busyMap["bulk-vibe-apply"])}
+                  className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40 disabled:opacity-60"
+                >
+                  {busyMap["bulk-vibe-apply"] ? "Applying..." : `Apply to selected (${selectedVibeKeys.length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={bulkApplyVibeTagsToMissingVisible}
+                  disabled={filteredMissingVibeQueue.length === 0 || Boolean(busyMap["bulk-vibe-apply"])}
+                  className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-200/40 disabled:opacity-60"
+                >
+                  {busyMap["bulk-vibe-apply"]
+                    ? "Applying..."
+                    : `Tag missing in view (${filteredMissingVibeQueue.length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedVibeKeys(filteredVibeQueue.map((item) => String(item.key)))}
+                  disabled={filteredVibeQueue.length === 0}
+                  className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/30 disabled:opacity-60"
+                >
+                  Select visible
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedVibeKeys([])}
+                  disabled={selectedVibeKeys.length === 0}
+                  className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/30 disabled:opacity-60"
+                >
+                  Clear selection
+                </button>
+                <button
+                  type="button"
+                  onClick={exportMissingVibeRowsCsv}
+                  disabled={missingVibeRowsForCsv.length === 0}
+                  className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
+                >
+                  Export missing CSV ({missingVibeRowsForCsv.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={exportLegacyVibeRowsCsv}
+                  disabled={legacyVibeRowsForCsv.length === 0}
+                  className="rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40 disabled:opacity-60"
+                >
+                  Export legacy CSV ({legacyVibeRowsForCsv.length})
+                </button>
+              </div>
+            </article>
+
+            <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Filters</p>
+              <div className="mt-3 grid gap-2">
+                <select
+                  value={vibeEntityFilter}
+                  onChange={(event) => setVibeEntityFilter(event.target.value)}
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
+                >
+                  <option value="all">All entity types</option>
+                  <option value="place">Places</option>
+                  <option value="event">City events</option>
+                  <option value="global_event">Off-grid events</option>
+                </select>
+                <select
+                  value={vibeCityFilter}
+                  onChange={(event) => setVibeCityFilter(event.target.value)}
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
+                >
+                  <option value="all">All cities</option>
+                  {vibeCityOptions.map((city) => (
+                    <option key={`vibe-city-${city}`} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={vibeStatusFilter}
+                  onChange={(event) => setVibeStatusFilter(event.target.value)}
+                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
+                >
+                  <option value="all">Tagged + missing</option>
+                  <option value="missing">Missing tags only</option>
+                  <option value="tagged">Tagged only</option>
+                </select>
+              </div>
+            </article>
+          </div>
+
+          <div className="mt-4 max-h-[460px] space-y-3 overflow-y-auto pr-1">
+            {filteredVibeQueue.length > 0 ? (
+              filteredVibeQueue.map((item) => (
+                <article key={item.key} className="rounded-2xl border border-white/12 bg-black/25 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <label className="mb-2 inline-flex cursor-pointer items-center gap-2 text-[11px] text-white/60">
+                        <input
+                          type="checkbox"
+                          checked={selectedVibeKeys.includes(String(item.key))}
+                          onChange={() => toggleVibeSelection(item.key)}
+                          className="h-3.5 w-3.5 rounded border-white/25 bg-black/40"
+                        />
+                        Select
+                      </label>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
+                        {formatTitle(item.targetType)} Â· {item.city || "Global"} Â· {formatTitle(item.type)}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-white">{item.name}</p>
+                      <VibeTagChips
+                        entity={item}
+                        tone="emerald"
+                        className="mt-2"
+                        includeTypeFallback={false}
+                        includeMixedFallback={false}
+                      />
+                      {item.vibe_tags.length === 0 && (
+                        <span className="mt-2 inline-flex rounded-full border border-amber-200/24 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
+                          No tags
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openVibeItem(item)}
+                        className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                      >
+                        Open item
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
+                No rows found for current vibe filters.
               </div>
             )}
           </div>
