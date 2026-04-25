@@ -503,17 +503,22 @@ export default function FavoritesPage() {
     });
   }, [isReady, isMember, loadFollowingCheckins, user?.id]);
 
+  const favoriteIdSet = useMemo(
+    () => new Set((favorites || []).map((item) => String(item))),
+    [favorites]
+  );
+
   const savedPlaces = useMemo(() => {
     return places
-      .filter((place) => favorites.includes(String(place.id)) && !blocked.places.has(String(place.id)))
+      .filter((place) => favoriteIdSet.has(String(place.id)) && !blocked.places.has(String(place.id)))
       .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
-  }, [blocked.places, favorites, places]);
+  }, [blocked.places, favoriteIdSet, places]);
 
   const savedEvents = useMemo(() => {
     return events
-      .filter((event) => favorites.includes(`event-${event.id}`) && !blocked.events.has(String(event.id)))
+      .filter((event) => favoriteIdSet.has(`event-${event.id}`) && !blocked.events.has(String(event.id)))
       .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
-  }, [blocked.events, favorites, events]);
+  }, [blocked.events, events, favoriteIdSet]);
 
   const totalPlaces = savedPlaces.length;
   const totalEvents = savedEvents.length;
@@ -1052,7 +1057,7 @@ export default function FavoritesPage() {
     const topVibeKey = [...savedVibeCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
 
     const recommendedPlaces = places
-      .filter((place) => !favorites.includes(String(place.id)) && !blocked.places.has(String(place.id)))
+      .filter((place) => !favoriteIdSet.has(String(place.id)) && !blocked.places.has(String(place.id)))
       .map((place) => {
         const cityKey = normalizeCityKey(place.city);
         const placeVibe = String(place.vibe || place.type || "").trim().toLowerCase();
@@ -1087,7 +1092,7 @@ export default function FavoritesPage() {
       .slice(0, 5);
 
     const recommendedEvents = events
-      .filter((event) => !favorites.includes(`event-${event.id}`) && !blocked.events.has(String(event.id)))
+      .filter((event) => !favoriteIdSet.has(`event-${event.id}`) && !blocked.events.has(String(event.id)))
       .map((event) => {
         const cityKey = normalizeCityKey(event.city);
         const eventDate = new Date(event.date || "");
@@ -1131,7 +1136,7 @@ export default function FavoritesPage() {
               ? `${item.reasonBase} Prioritizing peak energy and late momentum.`
               : `${item.reasonBase} Balanced between comfort and intensity.`,
       }));
-  }, [blocked.events, blocked.places, events, favorites, followingFeedItems, places, recommendationMode, savedPlaces]);
+  }, [blocked.events, blocked.places, events, favoriteIdSet, followingFeedItems, places, recommendationMode, savedPlaces]);
 
   const weeklyDigest = useMemo(() => {
     const weekAgo = nowTs - 7 * 24 * 60 * 60 * 1000;

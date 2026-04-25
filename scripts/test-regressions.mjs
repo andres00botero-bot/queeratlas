@@ -221,6 +221,54 @@ function testPlacesWithStatsMissingLocationGuard() {
   );
 }
 
+function testNowNewsAdminControls() {
+  const source = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+  assert(
+    source.includes('const rpcRes = await supabase.rpc("qa_is_admin");'),
+    "now news admin: now page should resolve admin state via qa_is_admin rpc"
+  );
+  assert(
+    source.includes("openEditNewsComposer(item);"),
+    "now news admin: admin cards should support opening edit composer"
+  );
+  assert(
+    source.includes('? "Update news"'),
+    "now news admin: composer should support update mode"
+  );
+}
+
+function testNowRankingAdminControls() {
+  const source = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+  assert(
+    source.includes("moveRankingDraftItem"),
+    "now ranking admin: ranking editor should support moving rows"
+  );
+  assert(
+    source.includes("Ranking save blocked. Every position from #1 to #15 must have a city."),
+    "now ranking admin: ranking editor should validate empty city slots"
+  );
+  assert(
+    source.includes("Duplicate cities found"),
+    "now ranking admin: ranking editor should validate duplicate cities"
+  );
+}
+
+function testPlacesAtlasNormalizesRatingFields() {
+  const source = readFileSync(new URL("../src/lib/placesDataApi.js", import.meta.url), "utf8");
+  assert(
+    source.includes("reviewCount,"),
+    "places atlas stats: data layer should expose reviewCount on place rows"
+  );
+  assert(
+    source.includes("avgRating,"),
+    "places atlas stats: data layer should expose avgRating on place rows"
+  );
+  assert(
+    source.includes('.from("reviews")'),
+    "places atlas stats: data layer should query reviews for fallback rating stats"
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -231,6 +279,9 @@ function run() {
   testAdminAndContributeUsePlacesFallbackLoader();
   testUsePlacesUsesFallbackLoader();
   testPlacesWithStatsMissingLocationGuard();
+  testNowNewsAdminControls();
+  testNowRankingAdminControls();
+  testPlacesAtlasNormalizesRatingFields();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");

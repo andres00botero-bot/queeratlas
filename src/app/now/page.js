@@ -30,6 +30,20 @@ function parseNewsTimestamp(value) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+function formatRatingValue(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return "N/A";
+  return numeric.toFixed(1);
+}
+
+function normalizeRankingDraftItem(item) {
+  return {
+    city: (item?.city || "").trim().toLowerCase().replaceAll(" ", "_"),
+    country: (item?.country || "").trim(),
+    signal: (item?.signal || "").trim(),
+  };
+}
+
 function compareNewsRecency(a, b) {
   const byCreatedAt =
     parseNewsTimestamp(b.createdAt || b.created_at) - parseNewsTimestamp(a.createdAt || a.created_at);
@@ -51,6 +65,16 @@ const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
 const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
 const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
 const NOW_EDITORIAL_CACHE_TTL_MS = 5 * 60 * 1000;
+function createAdminNewsFormDefault() {
+  return {
+    title: "",
+    city: "",
+    category: "culture_tip",
+    summary: "",
+    whyItMatters: "",
+    date: "",
+  };
+}
 const ATLAS_DESTINATION_RANKINGS = {
   2026: [
     { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
@@ -180,14 +204,8 @@ export default function NowPage() {
   const [isAdminByTable, setIsAdminByTable] = useState(false);
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [isPublishingNews, setIsPublishingNews] = useState(false);
-  const [adminForm, setAdminForm] = useState({
-    title: "",
-    city: "",
-    category: "culture_tip",
-    summary: "",
-    whyItMatters: "",
-    date: "",
-  });
+  const [editingNewsId, setEditingNewsId] = useState("");
+  const [adminForm, setAdminForm] = useState(() => createAdminNewsFormDefault());
 
   const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
@@ -330,11 +348,12 @@ export default function NowPage() {
     () => [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))].sort(),
     [events, places]
   );
+  const cityOptionSet = useMemo(() => new Set(cityOptions), [cityOptions]);
   const currentEmail = String(user?.email || "").toLowerCase();
   const isAdmin = isAdminByTable;
 
   useEffect(() => {
-    if (!isMember || !currentEmail) {
+    if (!isMember) {
       setIsAdminByTable(false);
       return;
     }
@@ -342,24 +361,36 @@ export default function NowPage() {
     let active = true;
 
     queueMicrotask(async () => {
-      const { data, error } = await supabase
-        .from("qa_admin_users")
-        .select("email")
-        .ilike("email", currentEmail)
-        .limit(1);
-
-      if (!active) return;
-
-      if (error) {
-        if (isMissingTableError(error)) {
-          setIsAdminByTable(false);
-          return;
+      let adminState = false;
+      try {
+        const rpcRes = await supabase.rpc("qa_is_admin");
+        if (!rpcRes.error) {
+          adminState = Boolean(rpcRes.data);
         }
-        setIsAdminByTable(false);
-        return;
+      } catch {
+        adminState = false;
       }
 
-      setIsAdminByTable((data || []).length > 0);
+      if (!adminState && currentEmail) {
+        try {
+          const { data, error } = await supabase
+            .from("qa_admin_users")
+            .select("email")
+            .ilike("email", currentEmail)
+            .limit(1);
+          adminState = !error && (data || []).length > 0;
+        } catch {
+          adminState = false;
+        }
+      }
+
+      if (!active) return;
+      setIsAdminByTable(adminState);
+      if (!adminState) {
+        setShowAdminForm(false);
+        setEditingNewsId("");
+        setAdminForm(createAdminNewsFormDefault());
+      }
     });
 
     return () => {
@@ -369,10 +400,12 @@ export default function NowPage() {
 
   const rankingYears = Object.keys(ATLAS_DESTINATION_RANKINGS).sort((a, b) => Number(b) - Number(a));
   const buildRankingDraftForYear = useCallback(
-    (year) =>
-      (rankingOverrides[year] || ATLAS_DESTINATION_RANKINGS[year] || [])
+    (year) => {
+      const source = (rankingOverrides[year] || ATLAS_DESTINATION_RANKINGS[year] || [])
         .slice(0, 15)
-        .map((item) => ({ ...item })),
+        .map((item) => ({ ...item }));
+      return Array.from({ length: 15 }, (_, index) => source[index] || { city: "", country: "", signal: "" });
+    },
     [rankingOverrides]
   );
   const baseRankingItems = useMemo(
@@ -451,7 +484,7 @@ export default function NowPage() {
         city: place.city || "City",
         category: "rising_spot",
         date: new Date().toISOString().slice(0, 10),
-        summary: `${place.type || "Venue"} | ${place.reviewCount || 0} reviews | rating ${place.avgRating?.toFixed(1) || "-"}`,
+        summary: `${place.type || "Venue"} | ${place.reviewCount || 0} reviews | rating ${formatRatingValue(place.avgRating)}`,
         whyItMatters: "Community traction is increasing, so this venue is becoming a higher-confidence choice.",
       })),
     [trendingPlaces]
@@ -478,13 +511,39 @@ export default function NowPage() {
       ...risingSpotsNews,
       ...majorEventNews,
     ];
+    const hiddenNewsIdSet = new Set((hiddenNewsIds || []).map((id) => String(id)));
 
     return combined
-      .filter((item) => !hiddenNewsIds.includes(String(item.id)))
+      .filter((item) => !hiddenNewsIdSet.has(String(item.id)))
       .sort(compareNewsRecency)
       .slice(0, 12);
   }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
   const displayedNewsItems = worldNewsItems.slice(0, 8);
+  const adminNewsIdSet = useMemo(
+    () => new Set((adminNews || []).map((item) => String(item.id))),
+    [adminNews]
+  );
+  const isEditingNews = Boolean(editingNewsId);
+
+  const resetAdminNewsComposer = useCallback(() => {
+    setEditingNewsId("");
+    setAdminForm(createAdminNewsFormDefault());
+    setShowAdminForm(false);
+  }, []);
+
+  const openEditNewsComposer = useCallback((item) => {
+    if (!item) return;
+    setEditingNewsId(String(item.id));
+    setShowAdminForm(true);
+    setAdminForm({
+      title: String(item.title || ""),
+      city: String(item.city || "").toLowerCase() === "global" ? "" : String(item.city || ""),
+      category: String(item.category || "culture_tip"),
+      summary: String(item.summary || ""),
+      whyItMatters: String(item.whyItMatters || ""),
+      date: String(item.date || ""),
+    });
+  }, []);
 
   const updateRankingDraftField = (index, field, value) => {
     setRankingDraft((current) =>
@@ -492,16 +551,55 @@ export default function NowPage() {
     );
   };
 
+  const moveRankingDraftItem = (index, direction) => {
+    setRankingDraft((current) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      const temp = next[index];
+      next[index] = next[nextIndex];
+      next[nextIndex] = temp;
+      return next;
+    });
+  };
+
+  const clearRankingDraftItem = (index) => {
+    setRankingDraft((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { city: "", country: "", signal: "" } : item
+      )
+    );
+  };
+
   const saveRankingDraft = async () => {
     if (!isAdmin) return;
+    const normalizedDraft = rankingDraft.map(normalizeRankingDraftItem);
+    const emptyRows = normalizedDraft
+      .map((item, index) => ({ index, city: item.city }))
+      .filter((item) => !item.city);
+    if (emptyRows.length > 0) {
+      setSyncWarning("Ranking save blocked. Every position from #1 to #15 must have a city.");
+      return;
+    }
+
+    const duplicateCitySet = new Set();
+    const duplicateCities = [];
+    normalizedDraft.forEach((item) => {
+      if (duplicateCitySet.has(item.city) && !duplicateCities.includes(item.city)) {
+        duplicateCities.push(item.city);
+      }
+      duplicateCitySet.add(item.city);
+    });
+    if (duplicateCities.length > 0) {
+      setSyncWarning(
+        `Ranking save blocked. Duplicate cities found: ${duplicateCities.join(", ")}.`
+      );
+      return;
+    }
 
     const next = {
       ...rankingOverrides,
-      [selectedRankingYear]: rankingDraft.map((item) => ({
-        city: (item.city || "").trim().toLowerCase().replaceAll(" ", "_"),
-        country: (item.country || "").trim(),
-        signal: (item.signal || "").trim(),
-      })),
+      [selectedRankingYear]: normalizedDraft,
     };
     const year = Number(selectedRankingYear);
     const rows = next[selectedRankingYear].map((item, index) => ({
@@ -562,8 +660,9 @@ export default function NowPage() {
     if (isPublishingNews) return;
     if (!adminForm.title || !adminForm.summary || !adminForm.whyItMatters) return;
 
+    const nextId = isEditingNews ? String(editingNewsId) : createClientId("admin-news");
     const item = {
-      id: createClientId("admin-news"),
+      id: nextId,
       title: adminForm.title,
       city: adminForm.city || "Global",
       category: adminForm.category || "culture_tip",
@@ -587,29 +686,49 @@ export default function NowPage() {
         source_name: item.sourceName,
       };
 
-      // Prefer canonical created_by (uuid) when available.
-      let { error } = await supabase.from(NEWS_TABLE).insert({
-        ...basePayload,
-        created_by: user?.id || null,
-      });
-
-      // Backward-compatible fallback for older schemas using created_by_email.
-      if (error && isMissingColumnError(error, "created_by")) {
-        const retry = await supabase.from(NEWS_TABLE).insert({
+      let error = null;
+      if (isEditingNews) {
+        const updateRes = await supabase
+          .from(NEWS_TABLE)
+          .update({
+            title: item.title,
+            city: item.city,
+            category: item.category,
+            date: item.date,
+            summary: item.summary,
+            why_it_matters: item.whyItMatters,
+            source_name: item.sourceName,
+          })
+          .eq("id", item.id);
+        error = updateRes.error;
+      } else {
+        // Prefer canonical created_by (uuid) when available.
+        const insertRes = await supabase.from(NEWS_TABLE).insert({
           ...basePayload,
-          created_by_email: currentEmail || null,
+          created_by: user?.id || null,
         });
-        error = retry.error;
-      }
+        error = insertRes.error;
 
-      // Final fallback if neither metadata column exists.
-      if (error && (isMissingColumnError(error, "created_by_email") || isMissingColumnError(error, "created_by"))) {
-        const retry = await supabase.from(NEWS_TABLE).insert(basePayload);
-        error = retry.error;
+        // Backward-compatible fallback for older schemas using created_by_email.
+        if (error && isMissingColumnError(error, "created_by")) {
+          const retry = await supabase.from(NEWS_TABLE).insert({
+            ...basePayload,
+            created_by_email: currentEmail || null,
+          });
+          error = retry.error;
+        }
+
+        // Final fallback if neither metadata column exists.
+        if (error && (isMissingColumnError(error, "created_by_email") || isMissingColumnError(error, "created_by"))) {
+          const retry = await supabase.from(NEWS_TABLE).insert(basePayload);
+          error = retry.error;
+        }
       }
 
       if (error && !isMissingTableError(error)) {
-        setSyncWarning(`Cloud sync failed. News was not published. ${String(error.message || "").trim()}`.trim());
+        setSyncWarning(
+          `Cloud sync failed. News was not ${isEditingNews ? "updated" : "published"}. ${String(error.message || "").trim()}`.trim()
+        );
         return;
       }
 
@@ -620,15 +739,7 @@ export default function NowPage() {
 
       await loadEditorialData({ forceRefresh: true });
 
-      setAdminForm({
-        title: "",
-        city: "",
-        category: "culture_tip",
-        summary: "",
-        whyItMatters: "",
-        date: "",
-      });
-      setShowAdminForm(false);
+      resetAdminNewsComposer();
     } finally {
       setIsPublishingNews(false);
     }
@@ -637,6 +748,9 @@ export default function NowPage() {
   const deleteFeedItem = async (itemId) => {
     if (!isAdmin) return;
     const key = String(itemId);
+    if (String(editingNewsId) === key) {
+      resetAdminNewsComposer();
+    }
 
     const { error: deleteNewsError } = await supabase.from(NEWS_TABLE).delete().eq("id", key);
     if (deleteNewsError && !isMissingTableError(deleteNewsError)) {
@@ -788,16 +902,27 @@ export default function NowPage() {
                 {isAdmin && (
                   <button
                     type="button"
-                    onClick={() => setShowAdminForm((current) => !current)}
+                    onClick={() => {
+                      if (showAdminForm) {
+                        resetAdminNewsComposer();
+                        return;
+                      }
+                      setEditingNewsId("");
+                      setAdminForm(createAdminNewsFormDefault());
+                      setShowAdminForm(true);
+                    }}
                     className="rounded-full border border-cyan-300/28 bg-cyan-300/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/45"
                   >
-                    {showAdminForm ? "Close admin publish" : "Admin publish"}
+                    {showAdminForm ? "Close admin composer" : "Admin publish"}
                   </button>
                 )}
               </div>
 
               {isAdmin && showAdminForm && (
                 <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
+                  <p className="md:col-span-2 text-xs uppercase tracking-[0.14em] text-cyan-100/85">
+                    {isEditingNews ? "Edit admin news" : "Publish admin news"}
+                  </p>
                   <input
                     value={adminForm.title}
                     onChange={(event) => setAdminForm((current) => ({ ...current, title: event.target.value }))}
@@ -847,7 +972,20 @@ export default function NowPage() {
                     disabled={isPublishingNews}
                     className="rounded-xl bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
                   >
-                    {isPublishingNews ? "Publishing..." : "Publish news"}
+                    {isPublishingNews
+                      ? isEditingNews
+                        ? "Updating..."
+                        : "Publishing..."
+                      : isEditingNews
+                        ? "Update news"
+                        : "Publish news"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetAdminNewsComposer}
+                    className="rounded-xl border border-white/16 bg-black/30 px-4 py-3 text-sm text-white/82 transition hover:border-white/28 md:col-span-2"
+                  >
+                    Cancel
                   </button>
                 </form>
               )}
@@ -860,7 +998,9 @@ export default function NowPage() {
 
               <div className="grid flex-1 content-start gap-4 md:grid-cols-2">
                 {displayedNewsItems.length > 0 ? (
-                  displayedNewsItems.map((item) => (
+                  displayedNewsItems.map((item) => {
+                    const canEditAdminNews = adminNewsIdSet.has(String(item.id));
+                    return (
                     <article
                       key={item.id}
                       role="button"
@@ -916,21 +1056,36 @@ export default function NowPage() {
                               : "Tap to expand"}
                           </span>
                           {isAdmin && (
-                            <button
-                              type="button"
-                              onClick={(clickEvent) => {
-                                clickEvent.stopPropagation();
-                                deleteFeedItem(item.id);
-                              }}
-                              className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
-                            >
-                              Delete
-                            </button>
+                            <>
+                              {canEditAdminNews && (
+                                <button
+                                  type="button"
+                                  onClick={(clickEvent) => {
+                                    clickEvent.stopPropagation();
+                                    openEditNewsComposer(item);
+                                  }}
+                                  className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/38"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(clickEvent) => {
+                                  clickEvent.stopPropagation();
+                                  deleteFeedItem(item.id);
+                                }}
+                                className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                              >
+                                Delete
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
                     </article>
-                  ))
+                    );
+                  })
                 ) : (
                   <EmptyState
                     title="No world news items yet."
@@ -939,6 +1094,8 @@ export default function NowPage() {
                     primaryActionLabel={isAdmin ? "Open admin publish" : "Open events"}
                     onPrimaryAction={() => {
                       if (isAdmin) {
+                        setEditingNewsId("");
+                        setAdminForm(createAdminNewsFormDefault());
                         setShowAdminForm(true);
                         return;
                       }
@@ -1033,7 +1190,7 @@ export default function NowPage() {
                     const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
                     const cityKey = String(item.city || "").toLowerCase();
                     const citySlug = cityKey.replaceAll(" ", "_").trim();
-                    const cityExists = cityOptions.includes(citySlug);
+                    const cityExists = cityOptionSet.has(citySlug);
                     const medalTone =
                       index === 0
                         ? "from-amber-200/90 via-yellow-200/70 to-amber-200/30 border-amber-200/35"
@@ -1082,7 +1239,7 @@ export default function NowPage() {
                   const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
                   const cityKey = String(item.city || "").toLowerCase();
                   const citySlug = cityKey.replaceAll(" ", "_").trim();
-                  const cityExists = cityOptions.includes(citySlug);
+                  const cityExists = cityOptionSet.has(citySlug);
                   const signalStrength = Math.max(22, 100 - index * 4);
                   return (
                     <div
@@ -1132,21 +1289,49 @@ export default function NowPage() {
                           </div>
                         </div>
                       )}
-                      <button
-                        type="button"
-                        disabled={!cityExists}
-                        onClick={() => {
-                          if (!cityExists) return;
-                          router.push(`/${citySlug}`);
-                        }}
-                        className={`rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] transition ${
-                          cityExists
-                            ? "border border-cyan-200/35 bg-cyan-200/12 text-cyan-100 hover:bg-cyan-200/22"
-                            : "border border-white/10 bg-white/5 text-white/35"
-                        }`}
-                      >
-                        {cityExists ? "Focus" : "Soon"}
-                      </button>
+                      {isAdmin && isRankingEditorOpen ? (
+                        <div className="flex flex-col gap-1">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => moveRankingDraftItem(index, -1)}
+                            className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
+                          >
+                            Up
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === 14}
+                            onClick={() => moveRankingDraftItem(index, 1)}
+                            className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
+                          >
+                            Down
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => clearRankingDraftItem(index)}
+                            className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={!cityExists}
+                          onClick={() => {
+                            if (!cityExists) return;
+                            router.push(`/${citySlug}`);
+                          }}
+                          className={`rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] transition ${
+                            cityExists
+                              ? "border border-cyan-200/35 bg-cyan-200/12 text-cyan-100 hover:bg-cyan-200/22"
+                              : "border border-white/10 bg-white/5 text-white/35"
+                          }`}
+                        >
+                          {cityExists ? "Focus" : "Soon"}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -1351,7 +1536,7 @@ export default function NowPage() {
                 <div className="mb-4 h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(16,185,129,0.96),rgba(52,211,153,0.55),rgba(16,185,129,0.2))]" />
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/80">{place.city}</p>
-                  <p className="text-xs text-white/55">* {place.avgRating?.toFixed(1) || "-"}</p>
+                  <p className="text-xs text-white/55">Rating {formatRatingValue(place.avgRating)}</p>
                 </div>
                 <h3 className="mt-2 text-lg font-semibold text-white">{place.name}</h3>
                 <p className="mt-2 text-sm text-emerald-100/85">{place.vibe || place.type || "Queer signal"}</p>
