@@ -1,3 +1,5 @@
+import { formatDateShort, formatDateTime } from "../../lib/dateDisplay.js";
+
 export function timeAgo(value) {
   if (!value) return "Recently";
   const diffHours = Math.round((new Date() - new Date(value)) / 3600000);
@@ -7,31 +9,15 @@ export function timeAgo(value) {
 }
 
 export function formatDate(value) {
-  if (!value) return "Date TBA";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-  });
+  return formatDateShort(value);
 }
 
 export function formatSavedTime(value) {
-  if (!value) return "Not saved yet";
-  return new Date(value).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(value, { fallback: "Not saved yet" });
 }
 
 export function formatCheckinTime(value) {
-  if (!value) return "Unknown time";
-  return new Date(value).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(value, { fallback: "Unknown time" });
 }
 
 export function isWithinDays(value, days) {

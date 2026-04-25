@@ -1,10 +1,7 @@
+import { formatDateLong } from "../../lib/dateDisplay.js";
+
 export function formatDate(value) {
-  if (!value) return "Date TBA";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  return formatDateLong(value);
 }
 
 export function normalizeIsoDate(value = "") {

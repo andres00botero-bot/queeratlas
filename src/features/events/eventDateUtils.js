@@ -1,5 +1,5 @@
 import { normalizeEventRange, normalizeIsoDate } from "@/features/events/eventFormatUtils";
-import { formatDateLong } from "@/lib/dateDisplay";
+import { formatDateLong } from "../../lib/dateDisplay.js";
 
 export function formatDateLabel(value) {
   return formatDateLong(value);

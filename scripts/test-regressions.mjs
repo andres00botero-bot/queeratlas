@@ -325,6 +325,8 @@ function testSharedDateDisplayUsage() {
   const nowSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
   const homeSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
   const eventDateSource = readFileSync(new URL("../src/features/events/eventDateUtils.js", import.meta.url), "utf8");
+  const cityEventDateSource = readFileSync(new URL("../src/features/city/eventRailFeature.js", import.meta.url), "utf8");
+  const favoritesDateSource = readFileSync(new URL("../src/features/favorites/favoritesPageUtils.js", import.meta.url), "utf8");
 
   assert(
     dateDisplaySource.includes("export function formatDateShort"),
@@ -343,8 +345,16 @@ function testSharedDateDisplayUsage() {
     "date display: home page should use shared date utility"
   );
   assert(
-    eventDateSource.includes('import { formatDateLong } from "@/lib/dateDisplay";'),
+    eventDateSource.includes("dateDisplay"),
     "date display: event date utils should use shared date utility"
+  );
+  assert(
+    cityEventDateSource.includes("dateDisplay"),
+    "date display: city event rail should use shared date utility"
+  );
+  assert(
+    favoritesDateSource.includes("dateDisplay"),
+    "date display: favorites utils should use shared date utility"
   );
 }
 
