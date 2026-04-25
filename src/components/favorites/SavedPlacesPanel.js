@@ -12,22 +12,22 @@ export default function SavedPlacesPanel({
   renderSkeleton,
 }) {
   return (
-    <section className="mb-8 rounded-[34px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-      <div className="mb-6 flex items-center justify-between gap-3">
+    <section className="mb-6 rounded-[30px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+          <h2 className="mt-1 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
             Saved places
           </h2>
-          <p className="mt-1 text-xs uppercase tracking-[0.22em] text-rose-200/70">
+          <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-rose-200/70">
             Places with gravity
           </p>
-          <p className="mt-3 text-sm leading-6 text-white/56">
+          <p className="mt-2 text-sm leading-6 text-white/56">
             Your core saved venues, ready to open fast when you plan your next move.
           </p>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {isAtlasLoading ? (
           Array.from({ length: 3 }).map((_, index) => (
             <div key={`place-skeleton-${index}`}>{renderSkeleton?.()}</div>
@@ -45,7 +45,7 @@ export default function SavedPlacesPanel({
                   onOpenPlace?.(place);
                 }
               }}
-              className="animate-rise-in cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5 transition duration-300 hover:-translate-y-[2px] hover:border-rose-200/18 hover:shadow-[0_24px_70px_rgba(0,0,0,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/45"
+              className="animate-rise-in cursor-pointer rounded-[22px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 transition duration-300 hover:-translate-y-[2px] hover:border-rose-200/18 hover:shadow-[0_20px_56px_rgba(0,0,0,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/45 sm:rounded-[24px] sm:p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -101,7 +101,7 @@ export default function SavedPlacesPanel({
             </div>
           ))
         ) : (
-          <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/48 md:col-span-2 xl:col-span-3">
+          <div className="rounded-[22px] border border-dashed border-white/10 px-5 py-8 text-sm text-white/48 md:col-span-2 xl:col-span-3">
             <p>No saved places yet.</p>
             <button
               type="button"

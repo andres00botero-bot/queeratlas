@@ -1871,7 +1871,7 @@ export default function FavoritesPage() {
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.14),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />
 
-        <section className="qa-panel relative mb-8 overflow-hidden rounded-[38px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.22),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.20),transparent_28%),linear-gradient(135deg,rgba(36,20,44,0.96),rgba(10,10,10,0.99),rgba(14,28,26,0.98))] p-8 shadow-[0_40px_140px_rgba(0,0,0,0.48)]">
+        <section className="qa-panel relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.22),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.20),transparent_28%),linear-gradient(135deg,rgba(36,20,44,0.96),rgba(10,10,10,0.99),rgba(14,28,26,0.98))] p-4 shadow-[0_30px_108px_rgba(0,0,0,0.46)] sm:rounded-[34px] sm:p-6">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="max-w-4xl">
@@ -1881,10 +1881,10 @@ export default function FavoritesPage() {
             <p className="mt-4 text-sm text-rose-100/78">
               {greeting}, {displayName}
             </p>
-            <h1 className="qa-display qa-h1 mt-4 text-5xl font-bold text-white sm:text-6xl">
+            <h1 className="qa-display qa-h1 mt-4 text-4xl font-bold text-white sm:text-6xl">
               Your Atlas
             </h1>
-            <p className="qa-lead mt-5 max-w-2xl text-base text-white/62">
+            <p className="qa-lead mt-4 max-w-2xl text-sm text-white/62 sm:mt-5 sm:text-base">
               Your saved queer map across cities, places, and events. This is where
               discovery becomes direction.
             </p>
@@ -1911,28 +1911,28 @@ export default function FavoritesPage() {
               </div>
             )}
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-rose-200/18 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-rose-100">Travel memory</span>
-              <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-cyan-100">Member signal</span>
-              <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">Live atlas</span>
+              <span className="rounded-full border border-rose-200/18 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 sm:px-3 sm:text-[11px] sm:tracking-[0.16em]">Travel memory</span>
+              <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100 sm:px-3 sm:text-[11px] sm:tracking-[0.16em]">Member signal</span>
+              <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/70 sm:px-3 sm:text-[11px] sm:tracking-[0.16em]">Live atlas</span>
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="qa-card qa-metric-card rounded-3xl border border-rose-200/18 bg-[linear-gradient(180deg,rgba(251,113,133,0.18),rgba(251,113,133,0.06))] p-5 backdrop-blur">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="qa-card qa-metric-card rounded-2xl border border-rose-200/18 bg-[linear-gradient(180deg,rgba(251,113,133,0.18),rgba(251,113,133,0.06))] p-3.5 backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved places</p>
-              <p className="mt-3 text-3xl font-semibold text-white">{totalPlaces}</p>
+              <p className="mt-2 text-xl font-semibold text-white sm:text-2xl">{totalPlaces}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-3xl border border-violet-200/18 bg-[linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.06))] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-2xl border border-violet-200/18 bg-[linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.06))] p-3.5 backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved events</p>
-              <p className="mt-3 text-3xl font-semibold text-white">{totalEvents}</p>
+              <p className="mt-2 text-xl font-semibold text-white sm:text-2xl">{totalEvents}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-3xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(34,211,238,0.16),rgba(34,211,238,0.06))] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-2xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(34,211,238,0.16),rgba(34,211,238,0.06))] p-3.5 backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
-              <p className="mt-3 text-3xl font-semibold text-white">{totalCities}</p>
+              <p className="mt-2 text-xl font-semibold text-white sm:text-2xl">{totalCities}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-3xl border border-amber-200/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.16),rgba(251,191,36,0.06))] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card rounded-2xl border border-amber-200/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.16),rgba(251,191,36,0.06))] p-3.5 backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Top vibe</p>
-              <p className="mt-3 text-3xl font-semibold capitalize text-white">
+              <p className="mt-2 text-xl font-semibold capitalize text-white sm:text-2xl">
                 {topVibe}
               </p>
             </div>
@@ -2086,11 +2086,11 @@ export default function FavoritesPage() {
           </form>
         </section>
 
-        <section className="relative mb-8 rounded-[34px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.10),transparent_34%),linear-gradient(180deg,rgba(22,14,28,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
+        <section className="relative mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.10),transparent_34%),linear-gradient(180deg,rgba(22,14,28,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_28px_88px_rgba(0,0,0,0.36)] sm:rounded-[32px] sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-white/55">Signal rail</p>
-              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Momentum</h2>
+              <h2 className="qa-h2 mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">Momentum</h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
                 One integrated panel for your current signal and your fastest next actions.
               </p>
@@ -2103,15 +2103,15 @@ export default function FavoritesPage() {
             </button>
           </div>
 
-          <div className="mt-6 grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-            <div className="h-full rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5">
+          <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="h-full rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/78">Your signal</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-black/22 p-4">
+                <div className="rounded-2xl border border-white/10 bg-black/22 p-3">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-rose-200/75">Added this week</p>
                   <p className="mt-2 text-3xl font-semibold text-white">{thisWeekAdds}</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-black/22 p-4">
+                <div className="rounded-2xl border border-white/10 bg-black/22 p-3">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/75">Cities touched</p>
                   <p className="mt-2 text-3xl font-semibold text-white">{allCities.length}</p>
                 </div>
@@ -2332,13 +2332,13 @@ export default function FavoritesPage() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-[34px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <section className="mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-200/75">
                 Your travel timeline
               </p>
-              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+              <h2 className="qa-h2 mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
                 Check-in map
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
@@ -2355,7 +2355,7 @@ export default function FavoritesPage() {
             </div>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
             <div
               ref={checkinMapCardRef}
               className={`rounded-3xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 transition ${
@@ -2375,13 +2375,13 @@ export default function FavoritesPage() {
               {mapboxToken ? (
                 <div
                   ref={checkinMapContainerRef}
-                  className="h-[280px] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/25"
+                  className="h-[230px] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/25 sm:h-[280px]"
                 />
               ) : checkinMapEmbedUrl ? (
                 <iframe
                   title="Your check-in map"
                   src={checkinMapEmbedUrl}
-                  className="h-[280px] w-full rounded-2xl border border-white/10 bg-black/25"
+                  className="h-[230px] w-full rounded-2xl border border-white/10 bg-black/25 sm:h-[280px]"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
@@ -2391,7 +2391,7 @@ export default function FavoritesPage() {
                   src={staticMapUrl}
                   alt="Your check-in map"
                   onError={() => setCheckinMapLoadFailed(true)}
-                  className="h-[280px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain"
+                  className="h-[230px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain sm:h-[280px]"
                 />
               ) : openStreetMapStaticUrl && !checkinStaticFallbackFailed ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -2399,10 +2399,10 @@ export default function FavoritesPage() {
                   src={openStreetMapStaticUrl}
                   alt="Your check-in map fallback"
                   onError={() => setCheckinStaticFallbackFailed(true)}
-                  className="h-[280px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain"
+                  className="h-[230px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain sm:h-[280px]"
                 />
               ) : (
-                <div className="flex h-[280px] items-center justify-center rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 text-sm text-white/45">
+                <div className="flex h-[230px] items-center justify-center rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 text-sm text-white/45 sm:h-[280px]">
                   Check-ins auto-pin from city + venue. Add more check-ins to render the map.
                 </div>
               )}
@@ -2966,13 +2966,13 @@ export default function FavoritesPage() {
             </form>
           </div>
 
-          <div className="rounded-[34px] border border-cyan-200/16 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_30%),linear-gradient(180deg,rgba(11,31,36,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
-            <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="rounded-[30px] border border-cyan-200/16 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_30%),linear-gradient(180deg,rgba(11,31,36,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_28px_88px_rgba(0,0,0,0.36)] sm:rounded-[32px] sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
                   Trip planner
                 </p>
-                <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
                   Plan a night or city flow
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-white/56">
@@ -3007,7 +3007,7 @@ export default function FavoritesPage() {
               plans.map((plan, index) => (
                 <article
                   key={plan.id}
-                  className="animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.20)]"
+                  className="animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.20)] sm:p-4"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
@@ -3039,7 +3039,7 @@ export default function FavoritesPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start lg:self-center">
+                    <div className="flex w-full flex-wrap items-center gap-2 self-start sm:w-auto lg:self-center">
                       <button
                         type="button"
                         onClick={() =>
@@ -3047,14 +3047,14 @@ export default function FavoritesPage() {
                             String(current) === String(plan.id) ? null : plan.id
                           )
                         }
-                        className="rounded-full border border-cyan-200/16 bg-cyan-200/[0.08] px-3 py-1.5 text-xs uppercase tracking-[0.12em] text-cyan-100/85 transition hover:border-cyan-200/30"
+                        className="rounded-full border border-cyan-200/16 bg-cyan-200/[0.08] px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-cyan-100/85 transition hover:border-cyan-200/30 sm:flex-none"
                       >
                         {String(expandedPlanId) === String(plan.id) ? "Collapse" : "Expand"}
                       </button>
                       <button
                         type="button"
                         onClick={() => removePlan(plan.id)}
-                        className="rounded-full border border-rose-200/16 bg-rose-200/[0.08] px-3 py-1.5 text-xs uppercase tracking-[0.12em] text-rose-100/85 transition hover:border-rose-200/30"
+                        className="rounded-full border border-rose-200/16 bg-rose-200/[0.08] px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-rose-100/85 transition hover:border-rose-200/30 sm:flex-none"
                       >
                         Remove
                       </button>
@@ -3119,7 +3119,7 @@ export default function FavoritesPage() {
                 </article>
               ))
             ) : (
-              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42">
+              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-8 text-sm text-white/42">
                 No plans yet. Build your first night or city flow from saved places and events.
               </div>
             )}
@@ -3129,13 +3129,13 @@ export default function FavoritesPage() {
 
         {showSignalDeck ? (
         <>
-        <section className="mb-8 rounded-[34px] border border-emerald-200/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(13,26,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-6 flex items-center justify-between gap-3">
+        <section className="mb-6 rounded-[30px] border border-emerald-200/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(13,26,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-emerald-200/70">
                 People signal
               </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
                 Trusted members network
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
@@ -3158,9 +3158,9 @@ export default function FavoritesPage() {
           )}
 
           <div className="grid gap-4 xl:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-black/25 p-4">
+            <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
               <p className="text-xs uppercase tracking-[0.16em] text-white/50">Following now</p>
-              <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
                 {followingProfiles.length > 0 ? (
                   followingProfiles.map((profile) => {
                     const titleMeta = getMemberTitleMeta(profile.title || "");
@@ -3222,9 +3222,9 @@ export default function FavoritesPage() {
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-white/10 bg-black/25 p-4">
+            <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
               <p className="text-xs uppercase tracking-[0.16em] text-white/50">Members to follow</p>
-              <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
                 {networkLoading ? (
                   Array.from({ length: 4 }).map((_, index) => (
                     <FavoritesCardSkeleton key={`member-skeleton-${index}`} />
@@ -3281,9 +3281,9 @@ export default function FavoritesPage() {
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-white/10 bg-black/25 p-4">
+            <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
               <p className="text-xs uppercase tracking-[0.16em] text-white/50">Saved by people you follow</p>
-              <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
                 {followingFeedItems.length > 0 ? (
                   followingFeedItems.map((item, index) => (
                     <div
@@ -3321,13 +3321,13 @@ export default function FavoritesPage() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-[34px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-6 flex items-center justify-between gap-3">
+        <section className="mb-6 rounded-[30px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
                 For you
               </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
                 Next best signal
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
@@ -3421,7 +3421,7 @@ export default function FavoritesPage() {
                 </article>
               ))
             ) : (
-              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-10 text-sm text-white/42 md:col-span-2 xl:col-span-3">
+              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-8 text-sm text-white/42 md:col-span-2 xl:col-span-3">
                 Save more places and follow members to unlock stronger personal recommendations.
               </div>
             )}
@@ -3450,11 +3450,11 @@ export default function FavoritesPage() {
           onBrowseEvents={() => router.push("/events")}
           renderSkeleton={() => <FavoritesCardSkeleton />}
         />
-        <section className="mt-8 rounded-[34px] border border-cyan-200/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_80%_15%,rgba(244,114,182,0.10),transparent_26%),linear-gradient(180deg,rgba(10,28,38,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
+        <section className="mt-6 rounded-[30px] border border-cyan-200/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_80%_15%,rgba(244,114,182,0.10),transparent_26%),linear-gradient(180deg,rgba(10,28,38,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/75">Atlas insights</p>
-              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">Signal dashboard</h2>
+              <h2 className="qa-h2 mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">Signal dashboard</h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
                 Keep the page clean: core tools stay open, deeper community signal stays one tap away.
               </p>
