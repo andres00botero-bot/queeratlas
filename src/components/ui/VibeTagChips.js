@@ -3,12 +3,12 @@
 import { resolveVibeTagLabelsForEntity } from "@/lib/vibeDisplay";
 
 const TONE_STYLE = {
-  amber: "border-amber-200/24 bg-amber-200/12 text-amber-100",
-  emerald: "border-emerald-200/24 bg-emerald-200/12 text-emerald-100",
-  violet: "border-violet-200/24 bg-violet-200/12 text-violet-100",
-  rose: "border-rose-200/24 bg-rose-200/12 text-rose-100",
-  cyan: "border-cyan-200/24 bg-cyan-200/12 text-cyan-100",
-  neutral: "border-white/14 bg-white/7 text-white/72",
+  amber: "border-amber-200/38 bg-amber-200/22 text-amber-50",
+  emerald: "border-emerald-200/38 bg-emerald-200/22 text-emerald-50",
+  violet: "border-violet-200/38 bg-violet-200/22 text-violet-50",
+  rose: "border-rose-200/38 bg-rose-200/22 text-rose-50",
+  cyan: "border-cyan-200/38 bg-cyan-200/22 text-cyan-50",
+  neutral: "border-white/24 bg-white/14 text-white/90",
 };
 
 function resolveToneClass(tone) {
@@ -36,7 +36,7 @@ export default function VibeTagChips({
       {labels.map((label) => (
         <span
           key={`${String(entity?.id || entity?.name || "entity")}-vibe-${label}`}
-          className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] ${resolveToneClass(tone)}`}
+          className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${resolveToneClass(tone)}`}
         >
           {label}
         </span>

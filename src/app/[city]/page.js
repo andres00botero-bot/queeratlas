@@ -3825,7 +3825,7 @@ export default function CityPage() {
                           <span className={`rounded-full border border-white/16 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${style.label}`}>
                             {TYPE_LABELS[place.type] || "Place"}
                           </span>
-                          <VibeTagChips entity={place} className="" includeTypeFallback includeMixedFallback />
+                          <VibeTagChips entity={place} tone="cyan" className="" includeTypeFallback includeMixedFallback />
                         </div>
                       </div>
 
