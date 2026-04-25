@@ -5,6 +5,7 @@ import {
 } from "../src/features/favorites/checkinMapGuards.js";
 import { readFileSync } from "node:fs";
 import { resolveEventOpenIntent } from "../src/features/events/eventOpenGuards.js";
+import { isMissingPlacesWithStatsLocation } from "../src/lib/supabaseErrorGuards.js";
 import {
   selectCityEventById,
   selectCityEventsAll,
@@ -131,12 +132,43 @@ function testFavoritesCheckinListsHaveStableScrollContainers() {
   );
 }
 
+function testPlacesWithStatsMissingLocationGuard() {
+  const directError = {
+    code: "42703",
+    message: "column places_with_stats.location does not exist",
+  };
+  assert(
+    isMissingPlacesWithStatsLocation(directError) === true,
+    "places_with_stats guard: direct 42703 missing location should be detected"
+  );
+
+  const jsonWrappedError = {
+    code: "",
+    message:
+      "{\"message\":\"column places_with_stats.location does not exist\",\"code\":\"42703\",\"details\":\"\",\"hint\":\"\"}",
+  };
+  assert(
+    isMissingPlacesWithStatsLocation(jsonWrappedError) === true,
+    "places_with_stats guard: JSON-wrapped missing location should be detected"
+  );
+
+  const unrelatedError = {
+    code: "42P01",
+    message: "relation places_with_stats does not exist",
+  };
+  assert(
+    isMissingPlacesWithStatsLocation(unrelatedError) === false,
+    "places_with_stats guard: unrelated errors must not be treated as missing location"
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
   testEventOpenIntent();
   testCityEventSelectionUsesAllCityEventsForDeepLink();
   testFavoritesCheckinListsHaveStableScrollContainers();
+  testPlacesWithStatsMissingLocationGuard();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");
