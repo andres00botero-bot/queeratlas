@@ -202,6 +202,10 @@ export default function CityPage() {
   const [liveVibeSubmittingKey, setLiveVibeSubmittingKey] = useState("");
   const [liveVibeJustSentKey, setLiveVibeJustSentKey] = useState("");
   const [showLiveVibeMomentum, setShowLiveVibeMomentum] = useState(false);
+  const [isSubmittingEventLiveVibe, setIsSubmittingEventLiveVibe] = useState(false);
+  const [eventLiveVibeSubmittingKey, setEventLiveVibeSubmittingKey] = useState("");
+  const [eventLiveVibeJustSentKey, setEventLiveVibeJustSentKey] = useState("");
+  const [eventLiveVibeSignalKey, setEventLiveVibeSignalKey] = useState("");
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsLoadError, setEventsLoadError] = useState("");
   const [mapError, setMapError] = useState("");
@@ -542,10 +546,19 @@ export default function CityPage() {
     () => LIVE_VIBE_OPTIONS.find((option) => option.key === liveVibeMyActiveSignalKey) || null,
     [liveVibeMyActiveSignalKey]
   );
+  const eventLiveVibeSelectedOption = useMemo(
+    () => LIVE_VIBE_OPTIONS.find((option) => option.key === eventLiveVibeSignalKey) || null,
+    [eventLiveVibeSignalKey]
+  );
 
   useEffect(() => {
     setShowLiveVibeMomentum(false);
   }, [selectedPlace?.id]);
+
+  useEffect(() => {
+    setEventLiveVibeSignalKey("");
+    setEventLiveVibeJustSentKey("");
+  }, [selectedEvent?.id]);
 
   const selectedPlaceQuality = selectedPlace
     ? getEntityQuality({
@@ -2428,6 +2441,25 @@ export default function CityPage() {
         return;
       }
 
+      const checkinPayload = {
+        user_id: user.id,
+        mode: "trip",
+        privacy: "friends",
+        country: null,
+        city: String(selectedPlace.city || city),
+        label: String(selectedPlace.name || "Venue"),
+        address: String(selectedPlace.location || "").trim() || null,
+        note: null,
+        place_id: String(dbId),
+        event_id: null,
+        lat: Number.isFinite(Number(selectedPlace.lat)) ? Number(selectedPlace.lat) : null,
+        lng: Number.isFinite(Number(selectedPlace.lng)) ? Number(selectedPlace.lng) : null,
+        checked_in_at: nowIso,
+      };
+      const { error: checkinError } = await supabase
+        .from("qa_member_checkins")
+        .insert([checkinPayload]);
+
       setLiveVibeTableMissing(false);
       setSelectedPlaceDbId(String(dbId));
       setLiveVibeRows((current) => {
@@ -2446,7 +2478,28 @@ export default function CityPage() {
         ];
       });
       setLiveVibeJustSentKey(String(signalKey || ""));
-      showToast("Live vibe shared.", { tone: "ok", duration: 1600 });
+      if (checkinError && isMissingTableError(checkinError)) {
+        showToast("Live vibe shared. Check-ins need latest Supabase SQL.", {
+          tone: "info",
+          duration: 2600,
+        });
+        return;
+      }
+      if (checkinError) {
+        showToast("Live vibe shared. Check-in sync unavailable right now.", {
+          tone: "info",
+          duration: 2400,
+        });
+        return;
+      }
+
+      trackKpiEvent("checkin_saved", {
+        city: String(selectedPlace.city || city),
+        targetType: "checkin",
+        targetId: String(dbId || ""),
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
+      showToast("Live vibe shared. Check-in saved.", { tone: "ok", duration: 1800 });
     } finally {
       setLiveVibeSubmittingKey("");
       setIsSubmittingLiveVibe(false);
@@ -2460,6 +2513,99 @@ export default function CityPage() {
     selectedPlace,
     selectedPlaceDbId,
     showToast,
+    city,
+    memberName,
+    user?.email,
+    user?.id,
+  ]);
+
+  const handleSubmitEventLiveVibe = useCallback(async (signalKey) => {
+    if (!selectedEvent) return;
+
+    if (!isMember || !user?.id) {
+      showToast("Join as member to share live vibe.", { tone: "info", duration: 2200 });
+      const redirectTarget = buildSelectionUrl({
+        nextPlaceId: null,
+        nextEventId: selectedEvent.id,
+        nextServiceId: null,
+      });
+      writeLocalValue("qa_redirect", redirectTarget);
+      writeLocalValue("qa_post_login_target", redirectTarget);
+      router.push("/?join=true");
+      return;
+    }
+
+    setIsSubmittingEventLiveVibe(true);
+    setEventLiveVibeSubmittingKey(String(signalKey || ""));
+    try {
+      const dbId = await resolveEventDbId(selectedEvent);
+      if (!dbId) {
+        showToast("Could not resolve this event for live signal.", {
+          tone: "warn",
+          duration: 2400,
+        });
+        return;
+      }
+
+      const nowIso = new Date().toISOString();
+      const checkinPayload = {
+        user_id: user.id,
+        mode: "trip",
+        privacy: "friends",
+        country: null,
+        city: String(selectedEvent.city || city),
+        label: String(selectedEvent.name || "Event"),
+        address: String(selectedEvent.location || "").trim() || null,
+        note: null,
+        place_id: null,
+        event_id: String(dbId),
+        lat: Number.isFinite(Number(selectedEvent.lat)) ? Number(selectedEvent.lat) : null,
+        lng: Number.isFinite(Number(selectedEvent.lng)) ? Number(selectedEvent.lng) : null,
+        checked_in_at: nowIso,
+      };
+      const { error: checkinError } = await supabase
+        .from("qa_member_checkins")
+        .insert([checkinPayload]);
+
+      setEventLiveVibeSignalKey(String(signalKey || ""));
+      setEventLiveVibeJustSentKey(String(signalKey || ""));
+
+      if (checkinError && isMissingTableError(checkinError)) {
+        showToast("Event live vibe shared. Check-ins need latest Supabase SQL.", {
+          tone: "info",
+          duration: 2600,
+        });
+        return;
+      }
+      if (checkinError) {
+        showToast("Event live vibe shared. Check-in sync unavailable right now.", {
+          tone: "info",
+          duration: 2400,
+        });
+        return;
+      }
+
+      trackKpiEvent("checkin_saved", {
+        city: String(selectedEvent.city || city),
+        targetType: "checkin",
+        targetId: `event-${String(dbId || "")}`,
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
+      showToast("Event live vibe shared. Check-in saved.", { tone: "ok", duration: 1800 });
+    } finally {
+      setEventLiveVibeSubmittingKey("");
+      setIsSubmittingEventLiveVibe(false);
+    }
+  }, [
+    buildSelectionUrl,
+    city,
+    isMember,
+    memberName,
+    resolveEventDbId,
+    router,
+    selectedEvent,
+    showToast,
+    user?.email,
     user?.id,
   ]);
 
@@ -2472,6 +2618,16 @@ export default function CityPage() {
       window.clearTimeout(timeout);
     };
   }, [liveVibeJustSentKey]);
+
+  useEffect(() => {
+    if (!eventLiveVibeJustSentKey) return undefined;
+    const timeout = window.setTimeout(() => {
+      setEventLiveVibeJustSentKey("");
+    }, 950);
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [eventLiveVibeJustSentKey]);
 
   const handleAdminSavePlace = useCallback(async () => {
     if (!isAdmin || !selectedPlace) return;
@@ -5434,6 +5590,50 @@ export default function CityPage() {
                 <p className="text-sm leading-relaxed text-white/68">{polishEventDescription(selectedEvent, cityName)}</p>
               </div>
             )}
+            <div className="mt-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.07] p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/80">Live vibe now</p>
+                <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/80">
+                  Event check-in
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-fuchsia-50/95">
+                Tap a live vibe and save a check-in automatically for this event.
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {LIVE_VIBE_OPTIONS.map((option) => {
+                  const isSelectedSignal = eventLiveVibeSignalKey === option.key;
+                  const isSubmittingSignal = isSubmittingEventLiveVibe && eventLiveVibeSubmittingKey === option.key;
+                  const isJustSentSignal = eventLiveVibeJustSentKey === option.key;
+                  return (
+                    <button
+                      key={`event-live-vibe-${option.key}`}
+                      type="button"
+                      disabled={isSubmittingEventLiveVibe}
+                      aria-pressed={isSelectedSignal}
+                      onClick={() => {
+                        handleSubmitEventLiveVibe(option.key);
+                      }}
+                      className={`qa-cinematic-hover rounded-xl border px-3 py-2 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${option.buttonClass} ${
+                        isSelectedSignal ? "ring-2 ring-white/35 shadow-[0_0_0_1px_rgba(255,255,255,0.22)_inset]" : ""
+                      } ${isJustSentSignal ? "scale-[1.02] shadow-[0_10px_28px_rgba(244,114,182,0.25)]" : ""}`}
+                    >
+                      <span className="block text-sm font-semibold">
+                        {option.emoji} {option.label}
+                      </span>
+                      <span className="mt-0.5 block text-[10px] uppercase tracking-[0.12em] opacity-85">
+                        {isSubmittingSignal ? "Saving..." : isSelectedSignal ? "Your signal" : "Tap now"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {isMember && eventLiveVibeSelectedOption && (
+                <p className="mt-2 text-[11px] text-fuchsia-100/82">
+                  Your event signal: {eventLiveVibeSelectedOption.emoji} {eventLiveVibeSelectedOption.label}
+                </p>
+              )}
+            </div>
             {(selectedEvent.link || selectedEventQuality?.lastChecked || selectedEventQuality?.source) && (
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {selectedEvent.link && (
