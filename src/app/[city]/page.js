@@ -251,7 +251,6 @@ export default function CityPage() {
   const serviceMarkersRef = useRef(new Map());
   const isMapInteractingRef = useRef(false);
   const keepMapViewOnNextCloseRef = useRef(false);
-  const autoCheckinCooldownRef = useRef(new Map());
 
   const openEventContribution = useCallback(() => {
     setAddEventMode(true);
@@ -747,86 +746,9 @@ export default function CityPage() {
     [eventId, pathname, placeId, searchParams, serviceId]
   );
 
-  const autoCheckinFromPlaceTap = useCallback(async (place) => {
-    if (!isMember || !user?.id || !place) return;
-
-    const tapKey = String(place.id || "");
-    const nowMs = Date.now();
-    const lastTapMs = Number(autoCheckinCooldownRef.current.get(tapKey) || 0);
-    if (nowMs - lastTapMs < 90 * 1000) return;
-    autoCheckinCooldownRef.current.set(tapKey, nowMs);
-
-    const resolvePlaceDbIdInline = async (targetPlace) => {
-      const placeId = String(targetPlace?.id || "");
-      const placeName = String(targetPlace?.name || "").trim();
-      const placeCity = String(targetPlace?.city || city).trim();
-      const normalizeCity = (value) =>
-        String(value || "")
-          .toLowerCase()
-          .replaceAll("_", " ")
-          .replaceAll("-", " ")
-          .replace(/\s+/g, " ")
-          .trim();
-
-      if (placeId && !placeId.startsWith("seed-place-")) {
-        return placeId;
-      }
-      if (!placeName || !placeCity) return null;
-
-      const lookup = await supabase
-        .from("places")
-        .select("id, city, name")
-        .ilike("name", placeName)
-        .limit(20);
-      const rows = Array.isArray(lookup?.data) ? lookup.data : [];
-      const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(placeCity));
-      return matched?.id ? String(matched.id) : null;
-    };
-
-    const dbPlaceId = await resolvePlaceDbIdInline(place);
-    if (!dbPlaceId) return;
-
-    const { error } = await supabase
-      .from("qa_member_checkins")
-      .insert([
-        {
-          user_id: user.id,
-          mode: "trip",
-          privacy: "friends",
-          country: null,
-          city: String(place.city || city),
-          label: String(place.name || "Venue"),
-          address: String(place.location || "").trim() || null,
-          note: null,
-          place_id: String(dbPlaceId),
-          event_id: null,
-          lat: Number.isFinite(Number(place.lat)) ? Number(place.lat) : null,
-          lng: Number.isFinite(Number(place.lng)) ? Number(place.lng) : null,
-          checked_in_at: new Date().toISOString(),
-        },
-      ]);
-
-    if (error && isMissingTableError(error)) {
-      showToast("Check-ins table missing. Run latest check-in SQL.", {
-        tone: "warn",
-        duration: 2600,
-      });
-      return;
-    }
-    if (!error) {
-      trackKpiEvent("checkin_saved", {
-        city: String(place.city || city),
-        targetType: "checkin",
-        targetId: String(place.id || ""),
-        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
-      });
-    }
-  }, [city, isMember, memberName, showToast, user?.email, user?.id]);
-
   const openPlace = useCallback((place) => {
     router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }));
-    void autoCheckinFromPlaceTap(place);
-  }, [autoCheckinFromPlaceTap, buildSelectionUrl, router]);
+  }, [buildSelectionUrl, router]);
 
   const openEvent = (event) => {
     router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id, nextServiceId: null }));
