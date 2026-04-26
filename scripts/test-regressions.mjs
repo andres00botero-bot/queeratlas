@@ -390,6 +390,7 @@ function testVibeTaxonomyContract() {
     "relax",
     "drag",
     "industrial",
+    "service",
   ];
 
   const definedKeys = STANDARD_VIBE_TAGS.map((item) => item.key);
