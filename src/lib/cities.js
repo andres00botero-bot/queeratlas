@@ -1244,6 +1244,19 @@ export const cityConfig = {
       cost: "Generally high for central nightlife and accommodation, but efficient short-distance planning keeps nights smooth.",
     }),
   },
+  manila: {
+    center: [120.9842, 14.5995],
+    title: "Queer Manila",
+    country: "Philippines",
+    vibe: "tropical megacity",
+    guide: buildGuide({
+      about: "Manila is one of Southeast Asia's most socially expressive queer cities, with a scene shaped by nightlife, pageant culture, drag visibility, and resilient local community networks. The city is big, loud, and emotional, and queer life here is often high-energy rather than discreet.",
+      district: "Most practical nightlife routing runs through Bonifacio Global City, Poblacion in Makati, and selected nightlife corridors in Quezon City. Manila works best as a set of focused micro-routes instead of one single district.",
+      safety: "Use rideshare-first movement between stops, especially late. Traffic and distance can drain energy fast, so route clarity matters as much as venue choice. In active queer zones, social visibility is strong, but planning your return before peak hours is still the smart move.",
+      nightlife: "Expect pop-heavy dance floors, drag and performance formats, social cocktail warmups, and late momentum that builds in waves. Manila rewards people who pace the night in layers: one social start, one energy shift, then one final room.",
+      cost: "Generally moderate for a major regional capital. Premium nightlife and hotel zones can rise quickly, but a tight route with planned transport can deliver strong value and high output over a weekend.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",
