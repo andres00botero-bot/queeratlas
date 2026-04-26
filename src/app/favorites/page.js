@@ -2086,45 +2086,80 @@ export default function FavoritesPage() {
           </form>
         </section>
 
-        <section className="relative mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.10),transparent_34%),linear-gradient(180deg,rgba(22,14,28,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_28px_88px_rgba(0,0,0,0.36)] sm:rounded-[32px] sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="relative mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.10),transparent_34%),linear-gradient(180deg,rgba(22,14,28,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_28px_88px_rgba(0,0,0,0.36)] max-[390px]:p-2.5 sm:rounded-[32px] sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 max-[390px]:gap-2">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-white/55">Signal rail</p>
-              <h2 className="qa-h2 mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">Momentum</h2>
-              <p className="mt-2 text-sm leading-6 text-white/56">
+              <p className="text-xs uppercase tracking-[0.24em] text-white/55 max-[390px]:text-[10px]">Signal rail</p>
+              <h2 className="qa-h2 mt-2 text-xl font-semibold tracking-[-0.02em] text-white max-[390px]:mt-1 max-[390px]:text-lg sm:text-2xl">Momentum</h2>
+              <p className="mt-1.5 text-xs leading-5 text-white/56 max-[390px]:text-[11px] max-[390px]:leading-4 sm:text-sm">
                 One integrated panel for your current signal and your fastest next actions.
               </p>
             </div>
             <button
               onClick={() => router.push("/cities")}
-              className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs text-white/65 transition hover:border-white/20 hover:text-white/88"
+              className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[11px] text-white/65 transition hover:border-white/20 hover:text-white/88 max-[390px]:px-2.5 max-[390px]:py-1 max-[390px]:text-[10px]"
             >
               Explore cities
             </button>
           </div>
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-            <div className="h-full rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/78">Your signal</p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/10 bg-black/22 p-3">
+          <div className="mt-4 max-[390px]:mt-2.5">
+            <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-3 max-[390px]:rounded-[18px] max-[390px]:p-2.5">
+              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/78 max-[390px]:text-[10px]">Your signal</p>
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-2 max-[390px]:mt-2">
+                <div className="rounded-2xl border border-white/10 bg-black/22 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-rose-200/75">Added this week</p>
-                  <p className="mt-2 text-3xl font-semibold text-white">{thisWeekAdds}</p>
+                  <p className="mt-1.5 text-2xl font-semibold text-white max-[390px]:text-xl">{thisWeekAdds}</p>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-black/22 p-3">
+                <div className="rounded-2xl border border-white/10 bg-black/22 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/75">Cities touched</p>
-                  <p className="mt-2 text-3xl font-semibold text-white">{allCities.length}</p>
+                  <p className="mt-1.5 text-2xl font-semibold text-white max-[390px]:text-xl">{allCities.length}</p>
                 </div>
               </div>
 
-              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200/75">Latest activity</p>
+                  <span className="text-[11px] text-white/58">Last {Math.min(recentSaves.length, 5)} saves</span>
+                </div>
+                <div className="mt-2.5 flex gap-2 overflow-x-auto pb-1 max-[390px]:mt-2">
+                  {recentSaves.length > 0 ? (
+                    recentSaves.map((item) => (
+                      <button
+                        key={`momentum-activity-${item.type}-${item.id}`}
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            citySelectionPath(item.city, {
+                              placeId: item.type === "place" ? item.id : "",
+                              eventId: item.type === "event" ? item.id : "",
+                            })
+                          )
+                        }
+                        className="inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border border-white/14 bg-white/8 px-3 py-1.5 text-left text-[11px] text-white/82 transition hover:border-white/28 hover:bg-white/12 max-[390px]:gap-1.5 max-[390px]:px-2.5 max-[390px]:py-1 max-[390px]:text-[10px]"
+                      >
+                        <span className="truncate max-w-[160px] max-[390px]:max-w-[125px]">
+                          {item.type === "place" ? "Place" : "Event"}: {item.name}
+                        </span>
+                        <span className="text-white/50">{timeAgo(item.date)}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-xs text-white/45">
+                      No recent saves yet. Save places or events to build momentum.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200/75">Momentum milestones</p>
                   <span className="text-[11px] text-white/58">
                     {momentumMilestones.completed}/{momentumMilestones.total}
                   </span>
                 </div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-emerald-300 transition-[width] duration-500"
                     style={{ width: `${Math.max(8, Math.round(momentumMilestones.overallProgress * 100))}%` }}
@@ -2138,11 +2173,11 @@ export default function FavoritesPage() {
                       )}/${momentumMilestones.nextMilestone.target})`
                     : "All core milestones completed. Keep your signal active this week."}
                 </p>
-                <div className="mt-3 grid gap-2">
+                <div className="mt-2.5 grid gap-2 max-[390px]:mt-2">
                   {momentumMilestones.items.map((item) => (
                     <div
                       key={item.id}
-                      className={`rounded-xl border px-3 py-2 text-xs ${
+                      className={`rounded-xl border px-3 py-2 text-xs max-[390px]:px-2.5 max-[390px]:py-1.5 max-[390px]:text-[11px] ${
                         item.done
                           ? "border-emerald-200/30 bg-emerald-200/10 text-emerald-100"
                           : "border-white/10 bg-black/20 text-white/72"
@@ -2159,7 +2194,7 @@ export default function FavoritesPage() {
                 </div>
               </div>
 
-              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-indigo-200/75">Community ranking</p>
                 {memberRank?.title ? (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -2179,7 +2214,7 @@ export default function FavoritesPage() {
                 )}
               </div>
 
-              <div className="mt-3 rounded-2xl border border-emerald-200/18 bg-emerald-200/[0.08] p-4">
+              <div className="mt-2.5 rounded-2xl border border-emerald-200/18 bg-emerald-200/[0.08] p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-100/78">Your footprint</p>
                   {!isEditingProfile ? (
@@ -2275,9 +2310,9 @@ export default function FavoritesPage() {
                 ) : null}
               </div>
 
-              <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">Your cities</p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2.5 flex flex-wrap gap-2">
                   {allCities.length > 0 ? (
                     allCities.map((city) => (
                       <button
@@ -2292,41 +2327,6 @@ export default function FavoritesPage() {
                     <p className="text-sm text-white/45">No cities saved yet.</p>
                   )}
                 </div>
-              </div>
-            </div>
-
-            <div className="h-full rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-5">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/78">Continue where you left off</p>
-              <p className="mt-2 text-sm text-white/56">Latest saves, optimized for quick re-entry.</p>
-              <div className="mt-4 space-y-2 md:max-h-[360px] md:overflow-y-auto md:pr-1">
-                {recentSaves.length > 0 ? (
-                  recentSaves.map((item) => (
-                    <button
-                      key={`${item.type}-${item.id}`}
-                      onClick={() =>
-                        router.push(
-                          citySelectionPath(item.city, {
-                            placeId: item.type === "place" ? item.id : "",
-                            eventId: item.type === "event" ? item.id : "",
-                          })
-                        )
-                      }
-                      className="animate-rise-in w-full rounded-[18px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-white/24 md:flex md:items-center md:justify-between"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/62">
-                          {item.type === "place" ? "Place" : "Event"} - {item.city}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold leading-5 text-white">{item.name}</p>
-                      </div>
-                      <span className="mt-1.5 block text-[11px] text-white/52 md:mt-0 md:ml-3">{timeAgo(item.date)}</span>
-                    </button>
-                  ))
-                ) : (
-                  <div className="w-full rounded-[22px] border border-dashed border-white/12 px-4 py-8 text-sm text-white/45">
-                    Start saving places and events to build your atlas.
-                  </div>
-                )}
               </div>
             </div>
           </div>
