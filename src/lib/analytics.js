@@ -84,6 +84,7 @@ export function getKpiSummary(days = 7) {
       reviewSubmitted: Number(counts.review_submitted || 0),
       placeAdded: Number(counts.place_added || 0),
       eventAdded: Number(counts.event_added || 0),
+      serviceAdded: Number(counts.service_added || 0),
       reportSubmitted: Number(counts.report_submitted || 0),
       searchOpened: Number(counts.search_opened || 0),
     },

@@ -122,7 +122,12 @@ as $$
     'sauna',
     'drag',
     'industrial',
-    'warehouse'
+    'warehouse',
+    'service',
+    'services',
+    'massage',
+    'tour',
+    'concierge'
   ]);
 $$;
 
@@ -132,7 +137,7 @@ language sql
 immutable
 as $$
   select public.qa_normalize_vibe_token(input_text) ~
-    '(techno|electro|electronic|edm|house|pop|mainstream|mixed|men only|men-only|after|afterhours|day party|chill|cultural|fetish|kink|social|cozy|cosy|massive|luxury|festival|underground|cruise|relax|drag|industrial|warehouse)';
+    '(techno|electro|electronic|edm|house|pop|mainstream|mixed|men only|men-only|after|afterhours|day party|chill|cultural|fetish|kink|social|cozy|cosy|massive|luxury|festival|underground|cruise|relax|drag|industrial|warehouse|service|services|massage|tour|concierge)';
 $$;
 
 create or replace function public.qa_vibe_tag_label(input_tag text)
@@ -160,6 +165,7 @@ as $$
     when 'relax' then 'Relax'
     when 'drag' then 'Drag'
     when 'industrial' then 'Industrial'
+    when 'service' then 'Service'
     else null
   end;
 $$;

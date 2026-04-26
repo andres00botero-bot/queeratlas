@@ -38,6 +38,7 @@ import {
   summarizeLiveVibeSignals,
 } from "@/lib/liveVibe";
 import { usePlaces } from "@/lib/usePlaces";
+import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
@@ -48,7 +49,7 @@ import CityQualityModal from "@/components/city/CityQualityModal";
 import CityReportModal from "@/components/city/CityReportModal";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import VipFeedStatusAlerts from "@/components/city/VipFeedStatusAlerts";
-import { buildEventAdminDraft, buildPlaceAdminDraft, getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
+import { buildEventAdminDraft, buildPlaceAdminDraft, buildServiceAdminDraft, getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import {
   createCityQualityModalFromTarget,
@@ -85,11 +86,33 @@ import {
 } from "@/features/city/vipFeature";
 import {
   REPORT_REASONS,
+  SERVICE_TYPE_LABELS,
+  SERVICE_TYPES,
+  SERVICE_TYPE_STYLES,
   TRUST_ACTIONS,
   TYPE_LABELS,
   TYPES,
   TYPE_STYLES,
 } from "@/features/city/cityPageConstants";
+
+function normalizeServiceImageUrls(input, max = 8) {
+  const urls = Array.isArray(input) ? input : [];
+  const out = [];
+  const seen = new Set();
+
+  for (const rawValue of urls) {
+    const value = String(rawValue || "").trim();
+    if (!value || !/^https?:\/\//i.test(value)) continue;
+    if (seen.has(value)) continue;
+    seen.add(value);
+    out.push(value);
+    if (out.length >= max) break;
+  }
+
+  return out;
+}
+
+const SERVICE_PRICE_TIER_OPTIONS = ["", "$", "$$", "$$$", "$$$$"];
 
 export default function CityPage() {
   const { city } = useParams();
@@ -103,6 +126,7 @@ export default function CityPage() {
   const cityHero = parseCityHeroText(cityHeroText);
   const placeId = searchParams.get("placeId");
   const eventId = searchParams.get("eventId");
+  const serviceId = searchParams.get("serviceId");
   const contributeMode = searchParams.get("contribute");
 
   const {
@@ -115,6 +139,9 @@ export default function CityPage() {
     reloadPlaces,
   } = usePlaces();
   const [eventsData, setEventsData] = useState([]);
+  const [servicesData, setServicesData] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [servicesLoadError, setServicesLoadError] = useState("");
   const [privateEvents, setPrivateEvents] = useState([]);
   const [privateEventsLoading, setPrivateEventsLoading] = useState(true);
   const [privateEventsError, setPrivateEventsError] = useState("");
@@ -128,7 +155,7 @@ export default function CityPage() {
   const [isUpdatingPrivateInviteStatus, setIsUpdatingPrivateInviteStatus] = useState(false);
   const [deletingPrivateEventId, setDeletingPrivateEventId] = useState("");
   const [vipRealtimeHealthy, setVipRealtimeHealthy] = useState(false);
-  const [privateFeedNowTick, setPrivateFeedNowTick] = useState(Date.now());
+  const [privateFeedNowTick, setPrivateFeedNowTick] = useState(0);
   const [tonightFeedTab, setTonightFeedTab] = useState("public");
   const [hostPrivateEventOpen, setHostPrivateEventOpen] = useState(false);
   const [isSubmittingPrivateEvent, setIsSubmittingPrivateEvent] = useState(false);
@@ -182,19 +209,25 @@ export default function CityPage() {
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [hoveredPlaceId, setHoveredPlaceId] = useState(null);
   const [hoveredEventId, setHoveredEventId] = useState(null);
+  const [hoveredServiceId, setHoveredServiceId] = useState(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
   const { isMember, user, memberName } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [placeAdminOpen, setPlaceAdminOpen] = useState(false);
   const [eventAdminOpen, setEventAdminOpen] = useState(false);
+  const [serviceAdminOpen, setServiceAdminOpen] = useState(false);
   const [placeAdminDraft, setPlaceAdminDraft] = useState(() => buildPlaceAdminDraft(null));
   const [eventAdminDraft, setEventAdminDraft] = useState(() => buildEventAdminDraft(null));
+  const [serviceAdminDraft, setServiceAdminDraft] = useState(() => buildServiceAdminDraft(null));
   const [isSavingPlaceAdmin, setIsSavingPlaceAdmin] = useState(false);
   const [isSavingEventAdmin, setIsSavingEventAdmin] = useState(false);
+  const [isSavingServiceAdmin, setIsSavingServiceAdmin] = useState(false);
   const [isSavingPlaceAddressOnly, setIsSavingPlaceAddressOnly] = useState(false);
   const [isSavingEventAddressOnly, setIsSavingEventAddressOnly] = useState(false);
+  const [isSavingServiceAddressOnly, setIsSavingServiceAddressOnly] = useState(false);
   const [isDeletingPlaceAdmin, setIsDeletingPlaceAdmin] = useState(false);
   const [isDeletingEventAdmin, setIsDeletingEventAdmin] = useState(false);
+  const [isDeletingServiceAdmin, setIsDeletingServiceAdmin] = useState(false);
   const [trustedPlaceSavesCount, setTrustedPlaceSavesCount] = useState(0);
   const [trustedEventSavesCount, setTrustedEventSavesCount] = useState(0);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -207,6 +240,7 @@ export default function CityPage() {
   const eventsSectionRef = useRef(null);
   const tonightSectionRef = useRef(null);
   const guideSectionRef = useRef(null);
+  const servicesSectionRef = useRef(null);
   const placesSectionRef = useRef(null);
   const addEventFormRef = useRef(null);
   const mapRef = useRef(null);
@@ -214,6 +248,7 @@ export default function CityPage() {
   const markersRef = useRef([]);
   const placeMarkersRef = useRef(new Map());
   const eventMarkersRef = useRef(new Map());
+  const serviceMarkersRef = useRef(new Map());
   const isMapInteractingRef = useRef(false);
   const keepMapViewOnNextCloseRef = useRef(false);
   const autoCheckinCooldownRef = useRef(new Map());
@@ -314,6 +349,22 @@ export default function CityPage() {
     [blockedItems, city, places]
   );
 
+  const cityServices = useMemo(() => {
+    const normalizedCity = normalizeCityKey(city);
+    return (Array.isArray(servicesData) ? servicesData : [])
+      .filter((service) => normalizeCityKey(service?.city) === normalizedCity)
+      .filter((service) => !blockedItems.some(
+        (item) =>
+          item.targetType === "service" &&
+          String(item.targetId) === String(service?.id)
+      ))
+      .map((service) => ({
+        ...service,
+        image_urls: normalizeServiceImageUrls(service?.image_urls),
+        vibe_tags: normalizeVibeTags(service?.vibe_tags, { max: 3 }),
+      }));
+  }, [blockedItems, city, servicesData]);
+
   const cityEventsAll = useMemo(
     () => selectCityEventsAll({ eventsData, city, blockedItems, normalizeCityKey }),
     [blockedItems, city, eventsData]
@@ -354,6 +405,11 @@ export default function CityPage() {
     return selectCityEventById(cityEventsAll, eventId);
   }, [cityEventsAll, eventId]);
 
+  const selectedService = useMemo(() => {
+    if (!serviceId) return null;
+    return cityServices.find((service) => String(service.id) === String(serviceId)) || null;
+  }, [cityServices, serviceId]);
+
   useEffect(() => {
     if (!selectedPlace) {
       setPlaceAdminOpen(false);
@@ -373,6 +429,16 @@ export default function CityPage() {
     setEventAdminOpen(false);
     setEventAdminDraft(buildEventAdminDraft(selectedEvent));
   }, [selectedEvent]);
+
+  useEffect(() => {
+    if (!selectedService) {
+      setServiceAdminOpen(false);
+      setServiceAdminDraft(buildServiceAdminDraft(null));
+      return;
+    }
+    setServiceAdminOpen(false);
+    setServiceAdminDraft(buildServiceAdminDraft(selectedService));
+  }, [selectedService]);
 
   useEffect(() => {
     let active = true;
@@ -452,16 +518,18 @@ export default function CityPage() {
   const liveVibeStreakNudge = useMemo(() => {
     if (!isMember) return "";
     if (liveVibeMemberMomentum.todayTapped) return "Nice. You already locked your streak today.";
+    if (privateFeedNowTick <= 0) return "Signal updates are syncing.";
 
-    const now = new Date();
+    const now = new Date(privateFeedNowTick);
     const midnight = new Date(now);
     midnight.setHours(24, 0, 0, 0);
     const hoursLeft = Math.max(1, Math.ceil((midnight.getTime() - now.getTime()) / (60 * 60 * 1000)));
     return `No tap today yet. One quick signal in the next ${hoursLeft}h keeps your streak alive.`;
-  }, [isMember, liveVibeMemberMomentum.todayTapped]);
+  }, [isMember, liveVibeMemberMomentum.todayTapped, privateFeedNowTick]);
   const liveVibeMyActiveSignalKey = useMemo(() => {
     if (!user?.id) return "";
-    const cutoffMs = Date.now() - (6 * 60 * 60 * 1000);
+    if (privateFeedNowTick <= 0) return "";
+    const cutoffMs = privateFeedNowTick - (6 * 60 * 60 * 1000);
     const myRows = (Array.isArray(liveVibeRows) ? liveVibeRows : [])
       .filter((row) => String(row?.user_id || "") === String(user.id))
       .filter((row) => {
@@ -470,7 +538,7 @@ export default function CityPage() {
       })
       .sort((a, b) => new Date(b?.created_at || "").getTime() - new Date(a?.created_at || "").getTime());
     return String(myRows[0]?.signal_key || "");
-  }, [liveVibeRows, user?.id]);
+  }, [liveVibeRows, privateFeedNowTick, user?.id]);
   const liveVibeSelectedOption = useMemo(
     () => LIVE_VIBE_OPTIONS.find((option) => option.key === liveVibeMyActiveSignalKey) || null,
     [liveVibeMyActiveSignalKey]
@@ -506,6 +574,31 @@ export default function CityPage() {
     [selectedEventQuality]
   );
 
+  const selectedServiceQuality = selectedService
+    ? getEntityQuality({
+      targetType: "service",
+      targetId: selectedService.id,
+      entity: selectedService,
+      map: qualityMap,
+    })
+    : null;
+  const selectedServiceQualityStatus = useMemo(
+    () => (selectedServiceQuality ? getQualityStatus(selectedServiceQuality) : null),
+    [selectedServiceQuality]
+  );
+  const selectedServiceImages = useMemo(
+    () => normalizeServiceImageUrls(selectedService?.image_urls),
+    [selectedService?.image_urls]
+  );
+  const selectedServiceBookingUrl = useMemo(
+    () => normalizeExternalUrl(selectedService?.booking_link || ""),
+    [selectedService?.booking_link]
+  );
+  const selectedServiceLinkUrl = useMemo(
+    () => normalizeExternalUrl(selectedService?.link || ""),
+    [selectedService?.link]
+  );
+
   const placesByType = useMemo(
     () =>
       cityPlaces.reduce((acc, place) => {
@@ -529,6 +622,29 @@ export default function CityPage() {
     [groupedPlaces]
   );
 
+  const servicesByType = useMemo(
+    () =>
+      cityServices.reduce((acc, service) => {
+        const key = String(service?.type || "other");
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(service);
+        return acc;
+      }, {}),
+    [cityServices]
+  );
+  const groupedServices = useMemo(
+    () =>
+      SERVICE_TYPES.map((item) => ({
+        ...item,
+        items: servicesByType[item.value] || [],
+      })),
+    [servicesByType]
+  );
+  const visibleServiceGroups = useMemo(
+    () => groupedServices.filter((group) => group.items.length > 0),
+    [groupedServices]
+  );
+
   const sortedEvents = useMemo(
     () =>
       cityEvents
@@ -546,20 +662,22 @@ export default function CityPage() {
 
   const featuredEvent = useMemo(() => {
     if (sortedEvents.length === 0) return null;
-    const now = new Date();
+    const now = privateFeedNowTick > 0 ? new Date(privateFeedNowTick) : new Date(0);
     const nowIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const upcoming = sortedEvents.find((event) => normalizeEventRange(event).endDate >= nowIso);
     return upcoming || sortedEvents[0];
-  }, [sortedEvents]);
+  }, [privateFeedNowTick, sortedEvents]);
 
   const remainingEvents = useMemo(() => {
     if (!featuredEvent) return sortedEvents;
     return sortedEvents.filter((event) => String(event.id) !== String(featuredEvent.id));
   }, [featuredEvent, sortedEvents]);
-  const isFocusMode = Boolean(selectedPlace || selectedEvent);
+  const isFocusMode = Boolean(selectedPlace || selectedEvent || selectedService);
   const cityPlaceCount = cityPlaces.length;
   const cityEventCount = cityEvents.length;
+  const cityServiceCount = cityServices.length;
   const hasAnyPlaces = cityPlaceCount > 0;
+  const hasAnyServices = cityServiceCount > 0;
   const placesChipLabel = placesLoading
     ? "Places syncing"
     : cityPlaceCount > 0
@@ -570,6 +688,10 @@ export default function CityPage() {
     : cityEventCount > 0
       ? `${cityEventCount} events`
       : "Events incoming";
+  const todayIso = useMemo(() => {
+    if (privateFeedNowTick <= 0) return "";
+    return new Date(privateFeedNowTick).toISOString().slice(0, 10);
+  }, [privateFeedNowTick]);
   const privateEventStartPreview = useMemo(
     () => combineDateAndTime(privateEventForm.startDate, privateEventForm.startTime),
     [privateEventForm.startDate, privateEventForm.startTime],
@@ -594,7 +716,8 @@ export default function CityPage() {
     [privateInviteRequestsByEvent]
   );
 
-  const buildSelectionUrl = useCallback(({ nextPlaceId = placeId, nextEventId = eventId } = {}) => {
+  const buildSelectionUrl = useCallback(
+    ({ nextPlaceId = placeId, nextEventId = eventId, nextServiceId = serviceId } = {}) => {
     const params = new URLSearchParams(searchParams.toString());
 
     if (nextPlaceId) {
@@ -609,12 +732,20 @@ export default function CityPage() {
       params.delete("eventId");
     }
 
+    if (nextServiceId) {
+      params.set("serviceId", String(nextServiceId));
+    } else {
+      params.delete("serviceId");
+    }
+
     params.delete("lat");
     params.delete("lng");
 
     const query = params.toString();
     return query ? `${pathname}?${query}` : pathname;
-  }, [eventId, pathname, placeId, searchParams]);
+    },
+    [eventId, pathname, placeId, searchParams, serviceId]
+  );
 
   const autoCheckinFromPlaceTap = useCallback(async (place) => {
     if (!isMember || !user?.id || !place) return;
@@ -693,20 +824,74 @@ export default function CityPage() {
   }, [city, isMember, memberName, showToast, user?.email, user?.id]);
 
   const openPlace = useCallback((place) => {
-    router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null }));
+    router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }));
     void autoCheckinFromPlaceTap(place);
   }, [autoCheckinFromPlaceTap, buildSelectionUrl, router]);
 
   const openEvent = (event) => {
-    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id }));
+    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id, nextServiceId: null }));
+  };
+
+  const openService = useCallback((service) => {
+    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: service.id }));
+  }, [buildSelectionUrl, router]);
+
+  const canEditSelectedService = Boolean(
+    isMember
+      && selectedService
+      && (
+        isAdmin
+        || String(selectedService.created_by || "") === String(user?.id || "")
+      )
+  );
+
+  const closeService = useCallback(() => {
+    router.push(buildSelectionUrl({ nextServiceId: null }));
+  }, [buildSelectionUrl, router]);
+
+  const closeAllDetails = useCallback(() => {
+    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: null }));
+  }, [buildSelectionUrl, router]);
+
+  const showServiceOnMap = () => {
+    const lat = Number(selectedService?.lat);
+    const lng = Number(selectedService?.lng);
+    if (!selectedService || !mapRef.current || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    mapRef.current.flyTo({
+      center: [lng, lat],
+      zoom: 14,
+    });
+
+    const isMobileViewport =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 1024px)").matches;
+
+    if (isMobileViewport) {
+      keepMapViewOnNextCloseRef.current = true;
+      closeService();
+      requestAnimationFrame(() => {
+        mapWrapperRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+      return;
+    }
+
+    mapWrapperRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const closePlace = useCallback(() => {
-    router.push(buildSelectionUrl({ nextPlaceId: null }));
+    router.push(buildSelectionUrl({ nextPlaceId: null, nextServiceId: null }));
   }, [buildSelectionUrl, router]);
 
   const closeEvent = useCallback(() => {
-    router.push(buildSelectionUrl({ nextEventId: null }));
+    router.push(buildSelectionUrl({ nextEventId: null, nextServiceId: null }));
   }, [buildSelectionUrl, router]);
 
   const showEventOnMap = () => {
@@ -782,6 +967,30 @@ export default function CityPage() {
       setEventsData((await mergeSeedEventsAsync([])).map((event) => normalizeEventRange(event)));
     } finally {
       setEventsLoading(false);
+    }
+  }, []);
+
+  const fetchServices = useCallback(async () => {
+    setServicesLoading(true);
+    setServicesLoadError("");
+    try {
+      const result = await fetchServicesQuery({
+        select:
+          "id, name, city, type, description, hours, link, location, lat, lng, price_tier, provider_name, contact, booking_link, image_urls, vibe, vibe_tags, source, lastChecked, verified, created_by",
+      });
+
+      if (result?.error) {
+        setServicesLoadError("Could not load local services right now.");
+        setServicesData([]);
+        return;
+      }
+
+      setServicesData(Array.isArray(result?.data) ? result.data : []);
+    } catch {
+      setServicesLoadError("Could not reach service index right now.");
+      setServicesData([]);
+    } finally {
+      setServicesLoading(false);
     }
   }, []);
 
@@ -1266,6 +1475,12 @@ export default function CityPage() {
 
   useEffect(() => {
     queueMicrotask(() => {
+      fetchServices();
+    });
+  }, [fetchServices]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
       fetchPrivateEvents();
     });
   }, [fetchPrivateEvents]);
@@ -1283,6 +1498,7 @@ export default function CityPage() {
   }, [cityPrivateEvents, fetchPrivateInviteRequests]);
 
   useEffect(() => {
+    setPrivateFeedNowTick(Date.now());
     const id = setInterval(() => {
       setPrivateFeedNowTick(Date.now());
     }, 60 * 1000);
@@ -1344,6 +1560,28 @@ export default function CityPage() {
       supabase.removeChannel(channel);
     };
   }, [city, isMember, refreshVipFeed]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`qa-city-services-${String(city || "").trim()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "services",
+          filter: `city=eq.${String(city || "").trim()}`,
+        },
+        () => {
+          fetchServices();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [city, fetchServices]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -1462,6 +1700,7 @@ export default function CityPage() {
     markersRef.current = [];
     placeMarkersRef.current = new Map();
     eventMarkersRef.current = new Map();
+    serviceMarkersRef.current = new Map();
 
     const showHoverPopup = (name, lng, lat) => {
       if (!hoverPopupRef.current || isMapInteractingRef.current) return;
@@ -1492,7 +1731,7 @@ export default function CityPage() {
         .addTo(mapRef.current);
 
       marker.getElement().addEventListener("click", () => {
-        router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null }));
+        router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }));
       });
       marker.getElement().addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
@@ -1523,7 +1762,7 @@ export default function CityPage() {
         .addTo(mapRef.current);
 
       marker.getElement().addEventListener("click", () => {
-        router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id }));
+        router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id, nextServiceId: null }));
       });
       marker.getElement().addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
@@ -1538,11 +1777,47 @@ export default function CityPage() {
       markersRef.current.push(marker);
       eventMarkersRef.current.set(String(event.id), marker);
     });
-  }, [buildSelectionUrl, cityPlaces, cityEvents, router]);
+
+    cityServices.forEach((service) => {
+      const lat = Number(service?.lat);
+      const lng = Number(service?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const typeConfig = SERVICE_TYPES.find((item) => item.value === service.type);
+
+      const element = document.createElement("div");
+      element.style.width = "14px";
+      element.style.height = "14px";
+      element.style.background = typeConfig?.color || "#10b981";
+      element.style.borderRadius = "999px";
+      element.style.border = "2px solid rgba(255,255,255,0.95)";
+
+      const marker = new mapboxgl.Marker(element)
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
+
+      marker.getElement().addEventListener("click", () => {
+        router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: service.id }));
+      });
+      marker.getElement().addEventListener("mouseenter", () => {
+        if (isMapInteractingRef.current) return;
+        setHoveredServiceId(String(service.id));
+        showHoverPopup(service.name || "Service", lng, lat);
+      });
+      marker.getElement().addEventListener("mouseleave", () => {
+        setHoveredServiceId(null);
+        hideHoverPopup();
+      });
+
+      markersRef.current.push(marker);
+      serviceMarkersRef.current.set(String(service.id), marker);
+    });
+  }, [buildSelectionUrl, cityEvents, cityPlaces, cityServices, router]);
 
   useEffect(() => {
     placeMarkersRef.current.forEach((marker, id) => {
-      const active = !isMapInteracting && hoveredPlaceId && String(id) === String(hoveredPlaceId);
+      const hovered = !isMapInteracting && hoveredPlaceId && String(id) === String(hoveredPlaceId);
+      const selected = selectedPlace && String(id) === String(selectedPlace.id);
+      const active = Boolean(hovered || selected);
       const el = marker.getElement();
       el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
       el.style.boxShadow = active ? "0 0 0 4px rgba(255,255,255,0.22), 0 0 22px rgba(255,255,255,0.35)" : "none";
@@ -1551,14 +1826,34 @@ export default function CityPage() {
     });
 
     eventMarkersRef.current.forEach((marker, id) => {
-      const active = !isMapInteracting && hoveredEventId && String(id) === String(hoveredEventId);
+      const hovered = !isMapInteracting && hoveredEventId && String(id) === String(hoveredEventId);
+      const selected = selectedEvent && String(id) === String(selectedEvent.id);
+      const active = Boolean(hovered || selected);
       const el = marker.getElement();
       el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
       el.style.boxShadow = active ? "0 0 0 4px rgba(139,92,246,0.24), 0 0 22px rgba(139,92,246,0.45)" : "none";
       el.style.filter = active ? "brightness(1.15)" : "brightness(1)";
       el.style.zIndex = active ? "32" : "12";
     });
-  }, [hoveredEventId, hoveredPlaceId, isMapInteracting]);
+    serviceMarkersRef.current.forEach((marker, id) => {
+      const hovered = !isMapInteracting && hoveredServiceId && String(id) === String(hoveredServiceId);
+      const selected = selectedService && String(id) === String(selectedService.id);
+      const active = Boolean(hovered || selected);
+      const el = marker.getElement();
+      el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
+      el.style.boxShadow = active ? "0 0 0 4px rgba(16,185,129,0.24), 0 0 22px rgba(16,185,129,0.42)" : "none";
+      el.style.filter = active ? "brightness(1.15)" : "brightness(1)";
+      el.style.zIndex = active ? "34" : "14";
+    });
+  }, [
+    hoveredEventId,
+    hoveredPlaceId,
+    hoveredServiceId,
+    isMapInteracting,
+    selectedEvent,
+    selectedPlace,
+    selectedService,
+  ]);
 
   useEffect(() => {
     if (!selectedPlace) {
@@ -1749,10 +2044,12 @@ export default function CityPage() {
   }, [liveVibeTableMissing, selectedPlaceDbId]);
 
   useEffect(() => {
-    const target = selectedPlace || selectedEvent;
+    const target = selectedPlace || selectedEvent || selectedService;
+    const targetLat = Number(target?.lat);
+    const targetLng = Number(target?.lng);
 
-    if (!target || !mapRef.current || target.lat == null || target.lng == null) {
-      if (!selectedPlace && !selectedEvent && mapRef.current) {
+    if (!target || !mapRef.current || !Number.isFinite(targetLat) || !Number.isFinite(targetLng)) {
+      if (!selectedPlace && !selectedEvent && !selectedService && mapRef.current) {
         if (keepMapViewOnNextCloseRef.current) {
           keepMapViewOnNextCloseRef.current = false;
           return;
@@ -1766,7 +2063,7 @@ export default function CityPage() {
     }
 
     mapRef.current.flyTo({
-      center: [target.lng, target.lat],
+      center: [targetLng, targetLat],
       zoom: 14.8,
     });
 
@@ -1774,7 +2071,7 @@ export default function CityPage() {
       behavior: "smooth",
       block: "start",
     });
-  }, [config.center, selectedEvent, selectedPlace]);
+  }, [config.center, selectedEvent, selectedPlace, selectedService]);
 
   const handleAddPlace = async () => {
     if (!name.trim() || !address.trim() || !description.trim() || !placeHours.trim()) {
@@ -2109,6 +2406,35 @@ export default function CityPage() {
     const lookup = await query;
     const rows = Array.isArray(lookup?.data) ? lookup.data : [];
     const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(eventCity));
+    return matched?.id ? String(matched.id) : null;
+  }, [city]);
+
+  const resolveServiceDbId = useCallback(async (service) => {
+    const serviceIdValue = String(service?.id || "");
+    const serviceName = String(service?.name || "").trim();
+    const serviceCity = String(service?.city || city).trim();
+    const normalizeCity = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (serviceIdValue && !serviceIdValue.startsWith("seed-service-")) {
+      return serviceIdValue;
+    }
+
+    if (!serviceName || !serviceCity) return null;
+
+    const lookup = await supabase
+      .from("services")
+      .select("id, city, name")
+      .ilike("name", serviceName)
+      .limit(20);
+
+    const rows = Array.isArray(lookup?.data) ? lookup.data : [];
+    const matched = rows.find((row) => normalizeCity(row?.city) === normalizeCity(serviceCity));
     return matched?.id ? String(matched.id) : null;
   }, [city]);
 
@@ -2730,6 +3056,222 @@ export default function CityPage() {
     }
   }, [closeEvent, fetchEvents, isAdmin, resolveEventDbId, selectedEvent, showToast]);
 
+  const handleAdminSaveService = useCallback(async () => {
+    if (!canEditSelectedService || !selectedService) return;
+
+    if (!String(serviceAdminDraft.name || "").trim() || !String(serviceAdminDraft.description || "").trim()) {
+      showToast("Service name and description are required.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    setIsSavingServiceAdmin(true);
+    try {
+      const dbId = await resolveServiceDbId(selectedService);
+      if (!dbId) {
+        showToast("Could not resolve service record in database.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      const locationValue = String(serviceAdminDraft.location || "").trim();
+      let nextLat = Number(selectedService?.lat);
+      let nextLng = Number(selectedService?.lng);
+
+      if (!Number.isFinite(nextLat)) nextLat = null;
+      if (!Number.isFinite(nextLng)) nextLng = null;
+
+      if (locationValue) {
+        const coords = await geocodeAddress(locationValue);
+        if (!coords) {
+          showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+          return;
+        }
+        nextLat = coords.lat;
+        nextLng = coords.lng;
+      }
+
+      const sourceValue = String(serviceAdminDraft.source || "").trim();
+      const lastCheckedValue = normalizeIsoDate(serviceAdminDraft.lastChecked);
+      const payload = {
+        name: String(serviceAdminDraft.name || "").trim(),
+        type: String(serviceAdminDraft.type || "other").trim() || "other",
+        provider_name: String(serviceAdminDraft.provider_name || "").trim() || null,
+        contact: String(serviceAdminDraft.contact || "").trim() || null,
+        booking_link: String(serviceAdminDraft.booking_link || "").trim() || null,
+        description: String(serviceAdminDraft.description || "").trim(),
+        hours: String(serviceAdminDraft.hours || "").trim() || null,
+        link: String(serviceAdminDraft.link || "").trim() || null,
+        price_tier: String(serviceAdminDraft.price_tier || "").trim() || null,
+        location: locationValue || null,
+        lat: nextLat,
+        lng: nextLng,
+        ...buildVibeDualWriteFields({
+          vibe: serviceAdminDraft.vibe,
+          vibeTags: normalizeVibeTags(serviceAdminDraft.vibe_tags, { max: 3 }),
+        }),
+        source: sourceValue || null,
+        lastChecked: lastCheckedValue || null,
+        verified: Boolean(sourceValue && lastCheckedValue),
+      };
+
+      let updateResult = await supabase
+        .from("services")
+        .update(payload)
+        .eq("id", dbId)
+        .select("id")
+        .single();
+
+      if (updateResult.error) {
+        const errorText = `${updateResult.error?.code || ""} ${updateResult.error?.message || ""}`.toLowerCase();
+        const missingLocation =
+          errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingVibeTags = isMissingVibeTagsColumnError(updateResult.error);
+
+        if (missingLocation || missingVibeTags) {
+          const fallbackPayload = { ...payload };
+          if (missingLocation) {
+            delete fallbackPayload.location;
+          }
+          if (missingVibeTags) {
+            delete fallbackPayload.vibe_tags;
+          }
+          updateResult = await supabase
+            .from("services")
+            .update(fallbackPayload)
+            .eq("id", dbId)
+            .select("id")
+            .single();
+        }
+      }
+
+      if (updateResult.error) {
+        showToast(updateResult.error.message || "Could not save service changes.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      await fetchServices();
+      setServiceAdminOpen(false);
+      showToast("Service updated and saved.", { tone: "ok", duration: 2100 });
+    } catch (error) {
+      showToast(error?.message || "Could not save service changes.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsSavingServiceAdmin(false);
+    }
+  }, [
+    canEditSelectedService,
+    fetchServices,
+    geocodeAddress,
+    resolveServiceDbId,
+    selectedService,
+    serviceAdminDraft,
+    showToast,
+  ]);
+
+  const handleAdminSaveServiceAddressOnly = useCallback(async () => {
+    if (!canEditSelectedService || !selectedService) return;
+    const locationValue = String(serviceAdminDraft.location || "").trim();
+    if (!locationValue) {
+      showToast("Address is required.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    setIsSavingServiceAddressOnly(true);
+    try {
+      const coords = await geocodeAddress(locationValue);
+      if (!coords) {
+        showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+        return;
+      }
+
+      const dbId = await resolveServiceDbId(selectedService);
+      if (!dbId) {
+        showToast("Could not resolve service record in database.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      let updateResult = await supabase
+        .from("services")
+        .update({
+          location: locationValue,
+          lat: coords.lat,
+          lng: coords.lng,
+        })
+        .eq("id", dbId)
+        .select("id")
+        .single();
+
+      if (updateResult.error) {
+        const errorText = `${updateResult.error?.code || ""} ${updateResult.error?.message || ""}`.toLowerCase();
+        const missingLocation =
+          errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+
+        if (missingLocation) {
+          updateResult = await supabase
+            .from("services")
+            .update({
+              lat: coords.lat,
+              lng: coords.lng,
+            })
+            .eq("id", dbId)
+            .select("id")
+            .single();
+        }
+      }
+
+      if (updateResult.error) {
+        showToast(updateResult.error.message || "Could not save service address.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      await fetchServices();
+      showToast("Service address updated.", { tone: "ok", duration: 2100 });
+    } catch (error) {
+      showToast(error?.message || "Could not save service address.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsSavingServiceAddressOnly(false);
+    }
+  }, [
+    canEditSelectedService,
+    fetchServices,
+    geocodeAddress,
+    resolveServiceDbId,
+    selectedService,
+    serviceAdminDraft.location,
+    showToast,
+  ]);
+
+  const handleAdminDeleteService = useCallback(async () => {
+    if (!canEditSelectedService || !selectedService) return;
+    const confirmed = window.confirm(`Delete service "${selectedService.name}" from atlas?`);
+    if (!confirmed) return;
+
+    setIsDeletingServiceAdmin(true);
+    try {
+      const dbId = await resolveServiceDbId(selectedService);
+      if (!dbId) {
+        showToast("Could not resolve service record in database.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      const { error } = await supabase
+        .from("services")
+        .delete()
+        .eq("id", dbId);
+
+      if (error) {
+        showToast(error.message || "Could not delete service.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      await fetchServices();
+      closeService();
+      showToast("Service deleted.", { tone: "ok", duration: 2000 });
+    } catch (error) {
+      showToast(error?.message || "Could not delete service.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsDeletingServiceAdmin(false);
+    }
+  }, [canEditSelectedService, closeService, fetchServices, resolveServiceDbId, selectedService, showToast]);
+
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
       <ActionToast toast={toast} />
@@ -2845,6 +3387,26 @@ export default function CityPage() {
           >
             {addEventMode ? "Cancel event" : "+ Add event"}
           </button>
+
+          <button
+            onClick={() => {
+              if (!isMember) {
+                writeLocalValue("qa_redirect", pathname);
+                router.push("/?join=true");
+                return;
+              }
+
+              const params = new URLSearchParams();
+              params.set("city", String(city || ""));
+              params.set("entity", "service");
+              params.set("focus", "service-form");
+              router.push(`/contribute?${params.toString()}`);
+            }}
+            className="rounded-full border border-pink-100/60 bg-gradient-to-r from-pink-200 via-rose-200 to-fuchsia-200 px-5 py-2.5 text-sm font-medium text-black transition hover:brightness-105"
+            aria-label="Open add service form"
+          >
+            + Add service
+          </button>
         </div>
 
         {addMode && (
@@ -2939,7 +3501,7 @@ export default function CityPage() {
 
         <div className="animate-cinematic-in mb-8 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_44px_rgba(0,0,0,0.22)]" style={{ animationDelay: "170ms" }}>
           <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Quick Navigation</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <button
               type="button"
               onClick={() => scrollToSection(tonightSectionRef)}
@@ -2955,6 +3517,14 @@ export default function CityPage() {
             >
               <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
               <p className="mt-1 font-semibold">Quick Guide</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection(servicesSectionRef)}
+              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
+            >
+              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
+              <p className="mt-1 font-semibold">Services</p>
             </button>
             <button
               type="button"
@@ -3387,7 +3957,7 @@ export default function CityPage() {
                       className="w-full"
                       tone="violet"
                       required
-                      min={new Date().toISOString().slice(0, 10)}
+                      min={todayIso || undefined}
                     />
                     <div className="relative">
                       <input
@@ -3724,6 +4294,179 @@ export default function CityPage() {
           </div>
         </div>
 
+        <div ref={servicesSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-emerald-200/10 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(16,185,129,0.06)]" style={{ animationDelay: "270ms" }}>
+          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-emerald-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-emerald-100 backdrop-blur">
+            Services
+          </h2>
+          <p className="mb-4 text-sm text-white/65">
+            Private services curated for this city: massage, tours, concierge, and premium support lanes.
+          </p>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/90">
+              {servicesLoading ? "Services syncing" : `${cityServiceCount} listed`}
+            </span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
+              {visibleServiceGroups.length} categories
+            </span>
+            <span className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.09] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/88">
+              Member-owned
+            </span>
+          </div>
+
+          {servicesLoadError && (
+            <div className="mb-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
+              <p>{servicesLoadError}</p>
+              <button
+                onClick={fetchServices}
+                className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {servicesLoading && (
+            <div className="mb-4 rounded-2xl border border-emerald-200/10 bg-emerald-200/[0.03] p-4">
+              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-emerald-100/60">Loading local services</p>
+              <SectionSkeleton tone="emerald" rows={2} />
+            </div>
+          )}
+
+          {!servicesLoading && !hasAnyServices && (
+            <div className="rounded-2xl border border-dashed border-emerald-200/20 bg-emerald-200/[0.04] px-4 py-8 text-sm text-emerald-100/75">
+              No service signal yet for this city. Add trusted providers from Contribute to unlock this lane.
+            </div>
+          )}
+
+          {visibleServiceGroups.map((group) => (
+            <div key={`service-group-${group.value}`} className="mb-6 last:mb-0">
+              <h3 className="mb-3 text-sm uppercase tracking-[0.16em] text-emerald-100/75">
+                {SERVICE_TYPE_LABELS[group.value] || group.label}
+              </h3>
+              <div className="grid gap-4 md:grid-cols-2">
+                {group.items.map((service, index) => {
+                  const style = SERVICE_TYPE_STYLES[service.type] || SERVICE_TYPE_STYLES.other;
+                  const bookingUrl = normalizeExternalUrl(service.booking_link || service.link || "");
+                  const contact = String(service.contact || "").trim();
+                  const providerName = String(service.provider_name || "").trim();
+                  const locationLabel = getEntityAddressLabel(service);
+                  const priceTier = String(service.price_tier || "").trim();
+                  const isSelectedService = String(serviceId || "") === String(service.id);
+                  const serviceImages = normalizeServiceImageUrls(service.image_urls);
+                  const coverImage = String(serviceImages[0] || "").trim();
+
+                  return (
+                    <article
+                      key={`service-${service.id}`}
+                      role="button"
+                      tabIndex={0}
+                      style={{ animationDelay: `${Math.min(index * 40, 220)}ms` }}
+                      className={`qa-cinematic-hover animate-rise-in rounded-[24px] border p-5 ${style.card} ${
+                        isSelectedService
+                          ? "border-emerald-200/40 shadow-[0_18px_48px_rgba(16,185,129,0.16)]"
+                          : "hover:border-emerald-200/22"
+                      } cursor-pointer`}
+                      onMouseEnter={() => setHoveredServiceId(String(service.id))}
+                      onMouseLeave={() => setHoveredServiceId(null)}
+                      onClick={() => openService(service)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openService(service);
+                        }
+                      }}
+                    >
+                      {coverImage && (
+                        <div className="mb-3 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
+                          <Image
+                            src={coverImage}
+                            alt={`${service.name} photo`}
+                            width={720}
+                            height={420}
+                            unoptimized
+                            className="h-36 w-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${style.line}`} />
+                      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="text-lg font-semibold leading-tight tracking-[-0.01em] text-white">
+                            {service.name}
+                          </h3>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className={`rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.15em] ${style.label}`}>
+                              {SERVICE_TYPE_LABELS[service.type] || "Service"}
+                            </span>
+                            {priceTier && (
+                              <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-amber-100">
+                                {priceTier}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {service.description && (
+                        <div className="mb-3 rounded-2xl border border-white/10 bg-black/28 p-3">
+                          <p className="line-clamp-3 text-sm leading-6 text-white/68">{String(service.description)}</p>
+                        </div>
+                      )}
+
+                      <VibeTagChips entity={service} tone="cyan" className="mb-3" includeMixedFallback />
+
+                      <div className="space-y-1.5 text-xs text-white/62">
+                        {providerName && (
+                          <p>
+                            <span className="text-white/48">Provider:</span> {providerName}
+                          </p>
+                        )}
+                        {locationLabel && (
+                          <p>
+                            <span className="text-white/48">Area:</span> {locationLabel}
+                          </p>
+                        )}
+                        {service.hours && (
+                          <p>
+                            <span className="text-white/48">Availability:</span> {String(service.hours)}
+                          </p>
+                        )}
+                        {contact && (
+                          <p>
+                            <span className="text-white/48">Contact:</span> {contact}
+                          </p>
+                        )}
+                      </div>
+
+                      {bookingUrl && (
+                        <a
+                          href={bookingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="mt-4 inline-flex rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
+                        >
+                          Open service
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openService(service);
+                        }}
+                        className="mt-3 inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30 hover:text-white"
+                      >
+                        View details
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
         {!placesLoading && !hasAnyPlaces && (
           <div className="mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
@@ -3915,16 +4658,323 @@ export default function CityPage() {
         })}
       </div>
 
-      {(selectedPlace || selectedEvent) && (
+      {(selectedPlace || selectedEvent || selectedService) && (
         <button
           type="button"
           aria-label="Close details panel"
-          onClick={() => {
-            if (selectedPlace) closePlace();
-            if (selectedEvent) closeEvent();
-          }}
+          onClick={closeAllDetails}
           className="fixed inset-0 z-30 bg-black/55 backdrop-blur-[1px] lg:hidden"
         />
+      )}
+
+      {selectedService && (
+        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.08),transparent_24%),linear-gradient(180deg,rgba(10,23,20,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[520px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
+          <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-emerald-400/12 blur-3xl" />
+          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#0b1412]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closeService}>
+            Close
+          </button>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <div className="mb-3 flex flex-wrap gap-2">
+              <span className="rounded-full border border-emerald-200/22 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-emerald-100">
+                {selectedService.city || config.title?.replace("Queer ", "")}
+              </span>
+              <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">
+                {SERVICE_TYPE_LABELS[selectedService.type] || "Service"}
+              </span>
+              {selectedService.price_tier && (
+                <span className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100">
+                  {String(selectedService.price_tier)}
+                </span>
+              )}
+            </div>
+            <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedService.name}</h2>
+            <VibeTagChips entity={selectedService} tone="cyan" className="mb-2" includeMixedFallback />
+            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
+              Area: {getEntityAddressLabel(selectedService) || "City-wide"}
+            </p>
+            <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-sky-300" />
+
+            {selectedServiceImages.length > 0 && (
+              <div className="mb-3 rounded-xl border border-white/10 bg-black/25 p-2.5">
+                <div className="overflow-hidden rounded-xl border border-white/12 bg-black/30">
+                  <Image
+                    src={selectedServiceImages[0]}
+                    alt={`${selectedService.name} photo`}
+                    width={920}
+                    height={540}
+                    unoptimized
+                    className="h-52 w-full object-cover"
+                  />
+                </div>
+                {selectedServiceImages.length > 1 && (
+                  <div className="mt-2 grid grid-cols-4 gap-2">
+                    {selectedServiceImages.slice(1, 5).map((imageUrl) => (
+                      <div key={`service-panel-image-${imageUrl}`} className="overflow-hidden rounded-lg border border-white/12 bg-black/35">
+                        <Image
+                          src={imageUrl}
+                          alt={`${selectedService.name} gallery`}
+                          width={240}
+                          height={160}
+                          unoptimized
+                          className="h-16 w-full object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedService.description && (
+              <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About service</p>
+                <p className="text-sm leading-relaxed text-white/72">{String(selectedService.description)}</p>
+              </div>
+            )}
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {selectedService.provider_name && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Provider</p>
+                  <p className="mt-1 text-xs text-white/82">{String(selectedService.provider_name)}</p>
+                </div>
+              )}
+              {selectedService.contact && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Contact</p>
+                  <p className="mt-1 text-xs text-white/82">{String(selectedService.contact)}</p>
+                </div>
+              )}
+              {selectedService.hours && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:col-span-2">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Availability</p>
+                  <p className="mt-1 text-xs text-white/82">{String(selectedService.hours)}</p>
+                </div>
+              )}
+            </div>
+
+            {selectedServiceQuality && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  onClick={(clickEvent) =>
+                    refreshEntityQuality(
+                      { targetType: "service", targetId: selectedService.id, fallbackSource: selectedServiceQuality.source || selectedService.link || "" },
+                      clickEvent
+                    )
+                  }
+                  className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedServiceQualityStatus?.tone || "community")}`}
+                >
+                  {selectedServiceQualityStatus?.label || "Community"}
+                </button>
+                {selectedServiceQuality.lastChecked && (
+                  <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
+                    Checked {formatDate(selectedServiceQuality.lastChecked)}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {canEditSelectedService && (
+              <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/82">Service controls</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setServiceAdminOpen((value) => !value);
+                      setServiceAdminDraft(buildServiceAdminDraft(selectedService));
+                    }}
+                    className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
+                  >
+                    {serviceAdminOpen ? "Close editor" : "Edit service"}
+                  </button>
+                </div>
+
+                {serviceAdminOpen && (
+                  <div className="mt-3 space-y-2">
+                    <input
+                      value={serviceAdminDraft.name}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, name: event.target.value }))}
+                      placeholder="Service name"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <select
+                      value={serviceAdminDraft.type}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, type: event.target.value }))}
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    >
+                      {SERVICE_TYPES.map((item) => (
+                        <option key={`admin-service-type-${item.value}`} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+                    <textarea
+                      value={serviceAdminDraft.description}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, description: event.target.value }))}
+                      placeholder="Description"
+                      className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <VibeTagPicker
+                      value={serviceAdminDraft.vibe_tags}
+                      onChange={(nextTags) =>
+                        setServiceAdminDraft((current) => ({ ...current, vibe_tags: nextTags }))
+                      }
+                      tone="amber"
+                      title="Service vibe tags"
+                      hint="Choose up to 3 tags."
+                    />
+                    <input
+                      value={serviceAdminDraft.vibe}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
+                      placeholder="Legacy vibe label (optional)"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={serviceAdminDraft.location}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, location: event.target.value }))}
+                      placeholder="Address / location (updates map pin)"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAdminSaveServiceAddressOnly}
+                      disabled={isSavingServiceAddressOnly}
+                      className="w-full rounded-xl border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55 disabled:opacity-60"
+                    >
+                      {isSavingServiceAddressOnly ? "Saving address..." : "Save address only"}
+                    </button>
+                    <input
+                      value={serviceAdminDraft.hours}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, hours: event.target.value }))}
+                      placeholder="Availability / opening hours"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={serviceAdminDraft.provider_name}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, provider_name: event.target.value }))}
+                      placeholder="Provider name"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={serviceAdminDraft.contact}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, contact: event.target.value }))}
+                      placeholder="Contact (phone / email / handle)"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={serviceAdminDraft.booking_link}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, booking_link: event.target.value }))}
+                      placeholder="Booking link"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <input
+                      value={serviceAdminDraft.link}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, link: event.target.value }))}
+                      placeholder="Official link"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <select
+                      value={serviceAdminDraft.price_tier}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, price_tier: event.target.value }))}
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    >
+                      {SERVICE_PRICE_TIER_OPTIONS.map((value) => (
+                        <option key={`admin-service-price-${value || "none"}`} value={value}>
+                          {value || "Price tier (optional)"}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={serviceAdminDraft.source}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, source: event.target.value }))}
+                      placeholder="Source (optional)"
+                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+                    />
+                    <DateInput
+                      value={serviceAdminDraft.lastChecked}
+                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, lastChecked: event.target.value }))}
+                      placeholder="Last checked (optional)"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAdminSaveService}
+                        disabled={isSavingServiceAdmin}
+                        className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
+                      >
+                        {isSavingServiceAdmin ? "Saving..." : "Save changes"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAdminDeleteService}
+                        disabled={isDeletingServiceAdmin}
+                        className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
+                      >
+                        {isDeletingServiceAdmin ? "Deleting..." : "Delete service"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {selectedServiceBookingUrl && (
+              <a
+                href={selectedServiceBookingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="qa-cinematic-hover block w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-cyan-200 py-3 text-center font-semibold text-black"
+              >
+                Open booking
+              </a>
+            )}
+            {selectedServiceLinkUrl && selectedServiceLinkUrl !== selectedServiceBookingUrl && (
+              <a
+                href={selectedServiceLinkUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="qa-cinematic-hover block w-full rounded-2xl border border-white/12 bg-white/6 py-3 text-center text-sm text-white/82 hover:border-white/22 hover:text-white"
+              >
+                Open official link
+              </a>
+            )}
+            <button
+              onClick={showServiceOnMap}
+              disabled={!Number.isFinite(Number(selectedService.lat)) || !Number.isFinite(Number(selectedService.lng))}
+              className="qa-cinematic-hover w-full rounded-2xl border border-white/10 bg-white/5 py-3 disabled:opacity-50"
+            >
+              Show on map
+            </button>
+            {canEditSelectedService && (
+              <button
+                onClick={() => {
+                  setServiceAdminOpen((value) => !value);
+                  setServiceAdminDraft(buildServiceAdminDraft(selectedService));
+                }}
+                className="qa-cinematic-hover w-full rounded-2xl border border-cyan-200/24 bg-cyan-200/10 py-3 text-sm text-cyan-100 transition hover:border-cyan-200/38 hover:bg-cyan-200/16"
+              >
+                {serviceAdminOpen ? "Close editor" : "Edit service"}
+              </button>
+            )}
+            <button
+              onClick={() =>
+                handleReport({
+                  targetType: "service",
+                  targetId: selectedService.id,
+                  title: selectedService.name,
+                })
+              }
+              className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+              aria-label={`Report service ${selectedService.name}`}
+            >
+              Report issue
+            </button>
+          </div>
+        </div>
       )}
 
       {selectedPlace && (

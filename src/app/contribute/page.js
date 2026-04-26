@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cityConfig } from "@/lib/cities";
 import { useAuth } from "@/lib/auth";
@@ -10,6 +11,7 @@ import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
+import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   blockItem,
@@ -35,6 +37,7 @@ import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import { SERVICE_TYPES as CITY_SERVICE_TYPES } from "@/features/city/cityPageConstants";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -59,6 +62,40 @@ const PLACE_TYPES = [
   { value: "cafe", label: "Cafe" },
   { value: "hotel", label: "Hotel" },
 ];
+
+const SERVICE_PRICE_TIERS = [
+  { value: "", label: "Price tier (optional)" },
+  { value: "$", label: "$ Budget" },
+  { value: "$$", label: "$$ Mid" },
+  { value: "$$$", label: "$$$ Premium" },
+  { value: "$$$$", label: "$$$$ Luxury" },
+];
+
+const SERVICE_MEDIA_BUCKET = "service-media";
+const SERVICE_MAX_IMAGES = 8;
+const SERVICE_MAX_FILE_BYTES = 8 * 1024 * 1024;
+const SERVICE_ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+function createEmptyServiceForm() {
+  return {
+    name: "",
+    city: "",
+    type: "massage",
+    provider_name: "",
+    contact: "",
+    booking_link: "",
+    image_urls: [],
+    address: "",
+    description: "",
+    hours: "",
+    link: "",
+    price_tier: "",
+    vibe: "",
+    vibe_tags: [],
+    source: "",
+    lastChecked: "",
+  };
+}
 
 function timeAgo(value) {
   const diffHours = Math.round((new Date() - new Date(value)) / 3600000);
@@ -103,18 +140,79 @@ function formatCityLabel(city) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function normalizeLooseSlug(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalizeServiceImageUrls(input, max = SERVICE_MAX_IMAGES) {
+  const urls = Array.isArray(input) ? input : [];
+  const out = [];
+  const seen = new Set();
+
+  for (const rawValue of urls) {
+    const value = String(rawValue || "").trim();
+    if (!value) continue;
+    if (!/^https?:\/\//i.test(value)) continue;
+    if (seen.has(value)) continue;
+    seen.add(value);
+    out.push(value);
+    if (out.length >= max) break;
+  }
+
+  return out;
+}
+
+function resolveCitySlugFromQueryValue(value) {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[-\s]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!normalized) return "";
+  if (cityConfig[normalized]) return normalized;
+
+  return (
+    Object.keys(cityConfig).find((key) => {
+      const titleNormalized = String(cityConfig[key]?.title || "")
+        .replace(/^queer\s+/i, "")
+        .trim()
+        .toLowerCase()
+        .replace(/[-\s]+/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+      return titleNormalized === normalized;
+    }) || ""
+  );
+}
+
 export default function ContributePage() {
   const router = useRouter();
+  const serviceFormPanelRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
-  const { isMember, isLoading: isAuthLoading, user } = useAuth();
+  const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
   const [selectedCity, setSelectedCity] = useState("");
   const [addMode, setAddMode] = useState(false);
   const [addEventMode, setAddEventMode] = useState(false);
+  const [addServiceMode, setAddServiceMode] = useState(false);
   const [atlasNotice, setAtlasNotice] = useState("");
   const [placeNotice, setPlaceNotice] = useState("");
   const [eventNotice, setEventNotice] = useState("");
+  const [serviceNotice, setServiceNotice] = useState("");
   const [isSavingPlace, setIsSavingPlace] = useState(false);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [isSavingService, setIsSavingService] = useState(false);
+  const [isUploadingServiceImages, setIsUploadingServiceImages] = useState(false);
+  const [serviceImageUrlDraft, setServiceImageUrlDraft] = useState("");
+  const [shouldScrollToServiceForm, setShouldScrollToServiceForm] = useState(false);
+  const [editingServiceId, setEditingServiceId] = useState("");
+  const [isLoadingServiceDraft, setIsLoadingServiceDraft] = useState(false);
   const { addPlace } = usePlaces();
   const [requests, setRequests] = useState(initialRequests);
   const [reports, setReports] = useState([]);
@@ -127,6 +225,7 @@ export default function ContributePage() {
   const [qaSnapshot, setQaSnapshot] = useState({
     places: [],
     events: [],
+    services: [],
     loading: false,
     error: "",
   });
@@ -155,12 +254,157 @@ export default function ContributePage() {
     source: "",
     lastChecked: "",
   });
+  const [serviceForm, setServiceForm] = useState(createEmptyServiceForm);
   const [requestForm, setRequestForm] = useState({
     type: "Correction",
     city: "",
     title: "",
     detail: "",
   });
+
+  useEffect(() => {
+    if (!isMember) return;
+    if (typeof window === "undefined") return;
+
+    const currentParams = new URLSearchParams(window.location.search);
+    const queryCity = currentParams.get("city");
+    const queryEntity = String(currentParams.get("entity") || "").trim().toLowerCase();
+    const queryFocus = String(currentParams.get("focus") || "").trim().toLowerCase();
+    const queryServiceId = String(currentParams.get("serviceId") || "").trim();
+    const citySlug = resolveCitySlugFromQueryValue(queryCity);
+
+    if (!citySlug && !queryEntity && !queryServiceId) return;
+
+    if (citySlug) {
+      const mappedCity = cityConfig[citySlug]?.title?.replace("Queer ", "") || "";
+      setSelectedCity(citySlug);
+      setPlaceForm((current) => ({ ...current, city: mappedCity }));
+      setEventForm((current) => ({ ...current, city: mappedCity }));
+      setServiceForm((current) => ({ ...current, city: mappedCity }));
+      setRequestForm((current) => ({ ...current, city: mappedCity }));
+    }
+
+    if (queryEntity === "service") {
+      setAddServiceMode(true);
+      setAddMode(false);
+      setAddEventMode(false);
+      setShouldScrollToServiceForm(true);
+      if (queryServiceId) {
+        setEditingServiceId(queryServiceId);
+      }
+    } else if (queryEntity === "event") {
+      setAddEventMode(true);
+      setAddMode(false);
+      setAddServiceMode(false);
+    } else if (queryEntity === "place") {
+      setAddMode(true);
+      setAddEventMode(false);
+      setAddServiceMode(false);
+    }
+    if (queryFocus === "service-form") {
+      setShouldScrollToServiceForm(true);
+      if (queryServiceId) {
+        setEditingServiceId(queryServiceId);
+      }
+    }
+
+    const nextParams = new URLSearchParams(currentParams.toString());
+    nextParams.delete("city");
+    nextParams.delete("entity");
+    nextParams.delete("focus");
+    nextParams.delete("serviceId");
+    const nextUrl = nextParams.toString() ? `/contribute?${nextParams.toString()}` : "/contribute";
+    router.replace(nextUrl);
+  }, [isMember, router]);
+
+  useEffect(() => {
+    if (!shouldScrollToServiceForm || !addServiceMode) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        serviceFormPanelRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+        setShouldScrollToServiceForm(false);
+      });
+    });
+  }, [addServiceMode, shouldScrollToServiceForm]);
+
+  useEffect(() => {
+    if (!isMember || !editingServiceId) return;
+
+    let active = true;
+    queueMicrotask(async () => {
+      setIsLoadingServiceDraft(true);
+      setServiceNotice("");
+      try {
+        const { data, error } = await supabase
+          .from("services")
+          .select("id, name, city, type, provider_name, contact, booking_link, image_urls, location, description, hours, link, price_tier, vibe, vibe_tags, source, lastChecked, created_by")
+          .eq("id", editingServiceId)
+          .maybeSingle();
+
+        if (!active) return;
+
+        if (error) {
+          if (isMissingTableError(error)) {
+            setServiceNotice("Services table missing. Run latest Supabase services SQL.");
+          } else {
+            setServiceNotice(error.message || "Could not load service draft.");
+          }
+          return;
+        }
+
+        if (!data) {
+          setServiceNotice("Service not found.");
+          return;
+        }
+
+        const ownerId = String(data.created_by || "");
+        const currentUserId = String(user?.id || "");
+        if (!isAdmin && (!ownerId || ownerId !== currentUserId)) {
+          setServiceNotice("Only the service owner or admin can edit this listing.");
+          return;
+        }
+
+        const mappedSlug = resolveCitySlugFromQueryValue(data.city);
+        if (mappedSlug) {
+          setSelectedCity(mappedSlug);
+        }
+
+        setServiceForm({
+          name: String(data.name || ""),
+          city: String(data.city || ""),
+          type: String(data.type || "massage"),
+          provider_name: String(data.provider_name || ""),
+          contact: String(data.contact || ""),
+          booking_link: String(data.booking_link || ""),
+          image_urls: normalizeServiceImageUrls(data.image_urls),
+          address: String(data.location || ""),
+          description: String(data.description || ""),
+          hours: String(data.hours || ""),
+          link: String(data.link || ""),
+          price_tier: String(data.price_tier || ""),
+          vibe: String(data.vibe || ""),
+          vibe_tags: normalizeVibeTags(data.vibe_tags, { max: 3 }),
+          source: String(data.source || ""),
+          lastChecked: String(data.lastChecked || ""),
+        });
+        setAddServiceMode(true);
+        setAddMode(false);
+        setAddEventMode(false);
+        setShouldScrollToServiceForm(true);
+      } finally {
+        if (active) {
+          setIsLoadingServiceDraft(false);
+        }
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [editingServiceId, isAdmin, isMember, user?.id]);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -229,7 +473,7 @@ export default function ContributePage() {
 
   useEffect(() => {
     if (!isMember || !isAdmin) {
-      setQaSnapshot({ places: [], events: [], loading: false, error: "" });
+      setQaSnapshot({ places: [], events: [], services: [], loading: false, error: "" });
       return;
     }
 
@@ -238,7 +482,7 @@ export default function ContributePage() {
     queueMicrotask(async () => {
       try {
         setQaSnapshot((current) => ({ ...current, loading: true, error: "" }));
-        const [placesRes, { data: eventsData, error: eventsError }] =
+        const [placesRes, { data: eventsData, error: eventsError }, servicesRes] =
           await Promise.all([
             fetchPlacesQueryWithFallback({
               select: "id, name, city, type, vibe, vibe_tags, description, hours, link, lat, lng, source, lastChecked, verified",
@@ -246,16 +490,23 @@ export default function ContributePage() {
             supabase
               .from("events")
               .select("id, name, city, vibe, vibe_tags, description, date, link, lat, lng, source, lastChecked, verified"),
+            fetchServicesQuery({
+              select:
+                "id, name, city, type, vibe, vibe_tags, description, hours, link, lat, lng, source, lastChecked, verified",
+            }),
           ]);
         const placesData = placesRes?.data || [];
         const placesError = placesRes?.error || null;
+        const servicesData = servicesRes?.data || [];
+        const servicesError = servicesRes?.error || null;
 
         if (!active) return;
 
-        if (placesError || eventsError) {
+        if (placesError || eventsError || servicesError) {
           setQaSnapshot({
             places: [],
             events: [],
+            services: [],
             loading: false,
             error: "Could not load complete QA snapshot from Supabase.",
           });
@@ -265,6 +516,7 @@ export default function ContributePage() {
         setQaSnapshot({
           places: await mergeSeedPlacesAsync(placesData || []),
           events: await mergeSeedEventsAsync(eventsData || []),
+          services: servicesData || [],
           loading: false,
           error: "",
         });
@@ -273,6 +525,7 @@ export default function ContributePage() {
         setQaSnapshot({
           places: [],
           events: [],
+          services: [],
           loading: false,
           error: "Network issue while loading QA snapshot.",
         });
@@ -560,6 +813,262 @@ export default function ContributePage() {
     }
   };
 
+  const submitServiceDirect = async () => {
+    if (!isMember || !user?.id) {
+      setServiceNotice("Join as member to publish services.");
+      showToast("Join as member to publish services.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    if (!serviceForm.name || !serviceForm.address || !serviceForm.description || !(selectedCity || serviceForm.city)) {
+      setServiceNotice("Fill in city, service name, address and description.");
+      showToast("Service not saved. Required fields are missing.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    setIsSavingService(true);
+    setServiceNotice("");
+
+    try {
+      const cityName =
+        (selectedCity ? cityConfig[selectedCity]?.title?.replace("Queer ", "") : "") ||
+        serviceForm.city.trim();
+      const coords = await geocodeAddress(serviceForm.address, cityName);
+
+      if (!coords) {
+        setServiceNotice("Address not found. Try a more specific address.");
+        return;
+      }
+
+      const vibeFields = buildVibeDualWriteFields({
+        vibe: serviceForm.vibe,
+        vibeTags: normalizeVibeTags(serviceForm.vibe_tags, { max: 3 }),
+      });
+      const announcerName = String(memberName || user?.email || "Member").trim();
+      const isEditing = Boolean(editingServiceId);
+      let savePayload = {
+        name: serviceForm.name,
+        city: cityName,
+        type: serviceForm.type,
+        provider_name: announcerName || null,
+        contact: serviceForm.contact || null,
+        booking_link: serviceForm.booking_link || null,
+        description: serviceForm.description,
+        hours: serviceForm.hours || null,
+        link: serviceForm.link || null,
+        image_urls: normalizeServiceImageUrls(serviceForm.image_urls),
+        price_tier: serviceForm.price_tier || null,
+        location: serviceForm.address,
+        lat: coords.lat,
+        lng: coords.lng,
+        source: serviceForm.source || null,
+        lastChecked: serviceForm.lastChecked || null,
+        verified: Boolean(serviceForm.source && serviceForm.lastChecked),
+        ...vibeFields,
+      };
+      if (!isEditing) {
+        savePayload.created_by = user.id;
+      }
+
+      let saveResult = null;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        saveResult = isEditing
+          ? await supabase
+            .from("services")
+            .update(savePayload)
+            .eq("id", editingServiceId)
+            .select("*")
+            .single()
+          : await supabase.from("services").insert([savePayload]).select("*").single();
+        if (!saveResult.error) break;
+
+        const errorText = `${saveResult.error?.code || ""} ${saveResult.error?.message || ""}`.toLowerCase();
+        if (errorText.includes("relation") && errorText.includes("does not exist")) {
+          setServiceNotice("Services table is missing. Run the latest Supabase services SQL script.");
+          showToast("Services table is missing in Supabase.", { tone: "warn", duration: 3000 });
+          return;
+        }
+
+        const missingVibeTags = isMissingVibeTagsColumnError(saveResult.error);
+        const missingColumnMatch = errorText.match(/column\s+["']?([a-z0-9_]+)["']?\s+does not exist/i);
+        const missingColumn = missingVibeTags ? "vibe_tags" : String(missingColumnMatch?.[1] || "");
+        if (!missingColumn || !(missingColumn in savePayload)) {
+          break;
+        }
+        const nextPayload = { ...savePayload };
+        delete nextPayload[missingColumn];
+        savePayload = nextPayload;
+      }
+
+      const { data: createdService, error } = saveResult || {};
+      if (error) {
+        setServiceNotice(error.message || "Could not save service right now.");
+        showToast(error.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      if (createdService?.id) {
+        upsertQuality({
+          targetType: "service",
+          targetId: createdService.id,
+          source: serviceForm.source,
+          lastChecked: serviceForm.lastChecked,
+          verified: Boolean(serviceForm.source && serviceForm.lastChecked),
+        });
+      }
+
+      const mappedCity = cityConfig[selectedCity]?.title?.replace("Queer ", "") || "";
+      setServiceForm({ ...createEmptyServiceForm(), city: mappedCity });
+      setServiceImageUrlDraft("");
+      setEditingServiceId("");
+      setAddServiceMode(false);
+      setAtlasNotice(isEditing ? "Service updated." : "Service added to atlas.");
+      showToast(isEditing ? "Service updated." : "Service saved to atlas.", { tone: "ok", duration: 2400 });
+    } catch (error) {
+      setServiceNotice(error?.message || "Could not save service right now.");
+      showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
+    } finally {
+      setIsSavingService(false);
+    }
+  };
+
+  const addServiceImageFromUrl = () => {
+    const rawUrl = String(serviceImageUrlDraft || "").trim();
+    if (!rawUrl) return;
+
+    let parsed;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      setServiceNotice("Image URL is invalid.");
+      showToast("Use a valid image URL (https://...).", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    if (!["http:", "https:"].includes(parsed.protocol)) {
+      setServiceNotice("Only http/https image URLs are supported.");
+      showToast("Only http/https image URLs are supported.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const nextUrl = parsed.toString();
+    setServiceForm((current) => ({
+      ...current,
+      image_urls: normalizeServiceImageUrls([...(current.image_urls || []), nextUrl]),
+    }));
+    setServiceImageUrlDraft("");
+    setServiceNotice("");
+  };
+
+  const removeServiceImage = (targetUrl) => {
+    setServiceForm((current) => ({
+      ...current,
+      image_urls: normalizeServiceImageUrls(
+        (current.image_urls || []).filter((entry) => String(entry) !== String(targetUrl))
+      ),
+    }));
+  };
+
+  const handleServiceImageUpload = async (event) => {
+    if (!isMember || !user?.id) {
+      setServiceNotice("Sign in as member to upload images.");
+      showToast("Sign in as member to upload images.", { tone: "warn", duration: 2200 });
+      if (event?.target) event.target.value = "";
+      return;
+    }
+
+    const files = Array.from(event?.target?.files || []);
+    if (files.length === 0) return;
+
+    const existingUrls = normalizeServiceImageUrls(serviceForm.image_urls);
+    const slotsLeft = Math.max(0, SERVICE_MAX_IMAGES - existingUrls.length);
+    if (slotsLeft === 0) {
+      setServiceNotice(`Maximum ${SERVICE_MAX_IMAGES} images per service.`);
+      showToast(`Maximum ${SERVICE_MAX_IMAGES} images per service.`, { tone: "info", duration: 2200 });
+      if (event?.target) event.target.value = "";
+      return;
+    }
+
+    setIsUploadingServiceImages(true);
+    setServiceNotice("");
+
+    try {
+      const uploadBatch = files.slice(0, slotsLeft);
+      const uploadedUrls = [];
+      const uploadIssues = [];
+      const safeCity = normalizeLooseSlug(
+        serviceForm.city ||
+          cityConfig[selectedCity]?.title?.replace("Queer ", "") ||
+          selectedCity ||
+          "global"
+      );
+      const safeUserId = normalizeLooseSlug(user?.id || "member");
+
+      for (const file of uploadBatch) {
+        const mimeType = String(file?.type || "").toLowerCase();
+        if (!SERVICE_ALLOWED_IMAGE_TYPES.has(mimeType)) {
+          uploadIssues.push(`${file.name}: unsupported format`);
+          continue;
+        }
+        if (Number(file?.size || 0) > SERVICE_MAX_FILE_BYTES) {
+          uploadIssues.push(`${file.name}: file too large (max 8MB)`);
+          continue;
+        }
+
+        const extension = mimeType.includes("png")
+          ? "png"
+          : mimeType.includes("webp")
+            ? "webp"
+            : "jpg";
+        const safeFileName = normalizeLooseSlug(file.name || "service-image");
+        const uniquePart = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const objectPath = `${safeCity}/${safeUserId}/${safeFileName || "service-image"}-${uniquePart}.${extension}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(SERVICE_MEDIA_BUCKET)
+          .upload(objectPath, file, { cacheControl: "3600", upsert: false, contentType: mimeType });
+
+        if (uploadError) {
+          const errorText = `${uploadError?.code || ""} ${uploadError?.message || ""}`.toLowerCase();
+          if (errorText.includes("bucket") || errorText.includes("not found")) {
+            setServiceNotice("Image upload bucket missing. Run latest services SQL to create service-media bucket.");
+          } else if (errorText.includes("row-level security")) {
+            setServiceNotice("Image upload policy blocked this upload. Check storage policies for service-media.");
+          } else {
+            uploadIssues.push(`${file.name}: ${uploadError?.message || "upload failed"}`);
+          }
+          continue;
+        }
+
+        const { data: publicData } = supabase.storage.from(SERVICE_MEDIA_BUCKET).getPublicUrl(objectPath);
+        const publicUrl = String(publicData?.publicUrl || "").trim();
+        if (!publicUrl) {
+          uploadIssues.push(`${file.name}: missing public URL`);
+          continue;
+        }
+        uploadedUrls.push(publicUrl);
+      }
+
+      if (uploadedUrls.length > 0) {
+        setServiceForm((current) => ({
+          ...current,
+          image_urls: normalizeServiceImageUrls([...(current.image_urls || []), ...uploadedUrls]),
+        }));
+        showToast(`${uploadedUrls.length} service image${uploadedUrls.length === 1 ? "" : "s"} uploaded.`, {
+          tone: "ok",
+          duration: 2200,
+        });
+      }
+
+      if (uploadIssues.length > 0) {
+        setServiceNotice(uploadIssues.slice(0, 2).join(" | "));
+      }
+    } finally {
+      setIsUploadingServiceImages(false);
+      if (event?.target) event.target.value = "";
+    }
+  };
+
   const resolveReport = (reportId) => {
     if (!isAdmin) return;
     const updated = reports.map((report) =>
@@ -639,7 +1148,16 @@ export default function ContributePage() {
         ? resolvedReports
         : openReports;
   const qaFindings = (() => {
-    if (!isAdmin) return { places: [], events: [], stale: [], cityCounts: [], totals: { places: 0, events: 0, stale: 0 } };
+    if (!isAdmin) {
+      return {
+        places: [],
+        events: [],
+        services: [],
+        stale: [],
+        cityCounts: [],
+        totals: { places: 0, events: 0, services: 0, stale: 0 },
+      };
+    }
 
     const qualityMap = getQualityMap();
 
@@ -692,9 +1210,35 @@ export default function ContributePage() {
       })
       .filter((item) => item.issues.length > 0);
 
+    const serviceIssues = qaSnapshot.services
+      .map((service) => {
+        const issues = [];
+        const serviceVibeTags = normalizeVibeTags(
+          Array.isArray(service?.vibe_tags) && service.vibe_tags.length > 0
+            ? service.vibe_tags
+            : inferVibeTagsFromLegacyVibe(String(service?.vibe || "")),
+          { max: 3 }
+        );
+        if (!String(service.description || "").trim()) issues.push("Missing description");
+        if (String(service.description || "").trim().length < 100) issues.push("Description is short");
+        if (!String(service.vibe || "").trim() && serviceVibeTags.length === 0) issues.push("Missing vibe");
+        if (!String(service.hours || "").trim()) issues.push("Missing availability");
+        if (!String(service.link || "").trim()) issues.push("No booking/contact link");
+        if (!Number.isFinite(Number(service.lat)) || !Number.isFinite(Number(service.lng))) issues.push("Missing coordinates");
+        return {
+          id: String(service.id),
+          city: service.city || "",
+          name: service.name || "Unnamed service",
+          type: service.type || "service",
+          issues,
+        };
+      })
+      .filter((item) => item.issues.length > 0);
+
     const staleItems = [
       ...qaSnapshot.places.map((item) => ({ ...item, entityType: "place" })),
       ...qaSnapshot.events.map((item) => ({ ...item, entityType: "event" })),
+      ...qaSnapshot.services.map((item) => ({ ...item, entityType: "service" })),
     ]
       .map((entity) => {
         const quality = getEntityQuality({
@@ -716,7 +1260,7 @@ export default function ContributePage() {
       .filter(Boolean);
 
     const cityAccumulator = {};
-    [...placeIssues, ...eventIssues, ...staleItems].forEach((item) => {
+    [...placeIssues, ...eventIssues, ...serviceIssues, ...staleItems].forEach((item) => {
       const cityKey = String(item.city || "global").toLowerCase();
       cityAccumulator[cityKey] = (cityAccumulator[cityKey] || 0) + 1;
     });
@@ -729,11 +1273,13 @@ export default function ContributePage() {
     return {
       places: placeIssues.slice(0, 10),
       events: eventIssues.slice(0, 10),
+      services: serviceIssues.slice(0, 10),
       stale: staleItems.slice(0, 10),
       cityCounts,
       totals: {
         places: placeIssues.length,
         events: eventIssues.length,
+        services: serviceIssues.length,
         stale: staleItems.length,
       },
     };
@@ -763,9 +1309,11 @@ export default function ContributePage() {
                   setAtlasNotice("");
                   setPlaceNotice("");
                   setEventNotice("");
+                  setServiceNotice("");
                   const mappedCity = cityConfig[event.target.value]?.title?.replace("Queer ", "") || "";
                   setPlaceForm((current) => ({ ...current, city: mappedCity }));
                   setEventForm((current) => ({ ...current, city: mappedCity }));
+                  setServiceForm((current) => ({ ...current, city: mappedCity }));
                   setRequestForm((current) => ({
                     ...current,
                     city: mappedCity,
@@ -797,13 +1345,16 @@ export default function ContributePage() {
               <h2 className="mt-2 text-2xl font-semibold text-white">Publish to {cityTitle}</h2>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <button
                 onClick={() => {
                   setAtlasNotice("");
                   setPlaceNotice("");
+                  setServiceNotice("");
+                  setEditingServiceId("");
                   setAddMode((current) => !current);
                   setAddEventMode(false);
+                  setAddServiceMode(false);
                 }}
                 className={`rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,43,33,0.76),rgba(11,11,11,0.96))] p-5 text-left transition ${
                   selectedCity
@@ -820,8 +1371,11 @@ export default function ContributePage() {
                 onClick={() => {
                   setAtlasNotice("");
                   setEventNotice("");
+                  setServiceNotice("");
+                  setEditingServiceId("");
                   setAddEventMode((current) => !current);
                   setAddMode(false);
+                  setAddServiceMode(false);
                 }}
                 className={`rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,43,33,0.76),rgba(11,11,11,0.96))] p-5 text-left transition ${
                   selectedCity
@@ -833,9 +1387,39 @@ export default function ContributePage() {
                 <h3 className="mt-2 text-lg font-semibold text-white">Add an event</h3>
                 <p className="mt-3 text-sm leading-6 text-gray-400">Publish event details without leaving this page.</p>
               </button>
+
+              <button
+                onClick={() => {
+                  setAtlasNotice("");
+                  setServiceNotice("");
+                  setPlaceNotice("");
+                  setEventNotice("");
+                  setAddServiceMode((current) => {
+                    const next = !current;
+                    if (next) {
+                      const mappedCity = cityConfig[selectedCity]?.title?.replace("Queer ", "") || "";
+                      setEditingServiceId("");
+                      setServiceImageUrlDraft("");
+                      setServiceForm({ ...createEmptyServiceForm(), city: mappedCity });
+                    }
+                    return next;
+                  });
+                  setAddMode(false);
+                  setAddEventMode(false);
+                }}
+                className={`rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(7,47,59,0.76),rgba(11,11,11,0.96))] p-5 text-left transition ${
+                  selectedCity
+                    ? "hover:-translate-y-[1px] hover:border-cyan-200/30 hover:shadow-[0_20px_50px_rgba(34,211,238,0.12)]"
+                    : "hover:border-cyan-200/20"
+                }`}
+              >
+                <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Service</p>
+                <h3 className="mt-2 text-lg font-semibold text-white">Add a service</h3>
+                <p className="mt-3 text-sm leading-6 text-gray-400">Publish massage, tour, concierge, and private service signal.</p>
+              </button>
             </div>
             {!selectedCity && (
-              <p className="mt-4 text-xs text-emerald-200/80">Choose city once, then add places and events directly here.</p>
+              <p className="mt-4 text-xs text-emerald-200/80">Choose city once, then add places, events, and services directly here.</p>
             )}
             {atlasNotice && (
               <p className="mt-2 text-xs text-amber-200">{atlasNotice}</p>
@@ -938,6 +1522,199 @@ export default function ContributePage() {
                   {isSavingEvent ? "Saving..." : "Save event"}
                 </button>
                 {eventNotice && <p className="text-xs text-amber-200">{eventNotice}</p>}
+              </div>
+            )}
+
+            {addServiceMode && (
+              <div ref={serviceFormPanelRef} className="mt-4 space-y-3 rounded-2xl border border-cyan-300/20 bg-cyan-300/6 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-2">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/88">
+                    {editingServiceId ? "Editing service" : "New service"}
+                  </p>
+                  {editingServiceId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const mappedCity = cityConfig[selectedCity]?.title?.replace("Queer ", "") || "";
+                        setEditingServiceId("");
+                        setServiceForm({ ...createEmptyServiceForm(), city: mappedCity });
+                        setServiceImageUrlDraft("");
+                        setServiceNotice("");
+                      }}
+                      className="rounded-lg border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/45"
+                    >
+                      Cancel edit
+                    </button>
+                  )}
+                </div>
+                {isLoadingServiceDraft && (
+                  <p className="text-xs text-cyan-100/78">Loading service draft...</p>
+                )}
+                <Field
+                  value={serviceForm.name}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, name: event.target.value }))}
+                  placeholder="Service name"
+                />
+                <Field
+                  value={serviceForm.city}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, city: event.target.value }))}
+                  placeholder="City"
+                />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <select
+                    value={serviceForm.type}
+                    onChange={(event) => setServiceForm((current) => ({ ...current, type: event.target.value }))}
+                    className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+                  >
+                    {CITY_SERVICE_TYPES.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={serviceForm.price_tier}
+                    onChange={(event) => setServiceForm((current) => ({ ...current, price_tier: event.target.value }))}
+                    className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+                  >
+                    {SERVICE_PRICE_TIERS.map((item) => (
+                      <option key={item.value || "empty"} value={item.value}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-xl border border-cyan-200/20 bg-cyan-200/[0.08] px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/80">Service announcer</p>
+                    <p className="mt-1 text-sm text-cyan-50/95">{String(memberName || user?.email || "Member account")}</p>
+                    <p className="mt-1 text-xs text-cyan-100/70">Only member-owned services are allowed. Third-party partner listings are blocked.</p>
+                  </div>
+                  <Field
+                    value={serviceForm.contact}
+                    onChange={(event) => setServiceForm((current) => ({ ...current, contact: event.target.value }))}
+                    placeholder="Contact (WhatsApp, Telegram, email)"
+                  />
+                </div>
+                <Field
+                  value={serviceForm.booking_link}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, booking_link: event.target.value }))}
+                  placeholder="Booking link (optional)"
+                />
+                <div className="grid gap-2 md:grid-cols-[1fr_auto]">
+                  <Field
+                    value={serviceImageUrlDraft}
+                    onChange={(event) => setServiceImageUrlDraft(event.target.value)}
+                    placeholder="Image URL (https://...)"
+                  />
+                  <button
+                    type="button"
+                    onClick={addServiceImageFromUrl}
+                    className="rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200/45"
+                  >
+                    Add image URL
+                  </button>
+                </div>
+                <div className="rounded-xl border border-cyan-200/20 bg-cyan-200/[0.06] p-3">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/82">Upload photos</p>
+                  <p className="mt-1 text-xs text-cyan-100/70">JPG/PNG/WEBP up to 8MB each. Max {SERVICE_MAX_IMAGES} images.</p>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    onChange={handleServiceImageUpload}
+                    disabled={isUploadingServiceImages}
+                    className="mt-2 block w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-xs text-white/85 file:mr-3 file:rounded-md file:border-0 file:bg-cyan-200/20 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-cyan-100"
+                  />
+                  {isUploadingServiceImages && (
+                    <p className="mt-2 text-xs text-cyan-100/80">Uploading images...</p>
+                  )}
+                  {Array.isArray(serviceForm.image_urls) && serviceForm.image_urls.length > 0 && (
+                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {serviceForm.image_urls.map((imageUrl) => (
+                        <div key={`service-form-image-${imageUrl}`} className="group relative overflow-hidden rounded-lg border border-white/12 bg-black/40">
+                          <Image
+                            src={imageUrl}
+                            alt="Service upload preview"
+                            width={360}
+                            height={240}
+                            unoptimized
+                            className="h-24 w-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeServiceImage(imageUrl)}
+                            className="absolute right-1 top-1 rounded-md border border-black/30 bg-black/60 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/90 opacity-0 transition group-hover:opacity-100"
+                            aria-label="Remove service image"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <Field
+                  value={serviceForm.link}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, link: event.target.value }))}
+                  placeholder="Official link (optional)"
+                />
+                <Field
+                  value={serviceForm.address}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, address: event.target.value }))}
+                  placeholder="Address"
+                />
+                <Field
+                  value={serviceForm.hours}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, hours: event.target.value }))}
+                  placeholder="Availability / opening hours"
+                />
+                <Field
+                  value={serviceForm.vibe}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, vibe: event.target.value }))}
+                  placeholder="Legacy vibe label (optional)"
+                />
+                <VibeTagPicker
+                  value={serviceForm.vibe_tags}
+                  onChange={(nextTags) => setServiceForm((current) => ({ ...current, vibe_tags: nextTags }))}
+                  title="Service vibe tags"
+                  hint="Pick up to 3 standardized tags."
+                  tone="cyan"
+                />
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Field
+                    value={serviceForm.source}
+                    onChange={(event) => setServiceForm((current) => ({ ...current, source: event.target.value }))}
+                    placeholder="Source URL or name (optional)"
+                  />
+                  <DateInput
+                    value={serviceForm.lastChecked}
+                    onChange={(event) => setServiceForm((current) => ({ ...current, lastChecked: event.target.value }))}
+                    className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+                    tone="cyan"
+                  />
+                </div>
+                <Field
+                  value={serviceForm.description}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, description: event.target.value }))}
+                  placeholder="Description"
+                  area
+                />
+                <button
+                  type="button"
+                  onClick={submitServiceDirect}
+                  disabled={isSavingService || isUploadingServiceImages || isLoadingServiceDraft}
+                  className="w-full rounded-xl bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95"
+                >
+                  {isSavingService
+                    ? "Saving..."
+                    : isUploadingServiceImages
+                      ? "Uploading images..."
+                      : editingServiceId
+                        ? "Update service"
+                        : "Save service"}
+                </button>
+                {serviceNotice && <p className="text-xs text-amber-200">{serviceNotice}</p>}
               </div>
             )}
           </section>
@@ -1063,6 +1840,9 @@ export default function ContributePage() {
                 <span className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-violet-100">
                   Events: {qaFindings.totals.events}
                 </span>
+                <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-emerald-100">
+                  Services: {qaFindings.totals.services}
+                </span>
                 <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-amber-100">
                   Needs refresh: {qaFindings.totals.stale}
                 </span>
@@ -1093,7 +1873,7 @@ export default function ContributePage() {
                   </div>
                 )}
 
-                <div className="grid gap-3 lg:grid-cols-3">
+                <div className="grid gap-3 lg:grid-cols-4">
                   <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
                     <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/80">Place issues</p>
                     <div className="mt-3 space-y-2">
@@ -1105,6 +1885,30 @@ export default function ContributePage() {
                           key={`qa-place-${item.id}`}
                           onClick={() => router.push(citySelectionPath(item.city, { placeId: item.id }))}
                           className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-cyan-200/30"
+                        >
+                          <p className="text-sm font-semibold text-white">{item.name}</p>
+                          <p className="mt-1 text-xs text-white/60">
+                            {formatCityLabel(item.city)} · {item.type}
+                          </p>
+                          <p className="mt-2 text-xs text-amber-100/90">{item.issues.join(" · ")}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+
+                  <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-emerald-100/80">Service issues</p>
+                    <div className="mt-3 space-y-2">
+                      {qaFindings.services.length === 0 && (
+                        <p className="text-sm text-white/55">No service issues detected.</p>
+                      )}
+                      {qaFindings.services.map((item) => (
+                        <button
+                          key={`qa-service-${item.id}`}
+                          onClick={() =>
+                            router.push(citySelectionPath(item.city, { extraParams: { serviceId: item.id } }))
+                          }
+                          className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-emerald-200/30"
                         >
                           <p className="text-sm font-semibold text-white">{item.name}</p>
                           <p className="mt-1 text-xs text-white/60">
@@ -1149,7 +1953,9 @@ export default function ContributePage() {
                             router.push(
                               item.entityType === "event"
                                 ? "/events"
-                                : cityPath(item.city)
+                                : item.entityType === "service"
+                                  ? citySelectionPath(item.city, { extraParams: { serviceId: item.id } })
+                                  : citySelectionPath(item.city, { placeId: item.id })
                             )
                           }
                           className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-amber-200/30"

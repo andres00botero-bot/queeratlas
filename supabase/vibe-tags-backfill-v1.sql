@@ -105,6 +105,11 @@ begin
       when 'drag' then tags := public.qa_push_vibe_tag(tags, 'drag');
       when 'industrial' then tags := public.qa_push_vibe_tag(tags, 'industrial');
       when 'warehouse' then tags := public.qa_push_vibe_tag(tags, 'industrial');
+      when 'service' then tags := public.qa_push_vibe_tag(tags, 'service');
+      when 'services' then tags := public.qa_push_vibe_tag(tags, 'service');
+      when 'massage' then tags := public.qa_push_vibe_tag(tags, 'service');
+      when 'tour' then tags := public.qa_push_vibe_tag(tags, 'service');
+      when 'concierge' then tags := public.qa_push_vibe_tag(tags, 'service');
       else null;
     end case;
   end loop;
@@ -160,6 +165,9 @@ begin
   end if;
   if coalesce(cardinality(tags), 0) < 3 and (normalized like '%chill%' or normalized like '%laid back%' or normalized like '%calm%' or normalized like '%soft%') then
     tags := public.qa_push_vibe_tag(tags, 'chill');
+  end if;
+  if coalesce(cardinality(tags), 0) < 3 and (normalized like '%service%' or normalized like '%massage%' or normalized like '%tour%' or normalized like '%concierge%' or normalized like '%provider%') then
+    tags := public.qa_push_vibe_tag(tags, 'service');
   end if;
 
   -- Type fallback for places and generic fallback for all entities.

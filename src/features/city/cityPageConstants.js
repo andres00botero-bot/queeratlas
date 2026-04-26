@@ -71,6 +71,71 @@ export const TYPE_STYLES = {
   },
 };
 
+export const SERVICE_TYPES = [
+  { value: "massage", label: "Massage", color: "#22d3ee" },
+  { value: "tour", label: "Travel Tour", color: "#60a5fa" },
+  { value: "wellness", label: "Wellness", color: "#14b8a6" },
+  { value: "escort", label: "Escort", color: "#f59e0b" },
+  { value: "styling", label: "Styling", color: "#f472b6" },
+  { value: "concierge", label: "Concierge", color: "#e879f9" },
+  { value: "transport", label: "Transport", color: "#34d399" },
+  { value: "other", label: "Other", color: "#94a3b8" },
+];
+
+export const SERVICE_TYPE_LABELS = {
+  massage: "Massage",
+  tour: "Travel Tour",
+  wellness: "Wellness",
+  escort: "Escort",
+  styling: "Styling",
+  concierge: "Concierge",
+  transport: "Transport",
+  other: "Service",
+};
+
+export const SERVICE_TYPE_STYLES = {
+  massage: {
+    card: "border-cyan-300/12 bg-[linear-gradient(180deg,rgba(12,53,72,0.34),rgba(15,15,15,0.96))]",
+    label: "text-cyan-100",
+    line: "from-cyan-300/75 via-sky-300/45 to-transparent",
+  },
+  tour: {
+    card: "border-sky-300/12 bg-[linear-gradient(180deg,rgba(16,49,86,0.34),rgba(15,15,15,0.96))]",
+    label: "text-sky-100",
+    line: "from-sky-300/75 via-blue-300/45 to-transparent",
+  },
+  wellness: {
+    card: "border-teal-300/12 bg-[linear-gradient(180deg,rgba(10,63,58,0.34),rgba(15,15,15,0.96))]",
+    label: "text-teal-100",
+    line: "from-teal-300/75 via-emerald-300/45 to-transparent",
+  },
+  escort: {
+    card: "border-amber-300/12 bg-[linear-gradient(180deg,rgba(86,48,8,0.34),rgba(15,15,15,0.96))]",
+    label: "text-amber-100",
+    line: "from-amber-300/75 via-orange-300/45 to-transparent",
+  },
+  styling: {
+    card: "border-pink-300/12 bg-[linear-gradient(180deg,rgba(86,24,56,0.34),rgba(15,15,15,0.96))]",
+    label: "text-pink-100",
+    line: "from-pink-300/75 via-fuchsia-300/45 to-transparent",
+  },
+  concierge: {
+    card: "border-fuchsia-300/12 bg-[linear-gradient(180deg,rgba(71,22,86,0.34),rgba(15,15,15,0.96))]",
+    label: "text-fuchsia-100",
+    line: "from-fuchsia-300/75 via-violet-300/45 to-transparent",
+  },
+  transport: {
+    card: "border-emerald-300/12 bg-[linear-gradient(180deg,rgba(10,62,45,0.34),rgba(15,15,15,0.96))]",
+    label: "text-emerald-100",
+    line: "from-emerald-300/75 via-teal-300/45 to-transparent",
+  },
+  other: {
+    card: "border-slate-300/12 bg-[linear-gradient(180deg,rgba(30,41,59,0.34),rgba(15,15,15,0.96))]",
+    label: "text-slate-100",
+    line: "from-slate-300/70 via-slate-200/40 to-transparent",
+  },
+};
+
 export const REPORT_REASONS = [
   { value: "safety", label: "Safety issue", helper: "Unsafe behavior, consent issues, harassment or risky conditions." },
   { value: "wrong_info", label: "Wrong info", helper: "Hours, location, link, category, or details are incorrect." },

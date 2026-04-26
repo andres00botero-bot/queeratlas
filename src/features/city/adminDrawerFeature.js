@@ -77,3 +77,30 @@ export function buildEventAdminDraft(event) {
     link: String(event?.link || ""),
   };
 }
+
+export function buildServiceAdminDraft(service) {
+  const vibeValue = String(service?.vibe || "");
+  const vibeTags = normalizeVibeTags(
+    Array.isArray(service?.vibe_tags) && service.vibe_tags.length > 0
+      ? service.vibe_tags
+      : inferVibeTagsFromLegacyVibe(vibeValue),
+    { max: 3 }
+  );
+
+  return {
+    name: String(service?.name || ""),
+    type: String(service?.type || "other"),
+    provider_name: String(service?.provider_name || ""),
+    contact: String(service?.contact || ""),
+    booking_link: String(service?.booking_link || ""),
+    description: String(service?.description || ""),
+    hours: String(service?.hours || ""),
+    link: String(service?.link || ""),
+    price_tier: String(service?.price_tier || ""),
+    location: String(service?.location || ""),
+    vibe: vibeValue,
+    vibe_tags: vibeTags,
+    source: String(service?.source || ""),
+    lastChecked: String(service?.lastChecked || ""),
+  };
+}

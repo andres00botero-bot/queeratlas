@@ -20,6 +20,7 @@ const STANDARD_VIBE_TAG_DEFS = [
   { key: "relax", label: "Relax", description: "Recovery, sauna, or rest-forward mode." },
   { key: "drag", label: "Drag", description: "Drag-first performance programming." },
   { key: "industrial", label: "Industrial", description: "Industrial or warehouse-coded atmosphere." },
+  { key: "service", label: "Service", description: "Private service or provider-led experience." },
 ];
 
 export const STANDARD_VIBE_TAGS = Object.freeze(
@@ -73,6 +74,11 @@ const VIBE_ALIAS_ENTRIES = [
   ["drag", "drag"],
   ["industrial", "industrial"],
   ["warehouse", "industrial"],
+  ["service", "service"],
+  ["services", "service"],
+  ["massage", "service"],
+  ["tour", "service"],
+  ["concierge", "service"],
 ];
 
 const VIBE_ALIAS_MAP = new Map(
@@ -81,6 +87,7 @@ const VIBE_ALIAS_MAP = new Map(
 
 const LEGACY_INFERENCE_RULES = [
   { key: "drag", keywords: ["drag", "cabaret", "queen"] },
+  { key: "service", keywords: ["service", "massage", "tour", "concierge", "escort", "provider"] },
   { key: "fetish", keywords: ["fetish", "leather", "gear", "kink"] },
   { key: "cruise", keywords: ["cruise", "cruising", "darkroom"] },
   { key: "relax", keywords: ["sauna", "steam", "spa", "onsen", "wellness", "relax"] },

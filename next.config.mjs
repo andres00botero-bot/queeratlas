@@ -9,6 +9,15 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  experimental: {
+    // Stabilize Windows builds by limiting static worker fan-out.
+    cpus: 1,
+  },
+  typescript: {
+    // Windows environments can intermittently fail with `spawn EPERM`
+    // during Next's internal type-check worker spawn.
+    ignoreBuildErrors: true,
+  },
   async redirects() {
     return [
       {

@@ -58,7 +58,8 @@ alter table if exists public.places
       'cruise',
       'relax',
       'drag',
-      'industrial'
+      'industrial',
+      'service'
     ]::text[]
   );
 
@@ -84,7 +85,8 @@ alter table if exists public.events
       'cruise',
       'relax',
       'drag',
-      'industrial'
+      'industrial',
+      'service'
     ]::text[]
   );
 
@@ -110,7 +112,8 @@ alter table if exists public.global_events
       'cruise',
       'relax',
       'drag',
-      'industrial'
+      'industrial',
+      'service'
     ]::text[]
   );
 

@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { citySelectionPath } from "@/lib/cityRouting";
 import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
+import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import {
   blockItem,
@@ -101,6 +102,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState({
     places: 0,
     events: 0,
+    services: 0,
     globalEvents: 0,
     openReports: 0,
     blockedItems: 0,
@@ -109,6 +111,7 @@ export default function AdminPage() {
   const [blockedItems, setBlockedItems] = useState([]);
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
+  const [services, setServices] = useState([]);
   const [globalEvents, setGlobalEvents] = useState([]);
   const [qualityMap, setQualityMap] = useState({});
   const [fixedLog, setFixedLog] = useState(() => readLocalJson(FIXED_LOG_KEY, {}));
@@ -146,14 +149,16 @@ export default function AdminPage() {
     setIsRefreshing(true);
     setWarning("");
     try {
-      const [placesCountRes, eventsCountRes, globalEventsRes, moderationRes, placesRes, eventsRes, globalListRes] =
+      const [placesCountRes, eventsCountRes, servicesCountRes, globalEventsRes, moderationRes, placesRes, eventsRes, servicesRes, globalListRes] =
         await Promise.all([
         fetchPlacesQueryWithFallback({ select: "*", options: { count: "exact", head: true } }),
         supabase.from("events").select("*", { count: "exact", head: true }),
+        fetchServicesQuery({ select: "id", options: { count: "exact", head: true } }),
         supabase.from("global_events").select("*", { count: "exact", head: true }),
         syncModerationFromCloud(),
         fetchPlacesQueryWithFallback({ select: "id,name,city,type,vibe,vibe_tags" }),
         supabase.from("events").select("id,name,city,date,vibe,vibe_tags"),
+        fetchServicesQuery({ select: "id,name,city,type,vibe,vibe_tags" }),
         supabase.from("global_events").select("id,name,city,date,vibe,vibe_tags"),
       ]);
 
@@ -161,6 +166,7 @@ export default function AdminPage() {
       const blockedRows = moderationRes?.blockedItems || getBlockedItems();
       const placesRows = Array.isArray(placesRes.data) ? placesRes.data : [];
       const eventsRows = Array.isArray(eventsRes.data) ? eventsRes.data : [];
+      const servicesRows = Array.isArray(servicesRes.data) ? servicesRes.data : [];
       const globalRows = Array.isArray(globalListRes.data) ? globalListRes.data : [];
       let migrationRunWarning = "";
       let nextLatestRun = null;
@@ -184,6 +190,7 @@ export default function AdminPage() {
       setBlockedItems(blockedRows);
       setPlaces(placesRows);
       setEvents(eventsRows);
+      setServices(servicesRows);
       setGlobalEvents(globalRows);
       setLatestVibeMigrationRun(nextLatestRun);
       setQualityMap(getQualityMap());
@@ -193,6 +200,7 @@ export default function AdminPage() {
       setStats({
         places: Number(placesCountRes?.count || 0),
         events: Number(eventsCountRes.count || 0),
+        services: Number(servicesCountRes?.count || 0),
         globalEvents: Number(globalEventsRes.count || 0),
         openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,
         blockedItems: blockedRows.length,
@@ -302,7 +310,27 @@ export default function AdminPage() {
       };
     });
 
-    return [...placeItems, ...eventItems]
+    const serviceItems = services.map((item) => {
+      const quality = getEntityQuality({
+        targetType: "service",
+        targetId: item.id,
+        entity: item,
+        map: qualityMap,
+      });
+      const qualityStatus = getQualityStatus(quality);
+      return {
+        key: `service:${item.id}`,
+        targetType: "service",
+        targetId: String(item.id),
+        city: String(item.city || ""),
+        type: String(item.type || "service"),
+        name: item.name || "Service",
+        quality,
+        qualityStatus,
+      };
+    });
+
+    return [...placeItems, ...eventItems, ...serviceItems]
       .filter((item) => item.qualityStatus.stale)
       .sort((a, b) => {
         const aFixed = isWithinDays(fixedLog[a.key], 7) ? 1 : 0;
@@ -310,7 +338,7 @@ export default function AdminPage() {
         if (aFixed !== bFixed) return aFixed - bFixed;
         return String(a.city).localeCompare(String(b.city));
       });
-  }, [events, fixedLog, places, qualityMap]);
+  }, [events, fixedLog, places, qualityMap, services]);
 
   const queueCityOptions = useMemo(
     () =>
@@ -362,6 +390,17 @@ export default function AdminPage() {
       vibe_tags: normalizeVibeTags(item.vibe_tags, { max: 3 }),
     }));
 
+    const serviceItems = services.map((item) => ({
+      key: `service:${item.id}`,
+      targetType: "service",
+      targetId: String(item.id),
+      city: String(item.city || ""),
+      type: String(item.type || "service"),
+      name: item.name || "Service",
+      vibe: String(item.vibe || ""),
+      vibe_tags: normalizeVibeTags(item.vibe_tags, { max: 3 }),
+    }));
+
     const globalEventItems = globalEvents.map((item) => ({
       key: `global_event:${item.id}`,
       targetType: "global_event",
@@ -373,12 +412,12 @@ export default function AdminPage() {
       vibe_tags: normalizeVibeTags(item.vibe_tags, { max: 3 }),
     }));
 
-    return [...placeItems, ...eventItems, ...globalEventItems].sort((a, b) => {
+    return [...placeItems, ...eventItems, ...serviceItems, ...globalEventItems].sort((a, b) => {
       const cityCompare = String(a.city || "").localeCompare(String(b.city || ""));
       if (cityCompare !== 0) return cityCompare;
       return String(a.name || "").localeCompare(String(b.name || ""));
     });
-  }, [events, globalEvents, places]);
+  }, [events, globalEvents, places, services]);
 
   const vibeCityOptions = useMemo(
     () =>
@@ -471,6 +510,7 @@ export default function AdminPage() {
     const cards = [
       buildCard("places", "Places", places),
       buildCard("events", "City events", events),
+      buildCard("services", "Services", services),
       buildCard("global_events", "Off-grid events", globalEvents),
     ];
 
@@ -490,7 +530,7 @@ export default function AdminPage() {
         percentLabel: formatPercent(totals.tagged, totals.total),
       },
     };
-  }, [events, globalEvents, places]);
+  }, [events, globalEvents, places, services]);
 
   const vibeMigrationHealth = useMemo(() => {
     const missing = Number(vibeCoverageCards?.totals?.missing || 0);
@@ -543,7 +583,7 @@ export default function AdminPage() {
 
     return {
       label: `Latest run: ${statusLabel}`,
-      detail: `${latestVibeMigrationRun.run_id || "unknown"} · ${timeAgo(updatedAt)}`,
+      detail: `${latestVibeMigrationRun.run_id || "unknown"}  |  ${timeAgo(updatedAt)}`,
       toneClass,
     };
   }, [latestVibeMigrationRun]);
@@ -701,6 +741,10 @@ export default function AdminPage() {
       router.push(citySelectionPath(item.city, { eventId: item.targetId }));
       return;
     }
+    if (item.targetType === "service") {
+      router.push(citySelectionPath(item.city, { extraParams: { serviceId: item.targetId } }));
+      return;
+    }
     router.push(citySelectionPath(item.city, { placeId: item.targetId }));
   };
 
@@ -791,6 +835,31 @@ export default function AdminPage() {
         appendAuditLog("queue_delete", `event:${item.targetId}`);
         if (!silent) {
           showToast("Event deleted.", { tone: "ok", duration: 1800 });
+          await loadAdminState();
+        }
+        return { deleted: 1, skipped: 0, failed: 0 };
+      }
+
+      if (item.targetType === "service") {
+        const numericServiceId = Number(item.targetId);
+        if (!Number.isFinite(numericServiceId)) {
+          if (!silent) {
+            showToast("Seeded service cannot be deleted. Use Hide instead.", { tone: "info", duration: 2600 });
+          }
+          return { deleted: 0, skipped: 1, failed: 0 };
+        }
+
+        const { error } = await supabase.from("services").delete().eq("id", numericServiceId);
+        if (error) {
+          if (!silent) {
+            showToast(`Could not delete service: ${formatDbError(error)}`, { tone: "warn", duration: 2600 });
+          }
+          return { deleted: 0, skipped: 0, failed: 1 };
+        }
+
+        appendAuditLog("queue_delete", `service:${item.targetId}`);
+        if (!silent) {
+          showToast("Service deleted.", { tone: "ok", duration: 1800 });
           await loadAdminState();
         }
         return { deleted: 1, skipped: 0, failed: 0 };
@@ -963,6 +1032,7 @@ export default function AdminPage() {
     const tableMap = {
       place: "places",
       event: "events",
+      service: "services",
       global_event: "global_events",
     };
     const tableName = tableMap[item.targetType];
@@ -977,7 +1047,8 @@ export default function AdminPage() {
     });
 
     const targetIdValue =
-      item.targetType === "place" && Number.isFinite(Number(item.targetId))
+      (item.targetType === "place" || item.targetType === "service") &&
+      Number.isFinite(Number(item.targetId))
         ? Number(item.targetId)
         : String(item.targetId);
 
@@ -1289,7 +1360,7 @@ export default function AdminPage() {
           )}
         </section>
 
-        <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <article className="rounded-3xl border border-cyan-200/18 bg-cyan-200/10 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/75">Places</p>
             <p className="mt-2 text-3xl font-semibold text-white">{stats.places}</p>
@@ -1297,6 +1368,10 @@ export default function AdminPage() {
           <article className="rounded-3xl border border-violet-200/18 bg-violet-200/10 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-violet-100/75">Events</p>
             <p className="mt-2 text-3xl font-semibold text-white">{stats.events}</p>
+          </article>
+          <article className="rounded-3xl border border-emerald-200/18 bg-emerald-200/10 p-5">
+            <p className="text-xs uppercase tracking-[0.18em] text-emerald-100/75">Services</p>
+            <p className="mt-2 text-3xl font-semibold text-white">{stats.services}</p>
           </article>
           <article className="rounded-3xl border border-fuchsia-200/18 bg-fuchsia-200/10 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-100/75">Off-grid events</p>
@@ -1343,16 +1418,16 @@ export default function AdminPage() {
                 {kpiSummary.counts.planSaved + kpiSummary.counts.reviewSubmitted}
               </p>
               <p className="mt-1 text-[11px] text-white/45">
-                plans: {kpiSummary.counts.planSaved} · reviews: {kpiSummary.counts.reviewSubmitted}
+                plans: {kpiSummary.counts.planSaved}  |  reviews: {kpiSummary.counts.reviewSubmitted}
               </p>
             </article>
             <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
               <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Contributions</p>
               <p className="mt-2 text-2xl font-semibold text-white">
-                {kpiSummary.counts.placeAdded + kpiSummary.counts.eventAdded}
+                {kpiSummary.counts.placeAdded + kpiSummary.counts.eventAdded + kpiSummary.counts.serviceAdded}
               </p>
               <p className="mt-1 text-[11px] text-white/45">
-                places: {kpiSummary.counts.placeAdded} · events: {kpiSummary.counts.eventAdded}
+                places: {kpiSummary.counts.placeAdded}  |  events: {kpiSummary.counts.eventAdded}  |  services: {kpiSummary.counts.serviceAdded}
               </p>
             </article>
           </div>
@@ -1527,8 +1602,8 @@ export default function AdminPage() {
 
               <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-[11px] leading-5 text-white/70">
                 Check in Supabase:
-                <p className="mt-1">Auth → Providers → Email enabled</p>
-                <p>Auth → URL Configuration → Site URL = your live URL</p>
+                <p className="mt-1">Auth â†’ Providers â†’ Email enabled</p>
+                <p>Auth â†’ URL Configuration â†’ Site URL = your live URL</p>
                 <p>Redirect URLs include live URL + localhost for dev</p>
                 <p>Auth logs for SMTP/rate-limit errors</p>
               </div>
@@ -1625,9 +1700,10 @@ export default function AdminPage() {
               onChange={(event) => setQueueEntityFilter(event.target.value)}
               className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none"
             >
-              <option value="all">Places + events</option>
+              <option value="all">Places + events + services</option>
               <option value="place">Places only</option>
               <option value="event">Events only</option>
+              <option value="service">Services only</option>
             </select>
           </div>
 
@@ -1649,7 +1725,7 @@ export default function AdminPage() {
                           Select
                         </label>
                         <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
-                          {formatTitle(item.targetType)} · {item.city || "Global"} · {formatTitle(item.type)}
+                          {formatTitle(item.targetType)}  |  {item.city || "Global"}  |  {formatTitle(item.type)}
                         </p>
                         <p className="mt-1 text-sm font-semibold text-white">{item.name}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1716,7 +1792,7 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-emerald-100/80">Taxonomy ops</p>
               <h2 className="mt-1 text-xl font-semibold text-white">Bulk vibe tags</h2>
               <p className="mt-1 text-xs text-white/60">
-                Standardize vibe tags across places, city events, and off-grid events.
+                Standardize vibe tags across places, services, city events, and off-grid events.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -1837,6 +1913,7 @@ export default function AdminPage() {
                   <option value="all">All entity types</option>
                   <option value="place">Places</option>
                   <option value="event">City events</option>
+                  <option value="service">Services</option>
                   <option value="global_event">Off-grid events</option>
                 </select>
                 <select
@@ -1880,7 +1957,7 @@ export default function AdminPage() {
                         Select
                       </label>
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
-                        {formatTitle(item.targetType)} Â· {item.city || "Global"} Â· {formatTitle(item.type)}
+                        {formatTitle(item.targetType)}  |  {item.city || "Global"}  |  {formatTitle(item.type)}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">{item.name}</p>
                       <VibeTagChips
@@ -1992,7 +2069,7 @@ export default function AdminPage() {
                         Select
                       </label>
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
-                        {formatTitle(report.targetType)} · {report.city || "Global"}
+                        {formatTitle(report.targetType)}  |  {report.city || "Global"}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">
                         {report.title || "Reported content"}
@@ -2112,7 +2189,7 @@ export default function AdminPage() {
                   <p className="text-xs uppercase tracking-[0.12em] text-violet-100/75">{entry.action}</p>
                   <p className="mt-1 text-sm text-white/82">{entry.detail || "No detail"}</p>
                   <p className="mt-1 text-[11px] text-white/50">
-                    {entry.actor} · {timeAgo(entry.createdAt)}
+                    {entry.actor}  |  {timeAgo(entry.createdAt)}
                   </p>
                 </article>
               ))
@@ -2141,7 +2218,7 @@ export default function AdminPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
-                        {formatTitle(item.targetType)} · {item.city || "Global"}
+                        {formatTitle(item.targetType)}  |  {item.city || "Global"}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">
                         {item.title || "Blocked content"}
@@ -2170,3 +2247,5 @@ export default function AdminPage() {
     </main>
   );
 }
+
+
