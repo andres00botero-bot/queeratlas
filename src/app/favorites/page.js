@@ -55,6 +55,7 @@ import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton"
 import SavedEventsPanel from "@/components/favorites/SavedEventsPanel";
 import SavedPlacesPanel from "@/components/favorites/SavedPlacesPanel";
 import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
+import styles from "./page.module.css";
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 
@@ -2697,7 +2698,7 @@ export default function FavoritesPage() {
                 ))}
               </div>
               <div
-                className="qa-guides-scroll mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]"
+                className={`${styles.guidesScroll} mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]`}
                 style={{ scrollbarGutter: "stable" }}
               >
                 {filteredRecentCheckins.length > 0 ? (
@@ -2768,7 +2769,7 @@ export default function FavoritesPage() {
               <div className="mt-4 border-t border-white/10 pt-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friends check-ins</p>
                 <div
-                  className="qa-guides-scroll mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]"
+                  className={`${styles.guidesScroll} mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]`}
                   style={{ scrollbarGutter: "stable" }}
                 >
                   {recentFollowingCheckins.length > 0 ? (

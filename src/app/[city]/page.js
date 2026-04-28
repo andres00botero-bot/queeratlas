@@ -94,6 +94,7 @@ import {
   TYPES,
   TYPE_STYLES,
 } from "@/features/city/cityPageConstants";
+import styles from "./page.module.css";
 
 function normalizeServiceImageUrls(input, max = 8) {
   const urls = Array.isArray(input) ? input : [];
@@ -114,11 +115,33 @@ function normalizeServiceImageUrls(input, max = 8) {
 
 const SERVICE_PRICE_TIER_OPTIONS = ["", "$", "$$", "$$$", "$$$$"];
 
+function resolveCityFromPathname(pathname = "") {
+  const firstSegment = String(pathname || "")
+    .split("?")[0]
+    .split("/")
+    .filter(Boolean)[0];
+  if (!firstSegment) return "";
+
+  try {
+    return normalizeCityKey(decodeURIComponent(firstSegment));
+  } catch {
+    return normalizeCityKey(firstSegment);
+  }
+}
+
 export default function CityPage() {
-  const { city } = useParams();
+  const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const cityParam = Array.isArray(params?.city) ? params.city[0] : params?.city;
+  const city = useMemo(() => {
+    const normalizedParam = normalizeCityKey(cityParam || "");
+    if (normalizedParam) return normalizedParam;
+    const fromPath = resolveCityFromPathname(pathname);
+    return fromPath || "berlin";
+  }, [cityParam, pathname]);
 
   const config = cityConfig[city] || cityConfig.berlin;
   const cityName = cityNameFromConfig(config, city);
@@ -1568,7 +1591,7 @@ export default function CityPage() {
         closeOnMove: false,
         anchor: "top",
         offset: 22,
-        className: "qa-map-hover-popup",
+        className: styles.mapHoverPopup,
       });
     } catch {
       queueMicrotask(() => {

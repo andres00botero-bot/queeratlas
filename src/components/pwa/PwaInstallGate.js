@@ -18,6 +18,34 @@ export default function PwaInstallGate() {
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
+    if (process.env.NODE_ENV !== "production") {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((registrations) => {
+            registrations.forEach((registration) => {
+              registration.unregister().catch(() => {});
+            });
+          })
+          .catch(() => {});
+      }
+
+      if ("caches" in window) {
+        window.caches
+          .keys()
+          .then((keys) =>
+            Promise.all(
+              keys
+                .filter((key) => key.startsWith("qa-"))
+                .map((key) => window.caches.delete(key))
+            )
+          )
+          .catch(() => {});
+      }
+
+      return undefined;
+    }
+
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
