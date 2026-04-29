@@ -19,6 +19,7 @@ import {
 } from "@/lib/moderation";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { getKpiSummary } from "@/lib/analytics";
+import { fetchTrafficSummary } from "@/lib/trafficAnalytics";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   buildVibeDualWriteFields,
@@ -144,6 +145,23 @@ export default function AdminPage() {
   const [diagTestEmail, setDiagTestEmail] = useState("");
   const [diagMailState, setDiagMailState] = useState("");
   const [kpiSummary, setKpiSummary] = useState(() => getKpiSummary(7));
+  const [trafficSummary, setTrafficSummary] = useState({
+    ok: false,
+    missingTable: false,
+    message: "",
+    days: 30,
+    totals: {
+      visits30: 0,
+      visitors30: 0,
+      visits7: 0,
+      visitors7: 0,
+      visitsToday: 0,
+      visitorsToday: 0,
+    },
+    topRoutes: [],
+    topCities: [],
+    daily: [],
+  });
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
@@ -170,6 +188,7 @@ export default function AdminPage() {
       const globalRows = Array.isArray(globalListRes.data) ? globalListRes.data : [];
       let migrationRunWarning = "";
       let nextLatestRun = null;
+      const trafficRes = await fetchTrafficSummary(30);
 
       const latestRunRes = await supabase
         .from("qa_vibe_migration_runs")
@@ -205,9 +224,14 @@ export default function AdminPage() {
         openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,
         blockedItems: blockedRows.length,
       });
+      setTrafficSummary(trafficRes);
 
-      if (moderationRes?.warning || migrationRunWarning) {
-        setWarning([moderationRes?.warning, migrationRunWarning].filter(Boolean).join(" "));
+      if (moderationRes?.warning || migrationRunWarning || (!trafficRes.ok && trafficRes.message)) {
+        setWarning(
+          [moderationRes?.warning, migrationRunWarning, !trafficRes.ok ? trafficRes.message : ""]
+            .filter(Boolean)
+            .join(" ")
+        );
       }
 
       setLastSyncedAt(new Date().toISOString());
@@ -1442,6 +1466,85 @@ export default function AdminPage() {
               </span>
             ))}
           </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-sky-300/16 bg-[linear-gradient(180deg,rgba(10,32,56,0.82),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-sky-100/80">Traffic</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Visitor snapshot (30 days)</h2>
+              <p className="mt-1 text-xs text-white/60">
+                Approximate unique visitors and page visits from first-party route telemetry.
+              </p>
+            </div>
+            <span className="rounded-full border border-sky-200/22 bg-sky-200/10 px-3 py-1 text-xs text-sky-100">
+              {trafficSummary.ok ? `${trafficSummary.totals.visitors30} visitors` : "Not configured"}
+            </span>
+          </div>
+
+          {trafficSummary.ok ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Today</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{trafficSummary.totals.visitorsToday}</p>
+                  <p className="mt-1 text-[11px] text-white/45">visits: {trafficSummary.totals.visitsToday}</p>
+                </article>
+                <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">7 days</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{trafficSummary.totals.visitors7}</p>
+                  <p className="mt-1 text-[11px] text-white/45">visits: {trafficSummary.totals.visits7}</p>
+                </article>
+                <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">30 days</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{trafficSummary.totals.visitors30}</p>
+                  <p className="mt-1 text-[11px] text-white/45">visits: {trafficSummary.totals.visits30}</p>
+                </article>
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-white/60">Top cities</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {trafficSummary.topCities.length > 0 ? (
+                      trafficSummary.topCities.map((entry) => (
+                        <span
+                          key={`traffic-city-${entry.city}`}
+                          className="rounded-full border border-sky-200/20 bg-sky-200/10 px-3 py-1 text-xs text-sky-100"
+                        >
+                          {entry.city}: {entry.visits}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-white/52">No city-level traffic yet.</span>
+                    )}
+                  </div>
+                </article>
+
+                <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-white/60">Top routes</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {trafficSummary.topRoutes.length > 0 ? (
+                      trafficSummary.topRoutes.map((entry) => (
+                        <span
+                          key={`traffic-route-${entry.route}`}
+                          className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/82"
+                        >
+                          {entry.route}: {entry.visits}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-white/52">No route traffic yet.</span>
+                    )}
+                  </div>
+                </article>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-amber-200/20 bg-amber-200/10 px-4 py-3 text-sm text-amber-100/90">
+              Traffic data is not configured yet. Run <code>supabase/traffic-visitors-v1.sql</code> to enable visitor reporting in admin.
+            </div>
+          )}
         </section>
 
         <section className="mb-8 rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5">

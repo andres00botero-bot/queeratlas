@@ -11,6 +11,9 @@ const MessageAlertGate = dynamic(() => import("@/components/messaging/MessageAle
 const PwaInstallGate = dynamic(() => import("@/components/pwa/PwaInstallGate"), {
   ssr: false,
 });
+const TrafficHeartbeat = dynamic(() => import("@/components/ui/TrafficHeartbeat"), {
+  ssr: false,
+});
 
 export default function DeferredGlobalChrome() {
   return (
@@ -18,6 +21,7 @@ export default function DeferredGlobalChrome() {
       <FloatingHomeButton />
       <MessageAlertGate />
       <PwaInstallGate />
+      <TrafficHeartbeat />
     </>
   );
 }
