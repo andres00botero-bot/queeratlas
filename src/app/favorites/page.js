@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";

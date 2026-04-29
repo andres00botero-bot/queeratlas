@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import "../signal-motion.css";
 import { cityConfig } from "@/lib/cities";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
@@ -5877,4 +5878,3 @@ export default function CityPage() {
     </main>
   );
 }
-

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import "../signal-motion.css";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
@@ -18,7 +19,6 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
-import styles from "./page.module.css";
 
 const KEYS = {
   stories: "qa_community_stories",
@@ -1106,7 +1106,7 @@ export default function CommunityPage() {
                 <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
               </form>
             )}
-                  <div className={`${styles.guidesScroll} max-h-[560px] space-y-3 overflow-y-auto pr-1`}>
+            <div className="qa-guides-scroll max-h-[560px] space-y-3 overflow-y-auto pr-1">
               {sortedGuides.map((guide) => {
                 const isExpanded = expandedGuideIds.includes(guide.id);
                 return (
