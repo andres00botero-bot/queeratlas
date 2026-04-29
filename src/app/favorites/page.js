@@ -46,6 +46,46 @@ import {
   PLAN_STORAGE_KEY,
 } from "@/features/favorites/favoritesStateDefaults";
 import {
+  buildCheckinMapEmbedUrl,
+  buildFollowingCheckinMarkers,
+  buildInteractiveCheckinPoints,
+  buildOpenStreetMapStaticUrl,
+  buildStaticMapUrl,
+  filterRecentCheckins,
+  getCheckinCities,
+  normalizeInvalidCheckinCity,
+  pickDefaultCheckinCity,
+  pickDefaultCheckinCountry,
+  getSelectedCheckin,
+  getSelectedCityEvents,
+  getSelectedCityPlaces,
+  resolveCheckinMapCenter,
+  sortRecentFollowingCheckins,
+} from "@/features/favorites/logic/checkinSelectors";
+import {
+  buildCityCountryLookup,
+  buildCityLabelLookup,
+  computeAllCities,
+  computeCheckinCityOptions,
+  computeCheckinCountryOptions,
+  computeRecentCheckins,
+  computeRecentSaves,
+  computeSavedEvents,
+  computeSavedPlaces,
+  computeThisWeekAdds,
+  computeTopVibe,
+} from "@/features/favorites/logic/favoritesSummary";
+import {
+  computeContributionCountsFromCollections,
+  computeForYouRecommendations,
+  computeFollowingFeedItems,
+  computeFollowingProfiles,
+  computeMomentumMilestones,
+  computePlannerCities,
+  computeSuggestedMembers,
+  computeWeeklyDigest,
+} from "@/features/favorites/logic/favoritesInsights";
+import {
   buildCheckinMarkerById,
   buildCheckinMarkers,
   resolveCheckinFocusCoordinates,
@@ -569,221 +609,141 @@ export default function FavoritesPage() {
   );
 
   const savedPlaces = useMemo(() => {
-    return places
-      .filter((place) => favoriteIdSet.has(String(place.id)) && !blocked.places.has(String(place.id)))
-      .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+    return computeSavedPlaces({
+      places,
+      favoriteIdSet,
+      blockedPlaceIds: blocked.places,
+    });
   }, [blocked.places, favoriteIdSet, places]);
 
   const savedEvents = useMemo(() => {
-    return events
-      .filter((event) => favoriteIdSet.has(`event-${event.id}`) && !blocked.events.has(String(event.id)))
-      .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    return computeSavedEvents({
+      events,
+      favoriteIdSet,
+      blockedEventIds: blocked.events,
+    });
   }, [blocked.events, events, favoriteIdSet]);
 
   const totalPlaces = savedPlaces.length;
   const totalEvents = savedEvents.length;
   const cityCountryLookup = useMemo(() => {
-    const map = new Map();
-
-    Object.entries(cityConfig || {}).forEach(([cityKey, config]) => {
-      const normalized = normalizeCityKey(cityKey);
-      const country = String(config?.country || "").trim();
-      if (normalized && country) {
-        map.set(normalized, country);
-      }
+    return buildCityCountryLookup({
+      cityConfig,
+      places,
+      events,
+      normalizeCityKey,
     });
-
-    places.forEach((place) => {
-      const normalized = normalizeCityKey(place.city);
-      const country = String(cityConfig?.[String(place.city || "").toLowerCase()]?.country || "").trim();
-      if (!normalized || !country || map.has(normalized)) return;
-      map.set(normalized, country);
-    });
-
-    events.forEach((event) => {
-      const normalized = normalizeCityKey(event.city);
-      const country = String(cityConfig?.[String(event.city || "").toLowerCase()]?.country || "").trim();
-      if (!normalized || !country || map.has(normalized)) return;
-      map.set(normalized, country);
-    });
-
-    return map;
   }, [events, places]);
 
   const cityLabelLookup = useMemo(() => {
-    const map = new Map();
-    Object.keys(cityConfig || {}).forEach((cityKey) => {
-      map.set(normalizeCityKey(cityKey), formatCityLabel(cityKey));
+    return buildCityLabelLookup({
+      cityConfig,
+      places,
+      events,
+      normalizeCityKey,
+      formatCityLabel,
     });
-    places.forEach((place) => {
-      const key = normalizeCityKey(place.city);
-      if (key && !map.has(key)) {
-        map.set(key, formatCityLabel(place.city));
-      }
-    });
-    events.forEach((event) => {
-      const key = normalizeCityKey(event.city);
-      if (key && !map.has(key)) {
-        map.set(key, formatCityLabel(event.city));
-      }
-    });
-    return map;
   }, [events, places]);
 
   const allCities = useMemo(
-    () =>
-      [...new Set(savedPlaces.concat(savedEvents).map((item) => normalizeCityKey(item.city)).filter(Boolean))]
-        .map((cityKey) => cityLabelLookup.get(cityKey) || formatCityLabel(cityKey))
-        .filter(Boolean),
+    () => computeAllCities({ savedPlaces, savedEvents, normalizeCityKey, cityLabelLookup, formatCityLabel }),
     [cityLabelLookup, savedEvents, savedPlaces]
   );
   const totalCities = allCities.length;
 
   const checkinCountryOptions = useMemo(() => {
-    return [...new Set([...cityCountryLookup.values(), String(memberProfile?.residentCountry || "").trim()].filter(Boolean))].sort(
-      (a, b) => a.localeCompare(b)
-    );
+    return computeCheckinCountryOptions({
+      cityCountryLookup,
+      residentCountry: memberProfile?.residentCountry || "",
+    });
   }, [cityCountryLookup, memberProfile?.residentCountry]);
 
   const checkinCityOptions = useMemo(() => {
-    const selectedCountry = String(checkinForm.country || "").trim();
-    const entries = [...cityCountryLookup.entries()].filter(([, country]) => {
-      if (!selectedCountry) return true;
-      return String(country).toLowerCase() === selectedCountry.toLowerCase();
+    return computeCheckinCityOptions({
+      cityCountryLookup,
+      cityLabelLookup,
+      selectedCountry: checkinForm.country || "",
+      formatCityLabel,
     });
-    return entries
-      .map(([cityKey]) => cityLabelLookup.get(cityKey) || formatCityLabel(cityKey))
-      .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b));
   }, [checkinForm.country, cityCountryLookup, cityLabelLookup]);
 
   useEffect(() => {
-    if (String(checkinForm.country || "").trim()) return;
-    if (memberProfile?.residentCountry) {
-      setCheckinForm((current) => ({ ...current, country: String(memberProfile.residentCountry).trim() }));
-      return;
-    }
-
-    const homeCityKey = normalizeCityKey(memberProfile?.homeCity);
-    const homeCountry = homeCityKey ? cityCountryLookup.get(homeCityKey) : "";
-    if (homeCountry) {
-      setCheckinForm((current) => ({ ...current, country: String(homeCountry) }));
-      return;
-    }
-
-    if (checkinCountryOptions.length > 0) {
-      setCheckinForm((current) => ({ ...current, country: String(checkinCountryOptions[0]) }));
-    }
+    const nextCountry = pickDefaultCheckinCountry({
+      currentCountry: checkinForm.country,
+      residentCountry: memberProfile?.residentCountry,
+      homeCity: memberProfile?.homeCity,
+      cityCountryLookup,
+      normalizeCityKey,
+      checkinCountryOptions,
+    });
+    if (nextCountry === null) return;
+    setCheckinForm((current) => ({ ...current, country: String(nextCountry) }));
   }, [checkinCountryOptions, checkinForm.country, cityCountryLookup, memberProfile?.homeCity, memberProfile?.residentCountry, setCheckinForm]);
 
   useEffect(() => {
-    if (String(checkinForm.city || "").trim()) return;
-    if (memberProfile?.homeCity) {
-      setCheckinForm((current) => ({ ...current, city: formatCityLabel(memberProfile.homeCity) }));
-      return;
-    }
-    if (checkinCityOptions.length > 0) {
-      setCheckinForm((current) => ({ ...current, city: String(checkinCityOptions[0]) }));
-    }
+    const nextCity = pickDefaultCheckinCity({
+      currentCity: checkinForm.city,
+      homeCity: memberProfile?.homeCity,
+      checkinCityOptions,
+      formatCityLabel,
+    });
+    if (nextCity === null) return;
+    setCheckinForm((current) => ({ ...current, city: String(nextCity) }));
   }, [checkinCityOptions, checkinForm.city, memberProfile?.homeCity, setCheckinForm]);
 
   useEffect(() => {
-    if (!checkinForm.city) return;
-    if (checkinCityOptions.includes(checkinForm.city)) return;
+    const normalizedCity = normalizeInvalidCheckinCity({
+      currentCity: checkinForm.city,
+      checkinCityOptions,
+    });
+    if (normalizedCity === null) return;
     setCheckinForm((current) => ({
       ...current,
-      city: checkinCityOptions[0] || "",
+      city: normalizedCity,
       sourceId: "",
       label: "",
       address: "",
     }));
   }, [checkinCityOptions, checkinForm.city, setCheckinForm]);
 
-  const vibeCount = savedPlaces.reduce((acc, place) => {
-    const vibeKey = resolvePrimaryVibeKey(place, { includeTypeFallback: true }) || "mixed";
-    acc[vibeKey] = (acc[vibeKey] || 0) + 1;
-    return acc;
-  }, {});
-
-  const topVibeKey =
-    Object.entries(vibeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || "mixed";
-  const topVibe = resolvePrimaryVibeLabel({ vibe_tags: [topVibeKey] }, { fallback: "Mixed" });
-
-  const recentSaves = [...added]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5)
-    .map((item) => {
-      const isEvent = String(item.id).startsWith("event-");
-      if (isEvent) {
-        const eventId = String(item.id).replace("event-", "");
-        const event = events.find((entry) => String(entry.id) === eventId);
-        return event
-          ? { type: "event", id: event.id, city: event.city, name: event.name, date: item.date }
-          : null;
-      }
-
-      const place = places.find((entry) => String(entry.id) === String(item.id));
-      return place
-        ? { type: "place", id: place.id, city: place.city, name: place.name, date: item.date }
-        : null;
-    })
-    .filter(Boolean);
-
-  const thisWeekAdds = added.filter((item) => {
-    const date = new Date(item.date);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return date >= weekAgo;
-  }).length;
+  const { topVibeKey, topVibe } = useMemo(
+    () => computeTopVibe({ savedPlaces, resolvePrimaryVibeKey, resolvePrimaryVibeLabel }),
+    [savedPlaces]
+  );
+  const recentSaves = useMemo(
+    () => computeRecentSaves({ added, events, places }),
+    [added, events, places]
+  );
+  const thisWeekAdds = useMemo(() => computeThisWeekAdds(added), [added]);
 
   const recentCheckins = useMemo(
-    () =>
-      [...checkins]
-        .sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0))
-        .slice(0, 10),
+    () => computeRecentCheckins(checkins, 10),
     [checkins]
   );
 
   const filteredRecentCheckins = useMemo(() => {
-    const base = [...recentCheckins];
-    if (checkinViewFilter === "places") return base.filter((item) => Boolean(String(item.placeId || "").trim()));
-    if (checkinViewFilter === "events") return base.filter((item) => Boolean(String(item.eventId || "").trim()));
-    if (checkinViewFilter === "manual") {
-      return base.filter(
-        (item) => !String(item.placeId || "").trim() && !String(item.eventId || "").trim()
-      );
-    }
-    return base;
+    return filterRecentCheckins(recentCheckins, checkinViewFilter);
   }, [checkinViewFilter, recentCheckins]);
 
   const recentFollowingCheckins = useMemo(
-    () =>
-      [...followingCheckins]
-        .sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0))
-        .slice(0, 12),
+    () => sortRecentFollowingCheckins(followingCheckins),
     [followingCheckins]
   );
 
   const checkinCities = useMemo(
-    () => [...new Set(checkins.map((item) => String(item.city || "").trim()).filter(Boolean))],
+    () => getCheckinCities(checkins),
     [checkins]
   );
 
   const selectedCheckinCityKey = useMemo(() => normalizeCityKey(checkinForm.city), [checkinForm.city]);
 
   const selectedCityPlaces = useMemo(
-    () =>
-      places
-        .filter((place) => normalizeCityKey(place.city) === selectedCheckinCityKey)
-        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))),
+    () => getSelectedCityPlaces({ places, selectedCheckinCityKey, normalizeCityKey }),
     [places, selectedCheckinCityKey]
   );
 
   const selectedCityEvents = useMemo(
-    () =>
-      events
-        .filter((event) => normalizeCityKey(event.city) === selectedCheckinCityKey)
-        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))),
+    () => getSelectedCityEvents({ events, selectedCheckinCityKey, normalizeCityKey }),
     [events, selectedCheckinCityKey]
   );
 
@@ -793,95 +753,46 @@ export default function FavoritesPage() {
   );
 
   const followingCheckinMarkers = useMemo(
-    () =>
-      recentFollowingCheckins
-        .filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng))
-        .map((item) => ({ ...item, markerLat: Number(item.lat), markerLng: Number(item.lng) }))
-        .slice(0, 18),
+    () => buildFollowingCheckinMarkers(recentFollowingCheckins),
     [recentFollowingCheckins]
   );
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
   const interactiveCheckinPoints = useMemo(() => {
-    const mine = checkinMarkers.map((item) => ({
-      ...item,
-      markerId: `mine-${String(item.id)}`,
-      markerKind: "mine",
-    }));
-    const friends = followingCheckinMarkers.map((item) => ({
-      ...item,
-      markerId: `friend-${String(item.id)}`,
-      markerKind: "friend",
-    }));
-    return [...mine, ...friends];
+    return buildInteractiveCheckinPoints({ checkinMarkers, followingCheckinMarkers });
   }, [checkinMarkers, followingCheckinMarkers]);
 
   const selectedCheckin = useMemo(() => {
-    if (!selectedCheckinId) return null;
-    return checkinMarkers.find((item) => String(item.id) === String(selectedCheckinId)) || null;
+    return getSelectedCheckin(checkinMarkers, selectedCheckinId);
   }, [checkinMarkers, selectedCheckinId]);
 
   const checkinMarkerById = useMemo(() => buildCheckinMarkerById(checkinMarkers), [checkinMarkers]);
 
   const checkinMapCenter = useMemo(() => {
-    const centerSource =
-      checkinMarkers[0] ||
-      followingCheckinMarkers[0] ||
-      savedPlaces.find((item) => Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))) ||
-      savedEvents.find((item) => Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng))) ||
-      null;
-    if (!centerSource) return null;
-
-    const centerLng = Number(centerSource.markerLng ?? centerSource.lng);
-    const centerLat = Number(centerSource.markerLat ?? centerSource.lat);
-    if (!Number.isFinite(centerLat) || !Number.isFinite(centerLng)) return null;
-    return { lat: centerLat, lng: centerLng };
+    return resolveCheckinMapCenter({
+      checkinMarkers,
+      followingCheckinMarkers,
+      savedPlaces,
+      savedEvents,
+    });
   }, [checkinMarkers, followingCheckinMarkers, savedEvents, savedPlaces]);
 
   const staticMapUrl = useMemo(() => {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) return "";
-    const myMarkers = checkinMarkers
-      .map((item) => `pin-s+f472b6(${item.markerLng},${item.markerLat})`)
-      .join(",");
-    const friendMarkers = followingCheckinMarkers
-      .map((item) => `pin-s+22d3ee(${item.markerLng},${item.markerLat})`)
-      .join(",");
-    const markerString = [myMarkers, friendMarkers].filter(Boolean).join(",");
-    if (!checkinMapCenter) return "";
-    const centerLng = Number(checkinMapCenter.lng);
-    const centerLat = Number(checkinMapCenter.lat);
-    const zoom = 11;
-    if (!markerString) {
-      return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${centerLng},${centerLat},${zoom}/1200x620?padding=36&access_token=${token}`;
-    }
-    const encoded = markerString.replaceAll("|", "%7C");
-    return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${encoded}/${centerLng},${centerLat},${zoom}/1200x620?padding=36&access_token=${token}`;
+    return buildStaticMapUrl({
+      checkinMapCenter,
+      checkinMarkers,
+      followingCheckinMarkers,
+      token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+    });
   }, [checkinMapCenter, checkinMarkers, followingCheckinMarkers]);
 
   const checkinMapEmbedUrl = useMemo(() => {
-    if (!checkinMapCenter) return "";
-    const lat = Number(checkinMapCenter.lat);
-    const lng = Number(checkinMapCenter.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
-
-    const delta = 0.06;
-    const left = (lng - delta).toFixed(6);
-    const right = (lng + delta).toFixed(6);
-    const top = (lat + delta).toFixed(6);
-    const bottom = (lat - delta).toFixed(6);
-    return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat.toFixed(6)}%2C${lng.toFixed(6)}`;
+    return buildCheckinMapEmbedUrl(checkinMapCenter);
   }, [checkinMapCenter]);
 
   const openStreetMapStaticUrl = useMemo(() => {
-    if (!checkinMapCenter) return "";
-    const lat = Number(checkinMapCenter.lat);
-    const lng = Number(checkinMapCenter.lng);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
-    const zoom = 11;
-    const marker = `${lat.toFixed(6)},${lng.toFixed(6)},red-pushpin`;
-    return `https://staticmap.openstreetmap.de/staticmap.php?center=${lat.toFixed(6)},${lng.toFixed(6)}&zoom=${zoom}&size=1200x620&markers=${marker}`;
+    return buildOpenStreetMapStaticUrl(checkinMapCenter);
   }, [checkinMapCenter]);
 
   useEffect(() => {
@@ -1011,308 +922,63 @@ export default function FavoritesPage() {
 
   const suggestedMembers = useMemo(() => {
     if (!showSignalDeck) return [];
-    const selfId = String(user?.id || "");
-    return (networkMembers || [])
-      .filter((entry) => {
-        const userId = String(entry.user_id || "");
-        return userId && userId !== selfId;
-      })
-      .sort((a, b) => {
-        const aRank = Number(a.rank || 9999);
-        const bRank = Number(b.rank || 9999);
-        const aScore = Number(a.score || 0);
-        const bScore = Number(b.score || 0);
-        const aCities = Number(a.city_count || 0);
-        const bCities = Number(b.city_count || 0);
-        const aSignal = aScore * 0.08 + aCities * 2.4 - aRank * 0.6;
-        const bSignal = bScore * 0.08 + bCities * 2.4 - bRank * 0.6;
-        return bSignal - aSignal;
-      })
-      .slice(0, 18);
+    return computeSuggestedMembers(networkMembers, user?.id);
   }, [networkMembers, showSignalDeck, user?.id]);
 
   const followingFeedItems = useMemo(() => {
-    return (followingFeedRows || [])
-      .map((row) => {
-        const favoriteId = String(row.favorite_id || "");
-        if (!favoriteId) return null;
-
-        const isEvent = favoriteId.startsWith("event-");
-        if (isEvent) {
-          const eventId = favoriteId.replace("event-", "");
-          const event = eventsById.get(String(eventId));
-          if (!event) return null;
-          return {
-            kind: "event",
-            favoriteId,
-            itemId: String(event.id),
-            name: event.name,
-            city: event.city,
-            date: row.created_at,
-            sourceName: row.display_name || "Member",
-            sourceTitle: row.title || "",
-          };
-        }
-
-        const place = placesById.get(favoriteId);
-        if (!place) return null;
-        return {
-          kind: "place",
-          favoriteId,
-          itemId: String(place.id),
-          name: place.name,
-          city: place.city,
-          date: row.created_at,
-          sourceName: row.display_name || "Member",
-          sourceTitle: row.title || "",
-        };
-      })
-      .filter(Boolean);
+    return computeFollowingFeedItems({
+      followingFeedRows,
+      eventsById,
+      placesById,
+    });
   }, [eventsById, followingFeedRows, placesById]);
 
   const followingProfiles = useMemo(() => {
     if (!showSignalDeck) return [];
-    if (!Array.isArray(followingUserIds) || followingUserIds.length === 0) return [];
-
-    const latestByOwner = new Map();
-    (followingFeedRows || []).forEach((row) => {
-      const ownerId = String(row.owner_user_id || "");
-      if (!ownerId) return;
-      const current = latestByOwner.get(ownerId);
-      const currentTime = current ? new Date(current.created_at || 0).getTime() : 0;
-      const nextTime = new Date(row.created_at || 0).getTime();
-      if (!current || nextTime > currentTime) {
-        latestByOwner.set(ownerId, row);
-      }
+    return computeFollowingProfiles({
+      followingUserIds,
+      followingFeedRows,
+      networkMembers,
     });
-
-    return followingUserIds
-      .map((id) => {
-        const key = String(id);
-        const member = (networkMembers || []).find((entry) => String(entry.user_id || "") === key);
-        const latest = latestByOwner.get(key);
-        return {
-          userId: key,
-          displayName: member?.display_name || "Member",
-          title: member?.title || "",
-          rank: member?.rank || null,
-          score: member?.score || 0,
-          cityCount: member?.city_count || 0,
-          latestItemName: latest?.item_name || latest?.favorite_id || "",
-          latestItemCity: latest?.item_city || "",
-          latestAt: latest?.created_at || "",
-        };
-      })
-      .sort((a, b) => new Date(b.latestAt || 0) - new Date(a.latestAt || 0));
   }, [followingFeedRows, followingUserIds, networkMembers, showSignalDeck]);
 
   const forYouRecommendations = useMemo(() => {
     if (!showSignalDeck) return [];
-    const modeWeights =
-      recommendationMode === "safe"
-        ? { trustedCity: 3, savedCity: 4, vibe: 2, reviews: 0.25, rating: 0.5, typeSafe: 2.5, typePeak: 0.5, eventSoon: 0.04 }
-        : recommendationMode === "peak"
-          ? { trustedCity: 5, savedCity: 3, vibe: 3, reviews: 0.1, rating: 0.25, typeSafe: 0.6, typePeak: 2.8, eventSoon: 0.14 }
-          : { trustedCity: 4, savedCity: 5, vibe: 3, reviews: 0.15, rating: 0.35, typeSafe: 1.2, typePeak: 1.4, eventSoon: 0.08 };
-
-    const savedCityCounts = new Map();
-    const trustedCityCounts = new Map();
-    const savedVibeCounts = new Map();
-
-    savedPlaces.forEach((place) => {
-      const cityKey = normalizeCityKey(place.city);
-      if (cityKey) {
-        savedCityCounts.set(cityKey, (savedCityCounts.get(cityKey) || 0) + 1);
-      }
-
-      const vibeKey = resolvePrimaryVibeKey(place, { includeTypeFallback: true });
-      if (vibeKey) {
-        savedVibeCounts.set(vibeKey, (savedVibeCounts.get(vibeKey) || 0) + 1);
-      }
+    return computeForYouRecommendations({
+      recommendationMode,
+      blockedEvents: blocked.events,
+      blockedPlaces: blocked.places,
+      events,
+      favoriteIdSet,
+      followingFeedItems,
+      places,
+      savedPlaces,
+      normalizeCityKey,
+      resolvePrimaryVibeKey,
+      resolvePrimaryVibeLabel,
+      formatDate,
     });
-
-    followingFeedItems.forEach((item) => {
-      const cityKey = normalizeCityKey(item.city);
-      if (!cityKey) return;
-      trustedCityCounts.set(cityKey, (trustedCityCounts.get(cityKey) || 0) + 1);
-    });
-
-    const topSavedCity = [...savedCityCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
-    const topTrustedCity = [...trustedCityCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
-    const topVibeKey = [...savedVibeCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
-
-    const recommendedPlaces = places
-      .filter((place) => !favoriteIdSet.has(String(place.id)) && !blocked.places.has(String(place.id)))
-      .map((place) => {
-        const cityKey = normalizeCityKey(place.city);
-        const placeVibe = resolvePrimaryVibeKey(place, { includeTypeFallback: true });
-        const placeType = String(place.type || "").trim().toLowerCase();
-        let score = 0;
-        if (cityKey && cityKey === topSavedCity) score += modeWeights.savedCity;
-        if (cityKey && cityKey === topTrustedCity) score += modeWeights.trustedCity;
-        if (topVibeKey && placeVibe && placeVibe === topVibeKey) score += modeWeights.vibe;
-        score += Math.min(Number(place.reviewCount || 0), 20) * modeWeights.reviews;
-        score += Number(place.avgRating || 0) * modeWeights.rating;
-        if (["cafe", "bar", "hotel"].includes(placeType)) score += modeWeights.typeSafe;
-        if (["club", "sauna", "cruise_club"].includes(placeType)) score += modeWeights.typePeak;
-
-        return {
-          kind: "place",
-          id: String(place.id),
-          city: place.city || "",
-          name: place.name || "Place",
-          subtitle: resolvePrimaryVibeLabel(place, { includeTypeFallback: true, fallback: "Venue" }),
-          score,
-          reasonBase:
-            cityKey && cityKey === topSavedCity
-              ? "Matches your strongest saved city signal."
-              : cityKey && cityKey === topTrustedCity
-                ? "Trending inside your trusted network."
-                : topVibeKey && placeVibe === topVibeKey
-                  ? "Aligned with your saved vibe pattern."
-                  : "Strong quality signal from reviews.",
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
-
-    const recommendedEvents = events
-      .filter((event) => !favoriteIdSet.has(`event-${event.id}`) && !blocked.events.has(String(event.id)))
-      .map((event) => {
-        const cityKey = normalizeCityKey(event.city);
-        const eventDate = new Date(event.date || "");
-        const now = new Date();
-        const daysUntil = Number.isNaN(eventDate.getTime())
-          ? 120
-          : Math.max(0, Math.round((eventDate.getTime() - now.getTime()) / 86400000));
-
-        let score = 0;
-        if (cityKey && cityKey === topSavedCity) score += modeWeights.savedCity - 1;
-        if (cityKey && cityKey === topTrustedCity) score += modeWeights.trustedCity;
-        score += Math.max(0, 40 - daysUntil) * modeWeights.eventSoon;
-
-        return {
-          kind: "event",
-          id: String(event.id),
-          city: event.city || "",
-          name: event.name || "Event",
-          subtitle: formatDate(event.date),
-          score,
-          reasonBase:
-            cityKey && cityKey === topSavedCity
-              ? "Upcoming in your saved city pattern."
-              : cityKey && cityKey === topTrustedCity
-                ? "Upcoming where your trusted members are active."
-                : "Strong timing for your next plan window.",
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 4);
-
-    return [...recommendedPlaces, ...recommendedEvents]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 6)
-      .map((item) => ({
-        ...item,
-        reason:
-          recommendationMode === "safe"
-            ? `${item.reasonBase} Prioritizing safer, lower-friction flow.`
-            : recommendationMode === "peak"
-              ? `${item.reasonBase} Prioritizing peak energy and late momentum.`
-              : `${item.reasonBase} Balanced between comfort and intensity.`,
-      }));
   }, [blocked.events, blocked.places, events, favoriteIdSet, followingFeedItems, places, recommendationMode, savedPlaces, showSignalDeck]);
 
   const weeklyDigest = useMemo(() => {
-    const weekAgo = nowTs - 7 * 24 * 60 * 60 * 1000;
-    const followingThisWeek = followingFeedItems.filter((item) => {
-      const value = new Date(item.date || "").getTime();
-      return Number.isFinite(value) && value >= weekAgo;
+    return computeWeeklyDigest({
+      followingFeedItems,
+      events,
+      allCities,
+      totalCities,
+      nowTs,
+      normalizeCityKey,
+      isWithinDays,
+      formatWeekRange,
     });
-
-    const upcomingInSavedCities = events
-      .filter((event) => {
-        const cityKey = normalizeCityKey(event.city);
-        return (
-          allCities.some((city) => normalizeCityKey(city) === cityKey) &&
-          isWithinDays(event.date, 10)
-        );
-      })
-      .slice(0, 3);
-
-    const newCityTarget = Math.max(0, 5 - totalCities);
-    const topFollowingCity =
-      [...new Set(followingThisWeek.map((item) => item.city).filter(Boolean))][0] || "";
-
-    return {
-      weekLabel: formatWeekRange(new Date()),
-      followingThisWeekCount: followingThisWeek.length,
-      topFollowingCity,
-      upcomingInSavedCities,
-      newCityTarget,
-    };
   }, [allCities, events, followingFeedItems, nowTs, totalCities]);
 
   const momentumMilestones = useMemo(() => {
-    const checkinCount = checkins.length;
-    const checkinCityCount = new Set(
-      checkins.map((item) => normalizeCityKey(item.city)).filter(Boolean)
-    ).size;
-    const weekendActivityCount = new Set(
-      checkins
-        .map((item) => {
-          const date = new Date(item.checkedInAt || item.createdAt || "");
-          if (Number.isNaN(date.getTime())) return "";
-          const year = date.getUTCFullYear();
-          const month = String(date.getUTCMonth() + 1).padStart(2, "0");
-          const day = String(date.getUTCDate()).padStart(2, "0");
-          return `${year}-${month}-${day}`;
-        })
-        .filter(Boolean)
-    ).size;
-
-    const items = [
-      {
-        id: "first-checkin",
-        label: "First check-in",
-        current: checkinCount,
-        target: 1,
-      },
-      {
-        id: "cities-5",
-        label: "5 cities explored",
-        current: checkinCityCount,
-        target: 5,
-      },
-      {
-        id: "venues-10",
-        label: "10 places saved",
-        current: totalPlaces,
-        target: 10,
-      },
-      {
-        id: "weekends-3",
-        label: "3 active days",
-        current: weekendActivityCount,
-        target: 3,
-      },
-    ].map((item) => ({
-      ...item,
-      done: item.current >= item.target,
-      progress: Math.max(0, Math.min(1, item.current / item.target)),
-    }));
-
-    const completed = items.filter((item) => item.done).length;
-    const overallProgress = items.length ? completed / items.length : 0;
-    const nextMilestone = items.find((item) => !item.done) || null;
-
-    return {
-      items,
-      completed,
-      total: items.length,
-      overallProgress,
-      nextMilestone,
-    };
+    return computeMomentumMilestones({
+      checkins,
+      totalPlaces,
+      normalizeCityKey,
+    });
   }, [checkins, totalPlaces]);
 
   const contributionCounts = useMemo(() => {
@@ -1331,29 +997,13 @@ export default function FavoritesPage() {
     const ideas = readLocalJson("qa_community_ideas", []);
     const topics = readLocalJson("qa_community_topics", []);
 
-    const me = (memberProfile?.displayName || authMemberName || memberName || "").trim().toLowerCase();
-    if (!me) {
-      return {
-        stories: 0,
-        guides: 0,
-        ideas: 0,
-        topics: 0,
-        total: 0,
-      };
-    }
-
-    const mineStories = stories.filter((item) => (item.author || "").trim().toLowerCase() === me).length;
-    const mineGuides = guides.filter((item) => (item.author || "").trim().toLowerCase() === me).length;
-    const mineIdeas = ideas.filter((item) => (item.author || "").trim().toLowerCase() === me).length;
-    const mineTopics = topics.filter((item) => (item.author || "").trim().toLowerCase() === me).length;
-
-    return {
-      stories: mineStories,
-      guides: mineGuides,
-      ideas: mineIdeas,
-      topics: mineTopics,
-      total: mineStories + mineGuides + mineIdeas + mineTopics,
-    };
+    return computeContributionCountsFromCollections({
+      stories,
+      guides,
+      ideas,
+      topics,
+      memberIdentity: memberProfile?.displayName || authMemberName || memberName || "",
+    });
   }, [authMemberName, memberName, memberProfile?.displayName]);
 
   const saveProfile = async (event) => {
@@ -1380,11 +1030,8 @@ export default function FavoritesPage() {
   const displayName = memberName.trim() || "Explorer";
   const memberTitleMeta = getMemberTitleMeta(memberRank?.title || "");
   const plannerCities = useMemo(() => {
-    const configCities = Object.values(cityConfig)
-      .map((item) => item.title?.replace("Queer ", ""))
-      .filter(Boolean);
-    const dataCities = [...new Set(places.concat(events).map((item) => item.city).filter(Boolean))];
-    return [...new Set([...configCities, ...dataCities])].sort((a, b) => a.localeCompare(b));
+    const configCities = Object.values(cityConfig).map((item) => item.title?.replace("Queer ", "")).filter(Boolean);
+    return computePlannerCities({ configCities, places, events });
   }, [events, places]);
 
   const removeFavorite = async (favoriteId, label = "Item") => {
