@@ -100,6 +100,8 @@ export default function FloatingHomeButton() {
       href: "/",
       label: "Home",
       icon: Home,
+      idleClass:
+        "border-slate-200/18 bg-slate-100/6 text-slate-100/88 hover:border-slate-100/34 hover:bg-slate-100/12",
       activeClass:
         "border-fuchsia-200/65 bg-[linear-gradient(135deg,rgba(244,114,182,0.30),rgba(99,102,241,0.28),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(217,70,239,0.36)]",
     },
@@ -107,6 +109,8 @@ export default function FloatingHomeButton() {
       href: "/favorites",
       label: "Your Atlas",
       icon: Star,
+      idleClass:
+        "border-amber-200/20 bg-amber-100/7 text-amber-100/90 hover:border-amber-100/40 hover:bg-amber-100/15",
       activeClass:
         "border-amber-200/65 bg-[linear-gradient(135deg,rgba(251,191,36,0.30),rgba(249,115,22,0.24),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(251,191,36,0.30)]",
     },
@@ -114,6 +118,8 @@ export default function FloatingHomeButton() {
       href: "/events",
       label: "Events",
       icon: CalendarDays,
+      idleClass:
+        "border-cyan-200/20 bg-cyan-100/7 text-cyan-100/90 hover:border-cyan-100/40 hover:bg-cyan-100/15",
       activeClass:
         "border-cyan-200/65 bg-[linear-gradient(135deg,rgba(34,211,238,0.30),rgba(59,130,246,0.28),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(34,211,238,0.34)]",
     },
@@ -121,6 +127,8 @@ export default function FloatingHomeButton() {
       href: "/cities",
       label: "Cities",
       icon: MapPinned,
+      idleClass:
+        "border-emerald-200/20 bg-emerald-100/7 text-emerald-100/90 hover:border-emerald-100/40 hover:bg-emerald-100/15",
       activeClass:
         "border-emerald-200/65 bg-[linear-gradient(135deg,rgba(16,185,129,0.32),rgba(6,182,212,0.26),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(16,185,129,0.30)]",
     },
@@ -130,6 +138,8 @@ export default function FloatingHomeButton() {
             href: "/community",
             label: "Community",
             icon: Users,
+            idleClass:
+              "border-violet-200/20 bg-violet-100/7 text-violet-100/90 hover:border-violet-100/40 hover:bg-violet-100/16",
             activeClass:
               "border-violet-200/65 bg-[linear-gradient(135deg,rgba(167,139,250,0.30),rgba(244,114,182,0.24),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(167,139,250,0.34)]",
           },
@@ -137,6 +147,8 @@ export default function FloatingHomeButton() {
             href: "/messages",
             label: "Messages",
             icon: MessageCircle,
+            idleClass:
+              "border-sky-200/20 bg-sky-100/7 text-sky-100/90 hover:border-sky-100/40 hover:bg-sky-100/15",
             activeClass:
               "border-sky-200/65 bg-[linear-gradient(135deg,rgba(56,189,248,0.32),rgba(99,102,241,0.24),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(56,189,248,0.34)]",
           },
@@ -165,13 +177,13 @@ export default function FloatingHomeButton() {
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               title={item.label}
-              className={`group relative inline-flex h-10 w-10 items-center justify-center rounded-full border text-white transition duration-200 ${
+              className={`group relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 ${
                 isActive
                   ? item.activeClass
-                  : "border-white/15 bg-white/5 hover:-translate-y-[1px] hover:border-white/35 hover:bg-white/12"
+                  : `${item.idleClass} hover:-translate-y-[1px]`
               }`}
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
+              <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
               <span className="pointer-events-none absolute -top-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-white/20 bg-black/85 px-2 py-1 text-[10px] font-medium text-white/90 shadow-[0_8px_24px_rgba(2,6,23,0.45)] md:block md:opacity-0 md:transition md:duration-150 md:group-hover:opacity-100">
                 {item.label}
               </span>
