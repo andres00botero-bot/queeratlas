@@ -1,4 +1,4 @@
-const CACHE_VERSION = "qa-v2";
+const CACHE_VERSION = "qa-v3";
 const SHELL_CACHE = `qa-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `qa-runtime-${CACHE_VERSION}`;
 const OFFLINE_FALLBACK_URL = "/offline.html";
@@ -42,13 +42,21 @@ self.addEventListener("fetch", (event) => {
 
   if (!isSameOrigin) return;
 
-  const isStaticAsset =
-    request.destination === "style" ||
-    request.destination === "script" ||
+  const isNextStaticChunk = requestUrl.pathname.startsWith("/_next/static/");
+  const isScriptOrStyle =
+    request.destination === "script" || request.destination === "style";
+
+  // Always fetch fresh JS/CSS chunks so deploys don't break with stale module factories.
+  if (isNextStaticChunk || isScriptOrStyle) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  const isRuntimeCacheAsset =
     request.destination === "font" ||
     request.destination === "image";
 
-  if (isStaticAsset) {
+  if (isRuntimeCacheAsset) {
     event.respondWith(
       caches.match(request).then(async (cached) => {
         if (cached) return cached;

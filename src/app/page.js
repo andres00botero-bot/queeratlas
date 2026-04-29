@@ -4,22 +4,23 @@ import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, use
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
+import { buildAtlasSearchResults } from "@/lib/search";
+import { getQualityMap } from "@/lib/quality";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
+import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
-
-const AuthModal = dynamic(() => import("@/components/home/AuthModal"), {
-  ssr: false,
-});
+import { ArrowUpRight, Search } from "lucide-react";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
-const HOME_ATLAS_CACHE_KEY = "qa_home_atlas_data_v1";
-const HOME_NEWS_CACHE_KEY = "qa_home_news_data_v1";
+const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
 const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
 
 function splitLegacyVibe(description = "") {
@@ -80,46 +81,6 @@ function compareNewsRecency(a, b) {
   return String(b.id || "").localeCompare(String(a.id || ""));
 }
 
-function SearchIcon({ className = "", size = 18 }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function ArrowUpRightIcon({ className = "", size = 12 }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M7 17 17 7" />
-      <path d="M7 7h10v10" />
-    </svg>
-  );
-}
-
 export default function Home() {
   const router = useRouter();
   const [events, setEvents] = useState([]);
@@ -127,9 +88,7 @@ export default function Home() {
   const [query, setQuery] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
-  const [isNewsLoading, setIsNewsLoading] = useState(true);
-  const [isAtlasDataLoading, setIsAtlasDataLoading] = useState(false);
-  const [hasAtlasDataLoaded, setHasAtlasDataLoaded] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   const [dataError, setDataError] = useState("");
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
@@ -151,7 +110,7 @@ export default function Home() {
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
-  const [isIntroVisible] = useState(true);
+  const [isIntroVisible, setIsIntroVisible] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const {
@@ -270,11 +229,6 @@ export default function Home() {
   };
 
   const fetchEvents = async () => {
-    const [{ supabase }, { mergeSeedEventsAsync }] = await Promise.all([
-      import("@/lib/supabase"),
-      import("@/lib/seedMerge"),
-    ]);
-
     const [eventsRes, globalRes] = await Promise.all([
       supabase
         .from("events")
@@ -296,13 +250,11 @@ export default function Home() {
   };
 
   const fetchPlaces = async () => {
-    const { fetchPlacesForAtlas } = await import("@/lib/placesDataApi");
     const { data, error } = await fetchPlacesForAtlas();
     return { error, data };
   };
 
   const fetchWorldNews = async () => {
-    const { supabase } = await import("@/lib/supabase");
     const { data, error } = await supabase
       .from("qa_world_news")
       .select("*")
@@ -354,128 +306,44 @@ export default function Home() {
     writeLocalJson("qa_favorites", updated);
   };
 
-  const loadAtlasData = useCallback(async ({ forceRefresh = false } = {}) => {
-    if (isAtlasDataLoading) return;
-
-    setIsAtlasDataLoading(true);
+  const loadHomeData = useCallback(async ({ forceRefresh = false } = {}) => {
+    setIsDataLoading(true);
     setDataError("");
 
-    const cached = forceRefresh
-      ? { hit: false, stale: true }
-      : readRuntimeCache(HOME_ATLAS_CACHE_KEY, HOME_DATA_CACHE_TTL_MS);
+    const cached = forceRefresh ? { hit: false, stale: true } : readRuntimeCache(HOME_DATA_CACHE_KEY, HOME_DATA_CACHE_TTL_MS);
     if (cached.hit && cached.data) {
       setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
       setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
-      setHasAtlasDataLoaded(true);
-      setIsAtlasDataLoading(false);
-      if (!cached.stale) {
-        return;
-      }
-    }
-
-    const [eventsRes, placesRes] = await Promise.all([fetchEvents(), fetchPlaces()]);
-    const nextEvents = eventsRes?.data || [];
-    const nextPlaces = placesRes?.data || [];
-
-    setEvents(nextEvents);
-    setPlaces(nextPlaces);
-    setHasAtlasDataLoaded(true);
-    writeRuntimeCache(HOME_ATLAS_CACHE_KEY, {
-      events: nextEvents,
-      places: nextPlaces,
-    });
-
-    if (eventsRes?.error || placesRes?.error) {
-      setDataError("Some atlas data could not load. Showing available signal.");
-    }
-    setIsAtlasDataLoading(false);
-  }, [isAtlasDataLoading]);
-
-  const loadHomeNews = useCallback(async ({ forceRefresh = false } = {}) => {
-    setIsNewsLoading(true);
-    setDataError("");
-
-    const cached = forceRefresh
-      ? { hit: false, stale: true }
-      : readRuntimeCache(HOME_NEWS_CACHE_KEY, HOME_DATA_CACHE_TTL_MS);
-    if (cached.hit && cached.data) {
       setWorldNews(Array.isArray(cached.data.worldNews) ? cached.data.worldNews : []);
-      setIsNewsLoading(false);
+      setIsDataLoading(false);
       if (!cached.stale) return;
     }
 
-    const worldNewsRes = await fetchWorldNews();
+    const [eventsRes, placesRes, worldNewsRes] = await Promise.all([fetchEvents(), fetchPlaces(), fetchWorldNews()]);
+    const nextEvents = eventsRes?.data || [];
+    const nextPlaces = placesRes?.data || [];
     const nextWorldNews = worldNewsRes?.data || [];
+
+    setEvents(nextEvents);
+    setPlaces(nextPlaces);
     setWorldNews(nextWorldNews);
-    writeRuntimeCache(HOME_NEWS_CACHE_KEY, {
+    writeRuntimeCache(HOME_DATA_CACHE_KEY, {
+      events: nextEvents,
+      places: nextPlaces,
       worldNews: nextWorldNews,
     });
 
-    if (worldNewsRes?.error) {
-      setDataError("Some world news data could not load. Showing available signal.");
+    if (eventsRes?.error || placesRes?.error || worldNewsRes?.error) {
+      setDataError("Some live data could not load. Showing available signal.");
     }
-    setIsNewsLoading(false);
+    setIsDataLoading(false);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    let cancelled = false;
-    const run = async () => {
-      if (cancelled) return;
-      await loadHomeNews();
-    };
-
-    let timeoutId;
-    let idleId;
-
-    if (typeof window.requestIdleCallback === "function") {
-      idleId = window.requestIdleCallback(() => {
-        run();
-      }, { timeout: 1200 });
-    } else {
-      timeoutId = window.setTimeout(run, 260);
-    }
-
-    return () => {
-      cancelled = true;
-      if (typeof idleId === "number" && typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idleId);
-      }
-      if (typeof timeoutId === "number") {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, [loadHomeNews]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (hasAtlasDataLoaded || isAtlasDataLoading) return;
-
-    let cancelled = false;
-    const run = () => {
-      if (cancelled || hasAtlasDataLoaded || isAtlasDataLoading) return;
-      loadAtlasData();
-    };
-
-    let timeoutId;
-    let idleId;
-    if (typeof window.requestIdleCallback === "function") {
-      idleId = window.requestIdleCallback(run, { timeout: 1800 });
-    } else {
-      timeoutId = window.setTimeout(run, 700);
-    }
-
-    return () => {
-      cancelled = true;
-      if (typeof idleId === "number" && typeof window.cancelIdleCallback === "function") {
-        window.cancelIdleCallback(idleId);
-      }
-      if (typeof timeoutId === "number") {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, [hasAtlasDataLoaded, isAtlasDataLoading, loadAtlasData]);
+    queueMicrotask(async () => {
+      await loadHomeData();
+    });
+  }, [loadHomeData]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -484,6 +352,14 @@ export default function Home() {
         setFavorites((readLocalJson("qa_favorites", []) || []).map((item) => String(item)));
       }
     });
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setIsIntroVisible(true);
+    }, 80);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -590,7 +466,6 @@ export default function Home() {
     let active = true;
 
     queueMicrotask(async () => {
-      const { resolveAdminAccess } = await import("@/lib/adminAccess");
       const { isAdmin: adminState } = await resolveAdminAccess({
         email: currentEmail,
       });
@@ -612,21 +487,7 @@ export default function Home() {
       return;
     }
 
-    if (!hasAtlasDataLoaded) {
-      queueMicrotask(() => {
-        loadAtlasData();
-      });
-      return;
-    }
-
-    let disposed = false;
-    const timeout = setTimeout(async () => {
-      const [{ buildAtlasSearchResults }, { getQualityMap }] = await Promise.all([
-        import("@/lib/search"),
-        import("@/lib/quality"),
-      ]);
-      if (disposed) return;
-
+    const timeout = setTimeout(() => {
       const merged = buildAtlasSearchResults({
         query: deferredQuery,
         places,
@@ -644,11 +505,8 @@ export default function Home() {
       });
     }, 300);
 
-    return () => {
-      disposed = true;
-      clearTimeout(timeout);
-    };
-  }, [deferredQuery, events, favorites, hasAtlasDataLoaded, loadAtlasData, places]);
+    return () => clearTimeout(timeout);
+  }, [deferredQuery, events, favorites, places]);
 
   const homeNewsItems = useMemo(
     () => [...worldNews].sort(compareNewsRecency).slice(0, 3),
@@ -687,149 +545,12 @@ export default function Home() {
   const eventCount = events.length;
   const placeCount = places.length;
   const formatMetric = (value) => (value > 0 ? String(value) : "—");
-  const cityCountDisplay = isAtlasDataLoading || !hasAtlasDataLoaded ? "…" : formatMetric(cityCount);
-  const placeCountDisplay = isAtlasDataLoading || !hasAtlasDataLoaded ? "…" : formatMetric(placeCount);
-  const eventCountDisplay = isAtlasDataLoading || !hasAtlasDataLoaded ? "…" : formatMetric(eventCount);
+  const cityCountDisplay = isDataLoading ? "…" : formatMetric(cityCount);
+  const placeCountDisplay = isDataLoading ? "…" : formatMetric(placeCount);
+  const eventCountDisplay = isDataLoading ? "…" : formatMetric(eventCount);
   const introClass = (visibleClass = "") =>
     `transition-all duration-700 ease-out ${isIntroVisible ? `translate-y-0 opacity-100 ${visibleClass}` : "translate-y-3 opacity-0"}`.trim();
   const introStyle = (delay = 0) => ({ transitionDelay: `${delay}ms` });
-  const belowFoldStyle = {
-    contentVisibility: "auto",
-    containIntrinsicSize: "1200px",
-  };
-
-  const handleGoogleSignIn = async () => {
-    setAuthMessage("");
-    setAuthLoading(true);
-    writeLocalValue("qa_post_login_target", "/");
-    const { error } = await signInWithGoogle();
-    if (error) setAuthMessage(error.message);
-    setAuthLoading(false);
-  };
-
-  const handlePasswordSignIn = async () => {
-    if (!emailInput.trim() || !passwordInput.trim()) {
-      setAuthMessage("Enter both email and password.");
-      return;
-    }
-
-    setAuthMessage("");
-    setAuthLoading(true);
-    writeLocalValue("qa_post_login_target", "/");
-    const { error } = await signInWithPassword(emailInput.trim(), passwordInput);
-    if (error) {
-      setAuthMessage(error.message);
-    } else {
-      setAuthMessage("Signed in. Redirecting...");
-      trackKpiEvent("login_completed", {
-        memberKey: emailInput.trim().toLowerCase(),
-      });
-    }
-    setAuthLoading(false);
-  };
-
-  const handleMagicLinkSignIn = async () => {
-    if (!emailInput.trim()) {
-      setAuthMessage("Enter your email to receive a magic link.");
-      return;
-    }
-
-    setAuthMessage("");
-    setAuthLoading(true);
-    writeLocalValue("qa_post_login_target", "/");
-    const { error } = await signInWithEmail(emailInput.trim());
-    if (error) {
-      setAuthMessage(error.message);
-    } else {
-      setAuthMessage("Magic link sent. Check your inbox.");
-    }
-    setAuthLoading(false);
-  };
-
-  const handleCreateAccount = async () => {
-    const email = signupForm.email.trim();
-    const password = signupForm.password.trim();
-    const confirmPassword = signupForm.confirmPassword.trim();
-    const profilePayload = {
-      displayName: signupForm.displayName.trim(),
-      pronouns: signupForm.pronouns.trim(),
-      homeCity: signupForm.homeCity.trim(),
-      residentCountry: signupForm.residentCountry.trim(),
-    };
-
-    if (!profilePayload.displayName || !email || !password) {
-      setAuthMessage("Name, email, and password are required.");
-      return;
-    }
-    if (password.length < 6) {
-      setAuthMessage("Password must be at least 6 characters.");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setAuthMessage("Passwords do not match.");
-      return;
-    }
-
-    setAuthMessage("");
-    setAuthLoading(true);
-    writeLocalValue("qa_post_login_target", "/");
-    const { data, error } = await signUpWithPassword(email, password);
-    if (error) {
-      setAuthMessage(error.message);
-      setPendingEmailConfirmation("");
-      setPendingConfirmationPassword("");
-      setAuthLoading(false);
-      return;
-    }
-
-    if (data?.session) {
-      setPendingEmailConfirmation("");
-      setPendingConfirmationPassword("");
-      const result = await updateMemberProfile(profilePayload);
-      if (result?.ok) {
-        setAuthMessage("Account ready. Welcome to Queer Atlas.");
-      } else {
-        setAuthMessage("Account created. Profile can be edited in Your Atlas.");
-      }
-      trackKpiEvent("signup_completed", {
-        memberKey: email.toLowerCase(),
-      });
-    } else {
-      setPendingEmailConfirmation(email);
-      setPendingConfirmationPassword(password);
-      localStorage.setItem(
-        PENDING_SIGNUP_PROFILE_KEY,
-        JSON.stringify({ ...profilePayload, email })
-      );
-      setAuthMessage("Account created. Confirm your email to activate your profile.");
-      trackKpiEvent("signup_completed", {
-        memberKey: email.toLowerCase(),
-      });
-    }
-
-    setSignupForm({
-      displayName: "",
-      pronouns: "",
-      homeCity: "",
-      residentCountry: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    });
-    setAuthLoading(false);
-  };
-
-  const handleResendConfirmation = async () => {
-    if (!pendingEmailConfirmation) return;
-    setAuthLoading(true);
-    const { error } = await signInWithEmail(pendingEmailConfirmation);
-    if (error) {
-      setAuthMessage(error.message);
-    } else {
-      setAuthMessage("New confirmation email sent. Check inbox + spam.");
-    }
-    setAuthLoading(false);
-  };
 
   const topLaneCards = [
     {
@@ -975,6 +696,7 @@ export default function Home() {
                   alt="Queer Atlas heart"
                   width={96}
                   height={96}
+                  priority
                   className="h-16 w-16 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
                 />
                 <h1 className="qa-display qa-h1 max-w-5xl text-4xl font-bold text-white sm:text-6xl xl:text-7xl">
@@ -986,28 +708,25 @@ export default function Home() {
                 Find the city. Feel the signal. The global queer database for discovery,
                 vibe, community, and culture.
               </p>
-              {(isNewsLoading || isAtlasDataLoading) && (
+              {isDataLoading && (
                 <p className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
               )}
               {dataError && (
                 <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
                   <span>{dataError}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        loadHomeNews({ forceRefresh: true });
-                        loadAtlasData({ forceRefresh: true });
-                      }}
-                      className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
-                    >
-                      Retry
+                  <button
+                    type="button"
+                    onClick={() => loadHomeData({ forceRefresh: true })}
+                    className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
+                  >
+                    Retry
                   </button>
                 </div>
               )}
 
               <div className="mt-7 w-full max-w-3xl">
                 <div className="relative">
-                  <SearchIcon
+                  <Search
                     className="absolute left-5 top-1/2 -translate-y-1/2 text-white/35"
                     size={18}
                   />
@@ -1015,10 +734,7 @@ export default function Home() {
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    onFocus={() => {
-                      setShowResults(true);
-                      loadAtlasData();
-                    }}
+                    onFocus={() => setShowResults(true)}
                     placeholder="Search cities, places, events"
                     className="w-full rounded-[24px] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] py-4 pl-11 pr-24 text-[13px] text-white outline-none backdrop-blur placeholder:text-white/45 focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/20 sm:py-5 sm:pl-14 sm:pr-32 sm:text-base"
                   />
@@ -1081,7 +797,7 @@ export default function Home() {
                   )}
                 </div>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/55">
+              <div className={`mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/55 ${introClass()}`} style={introStyle(220)}>
                 <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Updated daily</span>
                 <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Community-powered</span>
                 <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Member-safe by design</span>
@@ -1144,12 +860,12 @@ export default function Home() {
                       </p>
                       <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/38">
                         Open news
-                        <ArrowUpRightIcon size={12} />
+                        <ArrowUpRight size={12} />
                       </span>
                     </button>
                   ))}
 
-                  {!isNewsLoading && homeNewsItems.length === 0 && (
+                  {!isDataLoading && homeNewsItems.length === 0 && (
                     <div className="rounded-2xl border border-dashed border-white/10 px-4 py-8 text-sm text-white/45">
                       No world news signal yet.
                     </div>
@@ -1159,7 +875,7 @@ export default function Home() {
             </aside>
           </div>
 
-          <section className={`mt-12 ${introClass()}`} style={{ ...introStyle(260), ...belowFoldStyle }}>
+          <section className={`mt-12 ${introClass()}`} style={introStyle(260)}>
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-white/40">
@@ -1197,7 +913,7 @@ export default function Home() {
                       <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r ${item.accent}`} />
                       <span className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-white/46 transition group-hover:text-white/72">
                         Open
-                        <ArrowUpRightIcon size={12} />
+                        <ArrowUpRight size={12} />
                       </span>
                     </div>
                   </div>
@@ -1231,7 +947,7 @@ export default function Home() {
                       <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r ${item.accent}`} />
                       <span className="inline-flex items-center gap-1 text-xs uppercase tracking-[0.14em] text-white/46 transition group-hover:text-white/72">
                         Open
-                        <ArrowUpRightIcon size={12} />
+                        <ArrowUpRight size={12} />
                       </span>
                     </div>
                   </div>
@@ -1240,7 +956,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={`mt-12 ${introClass()}`} style={{ ...introStyle(560), ...belowFoldStyle }}>
+          <section className={`mt-12 ${introClass()}`} style={introStyle(560)}>
             <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.32)]">
               <p className="text-xs uppercase tracking-[0.28em] text-white/40">
                 City gravity
@@ -1272,11 +988,6 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              {!hasAtlasDataLoaded && (
-                <div className="mt-4 rounded-2xl border border-dashed border-white/12 bg-white/[0.03] px-4 py-3 text-xs text-white/55">
-                  Tap search to load live city gravity and ranking.
-                </div>
-              )}
               <div className="mt-4 flex justify-end">
                 <button
                   type="button"
@@ -1289,26 +1000,23 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={`mt-10 pb-4 ${introClass("opacity-70")}`} style={{ ...introStyle(680), ...belowFoldStyle }}>
+          <section className={`mt-10 pb-4 ${introClass("opacity-70")}`} style={introStyle(680)}>
             <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
               <span className="mr-1 uppercase tracking-[0.18em] text-white/32">Search guides</span>
               <Link
                 href="/gay-guide"
-                prefetch={false}
                 className="rounded-full border border-fuchsia-200/14 bg-fuchsia-200/[0.05] px-2.5 py-1 text-[11px] text-fuchsia-100/70 transition hover:border-fuchsia-200/30 hover:text-fuchsia-100"
               >
                 Gay Guide
               </Link>
               <Link
                 href="/queer-guide"
-                prefetch={false}
                 className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-[11px] text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100"
               >
                 Queer Guide
               </Link>
               <Link
                 href="/hbtq-guide"
-                prefetch={false}
                 className="rounded-full border border-amber-200/14 bg-amber-200/[0.05] px-2.5 py-1 text-[11px] text-amber-100/70 transition hover:border-amber-200/30 hover:text-amber-100"
               >
                 HBTQ Guide
@@ -1317,7 +1025,6 @@ export default function Home() {
             <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[11px] text-white/45">
               <Link
                 href="/privacy"
-                prefetch={false}
                 className="underline underline-offset-2 transition hover:text-white"
               >
                 Privacy Policy
@@ -1325,7 +1032,6 @@ export default function Home() {
               <span className="text-white/25">|</span>
               <Link
                 href="/terms"
-                prefetch={false}
                 className="underline underline-offset-2 transition hover:text-white"
               >
                 Terms
@@ -1335,30 +1041,341 @@ export default function Home() {
         </div>
       </div>
 
-      <AuthModal
-        show={showSignup}
-        onClose={() => setShowSignup(false)}
-        authMode={authMode}
-        onAuthModeChange={(mode) => {
-          setAuthMode(mode);
-          setAuthMessage('');
-        }}
-        authLoading={authLoading}
-        authMessage={authMessage}
-        needsEmailConfirmation={needsEmailConfirmation}
-        emailInput={emailInput}
-        onEmailInputChange={setEmailInput}
-        passwordInput={passwordInput}
-        onPasswordInputChange={setPasswordInput}
-        signupForm={signupForm}
-        onSignupFieldChange={(field, value) => setSignupForm((current) => ({ ...current, [field]: value }))}
-        pendingEmailConfirmation={pendingEmailConfirmation}
-        onGoogleSignIn={handleGoogleSignIn}
-        onPasswordSignIn={handlePasswordSignIn}
-        onMagicLinkSignIn={handleMagicLinkSignIn}
-        onCreateAccount={handleCreateAccount}
-        onResendConfirmation={handleResendConfirmation}
-      />
+      {showSignup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-6">
+          <div
+            className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            onClick={() => setShowSignup(false)}
+          />
+
+          <div className="relative w-full max-w-lg overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(21,21,21,0.97),rgba(10,10,10,0.99))] p-8 shadow-[0_30px_120px_rgba(0,0,0,0.55)]">
+            <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full bg-rose-400/12 blur-3xl" />
+            <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
+
+            <div className="relative">
+              <p className="text-xs uppercase tracking-[0.28em] text-white/40">
+                Member access
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold text-white">
+                Join Queer Atlas
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-white/62">
+                Unlock community, contribution, and the deeper layer of queer discovery.
+              </p>
+
+              <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/30 p-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("signin");
+                    setAuthMessage("");
+                  }}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    authMode === "signin" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
+                  }`}
+                >
+                  Sign in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("signup");
+                    setAuthMessage("");
+                  }}
+                  className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                    authMode === "signup" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
+                  }`}
+                >
+                  Create account
+                </button>
+              </div>
+
+              {authMode === "signin" ? (
+                <div className="mt-6 space-y-3">
+                  <button
+                    onClick={async () => {
+                      setAuthMessage("");
+                      setAuthLoading(true);
+                      writeLocalValue("qa_post_login_target", "/");
+                      const { error } = await signInWithGoogle();
+                      if (error) setAuthMessage(error.message);
+                      setAuthLoading(false);
+                    }}
+                    disabled={authLoading}
+                    className="w-full rounded-2xl bg-gradient-to-r from-white via-rose-100 to-orange-100 py-3 font-semibold text-black transition hover:opacity-95"
+                  >
+                    {authLoading ? "Opening..." : "Continue with Google"}
+                  </button>
+                  <p className="px-1 text-xs leading-5 text-white/60">
+                    Google sign-in only uses basic account identity (openid, email, profile) for authentication.
+                    {" "}
+                    <Link href="/privacy" className="text-cyan-300 underline underline-offset-2 hover:text-cyan-200">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </p>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                    <input
+                      value={emailInput}
+                      onChange={(event) => setEmailInput(event.target.value)}
+                      placeholder="you@email.com"
+                      className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={passwordInput}
+                      onChange={(event) => setPasswordInput(event.target.value)}
+                      type="password"
+                      placeholder="Password"
+                      className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <button
+                      onClick={async () => {
+                        if (!emailInput.trim() || !passwordInput.trim()) {
+                          setAuthMessage("Enter both email and password.");
+                          return;
+                        }
+
+                        setAuthMessage("");
+                        setAuthLoading(true);
+                        writeLocalValue("qa_post_login_target", "/");
+                        const { error } = await signInWithPassword(emailInput.trim(), passwordInput);
+                        if (error) {
+                          setAuthMessage(error.message);
+                        } else {
+                          setAuthMessage("Signed in. Redirecting...");
+                          trackKpiEvent("login_completed", {
+                            memberKey: emailInput.trim().toLowerCase(),
+                          });
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+                    >
+                      {authLoading ? "Signing in..." : "Sign in with email + password"}
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        if (!emailInput.trim()) {
+                          setAuthMessage("Enter your email to receive a magic link.");
+                          return;
+                        }
+
+                        setAuthMessage("");
+                        setAuthLoading(true);
+                        writeLocalValue("qa_post_login_target", "/");
+                        const { error } = await signInWithEmail(emailInput.trim());
+                        if (error) {
+                          setAuthMessage(error.message);
+                        } else {
+                          setAuthMessage("Magic link sent. Check your inbox.");
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 py-2 text-xs font-semibold tracking-[0.08em] text-white/75 transition hover:border-white/24 hover:text-white"
+                    >
+                      {authLoading ? "Sending..." : "Send magic link instead"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(244,114,182,0.08),rgba(0,0,0,0.22))] p-4">
+                  <p className="mb-3 text-xs uppercase tracking-[0.14em] text-fuchsia-100/85">Build your member identity</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      value={signupForm.displayName}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, displayName: event.target.value }))}
+                      placeholder="Display name"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.pronouns}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, pronouns: event.target.value }))}
+                      placeholder="Pronouns (optional)"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.homeCity}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, homeCity: event.target.value }))}
+                      placeholder="Home city"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.residentCountry}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, residentCountry: event.target.value }))}
+                      placeholder="Country"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      value={signupForm.email}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, email: event.target.value }))}
+                      placeholder="Email"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30 sm:col-span-2"
+                    />
+                    <input
+                      type="password"
+                      value={signupForm.password}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, password: event.target.value }))}
+                      placeholder="Choose password"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <input
+                      type="password"
+                      value={signupForm.confirmPassword}
+                      onChange={(event) => setSignupForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                      placeholder="Confirm password"
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      const email = signupForm.email.trim();
+                      const password = signupForm.password.trim();
+                      const confirmPassword = signupForm.confirmPassword.trim();
+                      const profilePayload = {
+                        displayName: signupForm.displayName.trim(),
+                        pronouns: signupForm.pronouns.trim(),
+                        homeCity: signupForm.homeCity.trim(),
+                        residentCountry: signupForm.residentCountry.trim(),
+                      };
+
+                      if (!profilePayload.displayName || !email || !password) {
+                        setAuthMessage("Name, email, and password are required.");
+                        return;
+                      }
+                      if (password.length < 6) {
+                        setAuthMessage("Password must be at least 6 characters.");
+                        return;
+                      }
+                      if (password !== confirmPassword) {
+                        setAuthMessage("Passwords do not match.");
+                        return;
+                      }
+
+                      setAuthMessage("");
+                      setAuthLoading(true);
+                      writeLocalValue("qa_post_login_target", "/");
+                      const { data, error } = await signUpWithPassword(email, password);
+                      if (error) {
+                        setAuthMessage(error.message);
+                        setPendingEmailConfirmation("");
+                        setPendingConfirmationPassword("");
+                        setAuthLoading(false);
+                        return;
+                      }
+
+                      if (data?.session) {
+                        setPendingEmailConfirmation("");
+                        setPendingConfirmationPassword("");
+                        const result = await updateMemberProfile(profilePayload);
+                        if (result?.ok) {
+                          setAuthMessage("Account ready. Welcome to Queer Atlas.");
+                        } else {
+                          setAuthMessage("Account created. Profile can be edited in Your Atlas.");
+                        }
+                        trackKpiEvent("signup_completed", {
+                          memberKey: email.toLowerCase(),
+                        });
+                      } else {
+                        setPendingEmailConfirmation(email);
+                        setPendingConfirmationPassword(password);
+                        localStorage.setItem(
+                          PENDING_SIGNUP_PROFILE_KEY,
+                          JSON.stringify({ ...profilePayload, email })
+                        );
+                        setAuthMessage("Account created. Confirm your email to activate your profile.");
+                        trackKpiEvent("signup_completed", {
+                          memberKey: email.toLowerCase(),
+                        });
+                      }
+
+                      setSignupForm({
+                        displayName: "",
+                        pronouns: "",
+                        homeCity: "",
+                        residentCountry: "",
+                        email: "",
+                        password: "",
+                        confirmPassword: "",
+                      });
+                      setAuthLoading(false);
+                    }}
+                    disabled={authLoading}
+                    className="mt-3 w-full rounded-xl border border-fuchsia-200/22 bg-fuchsia-200/12 py-2.5 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/38 hover:bg-fuchsia-200/18"
+                  >
+                    {authLoading ? "Creating..." : "Create account"}
+                  </button>
+                </div>
+              )}
+
+              {authMessage && (
+                <div
+                  className={`mt-4 rounded-xl border px-3 py-2 text-xs ${
+                    needsEmailConfirmation
+                      ? "animate-pulse border-amber-300/45 bg-amber-300/15 text-amber-100"
+                      : "border-white/10 bg-white/5 text-white/75"
+                  }`}
+                >
+                  {authMessage}
+                </div>
+              )}
+              {needsEmailConfirmation && (
+                <div className="mt-2 rounded-xl border border-amber-200/25 bg-amber-200/10 px-3 py-2 text-[11px] text-amber-100/90">
+                  <p>Check inbox + spam in 1-2 minutes, then confirm the link.</p>
+                  {pendingEmailConfirmation && (
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-amber-100/80">
+                      Auto-check active on this screen. After confirmation on phone, this tab signs in automatically.
+                    </p>
+                  )}
+                  {pendingEmailConfirmation && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setAuthLoading(true);
+                        const { error } = await signInWithEmail(pendingEmailConfirmation);
+                        if (error) {
+                          setAuthMessage(error.message);
+                        } else {
+                          setAuthMessage("New confirmation email sent. Check inbox + spam.");
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="mt-2 rounded-full border border-amber-100/35 bg-amber-100/15 px-3 py-1 text-[10px] font-semibold tracking-[0.08em] text-amber-50 transition hover:bg-amber-100/22 disabled:opacity-70"
+                    >
+                      {authLoading ? "Sending..." : "Resend confirmation"}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <p className="mt-5 text-xs leading-6 text-white/36">
+                By signing in or creating an account, you agree to our{" "}
+                <Link href="/terms" className="text-white/70 underline underline-offset-2 transition hover:text-white">
+                  Terms
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="text-white/70 underline underline-offset-2 transition hover:text-white">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+
+              <button
+                onClick={() => setShowSignup(false)}
+                className="mt-4 text-sm text-white/46 transition hover:text-white/75"
+              >
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSaved && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
           <div className="rounded-full border border-white/10 bg-white px-4 py-2 text-sm font-medium text-black shadow-[0_18px_50px_rgba(255,255,255,0.18)]">
