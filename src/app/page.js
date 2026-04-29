@@ -7,8 +7,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
-import { buildAtlasSearchResults } from "@/lib/search";
-import { getQualityMap } from "@/lib/quality";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
@@ -478,9 +476,22 @@ export default function Home() {
       return;
     }
 
-    const timeout = setTimeout(() => {
+    const normalizedQuery = String(deferredQuery || "").trim();
+    if (normalizedQuery.length < 2) {
+      setResults([]);
+      setShowResults(true);
+      return;
+    }
+
+    let cancelled = false;
+    const timeout = setTimeout(async () => {
+      const [{ buildAtlasSearchResults }, { getQualityMap }] = await Promise.all([
+        import("@/lib/search"),
+        import("@/lib/quality"),
+      ]);
+      if (cancelled) return;
       const merged = buildAtlasSearchResults({
-        query: deferredQuery,
+        query: normalizedQuery,
         places,
         events,
         cityLimit: 4,
@@ -496,7 +507,10 @@ export default function Home() {
       });
     }, 300);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [deferredQuery, events, favorites, places]);
 
   const homeNewsItems = useMemo(
