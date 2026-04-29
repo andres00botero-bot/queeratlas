@@ -4,15 +4,11 @@ import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, use
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
-import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
-import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
 import { ArrowUpRight, Search } from "lucide-react";
@@ -20,42 +16,6 @@ import { ArrowUpRight, Search } from "lucide-react";
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
 const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
-
-function splitLegacyVibe(description = "") {
-  const raw = String(description || "");
-  const match = raw.match(/^\[Vibe:\s*([^\]]+)\]\s*(?:\n\n)?([\s\S]*)$/i);
-  if (!match) {
-    return {
-      vibe: "",
-      description: raw,
-    };
-  }
-
-  return {
-    vibe: String(match[1] || "").trim(),
-    description: String(match[2] || "").trim(),
-  };
-}
-
-function mapGlobalEventForSearch(row = {}) {
-  const parsed = splitLegacyVibe(row.description || "");
-  const startDate = String(row.start_date || row.date || "").slice(0, 10);
-  const endDate = String(row.end_date || row.start_date || row.date || "").slice(0, 10);
-
-  return {
-    id: `global-${String(row.id || "")}`,
-    name: String(row.name || "").trim(),
-    city: "Global",
-    description: parsed.description || "",
-    vibe: String(row.vibe || parsed.vibe || "").trim(),
-    date: startDate,
-    start_date: startDate,
-    end_date: endDate || startDate,
-    location: String(row.location || "").trim(),
-    link: String(row.link || "").trim(),
-    isGlobal: true,
-  };
-}
 
 function getResultMeta(result) {
   if (result.type === "city") return `City | ${result.country || "Global"}`;
@@ -225,60 +185,27 @@ export default function Home() {
     }, 1000);
   };
 
-  const fetchEvents = async () => {
-    const [eventsRes, globalRes] = await Promise.all([
-      supabase
-        .from("events")
-        .select("*")
-        .order("date", { ascending: true }),
-      supabase
-        .from("global_events")
-        .select("*")
-        .order("date", { ascending: true })
-        .order("created_at", { ascending: false }),
-    ]);
+  const fetchHomeData = useCallback(async () => {
+    const response = await fetch("/api/home-data", {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    });
 
-    const mergedEvents = await mergeSeedEventsAsync(eventsRes?.data || []);
-    const globalEvents = Array.isArray(globalRes?.data)
-      ? globalRes.data.map(mapGlobalEventForSearch).filter((event) => event.name)
-      : [];
-
-    return { error: eventsRes?.error || globalRes?.error, data: [...mergedEvents, ...globalEvents] };
-  };
-
-  const fetchPlaces = async () => {
-    const { data, error } = await fetchPlacesForAtlas();
-    return { error, data };
-  };
-
-  const fetchWorldNews = async () => {
-    const { data, error } = await supabase
-      .from("qa_world_news")
-      .select("*")
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      const fallback = [...EDITORIAL_PULSE_ITEMS].sort(compareNewsRecency);
-      return { error: null, data: fallback };
+    if (!response.ok) {
+      throw new Error(`home-data-${response.status}`);
     }
 
-    const withCategoryLabel = (data || []).map((item) => ({
-      ...item,
-      createdAt: item.created_at || "",
-      categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
-    }));
-
-    const merged = [...withCategoryLabel, ...EDITORIAL_PULSE_ITEMS].reduce((acc, item) => {
-      const key = String(item.id || `${item.title}-${item.date}`);
-      if (!acc.some((existing) => String(existing.id || `${existing.title}-${existing.date}`) === key)) {
-        acc.push(item);
-      }
-      return acc;
-    }, []);
-
-    return { error: null, data: merged.sort(compareNewsRecency) };
-  };
+    const payload = await response.json();
+    return {
+      events: Array.isArray(payload?.events) ? payload.events : [],
+      places: Array.isArray(payload?.places) ? payload.places : [],
+      worldNews: Array.isArray(payload?.worldNews) ? payload.worldNews : [],
+      partialData: Boolean(payload?.partialData),
+    };
+  }, []);
 
   const toggleFavorite = (id) => {
     const key = String(id);
@@ -316,10 +243,18 @@ export default function Home() {
       if (!cached.stale) return;
     }
 
-    const [eventsRes, placesRes, worldNewsRes] = await Promise.all([fetchEvents(), fetchPlaces(), fetchWorldNews()]);
-    const nextEvents = eventsRes?.data || [];
-    const nextPlaces = placesRes?.data || [];
-    const nextWorldNews = worldNewsRes?.data || [];
+    let payload;
+    try {
+      payload = await fetchHomeData();
+    } catch {
+      setDataError("Some live data could not load. Showing available signal.");
+      setIsDataLoading(false);
+      return;
+    }
+
+    const nextEvents = payload.events;
+    const nextPlaces = payload.places;
+    const nextWorldNews = payload.worldNews;
 
     setEvents(nextEvents);
     setPlaces(nextPlaces);
@@ -330,11 +265,11 @@ export default function Home() {
       worldNews: nextWorldNews,
     });
 
-    if (eventsRes?.error || placesRes?.error || worldNewsRes?.error) {
+    if (payload.partialData) {
       setDataError("Some live data could not load. Showing available signal.");
     }
     setIsDataLoading(false);
-  }, []);
+  }, [fetchHomeData]);
 
   useEffect(() => {
     queueMicrotask(async () => {
