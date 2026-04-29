@@ -110,7 +110,7 @@ export default function Home() {
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
-  const [isIntroVisible, setIsIntroVisible] = useState(false);
+  const [isIntroVisible] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const {
@@ -352,14 +352,6 @@ export default function Home() {
         setFavorites((readLocalJson("qa_favorites", []) || []).map((item) => String(item)));
       }
     });
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setIsIntroVisible(true);
-    }, 80);
-
-    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
