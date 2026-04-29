@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import "../signal-motion.css";
@@ -51,11 +52,18 @@ import {
 } from "@/features/favorites/checkinMapGuards";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
-import TripPlannerV2 from "@/components/planner/TripPlannerV2";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
-import SavedEventsPanel from "@/components/favorites/SavedEventsPanel";
-import SavedPlacesPanel from "@/components/favorites/SavedPlacesPanel";
 import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
+
+const TripPlannerV2 = dynamic(() => import("@/components/planner/TripPlannerV2"), {
+  loading: () => <FavoritesCardSkeleton />,
+});
+const SavedEventsPanel = dynamic(() => import("@/components/favorites/SavedEventsPanel"), {
+  loading: () => <FavoritesCardSkeleton />,
+});
+const SavedPlacesPanel = dynamic(() => import("@/components/favorites/SavedPlacesPanel"), {
+  loading: () => <FavoritesCardSkeleton />,
+});
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 
@@ -360,8 +368,10 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (isAuthLoading) return;
+    let active = true;
 
     queueMicrotask(async () => {
+      if (!active) return;
       setSyncWarning("");
       if (!isMember) {
         localStorage.removeItem("qa_redirect");
@@ -402,10 +412,14 @@ export default function FavoritesPage() {
         setPlans(storedPlans);
       }
 
-      await loadAtlasData();
-      await loadCheckins();
       setIsReady(true);
+      queueMicrotask(async () => {
+        await Promise.all([loadAtlasData(), loadCheckins()]);
+      });
     });
+    return () => {
+      active = false;
+    };
   }, [authMemberName, isAuthLoading, isMember, loadAtlasData, loadCheckins, loadMemberCollections, memberProfile, router, setAdded, setFavorites, setIsReady, setMemberName, setPlans, setProfileForm, setSyncWarning, user?.id]);
 
   useEffect(() => {
@@ -495,16 +509,58 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     if (!isReady || !isMember || !user?.id) return;
-    queueMicrotask(async () => {
-      await loadTrustNetwork();
-    });
+    let timeoutId = null;
+    let cancelled = false;
+
+    const run = () => {
+      queueMicrotask(async () => {
+        if (cancelled) return;
+        await loadTrustNetwork();
+      });
+    };
+
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(run, { timeout: 1800 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+        if (timeoutId) window.clearTimeout(timeoutId);
+      };
+    }
+
+    timeoutId = window.setTimeout(run, 900);
+    return () => {
+      cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
   }, [isReady, isMember, loadTrustNetwork, user?.id]);
 
   useEffect(() => {
     if (!isReady || !isMember || !user?.id) return;
-    queueMicrotask(async () => {
-      await loadFollowingCheckins();
-    });
+    let timeoutId = null;
+    let cancelled = false;
+
+    const run = () => {
+      queueMicrotask(async () => {
+        if (cancelled) return;
+        await loadFollowingCheckins();
+      });
+    };
+
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(run, { timeout: 2200 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback(idleId);
+        if (timeoutId) window.clearTimeout(timeoutId);
+      };
+    }
+
+    timeoutId = window.setTimeout(run, 1300);
+    return () => {
+      cancelled = true;
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
   }, [isReady, isMember, loadFollowingCheckins, user?.id]);
 
   const favoriteIdSet = useMemo(
@@ -933,7 +989,28 @@ export default function FavoritesPage() {
     [followingUserIds]
   );
 
+  const placesById = useMemo(() => {
+    const map = new Map();
+    (places || []).forEach((entry) => {
+      const key = String(entry?.id || "");
+      if (!key) return;
+      map.set(key, entry);
+    });
+    return map;
+  }, [places]);
+
+  const eventsById = useMemo(() => {
+    const map = new Map();
+    (events || []).forEach((entry) => {
+      const key = String(entry?.id || "");
+      if (!key) return;
+      map.set(key, entry);
+    });
+    return map;
+  }, [events]);
+
   const suggestedMembers = useMemo(() => {
+    if (!showSignalDeck) return [];
     const selfId = String(user?.id || "");
     return (networkMembers || [])
       .filter((entry) => {
@@ -952,7 +1029,7 @@ export default function FavoritesPage() {
         return bSignal - aSignal;
       })
       .slice(0, 18);
-  }, [networkMembers, user?.id]);
+  }, [networkMembers, showSignalDeck, user?.id]);
 
   const followingFeedItems = useMemo(() => {
     return (followingFeedRows || [])
@@ -963,7 +1040,7 @@ export default function FavoritesPage() {
         const isEvent = favoriteId.startsWith("event-");
         if (isEvent) {
           const eventId = favoriteId.replace("event-", "");
-          const event = events.find((entry) => String(entry.id) === String(eventId));
+          const event = eventsById.get(String(eventId));
           if (!event) return null;
           return {
             kind: "event",
@@ -977,7 +1054,7 @@ export default function FavoritesPage() {
           };
         }
 
-        const place = places.find((entry) => String(entry.id) === favoriteId);
+        const place = placesById.get(favoriteId);
         if (!place) return null;
         return {
           kind: "place",
@@ -991,9 +1068,10 @@ export default function FavoritesPage() {
         };
       })
       .filter(Boolean);
-  }, [events, followingFeedRows, places]);
+  }, [eventsById, followingFeedRows, placesById]);
 
   const followingProfiles = useMemo(() => {
+    if (!showSignalDeck) return [];
     if (!Array.isArray(followingUserIds) || followingUserIds.length === 0) return [];
 
     const latestByOwner = new Map();
@@ -1026,9 +1104,10 @@ export default function FavoritesPage() {
         };
       })
       .sort((a, b) => new Date(b.latestAt || 0) - new Date(a.latestAt || 0));
-  }, [followingFeedRows, followingUserIds, networkMembers]);
+  }, [followingFeedRows, followingUserIds, networkMembers, showSignalDeck]);
 
   const forYouRecommendations = useMemo(() => {
+    if (!showSignalDeck) return [];
     const modeWeights =
       recommendationMode === "safe"
         ? { trustedCity: 3, savedCity: 4, vibe: 2, reviews: 0.25, rating: 0.5, typeSafe: 2.5, typePeak: 0.5, eventSoon: 0.04 }
@@ -1142,7 +1221,7 @@ export default function FavoritesPage() {
               ? `${item.reasonBase} Prioritizing peak energy and late momentum.`
               : `${item.reasonBase} Balanced between comfort and intensity.`,
       }));
-  }, [blocked.events, blocked.places, events, favoriteIdSet, followingFeedItems, places, recommendationMode, savedPlaces]);
+  }, [blocked.events, blocked.places, events, favoriteIdSet, followingFeedItems, places, recommendationMode, savedPlaces, showSignalDeck]);
 
   const weeklyDigest = useMemo(() => {
     const weekAgo = nowTs - 7 * 24 * 60 * 60 * 1000;
