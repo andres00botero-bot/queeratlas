@@ -164,7 +164,11 @@ function createClientId(prefix) {
 
 function PulseSkeletonCard({ tone = "orange" }) {
   const toneClass =
-    tone === "emerald"
+    tone === "fuchsia"
+      ? "border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(10,10,10,0.94))]"
+      : tone === "cyan"
+        ? "border-cyan-200/16 bg-[linear-gradient(180deg,rgba(56,189,248,0.12),rgba(10,10,10,0.94))]"
+      : tone === "emerald"
       ? "border-emerald-200/16 bg-[linear-gradient(180deg,rgba(16,185,129,0.10),rgba(10,10,10,0.94))]"
       : tone === "yellow"
         ? "border-yellow-200/16 bg-[linear-gradient(180deg,rgba(250,204,21,0.10),rgba(10,10,10,0.94))]"
@@ -798,7 +802,7 @@ export default function NowPage() {
     return (
       <main className="qa-page min-h-screen bg-black px-6 py-8 text-white">
         <div className="mx-auto max-w-7xl space-y-6">
-          <section className="rounded-[32px] border border-orange-300/15 bg-[linear-gradient(135deg,rgba(67,20,7,0.86),rgba(10,10,10,0.98),rgba(120,53,15,0.82))] p-8">
+          <section className="rounded-[32px] border border-fuchsia-300/18 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.22),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(251,146,60,0.14),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(61,24,38,0.9))] p-8">
             <div className="animate-pulse space-y-3" aria-hidden="true">
               <div className="h-3 w-28 rounded-full bg-white/14" />
               <div className="h-10 w-52 rounded-full bg-white/12" />
@@ -807,16 +811,16 @@ export default function NowPage() {
             </div>
           </section>
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            <section className="rounded-[28px] border border-orange-300/15 bg-[linear-gradient(180deg,rgba(44,20,10,0.95),rgba(10,10,10,1))] p-6">
+            <section className="rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(14,24,36,0.92),rgba(10,10,10,1))] p-6">
               <div className="grid gap-4 md:grid-cols-2">
-                <PulseSkeletonCard tone="orange" />
-                <PulseSkeletonCard tone="orange" />
+                <PulseSkeletonCard tone="cyan" />
+                <PulseSkeletonCard tone="cyan" />
               </div>
             </section>
-            <section className="rounded-[28px] border border-yellow-300/15 bg-[linear-gradient(180deg,rgba(54,36,10,0.95),rgba(10,10,10,1))] p-6">
+            <section className="rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(11,44,56,0.75),rgba(9,9,9,0.96))] p-6">
               <div className="space-y-3">
-                <PulseSkeletonCard tone="yellow" />
-                <PulseSkeletonCard tone="yellow" />
+                <PulseSkeletonCard tone="cyan" />
+                <PulseSkeletonCard tone="cyan" />
               </div>
             </section>
           </div>
@@ -835,10 +839,10 @@ export default function NowPage() {
   return (
     <main className="qa-page min-h-screen bg-black text-white">
       <div className="qa-shell">
-        <div className="qa-panel mb-8 rounded-[30px] border border-cyan-300/15 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.2),transparent_25%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.12),transparent_30%),linear-gradient(135deg,rgba(8,38,54,0.92),rgba(10,10,10,0.98),rgba(11,28,44,0.88))] p-7 shadow-[0_30px_120px_rgba(34,211,238,0.08)] sm:p-8">
+        <div className="qa-panel mb-8 rounded-[30px] border border-fuchsia-300/18 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.22),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(251,146,60,0.14),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(61,24,38,0.9))] p-7 shadow-[0_30px_120px_rgba(232,121,249,0.12)] sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="qa-eyebrow text-cyan-200/85">Live Discovery + Editorial Signal</p>
+              <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
               <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Queer World News</h1>
               <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
                 One mixed stream: what is happening now, what is rising, what changed in nightlife, rights/safety updates, major events, and culture tips.
@@ -850,7 +854,7 @@ export default function NowPage() {
               <select
                 value={selectedCity}
                 onChange={(event) => setSelectedCity(event.target.value)}
-                className="mt-3 w-full rounded-xl border border-white/15 bg-black px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
+                className="mt-3 w-full rounded-xl border border-white/15 bg-black px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-300"
               >
                 <option value="all">All cities</option>
                 {cityOptions.map((city) => (
