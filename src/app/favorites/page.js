@@ -62,9 +62,22 @@ import {
   sortRecentFollowingCheckins,
 } from "@/features/favorites/logic/checkinSelectors";
 import {
+  buildEditCheckinFormPatch,
+  buildNextCheckin,
+  mergeSavedCheckinIntoList,
+  resolveDirectPlaceDbId,
+  resolvePlaceDbIdFromLookupRows,
+} from "@/features/favorites/logic/favoritesCheckins";
+import {
   addFavoriteLocalState,
   addFollowingUserIdLocalState,
+  buildAddedEntriesFromFavoriteRows,
+  buildFavoriteIdsFromRows,
+  buildLocalAddedEntries,
   buildQuickCheckinPayload,
+  computeMissingFavorites,
+  mergeFavoriteIds,
+  normalizeFavoriteIds,
   removeFavoriteLocalState,
   removeFollowingLocalState,
   removePlanLocalState,
@@ -205,26 +218,22 @@ export default function FavoritesPage() {
 
     if (favoritesRes.error || plansRes.error) {
       setSyncWarning("Cloud sync unavailable. Using local data.");
-      setFavorites((localFavorites || []).map((item) => String(item)));
-      setAdded(
-        (localFavorites || []).map((id) => ({
-          id: String(id),
-          date: new Date().toISOString(),
-        }))
-      );
+      const localFavoriteIds = normalizeFavoriteIds(localFavorites);
+      setFavorites(localFavoriteIds);
+      setAdded(buildLocalAddedEntries(localFavoriteIds));
       setPlans(localPlans || []);
       return;
     }
 
-    const remoteFavorites = (favoritesRes.data || []).map((row) => String(row.favorite_id));
-    const remoteAdded = (favoritesRes.data || []).map((row) => ({
-      id: String(row.favorite_id),
-      date: row.created_at,
-    }));
+    const remoteFavorites = buildFavoriteIdsFromRows(favoritesRes.data || []);
+    const remoteAdded = buildAddedEntriesFromFavoriteRows(favoritesRes.data || []);
     const remotePlans = (plansRes.data || []).map(mapPlanRow);
 
-    const localFavsNormalized = (localFavorites || []).map((id) => String(id));
-    const missingFavorites = localFavsNormalized.filter((id) => !remoteFavorites.includes(id));
+    const localFavsNormalized = normalizeFavoriteIds(localFavorites);
+    const missingFavorites = computeMissingFavorites({
+      localFavoriteIds: localFavsNormalized,
+      remoteFavoriteIds: remoteFavorites,
+    });
 
     if (missingFavorites.length > 0) {
       await supabase.from("member_favorites").insert(
@@ -251,12 +260,12 @@ export default function FavoritesPage() {
       );
     }
 
-    const mergedFavorites = [...new Set([...remoteFavorites, ...localFavsNormalized])];
+    const mergedFavorites = mergeFavoriteIds(remoteFavorites, localFavsNormalized);
     setFavorites(mergedFavorites);
     setAdded(
       remoteAdded.length > 0
         ? remoteAdded
-        : mergedFavorites.map((id) => ({ id, date: new Date().toISOString() }))
+        : buildLocalAddedEntries(mergedFavorites)
     );
     setPlans(remotePlans.length > 0 ? remotePlans : localPlans || []);
 
@@ -1093,22 +1102,12 @@ export default function FavoritesPage() {
   };
 
   const resolveCheckinPlaceDbId = useCallback(async (entry) => {
-    const rawPlaceId = String(entry?.placeId || "").trim();
-    if (rawPlaceId && !rawPlaceId.startsWith("seed-place-") && /^\d+$/.test(rawPlaceId)) {
-      return Number(rawPlaceId);
-    }
+    const directPlaceId = resolveDirectPlaceDbId(entry?.placeId);
+    if (directPlaceId) return directPlaceId;
 
     const cityValue = String(entry?.city || "").trim();
     const labelValue = String(entry?.label || "").trim();
     if (!cityValue || !labelValue) return null;
-
-    const normalize = (value) =>
-      String(value || "")
-        .trim()
-        .toLowerCase()
-        .replaceAll("_", " ")
-        .replaceAll("-", " ")
-        .replace(/\s+/g, " ");
 
     const lookup = await supabase
       .from("places")
@@ -1116,10 +1115,10 @@ export default function FavoritesPage() {
       .ilike("name", labelValue)
       .limit(20);
 
-    const rows = Array.isArray(lookup?.data) ? lookup.data : [];
-    const matched = rows.find((row) => normalize(row?.city) === normalize(cityValue));
-    const numericId = Number(matched?.id);
-    return Number.isFinite(numericId) ? numericId : null;
+    return resolvePlaceDbIdFromLookupRows({
+      rows: Array.isArray(lookup?.data) ? lookup.data : [],
+      city: cityValue,
+    });
   }, []);
 
   const submitCheckinVibe = useCallback(async (signalKey) => {
@@ -1206,22 +1205,12 @@ export default function FavoritesPage() {
       });
     }
 
-    const nextCheckin = {
-      id: isEditing ? editingId : `local-${Date.now()}`,
-      mode: modeValue,
-      privacy: privacyValue,
-      country: countryValue,
-      city: cityValue,
-      label: labelValue,
-      address: addressValue,
-      note: String(payload?.note || "").trim(),
-      placeId: String(payload?.placeId || ""),
-      eventId: String(payload?.eventId || ""),
-      lat: Number.isFinite(Number(resolvedCoords?.lat)) ? Number(resolvedCoords.lat) : null,
-      lng: Number.isFinite(Number(resolvedCoords?.lng)) ? Number(resolvedCoords.lng) : null,
-      checkedInAt: String(payload?.checkedInAt || new Date().toISOString()),
-      createdAt: String(payload?.createdAt || new Date().toISOString()),
-    };
+    const nextCheckin = buildNextCheckin({
+      payload,
+      resolvedCoords,
+      isEditing,
+      editingId,
+    });
 
     setIsSavingCheckin(true);
     try {
@@ -1275,9 +1264,12 @@ export default function FavoritesPage() {
       }
 
       setCheckins((current) => {
-        const merged = isEditing
-          ? current.map((entry) => (String(entry.id) === String(savedRow.id) ? savedRow : entry))
-          : [savedRow, ...current].slice(0, 300);
+        const merged = mergeSavedCheckinIntoList({
+          current,
+          savedRow,
+          isEditing,
+          limit: 300,
+        });
         writeLocalJson(CHECKINS_STORAGE_KEY, merged);
         return merged;
       });
@@ -1320,15 +1312,13 @@ export default function FavoritesPage() {
     setSelectedCheckinId(String(entry.id));
     setCheckinForm((current) => ({
       ...current,
-      mode: String(entry.mode || "trip"),
-      privacy: String(entry.privacy || "friends"),
-      country: String(entry.country || cityCountryLookup.get(normalizeCityKey(entry.city)) || current.country || ""),
-      city: formatCityLabel(String(entry.city || current.city || "")),
-      sourceType: "manual",
-      sourceId: "",
-      label: String(entry.label || ""),
-      address: String(entry.address || ""),
-      note: String(entry.note || ""),
+      ...buildEditCheckinFormPatch({
+        entry,
+        currentCountry: current.country,
+        cityCountryLookup,
+        normalizeCityKey,
+        formatCityLabel,
+      }),
     }));
   };
 

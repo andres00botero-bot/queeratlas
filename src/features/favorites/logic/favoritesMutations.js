@@ -96,3 +96,33 @@ export function removePlanLocalState({
     expandedPlanId: String(expandedPlanId) === normalized ? null : expandedPlanId,
   };
 }
+
+export function normalizeFavoriteIds(favorites = []) {
+  return (favorites || []).map((id) => String(id));
+}
+
+export function buildAddedEntriesFromFavoriteRows(rows = []) {
+  return (rows || []).map((row) => ({
+    id: String(row.favorite_id),
+    date: row.created_at,
+  }));
+}
+
+export function buildFavoriteIdsFromRows(rows = []) {
+  return (rows || []).map((row) => String(row.favorite_id));
+}
+
+export function buildLocalAddedEntries(favorites = [], nowIso = "") {
+  return (favorites || []).map((id) => ({
+    id: String(id),
+    date: nowIso || new Date().toISOString(),
+  }));
+}
+
+export function computeMissingFavorites({ localFavoriteIds = [], remoteFavoriteIds = [] }) {
+  return (localFavoriteIds || []).filter((id) => !(remoteFavoriteIds || []).includes(id));
+}
+
+export function mergeFavoriteIds(remoteFavoriteIds = [], localFavoriteIds = []) {
+  return [...new Set([...(remoteFavoriteIds || []), ...(localFavoriteIds || [])])];
+}
