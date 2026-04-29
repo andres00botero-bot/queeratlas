@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "../signal-motion.css";
@@ -73,6 +73,7 @@ function readStored(key, fallback) {
 const MAX_MESSAGES_PER_TOPIC = 100;
 const MAX_TOPICS = 120;
 const TOPIC_RETENTION_DAYS = 365;
+const MEMBER_SEARCH_PAGE_SIZE = 18;
 const REPORT_REASON_OPTIONS = [
   { value: "1", label: "Safety issue" },
   { value: "2", label: "Wrong info" },
@@ -238,6 +239,44 @@ function normalizeReportReason(input = "") {
   return map[value] || value;
 }
 
+function isMissingDbObjectError(error) {
+  if (!error) return false;
+  const code = String(error.code || "").toUpperCase();
+  const text = `${error.message || ""} ${error.details || ""} ${error.hint || ""}`.toLowerCase();
+  return (
+    code === "42P01" ||
+    code === "42883" ||
+    (text.includes("does not exist") && (text.includes("function") || text.includes("relation")))
+  );
+}
+
+function formatMemberSeen(lastSeenAt = "", isOnline = false) {
+  if (isOnline) return "Active now";
+  if (!lastSeenAt) return "Seen unknown";
+  const safe = new Date(lastSeenAt);
+  if (Number.isNaN(safe.getTime())) return "Seen recently";
+  return `Seen ${safe.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
+function mapMemberSearchRow(row) {
+  return {
+    user_id: String(row?.user_id || ""),
+    display_name: String(row?.display_name || "Member"),
+    home_city: String(row?.home_city || ""),
+    resident_country: String(row?.resident_country || ""),
+    pronouns: String(row?.pronouns || ""),
+    title: String(row?.title || ""),
+    rank: Number(row?.rank || 999999),
+    score: Number(row?.score || 0),
+    city_count: Number(row?.city_count || 0),
+    is_following: Boolean(row?.is_following),
+    follows_you: Boolean(row?.follows_you),
+    mutual_count: Number(row?.mutual_count || 0),
+    is_online: Boolean(row?.is_online),
+    last_seen_at: String(row?.last_seen_at || ""),
+  };
+}
+
 function Field({ value, onChange, placeholder, area = false }) {
   if (area) {
     return <textarea value={value} onChange={onChange} placeholder={placeholder} className="h-28 w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50" />;
@@ -274,6 +313,16 @@ export default function CommunityPage() {
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [leaderboard, setLeaderboard] = useState([]);
   const [myRank, setMyRank] = useState(null);
+  const [memberSearchTerm, setMemberSearchTerm] = useState("");
+  const [memberSearchCity, setMemberSearchCity] = useState("");
+  const [memberSearchSort, setMemberSearchSort] = useState("best");
+  const [memberSearchScope, setMemberSearchScope] = useState("all");
+  const [memberSearchRows, setMemberSearchRows] = useState([]);
+  const [memberSearchLoading, setMemberSearchLoading] = useState(false);
+  const [memberSearchHasMore, setMemberSearchHasMore] = useState(false);
+  const [memberSearchOffset, setMemberSearchOffset] = useState(0);
+  const [memberSearchWarning, setMemberSearchWarning] = useState("");
+  const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
   const [reportModal, setReportModal] = useState({
     open: false,
     targetType: "",
@@ -283,6 +332,9 @@ export default function CommunityPage() {
     details: "",
   });
   const { toast, showToast } = useActionToast();
+  const memberUserId = String(user?.id || "");
+  const memberSearchCacheRef = useRef(new Map());
+  const memberSearchSentinelRef = useRef(null);
 
   const loadCommunityData = useCallback(async () => {
     setSyncError("");
@@ -481,6 +533,183 @@ export default function CommunityPage() {
     };
   }, [isReady, isMember, user?.email]);
 
+  const loadMemberDiscovery = useCallback(async ({
+    offset = 0,
+    append = false,
+    force = false,
+  } = {}) => {
+    if (!isReady || !isMember || !memberUserId) return;
+    const query = String(memberSearchTerm || "").trim();
+    const city = String(memberSearchCity || "").trim();
+    const safeOffset = Math.max(0, Number(offset || 0));
+    const safeSort = String(memberSearchSort || "best").trim().toLowerCase();
+    const friendsOnly = memberSearchScope === "friends";
+    const cacheKey = JSON.stringify({
+      query: query.toLowerCase(),
+      city: city.toLowerCase(),
+      sort: safeSort,
+      scope: memberSearchScope,
+      offset: safeOffset,
+      size: MEMBER_SEARCH_PAGE_SIZE,
+    });
+
+    if (!force && memberSearchCacheRef.current.has(cacheKey)) {
+      const cached = memberSearchCacheRef.current.get(cacheKey);
+      setMemberSearchWarning(cached.warning || "");
+      setMemberSearchHasMore(Boolean(cached.hasMore));
+      setMemberSearchOffset(safeOffset);
+      setMemberSearchRows((current) => {
+        if (!append) return cached.rows;
+        const seen = new Set(current.map((row) => row.user_id));
+        const merged = [...current];
+        cached.rows.forEach((row) => {
+          if (seen.has(row.user_id)) return;
+          seen.add(row.user_id);
+          merged.push(row);
+        });
+        return merged;
+      });
+      return;
+    }
+
+    setMemberSearchLoading(true);
+    if (!append) setMemberSearchWarning("");
+
+    const requestLimit = MEMBER_SEARCH_PAGE_SIZE + 1;
+    const { data, error } = await supabase.rpc("qa_search_members", {
+      search_query: query,
+      city_filter: city,
+      sort_mode: safeSort,
+      friends_only: friendsOnly,
+      result_limit: requestLimit,
+      result_offset: safeOffset,
+    });
+
+    if (error) {
+      const fallbackRows = (leaderboard || [])
+        .filter((entry) => String(entry.user_id || "") !== memberUserId)
+        .map((entry) =>
+          mapMemberSearchRow({
+            user_id: entry.user_id,
+            display_name: entry.display_name,
+            title: entry.title,
+            rank: entry.rank,
+            score: entry.score,
+            city_count: entry.city_count,
+            is_following: false,
+            follows_you: false,
+            mutual_count: 0,
+            is_online: false,
+            last_seen_at: "",
+          })
+        )
+        .filter((entry) => {
+          const queryLower = query.toLowerCase();
+          const cityLower = city.toLowerCase();
+          const queryPass =
+            !queryLower ||
+            entry.display_name.toLowerCase().includes(queryLower) ||
+            entry.home_city.toLowerCase().includes(queryLower) ||
+            entry.resident_country.toLowerCase().includes(queryLower);
+          const cityPass = !cityLower || entry.home_city.toLowerCase() === cityLower;
+          return queryPass && cityPass;
+        })
+        .slice(0, MEMBER_SEARCH_PAGE_SIZE);
+
+      const warning = isMissingDbObjectError(error)
+        ? "Member search backend is not migrated yet. Run supabase/community-member-search-v1.sql for full results."
+        : "Live member search is temporarily unavailable. Showing fallback ranking.";
+
+      setMemberSearchWarning(warning);
+      setMemberSearchHasMore(false);
+      setMemberSearchOffset(0);
+      setMemberSearchRows(fallbackRows);
+      memberSearchCacheRef.current.set(cacheKey, {
+        rows: fallbackRows,
+        hasMore: false,
+        warning,
+      });
+      setMemberSearchLoading(false);
+      return;
+    }
+
+    const mapped = (data || []).map(mapMemberSearchRow);
+    const hasMore = mapped.length > MEMBER_SEARCH_PAGE_SIZE;
+    const visibleRows = hasMore ? mapped.slice(0, MEMBER_SEARCH_PAGE_SIZE) : mapped;
+
+    setMemberSearchHasMore(hasMore);
+    setMemberSearchOffset(safeOffset);
+    setMemberSearchWarning("");
+    setMemberSearchRows((current) => {
+      if (!append) return visibleRows;
+      const seen = new Set(current.map((row) => row.user_id));
+      const merged = [...current];
+      visibleRows.forEach((row) => {
+        if (seen.has(row.user_id)) return;
+        seen.add(row.user_id);
+        merged.push(row);
+      });
+      return merged;
+    });
+    memberSearchCacheRef.current.set(cacheKey, {
+      rows: visibleRows,
+      hasMore,
+      warning: "",
+    });
+    setMemberSearchLoading(false);
+  }, [
+    isReady,
+    isMember,
+    memberUserId,
+    memberSearchTerm,
+    memberSearchCity,
+    memberSearchSort,
+    memberSearchScope,
+    leaderboard,
+  ]);
+
+  useEffect(() => {
+    if (!isReady || !isMember || !memberUserId) return;
+    const timer = setTimeout(() => {
+      queueMicrotask(async () => {
+        await loadMemberDiscovery({ offset: 0, append: false });
+      });
+    }, 240);
+    return () => clearTimeout(timer);
+  }, [
+    isReady,
+    isMember,
+    memberUserId,
+    memberSearchTerm,
+    memberSearchCity,
+    memberSearchSort,
+    memberSearchScope,
+    loadMemberDiscovery,
+  ]);
+
+  const loadMoreMemberDiscovery = useCallback(async () => {
+    if (memberSearchLoading || !memberSearchHasMore) return;
+    const nextOffset = memberSearchOffset + MEMBER_SEARCH_PAGE_SIZE;
+    await loadMemberDiscovery({ offset: nextOffset, append: true });
+  }, [memberSearchLoading, memberSearchHasMore, memberSearchOffset, loadMemberDiscovery]);
+
+  useEffect(() => {
+    const target = memberSearchSentinelRef.current;
+    if (!target || memberSearchLoading || !memberSearchHasMore) return;
+    const observer = new IntersectionObserver((entries) => {
+      const first = entries[0];
+      if (!first?.isIntersecting) return;
+      queueMicrotask(async () => {
+        await loadMoreMemberDiscovery();
+      });
+    }, {
+      rootMargin: "300px 0px",
+      threshold: 0.01,
+    });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [memberSearchLoading, memberSearchHasMore, loadMoreMemberDiscovery]);
+
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
@@ -593,6 +822,22 @@ export default function CommunityPage() {
       .sort((a, b) => b.total - a.total)
       .slice(0, 3);
   })();
+
+  const memberDiscoveryCities = (() => {
+    const fromSearch = memberSearchRows.map((row) => row.home_city).filter(Boolean);
+    const fromStories = visibleStories.map((story) => story.city).filter(Boolean);
+    const fromGuides = visibleGuides.map((guide) => guide.city).filter(Boolean);
+    const unique = [...new Set([...fromSearch, ...fromStories, ...fromGuides].map((value) => String(value).trim()).filter(Boolean))];
+    return unique
+      .map((value) => ({
+        raw: value,
+        normalized: normalizeMemberKey(value),
+        label: formatCityLabel(value),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  })();
+
+  const displayedMemberRows = memberSearchRows;
 
   const canDeleteTopic = (topic) => {
     if (!topic) return false;
@@ -840,6 +1085,60 @@ export default function CommunityPage() {
     });
   };
 
+  const openMemberThread = (entry) => {
+    const targetId = String(entry?.user_id || "").trim();
+    if (!targetId) return;
+    const safeName = String(entry?.display_name || "Member");
+    router.push(`/messages?user=${encodeURIComponent(targetId)}&name=${encodeURIComponent(safeName)}`);
+  };
+
+  const toggleMemberFollow = async (entry) => {
+    const targetId = String(entry?.user_id || "").trim();
+    if (!targetId || !user?.id) return;
+    if (memberSearchBusyById[targetId]) return;
+
+    const currentlyFollowing = Boolean(entry.is_following);
+    setMemberSearchBusyById((current) => ({ ...current, [targetId]: true }));
+    setMemberSearchRows((current) =>
+      current.map((row) =>
+        row.user_id === targetId ? { ...row, is_following: !currentlyFollowing } : row
+      )
+    );
+
+    const operation = currentlyFollowing
+      ? supabase
+          .from("member_following")
+          .delete()
+          .eq("follower_user_id", user.id)
+          .eq("followed_user_id", targetId)
+      : supabase
+          .from("member_following")
+          .insert([{ follower_user_id: user.id, followed_user_id: targetId }]);
+
+    const { error } = await operation;
+    if (error) {
+      setMemberSearchRows((current) =>
+        current.map((row) =>
+          row.user_id === targetId ? { ...row, is_following: currentlyFollowing } : row
+        )
+      );
+      showToast("Could not update connection right now.", { tone: "warn", duration: 2200 });
+    } else {
+      showToast(currentlyFollowing ? "Removed from your trusted circle." : "Added to your trusted circle.", {
+        tone: "ok",
+        duration: 2200,
+      });
+      memberSearchCacheRef.current.clear();
+      if (memberSearchScope === "friends") {
+        queueMicrotask(async () => {
+          await loadMemberDiscovery({ offset: 0, append: false, force: true });
+        });
+      }
+    }
+
+    setMemberSearchBusyById((current) => ({ ...current, [targetId]: false }));
+  };
+
   const closeReportModal = () => {
     setReportModal((current) => ({ ...current, open: false }));
   };
@@ -1002,6 +1301,165 @@ export default function CommunityPage() {
                 </div>
               )}
             </div>
+          </div>
+        </section>
+
+        <section className="mb-6 rounded-[26px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-5 shadow-[0_22px_70px_rgba(217,70,239,0.12)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/85">Member Discovery</p>
+              <h2 className="mt-1 text-lg font-semibold text-white">Find people by name, city, and signal</h2>
+            </div>
+            <p className="text-xs text-fuchsia-100/75">
+              {memberSearchLoading
+                ? "Refreshing live member graph..."
+                : `${displayedMemberRows.length} loaded${memberSearchHasMore ? " · more available" : ""}`}
+            </p>
+          </div>
+
+          <div className="mt-3 inline-flex rounded-full border border-fuchsia-200/24 bg-black/35 p-1">
+            <button
+              onClick={() => setMemberSearchScope("all")}
+              className={`rounded-full px-3 py-1 text-xs transition ${memberSearchScope === "all" ? "bg-fuchsia-200/22 text-white" : "text-white/72 hover:text-white"}`}
+            >
+              All members
+            </button>
+            <button
+              onClick={() => setMemberSearchScope("friends")}
+              className={`rounded-full px-3 py-1 text-xs transition ${memberSearchScope === "friends" ? "bg-fuchsia-200/22 text-white" : "text-white/72 hover:text-white"}`}
+            >
+              My friends only
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-[1.4fr_1fr_0.8fr_auto]">
+            <input
+              value={memberSearchTerm}
+              onChange={(event) => setMemberSearchTerm(event.target.value)}
+              placeholder="Search member name, city, title, pronouns"
+              className="w-full rounded-xl border border-fuchsia-200/24 bg-black/45 px-4 py-3 text-sm text-white outline-none transition focus:border-fuchsia-200/55"
+            />
+            <select
+              value={memberSearchCity}
+              onChange={(event) => setMemberSearchCity(event.target.value)}
+              className="w-full rounded-xl border border-fuchsia-200/24 bg-black/45 px-4 py-3 text-sm text-white outline-none transition focus:border-fuchsia-200/55"
+            >
+              <option value="">All cities</option>
+              {memberDiscoveryCities.map((city) => (
+                <option key={city.normalized} value={city.raw}>
+                  {city.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={memberSearchSort}
+              onChange={(event) => setMemberSearchSort(event.target.value)}
+              className="w-full rounded-xl border border-fuchsia-200/24 bg-black/45 px-4 py-3 text-sm text-white outline-none transition focus:border-fuchsia-200/55"
+            >
+              <option value="best">Best match</option>
+              <option value="active">Most active</option>
+              <option value="mutual">Most mutual</option>
+            </select>
+            <button
+              onClick={() => {
+                memberSearchCacheRef.current.clear();
+                queueMicrotask(async () => {
+                  await loadMemberDiscovery({ offset: 0, append: false, force: true });
+                });
+              }}
+              className="rounded-xl border border-fuchsia-200/35 bg-fuchsia-200/14 px-4 py-3 text-sm font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/55"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {memberSearchWarning && (
+            <p className="mt-3 rounded-xl border border-amber-200/22 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+              {memberSearchWarning}
+            </p>
+          )}
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {displayedMemberRows.map((entry) => {
+              const titleMeta = getMemberTitleMeta(entry.title || "");
+              const busy = Boolean(memberSearchBusyById[entry.user_id]);
+              return (
+                <article key={entry.user_id} className="rounded-2xl border border-white/10 bg-black/28 p-4 transition hover:border-fuchsia-200/30 hover:bg-black/35">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{entry.display_name}</p>
+                      <p className="mt-1 text-xs text-white/62">
+                        {[entry.home_city, entry.resident_country].filter(Boolean).join(" · ") || "City not set"}
+                      </p>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
+                      <span>{titleMeta.icon}</span>
+                      {titleMeta.label}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${entry.is_online ? "border-emerald-200/30 bg-emerald-200/14 text-emerald-100" : "border-white/14 bg-white/6 text-white/75"}`}>
+                      {formatMemberSeen(entry.last_seen_at, entry.is_online)}
+                    </span>
+                    {entry.follows_you && (
+                      <span className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
+                        Follows you
+                      </span>
+                    )}
+                    {entry.mutual_count > 0 && (
+                      <span className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100">
+                        {entry.mutual_count} mutual
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-xs text-white/62">
+                    {entry.score} pts · {entry.city_count} cities {entry.pronouns ? `· ${entry.pronouns}` : ""}
+                  </p>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => openMemberThread(entry)}
+                      className="rounded-xl border border-white/14 bg-white/7 px-3 py-2 text-xs text-white transition hover:border-white/30"
+                    >
+                      Message
+                    </button>
+                    <button
+                      onClick={() => toggleMemberFollow(entry)}
+                      disabled={busy}
+                      className="rounded-xl border border-fuchsia-200/34 bg-fuchsia-200/14 px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/55 disabled:cursor-wait disabled:opacity-65"
+                    >
+                      {busy ? "Saving..." : entry.is_following ? "Following" : "Add friend"}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+            {!memberSearchLoading && displayedMemberRows.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-fuchsia-200/26 px-4 py-6 text-sm text-white/62 md:col-span-2 xl:col-span-3">
+                No members matched this filter yet. Try another city or a broader search.
+              </div>
+            )}
+          </div>
+          <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-[11px] text-fuchsia-100/65">
+              Stable paging: {displayedMemberRows.length} loaded
+            </p>
+            {memberSearchHasMore && (
+              <button
+                onClick={() => {
+                  queueMicrotask(async () => {
+                    await loadMoreMemberDiscovery();
+                  });
+                }}
+                disabled={memberSearchLoading}
+                className="rounded-full border border-fuchsia-200/32 bg-fuchsia-200/12 px-3 py-1 text-[11px] font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/52 disabled:opacity-60"
+              >
+                {memberSearchLoading ? "Loading..." : "Load more"}
+              </button>
+            )}
           </div>
         </section>
 
