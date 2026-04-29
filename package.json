@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test:smoke": "node scripts/test-smoke.mjs",
     "test:e2e-smoke": "node scripts/test-e2e-smoke.mjs",
+    "test:favorites-helpers": "node scripts/test-favorites-helpers.mjs",
     "test:regressions": "node scripts/test-regressions.mjs",
     "verify:release": "npm run lint && npm run test:smoke && npm run test:e2e-smoke && npm run test:regressions",
     "push:safe": "npm run verify:release && git push",
