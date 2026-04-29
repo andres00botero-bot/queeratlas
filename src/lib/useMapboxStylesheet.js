@@ -14,7 +14,7 @@ export function useMapboxStylesheet() {
     const existing = document.getElementById(MAPBOX_STYLESHEET_ID);
     if (existing && existing.tagName === "LINK") {
       if (existing.sheet) {
-        setIsReady(true);
+        queueMicrotask(() => setIsReady(true));
         return;
       }
 
