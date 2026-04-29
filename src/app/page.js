@@ -110,7 +110,6 @@ export default function Home() {
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
-  const [isIntroVisible] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const deferredQuery = useDeferredValue(query);
   const {
@@ -536,13 +535,10 @@ export default function Home() {
   );
   const eventCount = events.length;
   const placeCount = places.length;
-  const formatMetric = (value) => (value > 0 ? String(value) : "—");
-  const cityCountDisplay = isDataLoading ? "…" : formatMetric(cityCount);
-  const placeCountDisplay = isDataLoading ? "…" : formatMetric(placeCount);
-  const eventCountDisplay = isDataLoading ? "…" : formatMetric(eventCount);
-  const introClass = (visibleClass = "") =>
-    `transition-all duration-700 ease-out ${isIntroVisible ? `translate-y-0 opacity-100 ${visibleClass}` : "translate-y-3 opacity-0"}`.trim();
-  const introStyle = (delay = 0) => ({ transitionDelay: `${delay}ms` });
+  const formatMetric = (value) => (value > 0 ? String(value) : "-");
+  const cityCountDisplay = isDataLoading ? "..." : formatMetric(cityCount);
+  const placeCountDisplay = isDataLoading ? "..." : formatMetric(placeCount);
+  const eventCountDisplay = isDataLoading ? "..." : formatMetric(eventCount);
 
   const topLaneCards = [
     {
@@ -617,7 +613,7 @@ export default function Home() {
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/6 blur-3xl" />
 
         <div className="qa-shell relative flex min-h-screen w-full flex-col">
-          <div className={`mb-8 flex flex-wrap items-center justify-between gap-4 ${introClass()}`} style={introStyle(0)}>
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="qa-eyebrow rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur">
               Global queer discovery
             </div>
@@ -676,7 +672,7 @@ export default function Home() {
           </div>
 
           <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
-            <section className={`pt-1 xl:pt-6 ${introClass()}`} style={introStyle(90)}>
+            <section className="pt-1 xl:pt-6">
               <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-cyan-200/18 bg-cyan-200/8 px-4 py-2 text-white/78 backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" />
                 Experience-first queer atlas
@@ -789,7 +785,7 @@ export default function Home() {
                   )}
                 </div>
               </div>
-              <div className={`mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/55 ${introClass()}`} style={introStyle(220)}>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/55">
                 <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Updated daily</span>
                 <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Community-powered</span>
                 <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">Member-safe by design</span>
@@ -811,7 +807,7 @@ export default function Home() {
               </div>
             </section>
 
-            <aside className={`grid gap-4 ${introClass()}`} style={introStyle(170)}>
+            <aside className="grid gap-4">
               <div className="overflow-hidden rounded-[28px] border border-white/12 bg-[linear-gradient(155deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -867,7 +863,7 @@ export default function Home() {
             </aside>
           </div>
 
-          <section className={`mt-12 ${introClass()}`} style={introStyle(260)}>
+          <section className="mt-12">
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-white/40">
@@ -885,8 +881,7 @@ export default function Home() {
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow} ${introClass()}`}
-                  style={introStyle(310 + (index * 55))}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow}`}
                 >
                   <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
                   <div className="absolute inset-[1px] rounded-[25px] bg-[#0b0b0b]/96" />
@@ -919,8 +914,7 @@ export default function Home() {
                   type="button"
                   key={item.title}
                   onClick={item.onClick}
-                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow} ${introClass()}`}
-                  style={introStyle(430 + (index * 55))}
+                  className={`group relative h-full w-full cursor-pointer overflow-hidden rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/22 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow}`}
                 >
                   <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
                   <div className="absolute inset-[1px] rounded-[25px] bg-[#0b0b0b]/96" />
@@ -948,7 +942,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={`mt-12 ${introClass()}`} style={introStyle(560)}>
+          <section className="mt-12">
             <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.32)]">
               <p className="text-xs uppercase tracking-[0.28em] text-white/40">
                 City gravity
@@ -963,7 +957,6 @@ export default function Home() {
                     key={city.city}
                     onClick={() => router.push(cityPath(city.city))}
                     className="w-full rounded-2xl border border-white/8 bg-white/4 px-4 py-4 text-left transition hover:border-white/16 hover:bg-white/6"
-                    style={introStyle(610 + (index * 45))}
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/8 bg-white/6 text-sm font-semibold text-white/75">
@@ -992,7 +985,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className={`mt-10 pb-4 ${introClass("opacity-70")}`} style={introStyle(680)}>
+          <section className="mt-10 pb-4 opacity-70">
             <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
               <span className="mr-1 uppercase tracking-[0.18em] text-white/32">Search guides</span>
               <Link
@@ -1378,3 +1371,4 @@ export default function Home() {
     </main>
   );
 }
+

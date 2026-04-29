@@ -1,6 +1,9 @@
 import "./globals.css"; // 
 import { AuthProvider } from "@/lib/auth";
-import DeferredGlobalChrome from "@/components/ui/DeferredGlobalChrome";
+import { Analytics } from "@vercel/analytics/react";
+import FloatingHomeButton from "@/components/ui/FloatingHomeButton";
+import MessageAlertGate from "@/components/messaging/MessageAlertGate";
+import PwaInstallGate from "@/components/pwa/PwaInstallGate";
 
 const baseUrl = "https://www.queeratlas.app";
 
@@ -103,10 +106,12 @@ export default function RootLayout({ children }) {
         />
         <AuthProvider>
           {children}
-          <DeferredGlobalChrome />
+          <FloatingHomeButton />
+          <MessageAlertGate />
+          <PwaInstallGate />
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
 }
-
