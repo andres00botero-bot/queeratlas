@@ -62,6 +62,31 @@ import {
   sortRecentFollowingCheckins,
 } from "@/features/favorites/logic/checkinSelectors";
 import {
+  addFavoriteLocalState,
+  addFollowingUserIdLocalState,
+  buildQuickCheckinPayload,
+  removeFavoriteLocalState,
+  removeFollowingLocalState,
+  removePlanLocalState,
+} from "@/features/favorites/logic/favoritesMutations";
+import {
+  buildProfileFormState,
+  hasProfileFormChanges,
+  resolveGreetingByHour,
+  resolveMemberDisplayName,
+  selectStoredProfile,
+} from "@/features/favorites/logic/favoritesProfile";
+import {
+  buildBlockedLookup,
+  hasTrustNetworkMissingTables,
+  mapFollowingCheckinsWithOwnerNames,
+  mapPresenceByUserId,
+  mapProfileDisplayNamesByUserId,
+  normalizeCheckins,
+  normalizeTrustNetworkRows,
+  normalizeFollowingTargetIds,
+} from "@/features/favorites/logic/favoritesNetwork";
+import {
   buildCityCountryLookup,
   buildCityLabelLookup,
   computeAllCities,
@@ -263,8 +288,7 @@ export default function FavoritesPage() {
   const loadCheckins = useCallback(async () => {
     if (!user?.id) {
       const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
-      const mapped = Array.isArray(localRows) ? localRows.map(mapCheckinRow) : [];
-      setCheckins(mapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0)));
+      setCheckins(normalizeCheckins(localRows, mapCheckinRow));
       return;
     }
 
@@ -282,12 +306,11 @@ export default function FavoritesPage() {
         setCheckinsWarning("Cloud check-ins unavailable. Showing local check-ins.");
       }
       const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
-      const mapped = Array.isArray(localRows) ? localRows.map(mapCheckinRow) : [];
-      setCheckins(mapped.sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0)));
+      setCheckins(normalizeCheckins(localRows, mapCheckinRow));
       return;
     }
 
-    const mapped = (Array.isArray(data) ? data : []).map(mapCheckinRow);
+    const mapped = normalizeCheckins(data, mapCheckinRow);
     setCheckins(mapped);
     writeLocalJson(CHECKINS_STORAGE_KEY, mapped);
     setCheckinsWarning("");
@@ -301,7 +324,7 @@ export default function FavoritesPage() {
       return;
     }
 
-    const targetIds = [...new Set(followingUserIds.map((id) => String(id)).filter(Boolean))];
+    const targetIds = normalizeFollowingTargetIds(followingUserIds);
     if (targetIds.length === 0) {
       setFollowingCheckins([]);
       setFollowingPresenceByUserId({});
@@ -337,32 +360,14 @@ export default function FavoritesPage() {
       return;
     }
 
-    const profileByUserId = new Map(
-      (Array.isArray(profilesRes.data) ? profilesRes.data : []).map((row) => [
-        String(row.user_id || ""),
-        String(row.display_name || "").trim() || "Member",
-      ])
-    );
-
-    const presenceMap = {};
-    (Array.isArray(presenceRes.data) ? presenceRes.data : []).forEach((row) => {
-      const userId = String(row.user_id || "");
-      if (!userId) return;
-      presenceMap[userId] = {
-        isOnline: Boolean(row.is_online),
-        lastSeenAt: row.last_seen_at || null,
-      };
-    });
+    const profileByUserId = mapProfileDisplayNamesByUserId(profilesRes.data);
+    const presenceMap = mapPresenceByUserId(presenceRes.data);
     setFollowingPresenceByUserId(presenceMap);
 
-    const mapped = (Array.isArray(checkinsRes.data) ? checkinsRes.data : []).map((row) => {
-      const normalized = mapCheckinRow(row);
-      const ownerId = String(row.user_id || "");
-      return {
-        ...normalized,
-        ownerUserId: ownerId,
-        ownerName: profileByUserId.get(ownerId) || "Member",
-      };
+    const mapped = mapFollowingCheckinsWithOwnerNames({
+      checkinRows: checkinsRes.data,
+      displayNameByUserId: profileByUserId,
+      mapCheckinRow,
     });
 
     setFollowingCheckins(mapped);
@@ -370,18 +375,7 @@ export default function FavoritesPage() {
   }, [followingUserIds, setFollowingCheckins, setFollowingCheckinsWarning, setFollowingPresenceByUserId, user?.id]);
 
   const blocked = useMemo(() => {
-    return {
-      places: new Set(
-        blockedItems
-          .filter((item) => item.targetType === "place")
-          .map((item) => String(item.targetId))
-      ),
-      events: new Set(
-        blockedItems
-          .filter((item) => item.targetType === "event")
-          .map((item) => String(item.targetId))
-      ),
-    };
+    return buildBlockedLookup(blockedItems);
   }, [blockedItems]);
 
   useEffect(() => {
@@ -426,23 +420,19 @@ export default function FavoritesPage() {
         "";
       const storedFavorites = readLocalJson(FAVORITES_STORAGE_KEY, []);
       const storedPlans = readLocalJson(PLAN_STORAGE_KEY, []);
-      const storedProfile =
-        memberProfile && (
-          memberProfile.displayName ||
-          memberProfile.pronouns ||
-          memberProfile.homeCity ||
-          memberProfile.residentCountry
-        )
-          ? memberProfile
-          : getMemberProfile();
+      const storedProfile = selectStoredProfile({
+        memberProfile,
+        fallbackProfile: getMemberProfile(),
+      });
 
       setMemberName(authMemberName || fallbackName);
-      setProfileForm({
-        displayName: storedProfile.displayName || authMemberName || fallbackName,
-        pronouns: storedProfile.pronouns || "",
-        homeCity: storedProfile.homeCity || "",
-        residentCountry: storedProfile.residentCountry || "",
-      });
+      setProfileForm(
+        buildProfileFormState({
+          storedProfile,
+          authMemberName,
+          fallbackName,
+        })
+      );
       if (user?.id) {
         await loadMemberCollections(user.id, storedFavorites, storedPlans);
       } else {
@@ -515,9 +505,11 @@ export default function FavoritesPage() {
       supabase.rpc("qa_following_feed_favorites", { feed_limit: 40 }),
     ]);
 
-    const missingTable =
-      isMissingTableError(followingRes.error) ||
-      isMissingTableError(feedRes.error);
+    const missingTable = hasTrustNetworkMissingTables({
+      followingError: followingRes.error,
+      feedError: feedRes.error,
+      isMissingTableError,
+    });
 
     if (missingTable) {
       setNetworkMembers([]);
@@ -534,15 +526,15 @@ export default function FavoritesPage() {
       return;
     }
 
-    const memberRows = Array.isArray(leaderboardRes.data) ? leaderboardRes.data : [];
-    const followRows = Array.isArray(followingRes.data) ? followingRes.data : [];
-    const feedRows = Array.isArray(feedRes.data) ? feedRes.data : [];
+    const trustNetworkRows = normalizeTrustNetworkRows({
+      leaderboardRows: leaderboardRes.data,
+      followingRows: followingRes.data,
+      feedRows: feedRes.data,
+    });
 
-    setNetworkMembers(memberRows);
-    setFollowingUserIds(
-      followRows.map((row) => String(row.followed_user_id)).filter(Boolean)
-    );
-    setFollowingFeedRows(feedRows);
+    setNetworkMembers(trustNetworkRows.members);
+    setFollowingUserIds(trustNetworkRows.followingUserIds);
+    setFollowingFeedRows(trustNetworkRows.feedRows);
     setNetworkLoading(false);
   }, [isMember, setFollowingFeedRows, setFollowingUserIds, setNetworkLoading, setNetworkMembers, setNetworkWarning, user?.id]);
 
@@ -1027,16 +1019,9 @@ export default function FavoritesPage() {
     setIsEditingProfile(false);
   };
 
-  const hasProfileChanges =
-    (profileForm.displayName || "").trim() !== (memberProfile?.displayName || "").trim() ||
-    (profileForm.pronouns || "").trim() !== (memberProfile?.pronouns || "").trim() ||
-    (profileForm.homeCity || "").trim() !== (memberProfile?.homeCity || "").trim() ||
-    (profileForm.residentCountry || "").trim() !== (memberProfile?.residentCountry || "").trim();
-
-  const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-  const displayName = memberName.trim() || "Explorer";
+  const hasProfileChanges = hasProfileFormChanges(profileForm, memberProfile || {});
+  const greeting = resolveGreetingByHour();
+  const displayName = resolveMemberDisplayName(memberName);
   const memberTitleMeta = getMemberTitleMeta(memberRank?.title || "");
   const plannerCities = useMemo(() => {
     const configCities = Object.values(cityConfig).map((item) => item.title?.replace("Queer ", "")).filter(Boolean);
@@ -1044,14 +1029,11 @@ export default function FavoritesPage() {
   }, [events, places]);
 
   const removeFavorite = async (favoriteId, label = "Item") => {
-    const updated = favorites.filter((entry) => String(entry) !== String(favoriteId));
-    setFavorites(updated);
-    writeLocalJson(FAVORITES_STORAGE_KEY, updated);
-    writeLocalJson(
-      ADDED_STORAGE_KEY,
-      added.filter((item) => String(item.id) !== String(favoriteId))
-    );
-    setAdded((current) => current.filter((item) => String(item.id) !== String(favoriteId)));
+    const nextState = removeFavoriteLocalState({ favorites, added, favoriteId });
+    setFavorites(nextState.favorites);
+    writeLocalJson(FAVORITES_STORAGE_KEY, nextState.favorites);
+    writeLocalJson(ADDED_STORAGE_KEY, nextState.added);
+    setAdded(nextState.added);
 
     if (user?.id) {
       const { error } = await supabase
@@ -1069,26 +1051,23 @@ export default function FavoritesPage() {
   };
 
   const addFavoriteFromNetwork = async (favoriteId, label = "Item") => {
+    const nextState = addFavoriteLocalState({
+      favorites,
+      added,
+      favoriteId,
+      nowIso: new Date().toISOString(),
+    });
+    if (!nextState.isValid) return;
     const normalized = String(favoriteId || "");
-    if (!normalized) return;
-    if (favorites.includes(normalized)) {
+    if (nextState.alreadySaved) {
       showActionFeedback(showToast, "favoriteAlreadySaved", { label });
       return;
     }
 
-    const updated = [...favorites, normalized];
-    setFavorites(updated);
-    writeLocalJson(FAVORITES_STORAGE_KEY, updated);
-
-    const nextAdded = [
-      {
-        id: normalized,
-        date: new Date().toISOString(),
-      },
-      ...added,
-    ];
-    setAdded(nextAdded);
-    writeLocalJson(ADDED_STORAGE_KEY, nextAdded);
+    setFavorites(nextState.favorites);
+    writeLocalJson(FAVORITES_STORAGE_KEY, nextState.favorites);
+    setAdded(nextState.added);
+    writeLocalJson(ADDED_STORAGE_KEY, nextState.added);
 
     if (user?.id) {
       const { error } = await supabase
@@ -1411,22 +1390,14 @@ export default function FavoritesPage() {
   );
 
   const quickCheckinFromItem = async (item, itemType = "place") => {
-    if (!item) return;
-    const cityValue = String(item.city || "");
-    const countryValue = cityCountryLookup.get(normalizeCityKey(cityValue)) || "";
-    await submitCheckin({
-      mode: "trip",
-      privacy: "friends",
-      country: countryValue,
-      city: cityValue,
-      label: String(item.name || item.title || "Unknown stop"),
-      address: String(item.location || item.address || ""),
-      note: "",
-      lat: item.lat,
-      lng: item.lng,
-      placeId: itemType === "place" ? String(item.id || "") : "",
-      eventId: itemType === "event" ? String(item.id || "") : "",
+    const payload = buildQuickCheckinPayload({
+      item,
+      itemType,
+      cityCountryLookup,
+      normalizeCityKey,
     });
+    if (!payload) return;
+    await submitCheckin(payload);
   };
 
   const toggleFollowMember = async (targetUserId) => {
@@ -1447,9 +1418,11 @@ export default function FavoritesPage() {
         return;
       }
 
-      setFollowingUserIds((current) => current.filter((id) => String(id) !== normalizedTarget));
+      setFollowingUserIds((current) =>
+        removeFollowingLocalState({ followingUserIds: current, targetUserId: normalizedTarget }).followingUserIds
+      );
       setFollowingFeedRows((current) =>
-        current.filter((row) => String(row.owner_user_id || "") !== normalizedTarget)
+        removeFollowingLocalState({ followingFeedRows: current, targetUserId: normalizedTarget }).followingFeedRows
       );
       showToast("Member removed from trusted signal.", { tone: "info", duration: 2100 });
       return;
@@ -1469,14 +1442,14 @@ export default function FavoritesPage() {
       return;
     }
 
-    setFollowingUserIds((current) => [...new Set([...current, normalizedTarget])]);
+    setFollowingUserIds((current) => addFollowingUserIdLocalState(current, normalizedTarget));
     showToast("Member added to your trusted signal.", { tone: "ok", duration: 2100 });
     await loadTrustNetwork();
   };
 
   const removePlan = async (planId) => {
-    setPlans((current) => current.filter((entry) => String(entry.id) !== String(planId)));
-    setExpandedPlanId((current) => (String(current) === String(planId) ? null : current));
+    setPlans((current) => removePlanLocalState({ plans: current, planId }).plans);
+    setExpandedPlanId((current) => removePlanLocalState({ expandedPlanId: current, planId }).expandedPlanId);
 
     if (user?.id) {
       const { error } = await supabase
