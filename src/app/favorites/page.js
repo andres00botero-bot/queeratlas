@@ -48,7 +48,6 @@ import {
 import {
   buildCheckinMapEmbedUrl,
   buildFollowingCheckinMarkers,
-  buildInteractiveCheckinPoints,
   buildOpenStreetMapStaticUrl,
   buildStaticMapUrl,
   filterRecentCheckins,
@@ -760,7 +759,17 @@ export default function FavoritesPage() {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
   const interactiveCheckinPoints = useMemo(() => {
-    return buildInteractiveCheckinPoints({ checkinMarkers, followingCheckinMarkers });
+    const mine = checkinMarkers.map((item) => ({
+      ...item,
+      markerId: `mine-${String(item.id)}`,
+      markerKind: "mine",
+    }));
+    const friends = followingCheckinMarkers.map((item) => ({
+      ...item,
+      markerId: `friend-${String(item.id)}`,
+      markerKind: "friend",
+    }));
+    return [...mine, ...friends];
   }, [checkinMarkers, followingCheckinMarkers]);
 
   const selectedCheckin = useMemo(() => {
