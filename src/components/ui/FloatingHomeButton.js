@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Home, MapPinned, MessageCircle, Star } from "lucide-react";
+import { CalendarDays, Home, MapPinned, MessageCircle, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
@@ -126,6 +126,13 @@ export default function FloatingHomeButton() {
     },
     ...(isMember
       ? [
+          {
+            href: "/community",
+            label: "Community",
+            icon: Users,
+            activeClass:
+              "border-violet-200/65 bg-[linear-gradient(135deg,rgba(167,139,250,0.30),rgba(244,114,182,0.24),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(167,139,250,0.34)]",
+          },
           {
             href: "/messages",
             label: "Messages",
