@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
 import "../signal-motion.css";
 import { cityConfig } from "@/lib/cities";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -39,6 +38,7 @@ import {
   summarizeLiveVibeSignals,
 } from "@/lib/liveVibe";
 import { usePlaces } from "@/lib/usePlaces";
+import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import ActionToast from "@/components/ui/ActionToast";
@@ -131,6 +131,7 @@ function resolveCityFromPathname(pathname = "") {
 }
 
 export default function CityPage() {
+  const isMapboxStylesReady = useMapboxStylesheet();
   const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -1564,6 +1565,7 @@ export default function CityPage() {
   }, [contributeMode]);
 
   useEffect(() => {
+    if (!isMapboxStylesReady) return;
     if (!mapContainerRef.current || mapRef.current) return;
 
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
@@ -1650,7 +1652,7 @@ export default function CityPage() {
       hoverPopupRef.current?.remove();
       hoverPopupRef.current = null;
     };
-  }, [config.center]);
+  }, [config.center, isMapboxStylesReady]);
 
   useEffect(() => {
     if (!mapRef.current) return;

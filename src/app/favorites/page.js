@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -18,6 +17,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
+import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { resolvePrimaryVibeKey, resolvePrimaryVibeLabel } from "@/lib/vibeDisplay";
 import { formatVibeTagLabel, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
@@ -61,6 +61,7 @@ const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 
 export default function FavoritesPage() {
   const router = useRouter();
+  const isMapboxStylesReady = useMapboxStylesheet();
   const {
     isReady, setIsReady,
     memberName, setMemberName,
@@ -828,6 +829,7 @@ export default function FavoritesPage() {
   }, [checkinMapCenter]);
 
   useEffect(() => {
+    if (!isMapboxStylesReady) return;
     if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
 
     mapboxgl.accessToken = mapboxToken;
@@ -851,7 +853,7 @@ export default function FavoritesPage() {
       map.remove();
       checkinMapRef.current = null;
     };
-  }, [checkinMapCenter, checkinMapContainerRef, checkinMapMarkersRef, checkinMapRef, mapboxToken]);
+  }, [checkinMapCenter, checkinMapContainerRef, checkinMapMarkersRef, checkinMapRef, isMapboxStylesReady, mapboxToken]);
 
   useEffect(() => {
     const map = checkinMapRef.current;

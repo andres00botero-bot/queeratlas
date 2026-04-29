@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
 import { cityConfig } from "@/lib/cities";
+import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -90,6 +90,7 @@ function resolveMapboxCountryToAppCountry(mapboxName, countries) {
 
 export default function CitiesPage() {
   const router = useRouter();
+  const isMapboxStylesReady = useMapboxStylesheet();
   const [query, setQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [mapError, setMapError] = useState("");
@@ -146,6 +147,7 @@ export default function CitiesPage() {
   }, [availableCountries]);
 
   useEffect(() => {
+    if (!isMapboxStylesReady) return;
     if (!countryMapContainerRef.current || countryMapRef.current) return;
     if (!mapboxToken) return;
 
@@ -252,7 +254,7 @@ export default function CitiesPage() {
       map.remove();
       countryMapRef.current = null;
     };
-  }, [availableCountries, mapboxToken, scrollToCountrySection, selectedCountry, updateCountryMapStyles]);
+  }, [availableCountries, isMapboxStylesReady, mapboxToken, scrollToCountrySection, selectedCountry, updateCountryMapStyles]);
 
   useEffect(() => {
     updateCountryMapStyles(selectedCountry);
