@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -131,6 +131,8 @@ import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
 import FavoritesMomentumPanel from "@/components/favorites/FavoritesMomentumPanel";
+import FavoritesPeopleSignalPanel from "@/components/favorites/FavoritesPeopleSignalPanel";
+import FavoritesForYouPanel from "@/components/favorites/FavoritesForYouPanel";
 import FavoritesSignalDashboard from "@/components/favorites/FavoritesSignalDashboard";
 import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
 
@@ -1504,8 +1506,8 @@ export default function FavoritesPage() {
     const vibeLabel = selectedVibeTags.length > 0
       ? selectedVibeTags.map((tag) => formatVibeTagLabel(tag) || tag).join(" + ")
       : "Mixed";
-    const title = `${cityName} · ${String(payload?.horizon || "trip").replaceAll("_", " ")} · ${vibeLabel}`;
-    const note = `V2 plan · vibes: ${selectedVibeTags.join(", ") || "mixed"} · budget: ${payload?.budget || "balanced"} · energy: ${payload?.energy || 70} · solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
+    const title = `${cityName} Â· ${String(payload?.horizon || "trip").replaceAll("_", " ")} Â· ${vibeLabel}`;
+    const note = `V2 plan Â· vibes: ${selectedVibeTags.join(", ") || "mixed"} Â· budget: ${payload?.budget || "balanced"} Â· energy: ${payload?.energy || 70} Â· solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
 
     const draftPlan = {
       id: `plan-v2-${Date.now()}`,
@@ -1746,7 +1748,7 @@ export default function FavoritesPage() {
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/40">Current profile</p>
                 <p className="mt-2 text-sm text-white/85">
                   {(memberProfile?.displayName || memberName || "Explorer")}
-                  {memberProfile?.pronouns ? ` · ${memberProfile.pronouns}` : ""}
+                  {memberProfile?.pronouns ? ` Â· ${memberProfile.pronouns}` : ""}
                 </p>
                 {memberRank?.title && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
@@ -1872,7 +1874,7 @@ export default function FavoritesPage() {
                 </p>
                 <p className="mt-1 text-xs text-white/62">
                   {memberProfile?.homeCity ? `Home: ${memberProfile.homeCity}` : "Home city not set"}
-                  {" · "}
+                  {" Â· "}
                   {memberProfile?.residentCountry ? `Country: ${memberProfile.residentCountry}` : "Country not set"}
                 </p>
 
@@ -1997,7 +1999,7 @@ export default function FavoritesPage() {
                 <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-3 py-1 text-[11px] text-fuchsia-100/95">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200" />
                   <span className="truncate">
-                    Selected: {selectedCheckin.label || "Check-in"} · {selectedCheckin.city || "City"}
+                    Selected: {selectedCheckin.label || "Check-in"} Â· {selectedCheckin.city || "City"}
                   </span>
                 </div>
               ) : null}
@@ -2341,7 +2343,7 @@ export default function FavoritesPage() {
                       }`}
                     >
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                        {entry.city || "Unknown city"}{entry.country ? ` · ${entry.country}` : ""}
+                        {entry.city || "Unknown city"}{entry.country ? ` Â· ${entry.country}` : ""}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
                       {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
@@ -2412,7 +2414,7 @@ export default function FavoritesPage() {
                                 {entry.ownerName || "Member"}
                               </p>
                               <p className="mt-1 text-xs text-white/65">
-                                {entry.label || "Unnamed check-in"} · {entry.city || "Unknown city"}
+                                {entry.label || "Unnamed check-in"} Â· {entry.city || "Unknown city"}
                               </p>
                               {entry.address ? <p className="mt-1 text-[11px] text-white/52">{entry.address}</p> : null}
                             </div>
@@ -2550,7 +2552,7 @@ export default function FavoritesPage() {
               <div className="rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-4">
                 <p className="text-sm text-white/85">
                   {(memberProfile?.displayName || memberName || "Explorer")}
-                  {memberProfile?.pronouns ? ` · ${memberProfile.pronouns}` : ""}
+                  {memberProfile?.pronouns ? ` Â· ${memberProfile.pronouns}` : ""}
                 </p>
                 {memberRank?.title && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
@@ -2727,7 +2729,7 @@ export default function FavoritesPage() {
                                 {typeof stop.trustScore === "number" && (
                                   <span className="mt-1 block truncate text-[10px] text-cyan-100/72">
                                     Trust {stop.trustScore}
-                                    {stop.trustReason ? ` · ${stop.trustReason}` : ""}
+                                    {stop.trustReason ? ` Â· ${stop.trustReason}` : ""}
                                   </span>
                                 )}
                               </span>
@@ -2756,307 +2758,44 @@ export default function FavoritesPage() {
           </div>
         </section>
 
-        {showSignalDeck ? (
-        <>
-        <section className="mb-6 rounded-[30px] border border-emerald-200/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(13,26,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-emerald-200/70">
-                People signal
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
-                Trusted members network
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-white/56">
-                Follow trusted members and pull signal from what they save.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={loadTrustNetwork}
-              className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
-            >
-              Refresh
-            </button>
-          </div>
+                {showSignalDeck ? (
+          <>
+            <FavoritesPeopleSignalPanel
+              networkWarning={networkWarning}
+              onRefresh={loadTrustNetwork}
+              followingProfiles={followingProfiles}
+              suggestedMembers={suggestedMembers}
+              followingFeedItems={followingFeedItems}
+              followingIdSet={followingIdSet}
+              networkLoading={networkLoading}
+              onMessageMember={(profile) =>
+                router.push(
+                  `/messages?user=${encodeURIComponent(String(profile?.userId || ""))}&name=${encodeURIComponent(
+                    String(profile?.displayName || "Member")
+                  )}`
+                )
+              }
+              onToggleFollow={(memberId) => toggleFollowMember(memberId)}
+              onSaveFromFeed={(item) => addFavoriteFromNetwork(item.favoriteId, item.name)}
+            />
 
-          {networkWarning && (
-            <div className="mb-4 rounded-2xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-xs text-amber-100/90">
-              {networkWarning}
-            </div>
-          )}
-
-          <div className="grid gap-4 xl:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Following now</p>
-              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
-                {followingProfiles.length > 0 ? (
-                  followingProfiles.map((profile) => {
-                    const titleMeta = getMemberTitleMeta(profile.title || "");
-                    return (
-                      <article
-                        key={`following-profile-${profile.userId}`}
-                        className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white">
-                              {profile.displayName}
-                            </p>
-                            <div className="mt-1 flex flex-wrap items-center gap-2">
-                              {profile.title ? (
-                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
-                                  <span>{titleMeta.icon}</span>
-                                  {titleMeta.label}
-                                </span>
-                              ) : null}
-                              {profile.rank ? (
-                                <span className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/65">
-                                  #{profile.rank}
-                                </span>
-                              ) : null}
-                            </div>
-                            <p className="mt-2 text-xs text-white/60">
-                              {profile.cityCount || 0} cities · {profile.score || 0} pts
-                            </p>
-                            {profile.latestItemName ? (
-                              <p className="mt-1 truncate text-[11px] text-cyan-100/72">
-                                Latest: {profile.latestItemName}
-                                {profile.latestItemCity ? ` · ${profile.latestItemCity}` : ""}
-                              </p>
-                            ) : (
-                              <p className="mt-1 text-[11px] text-white/45">No recent shared save yet.</p>
-                            )}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              router.push(
-                                `/messages?user=${encodeURIComponent(String(profile.userId || ""))}&name=${encodeURIComponent(String(profile.displayName || "Member"))}`
-                              )
-                            }
-                            className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
-                          >
-                            Message
-                          </button>
-                        </div>
-                      </article>
-                    );
+            <FavoritesForYouPanel
+              recommendationMode={recommendationMode}
+              setRecommendationMode={setRecommendationMode}
+              forYouRecommendations={forYouRecommendations}
+              onOpenRecommendation={(item) =>
+                router.push(
+                  citySelectionPath(item.city, {
+                    placeId: item.kind === "place" ? item.id : "",
+                    eventId: item.kind === "event" ? item.id : "",
                   })
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 py-6 text-sm text-white/45">
-                    Follow members to build your trusted inner circle.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Members to follow</p>
-              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
-                {networkLoading ? (
-                  Array.from({ length: 4 }).map((_, index) => (
-                    <FavoritesCardSkeleton key={`member-skeleton-${index}`} />
-                  ))
-                ) : suggestedMembers.length > 0 ? (
-                  suggestedMembers.map((member) => {
-                    const memberId = String(member.user_id || "");
-                    const isFollowing = followingIdSet.has(memberId);
-                    const titleMeta = getMemberTitleMeta(member.title || "");
-                    return (
-                      <div
-                        key={`member-suggest-${memberId}`}
-                        className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white">
-                              {member.display_name || "Member"}
-                            </p>
-                            <div className="mt-1 flex flex-wrap items-center gap-2">
-                              {member.title && (
-                                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
-                                  <span>{titleMeta.icon}</span>
-                                  {titleMeta.label}
-                                </span>
-                              )}
-                              {member.rank && (
-                                <span className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/65">
-                                  #{member.rank}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => toggleFollowMember(memberId)}
-                            className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
-                              isFollowing
-                                ? "border-fuchsia-200/30 bg-fuchsia-200/12 text-fuchsia-100"
-                                : "border-emerald-200/25 bg-emerald-200/10 text-emerald-100 hover:border-emerald-200/40"
-                            }`}
-                          >
-                            {isFollowing ? "Following" : "Follow"}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 py-6 text-sm text-white/45">
-                    No member signal yet. As community grows, top contributors appear here.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
-              <p className="text-xs uppercase tracking-[0.16em] text-white/50">Saved by people you follow</p>
-              <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
-                {followingFeedItems.length > 0 ? (
-                  followingFeedItems.map((item, index) => (
-                    <div
-                      key={`following-feed-${item.favoriteId}-${index}`}
-                      className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-white">{item.name}</p>
-                          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/55">
-                            {item.city || "City"} · {item.kind}
-                          </p>
-                          <p className="mt-1 text-xs text-white/60">
-                            Saved by {item.sourceName}
-                            {item.sourceTitle ? ` · ${item.sourceTitle}` : ""}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => addFavoriteFromNetwork(item.favoriteId, item.name)}
-                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 py-6 text-sm text-white/45">
-                    Follow members to unlock trusted favorites feed.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="mb-6 rounded-[30px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
-                For you
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
-                Next best signal
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-white/56">
-                Personalized picks from your saved vibe, city history, and trusted network.
-              </p>
-            </div>
-          </div>
-
-          <div className="mb-5 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setRecommendationMode("safe")}
-              className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
-                recommendationMode === "safe"
-                  ? "border-emerald-200/40 bg-emerald-200/16 text-emerald-100"
-                  : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
-              }`}
-            >
-              Safe mode
-            </button>
-            <button
-              type="button"
-              onClick={() => setRecommendationMode("balanced")}
-              className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
-                recommendationMode === "balanced"
-                  ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
-                  : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
-              }`}
-            >
-              Balanced
-            </button>
-            <button
-              type="button"
-              onClick={() => setRecommendationMode("peak")}
-              className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
-                recommendationMode === "peak"
-                  ? "border-fuchsia-200/40 bg-fuchsia-200/16 text-fuchsia-100"
-                  : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
-              }`}
-            >
-              Peak mode
-            </button>
-          </div>
-          <p className="mb-4 text-xs text-white/52">
-            Mode changes how the engine weights trust, timing, and venue energy.
-          </p>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {forYouRecommendations.length > 0 ? (
-              forYouRecommendations.map((item) => (
-                <article
-                  key={`for-you-${item.kind}-${item.id}`}
-                  className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4"
-                >
-                  <p className="text-[10px] uppercase tracking-[0.15em] text-white/46">
-                    {item.city || "City"} · {item.kind}
-                  </p>
-                  <h3 className="mt-2 text-lg font-semibold text-white">{item.name}</h3>
-                  <p className="mt-1 text-xs text-cyan-100/75">{item.subtitle}</p>
-                  <p className="mt-3 min-h-[36px] text-xs leading-5 text-white/60">
-                    {item.reason}
-                  </p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        router.push(
-                          citySelectionPath(item.city, {
-                            placeId: item.kind === "place" ? item.id : "",
-                            eventId: item.kind === "event" ? item.id : "",
-                          })
-                        )
-                      }
-                      className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/85 transition hover:border-white/30"
-                    >
-                      Open
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        addFavoriteFromNetwork(
-                          item.kind === "event" ? `event-${item.id}` : item.id,
-                          item.name
-                        )
-                      }
-                      className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </article>
-              ))
-            ) : (
-              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-8 text-sm text-white/42 md:col-span-2 xl:col-span-3">
-                Save more places and follow members to unlock stronger personal recommendations.
-              </div>
-            )}
-          </div>
-        </section>
-        </>
+                )
+              }
+              onSaveRecommendation={(item) =>
+                addFavoriteFromNetwork(item.kind === "event" ? `event-${item.id}` : item.id, item.name)
+              }
+            />
+          </>
         ) : null}
 
         <SavedPlacesPanel
@@ -3088,3 +2827,4 @@ export default function FavoritesPage() {
     </main>
   );
 }
+
