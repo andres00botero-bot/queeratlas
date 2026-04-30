@@ -27,6 +27,7 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   buildVibeDualWriteFields,
   isMissingVibeTagsColumnError,
+  normalizeVibeTag,
   normalizeVibeTags,
 } from "@/lib/vibeTaxonomy";
 import {
@@ -152,6 +153,23 @@ function getDisplayedSafetyShields(signal) {
   const reviewAvg = Number(signal.safetyReviewAvg || 0);
   const base = reviewCount > 0 && Number.isFinite(reviewAvg) ? reviewAvg : Number(signal.shields || 0);
   return Math.max(1, Math.min(5, Math.round(base)));
+}
+
+function shouldShowLegacyVibe(entity) {
+  if (!Boolean(entity?.legacy_vibe_user_set)) return false;
+
+  const legacyRaw = String(entity?.vibe || "").trim();
+  if (!legacyRaw) return false;
+
+  const normalizedLegacy = normalizeVibeTag(legacyRaw);
+  const tags = normalizeVibeTags(entity?.vibe_tags, { max: 8 });
+  if (normalizedLegacy && tags.includes(normalizedLegacy)) return false;
+
+  const legacyLabel = legacyRaw.replaceAll("_", " ").trim().toLowerCase();
+  const tagLabels = tags.map((tag) => String(tag || "").replaceAll("_", " ").trim().toLowerCase());
+  if (tagLabels.includes(legacyLabel)) return false;
+
+  return true;
 }
 
 function resolveCityFromPathname(pathname = "") {
@@ -2821,6 +2839,7 @@ export default function CityPage() {
           vibe: placeAdminDraft.vibe,
           vibeTags: normalizeVibeTags(placeAdminDraft.vibe_tags, { max: 3 }),
         }),
+        legacy_vibe_user_set: Boolean(String(placeAdminDraft.vibe || "").trim()),
         location: locationValue || null,
         hours: placeAdminDraft.hours.trim(),
         link: placeAdminDraft.link.trim() || null,
@@ -2841,14 +2860,20 @@ export default function CityPage() {
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
           const missingVibeTags = isMissingVibeTagsColumnError(updateResult.error);
+          const missingLegacyVibeUserSet =
+            errorText.includes("legacy_vibe_user_set") &&
+            (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingLocation || missingVibeTags) {
+          if (missingLocation || missingVibeTags || missingLegacyVibeUserSet) {
             const fallbackPayload = { ...payload };
             if (missingLocation) {
               delete fallbackPayload.location;
             }
             if (missingVibeTags) {
               delete fallbackPayload.vibe_tags;
+            }
+            if (missingLegacyVibeUserSet) {
+              delete fallbackPayload.legacy_vibe_user_set;
             }
             updateResult = await supabase
               .from("places")
@@ -2880,14 +2905,20 @@ export default function CityPage() {
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
           const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
+          const missingLegacyVibeUserSet =
+            errorText.includes("legacy_vibe_user_set") &&
+            (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingLocation || missingVibeTags) {
+          if (missingLocation || missingVibeTags || missingLegacyVibeUserSet) {
             insertPayload = { ...insertPayload };
             if (missingLocation) {
               delete insertPayload.location;
             }
             if (missingVibeTags) {
               delete insertPayload.vibe_tags;
+            }
+            if (missingLegacyVibeUserSet) {
+              delete insertPayload.legacy_vibe_user_set;
             }
             insertResult = await supabase
               .from("places")
@@ -5252,7 +5283,7 @@ export default function CityPage() {
               includeTypeFallback
               includeMixedFallback
             />
-            {String(selectedPlace.vibe || "").trim() && (
+            {shouldShowLegacyVibe(selectedPlace) && (
               <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-cyan-100/72">
                 Legacy vibe: {String(selectedPlace.vibe || "").trim()}
               </p>

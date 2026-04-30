@@ -12,12 +12,27 @@ import {
 } from "./vibeTaxonomy";
 
 const PLACE_SELECT_FIELDS =
+  "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location";
+const PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG =
   "id, name, type, city, lat, lng, description, vibe, vibe_tags, hours, link, location";
 const PLACE_SELECT_FIELDS_LEGACY =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
 
+function isMissingColumnError(error, columnName = "") {
+  const text = `${error?.code || ""} ${error?.message || ""} ${error?.details || ""}`.toLowerCase();
+  const needle = String(columnName || "").trim().toLowerCase();
+  return Boolean(
+    needle &&
+      text.includes(needle) &&
+      (text.includes("column") || text.includes("schema cache"))
+  );
+}
+
 async function fetchPlacesRows(client) {
   let response = await client.from("places").select(PLACE_SELECT_FIELDS);
+  if (response?.error && isMissingColumnError(response.error, "legacy_vibe_user_set")) {
+    response = await client.from("places").select(PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG);
+  }
   if (response?.error && isMissingVibeTagsColumnError(response.error)) {
     response = await client.from("places").select(PLACE_SELECT_FIELDS_LEGACY);
   }
@@ -225,6 +240,19 @@ export function usePlaces(city) {
           ),
         ]),
     );
+    const placeLegacyVibeUserSetById = new Map(
+      placeRows
+        .filter((row) => row?.id)
+        .map((row) => [String(row.id), Boolean(row?.legacy_vibe_user_set)]),
+    );
+    const placeLegacyVibeUserSetByCityName = new Map(
+      placeRows
+        .filter((row) => row?.name && row?.city)
+        .map((row) => [
+          `${String(row.city).toLowerCase()}::${String(row.name).trim().toLowerCase()}`,
+          Boolean(row?.legacy_vibe_user_set),
+        ]),
+    );
 
     const statsByPlaceId = reviewRows.reduce((acc, row) => {
       const placeId = String(row?.place_id || "");
@@ -301,6 +329,10 @@ export function usePlaces(city) {
       const vibeTagsByCityName = placeVibeTagsByCityName.get(
         `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
       );
+      const legacyVibeUserSetById = placeLegacyVibeUserSetById.get(String(row.id || ""));
+      const legacyVibeUserSetByCityName = placeLegacyVibeUserSetByCityName.get(
+        `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
+      );
       return {
         ...row,
         reviewCount,
@@ -315,6 +347,9 @@ export function usePlaces(city) {
             ? row.vibe_tags
             : vibeTagsById || vibeTagsByCityName || inferVibeTagsFromLegacyVibe(String(row?.vibe || "")),
           { max: 3 }
+        ),
+        legacy_vibe_user_set: Boolean(
+          row?.legacy_vibe_user_set ?? legacyVibeUserSetById ?? legacyVibeUserSetByCityName ?? false
         ),
       };
     });
@@ -360,6 +395,7 @@ export function usePlaces(city) {
       type: place.type,
       description: place.description,
       ...vibeFields,
+      legacy_vibe_user_set: Boolean(String(place?.vibe || "").trim()),
       hours: place.hours,
       link: place.link,
       location: String(place.location || place.address || "").trim() || null,
@@ -373,9 +409,10 @@ export function usePlaces(city) {
       .select("*")
       .single();
 
-    if (insertResult.error && isMissingVibeTagsColumnError(insertResult.error)) {
+    if (insertResult.error && (isMissingVibeTagsColumnError(insertResult.error) || isMissingColumnError(insertResult.error, "legacy_vibe_user_set"))) {
       const legacyPayload = { ...basePayload };
       delete legacyPayload.vibe_tags;
+      delete legacyPayload.legacy_vibe_user_set;
       insertResult = await supabase
         .from("places")
         .insert([legacyPayload])
@@ -446,6 +483,7 @@ export function usePlaces(city) {
           vibe: String(place?.vibe || "").trim(),
           vibeTags: place?.vibe_tags,
         }),
+        legacy_vibe_user_set: Boolean(String(place?.vibe || "").trim()),
         hours: String(place?.hours || "").trim(),
         link: String(place?.link || "").trim(),
         location: String(place?.location || place?.address || "").trim() || null,
@@ -460,9 +498,10 @@ export function usePlaces(city) {
         .select("id")
         .single();
 
-      if (inserted?.error && isMissingVibeTagsColumnError(inserted.error)) {
+      if (inserted?.error && (isMissingVibeTagsColumnError(inserted.error) || isMissingColumnError(inserted.error, "legacy_vibe_user_set"))) {
         const legacyPayload = { ...insertPayload };
         delete legacyPayload.vibe_tags;
+        delete legacyPayload.legacy_vibe_user_set;
         inserted = await supabase
           .from("places")
           .insert([legacyPayload])
