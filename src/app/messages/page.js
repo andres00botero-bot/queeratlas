@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
-import { writeLocalValue } from "@/lib/storage";
+import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { cityHref, formatInviteTimeline, inviteStatusLabel } from "@/lib/vipInvites";
 import ActionToast from "@/components/ui/ActionToast";
 import EmptyState from "@/components/ui/EmptyState";
@@ -86,6 +86,22 @@ function normalizeMessageRow(row) {
   };
 }
 
+const MEMBER_PICKER_PAGE_SIZE = 16;
+
+function normalizeMemberPickerRow(row) {
+  return {
+    userId: String(row?.user_id || ""),
+    displayName: String(row?.display_name || "Member").trim() || "Member",
+    homeCity: String(row?.home_city || "").trim(),
+    residentCountry: String(row?.resident_country || "").trim(),
+    isOnline: Boolean(row?.is_online),
+    lastSeenAt: row?.last_seen_at || null,
+    isFollowing: Boolean(row?.is_following),
+    followsYou: Boolean(row?.follows_you),
+    mutualCount: Number(row?.mutual_count || 0),
+  };
+}
+
 export default function MessagesPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user } = useAuth();
@@ -130,6 +146,16 @@ export default function MessagesPage() {
   const [vipPanelCollapsed, setVipPanelCollapsed] = useState(true);
   const [vipRealtimeHealthy, setVipRealtimeHealthy] = useState(false);
   const [vipInvitesLoadedOnce, setVipInvitesLoadedOnce] = useState(false);
+  const [composerTab, setComposerTab] = useState("friends");
+  const [composerSearch, setComposerSearch] = useState("");
+  const [composerWarning, setComposerWarning] = useState("");
+  const [composerLoading, setComposerLoading] = useState(false);
+  const [friendCandidates, setFriendCandidates] = useState([]);
+  const [memberCandidates, setMemberCandidates] = useState([]);
+  const [memberCandidateOffset, setMemberCandidateOffset] = useState(0);
+  const [memberCandidatesHasMore, setMemberCandidatesHasMore] = useState(false);
+  const [composerBusyByUserId, setComposerBusyByUserId] = useState({});
+  const [hiddenThreadIds, setHiddenThreadIds] = useState([]);
 
   const activeThread = useMemo(
     () => threads.find((thread) => String(thread.id) === String(activeThreadId)) || null,
@@ -137,6 +163,10 @@ export default function MessagesPage() {
   );
 
   const activeOtherUserId = activeThread?.otherUserId || "";
+  const hiddenThreadStorageKey = useMemo(
+    () => `qa_hidden_dm_threads_${userId || "guest"}`,
+    [userId]
+  );
 
   const metrics = useMemo(() => {
     const unread = threads.reduce((sum, thread) => sum + Number(thread.unreadCount || 0), 0);
@@ -157,6 +187,34 @@ export default function MessagesPage() {
     }
     return threads;
   }, [filter, threads]);
+
+  useEffect(() => {
+    if (!userId) {
+      setHiddenThreadIds([]);
+      return;
+    }
+    const stored = readLocalJson(hiddenThreadStorageKey, []);
+    if (!Array.isArray(stored)) {
+      setHiddenThreadIds([]);
+      return;
+    }
+    const normalized = [...new Set(stored.map((value) => String(value || "").trim()).filter(Boolean))];
+    setHiddenThreadIds(normalized);
+  }, [hiddenThreadStorageKey, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    writeLocalJson(hiddenThreadStorageKey, hiddenThreadIds);
+  }, [hiddenThreadIds, hiddenThreadStorageKey, userId]);
+
+  const threadByOtherUserId = useMemo(() => {
+    const next = new Map();
+    threads.forEach((thread) => {
+      if (!thread?.otherUserId) return;
+      next.set(String(thread.otherUserId), thread);
+    });
+    return next;
+  }, [threads]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -328,6 +386,7 @@ export default function MessagesPage() {
       });
     }
 
+    const hiddenSet = new Set(hiddenThreadIds.map((value) => String(value || "")));
     const mappedThreads = normalizedThreads
       .map((thread) => {
         const profile = profileMap.get(thread.otherUserId);
@@ -354,6 +413,7 @@ export default function MessagesPage() {
           sortTs: new Date(lastMessage?.createdAt || thread.lastMessageAt || thread.updatedAt || thread.createdAt || 0).getTime(),
         };
       })
+      .filter((thread) => !hiddenSet.has(String(thread.id)))
       .sort((a, b) => b.sortTs - a.sortTs);
 
     setThreads(mappedThreads);
@@ -362,7 +422,7 @@ export default function MessagesPage() {
       return mappedThreads[0]?.id || "";
     });
     setIsLoadingThreads(false);
-  }, [startUserId, startUserName, userId]);
+  }, [hiddenThreadIds, startUserId, startUserName, userId]);
 
   const loadVipInvites = useCallback(async ({ silent = false } = {}) => {
     if (!userId) {
@@ -520,6 +580,98 @@ export default function MessagesPage() {
     setIsLoadingVipInvites(false);
   }, [userId, vipInvitesLoadedOnce]);
 
+  const loadFriendCandidates = useCallback(async (searchTerm = "") => {
+    if (!userId || !isMember) {
+      setFriendCandidates([]);
+      return;
+    }
+
+    const { data, error } = await supabase.rpc("qa_get_friend_momentum", { friend_limit: 120 });
+    if (error) {
+      if (isMissingTableError(error)) {
+        setComposerWarning("Friend network is not enabled yet.");
+      } else {
+        setComposerWarning("Could not load friend network right now.");
+      }
+      setFriendCandidates([]);
+      return;
+    }
+
+    const query = String(searchTerm || "").trim().toLowerCase();
+    const rows = (data || []).map((row) => ({
+      userId: String(row.user_id || ""),
+      displayName: String(row.display_name || "").trim() || "Member",
+      isOnline: Boolean(row.is_online),
+      activeNow: Boolean(row.active_now),
+      lastSeenAt: row.last_seen_at || null,
+      latestMessageAt: row.latest_message_at || null,
+      unreadCount: Number(row.unread_count || 0),
+    }));
+
+    const filtered = !query
+      ? rows
+      : rows.filter((row) => row.displayName.toLowerCase().includes(query));
+
+    setFriendCandidates(filtered);
+  }, [isMember, userId]);
+
+  const loadMemberCandidates = useCallback(async ({
+    searchTerm = "",
+    offset = 0,
+    append = false,
+  } = {}) => {
+    if (!userId || !isMember) {
+      setMemberCandidates([]);
+      setMemberCandidateOffset(0);
+      setMemberCandidatesHasMore(false);
+      return;
+    }
+
+    const safeOffset = Math.max(0, Number(offset || 0));
+    const requestLimit = MEMBER_PICKER_PAGE_SIZE + 1;
+
+    const { data, error } = await supabase.rpc("qa_search_members", {
+      search_query: String(searchTerm || "").trim(),
+      city_filter: "",
+      sort_mode: "best",
+      friends_only: false,
+      result_limit: requestLimit,
+      result_offset: safeOffset,
+    });
+
+    if (error) {
+      if (isMissingTableError(error)) {
+        setComposerWarning("Member discovery backend is not enabled yet.");
+      } else {
+        setComposerWarning("Could not search members right now.");
+      }
+      if (!append) {
+        setMemberCandidates([]);
+        setMemberCandidateOffset(0);
+        setMemberCandidatesHasMore(false);
+      }
+      return;
+    }
+
+    const normalized = (data || []).map(normalizeMemberPickerRow);
+    const hasMore = normalized.length > MEMBER_PICKER_PAGE_SIZE;
+    const visible = hasMore ? normalized.slice(0, MEMBER_PICKER_PAGE_SIZE) : normalized;
+
+    setMemberCandidateOffset(safeOffset);
+    setMemberCandidatesHasMore(hasMore);
+    setMemberCandidates((current) => {
+      if (!append) return visible;
+      const seen = new Set(current.map((row) => row.userId));
+      const merged = [...current];
+      visible.forEach((row) => {
+        if (!row.userId || seen.has(row.userId)) return;
+        seen.add(row.userId);
+        merged.push(row);
+      });
+      return merged;
+    });
+  }, [isMember, userId]);
+
   const markThreadRead = useCallback(
     async (threadId) => {
       if (!threadId || !userId) return;
@@ -601,6 +753,34 @@ export default function MessagesPage() {
     }
   }, []);
 
+  const removeThreadFromInbox = useCallback((threadId, options = {}) => {
+    const targetThreadId = String(threadId || "").trim();
+    if (!targetThreadId) return;
+    const { silent = false } = options;
+
+    setHiddenThreadIds((current) => {
+      if (current.includes(targetThreadId)) return current;
+      return [...current, targetThreadId];
+    });
+
+    setThreads((current) => {
+      const next = current.filter((thread) => String(thread.id) !== targetThreadId);
+      if (String(activeThreadRef.current) === targetThreadId) {
+        const nextActive = next[0]?.id || "";
+        setActiveThreadId(nextActive);
+        setMessages([]);
+        if (!nextActive) {
+          setMobileThreadOpen(false);
+        }
+      }
+      return next;
+    });
+
+    if (!silent) {
+      showToast("Conversation removed from inbox.", { tone: "ok", duration: 2200 });
+    }
+  }, [showToast]);
+
   const handleSend = useCallback(async () => {
     const body = draft.trim();
     if (!body || !activeThreadId || !userId || sending) return;
@@ -665,6 +845,7 @@ export default function MessagesPage() {
       const threadId = await getOrCreateThreadForUser(targetUserId);
       if (!threadId) return;
 
+      setHiddenThreadIds((current) => current.filter((id) => String(id) !== String(threadId)));
       await loadThreads();
       setActiveThreadId(threadId);
       setStartUserId("");
@@ -695,6 +876,7 @@ export default function MessagesPage() {
       });
       if (error) throw error;
 
+      setHiddenThreadIds((current) => current.filter((id) => String(id) !== String(threadId)));
       await loadThreads();
       setActiveThreadId(threadId);
       setStartCompose(false);
@@ -734,9 +916,85 @@ export default function MessagesPage() {
     });
   }, []);
 
+  const openThreadFromCandidate = useCallback(async (candidateUserId) => {
+    const targetUserId = String(candidateUserId || "").trim();
+    if (!targetUserId || targetUserId === userId) return;
+    if (composerBusyByUserId[targetUserId]) return;
+
+    setComposerBusyByUserId((current) => ({ ...current, [targetUserId]: true }));
+    try {
+      await openOrCreateThreadForUser(targetUserId);
+      setFilter("all");
+      setMobileThreadOpen(true);
+    } finally {
+      setComposerBusyByUserId((current) => ({ ...current, [targetUserId]: false }));
+    }
+  }, [composerBusyByUserId, openOrCreateThreadForUser, userId]);
+
+  const loadMoreMemberCandidates = useCallback(async () => {
+    if (composerLoading || !memberCandidatesHasMore || composerTab !== "members") return;
+    const nextOffset = memberCandidateOffset + MEMBER_PICKER_PAGE_SIZE;
+    setComposerLoading(true);
+    await loadMemberCandidates({
+      searchTerm: composerSearch,
+      offset: nextOffset,
+      append: true,
+    });
+    setComposerLoading(false);
+  }, [
+    composerLoading,
+    memberCandidatesHasMore,
+    composerTab,
+    memberCandidateOffset,
+    loadMemberCandidates,
+    composerSearch,
+  ]);
+
   useEffect(() => {
     activeThreadRef.current = activeThreadId;
   }, [activeThreadId]);
+
+  useEffect(() => {
+    if (!isReady || !isMember || !userId) return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      queueMicrotask(async () => {
+        if (cancelled) return;
+        setComposerLoading(true);
+        setComposerWarning("");
+
+        if (composerTab === "friends") {
+          await loadFriendCandidates(composerSearch);
+          if (!cancelled) {
+            setMemberCandidates([]);
+            setMemberCandidateOffset(0);
+            setMemberCandidatesHasMore(false);
+          }
+        } else {
+          await loadMemberCandidates({
+            searchTerm: composerSearch,
+            offset: 0,
+            append: false,
+          });
+        }
+
+        if (!cancelled) setComposerLoading(false);
+      });
+    }, 220);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    composerSearch,
+    composerTab,
+    isMember,
+    isReady,
+    loadFriendCandidates,
+    loadMemberCandidates,
+    userId,
+  ]);
 
   useEffect(() => {
     if (!isReady) return;
@@ -864,6 +1122,15 @@ export default function MessagesPage() {
 
         setThreads((current) => {
           if (!current.some((thread) => thread.id === threadId)) {
+            const isIncomingHidden =
+              messageRow.senderId &&
+              messageRow.senderId !== userId &&
+              hiddenThreadIds.includes(threadId);
+            if (isIncomingHidden) {
+              setHiddenThreadIds((currentHidden) =>
+                currentHidden.filter((id) => String(id) !== threadId)
+              );
+            }
             queueMicrotask(loadThreads);
             return current;
           }
@@ -928,7 +1195,7 @@ export default function MessagesPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isMember, loadThreads, markThreadRead, showToast, userId]);
+  }, [hiddenThreadIds, isMember, loadThreads, markThreadRead, showToast, userId]);
 
   if (!isReady || isAuthLoading) {
     return (
@@ -1179,6 +1446,146 @@ export default function MessagesPage() {
           </section>
         ) : null}
 
+        <section className="qa-panel mb-6 rounded-[26px] border border-sky-300/16 bg-[radial-gradient(circle_at_10%_10%,rgba(56,189,248,0.18),transparent_34%),linear-gradient(145deg,rgba(11,29,47,0.9),rgba(10,10,10,0.98))] p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-sky-100/75">Start Conversation</p>
+              <h2 className="mt-1 text-lg font-semibold text-white">Message friends or discover new members</h2>
+            </div>
+            <div className="inline-flex rounded-full border border-white/14 bg-white/7 p-1">
+              <button
+                type="button"
+                onClick={() => setComposerTab("friends")}
+                className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  composerTab === "friends"
+                    ? "border border-cyan-200/36 bg-cyan-200/16 text-cyan-100"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                Friends
+              </button>
+              <button
+                type="button"
+                onClick={() => setComposerTab("members")}
+                className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  composerTab === "members"
+                    ? "border border-fuchsia-200/36 bg-fuchsia-200/16 text-fuchsia-100"
+                    : "text-white/70 hover:text-white"
+                }`}
+              >
+                All members
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <input
+              value={composerSearch}
+              onChange={(event) => setComposerSearch(event.target.value)}
+              placeholder={composerTab === "friends" ? "Search your friends by name" : "Search members by name, city, title"}
+              className="w-full rounded-xl border border-white/14 bg-black/35 px-3 py-2 text-sm text-white outline-none transition focus:border-sky-200/40"
+            />
+            <p className="mt-2 text-[11px] text-white/55">
+              {composerTab === "friends"
+                ? "Friend-first inbox flow. Start from trusted circle."
+                : "Discover new members and open a direct thread in one tap."}
+            </p>
+          </div>
+
+          {composerWarning ? (
+            <p className="mt-3 rounded-xl border border-amber-200/24 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+              {composerWarning}
+            </p>
+          ) : null}
+
+          <div className="mt-3 max-h-[320px] space-y-2 overflow-y-auto pr-1">
+            {composerLoading ? (
+              [0, 1, 2].map((item) => (
+                <div key={`composer-skeleton-${item}`} className="h-16 rounded-2xl border border-white/10 bg-white/5" />
+              ))
+            ) : composerTab === "friends" ? (
+              friendCandidates.length > 0 ? (
+                friendCandidates.map((candidate) => {
+                  const existingThread = threadByOtherUserId.get(candidate.userId);
+                  const busy = Boolean(composerBusyByUserId[candidate.userId]);
+                  return (
+                    <article key={`friend-${candidate.userId}`} className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                          <p className="mt-1 text-[11px] text-white/58">
+                            {candidate.activeNow ? "Active now" : timeAgo(candidate.lastSeenAt)}
+                            {candidate.unreadCount > 0 ? ` · ${candidate.unreadCount} unread` : ""}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openThreadFromCandidate(candidate.userId)}
+                          disabled={busy}
+                          className="qa-action rounded-full border border-cyan-200/30 bg-cyan-200/14 px-3 py-1 text-[11px] font-semibold text-cyan-100 transition hover:border-cyan-200/50 disabled:opacity-60"
+                        >
+                          {busy ? "Opening..." : existingThread ? "Open thread" : "Message"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })
+              ) : (
+                <p className="rounded-2xl border border-dashed border-white/14 px-3 py-5 text-xs text-white/58">
+                  No friends matched this search yet.
+                </p>
+              )
+            ) : memberCandidates.length > 0 ? (
+              memberCandidates.map((candidate) => {
+                const existingThread = threadByOtherUserId.get(candidate.userId);
+                const busy = Boolean(composerBusyByUserId[candidate.userId]);
+                return (
+                  <article key={`member-${candidate.userId}`} className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                        <p className="mt-1 text-[11px] text-white/58">
+                          {[candidate.homeCity, candidate.residentCountry].filter(Boolean).join(" · ") || "City not set"}
+                        </p>
+                        <p className="mt-1 text-[11px] text-white/52">
+                          {candidate.isOnline ? "Active now" : timeAgo(candidate.lastSeenAt)}
+                          {candidate.mutualCount > 0 ? ` · ${candidate.mutualCount} mutual` : ""}
+                          {candidate.followsYou ? " · follows you" : ""}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openThreadFromCandidate(candidate.userId)}
+                        disabled={busy}
+                        className="qa-action rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1 text-[11px] font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/50 disabled:opacity-60"
+                      >
+                        {busy ? "Opening..." : existingThread ? "Open thread" : "Message"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <p className="rounded-2xl border border-dashed border-white/14 px-3 py-5 text-xs text-white/58">
+                No members matched this search.
+              </p>
+            )}
+          </div>
+
+          {composerTab === "members" && memberCandidatesHasMore ? (
+            <div className="mt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={loadMoreMemberCandidates}
+                disabled={composerLoading}
+                className="qa-action rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/45 disabled:opacity-60"
+              >
+                {composerLoading ? "Loading..." : "Load more"}
+              </button>
+            </div>
+          ) : null}
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className={`${mobileThreadOpen ? "hidden lg:block" : "block"} qa-panel rounded-[30px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(9,30,40,0.68),rgba(10,10,10,0.99))] p-4`}>
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -1299,10 +1706,10 @@ export default function MessagesPage() {
                       </button>
                       <button
                         type="button"
-                        disabled
-                        className="qa-action rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/45"
+                        onClick={() => removeThreadFromInbox(activeThread.id)}
+                        className="qa-action rounded-full border border-rose-200/30 bg-rose-200/14 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/50"
                       >
-                        Mute
+                        Remove
                       </button>
                     </div>
                   </div>
