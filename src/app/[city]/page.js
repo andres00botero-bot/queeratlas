@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import mapboxgl from "mapbox-gl";
+import { Shield, Star } from "lucide-react";
 import "../signal-motion.css";
 import { cityConfig } from "@/lib/cities";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -11,6 +12,7 @@ import { useAuth } from "@/lib/auth";
 import {
   addReport,
   getBlockedItems,
+  getReports,
   subscribeBlockedItems,
   syncBlockedItemsFromCloud,
 } from "@/lib/moderation";
@@ -41,6 +43,7 @@ import { usePlaces } from "@/lib/usePlaces";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
+import { buildPlaceSafetySignalMap, getSafetyToneClass } from "@/lib/placeSafetySignals";
 import ActionToast from "@/components/ui/ActionToast";
 import DateInput from "@/components/ui/DateInput";
 import VibeTagChips from "@/components/ui/VibeTagChips";
@@ -115,6 +118,41 @@ function normalizeServiceImageUrls(input, max = 8) {
 }
 
 const SERVICE_PRICE_TIER_OPTIONS = ["", "$", "$$", "$$$", "$$$$"];
+
+function SafetyShields({ value = 0, className = "", activeClassName = "", inactiveClassName = "" }) {
+  const safeValue = Math.max(0, Math.min(5, Number(value) || 0));
+  return (
+    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${className}`.trim()}>
+      {[1, 2, 3, 4, 5].map((step) => {
+        const active = safeValue >= step;
+        return (
+          <Shield
+            key={`safety-shield-${step}`}
+            className={`h-3.5 w-3.5 ${active ? activeClassName : inactiveClassName}`.trim()}
+            strokeWidth={2.1}
+            fill={active ? "currentColor" : "none"}
+            aria-hidden="true"
+          />
+        );
+      })}
+    </span>
+  );
+}
+
+function getSafetyIconToneClass(tone = "neutral") {
+  if (tone === "safe") return "text-emerald-300";
+  if (tone === "mixed") return "text-amber-300";
+  if (tone === "risk") return "text-rose-300";
+  return "text-cyan-200";
+}
+
+function getDisplayedSafetyShields(signal) {
+  if (!signal) return 0;
+  const reviewCount = Number(signal.safetyReviewCount || 0);
+  const reviewAvg = Number(signal.safetyReviewAvg || 0);
+  const base = reviewCount > 0 && Number.isFinite(reviewAvg) ? reviewAvg : Number(signal.shields || 0);
+  return Math.max(1, Math.min(5, Math.round(base)));
+}
 
 function resolveCityFromPathname(pathname = "") {
   const firstSegment = String(pathname || "")
@@ -215,6 +253,8 @@ export default function CityPage() {
   const [eventLink, setEventLink] = useState("");
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(null);
+  const [safetyRating, setSafetyRating] = useState(4);
+  const [hoverSafetyRating, setHoverSafetyRating] = useState(null);
   const [comment, setComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const { toast, showToast } = useActionToast();
@@ -234,6 +274,7 @@ export default function CityPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsLoadError, setEventsLoadError] = useState("");
   const [mapError, setMapError] = useState("");
+  const [safetySignalsByPlaceId, setSafetySignalsByPlaceId] = useState({});
   const [, setQualityTick] = useState(0);
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [hoveredPlaceId, setHoveredPlaceId] = useState(null);
@@ -439,6 +480,95 @@ export default function CityPage() {
   }, [cityServices, serviceId]);
 
   useEffect(() => {
+    let active = true;
+    const placeIds = cityPlaces
+      .map((place) => String(place?.id || "").trim())
+      .filter(Boolean);
+
+    if (placeIds.length === 0) {
+      setSafetySignalsByPlaceId({});
+      return () => {
+        active = false;
+      };
+    }
+
+    const refreshSignals = async () => {
+      const numericPlaceIds = placeIds
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0);
+      const checkinLookbackIso = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+      const reportLookbackIso = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+      const liveLookbackIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+      const [checkinsRes, reportsRes, liveSignalsRes, reviewSafetyRes] = await Promise.all([
+        numericPlaceIds.length > 0
+          ? supabase
+              .from("qa_member_checkins")
+              .select("place_id, checked_in_at")
+              .in("place_id", numericPlaceIds)
+              .gte("checked_in_at", checkinLookbackIso)
+              .limit(2000)
+          : Promise.resolve({ data: [], error: null }),
+        supabase
+          .from("qa_reports")
+          .select("target_id, status, created_at, target_type")
+          .eq("target_type", "place")
+          .in("target_id", placeIds)
+          .gte("created_at", reportLookbackIso)
+          .limit(1200),
+        numericPlaceIds.length > 0
+          ? supabase
+              .from("qa_place_vibe_signals")
+              .select("place_id, signal_key, created_at")
+              .in("place_id", numericPlaceIds)
+              .gte("created_at", liveLookbackIso)
+              .limit(2000)
+          : Promise.resolve({ data: [], error: null }),
+        numericPlaceIds.length > 0
+          ? supabase
+              .from("reviews")
+              .select("place_id, safety, created_at")
+              .in("place_id", numericPlaceIds)
+              .limit(3000)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      if (!active) return;
+
+      const localReports = getReports()
+        .filter((row) => String(row?.targetType || "").toLowerCase() === "place")
+        .filter((row) => placeIds.includes(String(row?.targetId || "")))
+        .map((row) => ({
+          target_id: String(row.targetId || ""),
+          status: row.status || "open",
+          created_at: row.createdAt || null,
+        }));
+      const cloudReports = Array.isArray(reportsRes?.data) ? reportsRes.data : [];
+      const reportsRows = cloudReports.length > 0 ? cloudReports : localReports;
+      const checkinsRows = Array.isArray(checkinsRes?.data) ? checkinsRes.data : [];
+      const liveRows = Array.isArray(liveSignalsRes?.data) ? liveSignalsRes.data : [];
+      const reviewSafetyRows = Array.isArray(reviewSafetyRes?.data) ? reviewSafetyRes.data : [];
+
+      const nextMap = buildPlaceSafetySignalMap({
+        places: cityPlaces,
+        checkins: checkinsRows,
+        reports: reportsRows,
+        liveSignals: liveRows,
+        reviewSafety: reviewSafetyRows,
+      });
+      setSafetySignalsByPlaceId(nextMap);
+    };
+
+    queueMicrotask(refreshSignals);
+    const interval = window.setInterval(refreshSignals, 5 * 60 * 1000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [cityPlaces]);
+
+  useEffect(() => {
     if (!selectedPlace) {
       setPlaceAdminOpen(false);
       setPlaceAdminDraft(buildPlaceAdminDraft(null));
@@ -597,6 +727,10 @@ export default function CityPage() {
     () => (selectedPlaceQuality ? getQualityStatus(selectedPlaceQuality) : null),
     [selectedPlaceQuality]
   );
+  const selectedPlaceSafetySignal = useMemo(() => {
+    if (!selectedPlace) return null;
+    return safetySignalsByPlaceId[String(selectedPlace.id)] || null;
+  }, [safetySignalsByPlaceId, selectedPlace]);
 
   const selectedEventQuality = selectedEvent
     ? getEntityQuality({
@@ -4632,6 +4766,7 @@ export default function CityPage() {
                       map: qualityMap,
                     });
                     const qualityStatus = getQualityStatus(quality);
+                    const placeSafetySignal = safetySignalsByPlaceId[String(place.id)] || null;
 
                     return (
                   <div
@@ -4696,6 +4831,19 @@ export default function CityPage() {
                         <span className={`rounded-full border border-white/14 bg-black/45 px-3 py-1 text-xs font-semibold ${style.label}`}>
                           Rating {place.avgRating?.toFixed(1) || "-"}
                         </span>
+                        {placeSafetySignal && Number(placeSafetySignal.safetyReviewCount || 0) > 0 && (
+                          <span
+                            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${getSafetyToneClass(placeSafetySignal.tone)}`}
+                            aria-label={`Safety ${getDisplayedSafetyShields(placeSafetySignal)} out of 5`}
+                          >
+                            <SafetyShields
+                              value={getDisplayedSafetyShields(placeSafetySignal)}
+                              activeClassName={getSafetyIconToneClass(placeSafetySignal.tone)}
+                              inactiveClassName="text-white/30"
+                            />
+                            {getDisplayedSafetyShields(placeSafetySignal)}/5
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -5134,7 +5282,7 @@ export default function CityPage() {
                 Official Link
               </a>
             )}
-            <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="mt-3 grid grid-cols-3 gap-2">
               <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
                 <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Rating</p>
                 <p className="mt-1 text-sm text-white/84">{selectedPlace.avgRating?.toFixed(1) || "-"}</p>
@@ -5143,7 +5291,35 @@ export default function CityPage() {
                 <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Reviews</p>
                 <p className="mt-1 text-sm text-white/84">{selectedPlace.reviewCount || 0}</p>
               </div>
+              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Safety</p>
+                {selectedPlaceSafetySignal ? (
+                  <p className={`mt-1 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-sm ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
+                    {getDisplayedSafetyShields(selectedPlaceSafetySignal)}/5
+                  </p>
+                ) : (
+                  <p className="mt-1 text-sm text-white/84">-</p>
+                )}
+              </div>
             </div>
+            {selectedPlaceSafetySignal && (
+              <div className={`mt-3 rounded-xl border p-3 ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
+                <p className="text-[10px] uppercase tracking-[0.18em]">Safety signal details</p>
+                <div className="mt-2 grid gap-2 text-xs sm:grid-cols-3">
+                  <p>Recent check-ins: {selectedPlaceSafetySignal.recentCheckins}</p>
+                  <p>Welcoming taps: {selectedPlaceSafetySignal.welcomingSignals}</p>
+                  <p>Open incidents: {selectedPlaceSafetySignal.openIncidents}</p>
+                </div>
+                {selectedPlaceSafetySignal.safetyReviewCount > 0 && (
+                  <p className="mt-2 text-xs">
+                    Community safety reviews: {selectedPlaceSafetySignal.safetyReviewAvg}/5 ({selectedPlaceSafetySignal.safetyReviewCount})
+                  </p>
+                )}
+                <p className="mt-2 text-[11px] opacity-85">
+                  Community signal. Not a guarantee.
+                </p>
+              </div>
+            )}
             <div className="mt-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.07] p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/80">Live vibe now</p>
@@ -5472,7 +5648,19 @@ export default function CityPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-xs uppercase tracking-[0.14em] text-yellow-300/90">Rating {review.rating}/5</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs uppercase tracking-[0.14em] text-yellow-300/90">Rating {review.rating}/5</p>
+                      {Number(review?.safety) > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
+                          <SafetyShields
+                            value={Number(review.safety)}
+                            activeClassName="text-cyan-100"
+                            inactiveClassName="text-white/30"
+                          />
+                          Safety
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="mt-2 text-sm text-gray-200">{review.comment}</p>
                 </div>
@@ -5504,24 +5692,58 @@ export default function CityPage() {
                 </button>
               </div>
             )}
-            <div className={`mb-3 flex items-center gap-1 ${!isMember || !canReviewSelectedPlace ? "hidden" : ""}`}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  type="button"
-                  disabled={isSubmittingReview}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(null)}
-                  onClick={() => setRating(star)}
-                  aria-label={`Set rating to ${star} star${star > 1 ? "s" : ""}`}
-                  aria-pressed={rating === star}
-                  className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-2xl transition ${
-                    (hoverRating || rating) >= star ? "text-yellow-400" : "text-gray-600"
-                  } ${isSubmittingReview ? "opacity-60" : "hover:bg-white/8"}`}
-                >
-                  ★
-                </button>
-              ))}
+            <div className={`${!isMember || !canReviewSelectedPlace ? "hidden" : ""}`}>
+              <p className="mb-1 text-[11px] uppercase tracking-[0.14em] text-white/55">Venue rating</p>
+              <div className="mb-3 flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    disabled={isSubmittingReview}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(null)}
+                    onClick={() => setRating(star)}
+                    aria-label={`Set rating to ${star} star${star > 1 ? "s" : ""}`}
+                    aria-pressed={rating === star}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition ${
+                      (hoverRating || rating) >= star ? "text-yellow-400" : "text-gray-600"
+                    } ${isSubmittingReview ? "opacity-60" : "hover:bg-white/8"}`}
+                  >
+                    <Star className="h-5 w-5" fill="currentColor" />
+                  </button>
+                ))}
+              </div>
+              <p className="mb-1 text-[11px] uppercase tracking-[0.14em] text-white/55">Safety feeling</p>
+              <div className="mb-3 flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((step) => (
+                  <button
+                    key={`safety-${step}`}
+                    type="button"
+                    disabled={isSubmittingReview}
+                    onMouseEnter={() => setHoverSafetyRating(step)}
+                    onMouseLeave={() => setHoverSafetyRating(null)}
+                    onClick={() => setSafetyRating(step)}
+                    aria-label={`Set safety to ${step} shield${step > 1 ? "s" : ""}`}
+                    aria-pressed={safetyRating === step}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition ${
+                      isSubmittingReview ? "opacity-60" : "hover:bg-white/8"
+                    }`}
+                  >
+                    <Shield
+                      className={`h-5 w-5 ${
+                        (hoverSafetyRating || safetyRating) >= step
+                          ? "text-cyan-300"
+                          : "text-white/30"
+                      }`}
+                      fill={(hoverSafetyRating || safetyRating) >= step ? "currentColor" : "none"}
+                      strokeWidth={2.1}
+                    />
+                  </button>
+                ))}
+                <span className="ml-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
+                  {safetyRating}/5
+                </span>
+              </div>
             </div>
 
             <textarea
@@ -5552,6 +5774,7 @@ export default function CityPage() {
                     placeId: selectedPlace.id,
                     place: selectedPlace,
                     rating,
+                    safety: safetyRating,
                     comment: trimmedComment,
                   });
 
@@ -5565,6 +5788,7 @@ export default function CityPage() {
 
                   setComment("");
                   setRating(5);
+                  setSafetyRating(4);
                   const updated = await getReviews(selectedPlace.id, selectedPlace);
                   setReviews(updated);
                   trackKpiEvent("review_submitted", {
