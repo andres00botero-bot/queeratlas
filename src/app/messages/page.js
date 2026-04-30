@@ -156,6 +156,7 @@ export default function MessagesPage() {
   const [memberCandidatesHasMore, setMemberCandidatesHasMore] = useState(false);
   const [composerBusyByUserId, setComposerBusyByUserId] = useState({});
   const [hiddenThreadIds, setHiddenThreadIds] = useState([]);
+  const [threadResetAtById, setThreadResetAtById] = useState({});
 
   const activeThread = useMemo(
     () => threads.find((thread) => String(thread.id) === String(activeThreadId)) || null,
@@ -165,6 +166,10 @@ export default function MessagesPage() {
   const activeOtherUserId = activeThread?.otherUserId || "";
   const hiddenThreadStorageKey = useMemo(
     () => `qa_hidden_dm_threads_${userId || "guest"}`,
+    [userId]
+  );
+  const threadResetStorageKey = useMemo(
+    () => `qa_dm_thread_reset_at_${userId || "guest"}`,
     [userId]
   );
 
@@ -206,6 +211,31 @@ export default function MessagesPage() {
     if (!userId) return;
     writeLocalJson(hiddenThreadStorageKey, hiddenThreadIds);
   }, [hiddenThreadIds, hiddenThreadStorageKey, userId]);
+
+  useEffect(() => {
+    if (!userId) {
+      setThreadResetAtById({});
+      return;
+    }
+    const stored = readLocalJson(threadResetStorageKey, {});
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+      setThreadResetAtById({});
+      return;
+    }
+    const normalized = {};
+    Object.entries(stored).forEach(([key, value]) => {
+      const threadId = String(key || "").trim();
+      const resetAt = Number(value || 0);
+      if (!threadId || !Number.isFinite(resetAt) || resetAt <= 0) return;
+      normalized[threadId] = resetAt;
+    });
+    setThreadResetAtById(normalized);
+  }, [threadResetStorageKey, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+    writeLocalJson(threadResetStorageKey, threadResetAtById);
+  }, [threadResetAtById, threadResetStorageKey, userId]);
 
   const threadByOtherUserId = useMemo(() => {
     const next = new Map();
@@ -276,6 +306,13 @@ export default function MessagesPage() {
     const hours = (avgMinutes / 60).toFixed(1);
     return `Avg host response: ~${hours}h`;
   }, [vipInviteRows]);
+
+  const getThreadResetAt = useCallback((threadId) => {
+    const key = String(threadId || "").trim();
+    if (!key) return 0;
+    const value = Number(threadResetAtById[key] || 0);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }, [threadResetAtById]);
 
   const loadThreads = useCallback(async () => {
     if (!userId) return;
@@ -356,7 +393,7 @@ export default function MessagesPage() {
       const [{ data: unreadRows }, { data: recentRows }] = await Promise.all([
         supabase
           .from("qa_dm_messages")
-          .select("thread_id")
+          .select("thread_id, created_at")
           .in("thread_id", threadIds)
           .neq("sender_id", userId)
           .is("read_at", null),
@@ -371,12 +408,18 @@ export default function MessagesPage() {
       (unreadRows || []).forEach((row) => {
         const threadId = String(row.thread_id || "");
         if (!threadId) return;
+        const resetAt = getThreadResetAt(threadId);
+        const createdAtMs = new Date(row.created_at || 0).getTime();
+        if (resetAt > 0 && Number.isFinite(createdAtMs) && createdAtMs <= resetAt) return;
         unreadMap.set(threadId, (unreadMap.get(threadId) || 0) + 1);
       });
 
       (recentRows || []).forEach((row) => {
         const threadId = String(row.thread_id || "");
         if (!threadId || lastMessageMap.has(threadId)) return;
+        const resetAt = getThreadResetAt(threadId);
+        const createdAtMs = new Date(row.created_at || 0).getTime();
+        if (resetAt > 0 && Number.isFinite(createdAtMs) && createdAtMs <= resetAt) return;
         lastMessageMap.set(threadId, {
           id: String(row.id),
           body: row.body || "",
@@ -397,7 +440,10 @@ export default function MessagesPage() {
             : nextPresenceByUserId[thread.otherUserId] || { isOnline: false, lastSeenAt: null };
 
         const lastMessage = lastMessageMap.get(thread.id) || null;
-        const unreadCount = unreadMap.get(thread.id) ?? momentumMeta?.unreadCount ?? 0;
+        const resetAt = getThreadResetAt(thread.id);
+        const unreadCount = unreadMap.has(thread.id)
+          ? Number(unreadMap.get(thread.id) || 0)
+          : (resetAt > 0 ? 0 : Number(momentumMeta?.unreadCount || 0));
         const hintedName = thread.otherUserId === startUserId ? String(startUserName || "").trim() : "";
         const displayName =
           momentumMeta?.displayName ||
@@ -422,7 +468,7 @@ export default function MessagesPage() {
       return mappedThreads[0]?.id || "";
     });
     setIsLoadingThreads(false);
-  }, [hiddenThreadIds, startUserId, startUserName, userId]);
+  }, [getThreadResetAt, hiddenThreadIds, startUserId, startUserName, userId]);
 
   const loadVipInvites = useCallback(async ({ silent = false } = {}) => {
     if (!userId) {
@@ -739,11 +785,17 @@ export default function MessagesPage() {
         return;
       }
 
-      setMessages((data || []).map(normalizeMessageRow));
+      const resetAt = getThreadResetAt(threadId);
+      const filteredRows = (data || []).filter((row) => {
+        if (!resetAt) return true;
+        const createdAtMs = new Date(row.created_at || 0).getTime();
+        return !Number.isFinite(createdAtMs) || createdAtMs > resetAt;
+      });
+      setMessages(filteredRows.map(normalizeMessageRow));
       await markThreadRead(threadId);
       setIsLoadingMessages(false);
     },
-    [markThreadRead, showToast]
+    [getThreadResetAt, markThreadRead, showToast]
   );
 
   const handleSelectThread = useCallback((threadId) => {
@@ -762,6 +814,10 @@ export default function MessagesPage() {
       if (current.includes(targetThreadId)) return current;
       return [...current, targetThreadId];
     });
+    setThreadResetAtById((current) => ({
+      ...current,
+      [targetThreadId]: Date.now(),
+    }));
 
     setThreads((current) => {
       const next = current.filter((thread) => String(thread.id) !== targetThreadId);
@@ -777,7 +833,7 @@ export default function MessagesPage() {
     });
 
     if (!silent) {
-      showToast("Conversation removed from inbox.", { tone: "ok", duration: 2200 });
+      showToast("Conversation removed. New chat with this member will start from zero.", { tone: "ok", duration: 2600 });
     }
   }, [showToast]);
 
@@ -1147,6 +1203,11 @@ export default function MessagesPage() {
         const row = payload.new || {};
         const threadId = String(row.thread_id || "");
         if (!threadId) return;
+        const resetAt = getThreadResetAt(threadId);
+        const createdAtMs = new Date(row.created_at || 0).getTime();
+        if (resetAt > 0 && Number.isFinite(createdAtMs) && createdAtMs <= resetAt) {
+          return;
+        }
 
         const messageRow = normalizeMessageRow(row);
 
@@ -1225,7 +1286,7 @@ export default function MessagesPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [hiddenThreadIds, isMember, loadThreads, markThreadRead, showToast, userId]);
+  }, [getThreadResetAt, hiddenThreadIds, isMember, loadThreads, markThreadRead, showToast, userId]);
 
   if (!isReady || isAuthLoading) {
     return (
