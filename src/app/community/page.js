@@ -1681,55 +1681,55 @@ export default function CommunityPage() {
                 </div>
               </form>
             </div>
-            <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.8),rgba(11,11,11,0.96))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+            <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.8),rgba(11,11,11,0.96))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:p-4">
               {activeTopic && (
                 <>
-                  <div className="border-b border-gray-800 pb-4">
-                    <div className="flex items-center justify-between gap-3">
+                  <div className="border-b border-gray-800 pb-3 sm:pb-4">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                       <div>
                         <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">{activeTopic.mood}</p>
                         <h3 className="mt-2 text-lg font-semibold">{activeTopic.name}</h3>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[11px] text-cyan-100 sm:px-3 sm:text-xs">
                           {busiestTopic ? `Trending: ${busiestTopic.name}` : "New conversation"}
                         </div>
                         {canDeleteTopic(activeTopic) && (
                           <button
                             onClick={() => deleteTopic(activeTopic)}
-                            className="rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                            className="rounded-full border border-rose-200/22 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38 sm:px-3"
                           >
                             Delete topic
                           </button>
                         )}
                       </div>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-gray-400">{activeTopic.description}</p>
+                    <p className="mt-2 text-sm leading-5 text-gray-400 sm:leading-6">{activeTopic.description}</p>
                     <p className="mt-2 text-[11px] text-cyan-100/60">
                       Topic policy: max {MAX_TOPICS} topics, kept for {TOPIC_RETENTION_DAYS} days.
                     </p>
                   </div>
-                  <div className="mt-4 rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,28,36,0.8),rgba(8,8,8,0.96))] p-3">
-                    <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div className="mt-3 rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,28,36,0.8),rgba(8,8,8,0.96))] p-2.5 sm:mt-4 sm:p-3">
+                    <div className="mb-3 flex flex-col gap-1.5 border-b border-white/10 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                       <p className="text-xs text-gray-300">Signed in as <span className="font-semibold text-cyan-200">{memberName || "Member"}</span></p>
                       <p className="text-xs text-gray-500">{activeMessages.length} messages</p>
                     </div>
-                    <div className="h-[340px] space-y-3 overflow-y-auto pr-1">
+                    <div className="h-[300px] space-y-2.5 overflow-y-auto pr-0.5 sm:h-[340px] sm:space-y-3 sm:pr-1">
                       {activeMessages.length === 0 && (
                         <div className="rounded-2xl border border-dashed border-gray-700 px-4 py-6 text-sm text-gray-500">No messages yet. Start the conversation.</div>
                       )}
                       {activeMessages.map((message) => {
                         const isMine = message.author === (memberName || "Member");
                         return (
-                          <div key={message.id} className={`flex gap-3 ${isMine ? "justify-end" : "justify-start"}`}>
+                          <div key={message.id} className={`flex gap-2 sm:gap-3 ${isMine ? "justify-end" : "justify-start"}`}>
                             {!isMine && (
-                              <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-xs font-semibold text-cyan-100">
+                              <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-[11px] font-semibold text-cyan-100 sm:h-8 sm:w-8 sm:text-xs">
                                 {message.author.slice(0, 1).toUpperCase()}
                               </div>
                             )}
-                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${isMine ? "border border-cyan-300/35 bg-cyan-300/18" : "border border-white/10 bg-black/35"}`}>
-                              <div className="flex items-center justify-between gap-3">
-                                <p className="text-xs font-semibold text-gray-200">
+                            <div className={`max-w-[92%] rounded-2xl px-3 py-2.5 sm:max-w-[85%] sm:px-4 sm:py-3 ${isMine ? "border border-cyan-300/35 bg-cyan-300/18" : "border border-white/10 bg-black/35"}`}>
+                              <div className="flex flex-col gap-1 sm:gap-1.5">
+                                <p className="text-[11px] font-semibold text-gray-200 sm:text-xs">
                                   {(() => {
                                     const rankMeta = getAuthorIdentityMeta(message.author);
                                     return (
@@ -1760,14 +1760,14 @@ export default function CommunityPage() {
                                   </button>
                                 </div>
                               </div>
-                              <p className="mt-1 text-sm leading-6 text-gray-200">{message.text}</p>
+                              <p className="mt-1.5 text-sm leading-5 text-gray-200 sm:leading-6">{message.text}</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   </div>
-                  <form onSubmit={sendMessage} className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+                  <form onSubmit={sendMessage} className="mt-3 grid gap-2.5 md:mt-4 md:grid-cols-[1fr_auto] md:gap-3">
                     <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder="Write a message to the topic" />
                     <button type="submit" className="rounded-xl bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
                   </form>
