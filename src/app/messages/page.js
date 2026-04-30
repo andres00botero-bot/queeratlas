@@ -786,11 +786,15 @@ export default function MessagesPage() {
     if (!body || !activeThreadId || !userId || sending) return;
 
     setSending(true);
-    const { error } = await supabase.from("qa_dm_messages").insert({
-      thread_id: activeThreadId,
-      sender_id: userId,
-      body,
-    });
+    const { data, error } = await supabase
+      .from("qa_dm_messages")
+      .insert({
+        thread_id: activeThreadId,
+        sender_id: userId,
+        body,
+      })
+      .select("id, thread_id, sender_id, body, created_at, read_at")
+      .single();
 
     if (error) {
       if (isMissingTableError(error)) {
@@ -800,6 +804,32 @@ export default function MessagesPage() {
       }
       setSending(false);
       return;
+    }
+
+    const sentMessage = normalizeMessageRow(data || {});
+    if (sentMessage?.id) {
+      setMessages((current) => {
+        if (current.some((item) => String(item.id) === String(sentMessage.id))) return current;
+        return [...current, sentMessage];
+      });
+      setThreads((current) => {
+        const next = current.map((thread) => {
+          if (String(thread.id) !== String(activeThreadId)) return thread;
+          return {
+            ...thread,
+            lastMessageAt: sentMessage.createdAt || thread.lastMessageAt,
+            lastMessage: {
+              id: sentMessage.id,
+              body: sentMessage.body,
+              createdAt: sentMessage.createdAt,
+              senderId: sentMessage.senderId,
+            },
+            preview: String(sentMessage.body || "").trim() || thread.preview,
+            sortTs: new Date(sentMessage.createdAt || thread.lastMessageAt || 0).getTime(),
+          };
+        });
+        return [...next].sort((a, b) => b.sortTs - a.sortTs);
+      });
     }
 
     setDraft("");
