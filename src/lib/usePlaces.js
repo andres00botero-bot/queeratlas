@@ -240,6 +240,26 @@ export function usePlaces(city) {
       return acc;
     }, {});
 
+    const placeIdentityById = new Map(
+      placeRows
+        .filter((row) => row?.id && row?.city && row?.name)
+        .map((row) => [
+          String(row.id),
+          `${normalizeLookupToken(row.city)}::${normalizeLookupToken(row.name)}`,
+        ]),
+    );
+
+    const statsByCityName = Object.entries(statsByPlaceId).reduce((acc, [placeId, stat]) => {
+      const identity = placeIdentityById.get(String(placeId));
+      if (!identity) return acc;
+      if (!acc[identity]) {
+        acc[identity] = { total: 0, count: 0 };
+      }
+      acc[identity].total += Number(stat?.total || 0);
+      acc[identity].count += Number(stat?.count || 0);
+      return acc;
+    }, {});
+
     const fallbackRows = placeRows.map((place) => {
       const stat = statsByPlaceId[String(place.id)] || { total: 0, count: 0 };
       const avgRating = stat.count > 0 ? Number((stat.total / stat.count).toFixed(1)) : null;
@@ -252,6 +272,23 @@ export function usePlaces(city) {
 
     const sourceRows = Array.isArray(statsRows) && statsRows.length > 0 ? statsRows : fallbackRows;
     const mergedRows = sourceRows.map((row) => {
+      const identityKey = `${normalizeLookupToken(row.city)}::${normalizeLookupToken(row.name)}`;
+      const statById = statsByPlaceId[String(row.id)] || { total: 0, count: 0 };
+      const statByName = statsByCityName[identityKey] || { total: 0, count: 0 };
+      const fallbackStat = statById.count > 0 ? statById : statByName;
+      const rowReviewCountRaw = Number(row?.reviewCount ?? row?.review_count);
+      const rowReviewCount =
+        Number.isFinite(rowReviewCountRaw) && rowReviewCountRaw > 0
+          ? Math.round(rowReviewCountRaw)
+          : 0;
+      const rowAvgRatingRaw = Number(row?.avgRating ?? row?.avg_rating);
+      const rowAvgRating =
+        Number.isFinite(rowAvgRatingRaw) && rowAvgRatingRaw > 0 ? rowAvgRatingRaw : null;
+      const computedAvgRating =
+        fallbackStat.count > 0 ? Number((fallbackStat.total / fallbackStat.count).toFixed(1)) : null;
+      const reviewCount = rowReviewCount > 0 ? rowReviewCount : fallbackStat.count;
+      const avgRating = rowAvgRating ?? computedAvgRating;
+
       const byId = placeLinkById.get(String(row.id || ""));
       const byCityName = placeLinkByCityName.get(
         `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
@@ -266,6 +303,10 @@ export function usePlaces(city) {
       );
       return {
         ...row,
+        reviewCount,
+        avgRating,
+        review_count: reviewCount,
+        avg_rating: avgRating,
         hours: String(row.hours || "").trim(),
         location: String(row.location || locationById || locationByCityName || "").trim(),
         link: String(row.link || byId || byCityName || "").trim(),

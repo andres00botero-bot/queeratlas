@@ -162,7 +162,7 @@ export default function CityPage() {
     isLoading: placesLoading,
     loadError: placesLoadError,
     reloadPlaces,
-  } = usePlaces();
+  } = usePlaces(city);
   const [eventsData, setEventsData] = useState([]);
   const [servicesData, setServicesData] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(true);
