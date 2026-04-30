@@ -5104,6 +5104,11 @@ export default function CityPage() {
               includeTypeFallback
               includeMixedFallback
             />
+            {String(selectedPlace.vibe || "").trim() && (
+              <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-cyan-100/72">
+                Legacy vibe: {String(selectedPlace.vibe || "").trim()}
+              </p>
+            )}
             <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
               Address: {getEntityAddressLabel(selectedPlace)}
             </p>
