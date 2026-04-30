@@ -757,20 +757,20 @@ export default function Home() {
             </section>
 
             <aside className="grid gap-4">
-              <div className="overflow-hidden rounded-[28px] border border-white/12 bg-[linear-gradient(155deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_25px_90px_rgba(0,0,0,0.35)]">
+              <div className="overflow-hidden rounded-[28px] border border-sky-300/22 bg-[radial-gradient(circle_at_8%_8%,rgba(56,189,248,0.18),transparent_36%),linear-gradient(155deg,rgba(10,26,38,0.96),rgba(8,12,20,0.99))] p-4 shadow-[0_25px_90px_rgba(14,116,144,0.24)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/65">
+                    <p className="text-xs uppercase tracking-[0.24em] text-sky-100/78">
                       Queer world news
                     </p>
-                    <h2 className="mt-2 text-xl font-semibold text-white">
+                    <h2 className="mt-2 text-xl font-semibold text-sky-50">
                       Live now
                     </h2>
                   </div>
 
                   <button
                     onClick={() => router.push("/now")}
-                    className="rounded-full border border-cyan-200/20 bg-cyan-200/8 px-3 py-1.5 text-[11px] text-cyan-100 transition hover:border-cyan-200/40 hover:bg-cyan-200/14"
+                    className="rounded-full border border-sky-200/30 bg-sky-200/14 px-3 py-1.5 text-[11px] text-sky-50 transition hover:border-sky-200/48 hover:bg-sky-200/22"
                   >
                     Open news
                   </button>
@@ -787,7 +787,7 @@ export default function Home() {
                         <p className="rounded-full border border-white/12 bg-white/7 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/82">
                           {[item.city || "Global", formatDateShort(item.date)].join(" | ")}
                         </p>
-                        <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
+                        <span className="rounded-full border border-sky-200/28 bg-sky-200/14 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-sky-100">
                           {item.categoryLabel || "news"}
                         </span>
                       </div>
