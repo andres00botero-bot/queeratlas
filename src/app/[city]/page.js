@@ -4867,10 +4867,11 @@ export default function CityPage() {
                             className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${getSafetyToneClass(placeSafetySignal.tone)}`}
                             aria-label={`Safety ${getDisplayedSafetyShields(placeSafetySignal)} out of 5`}
                           >
-                            <SafetyShields
-                              value={getDisplayedSafetyShields(placeSafetySignal)}
-                              activeClassName={getSafetyIconToneClass(placeSafetySignal.tone)}
-                              inactiveClassName="text-white/30"
+                            <Shield
+                              className={`h-3.5 w-3.5 ${getSafetyIconToneClass(placeSafetySignal.tone)}`}
+                              fill="currentColor"
+                              strokeWidth={2}
+                              aria-hidden="true"
                             />
                             {getDisplayedSafetyShields(placeSafetySignal)}/5
                           </span>
@@ -5323,8 +5324,8 @@ export default function CityPage() {
                 <p className="mt-1 text-sm text-white/84">{selectedPlace.reviewCount || 0}</p>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Safety</p>
-                {selectedPlaceSafetySignal ? (
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Safety reviews</p>
+                {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 ? (
                   <p className={`mt-1 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-sm ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
                     {getDisplayedSafetyShields(selectedPlaceSafetySignal)}/5
                   </p>
@@ -5333,23 +5334,10 @@ export default function CityPage() {
                 )}
               </div>
             </div>
-            {selectedPlaceSafetySignal && (
-              <div className={`mt-3 rounded-xl border p-3 ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
-                <p className="text-[10px] uppercase tracking-[0.18em]">Safety signal details</p>
-                <div className="mt-2 grid gap-2 text-xs sm:grid-cols-3">
-                  <p>Recent check-ins: {selectedPlaceSafetySignal.recentCheckins}</p>
-                  <p>Welcoming taps: {selectedPlaceSafetySignal.welcomingSignals}</p>
-                  <p>Open incidents: {selectedPlaceSafetySignal.openIncidents}</p>
-                </div>
-                {selectedPlaceSafetySignal.safetyReviewCount > 0 && (
-                  <p className="mt-2 text-xs">
-                    Community safety reviews: {selectedPlaceSafetySignal.safetyReviewAvg}/5 ({selectedPlaceSafetySignal.safetyReviewCount})
-                  </p>
-                )}
-                <p className="mt-2 text-[11px] opacity-85">
-                  Community signal. Not a guarantee.
-                </p>
-              </div>
+            {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 && (
+              <p className="mt-2 text-[11px] text-white/60">
+                Based on {selectedPlaceSafetySignal.safetyReviewCount} member safety review{selectedPlaceSafetySignal.safetyReviewCount === 1 ? "" : "s"}.
+              </p>
             )}
             <div className="mt-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.07] p-3">
               <div className="flex items-center justify-between gap-2">
