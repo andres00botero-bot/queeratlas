@@ -434,10 +434,12 @@ export default function Home() {
         eventLimit: 4,
         favoriteIds: favorites,
         qualityMap: getQualityMap(),
-      }).all;
+      });
+
+      const orderedResults = [...merged.cities, ...merged.events, ...merged.places];
 
       startTransition(() => {
-        setResults(merged);
+        setResults(orderedResults);
         setShowResults(true);
       });
     }, 300);
