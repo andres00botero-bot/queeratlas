@@ -42,6 +42,7 @@ import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
 import ActionToast from "@/components/ui/ActionToast";
+import AddServiceInlineForm from "@/components/city/AddServiceInlineForm";
 import AddEventInlineForm from "@/components/city/AddEventInlineForm";
 import AddPlaceInlineForm from "@/components/city/AddPlaceInlineForm";
 import CityContributionActions from "@/components/city/CityContributionActions";
@@ -177,6 +178,7 @@ export default function CityPage() {
   const [favorites, setFavorites] = useState([]);
   const [addMode, setAddMode] = useState(false);
   const [addEventMode, setAddEventMode] = useState(false);
+  const [addServiceMode, setAddServiceMode] = useState(false);
   const [name, setName] = useState("");
   const [type, setType] = useState("club");
   const [address, setAddress] = useState("");
@@ -193,6 +195,19 @@ export default function CityPage() {
   const [eventVibeTags, setEventVibeTags] = useState([]);
   const [eventDescription, setEventDescription] = useState("");
   const [eventLink, setEventLink] = useState("");
+  const [serviceName, setServiceName] = useState("");
+  const [serviceType, setServiceType] = useState(SERVICE_TYPES[0]?.value || "other");
+  const [serviceAddress, setServiceAddress] = useState("");
+  const [serviceDescription, setServiceDescription] = useState("");
+  const [serviceVibe, setServiceVibe] = useState("");
+  const [serviceVibeTags, setServiceVibeTags] = useState([]);
+  const [serviceHours, setServiceHours] = useState("");
+  const [serviceLink, setServiceLink] = useState("");
+  const [serviceBookingLink, setServiceBookingLink] = useState("");
+  const [serviceContact, setServiceContact] = useState("");
+  const [serviceProviderName, setServiceProviderName] = useState("");
+  const [servicePriceTier, setServicePriceTier] = useState("");
+  const [serviceImageUrlsInput, setServiceImageUrlsInput] = useState("");
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(null);
   const [safetyRating, setSafetyRating] = useState(4);
@@ -255,6 +270,7 @@ export default function CityPage() {
   const servicesSectionRef = useRef(null);
   const placesSectionRef = useRef(null);
   const addEventFormRef = useRef(null);
+  const addServiceFormRef = useRef(null);
   const mapRef = useRef(null);
   const hoverPopupRef = useRef(null);
   const markersRef = useRef([]);
@@ -267,6 +283,7 @@ export default function CityPage() {
   const openEventContribution = useCallback(() => {
     setAddEventMode(true);
     setAddMode(false);
+    setAddServiceMode(false);
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -1671,9 +1688,15 @@ export default function CityPage() {
       if (contributeMode === "place") {
         setAddMode(true);
         setAddEventMode(false);
+        setAddServiceMode(false);
       } else if (contributeMode === "event") {
         setAddEventMode(true);
         setAddMode(false);
+        setAddServiceMode(false);
+      } else if (contributeMode === "service") {
+        setAddServiceMode(true);
+        setAddMode(false);
+        setAddEventMode(false);
       }
     });
   }, [contributeMode]);
@@ -2331,6 +2354,146 @@ export default function CityPage() {
         hasDate: Boolean(startDate),
       });
       showToast(error?.message || "Could not save event right now.", { tone: "warn", duration: 2600 });
+    }
+  };
+
+  const handleAddService = async () => {
+    if (!serviceName.trim() || !serviceAddress.trim() || !serviceDescription.trim()) {
+      showToast("Fill in service name, address, and description before saving.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    try {
+      const coords = await geocodeAddress(serviceAddress);
+
+      if (!coords) {
+        showToast("Address not found. Try a more specific address.", { tone: "warn", duration: 2400 });
+        return;
+      }
+
+      const normalizedImageUrls = normalizeServiceImageUrls(
+        String(serviceImageUrlsInput || "")
+          .split(",")
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+      );
+
+      const basePayload = {
+        name: serviceName.trim(),
+        city,
+        type: serviceType || "other",
+        provider_name: serviceProviderName.trim() || null,
+        contact: serviceContact.trim() || null,
+        booking_link: serviceBookingLink.trim() || null,
+        description: serviceDescription.trim(),
+        hours: serviceHours.trim() || null,
+        link: serviceLink.trim() || null,
+        image_urls: normalizedImageUrls,
+        price_tier: servicePriceTier || null,
+        location: serviceAddress.trim(),
+        lat: coords.lat,
+        lng: coords.lng,
+        created_by: user?.id || null,
+        ...buildVibeDualWriteFields({
+          vibe: serviceVibe,
+          vibeTags: normalizeVibeTags(serviceVibeTags, { max: 3 }),
+        }),
+      };
+
+      let insertResult = await supabase
+        .from("services")
+        .insert([basePayload])
+        .select("*")
+        .single();
+
+      if (insertResult.error) {
+        const errorText = `${insertResult.error?.code || ""} ${insertResult.error?.message || ""}`.toLowerCase();
+        const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
+        const missingVibe = /\bvibe\b/.test(errorText) && (errorText.includes("column") || errorText.includes("schema cache"));
+
+        if (missingVibeTags || missingVibe) {
+          const legacyPayload = {
+            name: serviceName.trim(),
+            city,
+            type: serviceType || "other",
+            provider_name: serviceProviderName.trim() || null,
+            contact: serviceContact.trim() || null,
+            booking_link: serviceBookingLink.trim() || null,
+            description: serviceDescription.trim(),
+            hours: serviceHours.trim() || null,
+            link: serviceLink.trim() || null,
+            image_urls: normalizedImageUrls,
+            price_tier: servicePriceTier || null,
+            location: serviceAddress.trim(),
+            lat: coords.lat,
+            lng: coords.lng,
+            created_by: user?.id || null,
+          };
+
+          if (!missingVibe) {
+            legacyPayload.vibe = serviceVibe.trim() || null;
+          }
+          if (!missingVibeTags) {
+            legacyPayload.vibe_tags = normalizeVibeTags(serviceVibeTags, { max: 3 });
+          }
+
+          insertResult = await supabase
+            .from("services")
+            .insert([legacyPayload])
+            .select("*")
+            .single();
+        }
+      }
+
+      const { data: createdService, error } = insertResult;
+
+      if (error || !createdService?.id) {
+        captureOperationalError("save_service_fail", error || new Error("Service insert returned no id."), {
+          city: String(city || ""),
+          flow: "city_add_service",
+        });
+        showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
+        return;
+      }
+
+      upsertQuality({
+        targetType: "service",
+        targetId: createdService.id,
+        source: "Community submission",
+        lastChecked: new Date().toISOString().slice(0, 10),
+        verified: false,
+      });
+
+      await fetchServices();
+
+      setServiceName("");
+      setServiceType(SERVICE_TYPES[0]?.value || "other");
+      setServiceAddress("");
+      setServiceDescription("");
+      setServiceVibe("");
+      setServiceVibeTags([]);
+      setServiceHours("");
+      setServiceLink("");
+      setServiceBookingLink("");
+      setServiceContact("");
+      setServiceProviderName("");
+      setServicePriceTier("");
+      setServiceImageUrlsInput("");
+      setAddServiceMode(false);
+
+      trackKpiEvent("service_added", {
+        city,
+        targetType: "service",
+        targetId: String(createdService?.id || ""),
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
+      showToast("Service added to city atlas.", { tone: "ok", duration: 2200 });
+    } catch (error) {
+      captureOperationalError("save_service_fail", error, {
+        city: String(city || ""),
+        flow: "city_add_service_catch",
+      });
+      showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
     }
   };
 
@@ -3579,6 +3742,7 @@ export default function CityPage() {
         <CityContributionActions
           addMode={addMode}
           addEventMode={addEventMode}
+          addServiceMode={addServiceMode}
           onToggleAddPlace={() => {
             if (!isMember) {
               redirectToJoin();
@@ -3586,6 +3750,7 @@ export default function CityPage() {
             }
             setAddMode((current) => !current);
             setAddEventMode(false);
+            setAddServiceMode(false);
           }}
           onToggleAddEvent={() => {
             if (!isMember) {
@@ -3598,16 +3763,27 @@ export default function CityPage() {
             }
             openEventContribution();
           }}
-          onAddService={() => {
+          onToggleAddService={() => {
             if (!isMember) {
               redirectToJoin();
               return;
             }
-            const params = new URLSearchParams();
-            params.set("city", String(city || ""));
-            params.set("entity", "service");
-            params.set("focus", "service-form");
-            router.push(`/contribute?${params.toString()}`);
+            setAddServiceMode((current) => {
+              const next = !current;
+              if (next) {
+                setAddMode(false);
+                setAddEventMode(false);
+                requestAnimationFrame(() => {
+                  requestAnimationFrame(() => {
+                    addServiceFormRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    });
+                  });
+                });
+              }
+              return next;
+            });
           }}
         />
 
@@ -3654,6 +3830,41 @@ export default function CityPage() {
             eventEndDate={eventEndDate}
             setEventEndDate={setEventEndDate}
             onSaveEvent={handleAddEvent}
+          />
+        )}
+
+        {addServiceMode && (
+          <AddServiceInlineForm
+            addServiceFormRef={addServiceFormRef}
+            serviceName={serviceName}
+            setServiceName={setServiceName}
+            serviceDescription={serviceDescription}
+            setServiceDescription={setServiceDescription}
+            serviceVibeTags={serviceVibeTags}
+            setServiceVibeTags={setServiceVibeTags}
+            serviceVibe={serviceVibe}
+            setServiceVibe={setServiceVibe}
+            serviceAddress={serviceAddress}
+            setServiceAddress={setServiceAddress}
+            serviceType={serviceType}
+            setServiceType={setServiceType}
+            serviceTypes={SERVICE_TYPES}
+            servicePriceTier={servicePriceTier}
+            setServicePriceTier={setServicePriceTier}
+            servicePriceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
+            serviceHours={serviceHours}
+            setServiceHours={setServiceHours}
+            serviceProviderName={serviceProviderName}
+            setServiceProviderName={setServiceProviderName}
+            serviceContact={serviceContact}
+            setServiceContact={setServiceContact}
+            serviceBookingLink={serviceBookingLink}
+            setServiceBookingLink={setServiceBookingLink}
+            serviceLink={serviceLink}
+            setServiceLink={setServiceLink}
+            serviceImageUrlsInput={serviceImageUrlsInput}
+            setServiceImageUrlsInput={setServiceImageUrlsInput}
+            onSaveService={handleAddService}
           />
         )}
 

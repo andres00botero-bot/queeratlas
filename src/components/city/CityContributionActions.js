@@ -3,9 +3,10 @@
 export default function CityContributionActions({
   addMode,
   addEventMode,
+  addServiceMode,
   onToggleAddPlace,
   onToggleAddEvent,
-  onAddService,
+  onToggleAddService,
 }) {
   return (
     <div className="animate-cinematic-in mb-4 flex flex-wrap gap-2" style={{ animationDelay: "70ms" }}>
@@ -36,11 +37,16 @@ export default function CityContributionActions({
       </button>
 
       <button
-        onClick={onAddService}
-        className="rounded-full border border-pink-100/60 bg-gradient-to-r from-pink-200 via-rose-200 to-fuchsia-200 px-5 py-2.5 text-sm font-medium text-black transition hover:brightness-105"
-        aria-label="Open add service form"
+        onClick={onToggleAddService}
+        className={`rounded-full border px-5 py-2.5 text-sm font-medium transition ${
+          addServiceMode
+            ? "border-red-300/50 bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
+            : "border-pink-100/60 bg-gradient-to-r from-pink-200 via-rose-200 to-fuchsia-200 text-black hover:brightness-105"
+        }`}
+        aria-pressed={addServiceMode}
+        aria-label={addServiceMode ? "Cancel add service form" : "Open add service form"}
       >
-        + Add service
+        {addServiceMode ? "Cancel service" : "+ Add service"}
       </button>
     </div>
   );
