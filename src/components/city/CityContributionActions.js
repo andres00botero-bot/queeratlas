@@ -12,10 +12,10 @@ export default function CityContributionActions({
     <div className="animate-cinematic-in mb-4 flex flex-wrap gap-2" style={{ animationDelay: "70ms" }}>
       <button
         onClick={onToggleAddPlace}
-        className={`rounded-full px-5 py-2.5 text-sm font-medium transition ${
+        className={`qa-action qa-action-strong rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
           addMode
-            ? "bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
-            : "bg-gradient-to-r from-emerald-300 to-teal-200 text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)]"
+            ? "border-red-300/60 bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.18)]"
+            : "border-emerald-100/70 bg-gradient-to-r from-emerald-300 to-teal-200 text-black shadow-[0_16px_44px_rgba(45,212,191,0.22)]"
         }`}
         aria-pressed={addMode}
         aria-label={addMode ? "Cancel add place form" : "Open add place form"}
@@ -25,10 +25,10 @@ export default function CityContributionActions({
 
       <button
         onClick={onToggleAddEvent}
-        className={`rounded-full px-5 py-2.5 text-sm font-medium transition ${
+        className={`qa-action qa-action-strong rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
           addEventMode
-            ? "bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
-            : "bg-gradient-to-r from-violet-300 to-fuchsia-200 text-black shadow-[0_14px_40px_rgba(192,132,252,0.16)]"
+            ? "border-red-300/60 bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.18)]"
+            : "border-violet-100/70 bg-gradient-to-r from-violet-300 to-fuchsia-200 text-black shadow-[0_16px_44px_rgba(192,132,252,0.22)]"
         }`}
         aria-pressed={addEventMode}
         aria-label={addEventMode ? "Cancel add event form" : "Open add event form"}
@@ -38,10 +38,10 @@ export default function CityContributionActions({
 
       <button
         onClick={onToggleAddService}
-        className={`rounded-full border px-5 py-2.5 text-sm font-medium transition ${
+        className={`qa-action qa-action-strong rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
           addServiceMode
-            ? "border-red-300/50 bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
-            : "border-pink-100/60 bg-gradient-to-r from-pink-200 via-rose-200 to-fuchsia-200 text-black hover:brightness-105"
+            ? "border-red-300/60 bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.18)]"
+            : "border-sky-100/70 bg-gradient-to-r from-sky-200 via-cyan-200 to-blue-200 text-black shadow-[0_16px_44px_rgba(56,189,248,0.22)] hover:brightness-105"
         }`}
         aria-pressed={addServiceMode}
         aria-label={addServiceMode ? "Cancel add service form" : "Open add service form"}

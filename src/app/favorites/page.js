@@ -1806,7 +1806,7 @@ export default function FavoritesPage() {
             </div>
             <button
               onClick={() => router.push("/cities")}
-              className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-[11px] text-white/65 transition hover:border-white/20 hover:text-white/88 max-[390px]:px-2.5 max-[390px]:py-1 max-[390px]:text-[10px]"
+              className="qa-action qa-action-strong rounded-full border border-cyan-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(99,102,241,0.16),rgba(12,10,18,0.92))] px-3 py-1.5 text-[11px] font-semibold text-cyan-50 transition hover:border-cyan-200/56 max-[390px]:px-2.5 max-[390px]:py-1 max-[390px]:text-[10px]"
             >
               Explore cities
             </button>

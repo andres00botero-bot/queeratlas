@@ -1326,7 +1326,7 @@ export default function MessagesPage() {
               }}
               className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                 pendingHostActions > 0
-                  ? "qa-attn-soft border-amber-200/35 bg-amber-200/15 text-amber-100 hover:border-amber-200/55"
+                  ? "qa-attn-soft border-amber-200/42 bg-amber-200/20 text-amber-100 hover:border-amber-200/62"
                   : "border-white/14 bg-white/8 text-white/72 hover:border-white/28"
               }`}
             >
@@ -1549,7 +1549,7 @@ export default function MessagesPage() {
                 onClick={() => setComposerTab("friends")}
                 className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                   composerTab === "friends"
-                    ? "border border-cyan-200/36 bg-cyan-200/16 text-cyan-100"
+                    ? "border border-cyan-200/45 bg-cyan-200/22 text-cyan-100 shadow-[0_8px_20px_rgba(34,211,238,0.18)]"
                     : "text-white/70 hover:text-white"
                 }`}
               >
@@ -1560,7 +1560,7 @@ export default function MessagesPage() {
                 onClick={() => setComposerTab("members")}
                 className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                   composerTab === "members"
-                    ? "border border-fuchsia-200/36 bg-fuchsia-200/16 text-fuchsia-100"
+                    ? "border border-fuchsia-200/45 bg-fuchsia-200/22 text-fuchsia-100 shadow-[0_8px_20px_rgba(217,70,239,0.2)]"
                     : "text-white/70 hover:text-white"
                 }`}
               >
@@ -1613,7 +1613,7 @@ export default function MessagesPage() {
                           type="button"
                           onClick={() => openThreadFromCandidate(candidate.userId)}
                           disabled={busy}
-                          className="qa-action rounded-full border border-cyan-200/30 bg-cyan-200/14 px-3 py-1 text-[11px] font-semibold text-cyan-100 transition hover:border-cyan-200/50 disabled:opacity-60"
+                          className="qa-action rounded-full border border-cyan-200/36 bg-cyan-200/18 px-3 py-1 text-[11px] font-semibold text-cyan-100 transition hover:border-cyan-200/54 disabled:opacity-60"
                         >
                           {busy ? "Opening..." : existingThread ? "Open thread" : "Message"}
                         </button>
@@ -1648,7 +1648,7 @@ export default function MessagesPage() {
                         type="button"
                         onClick={() => openThreadFromCandidate(candidate.userId)}
                         disabled={busy}
-                        className="qa-action rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1 text-[11px] font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/50 disabled:opacity-60"
+                        className="qa-action rounded-full border border-fuchsia-200/36 bg-fuchsia-200/18 px-3 py-1 text-[11px] font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/54 disabled:opacity-60"
                       >
                         {busy ? "Opening..." : existingThread ? "Open thread" : "Message"}
                       </button>
@@ -1685,33 +1685,33 @@ export default function MessagesPage() {
                 <button
                   type="button"
                   onClick={() => setFilter("all")}
-                  className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
-                    filter === "all"
-                      ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
-                      : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
-                  }`}
+                className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  filter === "all"
+                    ? "border-cyan-200/50 bg-cyan-200/22 text-cyan-100"
+                    : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
+                }`}
                 >
                   All
                 </button>
                 <button
                   type="button"
                   onClick={() => setFilter("unread")}
-                  className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
-                    filter === "unread"
-                      ? "border-fuchsia-200/40 bg-fuchsia-200/16 text-fuchsia-100"
-                      : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
-                  }`}
+                className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  filter === "unread"
+                    ? "border-fuchsia-200/50 bg-fuchsia-200/22 text-fuchsia-100"
+                    : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
+                }`}
                 >
                   Unread
                 </button>
                 <button
                   type="button"
                   onClick={() => setFilter("active")}
-                  className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
-                    filter === "active"
-                      ? "border-emerald-200/40 bg-emerald-200/16 text-emerald-100"
-                      : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
-                  }`}
+                className={`qa-action rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                  filter === "active"
+                    ? "border-emerald-200/50 bg-emerald-200/22 text-emerald-100"
+                    : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
+                }`}
                 >
                   Active
                 </button>

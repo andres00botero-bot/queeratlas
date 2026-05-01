@@ -158,10 +158,10 @@ export default function FloatingHomeButton() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[90] sm:bottom-6 sm:right-6">
-      <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.22),rgba(56,189,248,0.14),transparent_72%)] blur-xl" />
+      <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.24),rgba(56,189,248,0.16),transparent_72%)] blur-xl" />
       <nav
         aria-label="Quick navigation"
-        className="relative flex items-center gap-1.5 rounded-full border border-white/20 bg-[linear-gradient(135deg,rgba(7,10,18,0.92),rgba(24,24,38,0.9),rgba(10,10,10,0.95))] px-2 py-2 shadow-[0_16px_50px_rgba(3,7,18,0.52)] backdrop-blur-xl"
+        className="relative flex items-center gap-1.5 rounded-full border border-white/26 bg-[linear-gradient(135deg,rgba(7,10,18,0.95),rgba(24,24,38,0.93),rgba(10,10,10,0.98))] px-2 py-2 shadow-[0_18px_56px_rgba(3,7,18,0.58)] backdrop-blur-xl"
       >
         <span
           aria-hidden="true"
@@ -177,20 +177,20 @@ export default function FloatingHomeButton() {
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               title={item.label}
-              className={`group relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 ${
+              className={`group relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                 isActive
-                  ? item.activeClass
+                  ? `${item.activeClass} text-white`
                   : `${item.idleClass} hover:-translate-y-[1px]`
               }`}
             >
-              <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+              <Icon className={`h-[18px] w-[18px] ${isActive ? "drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" : ""}`} aria-hidden="true" />
               <span className="pointer-events-none absolute -top-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-white/20 bg-black/85 px-2 py-1 text-[10px] font-medium text-white/90 shadow-[0_8px_24px_rgba(2,6,23,0.45)] md:block md:opacity-0 md:transition md:duration-150 md:group-hover:opacity-100">
                 {item.label}
               </span>
               {isActive ? (
                 <span
                   aria-hidden="true"
-                  className="absolute -bottom-1 h-1.5 w-1.5 rounded-full bg-white/90 shadow-[0_0_10px_rgba(255,255,255,0.85)]"
+                  className="absolute -bottom-1 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.95)]"
                 />
               ) : null}
               {item.href === "/messages" && unreadCount > 0 ? (

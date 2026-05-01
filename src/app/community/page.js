@@ -1367,7 +1367,7 @@ export default function CommunityPage() {
                   await loadMemberDiscovery({ offset: 0, append: false, force: true });
                 });
               }}
-              className="rounded-xl border border-fuchsia-200/35 bg-fuchsia-200/14 px-4 py-3 text-sm font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/55"
+              className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/42 bg-[linear-gradient(135deg,rgba(232,121,249,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.94))] px-4 py-3 text-sm font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62"
             >
               Refresh
             </button>
@@ -1421,14 +1421,14 @@ export default function CommunityPage() {
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
                       onClick={() => openMemberThread(entry)}
-                      className="rounded-xl border border-white/14 bg-white/7 px-3 py-2 text-xs text-white transition hover:border-white/30"
+                      className="qa-action rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/50"
                     >
                       Message
                     </button>
                     <button
                       onClick={() => toggleMemberFollow(entry)}
                       disabled={busy}
-                      className="rounded-xl border border-fuchsia-200/34 bg-fuchsia-200/14 px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/55 disabled:cursor-wait disabled:opacity-65"
+                      className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.22),rgba(99,102,241,0.16),rgba(14,10,20,0.94))] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62 disabled:cursor-wait disabled:opacity-65"
                     >
                       {busy ? "Saving..." : entry.is_following ? "Following" : "Add friend"}
                     </button>
@@ -1455,7 +1455,7 @@ export default function CommunityPage() {
                   });
                 }}
                 disabled={memberSearchLoading}
-                className="rounded-full border border-fuchsia-200/32 bg-fuchsia-200/12 px-3 py-1 text-[11px] font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/52 disabled:opacity-60"
+                className="qa-action rounded-full border border-fuchsia-200/36 bg-fuchsia-200/16 px-3 py-1 text-[11px] font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/56 disabled:opacity-60"
               >
                 {memberSearchLoading ? "Loading..." : "Load more"}
               </button>

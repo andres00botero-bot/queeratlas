@@ -154,8 +154,10 @@ body {
   position: relative;
   isolation: isolate;
   font-family: var(--qa-font-ui);
+  font-weight: 600;
   letter-spacing: 0.01em;
   box-shadow: var(--qa-elev-1-shadow);
+  will-change: transform;
   transition:
     border-color var(--qa-dur-base) var(--qa-ease-standard),
     background-color var(--qa-dur-base) var(--qa-ease-standard),
@@ -177,6 +179,7 @@ body {
 }
 
 .qa-action:hover {
+  transform: translateY(-1px);
   box-shadow: var(--qa-elev-2-shadow);
 }
 

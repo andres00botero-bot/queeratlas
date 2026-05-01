@@ -21,14 +21,14 @@ export default function CityTonightHeader({
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <div className="inline-flex rounded-full border border-white/12 bg-black/35 p-1 text-xs">
+        <div className="inline-flex rounded-full border border-white/14 bg-black/40 p-1 text-xs shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
           <button
             type="button"
             onClick={() => onSetTonightFeedTab("public")}
             className={`rounded-full px-3 py-1.5 transition ${
               tonightFeedTab === "public"
-                ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
-                : "text-white/65 hover:text-white"
+                ? "border border-cyan-200/50 bg-cyan-200/20 text-cyan-100 shadow-[0_8px_22px_rgba(34,211,238,0.18)]"
+                : "text-white/68 hover:text-white"
             }`}
           >
             Public
@@ -38,8 +38,8 @@ export default function CityTonightHeader({
             onClick={() => onSetTonightFeedTab("vip")}
             className={`rounded-full px-3 py-1.5 transition ${
               tonightFeedTab === "vip"
-                ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
-                : "text-white/65 hover:text-white"
+                ? "border border-fuchsia-200/52 bg-fuchsia-200/22 text-fuchsia-100 shadow-[0_8px_22px_rgba(217,70,239,0.2)]"
+                : "text-white/68 hover:text-white"
             }`}
           >
             VIP / Invites
@@ -51,7 +51,7 @@ export default function CityTonightHeader({
             <button
               type="button"
               onClick={onHostPrivatePlanFromPublic}
-              className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+              className="qa-cinematic-hover qa-action qa-action-strong rounded-full border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.26),rgba(99,102,241,0.2),rgba(14,10,20,0.94))] px-4 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62"
             >
               Host private plan
             </button>
@@ -59,7 +59,7 @@ export default function CityTonightHeader({
             <button
               type="button"
               onClick={onJoinToHost}
-              className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+              className="qa-cinematic-hover qa-action rounded-full border border-fuchsia-200/38 bg-fuchsia-200/18 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/56"
             >
               Join to host
             </button>
@@ -68,7 +68,7 @@ export default function CityTonightHeader({
           <button
             type="button"
             onClick={onToggleHostTonight}
-            className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+            className="qa-cinematic-hover qa-action qa-action-strong rounded-full border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.26),rgba(99,102,241,0.2),rgba(14,10,20,0.94))] px-4 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62"
           >
             {hostPrivateEventOpen ? "Close host form" : "Host tonight"}
           </button>
@@ -76,7 +76,7 @@ export default function CityTonightHeader({
           <button
             type="button"
             onClick={onJoinToHost}
-            className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
+            className="qa-cinematic-hover qa-action rounded-full border border-fuchsia-200/38 bg-fuchsia-200/18 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/56"
           >
             Join to host
           </button>

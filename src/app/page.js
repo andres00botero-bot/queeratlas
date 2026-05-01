@@ -585,25 +585,25 @@ export default function Home() {
                 </button>
               ) : (
                 <>
-                  <button
-                    onClick={() => router.push("/favorites")}
-                    className="qa-action rounded-full border border-fuchsia-200/26 bg-fuchsia-200/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/45 hover:bg-fuchsia-200/14"
-                  >
-                    Your Atlas
-                  </button>
-                  <button
-                    onClick={() => router.push("/community")}
-                    className="qa-action hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/72 backdrop-blur transition hover:border-white/16 hover:text-white sm:inline-flex"
-                  >
-                    Community
-                  </button>
+                <button
+                  onClick={() => router.push("/favorites")}
+                  className="qa-action qa-action-strong rounded-full border border-fuchsia-200/34 bg-[linear-gradient(135deg,rgba(232,121,249,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.94))] px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/58"
+                >
+                  Your Atlas
+                </button>
+                <button
+                  onClick={() => router.push("/community")}
+                  className="qa-action hidden rounded-full border border-emerald-200/22 bg-emerald-200/10 px-4 py-2 text-sm text-emerald-100/90 backdrop-blur transition hover:border-emerald-200/44 hover:text-emerald-50 sm:inline-flex"
+                >
+                  Community
+                </button>
                   {isAdmin && (
-                    <button
-                      onClick={() => router.push("/admin")}
-                      className="qa-action hidden rounded-full border border-cyan-200/24 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/45 sm:inline-flex"
-                    >
-                      Admin
-                    </button>
+                  <button
+                    onClick={() => router.push("/admin")}
+                    className="qa-action hidden rounded-full border border-cyan-200/30 bg-cyan-200/14 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/50 sm:inline-flex"
+                  >
+                    Admin
+                  </button>
                   )}
                 </>
               )}
@@ -682,7 +682,7 @@ export default function Home() {
                     onClick={() => {
                       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-2.5 py-1.5 text-[10px] font-semibold text-black transition hover:scale-[1.02] sm:right-3 sm:px-4 sm:py-2 sm:text-xs"
+                    className="qa-action qa-action-strong absolute right-2 top-1/2 -translate-y-1/2 rounded-full border border-cyan-100/70 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-2.5 py-1.5 text-[10px] font-semibold text-black transition hover:scale-[1.02] sm:right-3 sm:px-4 sm:py-2 sm:text-xs"
                   >
                     Explore
                   </button>
@@ -715,7 +715,7 @@ export default function Home() {
                                   event.stopPropagation();
                                   saveResult(result);
                                 }}
-                                className={`rounded-full border px-3 py-1 text-xs transition ${
+                                className={`qa-action rounded-full border px-3 py-1 text-xs transition ${
                                   isSavedResult(result)
                                     ? "border-rose-300/25 bg-rose-300/10 text-rose-100"
                                     : "border-white/10 bg-white/5 text-white/65 hover:border-rose-300/25 hover:text-rose-100"
@@ -772,7 +772,7 @@ export default function Home() {
 
                   <button
                     onClick={() => router.push("/now")}
-                    className="rounded-full border border-sky-200/30 bg-sky-200/14 px-3 py-1.5 text-[11px] text-sky-50 transition hover:border-sky-200/48 hover:bg-sky-200/22"
+                    className="qa-action rounded-full border border-sky-200/36 bg-sky-200/16 px-3 py-1.5 text-[11px] text-sky-50 transition hover:border-sky-200/52 hover:bg-sky-200/24"
                   >
                     Open news
                   </button>
