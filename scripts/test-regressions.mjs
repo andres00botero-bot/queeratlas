@@ -460,6 +460,7 @@ function testVibeTagsDualWriteWiring() {
   const globalEventsApiSource = readFileSync(new URL("../src/features/events/eventGlobalApiUtils.js", import.meta.url), "utf8");
   const usePlacesSource = readFileSync(new URL("../src/lib/usePlaces.js", import.meta.url), "utf8");
   const cityPageSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const addEventInlineFormSource = readFileSync(new URL("../src/components/city/AddEventInlineForm.js", import.meta.url), "utf8");
   const eventsPageSource = readFileSync(new URL("../src/app/events/page.js", import.meta.url), "utf8");
   const cityEventEditModalSource = readFileSync(new URL("../src/components/events/CityEventEditModal.js", import.meta.url), "utf8");
   const globalEventFormSource = readFileSync(new URL("../src/components/events/GlobalEventForm.js", import.meta.url), "utf8");
@@ -485,7 +486,10 @@ function testVibeTagsDualWriteWiring() {
   assert(
     cityPageSource.includes("vibeTags: normalizeVibeTags(eventVibeTags") &&
       cityPageSource.includes("vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags") &&
-      cityPageSource.includes("<VibeTagPicker"),
+      (
+        cityPageSource.includes("<VibeTagPicker")
+        || addEventInlineFormSource.includes("<VibeTagPicker")
+      ),
     "vibe dual-write wiring: city page should bind standardized vibe tag state in event flows"
   );
   assert(
@@ -551,6 +555,8 @@ function testVibeTagChipsRenderingWiring() {
   const searchPageSource = readFileSync(new URL("../src/app/search/page.js", import.meta.url), "utf8");
   const nowPageSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
   const cityPageSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const cityEventsRailSource = readFileSync(new URL("../src/components/city/CityEventsRailSection.js", import.meta.url), "utf8");
+  const placeGuideCardSource = readFileSync(new URL("../src/components/city/PlaceGuideCard.js", import.meta.url), "utf8");
   const savedPlacesPanelSource = readFileSync(new URL("../src/components/favorites/SavedPlacesPanel.js", import.meta.url), "utf8");
   const savedEventsPanelSource = readFileSync(new URL("../src/components/favorites/SavedEventsPanel.js", import.meta.url), "utf8");
 
@@ -575,9 +581,15 @@ function testVibeTagChipsRenderingWiring() {
     "vibe chips: now page should render vibe chips for trending places"
   );
   assert(
-    cityPageSource.includes('import VibeTagChips from "@/components/ui/VibeTagChips";') &&
-      cityPageSource.includes("<VibeTagChips"),
-    "vibe chips: city page should render vibe chips in events and places"
+    (
+      cityPageSource.includes("<VibeTagChips")
+      || cityEventsRailSource.includes("<VibeTagChips")
+    ) &&
+      (
+        cityPageSource.includes("<VibeTagChips")
+        || placeGuideCardSource.includes("<VibeTagChips")
+      ),
+    "vibe chips: city experience should render vibe chips for both events and places"
   );
   assert(
     savedPlacesPanelSource.includes("<VibeTagChips") &&

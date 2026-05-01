@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import mapboxgl from "mapbox-gl";
-import { Shield } from "lucide-react";
 import "../signal-motion.css";
 import { cityConfig } from "@/lib/cities";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -42,34 +40,27 @@ import { usePlaces } from "@/lib/usePlaces";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
-import { buildPlaceSafetySignalMap, getSafetyToneClass } from "@/lib/placeSafetySignals";
+import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
 import ActionToast from "@/components/ui/ActionToast";
-import DateInput from "@/components/ui/DateInput";
-import VibeTagChips from "@/components/ui/VibeTagChips";
-import VibeTagPicker from "@/components/ui/VibeTagPicker";
-import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
+import AddEventInlineForm from "@/components/city/AddEventInlineForm";
+import AddPlaceInlineForm from "@/components/city/AddPlaceInlineForm";
+import CityContributionActions from "@/components/city/CityContributionActions";
+import CityEventsRailSection from "@/components/city/CityEventsRailSection";
+import CityHeroCard from "@/components/city/CityHeroCard";
+import CityPlacesSection from "@/components/city/CityPlacesSection";
 import CityQualityModal from "@/components/city/CityQualityModal";
+import CityQuickNavigation from "@/components/city/CityQuickNavigation";
 import CityReportModal from "@/components/city/CityReportModal";
+import CityServicesSection from "@/components/city/CityServicesSection";
+import DetailsPanelBackdrop from "@/components/city/DetailsPanelBackdrop";
+import QuickGuideSection from "@/components/city/QuickGuideSection";
 import SafetyShields from "@/components/city/SafetyShields";
-import SelectedEventLiveVibePanel from "@/components/city/SelectedEventLiveVibePanel";
-import SelectedEventActions from "@/components/city/SelectedEventActions";
-import SelectedEventAdminControls from "@/components/city/SelectedEventAdminControls";
-import SelectedEventMetaCards from "@/components/city/SelectedEventMetaCards";
-import SelectedEventSummary from "@/components/city/SelectedEventSummary";
-import SelectedEventTrustSignals from "@/components/city/SelectedEventTrustSignals";
-import SelectedPlaceActions from "@/components/city/SelectedPlaceActions";
-import SelectedPlaceAdminControls from "@/components/city/SelectedPlaceAdminControls";
-import SelectedPlaceLiveVibePanel from "@/components/city/SelectedPlaceLiveVibePanel";
-import SelectedPlaceReviewComposer from "@/components/city/SelectedPlaceReviewComposer";
-import SelectedPlaceReviewsList from "@/components/city/SelectedPlaceReviewsList";
-import SelectedPlaceSummary from "@/components/city/SelectedPlaceSummary";
-import SelectedPlaceTrustSignals from "@/components/city/SelectedPlaceTrustSignals";
-import SelectedServiceActions from "@/components/city/SelectedServiceActions";
-import SelectedServiceAdminControls from "@/components/city/SelectedServiceAdminControls";
-import SelectedServiceSummary from "@/components/city/SelectedServiceSummary";
-import SectionSkeleton from "@/components/city/SectionSkeleton";
-import VipFeedStatusAlerts from "@/components/city/VipFeedStatusAlerts";
-import { buildEventAdminDraft, buildPlaceAdminDraft, buildServiceAdminDraft, getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
+import SelectedEventPanel from "@/components/city/SelectedEventPanel";
+import SelectedPlacePanel from "@/components/city/SelectedPlacePanel";
+import SelectedServicePanel from "@/components/city/SelectedServicePanel";
+import TonightPublicFeedPanel from "@/components/city/TonightPublicFeedPanel";
+import TonightVipFeedPanel from "@/components/city/TonightVipFeedPanel";
+import { buildEventAdminDraft, buildPlaceAdminDraft, buildServiceAdminDraft, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import {
   createCityQualityModalFromTarget,
@@ -89,18 +80,12 @@ import {
   LIVE_VIBE_COOLDOWN_MS,
   parseCityHeroText,
   polishEventDescription,
-  polishGuideText,
-  polishVenueDescription,
 } from "@/features/city/liveVibeFeature";
 import {
   normalizeServiceImageUrls,
   resolveCityFromPathname,
   SERVICE_PRICE_TIER_OPTIONS,
 } from "@/features/city/cityPageUtils";
-import {
-  getDisplayedSafetyShields,
-  getSafetyIconToneClass,
-} from "@/features/city/placeSafetyUi";
 import {
   arePrivateEventsEquivalent,
   areRequestMapsEqual,
@@ -714,6 +699,10 @@ export default function CityPage() {
     () => (selectedServiceQuality ? getQualityStatus(selectedServiceQuality) : null),
     [selectedServiceQuality]
   );
+  const canShowSelectedServiceOnMap = useMemo(
+    () => Number.isFinite(Number(selectedService?.lat)) && Number.isFinite(Number(selectedService?.lng)),
+    [selectedService?.lat, selectedService?.lng]
+  );
   const selectedServiceImages = useMemo(
     () => normalizeServiceImageUrls(selectedService?.image_urls),
     [selectedService?.image_urls]
@@ -911,6 +900,12 @@ export default function CityPage() {
     router.push(buildSelectionUrl({ nextServiceId: null }));
   }, [buildSelectionUrl, router]);
 
+  const toggleServiceAdminEditor = useCallback(() => {
+    if (!selectedService) return;
+    setServiceAdminOpen((value) => !value);
+    setServiceAdminDraft(buildServiceAdminDraft(selectedService));
+  }, [selectedService]);
+
   const closeAllDetails = useCallback(() => {
     router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: null }));
   }, [buildSelectionUrl, router]);
@@ -948,13 +943,34 @@ export default function CityPage() {
     });
   };
 
+  const handleReportSelectedService = () => {
+    if (!selectedService) return;
+    handleReport({
+      targetType: "service",
+      targetId: selectedService.id,
+      title: selectedService.name,
+    });
+  };
+
   const closePlace = useCallback(() => {
     router.push(buildSelectionUrl({ nextPlaceId: null, nextServiceId: null }));
   }, [buildSelectionUrl, router]);
 
+  const togglePlaceAdminEditor = useCallback(() => {
+    if (!selectedPlace) return;
+    setPlaceAdminOpen((value) => !value);
+    setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
+  }, [selectedPlace]);
+
   const closeEvent = useCallback(() => {
     router.push(buildSelectionUrl({ nextEventId: null, nextServiceId: null }));
   }, [buildSelectionUrl, router]);
+
+  const toggleEventAdminEditor = useCallback(() => {
+    if (!selectedEvent) return;
+    setEventAdminOpen((value) => !value);
+    setEventAdminDraft(buildEventAdminDraft(selectedEvent));
+  }, [selectedEvent]);
 
   const showEventOnMap = () => {
     if (!selectedEvent || !mapRef.current || selectedEvent.lat == null || selectedEvent.lng == null) return;
@@ -3553,203 +3569,92 @@ export default function CityPage() {
     <main className="flex min-h-screen bg-[#050505] text-white">
       <ActionToast toast={toast} />
       <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8">
-        <div className="animate-cinematic-in relative mb-6 overflow-hidden rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_10%_0%,rgba(244,114,182,0.11),transparent_30%),radial-gradient(circle_at_86%_12%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(135deg,rgba(22,22,22,0.97),rgba(10,10,10,0.99),rgba(18,18,18,0.97))] p-6 shadow-[0_28px_96px_rgba(0,0,0,0.40)] sm:p-7">
-          <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-fuchsia-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute -right-20 top-4 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div>
-            <div className="mb-2 flex items-center gap-4">
-              <Image
-                src="/queer-atlas-heart-logo-progress.png"
-                alt="Queer Atlas heart"
-                width={64}
-                height={64}
-                className="h-12 w-12 shrink-0 sm:h-14 sm:w-14"
-              />
-              <h1 className="text-4xl font-bold tracking-[-0.03em]">{`Queer ${cityName} Guide`}</h1>
-            </div>
-            <p className="mb-4 max-w-3xl text-sm leading-7 text-white/76 sm:text-[15px]">
-              Gay clubs, queer bars, LGBT nightlife, and gay sauna signal in {cityName}.
-            </p>
-            <div className="mb-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/90">
-                {placesChipLabel}
-              </span>
-              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/90">
-                {eventsChipLabel}
-              </span>
-              <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
-                Queer signal live
-              </span>
-            </div>
-            <div className="max-w-4xl rounded-2xl border border-white/10 bg-black/28 p-4 sm:p-5">
-              <div className="space-y-3">
-                {cityHero.hook && (
-                  <div className="flex items-start gap-3">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-fuchsia-300 shadow-[0_0_12px_rgba(244,114,182,0.9)]" />
-                    <p className="text-sm leading-7 text-white/86 sm:text-[15px]">
-                      <span className="mr-2 text-[11px] uppercase tracking-[0.18em] text-fuchsia-200/90">Hook</span>
-                      {cityHero.hook}
-                    </p>
-                  </div>
-                )}
-                {cityHero.status && (
-                  <div className="flex items-start gap-3">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.9)]" />
-                    <p className="text-sm leading-7 text-white/82 sm:text-[15px]">
-                      <span className="mr-2 text-[11px] uppercase tracking-[0.18em] text-cyan-200/90">Queer Status</span>
-                      {cityHero.status}
-                    </p>
-                  </div>
-                )}
-                {cityHero.crowd && (
-                  <div className="flex items-start gap-3">
-                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.9)]" />
-                    <p className="text-sm leading-7 text-white/82 sm:text-[15px]">
-                      <span className="mr-2 text-[11px] uppercase tracking-[0.18em] text-amber-200/90">Crowd</span>
-                      {cityHero.crowd}
-                    </p>
-                  </div>
-                )}
-              </div>
+        <CityHeroCard
+          cityName={cityName}
+          placesChipLabel={placesChipLabel}
+          eventsChipLabel={eventsChipLabel}
+          cityHero={cityHero}
+        />
 
-            </div>
-          </div>
-        </div>
-
-        <div className="animate-cinematic-in mb-4 flex flex-wrap gap-2" style={{ animationDelay: "70ms" }}>
-          <button
-            onClick={() => {
-              if (!isMember) {
-                redirectToJoin();
-                return;
-              }
-
-              setAddMode((current) => !current);
+        <CityContributionActions
+          addMode={addMode}
+          addEventMode={addEventMode}
+          onToggleAddPlace={() => {
+            if (!isMember) {
+              redirectToJoin();
+              return;
+            }
+            setAddMode((current) => !current);
+            setAddEventMode(false);
+          }}
+          onToggleAddEvent={() => {
+            if (!isMember) {
+              redirectToJoin();
+              return;
+            }
+            if (addEventMode) {
               setAddEventMode(false);
-            }}
-            className={`rounded-full px-5 py-2.5 text-sm font-medium transition ${
-              addMode
-                ? "bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
-                : "bg-gradient-to-r from-emerald-300 to-teal-200 text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)]"
-            }`}
-            aria-pressed={addMode}
-            aria-label={addMode ? "Cancel add place form" : "Open add place form"}
-          >
-            {addMode ? "Cancel adding" : "+ Add place"}
-          </button>
-
-          <button
-            onClick={() => {
-              if (!isMember) {
-                redirectToJoin();
-                return;
-              }
-
-              if (addEventMode) {
-                setAddEventMode(false);
-                return;
-              }
-
-              openEventContribution();
-            }}
-            className={`rounded-full px-5 py-2.5 text-sm font-medium transition ${
-              addEventMode
-                ? "bg-red-400 text-black shadow-[0_14px_40px_rgba(248,113,113,0.16)]"
-                : "bg-gradient-to-r from-violet-300 to-fuchsia-200 text-black shadow-[0_14px_40px_rgba(192,132,252,0.16)]"
-            }`}
-            aria-pressed={addEventMode}
-            aria-label={addEventMode ? "Cancel add event form" : "Open add event form"}
-          >
-            {addEventMode ? "Cancel event" : "+ Add event"}
-          </button>
-
-          <button
-            onClick={() => {
-              if (!isMember) {
-                redirectToJoin();
-                return;
-              }
-
-              const params = new URLSearchParams();
-              params.set("city", String(city || ""));
-              params.set("entity", "service");
-              params.set("focus", "service-form");
-              router.push(`/contribute?${params.toString()}`);
-            }}
-            className="rounded-full border border-pink-100/60 bg-gradient-to-r from-pink-200 via-rose-200 to-fuchsia-200 px-5 py-2.5 text-sm font-medium text-black transition hover:brightness-105"
-            aria-label="Open add service form"
-          >
-            + Add service
-          </button>
-        </div>
+              return;
+            }
+            openEventContribution();
+          }}
+          onAddService={() => {
+            if (!isMember) {
+              redirectToJoin();
+              return;
+            }
+            const params = new URLSearchParams();
+            params.set("city", String(city || ""));
+            params.set("entity", "service");
+            params.set("focus", "service-form");
+            router.push(`/contribute?${params.toString()}`);
+          }}
+        />
 
         {addMode && (
-          <div className="mb-6 space-y-3 rounded-[28px] border border-emerald-300/12 bg-[linear-gradient(180deg,rgba(9,36,30,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(16,185,129,0.08)]">
-            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Place name" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Short description (vibe, crowd, energy...)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <VibeTagPicker
-              value={vibeTags}
-              onChange={setVibeTags}
-              tone="emerald"
-              title="Venue vibe tags"
-              hint="Choose up to 3 tags for standardized discovery."
-            />
-            <input
-              value={vibe}
-              onChange={(event) => setVibe(event.target.value)}
-              placeholder="Legacy vibe label (optional)"
-              className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
-            />
-            <input value={placeHours} onChange={(event) => setPlaceHours(event.target.value)} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <input value={placeLink} onChange={(event) => setPlaceLink(event.target.value)} placeholder="Official link (website, Instagram, Facebook) - optional" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <select value={type} onChange={(event) => setType(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/40 p-3 outline-none">
-              {TYPES.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-            <button onClick={handleAddPlace} className="w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-teal-200 py-3 font-semibold text-black">
-              Save
-            </button>
-          </div>
+          <AddPlaceInlineForm
+            name={name}
+            setName={setName}
+            description={description}
+            setDescription={setDescription}
+            vibeTags={vibeTags}
+            setVibeTags={setVibeTags}
+            vibe={vibe}
+            setVibe={setVibe}
+            placeHours={placeHours}
+            setPlaceHours={setPlaceHours}
+            placeLink={placeLink}
+            setPlaceLink={setPlaceLink}
+            address={address}
+            setAddress={setAddress}
+            type={type}
+            setType={setType}
+            types={TYPES}
+            onSave={handleAddPlace}
+          />
         )}
 
         {addEventMode && (
-          <div ref={addEventFormRef} className="mb-6 space-y-3 rounded-[28px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(28,19,56,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(139,92,246,0.08)]">
-            <input value={eventName} onChange={(event) => setEventName(event.target.value)} placeholder="Event name" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <textarea value={eventDescription} onChange={(event) => setEventDescription(event.target.value)} placeholder="Description (what is this event?)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <VibeTagPicker
-              value={eventVibeTags}
-              onChange={setEventVibeTags}
-              tone="violet"
-              title="Event vibe tags"
-              hint="Choose up to 3 tags for search and trip planner."
-            />
-            <input
-              value={eventVibe}
-              onChange={(event) => setEventVibe(event.target.value)}
-              placeholder="Legacy vibe label (optional)"
-              className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
-            />
-            <input value={eventLink} onChange={(event) => setEventLink(event.target.value)} placeholder="Event link (Instagram, RA, etc)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">From</p>
-                <DateInput value={eventStartDate} onChange={(event) => setEventStartDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" tone="violet" />
-              </div>
-              <div>
-                <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">To</p>
-                <DateInput value={eventEndDate} onChange={(event) => setEventEndDate(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" tone="violet" />
-              </div>
-            </div>
-            <p className="text-[11px] text-white/50">Leave &quot;To&quot; empty for single-day events.</p>
-            <button onClick={handleAddEvent} className="w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 font-semibold text-black">
-              Save event
-            </button>
-          </div>
+          <AddEventInlineForm
+            addEventFormRef={addEventFormRef}
+            eventName={eventName}
+            setEventName={setEventName}
+            eventDescription={eventDescription}
+            setEventDescription={setEventDescription}
+            eventVibeTags={eventVibeTags}
+            setEventVibeTags={setEventVibeTags}
+            eventVibe={eventVibe}
+            setEventVibe={setEventVibe}
+            eventLink={eventLink}
+            setEventLink={setEventLink}
+            eventAddress={eventAddress}
+            setEventAddress={setEventAddress}
+            eventStartDate={eventStartDate}
+            setEventStartDate={setEventStartDate}
+            eventEndDate={eventEndDate}
+            setEventEndDate={setEventEndDate}
+            onSaveEvent={handleAddEvent}
+          />
         )}
 
         <div ref={mapWrapperRef} className="animate-cinematic-in mb-8" style={{ animationDelay: "120ms" }}>
@@ -3773,43 +3678,12 @@ export default function CityPage() {
           </div>
         </div>
 
-        <div className="animate-cinematic-in mb-8 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4 shadow-[0_14px_44px_rgba(0,0,0,0.22)]" style={{ animationDelay: "170ms" }}>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Quick Navigation</p>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <button
-              type="button"
-              onClick={() => scrollToSection(tonightSectionRef)}
-              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
-            >
-              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
-              <p className="mt-1 font-semibold">Events</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection(guideSectionRef)}
-              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
-            >
-              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
-              <p className="mt-1 font-semibold">Quick Guide</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection(servicesSectionRef)}
-              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
-            >
-              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
-              <p className="mt-1 font-semibold">Services</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection(placesSectionRef)}
-              className="qa-cinematic-hover rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] px-4 py-3 text-left text-sm text-cyan-100 hover:border-cyan-200/32"
-            >
-              <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/75">Jump To</p>
-              <p className="mt-1 font-semibold">Venues</p>
-            </button>
-          </div>
-        </div>
+        <CityQuickNavigation
+          onGoEvents={() => scrollToSection(tonightSectionRef)}
+          onGoGuide={() => scrollToSection(guideSectionRef)}
+          onGoServices={() => scrollToSection(servicesSectionRef)}
+          onGoVenues={() => scrollToSection(placesSectionRef)}
+        />
 
         <div ref={tonightSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-fuchsia-300/12 bg-[linear-gradient(180deg,rgba(38,20,44,0.84),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(217,70,239,0.08)]" style={{ animationDelay: "195ms" }}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -3892,1289 +3766,278 @@ export default function CityPage() {
           </div>
 
           {tonightFeedTab === "public" ? (
-            <div className="space-y-3 rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5">
-              {eventsLoadError ? (
-                <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
-                  <p>{eventsLoadError}</p>
-                  <button
-                    onClick={fetchEvents}
-                    className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : null}
-
-              {eventsLoading ? (
-                <div className="rounded-2xl border border-violet-200/10 bg-violet-200/[0.03] p-4">
-                  <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">Loading events</p>
-                  <SectionSkeleton tone="violet" rows={2} />
-                </div>
-              ) : null}
-
-              {featuredEvent ? (
-                <div
-                  onClick={() => openEvent(featuredEvent)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Open event details for ${featuredEvent.name}`}
-                  onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
-                  onMouseLeave={() => setHoveredEventId(null)}
-                  onKeyDown={(keyEvent) => {
-                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                      keyEvent.preventDefault();
-                      openEvent(featuredEvent);
-                    }
-                  }}
-                  className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
-                    String(hoveredEventId) === String(featuredEvent.id)
-                      ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
-                      : ""
-                  } ${
-                    isFocusMode && String(selectedEvent?.id) !== String(featuredEvent.id)
-                      ? "opacity-55 saturate-75"
-                      : ""
-                  }`}
-                >
-                  <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-violet-300/18 blur-3xl" />
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">{featuredEvent.name}</h3>
-                    {normalizeEventRange(featuredEvent).startDate ? (
-                      <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
-                        {formatEventDateLabel(featuredEvent)}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="line-clamp-2 text-sm leading-6 text-white/72">
-                    {polishEventDescription(featuredEvent, cityName)}
-                  </p>
-                </div>
-              ) : null}
-
-              {!eventsLoading && remainingEvents.slice(0, 8).map((event) => (
-                <div
-                  key={event.id}
-                  onClick={() => openEvent(event)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Open event details for ${event.name}`}
-                  onMouseEnter={() => setHoveredEventId(String(event.id))}
-                  onMouseLeave={() => setHoveredEventId(null)}
-                  onKeyDown={(keyEvent) => {
-                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                      keyEvent.preventDefault();
-                      openEvent(event);
-                    }
-                  }}
-                  className={`qa-cinematic-hover animate-rise-in cursor-pointer rounded-[20px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
-                    String(selectedEvent?.id) === String(event.id)
-                      ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
-                      : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${
-                        isFocusMode ? "opacity-55 saturate-75" : ""
-                      }`
-                  } ${
-                    String(hoveredEventId) === String(event.id)
-                      ? "border-violet-200/45 shadow-[0_18px_48px_rgba(139,92,246,0.18)]"
-                      : ""
-                  }`}
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <h3 className="font-semibold">{event.name}</h3>
-                    {normalizeEventRange(event).startDate ? (
-                      <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
-                        {formatEventDateLabel(event)}
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="line-clamp-2 text-sm leading-6 text-white/70">
-                    {polishEventDescription(event, cityName)}
-                  </p>
-                </div>
-              ))}
-
-              {!eventsLoading && !featuredEvent && remainingEvents.length === 0 ? (
-                <EventPulseEmptyState
-                  isMember={isMember}
-                  onPublishFirstEvent={() => {
-                    openEventContribution();
-                  }}
-                  onJoinToPublish={() => {
-                    redirectToJoin();
-                  }}
-                />
-              ) : null}
-
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <VipFeedStatusAlerts
-                privateEventsTableMissing={privateEventsTableMissing}
-                privateEventsError={privateEventsError}
-              />
-              {privateEventsLoading ? (
-                <div className="rounded-2xl border border-fuchsia-200/10 bg-fuchsia-200/[0.03] p-4">
-                  <p className="mb-3 text-xs uppercase tracking-[0.16em] text-fuchsia-100/60">Loading VIP feed</p>
-                  <SectionSkeleton tone="fuchsia" rows={2} />
-                </div>
-              ) : null}
-
-              {!privateEventsLoading && cityPrivateEvents.map((item) => {
-                const status = getPrivateEventStatus(item);
-                const isHost = String(item.host_user_id || "") === String(user?.id || "");
-                const inviteStatus = String(privateEventInvites[String(item.id)] || "");
-                const canSeeExactLocation = isHost || inviteStatus === "accepted";
-                const displayArea = canSeeExactLocation
-                  ? String(item.exact_location || item.approx_area || "TBA")
-                  : String(item.approx_area || "TBA");
-                const requestRows = privateInviteRequestsByEvent[String(item.id)] || [];
-                const pendingRequestsCount = pendingPrivateInviteCountByEvent[String(item.id)] || 0;
-                const isExpandedHostCard = String(expandedPrivateHostEventId) === String(item.id);
-                const endsInLabel = formatEndsIn(item.expires_at, privateFeedNowTick);
-                const inviteLabelMap = {
-                  requested: "Invite requested",
-                  accepted: "Invite accepted",
-                  declined: "Invite declined",
-                  cancelled: "Invite cancelled",
-                };
-
-                return (
-                  <article key={String(item.id)} className="qa-cinematic-hover rounded-[22px] border border-fuchsia-200/18 bg-[linear-gradient(160deg,rgba(86,15,96,0.22),rgba(18,18,18,0.96))] p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100">
-                        Invite-only
-                      </span>
-                      <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] ${
-                        status.key === "live"
-                          ? "border-emerald-200/30 bg-emerald-200/14 text-emerald-100"
-                          : "border-cyan-200/30 bg-cyan-200/14 text-cyan-100"
-                      }`}>
-                        {status.label}
-                      </span>
-                      <span className="rounded-full border border-white/15 bg-white/7 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/80">
-                        {PRIVATE_EVENT_TYPE_LABELS[String(item.event_type || "")] || "Private event"}
-                      </span>
-                      {endsInLabel ? (
-                        <span className="rounded-full border border-amber-200/24 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
-                          {endsInLabel}
-                        </span>
-                      ) : null}
-                    </div>
-                    <h3 className="mt-3 text-base font-semibold text-white">{item.title}</h3>
-                    <p className="mt-1 text-sm text-white/70">
-                      {canSeeExactLocation ? "Location" : "Area"}: {displayArea}
-                    </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.14em] text-white/55">
-                      Starts {formatDateTime(item.start_at)} · Ends {formatDateTime(item.expires_at)}
-                    </p>
-                    {item.notes ? (
-                      <p className="mt-2 line-clamp-2 text-sm text-white/64">{item.notes}</p>
-                    ) : null}
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full border border-white/15 bg-white/8 px-3 py-1 text-[11px] text-white/78">
-                        Host: {String(item.host_alias || "Member").trim() || "Member"}
-                      </span>
-                      {isHost ? (
-                        <>
-                          <span className="rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100">
-                            You host this
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setExpandedPrivateHostEventId((current) => (
-                              String(current) === String(item.id) ? "" : String(item.id)
-                            ))}
-                            className={`qa-cinematic-hover rounded-full border px-3 py-1 text-[11px] transition ${
-                              pendingRequestsCount > 0
-                                ? "qa-attn-soft border-amber-200/40 bg-amber-200/14 text-amber-100 hover:border-amber-200/60"
-                                : "border-cyan-200/26 bg-cyan-200/12 text-cyan-100 hover:border-cyan-200/45"
-                            }`}
-                          >
-                            Requests ({requestRows.length})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deletePrivateEvent(item)}
-                            disabled={deletingPrivateEventId === String(item.id)}
-                            className="qa-cinematic-hover rounded-full border border-rose-200/28 bg-rose-200/12 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/45 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {deletingPrivateEventId === String(item.id) ? "Deleting..." : "Delete event"}
-                          </button>
-                        </>
-                      ) : inviteStatus ? (
-                        <>
-                          <span className="rounded-full border border-violet-200/26 bg-violet-200/12 px-3 py-1 text-[11px] text-violet-100">
-                            {inviteLabelMap[inviteStatus] || "Invite status"}
-                          </span>
-                          {inviteStatus === "accepted" && String(item.host_user_id || "").trim() ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const hostId = encodeURIComponent(String(item.host_user_id || "").trim());
-                                const hostName = encodeURIComponent(String(item.host_alias || "Host").trim() || "Host");
-                                router.push(`/messages?user=${hostId}&name=${hostName}&compose=1`);
-                              }}
-                              className="qa-cinematic-hover rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] text-cyan-100 transition hover:border-cyan-200/45"
-                            >
-                              Contact host
-                            </button>
-                          ) : null}
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => requestPrivateInvite(item)}
-                          disabled={!isMember || isSubmittingPrivateInvite || privateInvitesTableMissing}
-                          className="qa-cinematic-hover rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] text-fuchsia-100 transition hover:border-fuchsia-200/50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Request invite
-                        </button>
-                      )}
-                    </div>
-                    {isHost && isExpandedHostCard ? (
-                      <div className="mt-3 rounded-2xl border border-cyan-200/20 bg-cyan-200/[0.06] p-3">
-                        {requestRows.length === 0 ? (
-                          <p className="text-xs text-white/62">No invite requests yet.</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {requestRows.map((request) => {
-                              const requestStatus = String(request.status || "requested");
-                              const requesterId = String(request.requester_user_id || "").trim();
-                              const requesterAlias = String(privateInviteRequesterProfiles[requesterId] || "").trim()
-                                || fallbackMemberAlias(requesterId);
-                              const requesterInitial = requesterAlias.charAt(0).toUpperCase() || "M";
-                              return (
-                                <div key={String(request.id)} className="rounded-xl border border-white/12 bg-black/25 p-2.5">
-                                  <div className="flex flex-wrap items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-cyan-200/30 bg-cyan-200/12 text-[11px] font-semibold text-cyan-100">
-                                        {requesterInitial}
-                                      </span>
-                                      <p className="text-xs text-white/75">
-                                        {requesterAlias} · {formatDate(request.created_at)}
-                                      </p>
-                                    </div>
-                                    <span className="rounded-full border border-white/16 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/80">
-                                      {requestStatus}
-                                    </span>
-                                  </div>
-                                  {request.message ? (
-                                    <p className="mt-1 text-xs text-white/65 line-clamp-2">{request.message}</p>
-                                  ) : null}
-                                  {requestStatus === "requested" ? (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => respondPrivateInviteRequest(request, "accepted")}
-                                        disabled={isUpdatingPrivateInviteStatus}
-                                        className="rounded-full border border-emerald-200/28 bg-emerald-200/12 px-2.5 py-1 text-[11px] text-emerald-100 transition hover:border-emerald-200/45 disabled:cursor-not-allowed disabled:opacity-50"
-                                      >
-                                        Accept
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => respondPrivateInviteRequest(request, "declined")}
-                                        disabled={isUpdatingPrivateInviteStatus}
-                                        className="rounded-full border border-rose-200/28 bg-rose-200/12 px-2.5 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/45 disabled:cursor-not-allowed disabled:opacity-50"
-                                      >
-                                        Decline
-                                      </button>
-                                    </div>
-                                  ) : null}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    ) : null}
-                  </article>
-                );
-              })}
-
-              {!privateEventsLoading && cityPrivateEvents.length === 0 ? (
-                <div className="rounded-[24px] border border-dashed border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(67,20,69,0.35),rgba(14,14,14,0.96))] px-5 py-8 text-center">
-                  <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-200/70">VIP signal</p>
-                  <h3 className="mt-2 text-lg font-semibold text-white">No invite-only plans yet</h3>
-                  <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-                    Be first to host a private afterparty, chill session, or invite-only gathering for tonight.
-                  </p>
-                </div>
-              ) : null}
-
-              {hostPrivateEventOpen && isMember ? (
-                <form onSubmit={submitPrivateEvent} className="rounded-[24px] border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(50,18,56,0.55),rgba(14,14,14,0.98))] p-4">
-                  <p className="text-xs uppercase tracking-[0.16em] text-fuchsia-100/70">Host a private plan</p>
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <input
-                      value={privateEventForm.title}
-                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, title: event.target.value }))}
-                      placeholder="Title (e.g. Rooftop afterparty)"
-                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45"
-                      maxLength={120}
-                      required
-                    />
-                    <select
-                      value={privateEventForm.eventType}
-                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, eventType: event.target.value }))}
-                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
-                    >
-                      {PRIVATE_EVENT_TYPES.map((entry) => (
-                        <option key={entry.value} value={entry.value}>{entry.label}</option>
-                      ))}
-                    </select>
-                    <DateInput
-                      value={privateEventForm.startDate}
-                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, startDate: event.target.value }))}
-                      className="w-full"
-                      tone="violet"
-                      required
-                      min={todayIso || undefined}
-                    />
-                    <div className="relative">
-                      <input
-                        type="time"
-                        value={privateEventForm.startTime}
-                        onChange={(event) => setPrivateEventForm((current) => ({ ...current, startTime: event.target.value }))}
-                        className="w-full rounded-2xl border border-white/12 bg-black/30 p-3 pr-20 text-sm text-white outline-none focus:border-fuchsia-200/45"
-                        required
-                      />
-                      <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-xl border border-white/14 bg-white/8 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/90">
-                        Time
-                      </span>
-                    </div>
-                    <input
-                      value={privateEventForm.approxArea}
-                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, approxArea: event.target.value }))}
-                      placeholder="Approx area (not exact address)"
-                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45"
-                      maxLength={120}
-                      required
-                    />
-                    <input
-                      value={privateEventForm.exactLocation}
-                      onChange={(event) => setPrivateEventForm((current) => ({ ...current, exactLocation: event.target.value }))}
-                      placeholder="Exact location (visible only to accepted)"
-                      className="rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45 md:col-span-2"
-                      maxLength={180}
-                    />
-                  </div>
-                  <textarea
-                    value={privateEventForm.notes}
-                    onChange={(event) => setPrivateEventForm((current) => ({ ...current, notes: event.target.value }))}
-                    placeholder="Optional notes"
-                    className="mt-3 min-h-[84px] w-full rounded-2xl border border-white/12 bg-black/30 p-3 text-sm text-white outline-none placeholder:text-white/45 focus:border-fuchsia-200/45"
-                    maxLength={320}
-                  />
-                  <p className="mt-2 text-[11px] text-white/55">
-                    Invite-only. Event auto-expires 24h after your selected start.
-                  </p>
-                  {privateEventStartPreview ? (
-                    <p className="mt-1 text-[11px] text-fuchsia-100/80">
-                      Starts {formatDateTime(privateEventStartPreview)} · Expires {formatDateTime(privateEventExpiresPreview)}
-                    </p>
-                  ) : null}
-                  <button
-                    type="submit"
-                    disabled={isSubmittingPrivateEvent || privateEventsTableMissing}
-                    className="qa-cinematic-hover mt-3 rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-4 py-2 text-xs text-fuchsia-100 transition hover:border-fuchsia-200/50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSubmittingPrivateEvent ? "Posting..." : "Post private event"}
-                  </button>
-                </form>
-              ) : null}
-            </div>
-          )}
-        </div>
-
-        <div ref={eventsSectionRef} className="hidden animate-cinematic-in mb-10 rounded-[32px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]" style={{ animationDelay: "210ms" }}>
-          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-violet-300/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-violet-200 backdrop-blur">
-            Events
-          </h2>
-          {eventsLoadError && (
-            <div className="mb-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
-              <p>{eventsLoadError}</p>
-              <button
-                onClick={fetchEvents}
-                className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          {eventsLoading && (
-            <div className="mb-4 rounded-2xl border border-violet-200/10 bg-violet-200/[0.03] p-4">
-              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">Loading events</p>
-              <SectionSkeleton tone="violet" rows={2} />
-            </div>
-          )}
-
-          {featuredEvent && (
-            (() => {
-              const featuredEventQuality = getEntityQuality({
-                targetType: "event",
-                targetId: featuredEvent.id,
-                entity: featuredEvent,
-                map: qualityMap,
-              });
-              const featuredEventQualityStatus = getQualityStatus(featuredEventQuality);
-
-              return (
-            <div className="mb-4">
-              <h3 className="mb-2 text-sm text-purple-400">Featured upcoming</h3>
-              <div
-                onClick={() => openEvent(featuredEvent)}
-                role="button"
-                tabIndex={0}
-                aria-label={`Open event details for ${featuredEvent.name}`}
-                onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
-                onMouseLeave={() => setHoveredEventId(null)}
-                onKeyDown={(keyEvent) => {
-                  if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                    keyEvent.preventDefault();
-                    openEvent(featuredEvent);
-                  }
-                }}
-                className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
-                  String(hoveredEventId) === String(featuredEvent.id)
-                    ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
-                    : ""
-                } ${
-                  isFocusMode && String(selectedEvent?.id) !== String(featuredEvent.id)
-                    ? "opacity-55 saturate-75"
-                    : ""
-                }`}
-              >
-                <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-violet-300/18 blur-3xl" />
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">{featuredEvent.name}</h3>
-                  {normalizeEventRange(featuredEvent).startDate && (
-                    <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
-                      {formatEventDateLabel(featuredEvent)}
-                    </span>
-                  )}
-                </div>
-                <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/72">
-                  {polishEventDescription(featuredEvent, cityName)}
-                </p>
-                <VibeTagChips entity={featuredEvent} tone="amber" className="mb-2" includeMixedFallback />
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-purple-200/90">Next notable event in this city</p>
-                  <button
-                    onClick={(clickEvent) =>
-                      refreshEntityQuality(
-                        { targetType: "event", targetId: featuredEvent.id, fallbackSource: featuredEvent.link || "" },
-                        clickEvent
-                      )
-                    }
-                    className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(featuredEventQualityStatus.tone)}`}
-                    aria-label={`Update quality status for event ${featuredEvent.name}`}
-                  >
-                    {featuredEventQualityStatus.label}
-                  </button>
-                </div>
-                {featuredEventQuality.lastChecked && (
-                  <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                    Checked {formatDate(featuredEventQuality.lastChecked)}
-                  </p>
-                )}
-                <div className="mt-3 h-1.5 w-28 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-orange-200" />
-              </div>
-            </div>
-              );
-            })()
-          )}
-
-          {remainingEvents.map((event) => (
-            (() => {
-              const quality = getEntityQuality({
-                targetType: "event",
-                targetId: event.id,
-                entity: event,
-                map: qualityMap,
-              });
-              const qualityStatus = getQualityStatus(quality);
-
-              return (
-                <div
-                  key={event.id}
-                  onClick={() => openEvent(event)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Open event details for ${event.name}`}
-                  onMouseEnter={() => setHoveredEventId(String(event.id))}
-                  onMouseLeave={() => setHoveredEventId(null)}
-                  onKeyDown={(keyEvent) => {
-                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                      keyEvent.preventDefault();
-                      openEvent(event);
-                    }
-                  }}
-                  className={`qa-cinematic-hover animate-rise-in mb-3 cursor-pointer rounded-[24px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
-                    String(selectedEvent?.id) === String(event.id)
-                      ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
-                      : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${
-                        isFocusMode ? "opacity-55 saturate-75" : ""
-                      }`
-                  } ${
-                    String(hoveredEventId) === String(event.id)
-                      ? "border-violet-200/45 shadow-[0_18px_48px_rgba(139,92,246,0.18)]"
-                      : ""
-                  }`}
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <h3 className="font-semibold">{event.name}</h3>
-                    {normalizeEventRange(event).startDate && (
-                      <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
-                        {formatEventDateLabel(event)}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/70">
-                    {polishEventDescription(event, cityName)}
-                  </p>
-                  <VibeTagChips entity={event} tone="amber" className="mb-2" includeMixedFallback />
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs text-purple-400">Community event</p>
-                    <button
-                      onClick={(clickEvent) =>
-                        refreshEntityQuality(
-                          { targetType: "event", targetId: event.id, fallbackSource: event.link || "" },
-                          clickEvent
-                        )
-                      }
-                      className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
-                      aria-label={`Update quality status for event ${event.name}`}
-                    >
-                      {qualityStatus.label}
-                    </button>
-                  </div>
-                  {quality.lastChecked && (
-                    <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                      Checked {formatDate(quality.lastChecked)}
-                    </p>
-                  )}
-                </div>
-              );
-            })()
-          ))}
-          {!eventsLoading && !featuredEvent && remainingEvents.length === 0 && (
-            <EventPulseEmptyState
+            <TonightPublicFeedPanel
+              eventsLoadError={eventsLoadError}
+              fetchEvents={fetchEvents}
+              eventsLoading={eventsLoading}
+              featuredEvent={featuredEvent}
+              openEvent={openEvent}
+              setHoveredEventId={setHoveredEventId}
+              hoveredEventId={hoveredEventId}
+              isFocusMode={isFocusMode}
+              selectedEvent={selectedEvent}
+              formatEventDateLabel={formatEventDateLabel}
+              cityName={cityName}
+              remainingEvents={remainingEvents}
               isMember={isMember}
-              secondaryActionLabel="Open guide lane"
-              onSecondaryAction={() => scrollToSection(guideSectionRef)}
-              onPublishFirstEvent={() => {
-                openEventContribution();
-              }}
-              onJoinToPublish={() => {
-                redirectToJoin();
-              }}
+              openEventContribution={openEventContribution}
+              redirectToJoin={redirectToJoin}
+            />
+                    ) : (
+            <TonightVipFeedPanel
+              privateEventsTableMissing={privateEventsTableMissing}
+              privateEventsError={privateEventsError}
+              privateEventsLoading={privateEventsLoading}
+              cityPrivateEvents={cityPrivateEvents}
+              getPrivateEventStatus={getPrivateEventStatus}
+              user={user}
+              privateEventInvites={privateEventInvites}
+              privateInviteRequestsByEvent={privateInviteRequestsByEvent}
+              pendingPrivateInviteCountByEvent={pendingPrivateInviteCountByEvent}
+              expandedPrivateHostEventId={expandedPrivateHostEventId}
+              setExpandedPrivateHostEventId={setExpandedPrivateHostEventId}
+              formatEndsIn={formatEndsIn}
+              privateFeedNowTick={privateFeedNowTick}
+              privateEventTypeLabels={PRIVATE_EVENT_TYPE_LABELS}
+              formatDateTime={formatDateTime}
+              deletePrivateEvent={deletePrivateEvent}
+              deletingPrivateEventId={deletingPrivateEventId}
+              isMember={isMember}
+              isSubmittingPrivateInvite={isSubmittingPrivateInvite}
+              requestPrivateInvite={requestPrivateInvite}
+              privateInviteRequesterProfiles={privateInviteRequesterProfiles}
+              formatDate={formatDate}
+              respondPrivateInviteRequest={respondPrivateInviteRequest}
+              isUpdatingPrivateInviteStatus={isUpdatingPrivateInviteStatus}
+              hostPrivateEventOpen={hostPrivateEventOpen}
+              privateEventForm={privateEventForm}
+              setPrivateEventForm={setPrivateEventForm}
+              privateEventStartPreview={privateEventStartPreview}
+              privateEventExpiresPreview={privateEventExpiresPreview}
+              submitPrivateEvent={submitPrivateEvent}
+              isSubmittingPrivateEvent={isSubmittingPrivateEvent}
+              privateEventTypes={PRIVATE_EVENT_TYPES}
+              todayIso={todayIso}
+              router={router}
             />
           )}
         </div>
+        <CityEventsRailSection
+          sectionRef={eventsSectionRef}
+          guideSectionRef={guideSectionRef}
+          eventsLoadError={eventsLoadError}
+          fetchEvents={fetchEvents}
+          eventsLoading={eventsLoading}
+          featuredEvent={featuredEvent}
+          qualityMap={qualityMap}
+          openEvent={openEvent}
+          setHoveredEventId={setHoveredEventId}
+          hoveredEventId={hoveredEventId}
+          isFocusMode={isFocusMode}
+          selectedEvent={selectedEvent}
+          formatEventDateLabel={formatEventDateLabel}
+          cityName={cityName}
+          refreshEntityQuality={refreshEntityQuality}
+          formatDate={formatDate}
+          remainingEvents={remainingEvents}
+          isMember={isMember}
+          scrollToSection={scrollToSection}
+          openEventContribution={openEventContribution}
+          redirectToJoin={redirectToJoin}
+        />
+        <QuickGuideSection
+          sectionRef={guideSectionRef}
+          cityName={cityName}
+          config={config}
+          placesLoading={placesLoading}
+          placesLoadError={placesLoadError}
+          reloadPlaces={reloadPlaces}
+        />
 
-        <div ref={guideSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-amber-200/10 bg-[linear-gradient(180deg,rgba(30,26,18,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(251,191,36,0.05)]" style={{ animationDelay: "250ms" }}>
-          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-amber-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-amber-100 backdrop-blur">
-            Quick Guide
-          </h2>
-          {placesLoading && (
-            <div className="mb-4 rounded-2xl border border-amber-200/10 bg-amber-200/[0.03] p-4">
-              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-amber-100/60">Loading guide signal</p>
-              <SectionSkeleton tone="amber" rows={2} />
-            </div>
-          )}
-          {placesLoadError && (
-            <div className="mb-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
-              <p>{placesLoadError}</p>
-              <button
-                onClick={reloadPlaces}
-                className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-          <div className="grid gap-4 md:grid-cols-2">
-            {config.guide.map((item, index) => {
-              const guideTone =
-                index % 4 === 0
-                  ? {
-                      card: "border-amber-200/20 bg-[linear-gradient(135deg,rgba(180,83,9,0.20),rgba(251,191,36,0.08),rgba(12,12,12,0.98))] hover:border-amber-200/34",
-                      strip: "from-amber-300/90 via-orange-300/60 to-transparent",
-                      type: "text-amber-100 border-amber-200/30 bg-amber-200/12",
-                      vibe: "Night pulse",
-                    }
-                  : index % 4 === 1
-                    ? {
-                        card: "border-cyan-200/18 bg-[linear-gradient(180deg,rgba(14,48,64,0.36),rgba(12,12,12,0.98))] hover:border-cyan-200/30",
-                        strip: "from-cyan-300/90 via-sky-300/60 to-transparent",
-                        type: "text-cyan-100 border-cyan-200/30 bg-cyan-200/12",
-                        vibe: "Local rhythm",
-                      }
-                    : index % 4 === 2
-                      ? {
-                          card: "border-violet-200/18 bg-[linear-gradient(180deg,rgba(47,28,78,0.34),rgba(12,12,12,0.98))] hover:border-violet-200/30",
-                          strip: "from-violet-300/90 via-fuchsia-300/60 to-transparent",
-                          type: "text-violet-100 border-violet-200/30 bg-violet-200/12",
-                          vibe: "After-dark flow",
-                        }
-                      : {
-                          card: "border-emerald-200/18 bg-[linear-gradient(180deg,rgba(16,70,52,0.34),rgba(12,12,12,0.98))] hover:border-emerald-200/30",
-                          strip: "from-emerald-300/90 via-teal-300/60 to-transparent",
-                          type: "text-emerald-100 border-emerald-200/30 bg-emerald-200/12",
-                          vibe: "Soft start",
-                        };
-              return (
-                <div
-                  key={`${item.title}-${index}`}
-                  className={`qa-cinematic-hover rounded-[24px] border p-5 ${guideTone.card} ${index === 0 ? "md:col-span-2" : ""}`}
-                >
-                  <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${guideTone.strip}`} />
-                  <div className="mb-4 flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <h3 className={`${index === 0 ? "text-xl md:text-2xl" : "text-lg"} font-semibold leading-tight tracking-[-0.01em] text-white`}>
-                        {item.title}
-                      </h3>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${guideTone.type}`}>
-                          Guide
-                        </span>
-                        <span className="rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
-                          {guideTone.vibe}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+        <CityServicesSection
+          sectionRef={servicesSectionRef}
+          servicesLoading={servicesLoading}
+          cityServiceCount={cityServiceCount}
+          visibleServiceGroups={visibleServiceGroups}
+          servicesLoadError={servicesLoadError}
+          fetchServices={fetchServices}
+          hasAnyServices={hasAnyServices}
+          openService={openService}
+          setHoveredServiceId={setHoveredServiceId}
+          serviceId={serviceId}
+          serviceTypeLabels={SERVICE_TYPE_LABELS}
+          serviceTypeStyles={SERVICE_TYPE_STYLES}
+        />
 
-                  <div className="rounded-2xl border border-white/8 bg-black/24 p-4">
-                    <p className={`${index === 0 ? "text-sm leading-7" : "text-sm leading-6"} text-white/68`}>
-                      {polishGuideText(item.text, {
-                        sectionTitle: item.title,
-                        cityName,
-                        vibe: config.vibe,
-                      })}
-                    </p>
-                  </div>
-
-                  {item.extra && (
-                    <p className="mt-4 text-xs uppercase tracking-[0.14em] text-white/42">{item.extra}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div ref={servicesSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-emerald-200/10 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(16,185,129,0.06)]" style={{ animationDelay: "270ms" }}>
-          <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-emerald-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-emerald-100 backdrop-blur">
-            Services
-          </h2>
-          <p className="mb-4 text-sm text-white/65">
-            Private services curated for this city: massage, tours, concierge, and premium support lanes.
-          </p>
-          <div className="mb-4 flex flex-wrap gap-2">
-            <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/90">
-              {servicesLoading ? "Services syncing" : `${cityServiceCount} listed`}
-            </span>
-            <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
-              {visibleServiceGroups.length} categories
-            </span>
-            <span className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.09] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/88">
-              Member-owned
-            </span>
-          </div>
-
-          {servicesLoadError && (
-            <div className="mb-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
-              <p>{servicesLoadError}</p>
-              <button
-                onClick={fetchServices}
-                className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
-              >
-                Retry
-              </button>
-            </div>
-          )}
-
-          {servicesLoading && (
-            <div className="mb-4 rounded-2xl border border-emerald-200/10 bg-emerald-200/[0.03] p-4">
-              <p className="mb-3 text-xs uppercase tracking-[0.16em] text-emerald-100/60">Loading local services</p>
-              <SectionSkeleton tone="emerald" rows={2} />
-            </div>
-          )}
-
-          {!servicesLoading && !hasAnyServices && (
-            <div className="rounded-2xl border border-dashed border-emerald-200/20 bg-emerald-200/[0.04] px-4 py-8 text-sm text-emerald-100/75">
-              No service signal yet for this city. Add trusted providers from Contribute to unlock this lane.
-            </div>
-          )}
-
-          {visibleServiceGroups.map((group) => (
-            <div key={`service-group-${group.value}`} className="mb-6 last:mb-0">
-              <h3 className="mb-3 text-sm uppercase tracking-[0.16em] text-emerald-100/75">
-                {SERVICE_TYPE_LABELS[group.value] || group.label}
-              </h3>
-              <div className="grid gap-4 md:grid-cols-2">
-                {group.items.map((service, index) => {
-                  const style = SERVICE_TYPE_STYLES[service.type] || SERVICE_TYPE_STYLES.other;
-                  const bookingUrl = normalizeExternalUrl(service.booking_link || service.link || "");
-                  const contact = String(service.contact || "").trim();
-                  const providerName = String(service.provider_name || "").trim();
-                  const locationLabel = getEntityAddressLabel(service);
-                  const priceTier = String(service.price_tier || "").trim();
-                  const isSelectedService = String(serviceId || "") === String(service.id);
-                  const serviceImages = normalizeServiceImageUrls(service.image_urls);
-                  const coverImage = String(serviceImages[0] || "").trim();
-
-                  return (
-                    <article
-                      key={`service-${service.id}`}
-                      role="button"
-                      tabIndex={0}
-                      style={{ animationDelay: `${Math.min(index * 40, 220)}ms` }}
-                      className={`qa-cinematic-hover animate-rise-in rounded-[24px] border p-5 ${style.card} ${
-                        isSelectedService
-                          ? "border-emerald-200/40 shadow-[0_18px_48px_rgba(16,185,129,0.16)]"
-                          : "hover:border-emerald-200/22"
-                      } cursor-pointer`}
-                      onMouseEnter={() => setHoveredServiceId(String(service.id))}
-                      onMouseLeave={() => setHoveredServiceId(null)}
-                      onClick={() => openService(service)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          openService(service);
-                        }
-                      }}
-                    >
-                      {coverImage && (
-                        <div className="mb-3 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
-                          <Image
-                            src={coverImage}
-                            alt={`${service.name} photo`}
-                            width={720}
-                            height={420}
-                            unoptimized
-                            className="h-36 w-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${style.line}`} />
-                      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="text-lg font-semibold leading-tight tracking-[-0.01em] text-white">
-                            {service.name}
-                          </h3>
-                          <div className="mt-2 flex flex-wrap items-center gap-2">
-                            <span className={`rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.15em] ${style.label}`}>
-                              {SERVICE_TYPE_LABELS[service.type] || "Service"}
-                            </span>
-                            {priceTier && (
-                              <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-amber-100">
-                                {priceTier}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {service.description && (
-                        <div className="mb-3 rounded-2xl border border-white/10 bg-black/28 p-3">
-                          <p className="line-clamp-3 text-sm leading-6 text-white/68">{String(service.description)}</p>
-                        </div>
-                      )}
-
-                      <VibeTagChips entity={service} tone="cyan" className="mb-3" includeMixedFallback />
-
-                      <div className="space-y-1.5 text-xs text-white/62">
-                        {providerName && (
-                          <p>
-                            <span className="text-white/48">Provider:</span> {providerName}
-                          </p>
-                        )}
-                        {locationLabel && (
-                          <p>
-                            <span className="text-white/48">Area:</span> {locationLabel}
-                          </p>
-                        )}
-                        {service.hours && (
-                          <p>
-                            <span className="text-white/48">Availability:</span> {String(service.hours)}
-                          </p>
-                        )}
-                        {contact && (
-                          <p>
-                            <span className="text-white/48">Contact:</span> {contact}
-                          </p>
-                        )}
-                      </div>
-
-                      {bookingUrl && (
-                        <a
-                          href={bookingUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="mt-4 inline-flex rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
-                        >
-                          Open service
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openService(service);
-                        }}
-                        className="mt-3 inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30 hover:text-white"
-                      >
-                        View details
-                      </button>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {!placesLoading && !hasAnyPlaces && (
-          <div className="mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
-            <h3 className="mt-2 text-lg font-semibold text-white">Venue map is taking shape</h3>
-            <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-              We&apos;re curating trusted drops for this city. Explore the guide lane now, or add a venue locals can rely on.
-            </p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => scrollToSection(guideSectionRef)}
-                className="qa-cinematic-hover rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/80 hover:border-white/30 hover:text-white"
-                >
-                  Read guide lane
-                </button>
-              {isMember ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddMode(true);
-                    setAddEventMode(false);
-                  }}
-                  className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
-                >
-                  Publish first venue
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    redirectToJoin();
-                  }}
-                  className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
-                >
-                  Join to publish
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {visiblePlaceGroups.map((group, groupIndex) => {
-          return (
-            <div ref={groupIndex === 0 ? placesSectionRef : null} key={group.value} className="animate-cinematic-in mb-10 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)]" style={{ animationDelay: `${300 + groupIndex * 40}ms` }}>
-              <h2 className="sticky top-0 z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 text-lg tracking-wide text-white/82 backdrop-blur">
-                {group.label}
-              </h2>
-              <div className="grid gap-4 md:grid-cols-2">
-                {group.items.map((place, index) => (
-                  (() => {
-                    const style = TYPE_STYLES[place.type] || TYPE_STYLES.bar;
-                    const isSelected = String(selectedPlace?.id) === String(place.id);
-                    const isHovered = String(hoveredPlaceId) === String(place.id);
-                    const quality = getEntityQuality({
-                      targetType: "place",
-                      targetId: place.id,
-                      entity: place,
-                      map: qualityMap,
-                    });
-                    const qualityStatus = getQualityStatus(quality);
-                    const placeSafetySignal = safetySignalsByPlaceId[String(place.id)] || null;
-
-                    return (
-                  <div
-                    key={place.id}
-                    onClick={() => openPlace(place)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Open place details for ${place.name}`}
-                    onMouseEnter={() => setHoveredPlaceId(String(place.id))}
-                    onMouseLeave={() => setHoveredPlaceId(null)}
-                    onKeyDown={(keyEvent) => {
-                      if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                        keyEvent.preventDefault();
-                        openPlace(place);
-                      }
-                    }}
-                    style={{ animationDelay: `${Math.min(index * 45, 280)}ms` }}
-                    className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
-                      index === 0 ? "md:col-span-2" : ""
-                    } ${
-                      isFocusMode && !isSelected ? "opacity-60 saturate-75" : ""
-                    } ${
-                      isSelected
-                        ? style.selected
-                        : `${style.card} hover:border-white/16`
-                    } ${
-                      isHovered
-                        ? "border-white/30 shadow-[0_20px_58px_rgba(255,255,255,0.12)]"
-                        : ""
-                    }`}
-                  >
-                    <div className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
-                    <div className={`mb-5 h-1.5 w-36 rounded-full bg-gradient-to-r ${style.line}`} />
-                    <div className="mb-4 flex items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <h3 className={`${index === 0 ? "text-xl md:text-[1.65rem]" : "text-lg"} font-semibold leading-tight tracking-[-0.015em] text-white`}>{place.name}</h3>
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          <span className={`rounded-full border border-white/16 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${style.label}`}>
-                            {TYPE_LABELS[place.type] || "Place"}
-                          </span>
-                          <VibeTagChips entity={place} tone="cyan" className="" includeTypeFallback includeMixedFallback />
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        <button
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleFavorite(place.id);
-                          }}
-                          className={`rounded-full border px-3 py-1 text-xs transition ${
-                            favorites.includes(String(place.id))
-                              ? "border-pink-300/36 bg-gradient-to-r from-pink-300/20 to-fuchsia-300/16 text-pink-100"
-                              : "border-white/14 bg-white/5 text-white/65 hover:border-pink-300/25 hover:text-pink-100"
-                          }`}
-                          aria-label={favorites.includes(String(place.id)) ? `Remove ${place.name} from favorites` : `Save ${place.name} to favorites`}
-                          aria-pressed={favorites.includes(String(place.id))}
-                        >
-                          {favorites.includes(String(place.id)) ? "Saved" : "Save"}
-                        </button>
-
-                        <span className={`rounded-full border border-white/14 bg-black/45 px-3 py-1 text-xs font-semibold ${style.label}`}>
-                          Rating {place.avgRating?.toFixed(1) || "-"}
-                        </span>
-                        {placeSafetySignal && Number(placeSafetySignal.safetyReviewCount || 0) > 0 && (
-                          <span
-                            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${getSafetyToneClass(placeSafetySignal.tone)}`}
-                            aria-label={`Safety ${getDisplayedSafetyShields(placeSafetySignal)} out of 5`}
-                          >
-                            <Shield
-                              className={`h-3.5 w-3.5 ${getSafetyIconToneClass(placeSafetySignal.tone)}`}
-                              fill="currentColor"
-                              strokeWidth={2}
-                              aria-hidden="true"
-                            />
-                            {getDisplayedSafetyShields(placeSafetySignal)}/5
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                      {polishVenueDescription(place, cityName, TYPE_LABELS) && (
-                      <div className="mb-4 rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(0,0,0,0.34),rgba(0,0,0,0.52))] p-4">
-                        <p className={`${index === 0 ? "line-clamp-4 text-sm leading-7" : "line-clamp-3 text-sm leading-6"} text-white/68`}>
-                          {polishVenueDescription(place, cityName, TYPE_LABELS)}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="mb-4 rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
-                      <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">Opening Hours</p>
-                      <p className="mt-1 text-xs leading-6 text-cyan-50/90">
-                        {String(place.hours || "").trim() || "Hours vary by night. Check official channels before going."}
-                      </p>
-                    </div>
-                    {place.link && (
-                      <div className="mb-4">
-                        <a
-                          href={normalizeExternalUrl(place.link)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(event) => event.stopPropagation()}
-                          className="inline-flex items-center rounded-full border border-cyan-200/18 bg-cyan-200/[0.08] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/34"
-                        >
-                          Official Link
-                        </a>
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
-                        {place.reviewCount || 0} reviews
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={(clickEvent) =>
-                            refreshEntityQuality(
-                              { targetType: "place", targetId: place.id, fallbackSource: "" },
-                              clickEvent
-                            )
-                          }
-                          className={`rounded-full border px-2.5 py-1 text-[11px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
-                          aria-label={`Update quality status for place ${place.name}`}
-                        >
-                          {qualityStatus.label}
-                        </button>
-                        <span>{group.label}</span>
-                      </div>
-                    </div>
-                    {quality.lastChecked && (
-                      <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                        Checked {formatDate(quality.lastChecked)}
-                      </p>
-                    )}
-                  </div>
-                    );
-                  })()
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        <CityPlacesSection
+          placesLoading={placesLoading}
+          hasAnyPlaces={hasAnyPlaces}
+          onReadGuide={() => scrollToSection(guideSectionRef)}
+          canPublish={isMember}
+          onPublishFirstVenue={() => {
+            setAddMode(true);
+            setAddEventMode(false);
+          }}
+          onJoinToPublish={redirectToJoin}
+          visiblePlaceGroups={visiblePlaceGroups}
+          firstGroupRef={placesSectionRef}
+          isFocusMode={isFocusMode}
+          selectedPlaceId={selectedPlace?.id}
+          hoveredPlaceId={hoveredPlaceId}
+          openPlace={openPlace}
+          setHoveredPlaceId={setHoveredPlaceId}
+          toggleFavorite={toggleFavorite}
+          favorites={favorites}
+          typeStyles={TYPE_STYLES}
+          typeLabels={TYPE_LABELS}
+          qualityMap={qualityMap}
+          refreshEntityQuality={refreshEntityQuality}
+          formatDate={formatDate}
+          cityName={cityName}
+          safetySignalsByPlaceId={safetySignalsByPlaceId}
+        />
       </div>
 
-      {(selectedPlace || selectedEvent || selectedService) && (
-        <button
-          type="button"
-          aria-label="Close details panel"
-          onClick={closeAllDetails}
-          className="fixed inset-0 z-30 bg-black/55 backdrop-blur-[1px] lg:hidden"
-        />
-      )}
+      <DetailsPanelBackdrop
+        isOpen={Boolean(selectedPlace || selectedEvent || selectedService)}
+        onClose={closeAllDetails}
+      />
 
       {selectedService && (
-        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.08),transparent_24%),linear-gradient(180deg,rgba(10,23,20,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[520px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
-          <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-emerald-400/12 blur-3xl" />
-          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#0b1412]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closeService}>
-            Close
-          </button>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <SelectedServiceSummary
-              selectedService={selectedService}
-              selectedServiceImages={selectedServiceImages}
-              cityLabel={config.title?.replace("Queer ", "")}
-              serviceTypeLabels={SERVICE_TYPE_LABELS}
-              selectedServiceQuality={selectedServiceQuality}
-              selectedServiceQualityStatus={selectedServiceQualityStatus}
-              refreshEntityQuality={refreshEntityQuality}
-              formatDate={formatDate}
-            />
-
-            <SelectedServiceAdminControls
-              canEdit={canEditSelectedService}
-              isOpen={serviceAdminOpen}
-              onToggleOpen={() => {
-                setServiceAdminOpen((value) => !value);
-                setServiceAdminDraft(buildServiceAdminDraft(selectedService));
-              }}
-              draft={serviceAdminDraft}
-              setDraft={setServiceAdminDraft}
-              onSaveAddressOnly={handleAdminSaveServiceAddressOnly}
-              isSavingAddressOnly={isSavingServiceAddressOnly}
-              onSave={handleAdminSaveService}
-              isSaving={isSavingServiceAdmin}
-              onDelete={handleAdminDeleteService}
-              isDeleting={isDeletingServiceAdmin}
-              serviceTypes={SERVICE_TYPES}
-              priceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
-            />
-          </div>
-
-          <SelectedServiceActions
-            bookingUrl={selectedServiceBookingUrl}
-            linkUrl={selectedServiceLinkUrl}
-            canShowOnMap={
-              Number.isFinite(Number(selectedService.lat)) && Number.isFinite(Number(selectedService.lng))
-            }
-            onShowOnMap={showServiceOnMap}
-            canEdit={canEditSelectedService}
-            isEditorOpen={serviceAdminOpen}
-            onToggleEditor={() => {
-              setServiceAdminOpen((value) => !value);
-              setServiceAdminDraft(buildServiceAdminDraft(selectedService));
-            }}
-            onReport={() =>
-              handleReport({
-                targetType: "service",
-                targetId: selectedService.id,
-                title: selectedService.name,
-              })
-            }
-            serviceName={selectedService.name}
-          />
-        </div>
+        <SelectedServicePanel
+          selectedService={selectedService}
+          onWheel={handleDesktopPanelWheel}
+          onClose={closeService}
+          selectedServiceImages={selectedServiceImages}
+          cityLabel={config.title?.replace("Queer ", "")}
+          serviceTypeLabels={SERVICE_TYPE_LABELS}
+          selectedServiceQuality={selectedServiceQuality}
+          selectedServiceQualityStatus={selectedServiceQualityStatus}
+          refreshEntityQuality={refreshEntityQuality}
+          formatDate={formatDate}
+          canEditSelectedService={canEditSelectedService}
+          serviceAdminOpen={serviceAdminOpen}
+          onToggleServiceAdmin={toggleServiceAdminEditor}
+          serviceAdminDraft={serviceAdminDraft}
+          setServiceAdminDraft={setServiceAdminDraft}
+          onSaveServiceAddressOnly={handleAdminSaveServiceAddressOnly}
+          isSavingServiceAddressOnly={isSavingServiceAddressOnly}
+          onSaveService={handleAdminSaveService}
+          isSavingServiceAdmin={isSavingServiceAdmin}
+          onDeleteService={handleAdminDeleteService}
+          isDeletingServiceAdmin={isDeletingServiceAdmin}
+          serviceTypes={SERVICE_TYPES}
+          priceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
+          bookingUrl={selectedServiceBookingUrl}
+          linkUrl={selectedServiceLinkUrl}
+          canShowOnMap={canShowSelectedServiceOnMap}
+          onShowOnMap={showServiceOnMap}
+          onReportService={handleReportSelectedService}
+        />
       )}
-
       {selectedPlace && (
-        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.08),transparent_22%),linear-gradient(180deg,rgba(17,17,17,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[520px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
-          <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-rose-400/10 blur-3xl" />
-          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#0e0e0e]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closePlace}>
-            Close
-          </button>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <SelectedPlaceSummary
-              selectedPlace={selectedPlace}
-              cityName={cityName}
-              typeLabels={TYPE_LABELS}
-              selectedPlaceSafetySignal={selectedPlaceSafetySignal}
-            />
-            <SelectedPlaceLiveVibePanel
-              liveVibeSummary={liveVibeSummary}
-              liveVibeHeadline={liveVibeHeadline}
-              liveVibePulse={liveVibePulse}
-              liveVibeConsensus={liveVibeConsensus}
-              liveVibeUpdatedLabel={liveVibeUpdatedLabel}
-              liveVibeTableMissing={liveVibeTableMissing}
-              handleSubmitLiveVibe={handleSubmitLiveVibe}
-              isSubmittingLiveVibe={isSubmittingLiveVibe}
-              liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
-              liveVibeSubmittingKey={liveVibeSubmittingKey}
-              liveVibeJustSentKey={liveVibeJustSentKey}
-              LIVE_VIBE_OPTIONS={LIVE_VIBE_OPTIONS}
-              isMember={isMember}
-              liveVibeSelectedOption={liveVibeSelectedOption}
-              isLoadingLiveVibe={isLoadingLiveVibe}
-              liveVibeError={liveVibeError}
-              liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
-              showLiveVibeMomentum={showLiveVibeMomentum}
-              setShowLiveVibeMomentum={setShowLiveVibeMomentum}
-              liveVibeMemberMomentum={liveVibeMemberMomentum}
-              liveVibeStreakNudge={liveVibeStreakNudge}
-            />
-            <SelectedPlaceTrustSignals
-              selectedPlace={selectedPlace}
-              selectedPlaceQuality={selectedPlaceQuality}
-              selectedPlaceQualityStatus={selectedPlaceQualityStatus}
-              refreshEntityQuality={refreshEntityQuality}
-              formatDate={formatDate}
-              trustedPlaceSavesCount={trustedPlaceSavesCount}
-            />
-            <SelectedPlaceAdminControls
-              isAdmin={isAdmin}
-              isOpen={placeAdminOpen}
-              onToggleOpen={() => {
-                setPlaceAdminOpen((value) => !value);
-                setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
-              }}
-              draft={placeAdminDraft}
-              setDraft={setPlaceAdminDraft}
-              onSaveAddressOnly={handleAdminSavePlaceAddressOnly}
-              isSavingAddressOnly={isSavingPlaceAddressOnly}
-              onSave={handleAdminSavePlace}
-              isSaving={isSavingPlaceAdmin}
-              onDelete={handleAdminDeletePlace}
-              isDeleting={isDeletingPlaceAdmin}
-              placeTypes={TYPES}
-            />
-          </div>
-          <SelectedPlaceActions
-            selectedPlace={selectedPlace}
-            handleReport={handleReport}
-            toggleFavorite={toggleFavorite}
-            favorites={favorites}
-            isAdmin={isAdmin}
-            handleAdminDeletePlace={handleAdminDeletePlace}
-            isDeletingPlaceAdmin={isDeletingPlaceAdmin}
-          />
-
-          <SelectedPlaceReviewsList reviews={reviews} />
-
-          <SelectedPlaceReviewComposer
-            isMember={isMember}
-            canReviewSelectedPlace={canReviewSelectedPlace}
-            isSubmittingReview={isSubmittingReview}
-            onJoinToReview={handleJoinToPlaceReview}
-            rating={rating}
-            hoverRating={hoverRating}
-            setHoverRating={setHoverRating}
-            setRating={setRating}
-            safetyRating={safetyRating}
-            hoverSafetyRating={hoverSafetyRating}
-            setHoverSafetyRating={setHoverSafetyRating}
-            setSafetyRating={setSafetyRating}
-            comment={comment}
-            setComment={setComment}
-            onSubmitReview={handleSubmitPlaceReview}
-          />
-        </div>
+        <SelectedPlacePanel
+          selectedPlace={selectedPlace}
+          onWheel={handleDesktopPanelWheel}
+          onClose={closePlace}
+          cityName={cityName}
+          typeLabels={TYPE_LABELS}
+          selectedPlaceSafetySignal={selectedPlaceSafetySignal}
+          liveVibeSummary={liveVibeSummary}
+          liveVibeHeadline={liveVibeHeadline}
+          liveVibePulse={liveVibePulse}
+          liveVibeConsensus={liveVibeConsensus}
+          liveVibeUpdatedLabel={liveVibeUpdatedLabel}
+          liveVibeTableMissing={liveVibeTableMissing}
+          handleSubmitLiveVibe={handleSubmitLiveVibe}
+          isSubmittingLiveVibe={isSubmittingLiveVibe}
+          liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
+          liveVibeSubmittingKey={liveVibeSubmittingKey}
+          liveVibeJustSentKey={liveVibeJustSentKey}
+          liveVibeOptions={LIVE_VIBE_OPTIONS}
+          isMember={isMember}
+          liveVibeSelectedOption={liveVibeSelectedOption}
+          isLoadingLiveVibe={isLoadingLiveVibe}
+          liveVibeError={liveVibeError}
+          liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
+          showLiveVibeMomentum={showLiveVibeMomentum}
+          setShowLiveVibeMomentum={setShowLiveVibeMomentum}
+          liveVibeMemberMomentum={liveVibeMemberMomentum}
+          liveVibeStreakNudge={liveVibeStreakNudge}
+          selectedPlaceQuality={selectedPlaceQuality}
+          selectedPlaceQualityStatus={selectedPlaceQualityStatus}
+          refreshEntityQuality={refreshEntityQuality}
+          formatDate={formatDate}
+          trustedPlaceSavesCount={trustedPlaceSavesCount}
+          isAdmin={isAdmin}
+          placeAdminOpen={placeAdminOpen}
+          onTogglePlaceAdmin={togglePlaceAdminEditor}
+          placeAdminDraft={placeAdminDraft}
+          setPlaceAdminDraft={setPlaceAdminDraft}
+          handleAdminSavePlaceAddressOnly={handleAdminSavePlaceAddressOnly}
+          isSavingPlaceAddressOnly={isSavingPlaceAddressOnly}
+          handleAdminSavePlace={handleAdminSavePlace}
+          isSavingPlaceAdmin={isSavingPlaceAdmin}
+          handleAdminDeletePlace={handleAdminDeletePlace}
+          isDeletingPlaceAdmin={isDeletingPlaceAdmin}
+          placeTypes={TYPES}
+          handleReport={handleReport}
+          toggleFavorite={toggleFavorite}
+          favorites={favorites}
+          reviews={reviews}
+          canReviewSelectedPlace={canReviewSelectedPlace}
+          isSubmittingReview={isSubmittingReview}
+          onJoinToReview={handleJoinToPlaceReview}
+          rating={rating}
+          hoverRating={hoverRating}
+          setHoverRating={setHoverRating}
+          setRating={setRating}
+          safetyRating={safetyRating}
+          hoverSafetyRating={hoverSafetyRating}
+          setHoverSafetyRating={setHoverSafetyRating}
+          setSafetyRating={setSafetyRating}
+          comment={comment}
+          setComment={setComment}
+          onSubmitReview={handleSubmitPlaceReview}
+        />
       )}
-
       {selectedEvent && (
-        <div onWheel={handleDesktopPanelWheel} className="animate-panel-in fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border border-white/10 border-b-0 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)] backdrop-blur lg:relative lg:inset-auto lg:w-[520px] lg:max-h-none lg:overflow-visible lg:overscroll-auto lg:rounded-none lg:border-b-0 lg:border-l lg:border-r-0 lg:border-t-0 lg:pb-6 lg:shadow-[-24px_0_80px_rgba(0,0,0,0.28)]">
-          <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
-          <button className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#111021]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white" onClick={closeEvent}>
-            Close
-          </button>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <SelectedEventSummary
-              selectedEvent={selectedEvent}
-              cityLabel={config.title?.replace("Queer ", "")}
-              cityName={cityName}
-            />
-            <SelectedEventLiveVibePanel
-              LIVE_VIBE_OPTIONS={LIVE_VIBE_OPTIONS}
-              eventLiveVibeSignalKey={eventLiveVibeSignalKey}
-              isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
-              eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
-              eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
-              handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
-              isMember={isMember}
-              eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
-            />
-            <SelectedEventMetaCards
-              selectedEvent={selectedEvent}
-              selectedEventQuality={selectedEventQuality}
-              formatDate={formatDate}
-            />
-            <SelectedEventTrustSignals
-              selectedEvent={selectedEvent}
-              selectedEventQuality={selectedEventQuality}
-              selectedEventQualityStatus={selectedEventQualityStatus}
-              refreshEntityQuality={refreshEntityQuality}
-              trustedEventSavesCount={trustedEventSavesCount}
-            />
-            <SelectedEventAdminControls
-              isAdmin={isAdmin}
-              isOpen={eventAdminOpen}
-              onToggleOpen={() => {
-                setEventAdminOpen((value) => !value);
-                setEventAdminDraft(buildEventAdminDraft(selectedEvent));
-              }}
-              draft={eventAdminDraft}
-              setDraft={setEventAdminDraft}
-              onSaveAddressOnly={handleAdminSaveEventAddressOnly}
-              isSavingAddressOnly={isSavingEventAddressOnly}
-              onSave={handleAdminSaveEvent}
-              isSaving={isSavingEventAdmin}
-              onDelete={handleAdminDeleteEvent}
-              isDeleting={isDeletingEventAdmin}
-            />
-          </div>
-
-          <SelectedEventActions
-            selectedEvent={selectedEvent}
-            favorites={favorites}
-            toggleFavorite={toggleFavorite}
-            showEventOnMap={showEventOnMap}
-            isAdmin={isAdmin}
-            isDeletingEventAdmin={isDeletingEventAdmin}
-            handleAdminDeleteEvent={handleAdminDeleteEvent}
-            handleReport={handleReport}
-          />
-        </div>
+        <SelectedEventPanel
+          selectedEvent={selectedEvent}
+          onWheel={handleDesktopPanelWheel}
+          onClose={closeEvent}
+          cityLabel={config.title?.replace("Queer ", "")}
+          cityName={cityName}
+          liveVibeOptions={LIVE_VIBE_OPTIONS}
+          eventLiveVibeSignalKey={eventLiveVibeSignalKey}
+          isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
+          eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
+          eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
+          handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
+          isMember={isMember}
+          eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
+          selectedEventQuality={selectedEventQuality}
+          formatDate={formatDate}
+          selectedEventQualityStatus={selectedEventQualityStatus}
+          refreshEntityQuality={refreshEntityQuality}
+          trustedEventSavesCount={trustedEventSavesCount}
+          isAdmin={isAdmin}
+          eventAdminOpen={eventAdminOpen}
+          onToggleEventAdmin={toggleEventAdminEditor}
+          eventAdminDraft={eventAdminDraft}
+          setEventAdminDraft={setEventAdminDraft}
+          handleAdminSaveEventAddressOnly={handleAdminSaveEventAddressOnly}
+          isSavingEventAddressOnly={isSavingEventAddressOnly}
+          handleAdminSaveEvent={handleAdminSaveEvent}
+          isSavingEventAdmin={isSavingEventAdmin}
+          handleAdminDeleteEvent={handleAdminDeleteEvent}
+          isDeletingEventAdmin={isDeletingEventAdmin}
+          favorites={favorites}
+          toggleFavorite={toggleFavorite}
+          showEventOnMap={showEventOnMap}
+          handleReport={handleReport}
+        />
       )}
-
       <CityReportModal
         open={reportModalOpen}
         reportDraft={reportDraft}
@@ -5194,5 +4057,11 @@ export default function CityPage() {
     </main>
   );
 }
+
+
+
+
+
+
 
 
