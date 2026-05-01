@@ -279,9 +279,9 @@ function mapMemberSearchRow(row) {
 
 function Field({ value, onChange, placeholder, area = false }) {
   if (area) {
-    return <textarea value={value} onChange={onChange} placeholder={placeholder} className="h-28 w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50" />;
+    return <textarea value={value} onChange={onChange} placeholder={placeholder} className="h-28 w-full rounded-xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/16" />;
   }
-  return <input value={value} onChange={onChange} placeholder={placeholder} className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50" />;
+  return <input value={value} onChange={onChange} placeholder={placeholder} className="w-full rounded-xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/16" />;
 }
 
 export default function CommunityPage() {
@@ -1184,16 +1184,17 @@ export default function CommunityPage() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white px-6 py-8">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(244,114,182,0.10),transparent_26%),radial-gradient(circle_at_88%_10%,rgba(34,211,238,0.10),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_52%,#040406_100%)] text-white px-6 py-8">
       <ActionToast toast={toast} />
-      <div className="relative mx-auto max-w-7xl">
+      <div className="qa-shell relative mx-auto max-w-7xl">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.06),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(59,130,246,0.06),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
-        <div className="mb-8 overflow-hidden rounded-[34px] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_26%),radial-gradient(circle_at_80%_20%,rgba(34,197,94,0.20),transparent_28%),linear-gradient(135deg,rgba(6,78,59,0.66),rgba(10,10,10,0.96),rgba(76,29,149,0.44))] p-8 shadow-[0_34px_130px_rgba(16,185,129,0.12)]">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="mb-8 qa-premium-card overflow-hidden rounded-[34px] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_26%),radial-gradient(circle_at_80%_20%,rgba(34,197,94,0.20),transparent_28%),linear-gradient(135deg,rgba(6,78,59,0.66),rgba(10,10,10,0.96),rgba(76,29,149,0.44))] p-8 shadow-[0_42px_140px_rgba(16,185,129,0.16),0_22px_60px_rgba(0,0,0,0.36)]">
           <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/90">Members Only</p>
-            <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">Community</h1>
+            <h1 className="qa-display mt-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">Community</h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-200">Stories, discussions, guides, and product ideas from queer travelers, locals, and regulars shaping the atlas together.</p>
             <p className="mt-3 text-xs text-emerald-100/75">
               Safety first. Read our{" "}
@@ -1224,7 +1225,7 @@ export default function CommunityPage() {
           </div>
         </div>
 
-        <section className="mb-6 rounded-[26px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-5 shadow-[0_22px_70px_rgba(99,102,241,0.12)]">
+        <section className="qa-premium-card mb-6 rounded-[26px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-5 shadow-[0_28px_90px_rgba(99,102,241,0.14),0_14px_34px_rgba(0,0,0,0.30)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-indigo-200/80">Community Ranking</p>
@@ -1236,7 +1237,7 @@ export default function CommunityPage() {
             {leaderboard.slice(0, 5).map((entry) => {
               const titleMeta = getMemberTitleMeta(entry.title);
               return (
-                <article key={entry.user_id} className="rounded-2xl border border-white/10 bg-white/6 p-3">
+                <article key={entry.user_id} className="qa-premium-card rounded-2xl border border-white/10 bg-white/6 p-3 shadow-[0_14px_32px_rgba(0,0,0,0.22)]">
                   <p className="text-xs text-white/60">#{entry.rank}</p>
                   <p className="mt-1 truncate text-sm font-semibold text-white">{entry.display_name}</p>
                   <span className={`mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
@@ -1265,7 +1266,7 @@ export default function CommunityPage() {
                 cityChampions.map((champion) => (
                   <article
                     key={`champion-${normalizeMemberKey(champion.city)}`}
-                    className="rounded-2xl border border-white/10 bg-black/25 p-3"
+                    className="qa-premium-card rounded-2xl border border-white/10 bg-black/25 p-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]"
                   >
                     <p className="text-[11px] uppercase tracking-[0.14em] text-indigo-100/75">
                       {champion.city}
@@ -1304,7 +1305,7 @@ export default function CommunityPage() {
           </div>
         </section>
 
-        <section className="mb-6 rounded-[26px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-5 shadow-[0_22px_70px_rgba(217,70,239,0.12)]">
+        <section className="qa-premium-card mb-6 rounded-[26px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-5 shadow-[0_30px_96px_rgba(217,70,239,0.15),0_14px_34px_rgba(0,0,0,0.30)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/85">Member Discovery</p>
@@ -1384,7 +1385,7 @@ export default function CommunityPage() {
               const titleMeta = getMemberTitleMeta(entry.title || "");
               const busy = Boolean(memberSearchBusyById[entry.user_id]);
               return (
-                <article key={entry.user_id} className="rounded-2xl border border-white/10 bg-black/28 p-4 transition hover:border-fuchsia-200/30 hover:bg-black/35">
+                <article key={entry.user_id} className="qa-premium-card rounded-2xl border border-white/10 bg-black/28 p-4 transition hover:border-fuchsia-200/30 hover:bg-black/35 hover:shadow-[0_20px_50px_rgba(217,70,239,0.14)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-white">{entry.display_name}</p>
@@ -1464,7 +1465,7 @@ export default function CommunityPage() {
         </section>
 
         <div className="relative grid gap-6 xl:grid-cols-2">
-          <section className="rounded-[30px] border border-rose-400/15 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.18),transparent_26%),linear-gradient(180deg,rgba(38,14,28,0.96),rgba(10,10,10,1))] p-6 shadow-[0_28px_90px_rgba(244,114,182,0.10)]">
+          <section className="qa-premium-card rounded-[30px] border border-rose-400/15 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.18),transparent_26%),linear-gradient(180deg,rgba(38,14,28,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(244,114,182,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-rose-300">Stories</p>
@@ -1489,7 +1490,7 @@ export default function CommunityPage() {
             )}
             <div className="max-h-[560px] space-y-4 overflow-y-auto pr-1">
               {sortedStories.map((story) => (
-                <article key={story.id} className="animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
+                <article key={story.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">{story.city} · {story.category}</p>
@@ -1541,7 +1542,7 @@ export default function CommunityPage() {
             </div>
           </section>
 
-          <section className="rounded-[30px] border border-violet-400/15 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.18),transparent_26%),linear-gradient(180deg,rgba(24,18,44,0.96),rgba(10,10,10,1))] p-6 shadow-[0_28px_90px_rgba(139,92,246,0.10)]">
+          <section className="qa-premium-card rounded-[30px] border border-violet-400/15 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.18),transparent_26%),linear-gradient(180deg,rgba(24,18,44,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(139,92,246,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.25em] text-violet-300">Member Guides</p>
@@ -1632,7 +1633,7 @@ export default function CommunityPage() {
           </section>
         </div>
 
-        <section className="mt-6 rounded-[30px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-6 shadow-[0_28px_90px_rgba(34,211,238,0.10)]">
+        <section className="qa-premium-card mt-6 rounded-[30px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
           <div className="mb-5">
             <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Discussions</p>
             <h2 className="mt-2 text-2xl font-semibold text-white">Live chat</h2>
@@ -1644,7 +1645,7 @@ export default function CommunityPage() {
                   const replies = (messages[topic.id] || []).length;
                   const active = activeTopic?.id === topic.id;
                   return (
-                    <article key={topic.id} className={`w-full rounded-2xl border p-4 text-left transition ${active ? "border-cyan-300 bg-cyan-300/12 shadow-[0_12px_30px_rgba(34,211,238,0.12)]" : "border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.74),rgba(11,11,11,0.95))] hover:border-cyan-300/30"} animate-rise-in`}>
+                    <article key={topic.id} className={`qa-premium-card w-full rounded-2xl border p-4 text-left transition ${active ? "border-cyan-300 bg-cyan-300/12 shadow-[0_12px_30px_rgba(34,211,238,0.12)]" : "border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.74),rgba(11,11,11,0.95))] hover:border-cyan-300/30"} animate-rise-in`}>
                       <button onClick={() => setTopicId(topic.id)} className="w-full text-left">
                         <div className="flex items-center justify-between gap-3">
                           <h3 className="text-sm font-semibold">{topic.name}</h3>
@@ -1777,7 +1778,7 @@ export default function CommunityPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-[30px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-6 shadow-[0_28px_90px_rgba(251,191,36,0.10)]">
+        <section className="qa-premium-card mt-6 rounded-[30px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Improve Queer Atlas</p>
@@ -1795,7 +1796,7 @@ export default function CommunityPage() {
           )}
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {sortedIdeas.map((idea) => (
-              <div key={idea.id} className="animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(46,31,10,0.78),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-amber-200/30 hover:shadow-[0_24px_60px_rgba(251,191,36,0.14)]">
+              <div key={idea.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(46,31,10,0.78),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-amber-200/30 hover:shadow-[0_24px_60px_rgba(251,191,36,0.14)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm leading-6 text-gray-300">{idea.text}</p>

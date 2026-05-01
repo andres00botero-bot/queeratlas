@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -1575,12 +1575,15 @@ export default function FavoritesPage() {
   }
 
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_top,#120b1d_0%,#050505_38%,#040404_100%)] text-white">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_9%,rgba(56,189,248,0.11),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_48%,#040406_100%)] text-white">
       <ActionToast toast={toast} />
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.14),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="pointer-events-none absolute -left-10 top-20 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-12 top-28 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
 
-        <section className="qa-panel relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.22),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.20),transparent_28%),linear-gradient(135deg,rgba(36,20,44,0.96),rgba(10,10,10,0.99),rgba(14,28,26,0.98))] p-4 shadow-[0_30px_108px_rgba(0,0,0,0.46)] sm:rounded-[34px] sm:p-6">
+        <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(135deg,rgba(22,22,24,0.95),rgba(10,10,10,0.99),rgba(16,18,22,0.98))] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="max-w-4xl">
@@ -1590,7 +1593,7 @@ export default function FavoritesPage() {
             <p className="mt-4 text-sm text-rose-100/78">
               {greeting}, {displayName}
             </p>
-            <h1 className="qa-display qa-h1 mt-4 text-4xl font-bold text-white sm:text-6xl">
+            <h1 className="qa-display qa-h1 mt-4 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-4xl font-bold text-transparent sm:text-6xl">
               Your Atlas
             </h1>
             <p className="qa-lead mt-4 max-w-2xl text-sm text-white/62 sm:mt-5 sm:text-base">
@@ -1627,19 +1630,19 @@ export default function FavoritesPage() {
           </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="qa-card qa-metric-card rounded-2xl border border-rose-200/18 bg-[linear-gradient(180deg,rgba(251,113,133,0.18),rgba(251,113,133,0.06))] p-3.5 backdrop-blur sm:p-4">
+            <div className="qa-premium-card qa-card qa-metric-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(244,114,182,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3.5 shadow-[0_22px_58px_rgba(0,0,0,0.34),0_10px_28px_rgba(244,114,182,0.14)] backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved places</p>
               <p className="mt-2 text-xl font-semibold text-white sm:text-2xl">{totalPlaces}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-2xl border border-violet-200/18 bg-[linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.06))] p-3.5 backdrop-blur sm:p-4">
+            <div className="qa-premium-card qa-card qa-metric-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(167,139,250,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3.5 shadow-[0_22px_58px_rgba(0,0,0,0.34),0_10px_28px_rgba(167,139,250,0.14)] backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved events</p>
               <p className="mt-2 text-xl font-semibold text-white sm:text-2xl">{totalEvents}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-2xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(34,211,238,0.16),rgba(34,211,238,0.06))] p-3.5 backdrop-blur sm:p-4">
+            <div className="qa-premium-card qa-card qa-metric-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(34,211,238,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3.5 shadow-[0_22px_58px_rgba(0,0,0,0.34),0_10px_28px_rgba(34,211,238,0.14)] backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
               <p className="mt-2 text-xl font-semibold text-white sm:text-2xl">{totalCities}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-2xl border border-amber-200/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.16),rgba(251,191,36,0.06))] p-3.5 backdrop-blur sm:p-4">
+            <div className="qa-premium-card qa-card qa-metric-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(251,191,36,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3.5 shadow-[0_22px_58px_rgba(0,0,0,0.34),0_10px_28px_rgba(251,191,36,0.14)] backdrop-blur sm:p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Top vibe</p>
               <p className="mt-2 text-xl font-semibold capitalize text-white sm:text-2xl">
                 {topVibe}
@@ -1795,11 +1798,11 @@ export default function FavoritesPage() {
           </form>
         </section>
 
-        <section className="relative mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.10),transparent_34%),linear-gradient(180deg,rgba(22,14,28,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_28px_88px_rgba(0,0,0,0.36)] max-[390px]:p-2.5 sm:rounded-[32px] sm:p-4">
+        <section className="qa-premium-card relative mb-6 rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_top_right,rgba(244,114,182,0.07),transparent_34%),linear-gradient(180deg,rgba(20,20,22,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_36px_108px_rgba(0,0,0,0.48)] max-[390px]:p-2.5 sm:rounded-[32px] sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-3 max-[390px]:gap-2">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-white/55 max-[390px]:text-[10px]">Signal rail</p>
-              <h2 className="qa-h2 mt-2 text-xl font-semibold tracking-[-0.02em] text-white max-[390px]:mt-1 max-[390px]:text-lg sm:text-2xl">Momentum</h2>
+              <h2 className="qa-h2 mt-2 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent max-[390px]:mt-1 max-[390px]:text-lg sm:text-2xl">Momentum</h2>
               <p className="mt-1.5 text-xs leading-5 text-white/56 max-[390px]:text-[11px] max-[390px]:leading-4 sm:text-sm">
                 One integrated panel for your current signal and your fastest next actions.
               </p>
@@ -1829,8 +1832,8 @@ export default function FavoritesPage() {
             />
           </div>
 
-          <div className="mt-2.5 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-3 max-[390px]:rounded-[18px] max-[390px]:p-2.5">
-              <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+          <div className="qa-premium-card mt-2.5 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_40px_rgba(0,0,0,0.26)] max-[390px]:rounded-[18px] max-[390px]:p-2.5">
+              <div className="qa-premium-card mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 shadow-[0_14px_30px_rgba(0,0,0,0.24)] max-[390px]:rounded-xl max-[390px]:p-2.5">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-indigo-200/75">Community ranking</p>
                 {memberRank?.title ? (
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1850,7 +1853,7 @@ export default function FavoritesPage() {
                 )}
               </div>
 
-              <div className="mt-2.5 rounded-2xl border border-emerald-200/18 bg-emerald-200/[0.08] p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+              <div className="qa-premium-card mt-2.5 rounded-2xl border border-emerald-200/18 bg-emerald-200/[0.08] p-3 shadow-[0_14px_30px_rgba(16,185,129,0.14),0_8px_20px_rgba(0,0,0,0.24)] max-[390px]:rounded-xl max-[390px]:p-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-100/78">Your footprint</p>
                   {!isEditingProfile ? (
@@ -1946,7 +1949,7 @@ export default function FavoritesPage() {
                 ) : null}
               </div>
 
-              <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+              <div className="qa-premium-card mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 shadow-[0_14px_30px_rgba(0,0,0,0.24)] max-[390px]:rounded-xl max-[390px]:p-2.5">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">Your cities</p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {allCities.length > 0 ? (
@@ -1967,13 +1970,13 @@ export default function FavoritesPage() {
             </div>
         </section>
 
-        <section className="mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+        <section className="qa-premium-card mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_34px_104px_rgba(0,0,0,0.42)] sm:rounded-[32px] sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-200/75">
                 Your travel timeline
               </p>
-              <h2 className="qa-h2 mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+              <h2 className="qa-h2 mt-2 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-2xl">
                 Check-in map
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
@@ -1993,10 +1996,10 @@ export default function FavoritesPage() {
           <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
             <div
               ref={checkinMapCardRef}
-              className={`rounded-3xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 transition ${
+              className={`qa-premium-card rounded-3xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 shadow-[0_18px_38px_rgba(0,0,0,0.28)] transition ${
                 selectedCheckin
                   ? "border-fuchsia-200/34 shadow-[0_0_0_1px_rgba(244,114,182,0.18),0_24px_80px_rgba(244,114,182,0.14)]"
-                  : "border-white/10"
+                  : "border-white/10 hover:shadow-[0_24px_54px_rgba(6,182,212,0.16),0_10px_26px_rgba(0,0,0,0.34)]"
               }`}
             >
               {selectedCheckin ? (
@@ -2304,7 +2307,7 @@ export default function FavoritesPage() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4">
+            <div className="qa-premium-card rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 shadow-[0_18px_38px_rgba(0,0,0,0.28)]">
               <p className="text-xs uppercase tracking-[0.18em] text-white/42">Your check-ins</p>
               <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                 <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
@@ -2601,7 +2604,7 @@ export default function FavoritesPage() {
             </form>
           </div>
 
-          <div className="rounded-[30px] border border-cyan-200/16 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_30%),linear-gradient(180deg,rgba(11,31,36,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_28px_88px_rgba(0,0,0,0.36)] sm:rounded-[32px] sm:p-5">
+          <div className="qa-premium-card rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_10%_8%,rgba(244,114,182,0.07),transparent_28%),linear-gradient(180deg,rgba(18,18,20,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_36px_108px_rgba(0,0,0,0.48)] sm:rounded-[32px] sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
@@ -2642,7 +2645,7 @@ export default function FavoritesPage() {
               plans.map((plan, index) => (
                 <article
                   key={plan.id}
-                  className="animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.20)] sm:p-4"
+                  className="qa-premium-card animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.20)] sm:p-4"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
@@ -2831,5 +2834,3 @@ export default function FavoritesPage() {
     </main>
   );
 }
-
-

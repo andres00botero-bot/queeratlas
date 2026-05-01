@@ -1304,7 +1304,7 @@ export default function MessagesPage() {
   return (
     <main className="qa-page min-h-screen bg-[#050505] text-white">
       <div className="qa-shell">
-        <section className="qa-panel mb-6 rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_10%_10%,rgba(34,211,238,0.22),transparent_34%),radial-gradient(circle_at_86%_18%,rgba(244,114,182,0.2),transparent_30%),linear-gradient(145deg,rgba(10,34,48,0.98),rgba(10,10,10,1))] p-6 shadow-[0_36px_120px_rgba(0,0,0,0.46)]">
+        <section className="qa-panel mb-6 rounded-[34px] border border-cyan-300/18 bg-[radial-gradient(circle_at_12%_8%,rgba(34,211,238,0.24),transparent_34%),radial-gradient(circle_at_88%_20%,rgba(244,114,182,0.2),transparent_34%),linear-gradient(150deg,rgba(10,38,52,0.98),rgba(10,10,10,1))] p-6 shadow-[0_44px_140px_rgba(0,0,0,0.56)] backdrop-blur-sm">
           <p className="qa-eyebrow text-cyan-100/75">Signal Inbox</p>
           <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Inbox</h1>
           <p className="qa-lead mt-4 max-w-3xl text-sm text-white/76">
@@ -1358,7 +1358,7 @@ export default function MessagesPage() {
 
         <section
           ref={vipPanelRef}
-          className="qa-panel mb-6 rounded-[28px] border border-fuchsia-300/16 bg-[linear-gradient(155deg,rgba(48,15,56,0.66),rgba(10,10,10,0.98))] p-4 sm:p-5"
+          className="qa-panel mb-6 rounded-[28px] border border-fuchsia-300/20 bg-[radial-gradient(circle_at_82%_4%,rgba(251,113,133,0.14),transparent_30%),linear-gradient(155deg,rgba(48,15,56,0.7),rgba(10,10,10,0.98))] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.4)] backdrop-blur-sm sm:p-5"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -1537,7 +1537,7 @@ export default function MessagesPage() {
           </section>
         ) : null}
 
-        <section className="qa-panel mb-6 rounded-[26px] border border-sky-300/16 bg-[radial-gradient(circle_at_10%_10%,rgba(56,189,248,0.18),transparent_34%),linear-gradient(145deg,rgba(11,29,47,0.9),rgba(10,10,10,0.98))] p-4 sm:p-5">
+        <section className="qa-panel mb-6 rounded-[26px] border border-sky-300/18 bg-[radial-gradient(circle_at_10%_10%,rgba(56,189,248,0.18),transparent_34%),radial-gradient(circle_at_90%_12%,rgba(45,212,191,0.14),transparent_30%),linear-gradient(145deg,rgba(11,31,49,0.92),rgba(10,10,10,0.98))] p-4 shadow-[0_24px_72px_rgba(0,0,0,0.38)] backdrop-blur-sm sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[11px] uppercase tracking-[0.16em] text-sky-100/75">Start Conversation</p>
@@ -1678,7 +1678,7 @@ export default function MessagesPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className={`${mobileThreadOpen ? "hidden lg:block" : "block"} qa-panel rounded-[30px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(9,30,40,0.68),rgba(10,10,10,0.99))] p-4`}>
+          <div className={`${mobileThreadOpen ? "hidden lg:block" : "block"} qa-panel rounded-[30px] border border-cyan-300/16 bg-[radial-gradient(circle_at_10%_8%,rgba(34,211,238,0.14),transparent_34%),linear-gradient(180deg,rgba(9,32,44,0.7),rgba(10,10,10,0.99))] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.35)] backdrop-blur-sm`}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-xs uppercase tracking-[0.2em] text-white/45">Conversations</p>
               <div className="flex items-center gap-2">
@@ -1773,7 +1773,7 @@ export default function MessagesPage() {
             )}
           </div>
 
-          <div className={`${mobileThreadOpen ? "block" : "hidden lg:block"} qa-panel rounded-[30px] border border-fuchsia-300/14 bg-[linear-gradient(180deg,rgba(42,14,38,0.46),rgba(10,10,10,0.99))] p-4`}>
+          <div className={`${mobileThreadOpen ? "block" : "hidden lg:block"} qa-panel rounded-[30px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_88%_8%,rgba(244,114,182,0.15),transparent_34%),linear-gradient(180deg,rgba(42,14,38,0.5),rgba(10,10,10,0.99))] p-4 shadow-[0_22px_60px_rgba(0,0,0,0.35)] backdrop-blur-sm`}>
             {activeThread ? (
               <>
                 <div className="mb-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-200/[0.06] px-4 py-3">

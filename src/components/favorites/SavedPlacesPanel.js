@@ -12,13 +12,13 @@ export default function SavedPlacesPanel({
   renderSkeleton,
 }) {
   return (
-    <section className="mb-6 rounded-[30px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+    <section className="qa-premium-card mb-6 rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_28%),radial-gradient(circle_at_88%_16%,rgba(244,114,182,0.06),transparent_26%),linear-gradient(180deg,rgba(18,18,20,0.92),rgba(10,10,10,0.99))] p-4 shadow-[0_36px_108px_rgba(0,0,0,0.50)] sm:rounded-[32px] sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="mt-1 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+          <h2 className="qa-title mt-1 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-2xl">
             Saved places
           </h2>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-rose-200/70">
+          <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-cyan-200/70">
             Places with gravity
           </p>
           <p className="mt-2 text-sm leading-6 text-white/56">
@@ -45,7 +45,7 @@ export default function SavedPlacesPanel({
                   onOpenPlace?.(place);
                 }
               }}
-              className="animate-rise-in cursor-pointer rounded-[22px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 transition duration-300 hover:-translate-y-[2px] hover:border-rose-200/18 hover:shadow-[0_20px_56px_rgba(0,0,0,0.30)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/45 sm:rounded-[24px] sm:p-4"
+              className="qa-premium-card animate-rise-in cursor-pointer rounded-[22px] border border-white/12 bg-[radial-gradient(circle_at_14%_10%,rgba(56,189,248,0.07),transparent_32%),linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.015))] p-3.5 shadow-[0_20px_56px_rgba(0,0,0,0.34)] transition duration-300 hover:-translate-y-[2px] hover:border-cyan-200/24 hover:shadow-[0_28px_76px_rgba(0,0,0,0.42)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 sm:rounded-[24px] sm:p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -54,8 +54,8 @@ export default function SavedPlacesPanel({
                   </p>
                   <h3 className="mt-2 text-xl font-semibold text-white">{place.name}</h3>
                 </div>
-                <div className="rounded-full border border-rose-200/10 bg-rose-200/[0.06] px-3 py-1 text-xs text-white/60">
-                  ★ {place.avgRating?.toFixed(1) || "-"}
+                <div className="rounded-full border border-white/14 bg-white/[0.07] px-3 py-1 text-xs text-white/70">
+                  Rating {place.avgRating?.toFixed(1) || "-"}
                 </div>
               </div>
 
@@ -82,7 +82,7 @@ export default function SavedPlacesPanel({
                       event.stopPropagation();
                       onQuickCheckin?.(place);
                     }}
-                    className="qa-action qa-action-strong rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
+                    className="qa-action qa-action-strong rounded-full border border-cyan-200/22 bg-cyan-200/[0.14] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:-translate-y-[1px] hover:border-cyan-200/34"
                   >
                     Check in
                   </button>
@@ -92,7 +92,7 @@ export default function SavedPlacesPanel({
                       event.stopPropagation();
                       onRemoveFavorite?.(place.id, place.name);
                     }}
-                    className="qa-action rounded-full border border-rose-200/14 bg-rose-200/[0.08] px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/30"
+                    className="qa-action rounded-full border border-white/16 bg-white/[0.10] px-3 py-1 text-[11px] text-white/85 transition hover:-translate-y-[1px] hover:border-white/34"
                   >
                     Remove
                   </button>
@@ -106,7 +106,7 @@ export default function SavedPlacesPanel({
             <button
               type="button"
               onClick={onExploreCities}
-              className="qa-action qa-action-strong mt-3 rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
+            className="qa-action qa-action-strong mt-3 rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:-translate-y-[1px] hover:border-cyan-200/40"
             >
               Explore cities
             </button>

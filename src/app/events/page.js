@@ -59,6 +59,7 @@ export default function EventsPage() {
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
   const { toast, showToast } = useActionToast();
   const offgridSectionRef = useRef(null);
+  const eventListSectionRef = useRef(null);
 
   const [events, setEvents] = useState([]);
   const [qualityTick, setQualityTick] = useState(0);
@@ -705,53 +706,67 @@ export default function EventsPage() {
     }
   };
 
+  const selectCalendarDate = useCallback((dateStr) => {
+    setSelectedDate(dateStr);
+    if (typeof window === "undefined") return;
+    if (!window.matchMedia("(max-width: 1023px)").matches) return;
+
+    requestAnimationFrame(() => {
+      eventListSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, []);
+
   return (
-    <main className="qa-page min-h-screen overflow-x-hidden bg-[#040404] text-white">
+    <main className="qa-page min-h-screen overflow-x-hidden bg-[#050608] text-white">
       <div className="relative">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(249,115,22,0.11),transparent_18%),radial-gradient(circle_at_20%_22%,rgba(236,72,153,0.12),transparent_24%),radial-gradient(circle_at_85%_16%,rgba(59,130,246,0.11),transparent_19%),linear-gradient(180deg,#040404_0%,#090909_48%,#040404_100%)]" />
-        <div className="pointer-events-none absolute left-[-6%] top-24 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute right-[-5%] top-32 h-80 w-80 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute bottom-16 left-1/3 h-72 w-72 rounded-full bg-orange-400/9 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_10%,rgba(56,189,248,0.12),transparent_25%),radial-gradient(circle_at_92%_14%,rgba(236,72,153,0.11),transparent_24%),radial-gradient(circle_at_45%_80%,rgba(249,115,22,0.10),transparent_30%),linear-gradient(180deg,#050608_0%,#090b10_48%,#050608_100%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="pointer-events-none absolute left-[-6%] top-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-[-5%] top-32 h-80 w-80 rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-16 left-1/3 h-72 w-72 rounded-full bg-orange-400/8 blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 top-[23rem] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
         <div className="qa-shell relative">
-          <section className="qa-panel overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(30,30,30,0.96),rgba(8,8,8,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8">
+          <section className="qa-panel qa-premium-card overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8">
             <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
               <div>
                 <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-white/72 backdrop-blur">
-                  <span className="h-2 w-2 rounded-full bg-orange-300 shadow-[0_0_20px_rgba(253,186,116,0.9)]" />
-                  Time-based queer signal
+                  <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.9)]" />
+                  Live Discovery + Event Signal
                 </div>
 
                 <h1 className="qa-display qa-h1 mt-6 text-4xl font-semibold text-white sm:text-5xl xl:text-6xl">
-                  Events
+                  Events Radar
                 </h1>
 
                 <p className="qa-lead mt-5 max-w-2xl text-base text-white/68 sm:text-lg">
-                  Track what is happening across the atlas, follow the live calendar,
-                  and jump straight into cities where queer energy is gathering.
+                  Follow the global queer calendar with precision: discover what is live,
+                  what is next, and where city energy is building right now.
                 </p>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  <div className="qa-card qa-metric-card rounded-3xl border border-fuchsia-300/20 bg-[linear-gradient(180deg,rgba(244,114,182,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
-                    <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-100/70">All events</p>
+                  <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-cyan-300/24 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_36px_rgba(6,182,212,0.18),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+                    <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/72">All events</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{calendarEvents.length}</p>
                   </div>
-                  <div className="qa-card qa-metric-card rounded-3xl border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                  <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-fuchsia-300/24 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_36px_rgba(236,72,153,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Active cities</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{activeCities}</p>
                   </div>
-                  <div className="qa-card qa-metric-card rounded-3xl border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(125,211,252,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
-                    <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/75">This month</p>
+                  <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-orange-300/22 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_36px_rgba(249,115,22,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+                    <p className="text-xs uppercase tracking-[0.18em] text-orange-100/75">This month</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{eventsThisMonth}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-[30px] border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-5 backdrop-blur">
+              <div className="qa-premium-card rounded-[30px] border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(13,24,34,0.92),rgba(8,8,10,0.98))] p-5 shadow-[0_28px_84px_rgba(8,145,178,0.22),0_14px_36px_rgba(0,0,0,0.34)] backdrop-blur">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/70">
+                    <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/70">
                       Next up
                     </p>
                     <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -761,17 +776,17 @@ export default function EventsPage() {
 
                   <button
                     onClick={() => router.push("/now")}
-                    className="qa-action rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-4 py-2 text-xs text-fuchsia-100 transition hover:border-fuchsia-200/42 hover:bg-fuchsia-200/16"
+                    className="qa-action qa-cta-primary rounded-full border border-cyan-200/30 bg-cyan-200/14 px-4 py-2 text-xs text-cyan-50 transition hover:border-cyan-200/42 hover:bg-cyan-200/20"
                   >
                     Open Now
                   </button>
                 </div>
                 <div className="mt-5 space-y-3">
                   {isLoading && (
-                    <div className="space-y-3 rounded-2xl border border-orange-200/14 bg-orange-200/[0.03] p-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-orange-100/62">Loading upcoming signal</p>
-                      <EventSkeletonCard tone="orange" />
-                      <EventSkeletonCard tone="orange" />
+                    <div className="space-y-3 rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.03] p-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/62">Loading upcoming signal</p>
+                      <EventSkeletonCard tone="cyan" />
+                      <EventSkeletonCard tone="cyan" />
                     </div>
                   )}
                   {upcomingEvents.map((event) => (
@@ -796,10 +811,10 @@ export default function EventsPage() {
                           openEvent(event);
                         }
                       }}
-                      className="w-full rounded-2xl border border-orange-200/15 bg-[linear-gradient(180deg,rgba(101,33,14,0.5),rgba(14,14,14,0.96))] p-4 text-left transition hover:-translate-y-[1px] hover:border-orange-200/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200/45"
+                      className="w-full rounded-2xl border border-cyan-200/15 bg-[linear-gradient(180deg,rgba(14,36,56,0.55),rgba(14,14,14,0.96))] p-4 text-left shadow-[0_16px_34px_rgba(8,145,178,0.16),0_8px_20px_rgba(0,0,0,0.28)] transition hover:-translate-y-[1px] hover:border-cyan-200/35 hover:shadow-[0_22px_42px_rgba(8,145,178,0.22),0_10px_24px_rgba(0,0,0,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs uppercase tracking-[0.18em] text-orange-100/72">
+                        <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/72">
                           {formatCityLabel(event.city)} | {formatEventDateLabel(event)}
                         </p>
                         <button
@@ -846,7 +861,7 @@ export default function EventsPage() {
           </section>
 
           <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="relative overflow-hidden rounded-[34px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_14%_10%,rgba(236,72,153,0.18),transparent_36%),radial-gradient(circle_at_85%_12%,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_50%_85%,rgba(249,115,22,0.12),transparent_40%),linear-gradient(180deg,rgba(19,19,19,0.96),rgba(9,9,9,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
+            <div className="qa-premium-card relative overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_14%_10%,rgba(34,211,238,0.16),transparent_36%),radial-gradient(circle_at_85%_12%,rgba(168,85,247,0.14),transparent_34%),radial-gradient(circle_at_50%_85%,rgba(249,115,22,0.10),transparent_40%),linear-gradient(180deg,rgba(17,20,24,0.96),rgba(9,10,12,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
               <div className="pointer-events-none absolute -left-14 -top-14 h-56 w-56 rounded-full bg-fuchsia-500/14 blur-3xl" />
               <div className="pointer-events-none absolute -right-12 top-16 h-52 w-52 rounded-full bg-blue-500/14 blur-3xl" />
               <div className="pointer-events-none absolute bottom-[-96px] left-1/3 h-56 w-56 rounded-full bg-orange-400/10 blur-3xl" />
@@ -878,12 +893,12 @@ export default function EventsPage() {
                 </div>
               </div>
 
-              <div className="relative mt-6 flex flex-wrap gap-3">
+              <div className="relative mt-6 flex flex-wrap items-center gap-3">
                 <button
-                  onClick={() => setSelectedDate("")}
-                    className={`rounded-full border px-4 py-2 text-sm transition ${
+                  onClick={() => selectCalendarDate("")}
+                    className={`qa-action rounded-full border px-4 py-2 text-sm transition ${
                     !selectedDate
-                      ? "border-fuchsia-300/38 bg-fuchsia-300/16 text-fuchsia-100"
+                      ? "border-cyan-300/38 bg-cyan-300/16 text-cyan-100"
                       : "border-white/14 bg-white/8 text-white/72 hover:border-white/22 hover:text-white"
                   }`}
                 >
@@ -919,7 +934,7 @@ export default function EventsPage() {
                   return (
                     <button
                       key={day}
-                      onClick={() => setSelectedDate(dateStr)}
+                      onClick={() => selectCalendarDate(dateStr)}
                       className={`h-20 rounded-2xl border p-2 text-left transition sm:h-24 sm:p-3 ${
                         isSelected
                           ? "border-fuchsia-300/34 bg-[linear-gradient(180deg,rgba(236,72,153,0.22),rgba(91,33,182,0.30))] shadow-[0_20px_48px_rgba(217,70,239,0.20)]"
@@ -953,7 +968,7 @@ export default function EventsPage() {
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_86%_10%,rgba(34,211,238,0.14),transparent_32%),radial-gradient(circle_at_18%_20%,rgba(168,85,247,0.10),transparent_35%),linear-gradient(180deg,rgba(18,18,18,0.96),rgba(8,8,8,1))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
+            <div ref={eventListSectionRef} className="qa-premium-card relative overflow-hidden rounded-[34px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_86%_10%,rgba(34,211,238,0.12),transparent_32%),radial-gradient(circle_at_18%_20%,rgba(236,72,153,0.14),transparent_35%),linear-gradient(180deg,rgba(18,18,20,0.96),rgba(8,8,8,1))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
               <div className="pointer-events-none absolute -right-10 top-24 h-48 w-48 rounded-full bg-cyan-500/12 blur-3xl" />
               <div className="pointer-events-none absolute -left-12 bottom-12 h-52 w-52 rounded-full bg-violet-500/10 blur-3xl" />
               <div className="pointer-events-none absolute inset-x-8 top-20 h-px bg-gradient-to-r from-transparent via-cyan-200/24 to-transparent" />
@@ -1015,7 +1030,7 @@ export default function EventsPage() {
                                 openEvent(event);
                               }
                             }}
-                            className="cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-5 transition hover:-translate-y-[1px] hover:border-cyan-200/28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
+                            className="qa-premium-card cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.28)] transition hover:-translate-y-[1px] hover:border-cyan-200/28 hover:shadow-[0_24px_54px_rgba(6,182,212,0.14),0_12px_30px_rgba(0,0,0,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div>
@@ -1070,7 +1085,7 @@ export default function EventsPage() {
                                   target="_blank"
                                   rel="noreferrer"
                                   onClick={(eventClick) => eventClick.stopPropagation()}
-                                  className="rounded-2xl bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-4 py-3 text-center text-sm font-semibold text-black transition hover:opacity-95"
+                                  className="qa-action qa-cta-primary rounded-2xl bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:opacity-95"
                                 >
                                   Open official link
                                 </a>
@@ -1147,7 +1162,7 @@ export default function EventsPage() {
             </div>
           </section>
 
-          <section ref={offgridSectionRef} className="mt-8 overflow-hidden rounded-[34px] border border-emerald-300/14 bg-[linear-gradient(165deg,rgba(20,20,20,0.96),rgba(8,8,8,0.98))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7">
+          <section ref={offgridSectionRef} className="qa-premium-card mt-8 overflow-hidden rounded-[34px] border border-emerald-300/14 bg-[linear-gradient(165deg,rgba(16,20,18,0.96),rgba(8,8,8,0.98))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-emerald-100/58">

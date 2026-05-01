@@ -100,37 +100,25 @@ export default function FloatingHomeButton() {
       href: "/",
       label: "Home",
       icon: Home,
-      idleClass:
-        "border-slate-200/18 bg-slate-100/6 text-slate-100/88 hover:border-slate-100/34 hover:bg-slate-100/12",
-      activeClass:
-        "border-fuchsia-200/65 bg-[linear-gradient(135deg,rgba(244,114,182,0.30),rgba(99,102,241,0.28),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(217,70,239,0.36)]",
+      accent: "fuchsia",
     },
     {
       href: "/favorites",
       label: "Your Atlas",
       icon: Star,
-      idleClass:
-        "border-amber-200/20 bg-amber-100/7 text-amber-100/90 hover:border-amber-100/40 hover:bg-amber-100/15",
-      activeClass:
-        "border-amber-200/65 bg-[linear-gradient(135deg,rgba(251,191,36,0.30),rgba(249,115,22,0.24),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(251,191,36,0.30)]",
+      accent: "amber",
     },
     {
       href: "/events",
       label: "Events",
       icon: CalendarDays,
-      idleClass:
-        "border-cyan-200/20 bg-cyan-100/7 text-cyan-100/90 hover:border-cyan-100/40 hover:bg-cyan-100/15",
-      activeClass:
-        "border-cyan-200/65 bg-[linear-gradient(135deg,rgba(34,211,238,0.30),rgba(59,130,246,0.28),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(34,211,238,0.34)]",
+      accent: "cyan",
     },
     {
       href: "/cities",
       label: "Cities",
       icon: MapPinned,
-      idleClass:
-        "border-emerald-200/20 bg-emerald-100/7 text-emerald-100/90 hover:border-emerald-100/40 hover:bg-emerald-100/15",
-      activeClass:
-        "border-emerald-200/65 bg-[linear-gradient(135deg,rgba(16,185,129,0.32),rgba(6,182,212,0.26),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(16,185,129,0.30)]",
+      accent: "emerald",
     },
     ...(isMember
       ? [
@@ -138,19 +126,13 @@ export default function FloatingHomeButton() {
             href: "/community",
             label: "Community",
             icon: Users,
-            idleClass:
-              "border-violet-200/20 bg-violet-100/7 text-violet-100/90 hover:border-violet-100/40 hover:bg-violet-100/16",
-            activeClass:
-              "border-violet-200/65 bg-[linear-gradient(135deg,rgba(167,139,250,0.30),rgba(244,114,182,0.24),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(167,139,250,0.34)]",
+            accent: "violet",
           },
           {
             href: "/messages",
             label: "Messages",
             icon: MessageCircle,
-            idleClass:
-              "border-sky-200/20 bg-sky-100/7 text-sky-100/90 hover:border-sky-100/40 hover:bg-sky-100/15",
-            activeClass:
-              "border-sky-200/65 bg-[linear-gradient(135deg,rgba(56,189,248,0.32),rgba(99,102,241,0.24),rgba(10,10,10,0.96))] shadow-[0_10px_30px_rgba(56,189,248,0.34)]",
+            accent: "sky",
           },
         ]
       : []),
@@ -158,10 +140,10 @@ export default function FloatingHomeButton() {
 
   return (
     <div className="fixed bottom-4 right-4 z-[90] sm:bottom-6 sm:right-6">
-      <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(251,191,36,0.24),rgba(56,189,248,0.16),transparent_72%)] blur-xl" />
+      <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(56,189,248,0.22),rgba(244,114,182,0.16),transparent_72%)] blur-xl" />
       <nav
         aria-label="Quick navigation"
-        className="relative flex items-center gap-1.5 rounded-full border border-white/26 bg-[linear-gradient(135deg,rgba(7,10,18,0.95),rgba(24,24,38,0.93),rgba(10,10,10,0.98))] px-2 py-2 shadow-[0_18px_56px_rgba(3,7,18,0.58)] backdrop-blur-xl"
+        className="relative flex items-center gap-1.5 rounded-full border border-white/24 bg-[linear-gradient(135deg,rgba(10,13,20,0.95),rgba(18,20,30,0.94),rgba(10,10,10,0.98))] px-2 py-2 shadow-[0_24px_64px_rgba(2,6,20,0.62),0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur-xl"
       >
         <span
           aria-hidden="true"
@@ -179,18 +161,47 @@ export default function FloatingHomeButton() {
               title={item.label}
               className={`group relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
                 isActive
-                  ? `${item.activeClass} text-white`
-                  : `${item.idleClass} hover:-translate-y-[1px]`
+                  ? "border-white/46 bg-[linear-gradient(135deg,rgba(255,255,255,0.24),rgba(255,255,255,0.08),rgba(10,10,10,0.86))] text-white shadow-[0_12px_34px_rgba(0,0,0,0.44)]"
+                  : "border-white/16 bg-white/[0.05] text-white/78 hover:-translate-y-[1px] hover:border-white/30 hover:bg-white/[0.1]"
               }`}
             >
-              <Icon className={`h-[18px] w-[18px] ${isActive ? "drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]" : ""}`} aria-hidden="true" />
+              <Icon
+                className={`h-[18px] w-[18px] ${
+                  isActive
+                    ? item.accent === "fuchsia"
+                      ? "text-fuchsia-100 drop-shadow-[0_0_12px_rgba(244,114,182,0.8)]"
+                      : item.accent === "amber"
+                        ? "text-amber-100 drop-shadow-[0_0_12px_rgba(251,191,36,0.8)]"
+                        : item.accent === "cyan"
+                          ? "text-cyan-100 drop-shadow-[0_0_12px_rgba(34,211,238,0.8)]"
+                          : item.accent === "emerald"
+                            ? "text-emerald-100 drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]"
+                            : item.accent === "violet"
+                              ? "text-violet-100 drop-shadow-[0_0_12px_rgba(167,139,250,0.8)]"
+                              : "text-sky-100 drop-shadow-[0_0_12px_rgba(56,189,248,0.8)]"
+                    : "text-white/80"
+                }`}
+                aria-hidden="true"
+              />
               <span className="pointer-events-none absolute -top-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-white/20 bg-black/85 px-2 py-1 text-[10px] font-medium text-white/90 shadow-[0_8px_24px_rgba(2,6,23,0.45)] md:block md:opacity-0 md:transition md:duration-150 md:group-hover:opacity-100">
                 {item.label}
               </span>
               {isActive ? (
                 <span
                   aria-hidden="true"
-                  className="absolute -bottom-1 h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.95)]"
+                  className={`absolute -bottom-1 h-1.5 w-1.5 rounded-full ${
+                    item.accent === "fuchsia"
+                      ? "bg-fuchsia-200 shadow-[0_0_12px_rgba(244,114,182,0.95)]"
+                      : item.accent === "amber"
+                        ? "bg-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.95)]"
+                        : item.accent === "cyan"
+                          ? "bg-cyan-200 shadow-[0_0_12px_rgba(34,211,238,0.95)]"
+                          : item.accent === "emerald"
+                            ? "bg-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.95)]"
+                            : item.accent === "violet"
+                              ? "bg-violet-200 shadow-[0_0_12px_rgba(167,139,250,0.95)]"
+                              : "bg-sky-200 shadow-[0_0_12px_rgba(56,189,248,0.95)]"
+                  }`}
                 />
               ) : null}
               {item.href === "/messages" && unreadCount > 0 ? (

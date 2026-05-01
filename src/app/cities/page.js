@@ -93,10 +93,13 @@ export default function CitiesPage() {
   const isMapboxStylesReady = useMapboxStylesheet();
   const [query, setQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const [countryPickerQuery, setCountryPickerQuery] = useState("");
   const [mapError, setMapError] = useState("");
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
+  const countryPickerRef = useRef(null);
   const countryMapContainerRef = useRef(null);
   const countryMapRef = useRef(null);
   const { places, isLoading } = usePlaces();
@@ -260,6 +263,32 @@ export default function CitiesPage() {
     updateCountryMapStyles(selectedCountry);
   }, [selectedCountry, updateCountryMapStyles]);
 
+  useEffect(() => {
+    setCountryPickerOpen(false);
+  }, [selectedCountry]);
+
+  useEffect(() => {
+    if (!countryPickerOpen) return undefined;
+
+    const handleClickOutside = (event) => {
+      if (!countryPickerRef.current) return;
+      if (countryPickerRef.current.contains(event.target)) return;
+      setCountryPickerOpen(false);
+    };
+
+    const handleEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setCountryPickerOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [countryPickerOpen]);
+
   const allCities = useMemo(() => {
     return Object.entries(cityConfig).map(([key, city]) => {
       const cityPlaces = places.filter((place) => place.city?.toLowerCase() === key);
@@ -308,6 +337,39 @@ export default function CitiesPage() {
       });
   }, [allCities, query, selectedCountry]);
 
+  const countryStats = useMemo(() => {
+    const stats = allCities.reduce((acc, city) => {
+      const country = city.country || "Other";
+      if (!acc[country]) {
+        acc[country] = { cityCount: 0, reviewCount: 0 };
+      }
+      acc[country].cityCount += 1;
+      acc[country].reviewCount += Number(city.reviewCount || 0);
+      return acc;
+    }, {});
+
+    return availableCountries
+      .map((country) => ({
+        country,
+        cityCount: stats[country]?.cityCount || 0,
+        reviewCount: stats[country]?.reviewCount || 0,
+      }))
+      .sort((a, b) => {
+        if (b.cityCount !== a.cityCount) return b.cityCount - a.cityCount;
+        if (b.reviewCount !== a.reviewCount) return b.reviewCount - a.reviewCount;
+        return a.country.localeCompare(b.country);
+      });
+  }, [allCities, availableCountries]);
+
+  const topCountries = useMemo(() => countryStats.slice(0, 7), [countryStats]);
+
+  const filteredCountryOptions = useMemo(() => {
+    const search = String(countryPickerQuery || "").trim().toLowerCase();
+    const withAll = [{ country: "All", cityCount: allCities.length, reviewCount: places.length }, ...countryStats];
+    if (!search) return withAll;
+    return withAll.filter((item) => item.country.toLowerCase().includes(search));
+  }, [allCities.length, countryPickerQuery, countryStats, places.length]);
+
   const groupedCities = useMemo(() => {
     return filteredCities.reduce((acc, city) => {
       const country = city.country || "Other";
@@ -323,43 +385,61 @@ export default function CitiesPage() {
   const totalCities = Object.keys(cityConfig).length;
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
+  const visibleCityCount = filteredCities.length;
+  const visibleCountryCount = visibleCountries.length;
+  const activeFilterLabel = selectedCountry === "All" ? "All countries" : selectedCountry;
+  const filterModeLabel = query ? "Search + country filter" : "Country filter";
 
   return (
     <main className="qa-page min-h-screen bg-[#050505] text-white">
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_76%_14%,rgba(96,165,250,0.08),transparent_20%),radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.06),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
+        <div className="pointer-events-none absolute -left-14 top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-10 top-20 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-        <section className="qa-panel relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.10),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.10),transparent_24%),linear-gradient(135deg,rgba(29,23,18,0.98),rgba(10,10,10,0.99),rgba(19,24,27,0.97))] p-8 shadow-[0_30px_120px_rgba(0,0,0,0.35)]">
+        <section className="qa-panel qa-premium-card relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.10),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.10),transparent_24%),linear-gradient(135deg,rgba(29,23,18,0.98),rgba(10,10,10,0.99),rgba(19,24,27,0.97))] p-8 shadow-[0_36px_126px_rgba(0,0,0,0.42)]">
           <div className="max-w-4xl">
             <p className="qa-eyebrow text-white/45">
-              Global discovery
+              Live Discovery + Atlas Signal
             </p>
-            <h1 className="qa-display qa-h1 mt-4 text-5xl font-bold text-white sm:text-6xl">
-              Cities
+            <h1 className="qa-display qa-h1 mt-4 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-5xl font-bold text-transparent sm:text-6xl">
+              Cities Atlas
             </h1>
             <p className="qa-lead mt-5 max-w-2xl text-base text-white/62">
               Browse queer cities by country, scan signal quickly, and jump straight
               into the local atlas. Built to scale globally without turning into chaos.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/85">
+                {filterModeLabel}
+              </span>
+              <span className="rounded-full border border-fuchsia-200/18 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/85">
+                {activeFilterLabel}
+              </span>
+              <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
+                {visibleCityCount} visible
+              </span>
+            </div>
           </div>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="qa-card qa-metric-card rounded-3xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-5 shadow-[0_16px_34px_rgba(236,72,153,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalCities}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 shadow-[0_16px_34px_rgba(6,182,212,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Countries</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalCountries}</p>
             </div>
-            <div className="qa-card qa-metric-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 backdrop-blur">
+            <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 shadow-[0_16px_34px_rgba(34,197,94,0.14),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Places</p>
               <p className="mt-3 text-3xl font-semibold text-white">{totalPlaces}</p>
             </div>
           </div>
         </section>
 
-        <section className="qa-panel relative mb-8 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+        <section className="qa-panel qa-premium-card relative mb-8 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_104px_rgba(0,0,0,0.34)]">
           <div className="mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">
@@ -372,7 +452,7 @@ export default function CitiesPage() {
                 Show all
               </button>
             </div>
-            <div ref={countryMapContainerRef} className="h-[320px] w-full" />
+            <div ref={countryMapContainerRef} className="h-[320px] w-full shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]" />
             {(mapboxMissing || mapError) && (
               <p className="border-t border-white/10 px-4 py-3 text-sm text-amber-100/85">
                 {mapboxMissing
@@ -391,7 +471,7 @@ export default function CitiesPage() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Search city, country, or vibe"
-                className="mt-3 w-full rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-4 text-sm outline-none transition focus:border-fuchsia-300/35"
+                className="mt-3 w-full rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-4 text-sm outline-none transition focus:border-fuchsia-300/35 focus:ring-2 focus:ring-fuchsia-300/20"
               />
             </div>
 
@@ -399,27 +479,85 @@ export default function CitiesPage() {
               <p className="text-xs uppercase tracking-[0.26em] text-white/38">
                 Country filter
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {countries.map((country) => {
-                  const active = selectedCountry === country;
+              <div className="mt-3 space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {topCountries.map((item) => {
+                    const active = selectedCountry === item.country;
+                    return (
+                      <button
+                        key={`top-country-${item.country}`}
+                        onClick={() => {
+                          setSelectedCountry(item.country);
+                          setCountryPickerOpen(false);
+                          setCountryPickerQuery("");
+                          scrollToCountrySection(item.country);
+                        }}
+                        className={`qa-action rounded-full border px-3 py-1.5 text-xs transition ${
+                          active
+                            ? "border-fuchsia-300/36 bg-fuchsia-300/14 text-white shadow-[0_16px_42px_rgba(217,70,239,0.16)]"
+                            : "border-white/10 bg-white/6 text-white/70 hover:border-white/22 hover:text-white"
+                        }`}
+                      >
+                        {item.country}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div ref={countryPickerRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setCountryPickerOpen((current) => !current)}
+                    className="qa-action flex w-full items-center justify-between rounded-2xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-4 py-3 text-left text-sm text-white/84 transition hover:border-cyan-200/32"
+                  >
+                    <span className="truncate">
+                      {selectedCountry === "All" ? "All countries" : selectedCountry}
+                    </span>
+                    <span className="text-white/55">{countryPickerOpen ? "Close" : "Choose"}</span>
+                  </button>
 
-                  return (
-                    <button
-                      key={country}
-                      onClick={() => {
-                        setSelectedCountry(country);
-                        scrollToCountrySection(country);
-                      }}
-                      className={`qa-action rounded-full border px-4 py-2 text-sm transition ${
-                        active
-                          ? "border-fuchsia-300/28 bg-fuchsia-300/12 text-white shadow-[0_10px_30px_rgba(217,70,239,0.10)]"
-                          : "border-white/8 bg-white/4 text-white/58 hover:border-white/14 hover:text-white/80"
-                      }`}
-                    >
-                      {country}
-                    </button>
-                  );
-                })}
+                  {countryPickerOpen && (
+                    <div className="mt-2 w-full overflow-hidden rounded-2xl border border-white/12 bg-[#101015]/95 shadow-[0_28px_84px_rgba(0,0,0,0.45)] backdrop-blur">
+                      <div className="border-b border-white/10 p-2.5">
+                        <input
+                          value={countryPickerQuery}
+                          onChange={(event) => setCountryPickerQuery(event.target.value)}
+                          placeholder="Search country"
+                          className="w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/18"
+                        />
+                      </div>
+                      <div className="max-h-80 overflow-y-auto p-2">
+                        {filteredCountryOptions.map((item) => {
+                          const active = selectedCountry === item.country;
+                          return (
+                            <button
+                              key={`country-option-${item.country}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCountry(item.country);
+                                setCountryPickerOpen(false);
+                                setCountryPickerQuery("");
+                                scrollToCountrySection(item.country);
+                              }}
+                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
+                                active
+                                  ? "bg-fuchsia-300/16 text-white"
+                                  : "text-white/78 hover:bg-white/8 hover:text-white"
+                              }`}
+                            >
+                              <span>{item.country === "All" ? "All countries" : item.country}</span>
+                              <span className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+                                {item.cityCount} cities
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {filteredCountryOptions.length === 0 && (
+                          <p className="px-3 py-2 text-sm text-white/52">No country match.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -427,7 +565,7 @@ export default function CitiesPage() {
 
         <div className="relative space-y-8">
           {isLoading && (
-            <section className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+            <section className="qa-premium-card rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
               <p className="mb-4 text-xs uppercase tracking-[0.2em] text-white/45">Loading city signal</p>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, index) => (
@@ -447,7 +585,7 @@ export default function CitiesPage() {
           )}
 
           {!isLoading && visibleCountries.length === 0 && (
-            <section className="rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-10 text-center shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
+            <section className="qa-premium-card rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-10 text-center shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
               <EmptyState
                 title="No cities match this filter yet."
                 description="Try resetting search and country to reopen the atlas."
@@ -479,7 +617,7 @@ export default function CitiesPage() {
                       delete countrySectionRefs.current[country];
                     }
                   }}
-                  className={`rounded-[32px] border p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)] ${tone.section}`}
+                  className={`qa-premium-card rounded-[32px] border p-6 shadow-[0_28px_98px_rgba(0,0,0,0.34)] ${tone.section}`}
                 >
                   <div className="mb-6 flex items-center gap-4">
                     <div className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.24em] ${tone.chip}`}>
@@ -487,18 +625,19 @@ export default function CitiesPage() {
                     </div>
                     <div className={`h-px flex-1 bg-gradient-to-r ${tone.divider} to-transparent`} />
                     <div className="text-xs text-white/38">
-                      {groupedCities[country].length} cities
+                      {groupedCities[country].length} cities · {visibleCountryCount} active countries
                     </div>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {groupedCities[country].map((city) => (
+                    {groupedCities[country].map((city, cityIndex) => (
                       <button
                         key={city.key}
                         onClick={() => router.push(`/${city.key}`)}
-                        className={`group relative overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[4px] active:translate-y-0 ${tone.card} ${tone.hover}`}
+                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[4px] active:translate-y-0 ${tone.card} ${tone.hover}`}
                       >
                         <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/8 opacity-0 blur-3xl transition duration-300 group-hover:opacity-100" />
+                        <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br from-white/7 via-transparent to-transparent" />
                         <div className="flex items-start justify-between gap-4">
                           <div>
                             <p className="text-xs uppercase tracking-[0.18em] text-white/34">
@@ -510,7 +649,7 @@ export default function CitiesPage() {
                           </div>
 
                           <div className={`rounded-full border px-3 py-1 text-xs transition group-hover:scale-[1.03] ${tone.pill}`}>
-                            {city.placeCount} places
+                            #{cityIndex + 1}
                           </div>
                         </div>
 
@@ -526,10 +665,10 @@ export default function CitiesPage() {
 
                           <div className="rounded-2xl border border-cyan-200/12 bg-cyan-200/[0.06] p-3">
                             <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                              Reviews
+                              Places
                             </p>
                             <p className="mt-2 text-lg font-semibold text-white/96">
-                              {city.reviewCount}
+                              {city.placeCount}
                             </p>
                           </div>
                         </div>

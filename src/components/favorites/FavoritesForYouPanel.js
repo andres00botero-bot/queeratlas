@@ -6,11 +6,11 @@ export default function FavoritesForYouPanel({
   onSaveRecommendation,
 }) {
   return (
-    <section className="mb-6 rounded-[30px] border border-rose-200/10 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.12),transparent_28%),linear-gradient(180deg,rgba(30,16,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+    <section className="mb-6 rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_92%_12%,rgba(244,114,182,0.06),transparent_28%),linear-gradient(180deg,rgba(16,16,18,0.92),rgba(10,10,10,0.99))] p-4 shadow-[0_34px_94px_rgba(0,0,0,0.48)] sm:rounded-[32px] sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">For you</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+          <h2 className="qa-title mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-2xl">
             Next best signal
           </h2>
           <p className="mt-2 text-sm leading-6 text-white/56">
@@ -19,13 +19,13 @@ export default function FavoritesForYouPanel({
         </div>
       </div>
 
-      <div className="mb-5 flex flex-wrap items-center gap-2">
+      <div className="mb-5 flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-black/24 p-2">
         <button
           type="button"
           onClick={() => setRecommendationMode?.("safe")}
           className={`qa-action rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
             recommendationMode === "safe"
-              ? "border-emerald-200/40 bg-emerald-200/16 text-emerald-100"
+              ? "border-white/32 bg-white/12 text-white"
               : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
           }`}
         >
@@ -63,7 +63,7 @@ export default function FavoritesForYouPanel({
           forYouRecommendations.map((item) => (
             <article
               key={`for-you-${item.kind}-${item.id}`}
-              className="rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4"
+              className="rounded-[24px] border border-white/12 bg-[radial-gradient(circle_at_12%_8%,rgba(56,189,248,0.08),transparent_34%),linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.015))] p-4 shadow-[0_20px_52px_rgba(0,0,0,0.34)]"
             >
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/46">
                 {item.city || "City"} - {item.kind}
@@ -75,14 +75,14 @@ export default function FavoritesForYouPanel({
                 <button
                   type="button"
                   onClick={() => onOpenRecommendation?.(item)}
-                  className="qa-action rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/85 transition hover:border-white/30"
+                  className="qa-action rounded-full border border-white/16 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/88 transition hover:-translate-y-[1px] hover:border-white/30"
                 >
                   Open
                 </button>
                 <button
                   type="button"
                   onClick={() => onSaveRecommendation?.(item)}
-                  className="qa-action qa-action-strong rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                  className="qa-action qa-action-strong rounded-full border border-cyan-200/26 bg-cyan-200/14 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:-translate-y-[1px] hover:border-cyan-200/44"
                 >
                   Save
                 </button>

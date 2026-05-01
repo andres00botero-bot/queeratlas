@@ -7,20 +7,22 @@ export default function FavoritesMomentumPanel({
   momentumMilestones,
 }) {
   return (
-    <div className="rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-3 max-[390px]:rounded-[18px] max-[390px]:p-2.5">
-      <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/78 max-[390px]:text-[10px]">Your signal</p>
+    <div className="relative overflow-hidden rounded-[24px] border border-white/12 bg-[radial-gradient(circle_at_18%_8%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_85%_14%,rgba(244,114,182,0.1),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-3.5 shadow-[0_24px_60px_rgba(0,0,0,0.34)] max-[390px]:rounded-[18px] max-[390px]:p-2.5">
+      <div className="pointer-events-none absolute -left-10 top-0 h-20 w-20 rounded-full bg-cyan-300/10 blur-2xl" />
+      <div className="pointer-events-none absolute -right-12 top-4 h-24 w-24 rounded-full bg-fuchsia-300/10 blur-2xl" />
+      <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/80 max-[390px]:text-[10px]">Your signal</p>
       <div className="mt-3 grid gap-2.5 sm:grid-cols-2 max-[390px]:mt-2">
-        <div className="rounded-2xl border border-white/10 bg-black/22 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-rose-200/75">Added this week</p>
+        <div className="rounded-2xl border border-cyan-200/14 bg-black/28 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/74">Added this week</p>
           <p className="mt-1.5 text-2xl font-semibold text-white max-[390px]:text-xl">{thisWeekAdds}</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-black/22 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-200/75">Cities touched</p>
+        <div className="rounded-2xl border border-fuchsia-200/14 bg-black/28 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/74">Cities touched</p>
           <p className="mt-1.5 text-2xl font-semibold text-white max-[390px]:text-xl">{allCitiesCount}</p>
         </div>
       </div>
 
-      <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+      <div className="mt-2.5 rounded-2xl border border-white/12 bg-black/24 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200/75">Latest activity</p>
           <span className="text-[11px] text-white/58">Last {Math.min(recentSaves.length, 5)} saves</span>
@@ -32,7 +34,7 @@ export default function FavoritesMomentumPanel({
                 key={`momentum-activity-${item.type}-${item.id}`}
                 type="button"
                 onClick={() => onOpenSavedItem?.(item)}
-                className="inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border border-white/14 bg-white/8 px-3 py-1.5 text-left text-[11px] text-white/82 transition hover:border-white/28 hover:bg-white/12 max-[390px]:gap-1.5 max-[390px]:px-2.5 max-[390px]:py-1 max-[390px]:text-[10px]"
+                className="inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border border-white/16 bg-white/10 px-3 py-1.5 text-left text-[11px] text-white/86 transition hover:-translate-y-[1px] hover:border-cyan-200/26 hover:bg-white/14 max-[390px]:gap-1.5 max-[390px]:px-2.5 max-[390px]:py-1 max-[390px]:text-[10px]"
               >
                 <span className="truncate max-w-[160px] max-[390px]:max-w-[125px]">
                   {item.type === "place" ? "Place" : "Event"}: {item.name}
@@ -48,7 +50,7 @@ export default function FavoritesMomentumPanel({
         </div>
       </div>
 
-      <div className="mt-2.5 rounded-2xl border border-white/10 bg-black/20 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
+      <div className="mt-2.5 rounded-2xl border border-white/12 bg-black/24 p-3 max-[390px]:rounded-xl max-[390px]:p-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-200/75">Momentum milestones</p>
           <span className="text-[11px] text-white/58">
@@ -57,7 +59,7 @@ export default function FavoritesMomentumPanel({
         </div>
         <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-emerald-300 transition-[width] duration-500"
+            className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-sky-200 to-fuchsia-300 transition-[width] duration-500"
             style={{ width: `${Math.max(8, Math.round(momentumMilestones.overallProgress * 100))}%` }}
           />
         </div>
@@ -73,9 +75,9 @@ export default function FavoritesMomentumPanel({
           {momentumMilestones.items.map((item) => (
             <div
               key={item.id}
-              className={`rounded-xl border px-3 py-2 text-xs max-[390px]:px-2.5 max-[390px]:py-1.5 max-[390px]:text-[11px] ${
+              className={`rounded-xl border px-3 py-2 text-xs transition max-[390px]:px-2.5 max-[390px]:py-1.5 max-[390px]:text-[11px] ${
                 item.done
-                  ? "border-emerald-200/30 bg-emerald-200/10 text-emerald-100"
+                  ? "border-cyan-200/30 bg-cyan-200/10 text-cyan-100"
                   : "border-white/10 bg-black/20 text-white/72"
               }`}
             >

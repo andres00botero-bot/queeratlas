@@ -14,11 +14,11 @@ export default function FavoritesPeopleSignalPanel({
   onSaveFromFeed,
 }) {
   return (
-    <section className="mb-6 rounded-[30px] border border-emerald-200/14 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(13,26,24,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5">
+    <section className="mb-6 rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_32%),radial-gradient(circle_at_top_right,rgba(244,114,182,0.08),transparent_28%),linear-gradient(180deg,rgba(16,18,20,0.94),rgba(10,10,10,0.99))] p-4 shadow-[0_34px_94px_rgba(0,0,0,0.48)] sm:rounded-[32px] sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.26em] text-emerald-200/70">People signal</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+          <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">People signal</p>
+          <h2 className="qa-title mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-2xl">
             Trusted members network
           </h2>
           <p className="mt-2 text-sm leading-6 text-white/56">
@@ -28,7 +28,7 @@ export default function FavoritesPeopleSignalPanel({
         <button
           type="button"
           onClick={onRefresh}
-          className="qa-action qa-action-strong rounded-full border border-emerald-200/20 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
+          className="qa-action qa-action-strong rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
         >
           Refresh
         </button>
@@ -41,7 +41,7 @@ export default function FavoritesPeopleSignalPanel({
       )}
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
+        <div className="rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 shadow-[0_16px_44px_rgba(0,0,0,0.30)]">
           <p className="text-xs uppercase tracking-[0.16em] text-white/50">Following now</p>
           <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
             {followingProfiles.length > 0 ? (
@@ -50,7 +50,7 @@ export default function FavoritesPeopleSignalPanel({
                 return (
                   <article
                     key={`following-profile-${profile.userId}`}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                    className="rounded-2xl border border-white/12 bg-white/[0.04] px-3 py-2"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -81,7 +81,7 @@ export default function FavoritesPeopleSignalPanel({
                       <button
                         type="button"
                         onClick={() => onMessageMember?.(profile)}
-                        className="qa-action rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                        className="qa-action rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:-translate-y-[1px] hover:border-cyan-200/44"
                       >
                         Message
                       </button>
@@ -97,7 +97,7 @@ export default function FavoritesPeopleSignalPanel({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
+        <div className="rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 shadow-[0_16px_44px_rgba(0,0,0,0.30)]">
           <p className="text-xs uppercase tracking-[0.16em] text-white/50">Members to follow</p>
           <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
             {networkLoading ? (
@@ -112,7 +112,7 @@ export default function FavoritesPeopleSignalPanel({
                 return (
                   <div
                     key={`member-suggest-${memberId}`}
-                    className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                    className="rounded-2xl border border-white/12 bg-white/[0.04] px-3 py-2"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
@@ -139,7 +139,7 @@ export default function FavoritesPeopleSignalPanel({
                         className={`qa-action qa-action-strong rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                           isFollowing
                             ? "border-fuchsia-200/30 bg-fuchsia-200/12 text-fuchsia-100"
-                            : "border-emerald-200/25 bg-emerald-200/10 text-emerald-100 hover:border-emerald-200/40"
+                            : "border-cyan-200/25 bg-cyan-200/10 text-cyan-100 hover:border-cyan-200/40"
                         }`}
                       >
                         {isFollowing ? "Following" : "Follow"}
@@ -156,14 +156,14 @@ export default function FavoritesPeopleSignalPanel({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-black/25 p-3.5">
+        <div className="rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 shadow-[0_16px_44px_rgba(0,0,0,0.30)]">
           <p className="text-xs uppercase tracking-[0.16em] text-white/50">Saved by people you follow</p>
           <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1 sm:max-h-[300px]">
             {followingFeedItems.length > 0 ? (
               followingFeedItems.map((item, index) => (
                 <div
                   key={`following-feed-${item.favoriteId}-${index}`}
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                  className="rounded-2xl border border-white/12 bg-white/[0.04] px-3 py-2"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -179,7 +179,7 @@ export default function FavoritesPeopleSignalPanel({
                     <button
                       type="button"
                       onClick={() => onSaveFromFeed?.(item)}
-                      className="qa-action rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                      className="qa-action rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:-translate-y-[1px] hover:border-cyan-200/44"
                     >
                       Save
                     </button>
