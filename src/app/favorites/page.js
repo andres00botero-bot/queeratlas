@@ -127,6 +127,10 @@ import {
   buildCheckinMarkers,
   resolveCheckinFocusCoordinates,
 } from "@/features/favorites/checkinMapGuards";
+import {
+  FAVORITES_CHECKIN_LIST_SCROLL_CLASS,
+  FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS,
+} from "@/features/favorites/favoritesUiConstants";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
@@ -2328,7 +2332,7 @@ export default function FavoritesPage() {
                 ))}
               </div>
               <div
-                className="qa-guides-scroll mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]"
+                className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
                 style={{ scrollbarGutter: "stable" }}
               >
                 {filteredRecentCheckins.length > 0 ? (
@@ -2399,7 +2403,7 @@ export default function FavoritesPage() {
               <div className="mt-4 border-t border-white/10 pt-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friends check-ins</p>
                 <div
-                  className="qa-guides-scroll mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]"
+                  className={FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS}
                   style={{ scrollbarGutter: "stable" }}
                 >
                   {recentFollowingCheckins.length > 0 ? (

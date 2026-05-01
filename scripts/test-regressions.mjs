@@ -3,6 +3,10 @@ import {
   buildCheckinMarkers,
   resolveCheckinFocusCoordinates,
 } from "../src/features/favorites/checkinMapGuards.js";
+import {
+  FAVORITES_CHECKIN_LIST_SCROLL_CLASS,
+  FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS,
+} from "../src/features/favorites/favoritesUiConstants.js";
 import { readFileSync } from "node:fs";
 import { resolveEventOpenIntent } from "../src/features/events/eventOpenGuards.js";
 import {
@@ -25,6 +29,7 @@ import {
   selectCityEventsAll,
   selectVisibleCityEvents,
 } from "../src/features/city/cityEventGuards.js";
+import { normalizeServicePriceTierOptions } from "../src/features/city/serviceFormUtils.js";
 import { normalizeCityKey } from "../src/features/city/checkinFeature.js";
 import { citySelectionPath } from "../src/lib/cityRouting.js";
 
@@ -134,15 +139,19 @@ function testCityEventSelectionUsesAllCityEventsForDeepLink() {
 }
 
 function testFavoritesCheckinListsHaveStableScrollContainers() {
-  const source = readFileSync(new URL("../src/app/favorites/page.js", import.meta.url), "utf8");
-
   assert(
-    source.includes("className=\"qa-guides-scroll mt-3 h-[22rem] space-y-2 overflow-y-scroll pr-1 md:h-[26rem]\""),
-    "favorites check-in list: primary list should keep explicit scroll container classes"
+    FAVORITES_CHECKIN_LIST_SCROLL_CLASS.includes("qa-guides-scroll") &&
+      FAVORITES_CHECKIN_LIST_SCROLL_CLASS.includes("overflow-y-scroll") &&
+      FAVORITES_CHECKIN_LIST_SCROLL_CLASS.includes("h-[22rem]") &&
+      FAVORITES_CHECKIN_LIST_SCROLL_CLASS.includes("md:h-[26rem]"),
+    "favorites check-in list: primary list should expose stable scroll container contract"
   );
   assert(
-    source.includes("className=\"qa-guides-scroll mt-2 h-[18rem] space-y-2 overflow-y-scroll pr-1 md:h-[22rem]\""),
-    "favorites check-in list: friends list should keep explicit scroll container classes"
+    FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS.includes("qa-guides-scroll") &&
+      FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS.includes("overflow-y-scroll") &&
+      FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS.includes("h-[18rem]") &&
+      FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS.includes("md:h-[22rem]"),
+    "favorites check-in list: friends list should expose stable scroll container contract"
   );
 }
 
@@ -598,6 +607,36 @@ function testVibeTagChipsRenderingWiring() {
   );
 }
 
+function testServicePriceTierOptionsNormalization() {
+  const fromStrings = normalizeServicePriceTierOptions(["", "$", "$$", "$", null]);
+  assert(
+    fromStrings.length === 3 &&
+      fromStrings[0].value === "" &&
+      fromStrings[0].label === "Price tier (optional)" &&
+      fromStrings[1].value === "$" &&
+      fromStrings[2].value === "$$",
+    "service form: price tier normalization should dedupe and preserve string options with placeholder"
+  );
+
+  const fromObjects = normalizeServicePriceTierOptions([
+    { value: "", label: "Select tier" },
+    { value: "$", label: "$ budget" },
+    { value: "$", label: "duplicate" },
+  ]);
+  assert(
+    fromObjects.length === 2 &&
+      fromObjects[0].label === "Select tier" &&
+      fromObjects[1].label === "$ budget",
+    "service form: price tier normalization should support object options and remove duplicates by value"
+  );
+
+  const fallback = normalizeServicePriceTierOptions([]);
+  assert(
+    fallback.length === 1 && fallback[0].value === "",
+    "service form: empty price tier options should still return safe placeholder option"
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -617,6 +656,7 @@ function run() {
   testVibeTagsDualWriteWiring();
   testContributeAndSearchUseStandardizedVibeTags();
   testVibeTagChipsRenderingWiring();
+  testServicePriceTierOptionsNormalization();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");

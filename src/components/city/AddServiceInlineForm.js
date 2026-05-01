@@ -1,6 +1,7 @@
 "use client";
 
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import { normalizeServicePriceTierOptions } from "@/features/city/serviceFormUtils";
 
 export default function AddServiceInlineForm({
   addServiceFormRef,
@@ -34,26 +35,7 @@ export default function AddServiceInlineForm({
   setServiceImageUrlsInput,
   onSaveService,
 }) {
-  const normalizedPriceTierOptions = (Array.isArray(servicePriceTierOptions) ? servicePriceTierOptions : [])
-    .map((item, index) => {
-      if (item && typeof item === "object") {
-        const value = String(item.value ?? "");
-        const label = String(item.label ?? (value || "Price tier (optional)"));
-        return { key: `${value || "empty"}-${index}`, value, label };
-      }
-
-      const value = String(item ?? "");
-      return {
-        key: `${value || "empty"}-${index}`,
-        value,
-        label: value || "Price tier (optional)",
-      };
-    })
-    .filter((option, index, all) => all.findIndex((candidate) => candidate.value === option.value) === index);
-
-  const priceTierOptions = normalizedPriceTierOptions.length > 0
-    ? normalizedPriceTierOptions
-    : [{ key: "empty-0", value: "", label: "Price tier (optional)" }];
+  const priceTierOptions = normalizeServicePriceTierOptions(servicePriceTierOptions);
 
   return (
     <div

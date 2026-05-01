@@ -16,7 +16,7 @@ import {
 } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
 import { useActionToast } from "@/lib/useActionToast";
-import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
+import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
 import { trackKpiEvent } from "@/lib/analytics";
 import { showActionFeedback } from "@/lib/actionFeedback";
@@ -42,25 +42,17 @@ import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
 import ActionToast from "@/components/ui/ActionToast";
-import AddServiceInlineForm from "@/components/city/AddServiceInlineForm";
-import AddEventInlineForm from "@/components/city/AddEventInlineForm";
-import AddPlaceInlineForm from "@/components/city/AddPlaceInlineForm";
-import CityContributionActions from "@/components/city/CityContributionActions";
+import CityContributionStack from "@/components/city/CityContributionStack";
+import CityDetailsLayer from "@/components/city/CityDetailsLayer";
 import CityEventsRailSection from "@/components/city/CityEventsRailSection";
 import CityHeroCard from "@/components/city/CityHeroCard";
+import CityMapSection from "@/components/city/CityMapSection";
 import CityPlacesSection from "@/components/city/CityPlacesSection";
-import CityQualityModal from "@/components/city/CityQualityModal";
 import CityQuickNavigation from "@/components/city/CityQuickNavigation";
-import CityReportModal from "@/components/city/CityReportModal";
 import CityServicesSection from "@/components/city/CityServicesSection";
-import DetailsPanelBackdrop from "@/components/city/DetailsPanelBackdrop";
+import CityTonightSection from "@/components/city/CityTonightSection";
 import QuickGuideSection from "@/components/city/QuickGuideSection";
 import SafetyShields from "@/components/city/SafetyShields";
-import SelectedEventPanel from "@/components/city/SelectedEventPanel";
-import SelectedPlacePanel from "@/components/city/SelectedPlacePanel";
-import SelectedServicePanel from "@/components/city/SelectedServicePanel";
-import TonightPublicFeedPanel from "@/components/city/TonightPublicFeedPanel";
-import TonightVipFeedPanel from "@/components/city/TonightVipFeedPanel";
 import { buildEventAdminDraft, buildPlaceAdminDraft, buildServiceAdminDraft, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import {
@@ -87,6 +79,12 @@ import {
   resolveCityFromPathname,
   SERVICE_PRICE_TIER_OPTIONS,
 } from "@/features/city/cityPageUtils";
+import { useCityContributionForms } from "@/features/city/useCityContributionForms";
+import { useCityContributionToggles } from "@/features/city/useCityContributionToggles";
+import { useCityAdminEditors } from "@/features/city/useCityAdminEditors";
+import { useJoinRedirect } from "@/features/city/useJoinRedirect";
+import { useCitySelectionRouting } from "@/features/city/useCitySelectionRouting";
+import { useCityServiceForm } from "@/features/city/useCityServiceForm";
 import {
   arePrivateEventsEquivalent,
   areRequestMapsEqual,
@@ -179,35 +177,71 @@ export default function CityPage() {
   const [addMode, setAddMode] = useState(false);
   const [addEventMode, setAddEventMode] = useState(false);
   const [addServiceMode, setAddServiceMode] = useState(false);
-  const [name, setName] = useState("");
-  const [type, setType] = useState("club");
-  const [address, setAddress] = useState("");
-  const [description, setDescription] = useState("");
-  const [vibe, setVibe] = useState("");
-  const [vibeTags, setVibeTags] = useState([]);
-  const [placeHours, setPlaceHours] = useState("");
-  const [placeLink, setPlaceLink] = useState("");
-  const [eventName, setEventName] = useState("");
-  const [eventAddress, setEventAddress] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
-  const [eventEndDate, setEventEndDate] = useState("");
-  const [eventVibe, setEventVibe] = useState("");
-  const [eventVibeTags, setEventVibeTags] = useState([]);
-  const [eventDescription, setEventDescription] = useState("");
-  const [eventLink, setEventLink] = useState("");
-  const [serviceName, setServiceName] = useState("");
-  const [serviceType, setServiceType] = useState(SERVICE_TYPES[0]?.value || "other");
-  const [serviceAddress, setServiceAddress] = useState("");
-  const [serviceDescription, setServiceDescription] = useState("");
-  const [serviceVibe, setServiceVibe] = useState("");
-  const [serviceVibeTags, setServiceVibeTags] = useState([]);
-  const [serviceHours, setServiceHours] = useState("");
-  const [serviceLink, setServiceLink] = useState("");
-  const [serviceBookingLink, setServiceBookingLink] = useState("");
-  const [serviceContact, setServiceContact] = useState("");
-  const [serviceProviderName, setServiceProviderName] = useState("");
-  const [servicePriceTier, setServicePriceTier] = useState("");
-  const [serviceImageUrlsInput, setServiceImageUrlsInput] = useState("");
+  const {
+    name,
+    setName,
+    type,
+    setType,
+    address,
+    setAddress,
+    description,
+    setDescription,
+    vibe,
+    setVibe,
+    vibeTags,
+    setVibeTags,
+    placeHours,
+    setPlaceHours,
+    placeLink,
+    setPlaceLink,
+    eventName,
+    setEventName,
+    eventAddress,
+    setEventAddress,
+    eventStartDate,
+    setEventStartDate,
+    eventEndDate,
+    setEventEndDate,
+    eventVibe,
+    setEventVibe,
+    eventVibeTags,
+    setEventVibeTags,
+    eventDescription,
+    setEventDescription,
+    eventLink,
+    setEventLink,
+    resetPlaceForm,
+    resetEventForm,
+  } = useCityContributionForms();
+  const {
+    serviceName,
+    setServiceName,
+    serviceType,
+    setServiceType,
+    serviceAddress,
+    setServiceAddress,
+    serviceDescription,
+    setServiceDescription,
+    serviceVibe,
+    setServiceVibe,
+    serviceVibeTags,
+    setServiceVibeTags,
+    serviceHours,
+    setServiceHours,
+    serviceLink,
+    setServiceLink,
+    serviceBookingLink,
+    setServiceBookingLink,
+    serviceContact,
+    setServiceContact,
+    serviceProviderName,
+    setServiceProviderName,
+    servicePriceTier,
+    setServicePriceTier,
+    serviceImageUrlsInput,
+    setServiceImageUrlsInput,
+    resetServiceForm,
+  } = useCityServiceForm();
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(null);
   const [safetyRating, setSafetyRating] = useState(4);
@@ -850,82 +884,67 @@ export default function CityPage() {
     [privateInviteRequestsByEvent]
   );
 
-  const buildSelectionUrl = useCallback(
-    ({ nextPlaceId = placeId, nextEventId = eventId, nextServiceId = serviceId } = {}) => {
-    const params = new URLSearchParams(searchParams.toString());
+  const {
+    buildSelectionUrl,
+    openPlace,
+    openEvent,
+    openService,
+    closeService,
+    closePlace,
+    closeEvent,
+    closeAllDetails,
+  } = useCitySelectionRouting({
+    pathname,
+    searchParams,
+    placeId,
+    eventId,
+    serviceId,
+    router,
+  });
 
-    if (nextPlaceId) {
-      params.set("placeId", String(nextPlaceId));
-    } else {
-      params.delete("placeId");
-    }
+  const { redirectToJoin, redirectToJoinWithReturnTarget } = useJoinRedirect({
+    pathname,
+    router,
+  });
 
-    if (nextEventId) {
-      params.set("eventId", String(nextEventId));
-    } else {
-      params.delete("eventId");
-    }
+  const {
+    onToggleAddPlace,
+    onToggleAddEvent,
+    onToggleAddService,
+  } = useCityContributionToggles({
+    isMember,
+    redirectToJoin,
+    addEventMode,
+    setAddMode,
+    setAddEventMode,
+    setAddServiceMode,
+    openEventContribution,
+    addServiceFormRef,
+  });
 
-    if (nextServiceId) {
-      params.set("serviceId", String(nextServiceId));
-    } else {
-      params.delete("serviceId");
-    }
+  const {
+    canEditSelectedService,
+    toggleServiceAdminEditor,
+    togglePlaceAdminEditor,
+    toggleEventAdminEditor,
+  } = useCityAdminEditors({
+    isMember,
+    isAdmin,
+    userId: user?.id,
+    selectedService,
+    selectedPlace,
+    selectedEvent,
+    setServiceAdminOpen,
+    setServiceAdminDraft,
+    setPlaceAdminOpen,
+    setPlaceAdminDraft,
+    setEventAdminOpen,
+    setEventAdminDraft,
+    buildServiceAdminDraft,
+    buildPlaceAdminDraft,
+    buildEventAdminDraft,
+  });
 
-    params.delete("lat");
-    params.delete("lng");
-
-    const query = params.toString();
-    return query ? `${pathname}?${query}` : pathname;
-    },
-    [eventId, pathname, placeId, searchParams, serviceId]
-  );
-
-  const redirectToJoin = useCallback((targetPath = pathname) => {
-    writeLocalValue("qa_redirect", targetPath);
-    router.push("/?join=true");
-  }, [pathname, router]);
-
-  const redirectToJoinWithReturnTarget = useCallback((targetPath) => {
-    writeLocalValue("qa_redirect", targetPath);
-    writeLocalValue("qa_post_login_target", targetPath);
-    router.push("/?join=true");
-  }, [router]);
-
-  const openPlace = useCallback((place) => {
-    router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
-
-  const openEvent = (event) => {
-    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id, nextServiceId: null }));
-  };
-
-  const openService = useCallback((service) => {
-    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: service.id }));
-  }, [buildSelectionUrl, router]);
-
-  const canEditSelectedService = Boolean(
-    isMember
-      && selectedService
-      && (
-        isAdmin
-        || String(selectedService.created_by || "") === String(user?.id || "")
-      )
-  );
-
-  const closeService = useCallback(() => {
-    router.push(buildSelectionUrl({ nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
-
-  const toggleServiceAdminEditor = useCallback(() => {
-    if (!selectedService) return;
-    setServiceAdminOpen((value) => !value);
-    setServiceAdminDraft(buildServiceAdminDraft(selectedService));
-  }, [selectedService]);
-
-  const closeAllDetails = useCallback(() => {
-    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
 
   const showServiceOnMap = () => {
     const lat = Number(selectedService?.lat);
@@ -968,27 +987,6 @@ export default function CityPage() {
       title: selectedService.name,
     });
   };
-
-  const closePlace = useCallback(() => {
-    router.push(buildSelectionUrl({ nextPlaceId: null, nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
-
-  const togglePlaceAdminEditor = useCallback(() => {
-    if (!selectedPlace) return;
-    setPlaceAdminOpen((value) => !value);
-    setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
-  }, [selectedPlace]);
-
-  const closeEvent = useCallback(() => {
-    router.push(buildSelectionUrl({ nextEventId: null, nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
-
-  const toggleEventAdminEditor = useCallback(() => {
-    if (!selectedEvent) return;
-    setEventAdminOpen((value) => !value);
-    setEventAdminDraft(buildEventAdminDraft(selectedEvent));
-  }, [selectedEvent]);
-
   const showEventOnMap = () => {
     if (!selectedEvent || !mapRef.current || selectedEvent.lat == null || selectedEvent.lng == null) return;
 
@@ -2214,13 +2212,7 @@ export default function CityPage() {
         return;
       }
 
-      setName("");
-      setAddress("");
-      setDescription("");
-      setVibe("");
-      setVibeTags([]);
-      setPlaceHours("");
-      setPlaceLink("");
+      resetPlaceForm();
       setAddMode(false);
       trackKpiEvent("place_added", {
         city,
@@ -2331,14 +2323,7 @@ export default function CityPage() {
       }
 
       await fetchEvents();
-      setEventName("");
-      setEventAddress("");
-      setEventStartDate("");
-      setEventEndDate("");
-      setEventVibe("");
-      setEventVibeTags([]);
-      setEventDescription("");
-      setEventLink("");
+      resetEventForm();
       setAddEventMode(false);
       trackKpiEvent("event_added", {
         city,
@@ -2357,7 +2342,7 @@ export default function CityPage() {
     }
   };
 
-  const handleAddService = async () => {
+  const handleAddService = useCallback(async () => {
     if (!serviceName.trim() || !serviceAddress.trim() || !serviceDescription.trim()) {
       showToast("Fill in service name, address, and description before saving.", { tone: "warn", duration: 2400 });
       return;
@@ -2466,19 +2451,7 @@ export default function CityPage() {
 
       await fetchServices();
 
-      setServiceName("");
-      setServiceType(SERVICE_TYPES[0]?.value || "other");
-      setServiceAddress("");
-      setServiceDescription("");
-      setServiceVibe("");
-      setServiceVibeTags([]);
-      setServiceHours("");
-      setServiceLink("");
-      setServiceBookingLink("");
-      setServiceContact("");
-      setServiceProviderName("");
-      setServicePriceTier("");
-      setServiceImageUrlsInput("");
+      resetServiceForm();
       setAddServiceMode(false);
 
       trackKpiEvent("service_added", {
@@ -2495,7 +2468,7 @@ export default function CityPage() {
       });
       showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
     }
-  };
+  }, [city, fetchServices, geocodeAddress, memberName, resetServiceForm, serviceAddress, serviceBookingLink, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceName, servicePriceTier, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
 
   const handleReport = ({ targetType, targetId, title }) => {
     setReportDraft(createCityReportDraftFromTarget({
@@ -3739,155 +3712,95 @@ export default function CityPage() {
           cityHero={cityHero}
         />
 
-        <CityContributionActions
+        <CityContributionStack
           addMode={addMode}
           addEventMode={addEventMode}
           addServiceMode={addServiceMode}
-          onToggleAddPlace={() => {
-            if (!isMember) {
-              redirectToJoin();
-              return;
-            }
-            setAddMode((current) => !current);
-            setAddEventMode(false);
-            setAddServiceMode(false);
+          onToggleAddPlace={onToggleAddPlace}
+          onToggleAddEvent={onToggleAddEvent}
+          onToggleAddService={onToggleAddService}
+          placeFormProps={{
+            name,
+            setName,
+            description,
+            setDescription,
+            vibeTags,
+            setVibeTags,
+            vibe,
+            setVibe,
+            placeHours,
+            setPlaceHours,
+            placeLink,
+            setPlaceLink,
+            address,
+            setAddress,
+            type,
+            setType,
+            types: TYPES,
+            onSave: handleAddPlace,
           }}
-          onToggleAddEvent={() => {
-            if (!isMember) {
-              redirectToJoin();
-              return;
-            }
-            if (addEventMode) {
-              setAddEventMode(false);
-              return;
-            }
-            openEventContribution();
+          eventFormProps={{
+            addEventFormRef,
+            eventName,
+            setEventName,
+            eventDescription,
+            setEventDescription,
+            eventVibeTags,
+            setEventVibeTags,
+            eventVibe,
+            setEventVibe,
+            eventLink,
+            setEventLink,
+            eventAddress,
+            setEventAddress,
+            eventStartDate,
+            setEventStartDate,
+            eventEndDate,
+            setEventEndDate,
+            onSaveEvent: handleAddEvent,
           }}
-          onToggleAddService={() => {
-            if (!isMember) {
-              redirectToJoin();
-              return;
-            }
-            setAddServiceMode((current) => {
-              const next = !current;
-              if (next) {
-                setAddMode(false);
-                setAddEventMode(false);
-                requestAnimationFrame(() => {
-                  requestAnimationFrame(() => {
-                    addServiceFormRef.current?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    });
-                  });
-                });
-              }
-              return next;
-            });
+          serviceFormProps={{
+            addServiceFormRef,
+            serviceName,
+            setServiceName,
+            serviceDescription,
+            setServiceDescription,
+            serviceVibeTags,
+            setServiceVibeTags,
+            serviceVibe,
+            setServiceVibe,
+            serviceAddress,
+            setServiceAddress,
+            serviceType,
+            setServiceType,
+            serviceTypes: SERVICE_TYPES,
+            servicePriceTier,
+            setServicePriceTier,
+            servicePriceTierOptions: SERVICE_PRICE_TIER_OPTIONS,
+            serviceHours,
+            setServiceHours,
+            serviceProviderName,
+            setServiceProviderName,
+            serviceContact,
+            setServiceContact,
+            serviceBookingLink,
+            setServiceBookingLink,
+            serviceLink,
+            setServiceLink,
+            serviceImageUrlsInput,
+            setServiceImageUrlsInput,
+            onSaveService: handleAddService,
           }}
         />
 
-        {addMode && (
-          <AddPlaceInlineForm
-            name={name}
-            setName={setName}
-            description={description}
-            setDescription={setDescription}
-            vibeTags={vibeTags}
-            setVibeTags={setVibeTags}
-            vibe={vibe}
-            setVibe={setVibe}
-            placeHours={placeHours}
-            setPlaceHours={setPlaceHours}
-            placeLink={placeLink}
-            setPlaceLink={setPlaceLink}
-            address={address}
-            setAddress={setAddress}
-            type={type}
-            setType={setType}
-            types={TYPES}
-            onSave={handleAddPlace}
-          />
-        )}
-
-        {addEventMode && (
-          <AddEventInlineForm
-            addEventFormRef={addEventFormRef}
-            eventName={eventName}
-            setEventName={setEventName}
-            eventDescription={eventDescription}
-            setEventDescription={setEventDescription}
-            eventVibeTags={eventVibeTags}
-            setEventVibeTags={setEventVibeTags}
-            eventVibe={eventVibe}
-            setEventVibe={setEventVibe}
-            eventLink={eventLink}
-            setEventLink={setEventLink}
-            eventAddress={eventAddress}
-            setEventAddress={setEventAddress}
-            eventStartDate={eventStartDate}
-            setEventStartDate={setEventStartDate}
-            eventEndDate={eventEndDate}
-            setEventEndDate={setEventEndDate}
-            onSaveEvent={handleAddEvent}
-          />
-        )}
-
-        {addServiceMode && (
-          <AddServiceInlineForm
-            addServiceFormRef={addServiceFormRef}
-            serviceName={serviceName}
-            setServiceName={setServiceName}
-            serviceDescription={serviceDescription}
-            setServiceDescription={setServiceDescription}
-            serviceVibeTags={serviceVibeTags}
-            setServiceVibeTags={setServiceVibeTags}
-            serviceVibe={serviceVibe}
-            setServiceVibe={setServiceVibe}
-            serviceAddress={serviceAddress}
-            setServiceAddress={setServiceAddress}
-            serviceType={serviceType}
-            setServiceType={setServiceType}
-            serviceTypes={SERVICE_TYPES}
-            servicePriceTier={servicePriceTier}
-            setServicePriceTier={setServicePriceTier}
-            servicePriceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
-            serviceHours={serviceHours}
-            setServiceHours={setServiceHours}
-            serviceProviderName={serviceProviderName}
-            setServiceProviderName={setServiceProviderName}
-            serviceContact={serviceContact}
-            setServiceContact={setServiceContact}
-            serviceBookingLink={serviceBookingLink}
-            setServiceBookingLink={setServiceBookingLink}
-            serviceLink={serviceLink}
-            setServiceLink={setServiceLink}
-            serviceImageUrlsInput={serviceImageUrlsInput}
-            setServiceImageUrlsInput={setServiceImageUrlsInput}
-            onSaveService={handleAddService}
-          />
-        )}
-
-        <div ref={mapWrapperRef} className="animate-cinematic-in mb-8" style={{ animationDelay: "120ms" }}>
-          <div className="relative h-[460px] w-full overflow-hidden rounded-[32px] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.30)]">
-            <div ref={mapContainerRef} className="h-full w-full" />
-            {mapError && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/70 p-6 text-center backdrop-blur-sm">
-                <div>
-                  <p className="text-sm text-white/80">{mapError}</p>
-                  <button
-                    onClick={() => {
-                      mapWrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }}
-                    className="mt-4 rounded-full border border-white/20 bg-white/8 px-4 py-2 text-xs text-white/75 transition hover:border-white/30 hover:text-white"
-                  >
-                    Continue in list mode
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <CityMapSection
+          mapWrapperRef={mapWrapperRef}
+          mapContainerRef={mapContainerRef}
+          mapError={mapError}
+          onContinueInListMode={() => {
+            mapWrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        />
 
         <CityQuickNavigation
           onGoEvents={() => scrollToSection(tonightSectionRef)}
@@ -3896,143 +3809,60 @@ export default function CityPage() {
           onGoVenues={() => scrollToSection(placesSectionRef)}
         />
 
-        <div ref={tonightSectionRef} className="animate-cinematic-in mb-10 rounded-[32px] border border-fuchsia-300/12 bg-[linear-gradient(180deg,rgba(38,20,44,0.84),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(217,70,239,0.08)]" style={{ animationDelay: "195ms" }}>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/65">Events in {cityName}</p>
-              <h2 className="mt-1 text-xl tracking-[0.02em] text-fuchsia-100">Events</h2>
-              <p className="mt-1 text-xs text-white/62">
-                Choose <span className="text-violet-100">Public</span> for official city events, or <span className="text-fuchsia-100">VIP / Invites</span> for private member plans.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div className="inline-flex rounded-full border border-white/12 bg-black/35 p-1 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setTonightFeedTab("public")}
-                  className={`rounded-full px-3 py-1.5 transition ${
-                    tonightFeedTab === "public"
-                      ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
-                      : "text-white/65 hover:text-white"
-                  }`}
-                >
-                  Public
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTonightFeedTab("vip")}
-                  className={`rounded-full px-3 py-1.5 transition ${
-                    tonightFeedTab === "vip"
-                      ? "border border-fuchsia-200/34 bg-fuchsia-200/18 text-fuchsia-100"
-                      : "text-white/65 hover:text-white"
-                  }`}
-                >
-                  VIP / Invites
-                </button>
-              </div>
-
-              {tonightFeedTab === "public" ? (
-                isMember ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTonightFeedTab("vip");
-                      setHostPrivateEventOpen(true);
-                    }}
-                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
-                  >
-                    Host private plan
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      redirectToJoin();
-                    }}
-                    className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
-                  >
-                    Join to host
-                  </button>
-                )
-              ) : isMember ? (
-                <button
-                  type="button"
-                  onClick={() => setHostPrivateEventOpen((current) => !current)}
-                  className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
-                >
-                  {hostPrivateEventOpen ? "Close host form" : "Host tonight"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    redirectToJoin();
-                  }}
-                  className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
-                >
-                  Join to host
-                </button>
-              )}
-            </div>
-          </div>
-
-          {tonightFeedTab === "public" ? (
-            <TonightPublicFeedPanel
-              eventsLoadError={eventsLoadError}
-              fetchEvents={fetchEvents}
-              eventsLoading={eventsLoading}
-              featuredEvent={featuredEvent}
-              openEvent={openEvent}
-              setHoveredEventId={setHoveredEventId}
-              hoveredEventId={hoveredEventId}
-              isFocusMode={isFocusMode}
-              selectedEvent={selectedEvent}
-              formatEventDateLabel={formatEventDateLabel}
-              cityName={cityName}
-              remainingEvents={remainingEvents}
-              isMember={isMember}
-              openEventContribution={openEventContribution}
-              redirectToJoin={redirectToJoin}
-            />
-                    ) : (
-            <TonightVipFeedPanel
-              privateEventsTableMissing={privateEventsTableMissing}
-              privateEventsError={privateEventsError}
-              privateEventsLoading={privateEventsLoading}
-              cityPrivateEvents={cityPrivateEvents}
-              getPrivateEventStatus={getPrivateEventStatus}
-              user={user}
-              privateEventInvites={privateEventInvites}
-              privateInviteRequestsByEvent={privateInviteRequestsByEvent}
-              pendingPrivateInviteCountByEvent={pendingPrivateInviteCountByEvent}
-              expandedPrivateHostEventId={expandedPrivateHostEventId}
-              setExpandedPrivateHostEventId={setExpandedPrivateHostEventId}
-              formatEndsIn={formatEndsIn}
-              privateFeedNowTick={privateFeedNowTick}
-              privateEventTypeLabels={PRIVATE_EVENT_TYPE_LABELS}
-              formatDateTime={formatDateTime}
-              deletePrivateEvent={deletePrivateEvent}
-              deletingPrivateEventId={deletingPrivateEventId}
-              isMember={isMember}
-              isSubmittingPrivateInvite={isSubmittingPrivateInvite}
-              requestPrivateInvite={requestPrivateInvite}
-              privateInviteRequesterProfiles={privateInviteRequesterProfiles}
-              formatDate={formatDate}
-              respondPrivateInviteRequest={respondPrivateInviteRequest}
-              isUpdatingPrivateInviteStatus={isUpdatingPrivateInviteStatus}
-              hostPrivateEventOpen={hostPrivateEventOpen}
-              privateEventForm={privateEventForm}
-              setPrivateEventForm={setPrivateEventForm}
-              privateEventStartPreview={privateEventStartPreview}
-              privateEventExpiresPreview={privateEventExpiresPreview}
-              submitPrivateEvent={submitPrivateEvent}
-              isSubmittingPrivateEvent={isSubmittingPrivateEvent}
-              privateEventTypes={PRIVATE_EVENT_TYPES}
-              todayIso={todayIso}
-              router={router}
-            />
-          )}
-        </div>
+        <CityTonightSection
+          sectionRef={tonightSectionRef}
+          cityName={cityName}
+          tonightFeedTab={tonightFeedTab}
+          setTonightFeedTab={setTonightFeedTab}
+          isMember={isMember}
+          hostPrivateEventOpen={hostPrivateEventOpen}
+          setHostPrivateEventOpen={setHostPrivateEventOpen}
+          redirectToJoin={redirectToJoin}
+          eventsLoadError={eventsLoadError}
+          fetchEvents={fetchEvents}
+          eventsLoading={eventsLoading}
+          featuredEvent={featuredEvent}
+          openEvent={openEvent}
+          setHoveredEventId={setHoveredEventId}
+          hoveredEventId={hoveredEventId}
+          isFocusMode={isFocusMode}
+          selectedEvent={selectedEvent}
+          formatEventDateLabel={formatEventDateLabel}
+          remainingEvents={remainingEvents}
+          openEventContribution={openEventContribution}
+          privateEventsTableMissing={privateEventsTableMissing}
+          privateEventsError={privateEventsError}
+          privateEventsLoading={privateEventsLoading}
+          cityPrivateEvents={cityPrivateEvents}
+          getPrivateEventStatus={getPrivateEventStatus}
+          user={user}
+          privateEventInvites={privateEventInvites}
+          privateInviteRequestsByEvent={privateInviteRequestsByEvent}
+          pendingPrivateInviteCountByEvent={pendingPrivateInviteCountByEvent}
+          expandedPrivateHostEventId={expandedPrivateHostEventId}
+          setExpandedPrivateHostEventId={setExpandedPrivateHostEventId}
+          formatEndsIn={formatEndsIn}
+          privateFeedNowTick={privateFeedNowTick}
+          privateEventTypeLabels={PRIVATE_EVENT_TYPE_LABELS}
+          formatDateTime={formatDateTime}
+          deletePrivateEvent={deletePrivateEvent}
+          deletingPrivateEventId={deletingPrivateEventId}
+          isSubmittingPrivateInvite={isSubmittingPrivateInvite}
+          requestPrivateInvite={requestPrivateInvite}
+          privateInviteRequesterProfiles={privateInviteRequesterProfiles}
+          formatDate={formatDate}
+          respondPrivateInviteRequest={respondPrivateInviteRequest}
+          isUpdatingPrivateInviteStatus={isUpdatingPrivateInviteStatus}
+          privateEventForm={privateEventForm}
+          setPrivateEventForm={setPrivateEventForm}
+          privateEventStartPreview={privateEventStartPreview}
+          privateEventExpiresPreview={privateEventExpiresPreview}
+          submitPrivateEvent={submitPrivateEvent}
+          isSubmittingPrivateEvent={isSubmittingPrivateEvent}
+          privateEventTypes={PRIVATE_EVENT_TYPES}
+          todayIso={todayIso}
+          router={router}
+        />
         <CityEventsRailSection
           sectionRef={eventsSectionRef}
           guideSectionRef={guideSectionRef}
@@ -4109,161 +3939,128 @@ export default function CityPage() {
         />
       </div>
 
-      <DetailsPanelBackdrop
-        isOpen={Boolean(selectedPlace || selectedEvent || selectedService)}
-        onClose={closeAllDetails}
-      />
-
-      {selectedService && (
-        <SelectedServicePanel
-          selectedService={selectedService}
-          onWheel={handleDesktopPanelWheel}
-          onClose={closeService}
-          selectedServiceImages={selectedServiceImages}
-          cityLabel={config.title?.replace("Queer ", "")}
-          serviceTypeLabels={SERVICE_TYPE_LABELS}
-          selectedServiceQuality={selectedServiceQuality}
-          selectedServiceQualityStatus={selectedServiceQualityStatus}
-          refreshEntityQuality={refreshEntityQuality}
-          formatDate={formatDate}
-          canEditSelectedService={canEditSelectedService}
-          serviceAdminOpen={serviceAdminOpen}
-          onToggleServiceAdmin={toggleServiceAdminEditor}
-          serviceAdminDraft={serviceAdminDraft}
-          setServiceAdminDraft={setServiceAdminDraft}
-          onSaveServiceAddressOnly={handleAdminSaveServiceAddressOnly}
-          isSavingServiceAddressOnly={isSavingServiceAddressOnly}
-          onSaveService={handleAdminSaveService}
-          isSavingServiceAdmin={isSavingServiceAdmin}
-          onDeleteService={handleAdminDeleteService}
-          isDeletingServiceAdmin={isDeletingServiceAdmin}
-          serviceTypes={SERVICE_TYPES}
-          priceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
-          bookingUrl={selectedServiceBookingUrl}
-          linkUrl={selectedServiceLinkUrl}
-          canShowOnMap={canShowSelectedServiceOnMap}
-          onShowOnMap={showServiceOnMap}
-          onReportService={handleReportSelectedService}
-        />
-      )}
-      {selectedPlace && (
-        <SelectedPlacePanel
-          selectedPlace={selectedPlace}
-          onWheel={handleDesktopPanelWheel}
-          onClose={closePlace}
-          cityName={cityName}
-          typeLabels={TYPE_LABELS}
-          selectedPlaceSafetySignal={selectedPlaceSafetySignal}
-          liveVibeSummary={liveVibeSummary}
-          liveVibeHeadline={liveVibeHeadline}
-          liveVibePulse={liveVibePulse}
-          liveVibeConsensus={liveVibeConsensus}
-          liveVibeUpdatedLabel={liveVibeUpdatedLabel}
-          liveVibeTableMissing={liveVibeTableMissing}
-          handleSubmitLiveVibe={handleSubmitLiveVibe}
-          isSubmittingLiveVibe={isSubmittingLiveVibe}
-          liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
-          liveVibeSubmittingKey={liveVibeSubmittingKey}
-          liveVibeJustSentKey={liveVibeJustSentKey}
-          liveVibeOptions={LIVE_VIBE_OPTIONS}
-          isMember={isMember}
-          liveVibeSelectedOption={liveVibeSelectedOption}
-          isLoadingLiveVibe={isLoadingLiveVibe}
-          liveVibeError={liveVibeError}
-          liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
-          showLiveVibeMomentum={showLiveVibeMomentum}
-          setShowLiveVibeMomentum={setShowLiveVibeMomentum}
-          liveVibeMemberMomentum={liveVibeMemberMomentum}
-          liveVibeStreakNudge={liveVibeStreakNudge}
-          selectedPlaceQuality={selectedPlaceQuality}
-          selectedPlaceQualityStatus={selectedPlaceQualityStatus}
-          refreshEntityQuality={refreshEntityQuality}
-          formatDate={formatDate}
-          trustedPlaceSavesCount={trustedPlaceSavesCount}
-          isAdmin={isAdmin}
-          placeAdminOpen={placeAdminOpen}
-          onTogglePlaceAdmin={togglePlaceAdminEditor}
-          placeAdminDraft={placeAdminDraft}
-          setPlaceAdminDraft={setPlaceAdminDraft}
-          handleAdminSavePlaceAddressOnly={handleAdminSavePlaceAddressOnly}
-          isSavingPlaceAddressOnly={isSavingPlaceAddressOnly}
-          handleAdminSavePlace={handleAdminSavePlace}
-          isSavingPlaceAdmin={isSavingPlaceAdmin}
-          handleAdminDeletePlace={handleAdminDeletePlace}
-          isDeletingPlaceAdmin={isDeletingPlaceAdmin}
-          placeTypes={TYPES}
-          handleReport={handleReport}
-          toggleFavorite={toggleFavorite}
-          favorites={favorites}
-          reviews={reviews}
-          canReviewSelectedPlace={canReviewSelectedPlace}
-          isSubmittingReview={isSubmittingReview}
-          onJoinToReview={handleJoinToPlaceReview}
-          rating={rating}
-          hoverRating={hoverRating}
-          setHoverRating={setHoverRating}
-          setRating={setRating}
-          safetyRating={safetyRating}
-          hoverSafetyRating={hoverSafetyRating}
-          setHoverSafetyRating={setHoverSafetyRating}
-          setSafetyRating={setSafetyRating}
-          comment={comment}
-          setComment={setComment}
-          onSubmitReview={handleSubmitPlaceReview}
-        />
-      )}
-      {selectedEvent && (
-        <SelectedEventPanel
-          selectedEvent={selectedEvent}
-          onWheel={handleDesktopPanelWheel}
-          onClose={closeEvent}
-          cityLabel={config.title?.replace("Queer ", "")}
-          cityName={cityName}
-          liveVibeOptions={LIVE_VIBE_OPTIONS}
-          eventLiveVibeSignalKey={eventLiveVibeSignalKey}
-          isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
-          eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
-          eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
-          handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
-          isMember={isMember}
-          eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
-          selectedEventQuality={selectedEventQuality}
-          formatDate={formatDate}
-          selectedEventQualityStatus={selectedEventQualityStatus}
-          refreshEntityQuality={refreshEntityQuality}
-          trustedEventSavesCount={trustedEventSavesCount}
-          isAdmin={isAdmin}
-          eventAdminOpen={eventAdminOpen}
-          onToggleEventAdmin={toggleEventAdminEditor}
-          eventAdminDraft={eventAdminDraft}
-          setEventAdminDraft={setEventAdminDraft}
-          handleAdminSaveEventAddressOnly={handleAdminSaveEventAddressOnly}
-          isSavingEventAddressOnly={isSavingEventAddressOnly}
-          handleAdminSaveEvent={handleAdminSaveEvent}
-          isSavingEventAdmin={isSavingEventAdmin}
-          handleAdminDeleteEvent={handleAdminDeleteEvent}
-          isDeletingEventAdmin={isDeletingEventAdmin}
-          favorites={favorites}
-          toggleFavorite={toggleFavorite}
-          showEventOnMap={showEventOnMap}
-          handleReport={handleReport}
-        />
-      )}
-      <CityReportModal
-        open={reportModalOpen}
+      <CityDetailsLayer
+        selectedPlace={selectedPlace}
+        selectedEvent={selectedEvent}
+        selectedService={selectedService}
+        closeAllDetails={closeAllDetails}
+        handleDesktopPanelWheel={handleDesktopPanelWheel}
+        closeService={closeService}
+        selectedServiceImages={selectedServiceImages}
+        cityLabel={config.title?.replace("Queer ", "")}
+        serviceTypeLabels={SERVICE_TYPE_LABELS}
+        selectedServiceQuality={selectedServiceQuality}
+        selectedServiceQualityStatus={selectedServiceQualityStatus}
+        refreshEntityQuality={refreshEntityQuality}
+        formatDate={formatDate}
+        canEditSelectedService={canEditSelectedService}
+        serviceAdminOpen={serviceAdminOpen}
+        toggleServiceAdminEditor={toggleServiceAdminEditor}
+        serviceAdminDraft={serviceAdminDraft}
+        setServiceAdminDraft={setServiceAdminDraft}
+        handleAdminSaveServiceAddressOnly={handleAdminSaveServiceAddressOnly}
+        isSavingServiceAddressOnly={isSavingServiceAddressOnly}
+        handleAdminSaveService={handleAdminSaveService}
+        isSavingServiceAdmin={isSavingServiceAdmin}
+        handleAdminDeleteService={handleAdminDeleteService}
+        isDeletingServiceAdmin={isDeletingServiceAdmin}
+        serviceTypes={SERVICE_TYPES}
+        servicePriceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
+        selectedServiceBookingUrl={selectedServiceBookingUrl}
+        selectedServiceLinkUrl={selectedServiceLinkUrl}
+        canShowSelectedServiceOnMap={canShowSelectedServiceOnMap}
+        showServiceOnMap={showServiceOnMap}
+        handleReportSelectedService={handleReportSelectedService}
+        closePlace={closePlace}
+        cityName={cityName}
+        typeLabels={TYPE_LABELS}
+        selectedPlaceSafetySignal={selectedPlaceSafetySignal}
+        liveVibeSummary={liveVibeSummary}
+        liveVibeHeadline={liveVibeHeadline}
+        liveVibePulse={liveVibePulse}
+        liveVibeConsensus={liveVibeConsensus}
+        liveVibeUpdatedLabel={liveVibeUpdatedLabel}
+        liveVibeTableMissing={liveVibeTableMissing}
+        handleSubmitLiveVibe={handleSubmitLiveVibe}
+        isSubmittingLiveVibe={isSubmittingLiveVibe}
+        liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
+        liveVibeSubmittingKey={liveVibeSubmittingKey}
+        liveVibeJustSentKey={liveVibeJustSentKey}
+        liveVibeOptions={LIVE_VIBE_OPTIONS}
+        isMember={isMember}
+        liveVibeSelectedOption={liveVibeSelectedOption}
+        isLoadingLiveVibe={isLoadingLiveVibe}
+        liveVibeError={liveVibeError}
+        liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
+        showLiveVibeMomentum={showLiveVibeMomentum}
+        setShowLiveVibeMomentum={setShowLiveVibeMomentum}
+        liveVibeMemberMomentum={liveVibeMemberMomentum}
+        liveVibeStreakNudge={liveVibeStreakNudge}
+        selectedPlaceQuality={selectedPlaceQuality}
+        selectedPlaceQualityStatus={selectedPlaceQualityStatus}
+        trustedPlaceSavesCount={trustedPlaceSavesCount}
+        isAdmin={isAdmin}
+        placeAdminOpen={placeAdminOpen}
+        togglePlaceAdminEditor={togglePlaceAdminEditor}
+        placeAdminDraft={placeAdminDraft}
+        setPlaceAdminDraft={setPlaceAdminDraft}
+        handleAdminSavePlaceAddressOnly={handleAdminSavePlaceAddressOnly}
+        isSavingPlaceAddressOnly={isSavingPlaceAddressOnly}
+        handleAdminSavePlace={handleAdminSavePlace}
+        isSavingPlaceAdmin={isSavingPlaceAdmin}
+        handleAdminDeletePlace={handleAdminDeletePlace}
+        isDeletingPlaceAdmin={isDeletingPlaceAdmin}
+        placeTypes={TYPES}
+        handleReport={handleReport}
+        toggleFavorite={toggleFavorite}
+        favorites={favorites}
+        reviews={reviews}
+        canReviewSelectedPlace={canReviewSelectedPlace}
+        isSubmittingReview={isSubmittingReview}
+        handleJoinToPlaceReview={handleJoinToPlaceReview}
+        rating={rating}
+        hoverRating={hoverRating}
+        setHoverRating={setHoverRating}
+        setRating={setRating}
+        safetyRating={safetyRating}
+        hoverSafetyRating={hoverSafetyRating}
+        setHoverSafetyRating={setHoverSafetyRating}
+        setSafetyRating={setSafetyRating}
+        comment={comment}
+        setComment={setComment}
+        handleSubmitPlaceReview={handleSubmitPlaceReview}
+        closeEvent={closeEvent}
+        eventLiveVibeSignalKey={eventLiveVibeSignalKey}
+        isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
+        eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
+        eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
+        handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
+        eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
+        selectedEventQuality={selectedEventQuality}
+        selectedEventQualityStatus={selectedEventQualityStatus}
+        trustedEventSavesCount={trustedEventSavesCount}
+        eventAdminOpen={eventAdminOpen}
+        toggleEventAdminEditor={toggleEventAdminEditor}
+        eventAdminDraft={eventAdminDraft}
+        setEventAdminDraft={setEventAdminDraft}
+        handleAdminSaveEventAddressOnly={handleAdminSaveEventAddressOnly}
+        isSavingEventAddressOnly={isSavingEventAddressOnly}
+        handleAdminSaveEvent={handleAdminSaveEvent}
+        isSavingEventAdmin={isSavingEventAdmin}
+        handleAdminDeleteEvent={handleAdminDeleteEvent}
+        isDeletingEventAdmin={isDeletingEventAdmin}
+        showEventOnMap={showEventOnMap}
+        reportModalOpen={reportModalOpen}
         reportDraft={reportDraft}
         setReportDraft={setReportDraft}
         reportReasons={REPORT_REASONS}
-        onClose={closeReportModal}
-        onSubmit={submitReport}
-      />
-      <CityQualityModal
-        open={qualityModal.open}
+        closeReportModal={closeReportModal}
+        submitReport={submitReport}
         qualityModal={qualityModal}
         setQualityModal={setQualityModal}
         trustActions={TRUST_ACTIONS}
-        onClose={closeQualityModal}
-        onSubmit={submitQualityModal}
+        closeQualityModal={closeQualityModal}
+        submitQualityModal={submitQualityModal}
       />
     </main>
   );
