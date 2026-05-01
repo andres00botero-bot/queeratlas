@@ -21,7 +21,7 @@ export default function SelectedPlaceReviewComposer({
   onSubmitReview,
 }) {
   return (
-    <div className="mt-4">
+    <div className="mt-4 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0">
       <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/45">Add your review</p>
       {!isMember && (
         <div className="mb-3 rounded-2xl border border-amber-300/20 bg-amber-200/10 p-3">
