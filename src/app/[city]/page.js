@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import mapboxgl from "mapbox-gl";
-import { Shield, Star } from "lucide-react";
+import { Shield } from "lucide-react";
 import "../signal-motion.css";
 import { cityConfig } from "@/lib/cities";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -17,7 +17,6 @@ import {
   syncBlockedItemsFromCloud,
 } from "@/lib/moderation";
 import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
-import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
@@ -27,7 +26,6 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   buildVibeDualWriteFields,
   isMissingVibeTagsColumnError,
-  normalizeVibeTag,
   normalizeVibeTags,
 } from "@/lib/vibeTaxonomy";
 import {
@@ -52,6 +50,23 @@ import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import CityQualityModal from "@/components/city/CityQualityModal";
 import CityReportModal from "@/components/city/CityReportModal";
+import SafetyShields from "@/components/city/SafetyShields";
+import SelectedEventLiveVibePanel from "@/components/city/SelectedEventLiveVibePanel";
+import SelectedEventActions from "@/components/city/SelectedEventActions";
+import SelectedEventAdminControls from "@/components/city/SelectedEventAdminControls";
+import SelectedEventMetaCards from "@/components/city/SelectedEventMetaCards";
+import SelectedEventSummary from "@/components/city/SelectedEventSummary";
+import SelectedEventTrustSignals from "@/components/city/SelectedEventTrustSignals";
+import SelectedPlaceActions from "@/components/city/SelectedPlaceActions";
+import SelectedPlaceAdminControls from "@/components/city/SelectedPlaceAdminControls";
+import SelectedPlaceLiveVibePanel from "@/components/city/SelectedPlaceLiveVibePanel";
+import SelectedPlaceReviewComposer from "@/components/city/SelectedPlaceReviewComposer";
+import SelectedPlaceReviewsList from "@/components/city/SelectedPlaceReviewsList";
+import SelectedPlaceSummary from "@/components/city/SelectedPlaceSummary";
+import SelectedPlaceTrustSignals from "@/components/city/SelectedPlaceTrustSignals";
+import SelectedServiceActions from "@/components/city/SelectedServiceActions";
+import SelectedServiceAdminControls from "@/components/city/SelectedServiceAdminControls";
+import SelectedServiceSummary from "@/components/city/SelectedServiceSummary";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import VipFeedStatusAlerts from "@/components/city/VipFeedStatusAlerts";
 import { buildEventAdminDraft, buildPlaceAdminDraft, buildServiceAdminDraft, getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
@@ -78,6 +93,15 @@ import {
   polishVenueDescription,
 } from "@/features/city/liveVibeFeature";
 import {
+  normalizeServiceImageUrls,
+  resolveCityFromPathname,
+  SERVICE_PRICE_TIER_OPTIONS,
+} from "@/features/city/cityPageUtils";
+import {
+  getDisplayedSafetyShields,
+  getSafetyIconToneClass,
+} from "@/features/city/placeSafetyUi";
+import {
   arePrivateEventsEquivalent,
   areRequestMapsEqual,
   areStringMapsEqual,
@@ -100,91 +124,6 @@ import {
   TYPE_STYLES,
 } from "@/features/city/cityPageConstants";
 import styles from "./page.module.css";
-
-function normalizeServiceImageUrls(input, max = 8) {
-  const urls = Array.isArray(input) ? input : [];
-  const out = [];
-  const seen = new Set();
-
-  for (const rawValue of urls) {
-    const value = String(rawValue || "").trim();
-    if (!value || !/^https?:\/\//i.test(value)) continue;
-    if (seen.has(value)) continue;
-    seen.add(value);
-    out.push(value);
-    if (out.length >= max) break;
-  }
-
-  return out;
-}
-
-const SERVICE_PRICE_TIER_OPTIONS = ["", "$", "$$", "$$$", "$$$$"];
-
-function SafetyShields({ value = 0, className = "", activeClassName = "", inactiveClassName = "" }) {
-  const safeValue = Math.max(0, Math.min(5, Number(value) || 0));
-  return (
-    <span className={`inline-flex items-center gap-1 whitespace-nowrap ${className}`.trim()}>
-      {[1, 2, 3, 4, 5].map((step) => {
-        const active = safeValue >= step;
-        return (
-          <Shield
-            key={`safety-shield-${step}`}
-            className={`h-3.5 w-3.5 ${active ? activeClassName : inactiveClassName}`.trim()}
-            strokeWidth={2.1}
-            fill={active ? "currentColor" : "none"}
-            aria-hidden="true"
-          />
-        );
-      })}
-    </span>
-  );
-}
-
-function getSafetyIconToneClass(tone = "neutral") {
-  if (tone === "safe") return "text-emerald-300";
-  if (tone === "mixed") return "text-amber-300";
-  if (tone === "risk") return "text-rose-300";
-  return "text-cyan-200";
-}
-
-function getDisplayedSafetyShields(signal) {
-  if (!signal) return 0;
-  const reviewCount = Number(signal.safetyReviewCount || 0);
-  const reviewAvg = Number(signal.safetyReviewAvg || 0);
-  const base = reviewCount > 0 && Number.isFinite(reviewAvg) ? reviewAvg : Number(signal.shields || 0);
-  return Math.max(1, Math.min(5, Math.round(base)));
-}
-
-function shouldShowLegacyVibe(entity) {
-  if (!Boolean(entity?.legacy_vibe_user_set)) return false;
-
-  const legacyRaw = String(entity?.vibe || "").trim();
-  if (!legacyRaw) return false;
-
-  const normalizedLegacy = normalizeVibeTag(legacyRaw);
-  const tags = normalizeVibeTags(entity?.vibe_tags, { max: 8 });
-  if (normalizedLegacy && tags.includes(normalizedLegacy)) return false;
-
-  const legacyLabel = legacyRaw.replaceAll("_", " ").trim().toLowerCase();
-  const tagLabels = tags.map((tag) => String(tag || "").replaceAll("_", " ").trim().toLowerCase());
-  if (tagLabels.includes(legacyLabel)) return false;
-
-  return true;
-}
-
-function resolveCityFromPathname(pathname = "") {
-  const firstSegment = String(pathname || "")
-    .split("?")[0]
-    .split("/")
-    .filter(Boolean)[0];
-  if (!firstSegment) return "";
-
-  try {
-    return normalizeCityKey(decodeURIComponent(firstSegment));
-  } catch {
-    return normalizeCityKey(firstSegment);
-  }
-}
 
 export default function CityPage() {
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -936,6 +875,17 @@ export default function CityPage() {
     [eventId, pathname, placeId, searchParams, serviceId]
   );
 
+  const redirectToJoin = useCallback((targetPath = pathname) => {
+    writeLocalValue("qa_redirect", targetPath);
+    router.push("/?join=true");
+  }, [pathname, router]);
+
+  const redirectToJoinWithReturnTarget = useCallback((targetPath) => {
+    writeLocalValue("qa_redirect", targetPath);
+    writeLocalValue("qa_post_login_target", targetPath);
+    router.push("/?join=true");
+  }, [router]);
+
   const openPlace = useCallback((place) => {
     router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }));
   }, [buildSelectionUrl, router]);
@@ -1274,8 +1224,7 @@ export default function CityPage() {
   const submitPrivateEvent = useCallback(async (submitEvent) => {
     submitEvent.preventDefault();
     if (!isMember || !user?.id) {
-      writeLocalValue("qa_redirect", pathname);
-      router.push("/?join=true");
+      redirectToJoin();
       return;
     }
     if (privateEventsTableMissing) {
@@ -1353,7 +1302,6 @@ export default function CityPage() {
     fetchPrivateEvents,
     isMember,
     memberName,
-    pathname,
     privateEventForm.approxArea,
     privateEventForm.exactLocation,
     privateEventForm.eventType,
@@ -1362,7 +1310,7 @@ export default function CityPage() {
     privateEventForm.startTime,
     privateEventForm.title,
     privateEventsTableMissing,
-    router,
+    redirectToJoin,
     showToast,
     user?.email,
     user?.id,
@@ -1495,8 +1443,7 @@ export default function CityPage() {
 
   const requestPrivateInvite = useCallback(async (eventRow) => {
     if (!isMember || !user?.id) {
-      writeLocalValue("qa_redirect", pathname);
-      router.push("/?join=true");
+      redirectToJoin();
       return;
     }
     if (!eventRow?.id || privateInvitesTableMissing) {
@@ -1541,9 +1488,8 @@ export default function CityPage() {
     cityPrivateEvents,
     fetchMyPrivateInvites,
     isMember,
-    pathname,
     privateInvitesTableMissing,
-    router,
+    redirectToJoin,
     showToast,
     user?.id,
   ]);
@@ -2560,9 +2506,7 @@ export default function CityPage() {
         nextPlaceId: selectedPlace.id,
         nextEventId: null,
       });
-      writeLocalValue("qa_redirect", redirectTarget);
-      writeLocalValue("qa_post_login_target", redirectTarget);
-      router.push("/?join=true");
+      redirectToJoinWithReturnTarget(redirectTarget);
       return;
     }
 
@@ -2684,15 +2628,15 @@ export default function CityPage() {
     }
   }, [
     buildSelectionUrl,
+    city,
     isMember,
     liveVibeMyLastTapMs,
+    memberName,
+    redirectToJoinWithReturnTarget,
     resolvePlaceDbId,
-    router,
     selectedPlace,
     selectedPlaceDbId,
     showToast,
-    city,
-    memberName,
     user?.email,
     user?.id,
   ]);
@@ -2707,9 +2651,7 @@ export default function CityPage() {
         nextEventId: selectedEvent.id,
         nextServiceId: null,
       });
-      writeLocalValue("qa_redirect", redirectTarget);
-      writeLocalValue("qa_post_login_target", redirectTarget);
-      router.push("/?join=true");
+      redirectToJoinWithReturnTarget(redirectTarget);
       return;
     }
 
@@ -2779,12 +2721,78 @@ export default function CityPage() {
     city,
     isMember,
     memberName,
+    redirectToJoinWithReturnTarget,
     resolveEventDbId,
-    router,
     selectedEvent,
     showToast,
     user?.email,
     user?.id,
+  ]);
+
+  const handleJoinToPlaceReview = useCallback(() => {
+    if (!selectedPlace) return;
+    const redirectTarget = buildSelectionUrl({
+      nextPlaceId: selectedPlace.id,
+      nextEventId: null,
+    });
+    redirectToJoinWithReturnTarget(redirectTarget);
+  }, [buildSelectionUrl, redirectToJoinWithReturnTarget, selectedPlace]);
+
+  const handleSubmitPlaceReview = useCallback(async () => {
+    if (!selectedPlace) return;
+    const trimmedComment = comment.trim();
+    if (!trimmedComment) {
+      showToast("Write a short comment before submitting.", {
+        tone: "warn",
+        duration: 2200,
+      });
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const result = await addReview({
+        placeId: selectedPlace.id,
+        place: selectedPlace,
+        rating,
+        safety: safetyRating,
+        comment: trimmedComment,
+      });
+
+      if (!result?.ok) {
+        showToast("Could not submit review right now.", {
+          tone: "warn",
+          duration: 2400,
+        });
+        return;
+      }
+
+      setComment("");
+      setRating(5);
+      setSafetyRating(4);
+      const updated = await getReviews(selectedPlace.id, selectedPlace);
+      setReviews(updated);
+      trackKpiEvent("review_submitted", {
+        city,
+        targetType: "place",
+        targetId: String(selectedPlace.id || ""),
+        memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      });
+      showToast("Review submitted.", { tone: "ok", duration: 1800 });
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  }, [
+    addReview,
+    city,
+    comment,
+    getReviews,
+    memberName,
+    rating,
+    safetyRating,
+    selectedPlace,
+    showToast,
+    user?.email,
   ]);
 
   useEffect(() => {
@@ -3612,8 +3620,7 @@ export default function CityPage() {
           <button
             onClick={() => {
               if (!isMember) {
-                writeLocalValue("qa_redirect", pathname);
-                router.push("/?join=true");
+                redirectToJoin();
                 return;
               }
 
@@ -3634,8 +3641,7 @@ export default function CityPage() {
           <button
             onClick={() => {
               if (!isMember) {
-                writeLocalValue("qa_redirect", pathname);
-                router.push("/?join=true");
+                redirectToJoin();
                 return;
               }
 
@@ -3660,8 +3666,7 @@ export default function CityPage() {
           <button
             onClick={() => {
               if (!isMember) {
-                writeLocalValue("qa_redirect", pathname);
-                router.push("/?join=true");
+                redirectToJoin();
                 return;
               }
 
@@ -3857,8 +3862,7 @@ export default function CityPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      writeLocalValue("qa_redirect", pathname);
-                      router.push("/?join=true");
+                      redirectToJoin();
                     }}
                     className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
                   >
@@ -3877,8 +3881,7 @@ export default function CityPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    writeLocalValue("qa_redirect", pathname);
-                    router.push("/?join=true");
+                    redirectToJoin();
                   }}
                   className="qa-cinematic-hover rounded-full border border-fuchsia-200/34 bg-fuchsia-200/16 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/52"
                 >
@@ -3996,8 +3999,7 @@ export default function CityPage() {
                     openEventContribution();
                   }}
                   onJoinToPublish={() => {
-                    writeLocalValue("qa_redirect", pathname);
-                    router.push("/?join=true");
+                    redirectToJoin();
                   }}
                 />
               ) : null}
@@ -4464,8 +4466,7 @@ export default function CityPage() {
                 openEventContribution();
               }}
               onJoinToPublish={() => {
-                writeLocalValue("qa_redirect", pathname);
-                router.push("/?join=true");
+                redirectToJoin();
               }}
             />
           )}
@@ -4766,8 +4767,7 @@ export default function CityPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    writeLocalValue("qa_redirect", pathname);
-                    router.push("/?join=true");
+                    redirectToJoin();
                   }}
                   className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
                 >
@@ -4959,305 +4959,59 @@ export default function CityPage() {
           </button>
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-3 flex flex-wrap gap-2">
-              <span className="rounded-full border border-emerald-200/22 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-emerald-100">
-                {selectedService.city || config.title?.replace("Queer ", "")}
-              </span>
-              <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">
-                {SERVICE_TYPE_LABELS[selectedService.type] || "Service"}
-              </span>
-              {selectedService.price_tier && (
-                <span className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100">
-                  {String(selectedService.price_tier)}
-                </span>
-              )}
-            </div>
-            <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedService.name}</h2>
-            <VibeTagChips entity={selectedService} tone="cyan" className="mb-2" includeMixedFallback />
-            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
-              Area: {getEntityAddressLabel(selectedService) || "City-wide"}
-            </p>
-            <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-sky-300" />
+            <SelectedServiceSummary
+              selectedService={selectedService}
+              selectedServiceImages={selectedServiceImages}
+              cityLabel={config.title?.replace("Queer ", "")}
+              serviceTypeLabels={SERVICE_TYPE_LABELS}
+              selectedServiceQuality={selectedServiceQuality}
+              selectedServiceQualityStatus={selectedServiceQualityStatus}
+              refreshEntityQuality={refreshEntityQuality}
+              formatDate={formatDate}
+            />
 
-            {selectedServiceImages.length > 0 && (
-              <div className="mb-3 rounded-xl border border-white/10 bg-black/25 p-2.5">
-                <div className="overflow-hidden rounded-xl border border-white/12 bg-black/30">
-                  <Image
-                    src={selectedServiceImages[0]}
-                    alt={`${selectedService.name} photo`}
-                    width={920}
-                    height={540}
-                    unoptimized
-                    className="h-52 w-full object-cover"
-                  />
-                </div>
-                {selectedServiceImages.length > 1 && (
-                  <div className="mt-2 grid grid-cols-4 gap-2">
-                    {selectedServiceImages.slice(1, 5).map((imageUrl) => (
-                      <div key={`service-panel-image-${imageUrl}`} className="overflow-hidden rounded-lg border border-white/12 bg-black/35">
-                        <Image
-                          src={imageUrl}
-                          alt={`${selectedService.name} gallery`}
-                          width={240}
-                          height={160}
-                          unoptimized
-                          className="h-16 w-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {selectedService.description && (
-              <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About service</p>
-                <p className="text-sm leading-relaxed text-white/72">{String(selectedService.description)}</p>
-              </div>
-            )}
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {selectedService.provider_name && (
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Provider</p>
-                  <p className="mt-1 text-xs text-white/82">{String(selectedService.provider_name)}</p>
-                </div>
-              )}
-              {selectedService.contact && (
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Contact</p>
-                  <p className="mt-1 text-xs text-white/82">{String(selectedService.contact)}</p>
-                </div>
-              )}
-              {selectedService.hours && (
-                <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:col-span-2">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Availability</p>
-                  <p className="mt-1 text-xs text-white/82">{String(selectedService.hours)}</p>
-                </div>
-              )}
-            </div>
-
-            {selectedServiceQuality && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  onClick={(clickEvent) =>
-                    refreshEntityQuality(
-                      { targetType: "service", targetId: selectedService.id, fallbackSource: selectedServiceQuality.source || selectedService.link || "" },
-                      clickEvent
-                    )
-                  }
-                  className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedServiceQualityStatus?.tone || "community")}`}
-                >
-                  {selectedServiceQualityStatus?.label || "Community"}
-                </button>
-                {selectedServiceQuality.lastChecked && (
-                  <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
-                    Checked {formatDate(selectedServiceQuality.lastChecked)}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {canEditSelectedService && (
-              <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/82">Service controls</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setServiceAdminOpen((value) => !value);
-                      setServiceAdminDraft(buildServiceAdminDraft(selectedService));
-                    }}
-                    className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
-                  >
-                    {serviceAdminOpen ? "Close editor" : "Edit service"}
-                  </button>
-                </div>
-
-                {serviceAdminOpen && (
-                  <div className="mt-3 space-y-2">
-                    <input
-                      value={serviceAdminDraft.name}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, name: event.target.value }))}
-                      placeholder="Service name"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <select
-                      value={serviceAdminDraft.type}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, type: event.target.value }))}
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    >
-                      {SERVICE_TYPES.map((item) => (
-                        <option key={`admin-service-type-${item.value}`} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                    <textarea
-                      value={serviceAdminDraft.description}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, description: event.target.value }))}
-                      placeholder="Description"
-                      className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <VibeTagPicker
-                      value={serviceAdminDraft.vibe_tags}
-                      onChange={(nextTags) =>
-                        setServiceAdminDraft((current) => ({ ...current, vibe_tags: nextTags }))
-                      }
-                      tone="amber"
-                      title="Service vibe tags"
-                      hint="Choose up to 3 tags."
-                    />
-                    <input
-                      value={serviceAdminDraft.vibe}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
-                      placeholder="Legacy vibe label (optional)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={serviceAdminDraft.location}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, location: event.target.value }))}
-                      placeholder="Address / location (updates map pin)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAdminSaveServiceAddressOnly}
-                      disabled={isSavingServiceAddressOnly}
-                      className="w-full rounded-xl border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55 disabled:opacity-60"
-                    >
-                      {isSavingServiceAddressOnly ? "Saving address..." : "Save address only"}
-                    </button>
-                    <input
-                      value={serviceAdminDraft.hours}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, hours: event.target.value }))}
-                      placeholder="Availability / opening hours"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={serviceAdminDraft.provider_name}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, provider_name: event.target.value }))}
-                      placeholder="Provider name"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={serviceAdminDraft.contact}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, contact: event.target.value }))}
-                      placeholder="Contact (phone / email / handle)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={serviceAdminDraft.booking_link}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, booking_link: event.target.value }))}
-                      placeholder="Booking link"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={serviceAdminDraft.link}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, link: event.target.value }))}
-                      placeholder="Official link"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <select
-                      value={serviceAdminDraft.price_tier}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, price_tier: event.target.value }))}
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    >
-                      {SERVICE_PRICE_TIER_OPTIONS.map((value) => (
-                        <option key={`admin-service-price-${value || "none"}`} value={value}>
-                          {value || "Price tier (optional)"}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      value={serviceAdminDraft.source}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, source: event.target.value }))}
-                      placeholder="Source (optional)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <DateInput
-                      value={serviceAdminDraft.lastChecked}
-                      onChange={(event) => setServiceAdminDraft((current) => ({ ...current, lastChecked: event.target.value }))}
-                      placeholder="Last checked (optional)"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={handleAdminSaveService}
-                        disabled={isSavingServiceAdmin}
-                        className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
-                      >
-                        {isSavingServiceAdmin ? "Saving..." : "Save changes"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAdminDeleteService}
-                        disabled={isDeletingServiceAdmin}
-                        className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
-                      >
-                        {isDeletingServiceAdmin ? "Deleting..." : "Delete service"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <SelectedServiceAdminControls
+              canEdit={canEditSelectedService}
+              isOpen={serviceAdminOpen}
+              onToggleOpen={() => {
+                setServiceAdminOpen((value) => !value);
+                setServiceAdminDraft(buildServiceAdminDraft(selectedService));
+              }}
+              draft={serviceAdminDraft}
+              setDraft={setServiceAdminDraft}
+              onSaveAddressOnly={handleAdminSaveServiceAddressOnly}
+              isSavingAddressOnly={isSavingServiceAddressOnly}
+              onSave={handleAdminSaveService}
+              isSaving={isSavingServiceAdmin}
+              onDelete={handleAdminDeleteService}
+              isDeleting={isDeletingServiceAdmin}
+              serviceTypes={SERVICE_TYPES}
+              priceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
+            />
           </div>
 
-          <div className="mt-3 space-y-2">
-            {selectedServiceBookingUrl && (
-              <a
-                href={selectedServiceBookingUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="qa-cinematic-hover block w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-cyan-200 py-3 text-center font-semibold text-black"
-              >
-                Open booking
-              </a>
-            )}
-            {selectedServiceLinkUrl && selectedServiceLinkUrl !== selectedServiceBookingUrl && (
-              <a
-                href={selectedServiceLinkUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="qa-cinematic-hover block w-full rounded-2xl border border-white/12 bg-white/6 py-3 text-center text-sm text-white/82 hover:border-white/22 hover:text-white"
-              >
-                Open official link
-              </a>
-            )}
-            <button
-              onClick={showServiceOnMap}
-              disabled={!Number.isFinite(Number(selectedService.lat)) || !Number.isFinite(Number(selectedService.lng))}
-              className="qa-cinematic-hover w-full rounded-2xl border border-white/10 bg-white/5 py-3 disabled:opacity-50"
-            >
-              Show on map
-            </button>
-            {canEditSelectedService && (
-              <button
-                onClick={() => {
-                  setServiceAdminOpen((value) => !value);
-                  setServiceAdminDraft(buildServiceAdminDraft(selectedService));
-                }}
-                className="qa-cinematic-hover w-full rounded-2xl border border-cyan-200/24 bg-cyan-200/10 py-3 text-sm text-cyan-100 transition hover:border-cyan-200/38 hover:bg-cyan-200/16"
-              >
-                {serviceAdminOpen ? "Close editor" : "Edit service"}
-              </button>
-            )}
-            <button
-              onClick={() =>
-                handleReport({
-                  targetType: "service",
-                  targetId: selectedService.id,
-                  title: selectedService.name,
-                })
-              }
-              className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
-              aria-label={`Report service ${selectedService.name}`}
-            >
-              Report issue
-            </button>
-          </div>
+          <SelectedServiceActions
+            bookingUrl={selectedServiceBookingUrl}
+            linkUrl={selectedServiceLinkUrl}
+            canShowOnMap={
+              Number.isFinite(Number(selectedService.lat)) && Number.isFinite(Number(selectedService.lng))
+            }
+            onShowOnMap={showServiceOnMap}
+            canEdit={canEditSelectedService}
+            isEditorOpen={serviceAdminOpen}
+            onToggleEditor={() => {
+              setServiceAdminOpen((value) => !value);
+              setServiceAdminDraft(buildServiceAdminDraft(selectedService));
+            }}
+            onReport={() =>
+              handleReport({
+                targetType: "service",
+                targetId: selectedService.id,
+                title: selectedService.name,
+              })
+            }
+            serviceName={selectedService.name}
+          />
         </div>
       )}
 
@@ -5268,566 +5022,90 @@ export default function CityPage() {
             Close
           </button>
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-3 flex flex-wrap gap-2">
-              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
-                {selectedPlace.city || config.title?.replace("Queer ", "")}
-              </span>
-              <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">
-                {TYPE_LABELS[selectedPlace.type] || "Place"}
-              </span>
-            </div>
-            <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedPlace.name}</h2>
-            <VibeTagChips
-              entity={selectedPlace}
-              tone="cyan"
-              className="mb-2"
-              includeTypeFallback
-              includeMixedFallback
+            <SelectedPlaceSummary
+              selectedPlace={selectedPlace}
+              cityName={cityName}
+              typeLabels={TYPE_LABELS}
+              selectedPlaceSafetySignal={selectedPlaceSafetySignal}
             />
-            {shouldShowLegacyVibe(selectedPlace) && (
-              <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-cyan-100/72">
-                Legacy vibe: {String(selectedPlace.vibe || "").trim()}
-              </p>
-            )}
-            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
-              Address: {getEntityAddressLabel(selectedPlace)}
-            </p>
-            <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-cyan-300 via-emerald-300 to-fuchsia-300" />
-                  {polishVenueDescription(selectedPlace, cityName, TYPE_LABELS) && (
-              <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                    <p className="text-sm leading-relaxed text-white/68">{polishVenueDescription(selectedPlace, cityName, TYPE_LABELS)}</p>
-              </div>
-            )}
-            <div className="mb-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">Opening Hours</p>
-              <p className="mt-1 text-xs leading-6 text-cyan-50/90">
-                {String(selectedPlace.hours || "").trim() || "Hours vary by night. Check official channels before going."}
-              </p>
-            </div>
-            {selectedPlace.link && (
-              <a
-                href={normalizeExternalUrl(selectedPlace.link)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mb-3 inline-flex items-center rounded-full border border-cyan-200/18 bg-cyan-200/[0.08] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/34"
-              >
-                Official Link
-              </a>
-            )}
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Rating</p>
-                <p className="mt-1 text-sm text-white/84">{selectedPlace.avgRating?.toFixed(1) || "-"}</p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Reviews</p>
-                <p className="mt-1 text-sm text-white/84">{selectedPlace.reviewCount || 0}</p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Safety reviews</p>
-                {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 ? (
-                  <p className={`mt-1 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-sm ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
-                    {getDisplayedSafetyShields(selectedPlaceSafetySignal)}/5
-                  </p>
-                ) : (
-                  <p className="mt-1 text-sm text-white/84">-</p>
-                )}
-              </div>
-            </div>
-            {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 && (
-              <p className="mt-2 text-[11px] text-white/60">
-                Based on {selectedPlaceSafetySignal.safetyReviewCount} member safety review{selectedPlaceSafetySignal.safetyReviewCount === 1 ? "" : "s"}.
-              </p>
-            )}
-            <div className="mt-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.07] p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/80">Live vibe now</p>
-                <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/80">
-                  {liveVibeSummary.total} signal{liveVibeSummary.total === 1 ? "" : "s"} - 6h
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-fuchsia-50/95">{liveVibeHeadline}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${liveVibePulse.className}`}
-                >
-                  {liveVibePulse.label}
-                </span>
-                {liveVibeConsensus > 0 && (
-                  <span className="rounded-full border border-white/18 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/80">
-                    {liveVibeConsensus}% consensus
-                  </span>
-                )}
-                <span className="text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/68">
-                  {liveVibePulse.hint}
-                </span>
-              </div>
-              {liveVibeUpdatedLabel && (
-                <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/70">
-                  {liveVibeUpdatedLabel}
-                </p>
-              )}
-              {liveVibeSummary.total === 0 && !liveVibeTableMissing && (
-                <button
-                  type="button"
-                  onClick={() => handleSubmitLiveVibe("packed")}
-                  disabled={isSubmittingLiveVibe}
-                  className="mt-2 rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/48 disabled:opacity-60"
-                >
-                  Be first now
-                </button>
-              )}
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {LIVE_VIBE_OPTIONS.map((option) => {
-                  const count = liveVibeSummary.countsByKey?.[option.key] || 0;
-                  const isSelectedSignal = liveVibeMyActiveSignalKey === option.key;
-                  const isSubmittingSignal = isSubmittingLiveVibe && liveVibeSubmittingKey === option.key;
-                  const isJustSentSignal = liveVibeJustSentKey === option.key;
-                  return (
-                    <button
-                      key={`live-vibe-${option.key}`}
-                      type="button"
-                      disabled={isSubmittingLiveVibe || liveVibeTableMissing}
-                      aria-pressed={isSelectedSignal}
-                      onClick={() => {
-                        handleSubmitLiveVibe(option.key);
-                      }}
-                      className={`qa-cinematic-hover rounded-xl border px-3 py-2 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${option.buttonClass} ${
-                        isSelectedSignal ? "ring-2 ring-white/35 shadow-[0_0_0_1px_rgba(255,255,255,0.22)_inset]" : ""
-                      } ${isJustSentSignal ? "scale-[1.02] shadow-[0_10px_28px_rgba(244,114,182,0.25)]" : ""}`}
-                    >
-                      <span className="block text-sm font-semibold">
-                        {option.emoji} {option.label}
-                      </span>
-                      <span className="mt-0.5 block text-[10px] uppercase tracking-[0.12em] opacity-85">
-                        {isSubmittingSignal
-                          ? "Sending..."
-                          : isSelectedSignal
-                            ? "Your signal"
-                            : `${count} tap${count === 1 ? "" : "s"}`}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {isMember && liveVibeSelectedOption && (
-                <p className="mt-2 text-[11px] text-fuchsia-100/82">
-                  Your live signal: {liveVibeSelectedOption.emoji} {liveVibeSelectedOption.label}
-                </p>
-              )}
-              {isLoadingLiveVibe && (
-                <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/65">Loading live vibe...</p>
-              )}
-              {!!liveVibeError && (
-                <p className="mt-2 text-xs text-rose-100">{liveVibeError}</p>
-              )}
-              {liveVibeTableMissing && (
-                <p className="mt-2 text-xs text-amber-100">
-                  Live vibe table is not activated yet. Run the SQL setup block first.
-                </p>
-              )}
-              <p className="mt-2 text-[11px] text-fuchsia-100/76">
-                One tap updates the room signal for everyone right now.
-              </p>
-              {liveVibeCooldownRemainingSec > 0 && (
-                <p className="mt-1 text-[11px] text-cyan-100/85">
-                  Cooldown active: {liveVibeCooldownRemainingSec}s
-                </p>
-              )}
-              {isMember && (
-                <div className="mt-2 rounded-xl border border-white/12 bg-white/[0.05] p-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/62">Your momentum</p>
-                    <button
-                      type="button"
-                      onClick={() => setShowLiveVibeMomentum((value) => !value)}
-                      className="rounded-full border border-white/16 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/28"
-                    >
-                      {showLiveVibeMomentum ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                  {showLiveVibeMomentum && (
-                    <>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-white/82">
-                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5">
-                          {liveVibeMemberMomentum.streakDays}d streak
-                        </span>
-                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5">
-                          {liveVibeMemberMomentum.weekTaps} taps / 7d
-                        </span>
-                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5">
-                          {liveVibeMemberMomentum.todayTapped ? "Tapped today" : "No tap today"}
-                        </span>
-                        {liveVibeMemberMomentum.lastTapLabel && (
-                          <span className="text-white/64">Last: {liveVibeMemberMomentum.lastTapLabel}</span>
-                        )}
-                      </div>
-                      {liveVibeStreakNudge && (
-                        <p
-                          className={`mt-1.5 text-[11px] ${
-                            liveVibeMemberMomentum.todayTapped ? "text-emerald-100/85" : "text-amber-100/88"
-                          }`}
-                        >
-                          {liveVibeStreakNudge}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-            {selectedPlaceQuality && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  onClick={(clickEvent) =>
-                    refreshEntityQuality(
-                      { targetType: "place", targetId: selectedPlace.id, fallbackSource: selectedPlaceQuality.source || "" },
-                      clickEvent
-                    )
-                  }
-                            className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedPlaceQualityStatus?.tone || "community")}`}
-                          >
-                            {selectedPlaceQualityStatus?.label || "Community"}
-                          </button>
-                {selectedPlaceQuality.lastChecked && (
-                  <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
-                    Checked {formatDate(selectedPlaceQuality.lastChecked)}
-                  </span>
-                )}
-                {selectedPlaceQuality.source && (
-                  <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
-                    Source added
-                  </span>
-                )}
-              </div>
-            )}
-            {trustedPlaceSavesCount > 0 && (
-              <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200/24 bg-emerald-200/[0.10] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100">
-                Saved by {trustedPlaceSavesCount} trusted member{trustedPlaceSavesCount > 1 ? "s" : ""}
-              </div>
-            )}
-            {isAdmin && (
-              <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/82">Admin controls</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPlaceAdminOpen((value) => !value);
-                      setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
-                    }}
-                    className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
-                  >
-                    {placeAdminOpen ? "Close editor" : "Edit venue"}
-                  </button>
-                </div>
-
-                {placeAdminOpen && (
-                  <div className="mt-3 space-y-2">
-                    <input
-                      value={placeAdminDraft.name}
-                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, name: event.target.value }))}
-                      placeholder="Venue name"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <select
-                      value={placeAdminDraft.type}
-                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, type: event.target.value }))}
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    >
-                      {TYPES.map((item) => (
-                        <option key={`admin-place-type-${item.value}`} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                    <textarea
-                      value={placeAdminDraft.description}
-                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, description: event.target.value }))}
-                      placeholder="Description"
-                      className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <VibeTagPicker
-                      value={placeAdminDraft.vibe_tags}
-                      onChange={(nextTags) =>
-                        setPlaceAdminDraft((current) => ({ ...current, vibe_tags: nextTags }))
-                      }
-                      tone="amber"
-                      title="Venue vibe tags"
-                      hint="Choose up to 3 tags."
-                    />
-                    <input
-                      value={placeAdminDraft.vibe}
-                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
-                      placeholder="Legacy vibe label (optional)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={placeAdminDraft.location}
-                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, location: event.target.value }))}
-                      placeholder="Address / location (updates map pin)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAdminSavePlaceAddressOnly}
-                      disabled={isSavingPlaceAddressOnly}
-                      className="w-full rounded-xl border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55 disabled:opacity-60"
-                    >
-                      {isSavingPlaceAddressOnly ? "Saving address..." : "Save address only"}
-                    </button>
-                    <input
-                      value={placeAdminDraft.hours}
-                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, hours: event.target.value }))}
-                      placeholder="Opening hours"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={placeAdminDraft.link}
-                      onChange={(event) => setPlaceAdminDraft((current) => ({ ...current, link: event.target.value }))}
-                      placeholder="Official link"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={handleAdminSavePlace}
-                        disabled={isSavingPlaceAdmin}
-                        className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
-                      >
-                        {isSavingPlaceAdmin ? "Saving..." : "Save changes"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAdminDeletePlace}
-                        disabled={isDeletingPlaceAdmin}
-                        className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
-                      >
-                        {isDeletingPlaceAdmin ? "Deleting..." : "Delete venue"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={() =>
-                handleReport({
-                  targetType: "place",
-                  targetId: selectedPlace.id,
-                  title: selectedPlace.name,
-                })
-              }
-              className="qa-cinematic-hover rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
-              aria-label={`Report place ${selectedPlace.name}`}
-            >
-              Report issue
-            </button>
-            <button
-              onClick={() => toggleFavorite(selectedPlace.id)}
-              className={`qa-cinematic-hover rounded-full border px-4 py-2.5 text-xs ${
-                favorites.includes(String(selectedPlace.id))
-                  ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
-                  : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
-              }`}
-              aria-label={favorites.includes(String(selectedPlace.id)) ? `Remove ${selectedPlace.name} from favorites` : `Save ${selectedPlace.name} to favorites`}
-              aria-pressed={favorites.includes(String(selectedPlace.id))}
-            >
-              {favorites.includes(String(selectedPlace.id)) ? "Saved in atlas" : "Save to atlas"}
-            </button>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handleAdminDeletePlace}
-                disabled={isDeletingPlaceAdmin}
-                className="qa-cinematic-hover rounded-full border border-rose-200/25 bg-rose-200/12 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
-                aria-label={`Delete venue ${selectedPlace.name}`}
-              >
-                {isDeletingPlaceAdmin ? "Deleting..." : "Delete venue"}
-              </button>
-            )}
-          </div>
-
-          <div className="mt-4 space-y-2">
-            {reviews.map((review) => {
-              const titleMeta = getMemberTitleMeta(review.memberTitle);
-              return (
-                <div key={review.id} className="rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-medium text-white/85">{review.authorName || "Member"}</p>
-                      {review.memberTitle && (
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}
-                        >
-                          <span>{titleMeta.icon}</span>
-                          {titleMeta.label}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs uppercase tracking-[0.14em] text-yellow-300/90">Rating {review.rating}/5</p>
-                      {Number(review?.safety) > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
-                          <SafetyShields
-                            value={Number(review.safety)}
-                            activeClassName="text-cyan-100"
-                            inactiveClassName="text-white/30"
-                          />
-                          Safety
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm text-gray-200">{review.comment}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-4">
-            <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/45">Add your review</p>
-            {!isMember && (
-              <div className="mb-3 rounded-2xl border border-amber-300/20 bg-amber-200/10 p-3">
-                <p className="text-sm text-amber-100">
-                  Log in as member to add reviews and strengthen quality signal.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const redirectTarget = buildSelectionUrl({
-                      nextPlaceId: selectedPlace.id,
-                      nextEventId: null,
-                    });
-                    writeLocalValue("qa_redirect", redirectTarget);
-                    writeLocalValue("qa_post_login_target", redirectTarget);
-                    router.push("/?join=true");
-                  }}
-                  className="mt-3 rounded-full border border-amber-200/28 bg-amber-200/14 px-4 py-2 text-xs text-amber-100 transition hover:border-amber-200/45"
-                >
-                  Join to review
-                </button>
-              </div>
-            )}
-            <div className={`${!isMember || !canReviewSelectedPlace ? "hidden" : ""}`}>
-              <p className="mb-1 text-[11px] uppercase tracking-[0.14em] text-white/55">Venue rating</p>
-              <div className="mb-3 flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    disabled={isSubmittingReview}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(null)}
-                    onClick={() => setRating(star)}
-                    aria-label={`Set rating to ${star} star${star > 1 ? "s" : ""}`}
-                    aria-pressed={rating === star}
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition ${
-                      (hoverRating || rating) >= star ? "text-yellow-400" : "text-gray-600"
-                    } ${isSubmittingReview ? "opacity-60" : "hover:bg-white/8"}`}
-                  >
-                    <Star className="h-5 w-5" fill="currentColor" />
-                  </button>
-                ))}
-              </div>
-              <p className="mb-1 text-[11px] uppercase tracking-[0.14em] text-white/55">Safety feeling</p>
-              <div className="mb-3 flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((step) => (
-                  <button
-                    key={`safety-${step}`}
-                    type="button"
-                    disabled={isSubmittingReview}
-                    onMouseEnter={() => setHoverSafetyRating(step)}
-                    onMouseLeave={() => setHoverSafetyRating(null)}
-                    onClick={() => setSafetyRating(step)}
-                    aria-label={`Set safety to ${step} shield${step > 1 ? "s" : ""}`}
-                    aria-pressed={safetyRating === step}
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition ${
-                      isSubmittingReview ? "opacity-60" : "hover:bg-white/8"
-                    }`}
-                  >
-                    <Shield
-                      className={`h-5 w-5 ${
-                        (hoverSafetyRating || safetyRating) >= step
-                          ? "text-cyan-300"
-                          : "text-white/30"
-                      }`}
-                      fill={(hoverSafetyRating || safetyRating) >= step ? "currentColor" : "none"}
-                      strokeWidth={2.1}
-                    />
-                  </button>
-                ))}
-                <span className="ml-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
-                  {safetyRating}/5
-                </span>
-              </div>
-            </div>
-
-            <textarea
-              value={comment}
-              disabled={!isMember || !canReviewSelectedPlace || isSubmittingReview}
-              onChange={(event) => setComment(event.target.value)}
-              placeholder="Share vibe, safety, crowd energy, music, and what to expect."
-              className={`mb-2 min-h-[110px] w-full rounded-2xl border border-white/10 bg-black/40 p-3 ${
-                !isMember || !canReviewSelectedPlace ? "hidden" : ""
-              }`}
+            <SelectedPlaceLiveVibePanel
+              liveVibeSummary={liveVibeSummary}
+              liveVibeHeadline={liveVibeHeadline}
+              liveVibePulse={liveVibePulse}
+              liveVibeConsensus={liveVibeConsensus}
+              liveVibeUpdatedLabel={liveVibeUpdatedLabel}
+              liveVibeTableMissing={liveVibeTableMissing}
+              handleSubmitLiveVibe={handleSubmitLiveVibe}
+              isSubmittingLiveVibe={isSubmittingLiveVibe}
+              liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
+              liveVibeSubmittingKey={liveVibeSubmittingKey}
+              liveVibeJustSentKey={liveVibeJustSentKey}
+              LIVE_VIBE_OPTIONS={LIVE_VIBE_OPTIONS}
+              isMember={isMember}
+              liveVibeSelectedOption={liveVibeSelectedOption}
+              isLoadingLiveVibe={isLoadingLiveVibe}
+              liveVibeError={liveVibeError}
+              liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
+              showLiveVibeMomentum={showLiveVibeMomentum}
+              setShowLiveVibeMomentum={setShowLiveVibeMomentum}
+              liveVibeMemberMomentum={liveVibeMemberMomentum}
+              liveVibeStreakNudge={liveVibeStreakNudge}
             />
-
-            <button
-              disabled={!isMember || !canReviewSelectedPlace || isSubmittingReview}
-              onClick={async () => {
-                const trimmedComment = comment.trim();
-                if (!trimmedComment) {
-                  showToast("Write a short comment before submitting.", {
-                    tone: "warn",
-                    duration: 2200,
-                  });
-                  return;
-                }
-
-                setIsSubmittingReview(true);
-                try {
-                  const result = await addReview({
-                    placeId: selectedPlace.id,
-                    place: selectedPlace,
-                    rating,
-                    safety: safetyRating,
-                    comment: trimmedComment,
-                  });
-
-                  if (!result?.ok) {
-                    showToast("Could not submit review right now.", {
-                      tone: "warn",
-                      duration: 2400,
-                    });
-                    return;
-                  }
-
-                  setComment("");
-                  setRating(5);
-                  setSafetyRating(4);
-                  const updated = await getReviews(selectedPlace.id, selectedPlace);
-                  setReviews(updated);
-                  trackKpiEvent("review_submitted", {
-                    city,
-                    targetType: "place",
-                    targetId: String(selectedPlace.id || ""),
-                    memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
-                  });
-                  showToast("Review submitted.", { tone: "ok", duration: 1800 });
-                } finally {
-                  setIsSubmittingReview(false);
-                }
+            <SelectedPlaceTrustSignals
+              selectedPlace={selectedPlace}
+              selectedPlaceQuality={selectedPlaceQuality}
+              selectedPlaceQualityStatus={selectedPlaceQualityStatus}
+              refreshEntityQuality={refreshEntityQuality}
+              formatDate={formatDate}
+              trustedPlaceSavesCount={trustedPlaceSavesCount}
+            />
+            <SelectedPlaceAdminControls
+              isAdmin={isAdmin}
+              isOpen={placeAdminOpen}
+              onToggleOpen={() => {
+                setPlaceAdminOpen((value) => !value);
+                setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
               }}
-              className={`qa-cinematic-hover w-full rounded-2xl bg-white py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60 ${
-                !isMember || !canReviewSelectedPlace ? "hidden" : ""
-              }`}
-            >
-              {isSubmittingReview ? "Submitting..." : "Submit review"}
-            </button>
+              draft={placeAdminDraft}
+              setDraft={setPlaceAdminDraft}
+              onSaveAddressOnly={handleAdminSavePlaceAddressOnly}
+              isSavingAddressOnly={isSavingPlaceAddressOnly}
+              onSave={handleAdminSavePlace}
+              isSaving={isSavingPlaceAdmin}
+              onDelete={handleAdminDeletePlace}
+              isDeleting={isDeletingPlaceAdmin}
+              placeTypes={TYPES}
+            />
           </div>
+          <SelectedPlaceActions
+            selectedPlace={selectedPlace}
+            handleReport={handleReport}
+            toggleFavorite={toggleFavorite}
+            favorites={favorites}
+            isAdmin={isAdmin}
+            handleAdminDeletePlace={handleAdminDeletePlace}
+            isDeletingPlaceAdmin={isDeletingPlaceAdmin}
+          />
+
+          <SelectedPlaceReviewsList reviews={reviews} />
+
+          <SelectedPlaceReviewComposer
+            isMember={isMember}
+            canReviewSelectedPlace={canReviewSelectedPlace}
+            isSubmittingReview={isSubmittingReview}
+            onJoinToReview={handleJoinToPlaceReview}
+            rating={rating}
+            hoverRating={hoverRating}
+            setHoverRating={setHoverRating}
+            setRating={setRating}
+            safetyRating={safetyRating}
+            hoverSafetyRating={hoverSafetyRating}
+            setHoverSafetyRating={setHoverSafetyRating}
+            setSafetyRating={setSafetyRating}
+            comment={comment}
+            setComment={setComment}
+            onSubmitReview={handleSubmitPlaceReview}
+          />
         </div>
       )}
 
@@ -5839,273 +5117,61 @@ export default function CityPage() {
           </button>
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <div className="mb-3 flex flex-wrap gap-2">
-              <span className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-violet-100">
-                {selectedEvent.city || config.title?.replace("Queer ", "")}
-              </span>
-              <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/70">
-                Community event
-              </span>
-              {normalizeEventRange(selectedEvent).startDate && (
-                <span className="rounded-full border border-violet-200/24 bg-violet-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-violet-100">
-                  {formatEventDateLabel(selectedEvent)}
-                </span>
-              )}
-            </div>
-            <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedEvent.name}</h2>
-            <VibeTagChips entity={selectedEvent} tone="amber" className="mb-2" includeMixedFallback />
-            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
-              Address: {getEntityAddressLabel(selectedEvent)}
-            </p>
-            <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
-            {polishEventDescription(selectedEvent, cityName) && (
-              <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About event</p>
-                <p className="text-sm leading-relaxed text-white/68">{polishEventDescription(selectedEvent, cityName)}</p>
-              </div>
-            )}
-            <div className="mt-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.07] p-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/80">Live vibe now</p>
-                <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/80">
-                  Event check-in
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-fuchsia-50/95">
-                Tap a live vibe and save a check-in automatically for this event.
-              </p>
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {LIVE_VIBE_OPTIONS.map((option) => {
-                  const isSelectedSignal = eventLiveVibeSignalKey === option.key;
-                  const isSubmittingSignal = isSubmittingEventLiveVibe && eventLiveVibeSubmittingKey === option.key;
-                  const isJustSentSignal = eventLiveVibeJustSentKey === option.key;
-                  return (
-                    <button
-                      key={`event-live-vibe-${option.key}`}
-                      type="button"
-                      disabled={isSubmittingEventLiveVibe}
-                      aria-pressed={isSelectedSignal}
-                      onClick={() => {
-                        handleSubmitEventLiveVibe(option.key);
-                      }}
-                      className={`qa-cinematic-hover rounded-xl border px-3 py-2 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${option.buttonClass} ${
-                        isSelectedSignal ? "ring-2 ring-white/35 shadow-[0_0_0_1px_rgba(255,255,255,0.22)_inset]" : ""
-                      } ${isJustSentSignal ? "scale-[1.02] shadow-[0_10px_28px_rgba(244,114,182,0.25)]" : ""}`}
-                    >
-                      <span className="block text-sm font-semibold">
-                        {option.emoji} {option.label}
-                      </span>
-                      <span className="mt-0.5 block text-[10px] uppercase tracking-[0.12em] opacity-85">
-                        {isSubmittingSignal ? "Saving..." : isSelectedSignal ? "Your signal" : "Tap now"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              {isMember && eventLiveVibeSelectedOption && (
-                <p className="mt-2 text-[11px] text-fuchsia-100/82">
-                  Your event signal: {eventLiveVibeSelectedOption.emoji} {eventLiveVibeSelectedOption.label}
-                </p>
-              )}
-            </div>
-            {(selectedEvent.link || selectedEventQuality?.lastChecked || selectedEventQuality?.source) && (
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {selectedEvent.link && (
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Link</p>
-                    <p className="mt-1 text-xs text-white/78">Official event link available</p>
-                  </div>
-                )}
-                {selectedEventQuality?.lastChecked && (
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Last checked</p>
-                    <p className="mt-1 text-xs text-white/78">{formatDate(selectedEventQuality.lastChecked)}</p>
-                  </div>
-                )}
-                {selectedEventQuality?.source && (
-                  <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 sm:col-span-2">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-white/45">Source note</p>
-                    <p className="mt-1 text-xs text-white/78 line-clamp-2">{selectedEventQuality.source}</p>
-                  </div>
-                )}
-              </div>
-            )}
-            {selectedEventQuality && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  onClick={(clickEvent) =>
-                    refreshEntityQuality(
-                      { targetType: "event", targetId: selectedEvent.id, fallbackSource: selectedEventQuality.source || selectedEvent.link || "" },
-                      clickEvent
-                    )
-                  }
-                                  className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedEventQualityStatus?.tone || "community")}`}
-                                >
-                                  {selectedEventQualityStatus?.label || "Community"}
-                                </button>
-              </div>
-            )}
-            {trustedEventSavesCount > 0 && (
-              <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200/24 bg-emerald-200/[0.10] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100">
-                Saved by {trustedEventSavesCount} trusted member{trustedEventSavesCount > 1 ? "s" : ""}
-              </div>
-            )}
-            {isAdmin && (
-              <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/82">Admin controls</p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEventAdminOpen((value) => !value);
-                      setEventAdminDraft(buildEventAdminDraft(selectedEvent));
-                    }}
-                    className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
-                  >
-                    {eventAdminOpen ? "Close editor" : "Edit event"}
-                  </button>
-                </div>
-
-                {eventAdminOpen && (
-                  <div className="mt-3 space-y-2">
-                    <input
-                      value={eventAdminDraft.name}
-                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, name: event.target.value }))}
-                      placeholder="Event name"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <DateInput
-                        value={eventAdminDraft.startDate}
-                        onChange={(event) => setEventAdminDraft((current) => ({ ...current, startDate: event.target.value }))}
-                        placeholder="From"
-                      />
-                      <DateInput
-                        value={eventAdminDraft.endDate}
-                        onChange={(event) => setEventAdminDraft((current) => ({ ...current, endDate: event.target.value }))}
-                        placeholder="To"
-                      />
-                    </div>
-                    <VibeTagPicker
-                      value={eventAdminDraft.vibe_tags}
-                      onChange={(nextTags) =>
-                        setEventAdminDraft((current) => ({ ...current, vibe_tags: nextTags }))
-                      }
-                      tone="amber"
-                      title="Event vibe tags"
-                      hint="Choose up to 3 tags."
-                    />
-                    <input
-                      value={eventAdminDraft.vibe}
-                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, vibe: event.target.value }))}
-                      placeholder="Legacy vibe label (optional)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={eventAdminDraft.location}
-                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, location: event.target.value }))}
-                      placeholder="Address / location (area / venue / neighborhood)"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAdminSaveEventAddressOnly}
-                      disabled={isSavingEventAddressOnly}
-                      className="w-full rounded-xl border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55 disabled:opacity-60"
-                    >
-                      {isSavingEventAddressOnly ? "Saving address..." : "Save address only"}
-                    </button>
-                    <textarea
-                      value={eventAdminDraft.description}
-                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, description: event.target.value }))}
-                      placeholder="Description"
-                      className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <input
-                      value={eventAdminDraft.link}
-                      onChange={(event) => setEventAdminDraft((current) => ({ ...current, link: event.target.value }))}
-                      placeholder="Official link"
-                      className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={handleAdminSaveEvent}
-                        disabled={isSavingEventAdmin}
-                        className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
-                      >
-                        {isSavingEventAdmin ? "Saving..." : "Save changes"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAdminDeleteEvent}
-                        disabled={isDeletingEventAdmin}
-                        className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
-                      >
-                        {isDeletingEventAdmin ? "Deleting..." : "Delete event"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <SelectedEventSummary
+              selectedEvent={selectedEvent}
+              cityLabel={config.title?.replace("Queer ", "")}
+              cityName={cityName}
+            />
+            <SelectedEventLiveVibePanel
+              LIVE_VIBE_OPTIONS={LIVE_VIBE_OPTIONS}
+              eventLiveVibeSignalKey={eventLiveVibeSignalKey}
+              isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
+              eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
+              eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
+              handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
+              isMember={isMember}
+              eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
+            />
+            <SelectedEventMetaCards
+              selectedEvent={selectedEvent}
+              selectedEventQuality={selectedEventQuality}
+              formatDate={formatDate}
+            />
+            <SelectedEventTrustSignals
+              selectedEvent={selectedEvent}
+              selectedEventQuality={selectedEventQuality}
+              selectedEventQualityStatus={selectedEventQualityStatus}
+              refreshEntityQuality={refreshEntityQuality}
+              trustedEventSavesCount={trustedEventSavesCount}
+            />
+            <SelectedEventAdminControls
+              isAdmin={isAdmin}
+              isOpen={eventAdminOpen}
+              onToggleOpen={() => {
+                setEventAdminOpen((value) => !value);
+                setEventAdminDraft(buildEventAdminDraft(selectedEvent));
+              }}
+              draft={eventAdminDraft}
+              setDraft={setEventAdminDraft}
+              onSaveAddressOnly={handleAdminSaveEventAddressOnly}
+              isSavingAddressOnly={isSavingEventAddressOnly}
+              onSave={handleAdminSaveEvent}
+              isSaving={isSavingEventAdmin}
+              onDelete={handleAdminDeleteEvent}
+              isDeleting={isDeletingEventAdmin}
+            />
           </div>
 
-          <div className="mt-3 space-y-2">
-            <button
-              onClick={() => toggleFavorite(`event-${selectedEvent.id}`)}
-              className={`qa-cinematic-hover w-full rounded-2xl border px-4 py-3 text-sm ${
-                favorites.includes(`event-${selectedEvent.id}`)
-                  ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
-                  : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
-              }`}
-              aria-label={favorites.includes(`event-${selectedEvent.id}`) ? `Remove ${selectedEvent.name} from favorites` : `Save ${selectedEvent.name} to favorites`}
-              aria-pressed={favorites.includes(`event-${selectedEvent.id}`)}
-            >
-              {favorites.includes(`event-${selectedEvent.id}`) ? "Saved in atlas" : "Save to atlas"}
-            </button>
-            {selectedEvent.link && (
-              <a
-                href={selectedEvent.link}
-                target="_blank"
-                rel="noreferrer"
-                className="qa-cinematic-hover block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
-              >
-                Open official link
-              </a>
-            )}
-
-            <button
-              onClick={showEventOnMap}
-              className="qa-cinematic-hover w-full rounded-2xl border border-white/10 bg-white/5 py-3"
-            >
-              Show on map
-            </button>
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handleAdminDeleteEvent}
-                disabled={isDeletingEventAdmin}
-                className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/25 bg-rose-200/12 py-3 text-sm text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
-                aria-label={`Delete event ${selectedEvent.name}`}
-              >
-                {isDeletingEventAdmin ? "Deleting..." : "Delete event"}
-              </button>
-            )}
-            <button
-              onClick={() =>
-                handleReport({
-                  targetType: "event",
-                  targetId: selectedEvent.id,
-                  title: selectedEvent.name,
-                })
-              }
-              className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
-              aria-label={`Report event ${selectedEvent.name}`}
-            >
-              Report issue
-            </button>
-          </div>
+          <SelectedEventActions
+            selectedEvent={selectedEvent}
+            favorites={favorites}
+            toggleFavorite={toggleFavorite}
+            showEventOnMap={showEventOnMap}
+            isAdmin={isAdmin}
+            isDeletingEventAdmin={isDeletingEventAdmin}
+            handleAdminDeleteEvent={handleAdminDeleteEvent}
+            handleReport={handleReport}
+          />
         </div>
       )}
 
@@ -6128,3 +5194,5 @@ export default function CityPage() {
     </main>
   );
 }
+
+
