@@ -21,14 +21,14 @@ export default function SelectedPlaceActions({
             title: selectedPlace.name,
           })
         }
-        className="qa-cinematic-hover rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+        className="qa-action qa-city-cta-tertiary rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
         aria-label={`Report place ${selectedPlace.name}`}
       >
         Report issue
       </button>
       <button
         onClick={() => toggleFavorite(selectedPlace.id)}
-        className={`qa-cinematic-hover rounded-full border px-4 py-2.5 text-xs ${
+        className={`qa-action qa-action-strong ${isSaved ? "qa-city-cta-primary" : "qa-city-cta-secondary"} rounded-full border px-4 py-2.5 text-xs ${
           isSaved
             ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
             : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
@@ -43,7 +43,7 @@ export default function SelectedPlaceActions({
           type="button"
           onClick={handleAdminDeletePlace}
           disabled={isDeletingPlaceAdmin}
-          className="qa-cinematic-hover rounded-full border border-rose-200/25 bg-rose-200/12 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
+          className="qa-action qa-city-cta-tertiary rounded-full border border-rose-200/25 bg-rose-200/12 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
           aria-label={`Delete venue ${selectedPlace.name}`}
         >
           {isDeletingPlaceAdmin ? "Deleting..." : "Delete venue"}

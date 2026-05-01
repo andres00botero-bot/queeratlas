@@ -1510,8 +1510,8 @@ export default function FavoritesPage() {
     const vibeLabel = selectedVibeTags.length > 0
       ? selectedVibeTags.map((tag) => formatVibeTagLabel(tag) || tag).join(" + ")
       : "Mixed";
-    const title = `${cityName} Â· ${String(payload?.horizon || "trip").replaceAll("_", " ")} Â· ${vibeLabel}`;
-    const note = `V2 plan Â· vibes: ${selectedVibeTags.join(", ") || "mixed"} Â· budget: ${payload?.budget || "balanced"} Â· energy: ${payload?.energy || 70} Â· solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
+    const title = `${cityName} · ${String(payload?.horizon || "trip").replaceAll("_", " ")} · ${vibeLabel}`;
+    const note = `V2 plan · vibes: ${selectedVibeTags.join(", ") || "mixed"} · budget: ${payload?.budget || "balanced"} · energy: ${payload?.energy || 70} · solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
 
     const draftPlan = {
       id: `plan-v2-${Date.now()}`,
@@ -1752,7 +1752,7 @@ export default function FavoritesPage() {
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/40">Current profile</p>
                 <p className="mt-2 text-sm text-white/85">
                   {(memberProfile?.displayName || memberName || "Explorer")}
-                  {memberProfile?.pronouns ? ` Â· ${memberProfile.pronouns}` : ""}
+                  {memberProfile?.pronouns ? ` · ${memberProfile.pronouns}` : ""}
                 </p>
                 {memberRank?.title && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
@@ -1878,7 +1878,7 @@ export default function FavoritesPage() {
                 </p>
                 <p className="mt-1 text-xs text-white/62">
                   {memberProfile?.homeCity ? `Home: ${memberProfile.homeCity}` : "Home city not set"}
-                  {" Â· "}
+                  {" · "}
                   {memberProfile?.residentCountry ? `Country: ${memberProfile.residentCountry}` : "Country not set"}
                 </p>
 
@@ -2003,7 +2003,7 @@ export default function FavoritesPage() {
                 <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-3 py-1 text-[11px] text-fuchsia-100/95">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200" />
                   <span className="truncate">
-                    Selected: {selectedCheckin.label || "Check-in"} Â· {selectedCheckin.city || "City"}
+                    Selected: {selectedCheckin.label || "Check-in"} · {selectedCheckin.city || "City"}
                   </span>
                 </div>
               ) : null}
@@ -2347,7 +2347,7 @@ export default function FavoritesPage() {
                       }`}
                     >
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                        {entry.city || "Unknown city"}{entry.country ? ` Â· ${entry.country}` : ""}
+                        {entry.city || "Unknown city"}{entry.country ? ` · ${entry.country}` : ""}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
                       {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
@@ -2418,7 +2418,7 @@ export default function FavoritesPage() {
                                 {entry.ownerName || "Member"}
                               </p>
                               <p className="mt-1 text-xs text-white/65">
-                                {entry.label || "Unnamed check-in"} Â· {entry.city || "Unknown city"}
+                                {entry.label || "Unnamed check-in"} · {entry.city || "Unknown city"}
                               </p>
                               {entry.address ? <p className="mt-1 text-[11px] text-white/52">{entry.address}</p> : null}
                             </div>
@@ -2556,7 +2556,7 @@ export default function FavoritesPage() {
               <div className="rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-4">
                 <p className="text-sm text-white/85">
                   {(memberProfile?.displayName || memberName || "Explorer")}
-                  {memberProfile?.pronouns ? ` Â· ${memberProfile.pronouns}` : ""}
+                  {memberProfile?.pronouns ? ` · ${memberProfile.pronouns}` : ""}
                 </p>
                 {memberRank?.title && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
@@ -2733,7 +2733,7 @@ export default function FavoritesPage() {
                                 {typeof stop.trustScore === "number" && (
                                   <span className="mt-1 block truncate text-[10px] text-cyan-100/72">
                                     Trust {stop.trustScore}
-                                    {stop.trustReason ? ` Â· ${stop.trustReason}` : ""}
+                                    {stop.trustReason ? ` · ${stop.trustReason}` : ""}
                                   </span>
                                 )}
                               </span>
@@ -2831,4 +2831,5 @@ export default function FavoritesPage() {
     </main>
   );
 }
+
 

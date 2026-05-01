@@ -34,7 +34,7 @@ export default function CityEventsRailSection({
   return (
     <div
       ref={sectionRef}
-      className="hidden animate-cinematic-in mb-10 rounded-[32px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]"
+      className="hidden qa-city-section animate-cinematic-in mb-10 rounded-[30px] border border-violet-300/14 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]"
       style={{ animationDelay: "210ms" }}
     >
       <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-violet-300/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-violet-200 backdrop-blur">
@@ -45,7 +45,7 @@ export default function CityEventsRailSection({
           <p>{eventsLoadError}</p>
           <button
             onClick={fetchEvents}
-            className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
+            className="qa-action qa-city-cta-tertiary mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
           >
             Retry
           </button>
@@ -84,7 +84,7 @@ export default function CityEventsRailSection({
                     openEvent(featuredEvent);
                   }
                 }}
-                className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                className={`qa-cinematic-hover qa-city-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
                   String(hoveredEventId) === String(featuredEvent.id)
                     ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
                     : ""
@@ -159,7 +159,7 @@ export default function CityEventsRailSection({
                   openEvent(event);
                 }
               }}
-              className={`qa-cinematic-hover animate-rise-in mb-3 cursor-pointer rounded-[24px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+              className={`qa-cinematic-hover qa-city-card animate-rise-in mb-3 cursor-pointer rounded-[24px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
                 String(selectedEvent?.id) === String(event.id)
                   ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
                   : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${

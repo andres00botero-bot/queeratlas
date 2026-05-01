@@ -80,7 +80,7 @@ export default function SavedEventsPanel({
                       itemEvent.stopPropagation();
                       onQuickCheckin?.(event);
                     }}
-                    className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
+                    className="qa-action qa-action-strong rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
                   >
                     Check in
                   </button>
@@ -90,7 +90,7 @@ export default function SavedEventsPanel({
                       itemEvent.stopPropagation();
                       onRemoveFavorite?.(`event-${event.id}`, event.name);
                     }}
-                    className="rounded-full border border-violet-200/14 bg-violet-200/[0.08] px-3 py-1 text-[11px] text-violet-100/90 transition hover:border-violet-200/30"
+                    className="qa-action rounded-full border border-violet-200/14 bg-violet-200/[0.08] px-3 py-1 text-[11px] text-violet-100/90 transition hover:border-violet-200/30"
                   >
                     Remove
                   </button>
@@ -104,7 +104,7 @@ export default function SavedEventsPanel({
             <button
               type="button"
               onClick={onBrowseEvents}
-              className="mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
+              className="qa-action qa-action-strong mt-3 rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
             >
               Browse events
             </button>

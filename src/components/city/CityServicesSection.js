@@ -20,7 +20,7 @@ export default function CityServicesSection({
   return (
     <div
       ref={sectionRef}
-      className="animate-cinematic-in mb-10 rounded-[32px] border border-emerald-200/10 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(16,185,129,0.06)]"
+      className="qa-city-section animate-cinematic-in mb-10 rounded-[30px] border border-emerald-200/12 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(16,185,129,0.06)]"
       style={{ animationDelay: "270ms" }}
     >
       <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-emerald-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-emerald-100 backdrop-blur">
@@ -46,7 +46,7 @@ export default function CityServicesSection({
           <p>{servicesLoadError}</p>
           <button
             onClick={fetchServices}
-            className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
+            className="qa-action qa-city-cta-tertiary mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
           >
             Retry
           </button>

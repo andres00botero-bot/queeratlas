@@ -55,7 +55,7 @@ export default function PlaceGuideCard({
         }
       }}
       style={{ animationDelay: `${Math.min(index * 45, 280)}ms` }}
-      className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
+      className={`qa-cinematic-hover qa-city-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
         index === 0 ? "md:col-span-2" : ""
       } ${
         isFocusMode && !isSelected ? "opacity-60 saturate-75" : ""
@@ -88,10 +88,10 @@ export default function PlaceGuideCard({
               event.stopPropagation();
               toggleFavorite(place.id);
             }}
-            className={`rounded-full border px-3 py-1 text-xs transition ${
+            className={`qa-action ${isFavorite ? "qa-city-cta-primary" : "qa-city-cta-secondary"} rounded-full border px-3 py-1 text-xs transition ${
               isFavorite
                 ? "border-pink-300/36 bg-gradient-to-r from-pink-300/20 to-fuchsia-300/16 text-pink-100"
-                : "border-white/14 bg-white/5 text-white/65 hover:border-pink-300/25 hover:text-pink-100"
+                : "border-white/14 bg-white/5 text-white/72 hover:border-pink-300/25 hover:text-pink-100"
             }`}
             aria-label={isFavorite ? `Remove ${place.name} from favorites` : `Save ${place.name} to favorites`}
             aria-pressed={isFavorite}
@@ -140,7 +140,7 @@ export default function PlaceGuideCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(event) => event.stopPropagation()}
-            className="inline-flex items-center rounded-full border border-cyan-200/18 bg-cyan-200/[0.08] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/34"
+            className="qa-action qa-city-cta-secondary inline-flex items-center rounded-full border border-cyan-200/18 bg-cyan-200/[0.08] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/34"
           >
             Official Link
           </a>

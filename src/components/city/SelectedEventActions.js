@@ -17,7 +17,7 @@ export default function SelectedEventActions({
     <div className="mt-3 space-y-2">
       <button
         onClick={() => toggleFavorite(favoriteKey)}
-        className={`qa-cinematic-hover w-full rounded-2xl border px-4 py-3 text-sm ${
+        className={`qa-action qa-action-strong ${isSaved ? "qa-city-cta-primary" : "qa-city-cta-secondary"} w-full rounded-2xl border px-4 py-3 text-sm ${
           isSaved
             ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
             : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
@@ -32,7 +32,7 @@ export default function SelectedEventActions({
           href={selectedEvent.link}
           target="_blank"
           rel="noreferrer"
-          className="qa-cinematic-hover block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
+          className="qa-action qa-action-strong qa-city-cta-primary block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
         >
           Open official link
         </a>
@@ -40,7 +40,7 @@ export default function SelectedEventActions({
 
       <button
         onClick={showEventOnMap}
-        className="qa-cinematic-hover w-full rounded-2xl border border-white/10 bg-white/5 py-3"
+        className="qa-action qa-city-cta-secondary w-full rounded-2xl border border-white/10 bg-white/5 py-3"
       >
         Show on map
       </button>
@@ -49,7 +49,7 @@ export default function SelectedEventActions({
           type="button"
           onClick={handleAdminDeleteEvent}
           disabled={isDeletingEventAdmin}
-          className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/25 bg-rose-200/12 py-3 text-sm text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
+          className="qa-action qa-city-cta-tertiary w-full rounded-2xl border border-rose-200/25 bg-rose-200/12 py-3 text-sm text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
           aria-label={`Delete event ${selectedEvent.name}`}
         >
           {isDeletingEventAdmin ? "Deleting..." : "Delete event"}
@@ -63,7 +63,7 @@ export default function SelectedEventActions({
             title: selectedEvent.name,
           })
         }
-        className="qa-cinematic-hover w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+        className="qa-action qa-city-cta-tertiary w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
         aria-label={`Report event ${selectedEvent.name}`}
       >
         Report issue

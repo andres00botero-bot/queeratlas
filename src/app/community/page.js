@@ -1470,7 +1470,7 @@ export default function CommunityPage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-rose-300">Stories</p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Member experiences</h2>
               </div>
-              <button onClick={() => setShowStoryForm((current) => !current)} className="rounded-full border border-rose-400/30 bg-rose-300/8 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-300 hover:bg-rose-300/15 hover:text-white">{showStoryForm ? "Close form" : "Write a story"}</button>
+              <button onClick={() => setShowStoryForm((current) => !current)} className="qa-action rounded-full border border-rose-400/34 bg-rose-300/10 px-4 py-2 text-xs font-semibold text-rose-100 transition hover:border-rose-300 hover:bg-rose-300/16 hover:text-white">{showStoryForm ? "Close form" : "Write a story"}</button>
             </div>
             {showStoryForm && (
               <form onSubmit={publishStory} className="mb-5 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
@@ -1484,7 +1484,7 @@ export default function CommunityPage() {
                 <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
                 <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
                 <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder="Write your experience" area />
-                <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
+                <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
               </form>
             )}
             <div className="max-h-[560px] space-y-4 overflow-y-auto pr-1">
@@ -1519,7 +1519,7 @@ export default function CommunityPage() {
                             title: story.title,
                           })
                         }
-                        className="rounded-full border border-rose-200/18 bg-rose-200/8 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/30"
+                        className="qa-action rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/34"
                       >
                         Report
                       </button>
@@ -1531,7 +1531,7 @@ export default function CommunityPage() {
                   )}
                   <button
                     onClick={() => toggleStoryExpanded(story.id)}
-                    className="mt-3 rounded-full border border-rose-200/20 bg-rose-200/8 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/35"
+                    className="qa-action mt-3 rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/38"
                   >
                     {expandedStoryIds.includes(story.id) ? "Show less" : "Read full story"}
                   </button>
@@ -1547,7 +1547,7 @@ export default function CommunityPage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-violet-300">Member Guides</p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Practical wisdom</h2>
               </div>
-              <button onClick={() => setShowGuideForm((current) => !current)} className="rounded-full border border-violet-400/30 bg-violet-300/8 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-300 hover:bg-violet-300/15 hover:text-white">{showGuideForm ? "Close form" : "New guide"}</button>
+              <button onClick={() => setShowGuideForm((current) => !current)} className="qa-action rounded-full border border-violet-400/34 bg-violet-300/10 px-4 py-2 text-xs font-semibold text-violet-100 transition hover:border-violet-300 hover:bg-violet-300/16 hover:text-white">{showGuideForm ? "Close form" : "New guide"}</button>
             </div>
             {showGuideForm && (
               <form onSubmit={publishGuide} className="mb-5 space-y-3 rounded-2xl border border-violet-400/20 bg-violet-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
@@ -1561,7 +1561,7 @@ export default function CommunityPage() {
                 <Field value={guideForm.focus} onChange={(event) => setGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder="Focus" />
                 <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Short summary" area />
                 <Field value={guideForm.content} onChange={(event) => setGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the guide" area />
-                <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
+                <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
               </form>
             )}
             <div className="qa-guides-scroll max-h-[560px] space-y-3 overflow-y-auto pr-1">
@@ -1582,7 +1582,7 @@ export default function CommunityPage() {
                       </p>
                       <button
                         onClick={() => toggleGuideExpanded(guide.id)}
-                        className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/35"
+                        className="qa-action rounded-full border border-violet-200/22 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/37"
                       >
                         {isExpanded ? "Show less" : "Expand guide"}
                       </button>
@@ -1615,7 +1615,7 @@ export default function CommunityPage() {
                             title: guide.title,
                           })
                         }
-                        className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/35"
+                        className="qa-action rounded-full border border-violet-200/22 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/37"
                       >
                         Report
                       </button>
@@ -1657,7 +1657,7 @@ export default function CommunityPage() {
                         <div className="mt-3 flex justify-end">
                           <button
                             onClick={() => deleteTopic(topic)}
-                            className="rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                            className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
                           >
                             Delete topic
                           </button>
@@ -1676,7 +1676,7 @@ export default function CommunityPage() {
                     <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder="What should people discuss here?" area />
                   </div>
                   <div className="md:col-span-3 xl:col-span-1">
-                    <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Create topic</button>
+                    <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Create topic</button>
                   </div>
                 </div>
               </form>
@@ -1697,7 +1697,7 @@ export default function CommunityPage() {
                         {canDeleteTopic(activeTopic) && (
                           <button
                             onClick={() => deleteTopic(activeTopic)}
-                            className="rounded-full border border-rose-200/22 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38 sm:px-3"
+                            className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 sm:px-3"
                           >
                             Delete topic
                           </button>
@@ -1754,7 +1754,7 @@ export default function CommunityPage() {
                                         title: activeTopic?.name || "Community message",
                                       })
                                     }
-                                    className="rounded-full border border-white/12 bg-white/5 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/60 transition hover:text-white"
+                                    className="qa-action rounded-full border border-white/14 bg-white/7 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/66 transition hover:text-white"
                                   >
                                     Report
                                   </button>
@@ -1769,7 +1769,7 @@ export default function CommunityPage() {
                   </div>
                   <form onSubmit={sendMessage} className="mt-3 grid gap-2.5 md:mt-4 md:grid-cols-[1fr_auto] md:gap-3">
                     <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder="Write a message to the topic" />
-                    <button type="submit" className="rounded-xl bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
+                    <button type="submit" className="qa-action qa-action-strong rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
                   </form>
                 </>
               )}
@@ -1783,13 +1783,13 @@ export default function CommunityPage() {
               <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Improve Queer Atlas</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">Member ideas</h2>
             </div>
-            <button onClick={() => setShowIdeaForm((current) => !current)} className="rounded-full border border-amber-300/30 bg-amber-300/8 px-4 py-2 text-xs text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/15 hover:text-white">{showIdeaForm ? "Close form" : "Suggest an improvement"}</button>
+            <button onClick={() => setShowIdeaForm((current) => !current)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-4 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">{showIdeaForm ? "Close form" : "Suggest an improvement"}</button>
           </div>
           {showIdeaForm && (
             <form onSubmit={publishIdea} className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What should we improve in the app?" />
-                <button type="submit" className="rounded-xl bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
+                <button type="submit" className="qa-action qa-action-strong rounded-xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
               </div>
             </form>
           )}
@@ -1808,12 +1808,12 @@ export default function CommunityPage() {
                           title: idea.text.slice(0, 80),
                         })
                       }
-                      className="mt-2 rounded-full border border-amber-200/20 bg-amber-200/8 px-3 py-1 text-xs text-amber-100 transition hover:border-amber-200/35"
+                      className="qa-action mt-2 rounded-full border border-amber-200/22 bg-amber-200/10 px-3 py-1 text-xs text-amber-100 transition hover:border-amber-200/37"
                     >
                       Report
                     </button>
                   </div>
-                  <button onClick={() => upvoteIdea(idea.id)} className="rounded-full border border-amber-300/30 bg-amber-300/8 px-3 py-2 text-xs text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/15 hover:text-white">▲ {idea.votes}</button>
+                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">▲ {idea.votes}</button>
                 </div>
               </div>
             ))}

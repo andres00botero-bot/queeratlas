@@ -30,7 +30,7 @@ export default function ServiceGuideCard({
       role="button"
       tabIndex={0}
       style={{ animationDelay: `${Math.min(index * 40, 220)}ms` }}
-      className={`qa-cinematic-hover animate-rise-in rounded-[24px] border p-5 ${style.card} ${
+      className={`qa-cinematic-hover qa-city-card animate-rise-in rounded-[24px] border p-5 ${style.card} ${
         isSelectedService
           ? "border-emerald-200/40 shadow-[0_18px_48px_rgba(16,185,129,0.16)]"
           : "hover:border-emerald-200/22"
@@ -113,7 +113,7 @@ export default function ServiceGuideCard({
           target="_blank"
           rel="noreferrer"
           onClick={(event) => event.stopPropagation()}
-          className="mt-4 inline-flex rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
+          className="qa-action qa-action-strong qa-city-cta-primary mt-4 inline-flex rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
         >
           Open service
         </a>
@@ -124,7 +124,7 @@ export default function ServiceGuideCard({
           event.stopPropagation();
           openService(service);
         }}
-        className="mt-3 inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30 hover:text-white"
+        className="qa-action qa-city-cta-secondary mt-3 inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30 hover:text-white"
       >
         View details
       </button>

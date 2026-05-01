@@ -82,7 +82,7 @@ export default function SavedPlacesPanel({
                       event.stopPropagation();
                       onQuickCheckin?.(place);
                     }}
-                    className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
+                    className="qa-action qa-action-strong rounded-full border border-cyan-200/18 bg-cyan-200/[0.10] px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/30"
                   >
                     Check in
                   </button>
@@ -92,7 +92,7 @@ export default function SavedPlacesPanel({
                       event.stopPropagation();
                       onRemoveFavorite?.(place.id, place.name);
                     }}
-                    className="rounded-full border border-rose-200/14 bg-rose-200/[0.08] px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/30"
+                    className="qa-action rounded-full border border-rose-200/14 bg-rose-200/[0.08] px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/30"
                   >
                     Remove
                   </button>
@@ -106,7 +106,7 @@ export default function SavedPlacesPanel({
             <button
               type="button"
               onClick={onExploreCities}
-              className="mt-3 rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
+              className="qa-action qa-action-strong mt-3 rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
             >
               Explore cities
             </button>

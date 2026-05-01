@@ -22,7 +22,7 @@ export default function FavoritesSignalDashboard({
           <button
             type="button"
             onClick={onToggleSignalDeck}
-            className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+            className="qa-action qa-action-strong rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
           >
             {showSignalDeck ? "Hide deep signal" : "Open deep signal"}
           </button>

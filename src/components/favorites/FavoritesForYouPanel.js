@@ -23,7 +23,7 @@ export default function FavoritesForYouPanel({
         <button
           type="button"
           onClick={() => setRecommendationMode?.("safe")}
-          className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
+          className={`qa-action rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
             recommendationMode === "safe"
               ? "border-emerald-200/40 bg-emerald-200/16 text-emerald-100"
               : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
@@ -34,7 +34,7 @@ export default function FavoritesForYouPanel({
         <button
           type="button"
           onClick={() => setRecommendationMode?.("balanced")}
-          className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
+          className={`qa-action rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
             recommendationMode === "balanced"
               ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
               : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
@@ -45,7 +45,7 @@ export default function FavoritesForYouPanel({
         <button
           type="button"
           onClick={() => setRecommendationMode?.("peak")}
-          className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
+          className={`qa-action rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] transition ${
             recommendationMode === "peak"
               ? "border-fuchsia-200/40 bg-fuchsia-200/16 text-fuchsia-100"
               : "border-white/12 bg-white/6 text-white/65 hover:border-white/24"
@@ -75,14 +75,14 @@ export default function FavoritesForYouPanel({
                 <button
                   type="button"
                   onClick={() => onOpenRecommendation?.(item)}
-                  className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/85 transition hover:border-white/30"
+                  className="qa-action rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/85 transition hover:border-white/30"
                 >
                   Open
                 </button>
                 <button
                   type="button"
                   onClick={() => onSaveRecommendation?.(item)}
-                  className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                  className="qa-action qa-action-strong rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
                 >
                   Save
                 </button>

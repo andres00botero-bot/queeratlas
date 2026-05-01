@@ -29,7 +29,7 @@ export default function CityPlacesSection({
   return (
     <>
       {!placesLoading && !hasAnyPlaces && (
-        <div className="mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
+        <div className="qa-city-section mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
           <h3 className="mt-2 text-lg font-semibold text-white">Venue map is taking shape</h3>
           <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
@@ -39,7 +39,7 @@ export default function CityPlacesSection({
             <button
               type="button"
               onClick={onReadGuide}
-              className="qa-cinematic-hover rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/80 hover:border-white/30 hover:text-white"
+              className="qa-action qa-city-cta-secondary rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/82 hover:border-white/30 hover:text-white"
             >
               Read guide lane
             </button>
@@ -47,7 +47,7 @@ export default function CityPlacesSection({
               <button
                 type="button"
                 onClick={onPublishFirstVenue}
-                className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
+                className="qa-action qa-action-strong qa-city-cta-primary rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
               >
                 Publish first venue
               </button>
@@ -55,7 +55,7 @@ export default function CityPlacesSection({
               <button
                 type="button"
                 onClick={onJoinToPublish}
-                className="qa-cinematic-hover rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
+                className="qa-action qa-action-strong qa-city-cta-primary rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
               >
                 Join to publish
               </button>
@@ -69,7 +69,9 @@ export default function CityPlacesSection({
           <div
             ref={groupIndex === 0 ? firstGroupRef : null}
             key={group.value}
-            className="animate-cinematic-in mb-10 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)]"
+            className={`qa-city-section animate-cinematic-in mb-10 border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)] ${
+              groupIndex % 2 === 0 ? "rounded-[34px]" : "rounded-[28px]"
+            }`}
             style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
           >
             <h2 className="sticky top-0 z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 text-lg tracking-wide text-white/82 backdrop-blur">

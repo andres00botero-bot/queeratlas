@@ -4,13 +4,13 @@
   --background: #ffffff;
   --foreground: #171717;
   --qa-font-body:
-    "Avenir Next", "Avenir", "Segoe UI", "Helvetica Neue", "Noto Sans",
+    var(--font-geist-sans), "Avenir Next", "Avenir", "Segoe UI", "Helvetica Neue", "Noto Sans",
     sans-serif;
   --qa-font-display:
-    "Inter", "SF Pro Display", "Avenir Next", "Segoe UI", "Helvetica Neue",
+    var(--font-geist-sans), "Sora", "Plus Jakarta Sans", "Avenir Next", "SF Pro Display", "Segoe UI", "Helvetica Neue",
     sans-serif;
   --qa-font-ui:
-    "Avenir Next", "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
+    var(--font-geist-sans), "Avenir Next", "Segoe UI", "Helvetica Neue", "Noto Sans", sans-serif;
   --qa-space-1: clamp(0.25rem, 0.22rem + 0.08vw, 0.32rem);
   --qa-space-2: clamp(0.5rem, 0.42rem + 0.2vw, 0.64rem);
   --qa-space-3: clamp(0.75rem, 0.65rem + 0.24vw, 0.92rem);
@@ -95,19 +95,21 @@ body {
 
 .qa-h1 {
   font-family: var(--qa-font-display);
-  font-size: clamp(2rem, 1.56rem + 2.15vw, 3.7rem);
-  line-height: 1.01;
-  letter-spacing: -0.018em;
-  font-weight: 700;
+  font-size: clamp(2.05rem, 1.52rem + 2.38vw, 3.95rem);
+  line-height: 0.98;
+  letter-spacing: -0.024em;
+  font-weight: 760;
+  font-variation-settings: "wght" 760;
   text-wrap: balance;
 }
 
 .qa-h2 {
   font-family: var(--qa-font-display);
-  font-size: clamp(1.38rem, 1.18rem + 1.05vw, 2.2rem);
-  line-height: 1.11;
-  letter-spacing: -0.01em;
-  font-weight: 700;
+  font-size: clamp(1.42rem, 1.16rem + 1.1vw, 2.28rem);
+  line-height: 1.08;
+  letter-spacing: -0.016em;
+  font-weight: 730;
+  font-variation-settings: "wght" 730;
   text-wrap: balance;
 }
 
@@ -145,9 +147,10 @@ body {
 }
 
 .qa-lead {
-  max-width: 68ch;
-  font-size: clamp(0.98rem, 0.92rem + 0.24vw, 1.12rem);
-  line-height: 1.66;
+  max-width: 64ch;
+  font-size: clamp(0.99rem, 0.92rem + 0.27vw, 1.14rem);
+  line-height: 1.63;
+  letter-spacing: 0.002em;
 }
 
 .qa-action {
@@ -192,6 +195,140 @@ body {
 
 .qa-action-strong {
   box-shadow: 0 16px 44px rgba(34, 211, 238, 0.18);
+}
+
+.qa-cta-primary {
+  border-color: rgba(165, 243, 252, 0.58) !important;
+  box-shadow:
+    0 18px 46px rgba(34, 211, 238, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+}
+
+.qa-cta-secondary {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.qa-premium-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--qa-dur-base) var(--qa-ease-standard),
+    border-color var(--qa-dur-base) var(--qa-ease-standard),
+    box-shadow var(--qa-dur-base) var(--qa-ease-standard),
+    background-color var(--qa-dur-base) var(--qa-ease-standard);
+}
+
+.qa-premium-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.08) 45%, transparent 100%);
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.qa-premium-card:hover::before {
+  transform: translateX(120%);
+  opacity: 1;
+  transition: transform 520ms var(--qa-ease-standard), opacity 220ms var(--qa-ease-standard);
+}
+
+.qa-premium-card:hover {
+  transform: translateY(-2px);
+}
+
+.qa-premium-card:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 0 0 5px rgba(56, 189, 248, 0.16),
+    0 18px 40px rgba(0, 0, 0, 0.34);
+}
+
+.qa-lane-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.28rem 0.62rem;
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  transition:
+    border-color var(--qa-dur-base) var(--qa-ease-standard),
+    background-color var(--qa-dur-base) var(--qa-ease-standard),
+    color var(--qa-dur-base) var(--qa-ease-standard);
+}
+
+.group:hover .qa-lane-cta {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.qa-city-section {
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color var(--qa-dur-base) var(--qa-ease-standard),
+    box-shadow var(--qa-dur-base) var(--qa-ease-standard),
+    transform var(--qa-dur-base) var(--qa-ease-standard);
+}
+
+.qa-city-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 40%);
+  transition: opacity var(--qa-dur-base) var(--qa-ease-standard);
+}
+
+.qa-city-section:hover::after {
+  opacity: 0.55;
+}
+
+.qa-city-card {
+  transition:
+    border-color var(--qa-dur-base) var(--qa-ease-standard),
+    box-shadow var(--qa-dur-base) var(--qa-ease-standard),
+    transform var(--qa-dur-base) var(--qa-ease-standard),
+    background-color var(--qa-dur-base) var(--qa-ease-standard);
+}
+
+.qa-city-card:hover {
+  transform: translateY(-1px);
+}
+
+.qa-city-card:focus-visible {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 0 0 4px rgba(56, 189, 248, 0.16),
+    0 12px 34px rgba(0, 0, 0, 0.28);
+}
+
+.qa-city-cta-primary {
+  border-color: rgba(165, 243, 252, 0.5) !important;
+  box-shadow:
+    0 14px 36px rgba(34, 211, 238, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+.qa-city-cta-secondary {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.qa-city-cta-tertiary {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
 }
 
 .qa-elev-1 {

@@ -28,7 +28,7 @@ export default function FavoritesPeopleSignalPanel({
         <button
           type="button"
           onClick={onRefresh}
-          className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
+          className="qa-action qa-action-strong rounded-full border border-emerald-200/20 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
         >
           Refresh
         </button>
@@ -81,7 +81,7 @@ export default function FavoritesPeopleSignalPanel({
                       <button
                         type="button"
                         onClick={() => onMessageMember?.(profile)}
-                        className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                        className="qa-action rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
                       >
                         Message
                       </button>
@@ -136,7 +136,7 @@ export default function FavoritesPeopleSignalPanel({
                       <button
                         type="button"
                         onClick={() => onToggleFollow?.(memberId)}
-                        className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                        className={`qa-action qa-action-strong rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                           isFollowing
                             ? "border-fuchsia-200/30 bg-fuchsia-200/12 text-fuchsia-100"
                             : "border-emerald-200/25 bg-emerald-200/10 text-emerald-100 hover:border-emerald-200/40"
@@ -179,7 +179,7 @@ export default function FavoritesPeopleSignalPanel({
                     <button
                       type="button"
                       onClick={() => onSaveFromFeed?.(item)}
-                      className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
+                      className="qa-action rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40"
                     >
                       Save
                     </button>

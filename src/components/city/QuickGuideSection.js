@@ -14,7 +14,7 @@ export default function QuickGuideSection({
   return (
     <div
       ref={sectionRef}
-      className="animate-cinematic-in mb-10 rounded-[32px] border border-amber-200/10 bg-[linear-gradient(180deg,rgba(30,26,18,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(251,191,36,0.05)]"
+      className="qa-city-section animate-cinematic-in mb-10 rounded-[34px] border border-amber-200/12 bg-[linear-gradient(180deg,rgba(30,26,18,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(251,191,36,0.05)]"
       style={{ animationDelay: "250ms" }}
     >
       <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-amber-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-amber-100 backdrop-blur">
@@ -31,7 +31,7 @@ export default function QuickGuideSection({
           <p>{placesLoadError}</p>
           <button
             onClick={reloadPlaces}
-            className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
+            className="qa-action qa-city-cta-tertiary mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
           >
             Retry
           </button>
@@ -70,7 +70,7 @@ export default function QuickGuideSection({
           return (
             <div
               key={`${item.title}-${index}`}
-              className={`qa-cinematic-hover rounded-[24px] border p-5 ${guideTone.card} ${index === 0 ? "md:col-span-2" : ""}`}
+              className={`qa-cinematic-hover qa-city-card rounded-[24px] border p-5 ${guideTone.card} ${index === 0 ? "md:col-span-2" : ""}`}
             >
               <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${guideTone.strip}`} />
               <div className="mb-4 flex items-start justify-between gap-4">
