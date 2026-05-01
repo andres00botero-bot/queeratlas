@@ -331,6 +331,27 @@ body {
   background: rgba(255, 255, 255, 0.04) !important;
 }
 
+.qa-city-panel-cq {
+  container-type: inline-size;
+}
+
+@container (max-width: 390px) {
+  .qa-city-panel-cq {
+    border-radius: 1.05rem;
+    padding: 0.75rem;
+  }
+
+  .qa-city-panel-cq .qa-action {
+    min-height: 2.3rem;
+    padding-inline: 0.72rem;
+  }
+
+  .qa-city-panel-cq p {
+    line-height: 1.5;
+    text-align: left;
+  }
+}
+
 .qa-elev-1 {
   border-color: var(--qa-elev-1-border) !important;
   box-shadow: var(--qa-elev-1-shadow) !important;
@@ -569,6 +590,11 @@ body {
   }
   :where(button, [role="button"], a[href]):active {
     transform: none;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }
 

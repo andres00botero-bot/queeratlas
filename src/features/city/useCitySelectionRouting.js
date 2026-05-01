@@ -8,6 +8,34 @@ export function useCitySelectionRouting({
   serviceId,
   router,
 }) {
+  const navigateSelection = useCallback(
+    (href, { replace = false } = {}) => {
+      const runNavigation = () => {
+        if (replace) {
+          router.replace(href);
+          return;
+        }
+        router.push(href);
+      };
+
+      if (
+        typeof document !== "undefined" &&
+        typeof document.startViewTransition === "function" &&
+        typeof window !== "undefined" &&
+        typeof window.matchMedia === "function" &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        document.startViewTransition(() => {
+          runNavigation();
+        });
+        return;
+      }
+
+      runNavigation();
+    },
+    [router]
+  );
+
   const buildSelectionUrl = useCallback(
     ({ nextPlaceId = placeId, nextEventId = eventId, nextServiceId = serviceId } = {}) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -40,41 +68,65 @@ export function useCitySelectionRouting({
   );
 
   const openPlace = useCallback(
-    (place) => {
-      router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }));
+    (place, options = {}) => {
+      navigateSelection(
+        buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }),
+        options
+      );
     },
-    [buildSelectionUrl, router]
+    [buildSelectionUrl, navigateSelection]
   );
 
   const openEvent = useCallback(
-    (event) => {
-      router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id, nextServiceId: null }));
+    (event, options = {}) => {
+      navigateSelection(
+        buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id, nextServiceId: null }),
+        options
+      );
     },
-    [buildSelectionUrl, router]
+    [buildSelectionUrl, navigateSelection]
   );
 
   const openService = useCallback(
-    (service) => {
-      router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: service.id }));
+    (service, options = {}) => {
+      navigateSelection(
+        buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: service.id }),
+        options
+      );
     },
-    [buildSelectionUrl, router]
+    [buildSelectionUrl, navigateSelection]
   );
 
-  const closeService = useCallback(() => {
-    router.push(buildSelectionUrl({ nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
+  const closeService = useCallback(
+    (options = {}) => {
+      navigateSelection(buildSelectionUrl({ nextServiceId: null }), options);
+    },
+    [buildSelectionUrl, navigateSelection]
+  );
 
-  const closePlace = useCallback(() => {
-    router.push(buildSelectionUrl({ nextPlaceId: null, nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
+  const closePlace = useCallback(
+    (options = {}) => {
+      navigateSelection(buildSelectionUrl({ nextPlaceId: null, nextServiceId: null }), options);
+    },
+    [buildSelectionUrl, navigateSelection]
+  );
 
-  const closeEvent = useCallback(() => {
-    router.push(buildSelectionUrl({ nextEventId: null, nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
+  const closeEvent = useCallback(
+    (options = {}) => {
+      navigateSelection(buildSelectionUrl({ nextEventId: null, nextServiceId: null }), options);
+    },
+    [buildSelectionUrl, navigateSelection]
+  );
 
-  const closeAllDetails = useCallback(() => {
-    router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: null }));
-  }, [buildSelectionUrl, router]);
+  const closeAllDetails = useCallback(
+    (options = {}) => {
+      navigateSelection(
+        buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: null }),
+        options
+      );
+    },
+    [buildSelectionUrl, navigateSelection]
+  );
 
   return {
     buildSelectionUrl,

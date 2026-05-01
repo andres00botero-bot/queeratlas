@@ -313,6 +313,8 @@ export default function CityPage() {
   const serviceMarkersRef = useRef(new Map());
   const isMapInteractingRef = useRef(false);
   const keepMapViewOnNextCloseRef = useRef(false);
+  const selectionOriginRef = useRef("init");
+  const lastSelectionKeyRef = useRef("");
 
   const openEventContribution = useCallback(() => {
     setAddEventMode(true);
@@ -886,13 +888,13 @@ export default function CityPage() {
 
   const {
     buildSelectionUrl,
-    openPlace,
-    openEvent,
-    openService,
-    closeService,
-    closePlace,
-    closeEvent,
-    closeAllDetails,
+    openPlace: routeOpenPlace,
+    openEvent: routeOpenEvent,
+    openService: routeOpenService,
+    closeService: routeCloseService,
+    closePlace: routeClosePlace,
+    closeEvent: routeCloseEvent,
+    closeAllDetails: routeCloseAllDetails,
   } = useCitySelectionRouting({
     pathname,
     searchParams,
@@ -901,6 +903,62 @@ export default function CityPage() {
     serviceId,
     router,
   });
+
+  const openPlace = useCallback(
+    (place, { origin = "list", ...options } = {}) => {
+      selectionOriginRef.current = origin;
+      routeOpenPlace(place, options);
+    },
+    [routeOpenPlace]
+  );
+
+  const openEvent = useCallback(
+    (event, { origin = "list", ...options } = {}) => {
+      selectionOriginRef.current = origin;
+      routeOpenEvent(event, options);
+    },
+    [routeOpenEvent]
+  );
+
+  const openService = useCallback(
+    (service, { origin = "list", ...options } = {}) => {
+      selectionOriginRef.current = origin;
+      routeOpenService(service, options);
+    },
+    [routeOpenService]
+  );
+
+  const closeService = useCallback(
+    ({ origin = "panel-close", ...options } = {}) => {
+      selectionOriginRef.current = origin;
+      routeCloseService(options);
+    },
+    [routeCloseService]
+  );
+
+  const closePlace = useCallback(
+    ({ origin = "panel-close", ...options } = {}) => {
+      selectionOriginRef.current = origin;
+      routeClosePlace(options);
+    },
+    [routeClosePlace]
+  );
+
+  const closeEvent = useCallback(
+    ({ origin = "panel-close", ...options } = {}) => {
+      selectionOriginRef.current = origin;
+      routeCloseEvent(options);
+    },
+    [routeCloseEvent]
+  );
+
+  const closeAllDetails = useCallback(
+    ({ origin = "panel-close", ...options } = {}) => {
+      selectionOriginRef.current = origin;
+      routeCloseAllDetails(options);
+    },
+    [routeCloseAllDetails]
+  );
 
   const { redirectToJoin, redirectToJoinWithReturnTarget } = useJoinRedirect({
     pathname,
@@ -963,7 +1021,7 @@ export default function CityPage() {
 
     if (isMobileViewport) {
       keepMapViewOnNextCloseRef.current = true;
-      closeService();
+      closeService({ origin: "map-cta" });
       requestAnimationFrame(() => {
         mapWrapperRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -1002,7 +1060,7 @@ export default function CityPage() {
 
     if (isMobileViewport) {
       keepMapViewOnNextCloseRef.current = true;
-      closeEvent();
+      closeEvent({ origin: "map-cta" });
       requestAnimationFrame(() => {
         mapWrapperRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -1827,7 +1885,7 @@ export default function CityPage() {
         .addTo(mapRef.current);
 
       marker.getElement().addEventListener("click", () => {
-        router.push(buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }));
+        openPlace(place, { origin: "map" });
       });
       marker.getElement().addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
@@ -1858,7 +1916,7 @@ export default function CityPage() {
         .addTo(mapRef.current);
 
       marker.getElement().addEventListener("click", () => {
-        router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: event.id, nextServiceId: null }));
+        openEvent(event, { origin: "map" });
       });
       marker.getElement().addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
@@ -1892,7 +1950,7 @@ export default function CityPage() {
         .addTo(mapRef.current);
 
       marker.getElement().addEventListener("click", () => {
-        router.push(buildSelectionUrl({ nextPlaceId: null, nextEventId: null, nextServiceId: service.id }));
+        openService(service, { origin: "map" });
       });
       marker.getElement().addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
@@ -1907,7 +1965,7 @@ export default function CityPage() {
       markersRef.current.push(marker);
       serviceMarkersRef.current.set(String(service.id), marker);
     });
-  }, [buildSelectionUrl, cityEvents, cityPlaces, cityServices, router]);
+  }, [cityEvents, cityPlaces, cityServices, openEvent, openPlace, openService]);
 
   useEffect(() => {
     placeMarkersRef.current.forEach((marker, id) => {
@@ -2145,29 +2203,43 @@ export default function CityPage() {
     const targetLng = Number(target?.lng);
 
     if (!target || !mapRef.current || !Number.isFinite(targetLat) || !Number.isFinite(targetLng)) {
-      if (!selectedPlace && !selectedEvent && !selectedService && mapRef.current) {
-        if (keepMapViewOnNextCloseRef.current) {
-          keepMapViewOnNextCloseRef.current = false;
-          return;
-        }
-        mapRef.current.flyTo({
-          center: config.center,
-          zoom: 11,
-        });
+      lastSelectionKeyRef.current = "";
+      if (!selectedPlace && !selectedEvent && !selectedService && keepMapViewOnNextCloseRef.current) {
+        keepMapViewOnNextCloseRef.current = false;
       }
       return;
     }
 
+    const targetKey = [
+      selectedPlace ? `place:${selectedPlace.id}` : "",
+      selectedEvent ? `event:${selectedEvent.id}` : "",
+      selectedService ? `service:${selectedService.id}` : "",
+    ]
+      .filter(Boolean)
+      .join("|");
+
+    if (targetKey && targetKey === lastSelectionKeyRef.current) {
+      return;
+    }
+    lastSelectionKeyRef.current = targetKey;
+
+    const shouldScrollToMap =
+      selectionOriginRef.current === "map" || selectionOriginRef.current === "map-cta";
+
     mapRef.current.flyTo({
       center: [targetLng, targetLat],
       zoom: 14.8,
+      duration: shouldScrollToMap ? 760 : 520,
     });
 
-    mapWrapperRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }, [config.center, selectedEvent, selectedPlace, selectedService]);
+    if (shouldScrollToMap) {
+      mapWrapperRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+    selectionOriginRef.current = "synced";
+  }, [selectedEvent, selectedPlace, selectedService]);
 
   const handleAddPlace = async () => {
     if (!name.trim() || !address.trim() || !description.trim() || !placeHours.trim()) {

@@ -43,7 +43,7 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className="animate-cinematic-in mb-8 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_16px_50px_rgba(0,0,0,0.26)]"
+      className="qa-city-panel-cq animate-cinematic-in mb-8 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_16px_50px_rgba(0,0,0,0.26)]"
       style={{ animationDelay: "170ms" }}
     >
       <p className="text-[11px] uppercase tracking-[0.18em] text-white/50">Quick Navigation</p>
