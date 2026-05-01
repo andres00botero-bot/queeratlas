@@ -650,7 +650,7 @@ export default function Home() {
                 Find the city. Feel the signal. The global queer database for discovery,
                 vibe, community, and culture.
               </p>
-              <div className="mt-5 flex flex-wrap gap-2.5">
+              <div className="mt-5 flex flex-wrap justify-center gap-2.5 sm:justify-start">
                 <button
                   type="button"
                   onClick={() => router.push("/cities")}
@@ -757,7 +757,7 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/55">
+              <div className="mt-3 hidden flex-wrap items-center gap-2 text-[11px] text-white/55 sm:flex">
                 <span className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-100/92">Updated daily</span>
                 <span className="rounded-full border border-white/16 bg-white/7 px-3 py-1 text-white/72">Community-powered</span>
                 <span className="rounded-full border border-emerald-200/28 bg-emerald-200/12 px-3 py-1 text-emerald-100/92">Member-safe by design</span>
