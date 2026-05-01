@@ -113,6 +113,19 @@ export const cityConfig = {
       cost: "Lisbon used to feel like an obvious bargain. It is less that now, but still often lands better than London, Paris, or Amsterdam if you plan with care.",
     }),
   },
+  malaga: {
+    center: [-4.4213, 36.7213],
+    title: "Queer Malaga",
+    country: "Spain",
+    vibe: "mediterranean city pulse",
+    guide: buildGuide({
+      about: "Malaga mixes old-town walkability, beach proximity, and a growing queer social rhythm that feels softer than Madrid but more city-led than resort strips nearby. The mood is local-first, with queer pockets that reward timing and route planning.",
+      district: "Centro Historico is the practical social anchor, especially around late-evening bar movement. Beach-adjacent zones and nearby neighborhoods add daytime reset options before nightlife starts.",
+      safety: "Central Malaga is generally manageable, but like most warm nightlife cities, energy peaks late and can get dense around weekend flows. Keep your route compact and your return plan ready.",
+      nightlife: "Malaga works in layers: one social start, one movement shift, one optional darker late stop. It is less about mega-club volume and more about smart sequencing with Mediterranean pace.",
+      cost: "Usually mid-range by Spanish city standards, with stronger value than many headline capitals. Staying central keeps both transport friction and spend under control.",
+    }),
+  },
   torremolinos: {
     center: [-4.4991, 36.6218],
     title: "Queer Torremolinos",
@@ -150,6 +163,19 @@ export const cityConfig = {
       safety: "Queer visibility is very high, but heat, alcohol, hookups, and visitor turnover still call for practical care. The easier the destination feels, the more important it is not to become sloppy inside it.",
       nightlife: "The rhythm is holiday-driven: beach by day, bars and circuit energy by night, repeat until your body asks for mercy. Gran Canaria works because it commits fully to the format.",
       cost: "Costs vary widely by season and style, but the island can still offer strong value compared with many luxury Mediterranean queer escapes.",
+    }),
+  },
+  tenerife: {
+    center: [-16.2518, 28.4636],
+    title: "Queer Tenerife",
+    country: "Spain",
+    vibe: "island nightlife split-grid",
+    guide: buildGuide({
+      about: "Tenerife's queer scene is distributed rather than concentrated in one single district. You get a mix of Santa Cruz city stops, Adeje/Playa nightlife pressure, and beach-route social drift depending on your route.",
+      district: "Think in micro-routes: Santa Cruz for city social starts, Adeje and Playa zones for late momentum, and selected beach areas for daytime recovery.",
+      safety: "Island distances matter. Plan transfers early, avoid unnecessary late detours, and choose one tight nightlife corridor per night instead of jumping across the island.",
+      nightlife: "The vibe is holiday-meets-local: social bars, dance crossover rooms, sauna/cruise formats, and seasonal event spikes. Tenerife rewards pacing and transport discipline.",
+      cost: "Generally moderate, with higher spend in resort-heavy zones. A compact route can still deliver premium output without overpaying for logistics.",
     }),
   },
   cologne: {
@@ -269,6 +295,19 @@ export const cityConfig = {
       cost: "Rome sits in the mid-to-high range, especially in central areas and peak seasons. The trick is to spend on the version of the city you actually want to remember.",
     }),
   },
+  naples: {
+    center: [14.2681, 40.8518],
+    title: "Queer Naples",
+    country: "Italy",
+    vibe: "raw southern momentum",
+    guide: buildGuide({
+      about: "Naples delivers queer nightlife with a rawer, more local-social edge than many polished European capitals. The scene blends cruise infrastructure, party formats, and Pride visibility into a city that feels intense and alive.",
+      district: "Centro Storico and surrounding central corridors are the easiest anchor. Additional nightlife pressure builds around event venues and Centro Direzionale depending on the night.",
+      safety: "Use direct transfers between stops, keep valuables low-friction, and avoid overextending the route late. Naples is rewarding when your plan is focused.",
+      nightlife: "The city can escalate quickly: social warm-up, coded late-night room, then one final pressure stop. It is high character, less scripted, and very memory-heavy.",
+      cost: "Usually better value than Milan or Rome for nightlife-heavy weekends, especially if you keep your sequence compact and central.",
+    }),
+  },
   milano: {
     center: [9.19, 45.4642],
     title: "Queer Milano",
@@ -332,6 +371,19 @@ export const cityConfig = {
       safety: "Dublin is often welcoming for queer travelers, but weekend drinking culture means practical caution still matters. The city is best enjoyed with a route home already in mind.",
       nightlife: "Dublin works especially well for people who enjoy social bars, drag energy, and a nightlife ecosystem that feels more human-scaled than overwhelming. It is less about chasing the biggest night and more about finding the right room.",
       cost: "Dublin is expensive relative to its size, especially for accommodation and drinks, but a compact trip can still feel rich if you spend with intention.",
+    }),
+  },
+  santorini: {
+    center: [25.4316, 36.4203],
+    title: "Queer Santorini",
+    country: "Greece",
+    vibe: "sunset social escape",
+    guide: buildGuide({
+      about: "Santorini is not a mega-scene queer city, but it works beautifully as a queer-friendly island social escape where sunset terraces, late bars, and high-season nightlife create a soft but addictive flow.",
+      district: "Fira is the practical nightlife core. Most social movement is walkable between terrace bars and late-night venues, with beach routes as daytime reset chapters.",
+      safety: "The island is generally easy to navigate, but steep paths, late returns, and summer crowd density require practical pacing. Keep evenings route-based and footwear realistic.",
+      nightlife: "Expect a social-to-late curve rather than a hard-club marathon: sunset cocktails, mixed dance rooms, and one final stop that stretches into early hours.",
+      cost: "Santorini is premium-priced, especially in peak season. The best strategy is fewer transitions, higher-quality stops, and one deliberately built night at a time.",
     }),
   },
   mykonos: {
