@@ -246,6 +246,8 @@ export default function CitiesPage() {
       }
 
       setSelectedCountry(matchedCountry);
+      setCountryPickerOpen(false);
+      setCountryPickerQuery("");
       scrollToCountrySection(matchedCountry);
     });
 
@@ -262,10 +264,6 @@ export default function CitiesPage() {
   useEffect(() => {
     updateCountryMapStyles(selectedCountry);
   }, [selectedCountry, updateCountryMapStyles]);
-
-  useEffect(() => {
-    setCountryPickerOpen(false);
-  }, [selectedCountry]);
 
   useEffect(() => {
     if (!countryPickerOpen) return undefined;
@@ -446,7 +444,11 @@ export default function CitiesPage() {
                 Interactive country filter
               </p>
               <button
-                onClick={() => setSelectedCountry("All")}
+                onClick={() => {
+                  setSelectedCountry("All");
+                  setCountryPickerOpen(false);
+                  setCountryPickerQuery("");
+                }}
                 className="qa-action rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70 transition hover:border-white/24 hover:text-white"
               >
                 Show all
@@ -594,6 +596,8 @@ export default function CitiesPage() {
                   onClick={() => {
                     setQuery("");
                     setSelectedCountry("All");
+                    setCountryPickerOpen(false);
+                    setCountryPickerQuery("");
                   }}
                   className="qa-action rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
                 >
