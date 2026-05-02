@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
 import { cityConfig } from "@/lib/cities";
@@ -52,6 +52,32 @@ const MAPBOX_COUNTRY_ALIASES = {
   "Czech Republic": ["Czech Republic", "Czechia"],
   Netherlands: ["Netherlands", "The Netherlands"],
 };
+const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
+const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";
+
+function subscribeLastExploredCity(callback) {
+  if (typeof window === "undefined") return () => {};
+
+  const handler = () => callback();
+  window.addEventListener("storage", handler);
+  window.addEventListener("focus", handler);
+
+  return () => {
+    window.removeEventListener("storage", handler);
+    window.removeEventListener("focus", handler);
+  };
+}
+
+function getLastExploredCitySnapshot() {
+  if (typeof window === "undefined") return "";
+  try {
+    return String(localStorage.getItem(LAST_EXPLORED_CITY_KEY) || "")
+      .trim()
+      .toLowerCase();
+  } catch {
+    return "";
+  }
+}
 
 function normalizeCountry(value) {
   return String(value || "")
@@ -99,10 +125,28 @@ export default function CitiesPage() {
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
+  const cityCardRefs = useRef({});
+  const lastCityAutoFocusRef = useRef("");
   const countryPickerRef = useRef(null);
   const countryMapContainerRef = useRef(null);
   const countryMapRef = useRef(null);
   const { places, isLoading } = usePlaces();
+  const lastExploredCity = useSyncExternalStore(
+    subscribeLastExploredCity,
+    getLastExploredCitySnapshot,
+    () => "",
+  );
+  const backRestoreCity = useMemo(() => {
+    if (typeof window === "undefined") return "";
+
+    try {
+      return String(window.history?.state?.[BACK_RESTORE_CITY_KEY] || "")
+        .trim()
+        .toLowerCase();
+    } catch {
+      return "";
+    }
+  }, []);
 
   const scrollToCountrySection = useCallback((country) => {
     if (!country || country === "All") return;
@@ -335,6 +379,11 @@ export default function CitiesPage() {
       });
   }, [allCities, query, selectedCountry]);
 
+  const lastExploredCityRecord = useMemo(
+    () => allCities.find((city) => city.key === lastExploredCity) || null,
+    [allCities, lastExploredCity],
+  );
+
   const countryStats = useMemo(() => {
     const stats = allCities.reduce((acc, city) => {
       const country = city.country || "Other";
@@ -388,6 +437,38 @@ export default function CitiesPage() {
   const activeFilterLabel = selectedCountry === "All" ? "All countries" : selectedCountry;
   const filterModeLabel = query ? "Search + country filter" : "Country filter";
 
+  useEffect(() => {
+    if (!backRestoreCity || typeof window === "undefined") return;
+
+    try {
+      const historyState = window.history?.state;
+      const nextState =
+        historyState && typeof historyState === "object"
+          ? { ...historyState }
+          : {};
+      delete nextState[BACK_RESTORE_CITY_KEY];
+      window.history.replaceState(nextState, "", window.location.href);
+    } catch {
+      // Ignore history/state restrictions.
+    }
+  }, [backRestoreCity]);
+
+  useEffect(() => {
+    if (!backRestoreCity || isLoading) return;
+    if (lastCityAutoFocusRef.current === backRestoreCity) return;
+    if (!filteredCities.some((city) => city.key === backRestoreCity)) return;
+
+    const target = cityCardRefs.current[backRestoreCity];
+    if (!target) return;
+
+    lastCityAutoFocusRef.current = backRestoreCity;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
+  }, [backRestoreCity, filteredCities, isLoading]);
+
   return (
     <main className="qa-page min-h-screen bg-[#050505] text-white">
       <div className="qa-shell relative">
@@ -418,6 +499,15 @@ export default function CitiesPage() {
               <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
                 {visibleCityCount} visible
               </span>
+              {lastExploredCityRecord && (
+                <button
+                  type="button"
+                  onClick={() => router.push(`/${lastExploredCityRecord.key}`)}
+                  className="rounded-full border border-emerald-200/22 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/86 transition hover:border-emerald-200/36 hover:text-white"
+                >
+                  Last explored: {lastExploredCityRecord.title}
+                </button>
+              )}
             </div>
           </div>
 
@@ -637,8 +727,35 @@ export default function CitiesPage() {
                     {groupedCities[country].map((city, cityIndex) => (
                       <button
                         key={city.key}
-                        onClick={() => router.push(`/${city.key}`)}
-                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[4px] active:translate-y-0 ${tone.card} ${tone.hover}`}
+                        ref={(node) => {
+                          if (node) {
+                            cityCardRefs.current[city.key] = node;
+                          } else {
+                            delete cityCardRefs.current[city.key];
+                          }
+                        }}
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            try {
+                              const currentState = window.history?.state;
+                              const nextState =
+                                currentState && typeof currentState === "object"
+                                  ? { ...currentState }
+                                  : {};
+                              nextState[BACK_RESTORE_CITY_KEY] = city.key;
+                              window.history.replaceState(nextState, "", window.location.href);
+                            } catch {
+                              // Ignore history/state restrictions.
+                            }
+                          }
+
+                          router.push(`/${city.key}`);
+                        }}
+                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[4px] active:translate-y-0 ${tone.card} ${tone.hover} ${
+                          city.key === lastExploredCity
+                            ? "ring-1 ring-emerald-300/45 shadow-[0_28px_92px_rgba(16,185,129,0.22)]"
+                            : ""
+                        }`}
                       >
                         <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/8 opacity-0 blur-3xl transition duration-300 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br from-white/7 via-transparent to-transparent" />

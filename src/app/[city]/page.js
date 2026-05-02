@@ -109,6 +109,8 @@ import {
 } from "@/features/city/cityPageConstants";
 import styles from "./page.module.css";
 
+const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
+
 export default function CityPage() {
   const isMapboxStylesReady = useMapboxStylesheet();
   const params = useParams();
@@ -132,6 +134,15 @@ export default function CityPage() {
   const eventId = searchParams.get("eventId");
   const serviceId = searchParams.get("serviceId");
   const contributeMode = searchParams.get("contribute");
+
+  useEffect(() => {
+    if (!city) return;
+    try {
+      localStorage.setItem(LAST_EXPLORED_CITY_KEY, String(city));
+    } catch {
+      // Ignore storage write issues in restricted browsing contexts.
+    }
+  }, [city]);
 
   const {
     places,
