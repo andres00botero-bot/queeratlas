@@ -22,6 +22,11 @@ import { getKpiSummary } from "@/lib/analytics";
 import { fetchTrafficSummary } from "@/lib/trafficAnalytics";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
+  listContentSubmissions,
+  publishContentSubmission,
+  updateContentSubmissionStatus,
+} from "@/lib/contentSubmissions";
+import {
   buildVibeDualWriteFields,
   isMissingVibeTagsColumnError,
   normalizeVibeTags,
@@ -76,6 +81,13 @@ function formatDbError(error) {
   const message = String(error.message || error.details || error.hint || "").trim();
   if (!message) return "Unknown error";
   return message;
+}
+
+function formatCityLabel(city = "") {
+  return String(city || "")
+    .replace(/_/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function isMissingRelationError(error) {
@@ -173,6 +185,10 @@ export default function AdminPage() {
   const [memberSearch, setMemberSearch] = useState("");
   const [memberDirectoryLoading, setMemberDirectoryLoading] = useState(false);
   const [memberDirectoryNotice, setMemberDirectoryNotice] = useState("");
+  const [pendingSubmissions, setPendingSubmissions] = useState([]);
+  const [isLoadingPendingSubmissions, setIsLoadingPendingSubmissions] = useState(false);
+  const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
+  const [isProcessingSubmissionId, setIsProcessingSubmissionId] = useState("");
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
@@ -761,6 +777,107 @@ export default function AdminPage() {
     setSelectedVibeKeys((current) =>
       current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
     );
+  };
+
+  const refreshPendingSubmissions = useCallback(async () => {
+    if (!isAdmin) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("");
+      return;
+    }
+
+    setIsLoadingPendingSubmissions(true);
+    const result = await listContentSubmissions({ status: "pending", limit: 120 });
+    if (result.tableMissing) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("Submission queue is not configured yet. Run supabase/content-submissions-v1.sql.");
+      setIsLoadingPendingSubmissions(false);
+      return;
+    }
+    if (result.error) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("Could not load pending submissions right now.");
+      setIsLoadingPendingSubmissions(false);
+      return;
+    }
+    setPendingSubmissions(result.data || []);
+    setSubmissionSyncNotice("");
+    setIsLoadingPendingSubmissions(false);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("");
+      return;
+    }
+    queueMicrotask(() => {
+      refreshPendingSubmissions();
+    });
+  }, [isAdmin, refreshPendingSubmissions]);
+
+  const approvePendingSubmission = async (submission) => {
+    if (!isAdmin || !submission?.id) return;
+    setIsProcessingSubmissionId(String(submission.id));
+    try {
+      const publishRes = await publishContentSubmission({
+        submission,
+        reviewer: { id: user?.id, email: user?.email },
+      });
+
+      if (publishRes.tableMissing) {
+        showToast("Target table is missing in Supabase for this submission.", {
+          tone: "warn",
+          duration: 2600,
+        });
+        return;
+      }
+      if (publishRes.error) {
+        showToast(publishRes.error.message || "Could not publish submission.", {
+          tone: "warn",
+          duration: 2600,
+        });
+        return;
+      }
+
+      appendAuditLog(
+        "submission_approved",
+        `${String(submission.entity_type || "item")}:${String(submission.id)}`
+      );
+      showToast("Submission approved and published.", { tone: "ok", duration: 2200 });
+      await refreshPendingSubmissions();
+      await loadAdminState();
+    } finally {
+      setIsProcessingSubmissionId("");
+    }
+  };
+
+  const rejectPendingSubmission = async (submission) => {
+    if (!isAdmin || !submission?.id) return;
+    setIsProcessingSubmissionId(String(submission.id));
+    try {
+      const result = await updateContentSubmissionStatus({
+        submissionId: submission.id,
+        status: "rejected",
+        reviewer: { id: user?.id, email: user?.email },
+      });
+      if (result.tableMissing) {
+        showToast("Moderation queue is not configured yet.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      if (result.error) {
+        showToast(result.error.message || "Could not reject submission.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      appendAuditLog(
+        "submission_rejected",
+        `${String(submission.entity_type || "item")}:${String(submission.id)}`
+      );
+      showToast("Submission rejected.", { tone: "info", duration: 2200 });
+      await refreshPendingSubmissions();
+    } finally {
+      setIsProcessingSubmissionId("");
+    }
   };
 
   const exportCsv = (rows, fileName) => {
@@ -2313,6 +2430,91 @@ export default function AdminPage() {
               </div>
             )}
           </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-indigo-300/16 bg-[linear-gradient(180deg,rgba(24,22,58,0.82),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-indigo-100/80">Moderation Queue</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Pending member entries</h2>
+              <p className="mt-2 text-sm text-white/65">
+                Approve or reject member-added venues, events, and services before they go live.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-indigo-200/20 bg-indigo-200/10 px-3 py-1 text-xs text-indigo-100">
+                Pending: {pendingSubmissions.length}
+              </span>
+              <button
+                type="button"
+                onClick={refreshPendingSubmissions}
+                className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-indigo-200/35 hover:text-indigo-100"
+              >
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {submissionSyncNotice ? (
+            <div className="mb-3 rounded-xl border border-amber-200/24 bg-amber-200/12 px-3 py-2 text-xs text-amber-100">
+              {submissionSyncNotice}
+            </div>
+          ) : null}
+
+          {isLoadingPendingSubmissions ? (
+            <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
+              Loading pending submissions...
+            </div>
+          ) : pendingSubmissions.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
+              No pending submissions right now.
+            </div>
+          ) : (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {pendingSubmissions.map((submission) => {
+                const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
+                const statusBusy = isProcessingSubmissionId === String(submission.id);
+                const submissionName = String(submission?.title || payload?.name || "Untitled");
+
+                return (
+                  <article key={submission.id} className="rounded-2xl border border-white/12 bg-black/25 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
+                        {String(submission.entity_type || "item")} | {formatCityLabel(String(submission.city || "global"))}
+                      </p>
+                      <p className="text-xs text-white/45">{timeAgo(submission.created_at)}</p>
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-white">{submissionName}</p>
+                    <p className="mt-2 text-xs text-white/65">
+                      by {String(submission.submitted_by_name || submission.submitted_by_email || "Member")}
+                      {submission.is_trusted_contributor ? " | trusted" : ""}
+                    </p>
+                    {payload?.description ? (
+                      <p className="mt-2 line-clamp-3 text-sm text-white/70">{String(payload.description)}</p>
+                    ) : null}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => approvePendingSubmission(submission)}
+                        disabled={statusBusy}
+                        className="rounded-full border border-emerald-200/26 bg-emerald-200/12 px-3 py-1 text-xs text-emerald-100 transition hover:border-emerald-200/45 disabled:opacity-60"
+                      >
+                        {statusBusy ? "Working..." : "Approve & publish"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => rejectPendingSubmission(submission)}
+                        disabled={statusBusy}
+                        className="rounded-full border border-rose-200/26 bg-rose-200/12 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/45 disabled:opacity-60"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="mb-8 rounded-[30px] border border-amber-300/16 bg-[linear-gradient(180deg,rgba(45,31,10,0.85),rgba(10,10,10,0.98))] p-6">
