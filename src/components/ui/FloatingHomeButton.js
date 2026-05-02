@@ -5,13 +5,22 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CalendarDays, Home, MapPinned, MessageCircle, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import { supabase } from "@/lib/supabase";
+
+function isMissingTableError(error) {
+  if (!error) return false;
+  const code = String(error.code || "").toUpperCase();
+  const message = String(error.message || "").toLowerCase();
+  return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
+}
 
 export default function FloatingHomeButton() {
   const pathname = usePathname();
   const { isMember, user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [vipRequestCount, setVipRequestCount] = useState(0);
+  const [pendingSubmissionCount, setPendingSubmissionCount] = useState(0);
 
   useEffect(() => {
     if (!isMember || !user?.id) {
@@ -52,12 +61,39 @@ export default function FloatingHomeButton() {
       setVipRequestCount(Number(count || 0));
     };
 
+    const refreshPendingSubmissions = async () => {
+      const { isAdmin } = await resolveAdminAccess({ email: user?.email || "" });
+      if (!active) return;
+
+      if (!isAdmin) {
+        setPendingSubmissionCount(0);
+        return;
+      }
+
+      const { count, error } = await supabase
+        .from("qa_content_submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending");
+
+      if (!active) return;
+      if (error) {
+        if (isMissingTableError(error)) {
+          setPendingSubmissionCount(0);
+        }
+        return;
+      }
+
+      setPendingSubmissionCount(Number(count || 0));
+    };
+
     refreshUnread();
     refreshVipRequests();
+    refreshPendingSubmissions();
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         refreshUnread();
         refreshVipRequests();
+        refreshPendingSubmissions();
       }
     };
 
@@ -71,6 +107,9 @@ export default function FloatingHomeButton() {
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "qa_private_events" }, () => {
         refreshVipRequests();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "qa_content_submissions" }, () => {
+        refreshPendingSubmissions();
       })
       .on(
         "postgres_changes",
@@ -93,7 +132,21 @@ export default function FloatingHomeButton() {
       document.removeEventListener("visibilitychange", onVisible);
       supabase.removeChannel(channel);
     };
-  }, [isMember, user?.id]);
+  }, [isMember, user?.email, user?.id]);
+
+  const messageSignalCount =
+    unreadCount > 0
+      ? unreadCount
+      : vipRequestCount > 0
+        ? vipRequestCount
+        : pendingSubmissionCount > 0
+          ? pendingSubmissionCount
+          : 0;
+  const messageSignalCountLabel = messageSignalCount > 99 ? "99+" : String(messageSignalCount);
+  const messageSignalTone =
+    unreadCount > 0 ? "fuchsia" : vipRequestCount > 0 ? "cyan" : pendingSubmissionCount > 0 ? "amber" : "none";
+  const messageSignalLayers = [unreadCount > 0, vipRequestCount > 0, pendingSubmissionCount > 0].filter(Boolean)
+    .length;
 
   const navItems = [
     {
@@ -204,17 +257,20 @@ export default function FloatingHomeButton() {
                   }`}
                 />
               ) : null}
-              {item.href === "/messages" && unreadCount > 0 ? (
-                <span className="absolute -right-1 -top-1 rounded-full border border-fuchsia-200/35 bg-fuchsia-300 px-1.5 py-0.5 text-[10px] font-bold text-black">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+              {item.href === "/messages" && messageSignalCount > 0 ? (
+                <span
+                  className={`absolute -right-1 -top-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-black ${
+                    messageSignalTone === "fuchsia"
+                      ? "border border-fuchsia-200/35 bg-fuchsia-300"
+                      : messageSignalTone === "cyan"
+                        ? "border border-cyan-200/35 bg-cyan-300"
+                        : "border border-amber-200/35 bg-amber-300"
+                  }`}
+                >
+                  {messageSignalCountLabel}
                 </span>
               ) : null}
-              {item.href === "/messages" && unreadCount <= 0 && vipRequestCount > 0 ? (
-                <span className="absolute -right-1 -top-1 rounded-full border border-cyan-200/35 bg-cyan-300 px-1.5 py-0.5 text-[10px] font-bold text-black">
-                  {vipRequestCount > 99 ? "99+" : vipRequestCount}
-                </span>
-              ) : null}
-              {item.href === "/messages" && unreadCount > 0 && vipRequestCount > 0 ? (
+              {item.href === "/messages" && messageSignalLayers > 1 ? (
                 <span
                   className="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full border border-cyan-100/60 bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.85)]"
                   aria-hidden="true"

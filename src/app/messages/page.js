@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
+import { resolveAdminAccess } from "@/lib/adminAccess";
+import { listContentSubmissions } from "@/lib/contentSubmissions";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { cityHref, formatInviteTimeline, inviteStatusLabel } from "@/lib/vipInvites";
 import ActionToast from "@/components/ui/ActionToast";
@@ -147,6 +149,11 @@ export default function MessagesPage() {
   const [vipPanelCollapsed, setVipPanelCollapsed] = useState(true);
   const [vipRealtimeHealthy, setVipRealtimeHealthy] = useState(false);
   const [vipInvitesLoadedOnce, setVipInvitesLoadedOnce] = useState(false);
+  const [isAdminModerator, setIsAdminModerator] = useState(false);
+  const [pendingSubmissionCount, setPendingSubmissionCount] = useState(0);
+  const [pendingSubmissionRows, setPendingSubmissionRows] = useState([]);
+  const [isLoadingPendingSubmissions, setIsLoadingPendingSubmissions] = useState(false);
+  const [pendingSubmissionsWarning, setPendingSubmissionsWarning] = useState("");
   const [composerTab, setComposerTab] = useState("friends");
   const [composerSearch, setComposerSearch] = useState("");
   const [composerWarning, setComposerWarning] = useState("");
@@ -627,6 +634,68 @@ export default function MessagesPage() {
     setVipInvitesLoadedOnce(true);
     setIsLoadingVipInvites(false);
   }, [userId, vipInvitesLoadedOnce]);
+
+  const loadPendingSubmissionAlerts = useCallback(async ({ silent = false } = {}) => {
+    if (!userId || !isMember) {
+      setIsAdminModerator(false);
+      setPendingSubmissionCount(0);
+      setPendingSubmissionRows([]);
+      setPendingSubmissionsWarning("");
+      return;
+    }
+
+    if (!silent) setIsLoadingPendingSubmissions(true);
+    setPendingSubmissionsWarning("");
+
+    const adminAccess = await resolveAdminAccess({ email: user?.email || "" });
+    const isAdmin = Boolean(adminAccess?.isAdmin);
+    setIsAdminModerator(isAdmin);
+
+    if (!isAdmin) {
+      setPendingSubmissionCount(0);
+      setPendingSubmissionRows([]);
+      setIsLoadingPendingSubmissions(false);
+      return;
+    }
+
+    const { count, error: countError } = await supabase
+      .from("qa_content_submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending");
+
+    if (countError) {
+      if (isMissingTableError(countError)) {
+        setPendingSubmissionsWarning(
+          "Moderation queue is not configured yet. Run supabase/content-submissions-v1.sql first."
+        );
+      } else {
+        setPendingSubmissionsWarning("Could not load moderation queue right now.");
+      }
+      setPendingSubmissionCount(0);
+      setPendingSubmissionRows([]);
+      setIsLoadingPendingSubmissions(false);
+      return;
+    }
+
+    setPendingSubmissionCount(Number(count || 0));
+
+    const listResult = await listContentSubmissions({ status: "pending", limit: 5 });
+    if (listResult.error) {
+      if (listResult.tableMissing) {
+        setPendingSubmissionsWarning(
+          "Moderation queue is not configured yet. Run supabase/content-submissions-v1.sql first."
+        );
+      } else {
+        setPendingSubmissionsWarning("Could not load moderation queue right now.");
+      }
+      setPendingSubmissionRows([]);
+      setIsLoadingPendingSubmissions(false);
+      return;
+    }
+
+    setPendingSubmissionRows(Array.isArray(listResult.data) ? listResult.data : []);
+    setIsLoadingPendingSubmissions(false);
+  }, [isMember, user?.email, userId]);
 
   const loadFriendCandidates = useCallback(async (searchTerm = "") => {
     if (!userId || !isMember) {
@@ -1170,6 +1239,31 @@ export default function MessagesPage() {
   }, [isMember, isReady, loadVipInvites, userId]);
 
   useEffect(() => {
+    if (!isReady || !isMember || !userId) return undefined;
+
+    loadPendingSubmissionAlerts();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        loadPendingSubmissionAlerts({ silent: true });
+      }
+    };
+
+    const channel = supabase
+      .channel(`qa-inbox-submission-alerts-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "qa_content_submissions" }, () => {
+        loadPendingSubmissionAlerts({ silent: true });
+      })
+      .subscribe();
+
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      supabase.removeChannel(channel);
+    };
+  }, [isMember, isReady, loadPendingSubmissionAlerts, userId]);
+
+  useEffect(() => {
     if (!isReady || !isMember || !startUserId || !userId || startCompose) return;
     queueMicrotask(() => {
       openOrCreateThreadForUser(startUserId);
@@ -1334,6 +1428,11 @@ export default function MessagesPage() {
             <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/72">
               Pending host actions: {pendingHostActions}
             </span>
+            {isAdminModerator ? (
+              <span className="rounded-full border border-amber-200/34 bg-amber-200/16 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-100">
+                Pending submissions: {pendingSubmissionCount}
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() => {
@@ -1351,6 +1450,15 @@ export default function MessagesPage() {
             >
               Review requests
             </button>
+            {isAdminModerator ? (
+              <button
+                type="button"
+                onClick={() => router.push("/admin")}
+                className="qa-action rounded-full border border-amber-200/34 bg-amber-200/14 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-200/58"
+              >
+                Open submission queue
+              </button>
+            ) : null}
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -1372,6 +1480,53 @@ export default function MessagesPage() {
             <p className="mt-4 rounded-xl border border-amber-200/24 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
               {warning}
             </p>
+          ) : null}
+
+          {isAdminModerator ? (
+            <div className="mt-4 rounded-2xl border border-amber-200/26 bg-amber-200/[0.08] p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/78">
+                  Moderation inbox alert
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/admin")}
+                  className="qa-action rounded-full border border-amber-200/36 bg-amber-200/16 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-200/58"
+                >
+                  Open admin queue
+                </button>
+              </div>
+              {pendingSubmissionsWarning ? (
+                <p className="mt-2 rounded-xl border border-amber-200/24 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+                  {pendingSubmissionsWarning}
+                </p>
+              ) : isLoadingPendingSubmissions ? (
+                <p className="mt-2 text-xs text-white/64">Syncing pending submissions...</p>
+              ) : pendingSubmissionCount > 0 ? (
+                <>
+                  <p className="mt-2 text-xs text-white/80">
+                    You have {pendingSubmissionCount} pending submission{pendingSubmissionCount === 1 ? "" : "s"} waiting for review.
+                  </p>
+                  <div className="mt-2 space-y-1.5">
+                    {pendingSubmissionRows.map((row) => (
+                      <div
+                        key={String(row.id || "")}
+                        className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] text-white/74"
+                      >
+                        <span className="rounded-full border border-amber-200/32 bg-amber-200/16 px-2 py-0.5 uppercase tracking-[0.1em] text-amber-100">
+                          {String(row.entity_type || "item")}
+                        </span>
+                        <span className="font-medium text-white/88">{String(row.title || "Untitled submission")}</span>
+                        <span className="text-white/55">• {String(row.city || "unknown city")}</span>
+                        <span className="ml-auto text-white/48">{timeAgo(row.created_at)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="mt-2 text-xs text-white/64">No pending submissions right now.</p>
+              )}
+            </div>
           ) : null}
         </section>
 
