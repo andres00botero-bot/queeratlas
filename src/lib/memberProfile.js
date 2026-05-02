@@ -5,6 +5,7 @@ const defaultProfile = {
   pronouns: "",
   homeCity: "",
   residentCountry: "",
+  trustedContributor: false,
   updatedAt: "",
 };
 
@@ -25,17 +26,23 @@ export function getMemberProfile() {
     pronouns: parsed.pronouns || "",
     homeCity: parsed.homeCity || "",
     residentCountry: parsed.residentCountry || "",
+    trustedContributor: Boolean(parsed.trustedContributor),
     updatedAt: parsed.updatedAt || "",
   };
 }
 
 export function saveMemberProfile(profile) {
   if (typeof window === "undefined") return;
+  const current = safeParse(window.localStorage.getItem(PROFILE_KEY), defaultProfile);
   const normalized = {
     displayName: profile?.displayName?.trim?.() || "",
     pronouns: profile?.pronouns?.trim?.() || "",
     homeCity: profile?.homeCity?.trim?.() || "",
     residentCountry: profile?.residentCountry?.trim?.() || "",
+    trustedContributor:
+      typeof profile?.trustedContributor === "boolean"
+        ? profile.trustedContributor
+        : Boolean(current?.trustedContributor),
     updatedAt: new Date().toISOString(),
   };
   window.localStorage.setItem(PROFILE_KEY, JSON.stringify(normalized));

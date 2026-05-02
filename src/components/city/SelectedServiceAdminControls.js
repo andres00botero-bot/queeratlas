@@ -15,6 +15,7 @@ export default function SelectedServiceAdminControls({
   isSaving,
   onDelete,
   isDeleting,
+  canDelete = false,
   serviceTypes,
   priceTierOptions,
 }) {
@@ -137,7 +138,7 @@ export default function SelectedServiceAdminControls({
             onChange={(event) => setDraft((current) => ({ ...current, lastChecked: event.target.value }))}
             placeholder="Last checked (optional)"
           />
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid gap-2 ${canDelete ? "grid-cols-2" : "grid-cols-1"}`}>
             <button
               type="button"
               onClick={onSave}
@@ -146,14 +147,16 @@ export default function SelectedServiceAdminControls({
             >
               {isSaving ? "Saving..." : "Save changes"}
             </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              disabled={isDeleting}
-              className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
-            >
-              {isDeleting ? "Deleting..." : "Delete service"}
-            </button>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={onDelete}
+                disabled={isDeleting}
+                className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
+              >
+                {isDeleting ? "Deleting..." : "Delete service"}
+              </button>
+            )}
           </div>
         </div>
       )}

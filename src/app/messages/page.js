@@ -94,6 +94,7 @@ function normalizeMemberPickerRow(row) {
     displayName: String(row?.display_name || "Member").trim() || "Member",
     homeCity: String(row?.home_city || "").trim(),
     residentCountry: String(row?.resident_country || "").trim(),
+    trustedContributor: Boolean(row?.trusted_contributor),
     isOnline: Boolean(row?.is_online),
     lastSeenAt: row?.last_seen_at || null,
     isFollowing: Boolean(row?.is_following),
@@ -360,7 +361,7 @@ export default function MessagesPage() {
     const [{ data: friendMomentumRows }, { data: profileRows }, { data: presenceRows }] = await Promise.all([
       supabase.rpc("qa_get_friend_momentum", { friend_limit: 200 }),
       otherUserIds.length > 0
-        ? supabase.from("member_profiles").select("user_id, display_name").in("user_id", otherUserIds)
+        ? supabase.from("member_profiles").select("user_id, display_name, trusted_contributor").in("user_id", otherUserIds)
         : Promise.resolve({ data: [] }),
       otherUserIds.length > 0
         ? supabase.from("qa_presence").select("user_id, is_online, last_seen_at").in("user_id", otherUserIds)
@@ -452,6 +453,7 @@ export default function MessagesPage() {
         return {
           ...thread,
           displayName,
+          trustedContributor: Boolean(profile?.trusted_contributor),
           lastMessage,
           unreadCount,
           presence,
@@ -643,10 +645,27 @@ export default function MessagesPage() {
       return;
     }
 
+    const trustedByUserId = new Map();
+    const friendUserIds = [...new Set((data || [])
+      .map((row) => String(row.user_id || "").trim())
+      .filter(Boolean))];
+    if (friendUserIds.length > 0) {
+      const { data: profileRows } = await supabase
+        .from("member_profiles")
+        .select("user_id,trusted_contributor")
+        .in("user_id", friendUserIds);
+      (profileRows || []).forEach((profile) => {
+        const profileUserId = String(profile?.user_id || "").trim();
+        if (!profileUserId) return;
+        trustedByUserId.set(profileUserId, Boolean(profile?.trusted_contributor));
+      });
+    }
+
     const query = String(searchTerm || "").trim().toLowerCase();
     const rows = (data || []).map((row) => ({
       userId: String(row.user_id || ""),
       displayName: String(row.display_name || "").trim() || "Member",
+      trustedContributor: Boolean(trustedByUserId.get(String(row.user_id || "").trim())),
       isOnline: Boolean(row.is_online),
       activeNow: Boolean(row.active_now),
       lastSeenAt: row.last_seen_at || null,
@@ -1603,7 +1622,14 @@ export default function MessagesPage() {
                     <article key={`friend-${candidate.userId}`} className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                            {candidate.trustedContributor && (
+                              <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
+                                Trusted
+                              </span>
+                            )}
+                          </div>
                           <p className="mt-1 text-[11px] text-white/58">
                             {candidate.activeNow ? "Active now" : timeAgo(candidate.lastSeenAt)}
                             {candidate.unreadCount > 0 ? ` · ${candidate.unreadCount} unread` : ""}
@@ -1634,7 +1660,14 @@ export default function MessagesPage() {
                   <article key={`member-${candidate.userId}`} className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                          {candidate.trustedContributor && (
+                            <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
+                              Trusted
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 text-[11px] text-white/58">
                           {[candidate.homeCity, candidate.residentCountry].filter(Boolean).join(" · ") || "City not set"}
                         </p>
@@ -1741,9 +1774,16 @@ export default function MessagesPage() {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className={`truncate text-sm ${thread.unreadCount > 0 ? "font-bold text-white" : "font-semibold text-white/92"}`}>
-                          {thread.displayName}
-                        </p>
+                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                          <p className={`truncate text-sm ${thread.unreadCount > 0 ? "font-bold text-white" : "font-semibold text-white/92"}`}>
+                            {thread.displayName}
+                          </p>
+                          {thread.trustedContributor && (
+                            <span className="shrink-0 rounded-full border border-cyan-200/30 bg-cyan-200/12 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-cyan-100">
+                              Trusted
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-white/45">{formatTime(thread.lastMessage?.createdAt || thread.lastMessageAt)}</p>
                       </div>
                       <div className="mt-1 flex items-center gap-2">
@@ -1780,7 +1820,14 @@ export default function MessagesPage() {
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.16em] text-white/55">Subject</p>
-                      <p className="mt-1 text-base font-semibold text-white">Conversation with {activeThread.displayName}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <p className="text-base font-semibold text-white">Conversation with {activeThread.displayName}</p>
+                        {activeThread.trustedContributor && (
+                          <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
+                            Trusted
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-[11px] text-white/58">
                         {isActiveNow(activeThread.presence)
                           ? "Active now"

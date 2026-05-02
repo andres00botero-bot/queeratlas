@@ -274,6 +274,7 @@ function mapMemberSearchRow(row) {
     mutual_count: Number(row?.mutual_count || 0),
     is_online: Boolean(row?.is_online),
     last_seen_at: String(row?.last_seen_at || ""),
+    trusted_contributor: Boolean(row?.trusted_contributor),
   };
 }
 
@@ -601,6 +602,7 @@ export default function CommunityPage() {
             mutual_count: 0,
             is_online: false,
             last_seen_at: "",
+            trusted_contributor: false,
           })
         )
         .filter((entry) => {
@@ -1388,7 +1390,14 @@ export default function CommunityPage() {
                 <article key={entry.user_id} className="qa-premium-card rounded-2xl border border-white/10 bg-black/28 p-4 transition hover:border-fuchsia-200/30 hover:bg-black/35 hover:shadow-[0_20px_50px_rgba(217,70,239,0.14)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-white">{entry.display_name}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-white">{entry.display_name}</p>
+                        {entry.trusted_contributor && (
+                          <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
+                            Trusted
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 text-xs text-white/62">
                         {[entry.home_city, entry.resident_country].filter(Boolean).join(" · ") || "City not set"}
                       </p>

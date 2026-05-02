@@ -65,6 +65,7 @@ export function AuthProvider({ children }) {
       pronouns: data.pronouns || "",
       homeCity: data.home_city || "",
       residentCountry: data.resident_country || "",
+      trustedContributor: Boolean(data.trusted_contributor),
       updatedAt: data.updated_at || "",
     };
   };

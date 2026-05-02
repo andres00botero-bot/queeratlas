@@ -20,7 +20,8 @@ import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
 import { trackKpiEvent } from "@/lib/analytics";
 import { showActionFeedback } from "@/lib/actionFeedback";
-import { resolveAdminAccess } from "@/lib/adminAccess";
+import { resolveContributionAccess } from "@/lib/adminAccess";
+import { createContentSubmission } from "@/lib/contentSubmissions";
 import {
   buildVibeDualWriteFields,
   isMissingVibeTagsColumnError,
@@ -285,6 +286,7 @@ export default function CityPage() {
   const [isMapInteracting, setIsMapInteracting] = useState(false);
   const { isMember, user, memberName } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isTrustedContributor, setIsTrustedContributor] = useState(false);
   const [placeAdminOpen, setPlaceAdminOpen] = useState(false);
   const [eventAdminOpen, setEventAdminOpen] = useState(false);
   const [serviceAdminOpen, setServiceAdminOpen] = useState(false);
@@ -374,19 +376,23 @@ export default function CityPage() {
         return;
       }
 
-      const { isAdmin: adminState } = await resolveAdminAccess({
+      const access = await resolveContributionAccess({
         email: user?.email,
+        userId: user?.id,
       });
 
       if (active) {
-        setIsAdmin(adminState);
+        setIsAdmin(Boolean(access?.isAdmin));
+        setIsTrustedContributor(Boolean(access?.isTrustedContributor));
       }
     });
 
     return () => {
       active = false;
     };
-  }, [isMember, user?.email]);
+  }, [isMember, user?.email, user?.id]);
+
+  const canPublishDirect = isAdmin || isTrustedContributor;
 
   useEffect(() => {
     let active = true;
@@ -1013,6 +1019,7 @@ export default function CityPage() {
     buildPlaceAdminDraft,
     buildEventAdminDraft,
   });
+  const canDeleteSelectedService = isAdmin;
 
 
   const showServiceOnMap = () => {
@@ -2266,19 +2273,60 @@ export default function CityPage() {
         return;
       }
 
-      const createdPlace = await addPlace({
-        name,
+      const placePayload = {
+        name: name.trim(),
         type,
-        description,
-        vibe,
+        description: description.trim(),
+        vibe: vibe.trim(),
         vibe_tags: normalizeVibeTags(vibeTags, { max: 3 }),
-        hours: placeHours,
-        link: placeLink,
-        location: address,
-        address,
+        hours: placeHours.trim(),
+        link: placeLink.trim() || null,
+        location: address.trim(),
+        address: address.trim(),
         lat: coords.lat,
         lng: coords.lng,
         city,
+      };
+
+      if (!canPublishDirect) {
+        const submissionRes = await createContentSubmission({
+          entityType: "place",
+          actionType: "create",
+          city,
+          title: name.trim(),
+          payload: placePayload,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            memberName,
+          },
+          isTrustedContributor: false,
+        });
+
+        if (submissionRes.tableMissing) {
+          showToast("Moderation queue is not configured yet. Run supabase/content-submissions-v1.sql.", {
+            tone: "warn",
+            duration: 3200,
+          });
+          return;
+        }
+
+        if (submissionRes.error) {
+          showToast(submissionRes.error.message || "Could not submit venue for review right now.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+
+        resetPlaceForm();
+        setAddMode(false);
+        showToast("Venue submitted. Waiting for admin approval.", { tone: "info", duration: 2600 });
+        return;
+      }
+
+      const createdPlace = await addPlace({
+        ...placePayload,
       });
 
       if (createdPlace?.id) {
@@ -2346,6 +2394,43 @@ export default function CityPage() {
         description: eventDescription,
         link: eventLink,
       };
+
+      if (!canPublishDirect) {
+        const submissionRes = await createContentSubmission({
+          entityType: "event",
+          actionType: "create",
+          city,
+          title: eventName.trim(),
+          payload: insertBasePayload,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            memberName,
+          },
+          isTrustedContributor: false,
+        });
+
+        if (submissionRes.tableMissing) {
+          showToast("Moderation queue is not configured yet. Run supabase/content-submissions-v1.sql.", {
+            tone: "warn",
+            duration: 3200,
+          });
+          return;
+        }
+
+        if (submissionRes.error) {
+          showToast(submissionRes.error.message || "Could not submit event for review right now.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+
+        resetEventForm();
+        setAddEventMode(false);
+        showToast("Event submitted. Waiting for admin approval.", { tone: "info", duration: 2600 });
+        return;
+      }
 
       let insertResult = await supabase.from("events").insert([insertBasePayload]).select("*").single();
 
@@ -2468,6 +2553,43 @@ export default function CityPage() {
         }),
       };
 
+      if (!canPublishDirect) {
+        const submissionRes = await createContentSubmission({
+          entityType: "service",
+          actionType: "create",
+          city,
+          title: serviceName.trim(),
+          payload: basePayload,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            memberName,
+          },
+          isTrustedContributor: false,
+        });
+
+        if (submissionRes.tableMissing) {
+          showToast("Moderation queue is not configured yet. Run supabase/content-submissions-v1.sql.", {
+            tone: "warn",
+            duration: 3200,
+          });
+          return;
+        }
+
+        if (submissionRes.error) {
+          showToast(submissionRes.error.message || "Could not submit service for review right now.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+
+        resetServiceForm();
+        setAddServiceMode(false);
+        showToast("Service submitted. Waiting for admin approval.", { tone: "info", duration: 2600 });
+        return;
+      }
+
       let insertResult = await supabase
         .from("services")
         .insert([basePayload])
@@ -2551,7 +2673,7 @@ export default function CityPage() {
       });
       showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
     }
-  }, [city, fetchServices, geocodeAddress, memberName, resetServiceForm, serviceAddress, serviceBookingLink, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceName, servicePriceTier, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
+  }, [canPublishDirect, city, fetchServices, geocodeAddress, memberName, resetServiceForm, serviceAddress, serviceBookingLink, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceName, servicePriceTier, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
 
   const handleReport = ({ targetType, targetId, title }) => {
     setReportDraft(createCityReportDraftFromTarget({
@@ -3752,7 +3874,7 @@ export default function CityPage() {
   ]);
 
   const handleAdminDeleteService = useCallback(async () => {
-    if (!canEditSelectedService || !selectedService) return;
+    if (!isAdmin || !selectedService) return;
     const confirmed = window.confirm(`Delete service "${selectedService.name}" from atlas?`);
     if (!confirmed) return;
 
@@ -3782,7 +3904,7 @@ export default function CityPage() {
     } finally {
       setIsDeletingServiceAdmin(false);
     }
-  }, [canEditSelectedService, closeService, fetchServices, resolveServiceDbId, selectedService, showToast]);
+  }, [closeService, fetchServices, isAdmin, resolveServiceDbId, selectedService, showToast]);
 
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
@@ -4036,8 +4158,9 @@ export default function CityPage() {
         selectedServiceQualityStatus={selectedServiceQualityStatus}
         refreshEntityQuality={refreshEntityQuality}
         formatDate={formatDate}
-        canEditSelectedService={canEditSelectedService}
-        serviceAdminOpen={serviceAdminOpen}
+          canEditSelectedService={canEditSelectedService}
+          canDeleteSelectedService={canDeleteSelectedService}
+          serviceAdminOpen={serviceAdminOpen}
         toggleServiceAdminEditor={toggleServiceAdminEditor}
         serviceAdminDraft={serviceAdminDraft}
         setServiceAdminDraft={setServiceAdminDraft}

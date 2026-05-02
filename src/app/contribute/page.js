@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,13 @@ import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
-import { resolveAdminAccess } from "@/lib/adminAccess";
+import { resolveContributionAccess } from "@/lib/adminAccess";
+import {
+  createContentSubmission,
+  listContentSubmissions,
+  publishContentSubmission,
+  updateContentSubmissionStatus,
+} from "@/lib/contentSubmissions";
 import {
   blockItem,
   getBlockedItems,
@@ -221,7 +227,12 @@ export default function ContributePage() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const { toast, showToast } = useActionToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isTrustedContributor, setIsTrustedContributor] = useState(false);
   const [moderationSyncNotice, setModerationSyncNotice] = useState("");
+  const [pendingSubmissions, setPendingSubmissions] = useState([]);
+  const [isLoadingPendingSubmissions, setIsLoadingPendingSubmissions] = useState(false);
+  const [isProcessingSubmissionId, setIsProcessingSubmissionId] = useState("");
+  const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
   const [qaSnapshot, setQaSnapshot] = useState({
     places: [],
     events: [],
@@ -261,6 +272,7 @@ export default function ContributePage() {
     title: "",
     detail: "",
   });
+  const canPublishDirect = isAdmin || isTrustedContributor;
 
   useEffect(() => {
     if (!isMember) return;
@@ -431,11 +443,17 @@ export default function ContributePage() {
         setBlockedItems(getBlockedItems());
 
         let adminAccess = false;
+        let trustedAccess = false;
         const notices = [];
-        const adminAccessRes = await resolveAdminAccess({ email: user?.email });
-        adminAccess = Boolean(adminAccessRes.isAdmin);
+        const accessRes = await resolveContributionAccess({
+          email: user?.email,
+          userId: user?.id,
+        });
+        adminAccess = Boolean(accessRes?.isAdmin);
+        trustedAccess = Boolean(accessRes?.isTrustedContributor);
         setIsAdmin(adminAccess);
-        if (adminAccessRes.error && isMissingTableError(adminAccessRes.error)) {
+        setIsTrustedContributor(trustedAccess);
+        if (accessRes?.error && isMissingTableError(accessRes.error)) {
           notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
         }
 
@@ -457,6 +475,7 @@ export default function ContributePage() {
         setModerationSyncNotice(notices.join(" "));
       } catch {
         setIsAdmin(false);
+        setIsTrustedContributor(false);
         setReports([]);
         setBlockedItems(getBlockedItems());
         setModerationSyncNotice("Could not sync moderation right now.");
@@ -464,7 +483,7 @@ export default function ContributePage() {
         setIsReady(true);
       }
     });
-  }, [isAuthLoading, isMember, user?.email]);
+  }, [isAuthLoading, isMember, user?.email, user?.id]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -537,6 +556,43 @@ export default function ContributePage() {
     };
   }, [isAdmin, isMember]);
 
+  const refreshPendingSubmissions = useCallback(async () => {
+    if (!isAdmin) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("");
+      return;
+    }
+
+    setIsLoadingPendingSubmissions(true);
+    const result = await listContentSubmissions({ status: "pending", limit: 120 });
+    if (result.tableMissing) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("Submission queue is not configured yet. Run supabase/content-submissions-v1.sql.");
+      setIsLoadingPendingSubmissions(false);
+      return;
+    }
+    if (result.error) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("Could not load pending submissions right now.");
+      setIsLoadingPendingSubmissions(false);
+      return;
+    }
+    setPendingSubmissions(result.data || []);
+    setSubmissionSyncNotice("");
+    setIsLoadingPendingSubmissions(false);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      setPendingSubmissions([]);
+      setSubmissionSyncNotice("");
+      return;
+    }
+    queueMicrotask(() => {
+      refreshPendingSubmissions();
+    });
+  }, [isAdmin, refreshPendingSubmissions]);
+
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
@@ -606,6 +662,12 @@ export default function ContributePage() {
   };
 
   const submitPlaceDirect = async () => {
+    if (!isMember || !user?.id) {
+      setPlaceNotice("Join as member to contribute places.");
+      showToast("Join as member to contribute places.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
     if (!placeForm.name || !placeForm.address || !placeForm.description || !placeForm.hours || !(selectedCity || placeForm.city)) {
       setPlaceNotice("Fill in city, place name, address, description and opening hours.");
       showToast("Place not saved. Required fields are missing.", { tone: "warn", duration: 2400 });
@@ -626,17 +688,70 @@ export default function ContributePage() {
         return;
       }
 
-      const createdPlace = await addPlace({
+      const placePayload = {
         name: placeForm.name,
         type: placeForm.type,
         description: placeForm.description,
         hours: placeForm.hours,
-        link: placeForm.link,
+        link: placeForm.link || null,
         vibe: placeForm.vibe,
         vibe_tags: normalizeVibeTags(placeForm.vibe_tags, { max: 3 }),
         lat: coords.lat,
         lng: coords.lng,
         city: cityName,
+        location: placeForm.address,
+      };
+
+      if (!canPublishDirect) {
+        const submissionRes = await createContentSubmission({
+          entityType: "place",
+          actionType: "create",
+          city: cityName,
+          title: placeForm.name.trim(),
+          payload: placePayload,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            memberName,
+          },
+          isTrustedContributor: false,
+        });
+
+        if (submissionRes.tableMissing) {
+          setPlaceNotice("Moderation queue missing. Run supabase/content-submissions-v1.sql.");
+          showToast("Moderation queue is not configured yet.", { tone: "warn", duration: 3000 });
+          return;
+        }
+        if (submissionRes.error) {
+          setPlaceNotice(submissionRes.error.message || "Could not submit place for review.");
+          showToast(submissionRes.error.message || "Could not submit place for review.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+
+        setPlaceForm({
+          name: "",
+          city: "",
+          type: "club",
+          address: "",
+          description: "",
+          hours: "",
+          link: "",
+          vibe: "",
+          vibe_tags: [],
+          source: "",
+          lastChecked: "",
+        });
+        setAddMode(false);
+        setAtlasNotice("Place submitted for admin review.");
+        showToast("Place submitted. Waiting for admin approval.", { tone: "info", duration: 2500 });
+        return;
+      }
+
+      const createdPlace = await addPlace({
+        ...placePayload,
       });
 
       if (createdPlace?.id) {
@@ -674,6 +789,12 @@ export default function ContributePage() {
   };
 
   const submitEventDirect = async () => {
+    if (!isMember || !user?.id) {
+      setEventNotice("Join as member to contribute events.");
+      showToast("Join as member to contribute events.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
     if (!eventForm.name || !eventForm.address || !eventForm.date || !(selectedCity || eventForm.city)) {
       setEventNotice("Fill in city, event name, address and date.");
       showToast("Event not saved. Required fields are missing.", { tone: "warn", duration: 2400 });
@@ -711,6 +832,53 @@ export default function ContributePage() {
         description: eventForm.description,
         link: eventForm.link,
       };
+
+      if (!canPublishDirect) {
+        const submissionRes = await createContentSubmission({
+          entityType: "event",
+          actionType: "create",
+          city: cityName,
+          title: eventForm.name.trim(),
+          payload: insertBasePayload,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            memberName,
+          },
+          isTrustedContributor: false,
+        });
+
+        if (submissionRes.tableMissing) {
+          setEventNotice("Moderation queue missing. Run supabase/content-submissions-v1.sql.");
+          showToast("Moderation queue is not configured yet.", { tone: "warn", duration: 3000 });
+          return;
+        }
+        if (submissionRes.error) {
+          setEventNotice(submissionRes.error.message || "Could not submit event for review.");
+          showToast(submissionRes.error.message || "Could not submit event for review.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+
+        setEventForm({
+          name: "",
+          city: "",
+          address: "",
+          date: "",
+          description: "",
+          link: "",
+          vibe: "",
+          vibe_tags: [],
+          source: "",
+          lastChecked: "",
+        });
+        setAddEventMode(false);
+        setAtlasNotice("Event submitted for admin review.");
+        showToast("Event submitted. Waiting for admin approval.", { tone: "info", duration: 2500 });
+        return;
+      }
 
       let insertResult = await supabase
         .from("events")
@@ -868,6 +1036,45 @@ export default function ContributePage() {
       };
       if (!isEditing) {
         savePayload.created_by = user.id;
+      }
+
+      if (!canPublishDirect && !isEditing) {
+        const submissionRes = await createContentSubmission({
+          entityType: "service",
+          actionType: "create",
+          city: cityName,
+          title: serviceForm.name.trim(),
+          payload: savePayload,
+          user: {
+            id: user?.id,
+            email: user?.email,
+            memberName,
+          },
+          isTrustedContributor: false,
+        });
+
+        if (submissionRes.tableMissing) {
+          setServiceNotice("Moderation queue missing. Run supabase/content-submissions-v1.sql.");
+          showToast("Moderation queue is not configured yet.", { tone: "warn", duration: 3000 });
+          return;
+        }
+        if (submissionRes.error) {
+          setServiceNotice(submissionRes.error.message || "Could not submit service for review.");
+          showToast(submissionRes.error.message || "Could not submit service for review.", {
+            tone: "warn",
+            duration: 2600,
+          });
+          return;
+        }
+
+        const mappedCity = cityConfig[selectedCity]?.title?.replace("Queer ", "") || "";
+        setServiceForm({ ...createEmptyServiceForm(), city: mappedCity });
+        setServiceImageUrlDraft("");
+        setEditingServiceId("");
+        setAddServiceMode(false);
+        setAtlasNotice("Service submitted for admin review.");
+        showToast("Service submitted. Waiting for admin approval.", { tone: "info", duration: 2500 });
+        return;
       }
 
       let saveResult = null;
@@ -1069,6 +1276,61 @@ export default function ContributePage() {
     }
   };
 
+  const approvePendingSubmission = async (submission) => {
+    if (!isAdmin || !submission?.id) return;
+    setIsProcessingSubmissionId(String(submission.id));
+    try {
+      const publishRes = await publishContentSubmission({
+        submission,
+        reviewer: { id: user?.id, email: user?.email },
+      });
+
+      if (publishRes.tableMissing) {
+        showToast("Target table is missing in Supabase for this submission.", {
+          tone: "warn",
+          duration: 2600,
+        });
+        return;
+      }
+      if (publishRes.error) {
+        showToast(publishRes.error.message || "Could not publish submission.", {
+          tone: "warn",
+          duration: 2600,
+        });
+        return;
+      }
+
+      showToast("Submission approved and published.", { tone: "ok", duration: 2200 });
+      await refreshPendingSubmissions();
+    } finally {
+      setIsProcessingSubmissionId("");
+    }
+  };
+
+  const rejectPendingSubmission = async (submission) => {
+    if (!isAdmin || !submission?.id) return;
+    setIsProcessingSubmissionId(String(submission.id));
+    try {
+      const result = await updateContentSubmissionStatus({
+        submissionId: submission.id,
+        status: "rejected",
+        reviewer: { id: user?.id, email: user?.email },
+      });
+      if (result.tableMissing) {
+        showToast("Moderation queue is not configured yet.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      if (result.error) {
+        showToast(result.error.message || "Could not reject submission.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      showToast("Submission rejected.", { tone: "info", duration: 2200 });
+      await refreshPendingSubmissions();
+    } finally {
+      setIsProcessingSubmissionId("");
+    }
+  };
+
   const resolveReport = (reportId) => {
     if (!isAdmin) return;
     const updated = reports.map((report) =>
@@ -1141,6 +1403,7 @@ export default function ContributePage() {
 
   const openReports = reports.filter((report) => report.status !== "resolved");
   const resolvedReports = reports.filter((report) => report.status === "resolved");
+  const pendingSubmissionCount = pendingSubmissions.length;
   const visibleReports =
     reportFilter === "all"
       ? reports
@@ -1298,6 +1561,20 @@ export default function ContributePage() {
                 Grow the atlas with places, events, stories, guides, and corrections.
                 This is where community turns signal into infrastructure.
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${
+                  canPublishDirect
+                    ? "border-emerald-200/28 bg-emerald-200/14 text-emerald-100"
+                    : "border-amber-200/26 bg-amber-200/14 text-amber-100"
+                }`}>
+                  {canPublishDirect ? "Live publish enabled" : "Pending review mode"}
+                </span>
+                {isTrustedContributor && (
+                  <span className="rounded-full border border-cyan-200/28 bg-cyan-200/14 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
+                    Trusted contributor
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/25 p-4 backdrop-blur">
@@ -1337,12 +1614,19 @@ export default function ContributePage() {
             {moderationSyncNotice}
           </div>
         )}
+        {submissionSyncNotice && (
+          <div className="mb-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-100">
+            {submissionSyncNotice}
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-2">
           <section className="rounded-[28px] border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(8,39,32,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(16,185,129,0.08)]">
             <div className="mb-5">
               <p className="text-xs uppercase tracking-[0.25em] text-emerald-200">Add to Atlas</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Publish to {cityTitle}</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
+                {canPublishDirect ? `Publish to ${cityTitle}` : `Submit to ${cityTitle}`}
+              </h2>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -1577,8 +1861,8 @@ export default function ContributePage() {
                     onChange={(event) => setServiceForm((current) => ({ ...current, price_tier: event.target.value }))}
                     className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
                   >
-                    {SERVICE_PRICE_TIERS.map((item) => (
-                      <option key={item.value || "empty"} value={item.value}>
+                    {SERVICE_PRICE_TIERS.map((item, index) => (
+                      <option key={`service-price-tier-${index}-${item.value || "empty"}`} value={item.value}>
                         {item.label}
                       </option>
                     ))}
@@ -1586,7 +1870,14 @@ export default function ContributePage() {
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="rounded-xl border border-cyan-200/20 bg-cyan-200/[0.08] px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/80">Service announcer</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/80">Service announcer</p>
+                      {isTrustedContributor && (
+                        <span className="rounded-full border border-cyan-200/35 bg-cyan-200/14 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100">
+                          Trusted contributor
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-1 text-sm text-cyan-50/95">{String(memberName || user?.email || "Member account")}</p>
                     <p className="mt-1 text-xs text-cyan-100/70">Only member-owned services are allowed. Third-party partner listings are blocked.</p>
                   </div>
@@ -1971,6 +2262,86 @@ export default function ContributePage() {
                   </article>
                 </div>
               </>
+            )}
+          </section>
+        )}
+
+        {isAdmin && (
+          <section className="mt-6 rounded-[28px] border border-indigo-300/15 bg-[linear-gradient(180deg,rgba(24,22,58,0.95),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(129,140,248,0.08)]">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-indigo-200">Submission Queue</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Pending member entries</h2>
+                <p className="mt-2 text-sm text-white/65">
+                  Review member-added venues, events, and services before they go live.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border border-indigo-200/24 bg-indigo-200/10 px-3 py-1 text-xs text-indigo-100">
+                  Pending: {pendingSubmissionCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={refreshPendingSubmissions}
+                  className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-xs text-white/80 transition hover:border-indigo-200/35 hover:text-indigo-100"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {isLoadingPendingSubmissions ? (
+              <div className="rounded-2xl border border-dashed border-white/12 px-5 py-8 text-sm text-white/55">
+                Loading pending submissions...
+              </div>
+            ) : pendingSubmissions.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/12 px-5 py-8 text-sm text-white/55">
+                No pending submissions right now.
+              </div>
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-2">
+                {pendingSubmissions.map((submission) => {
+                  const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
+                  const statusBusy = isProcessingSubmissionId === String(submission.id);
+                  const submissionName = String(submission?.title || payload?.name || "Untitled");
+                  return (
+                    <article key={submission.id} className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-xs uppercase tracking-[0.16em] text-indigo-100/85">
+                          {String(submission.entity_type || "item")} · {formatCityLabel(String(submission.city || "global"))}
+                        </p>
+                        <p className="text-xs text-white/45">{timeAgo(submission.created_at)}</p>
+                      </div>
+                      <h3 className="mt-2 text-sm font-semibold text-white">{submissionName}</h3>
+                      <p className="mt-2 text-xs text-white/65">
+                        by {String(submission.submitted_by_name || submission.submitted_by_email || "Member")}
+                        {submission.is_trusted_contributor ? " · trusted" : ""}
+                      </p>
+                      {payload?.description && (
+                        <p className="mt-2 line-clamp-3 text-sm text-white/70">{String(payload.description)}</p>
+                      )}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => approvePendingSubmission(submission)}
+                          disabled={statusBusy}
+                          className="rounded-full border border-emerald-200/26 bg-emerald-200/12 px-3 py-1 text-xs text-emerald-100 transition hover:border-emerald-200/45 disabled:opacity-60"
+                        >
+                          {statusBusy ? "Working..." : "Approve & publish"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => rejectPendingSubmission(submission)}
+                          disabled={statusBusy}
+                          className="rounded-full border border-rose-200/26 bg-rose-200/12 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/45 disabled:opacity-60"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
             )}
           </section>
         )}

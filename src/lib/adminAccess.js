@@ -39,3 +39,69 @@ export async function resolveAdminAccess({ client = supabase, email = "" } = {})
   }
 }
 
+function isMissingColumnOrTableError(error) {
+  const code = String(error?.code || "").toLowerCase();
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    code === "42p01" ||
+    code === "pgrst205" ||
+    message.includes("does not exist") ||
+    message.includes("schema cache")
+  );
+}
+
+export async function resolveContributionAccess({ client = supabase, email = "", userId = "" } = {}) {
+  const adminAccess = await resolveAdminAccess({ client, email });
+  const isAdmin = Boolean(adminAccess?.isAdmin);
+
+  if (isAdmin) {
+    return {
+      isAdmin: true,
+      isTrustedContributor: true,
+      canPublishDirect: true,
+      error: adminAccess?.error || null,
+    };
+  }
+
+  const normalizedUserId = String(userId || "").trim();
+  if (!normalizedUserId) {
+    return {
+      isAdmin: false,
+      isTrustedContributor: false,
+      canPublishDirect: false,
+      error: adminAccess?.error || null,
+    };
+  }
+
+  try {
+    const { data, error } = await client
+      .from("member_profiles")
+      .select("trusted_contributor")
+      .eq("user_id", normalizedUserId)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        isAdmin: false,
+        isTrustedContributor: false,
+        canPublishDirect: false,
+        error: isMissingColumnOrTableError(error) ? null : error,
+      };
+    }
+
+    const isTrustedContributor = Boolean(data?.trusted_contributor);
+    return {
+      isAdmin: false,
+      isTrustedContributor,
+      canPublishDirect: isTrustedContributor,
+      error: adminAccess?.error || null,
+    };
+  } catch (error) {
+    return {
+      isAdmin: false,
+      isTrustedContributor: false,
+      canPublishDirect: false,
+      error,
+    };
+  }
+}

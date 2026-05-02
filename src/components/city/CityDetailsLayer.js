@@ -20,6 +20,7 @@ export default function CityDetailsLayer({
   refreshEntityQuality,
   formatDate,
   canEditSelectedService,
+  canDeleteSelectedService,
   serviceAdminOpen,
   toggleServiceAdminEditor,
   serviceAdminDraft,
@@ -148,6 +149,7 @@ export default function CityDetailsLayer({
           refreshEntityQuality={refreshEntityQuality}
           formatDate={formatDate}
           canEditSelectedService={canEditSelectedService}
+          canDeleteSelectedService={canDeleteSelectedService}
           serviceAdminOpen={serviceAdminOpen}
           onToggleServiceAdmin={toggleServiceAdminEditor}
           serviceAdminDraft={serviceAdminDraft}

@@ -16,6 +16,7 @@ export default function SelectedServicePanel({
   refreshEntityQuality,
   formatDate,
   canEditSelectedService,
+  canDeleteSelectedService,
   serviceAdminOpen,
   onToggleServiceAdmin,
   serviceAdminDraft,
@@ -75,6 +76,7 @@ export default function SelectedServicePanel({
           isSaving={isSavingServiceAdmin}
           onDelete={onDeleteService}
           isDeleting={isDeletingServiceAdmin}
+          canDelete={canDeleteSelectedService}
           serviceTypes={serviceTypes}
           priceTierOptions={priceTierOptions}
         />

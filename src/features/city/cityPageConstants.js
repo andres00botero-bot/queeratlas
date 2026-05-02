@@ -75,6 +75,7 @@ export const SERVICE_TYPES = [
   { value: "massage", label: "Massage", color: "#22d3ee" },
   { value: "tour", label: "Travel Tour", color: "#60a5fa" },
   { value: "wellness", label: "Wellness", color: "#14b8a6" },
+  { value: "gay_store", label: "Gay Store", color: "#a78bfa" },
   { value: "escort", label: "Escort", color: "#f59e0b" },
   { value: "styling", label: "Styling", color: "#f472b6" },
   { value: "concierge", label: "Concierge", color: "#e879f9" },
@@ -86,6 +87,7 @@ export const SERVICE_TYPE_LABELS = {
   massage: "Massage",
   tour: "Travel Tour",
   wellness: "Wellness",
+  gay_store: "Gay Store",
   escort: "Escort",
   styling: "Styling",
   concierge: "Concierge",
@@ -108,6 +110,11 @@ export const SERVICE_TYPE_STYLES = {
     card: "border-teal-300/12 bg-[linear-gradient(180deg,rgba(10,63,58,0.34),rgba(15,15,15,0.96))]",
     label: "text-teal-100",
     line: "from-teal-300/75 via-emerald-300/45 to-transparent",
+  },
+  gay_store: {
+    card: "border-violet-300/12 bg-[linear-gradient(180deg,rgba(54,33,97,0.34),rgba(15,15,15,0.96))]",
+    label: "text-violet-100",
+    line: "from-violet-300/75 via-indigo-300/45 to-transparent",
   },
   escort: {
     card: "border-amber-300/12 bg-[linear-gradient(180deg,rgba(86,48,8,0.34),rgba(15,15,15,0.96))]",
