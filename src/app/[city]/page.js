@@ -316,6 +316,7 @@ export default function CityPage() {
   const guideSectionRef = useRef(null);
   const servicesSectionRef = useRef(null);
   const placesSectionRef = useRef(null);
+  const venueGroupRefs = useRef({});
   const addEventFormRef = useRef(null);
   const addServiceFormRef = useRef(null);
   const mapRef = useRef(null);
@@ -349,6 +350,16 @@ export default function CityPage() {
       behavior: "smooth",
       block: "start",
     });
+  }, []);
+
+  const setVenueGroupRef = useCallback((groupValue, node) => {
+    const key = String(groupValue || "").trim();
+    if (!key) return;
+    if (!node) {
+      delete venueGroupRefs.current[key];
+      return;
+    }
+    venueGroupRefs.current[key] = node;
   }, []);
 
   const handleDesktopPanelWheel = useCallback((event) => {
@@ -819,6 +830,36 @@ export default function CityPage() {
     () => groupedPlaces.filter((group) => group.items.length > 0),
     [groupedPlaces]
   );
+  const venueJumpGroups = useMemo(
+    () =>
+      visiblePlaceGroups.map((group) => ({
+        value: String(group.value || ""),
+        label: String(group.label || group.value || "Venues"),
+        count: Array.isArray(group.items) ? group.items.length : 0,
+      })),
+    [visiblePlaceGroups]
+  );
+  const handleGoVenueType = useCallback((groupValue) => {
+    const key = String(groupValue || "").trim();
+    if (!key) {
+      scrollToSection(placesSectionRef);
+      return;
+    }
+
+    const targetNode = venueGroupRefs.current[key];
+    if (targetNode) {
+      targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      scrollToSection(placesSectionRef);
+    }
+
+    const targetGroup = visiblePlaceGroups.find((group) => String(group?.value || "") === key);
+    const firstPlace = targetGroup?.items?.[0];
+    if (firstPlace?.id) {
+      setHoveredPlaceId(String(firstPlace.id));
+      window.setTimeout(() => setHoveredPlaceId(null), 1200);
+    }
+  }, [scrollToSection, visiblePlaceGroups]);
 
   const servicesByType = useMemo(
     () =>
@@ -4023,6 +4064,8 @@ export default function CityPage() {
           onGoGuide={() => scrollToSection(guideSectionRef)}
           onGoServices={() => scrollToSection(servicesSectionRef)}
           onGoVenues={() => scrollToSection(placesSectionRef)}
+          onGoVenueType={handleGoVenueType}
+          venueJumpGroups={venueJumpGroups}
         />
 
         <CityTonightSection
@@ -4138,6 +4181,7 @@ export default function CityPage() {
           onJoinToPublish={redirectToJoin}
           visiblePlaceGroups={visiblePlaceGroups}
           firstGroupRef={placesSectionRef}
+          setPlaceGroupRef={setVenueGroupRef}
           isFocusMode={isFocusMode}
           selectedPlaceId={selectedPlace?.id}
           hoveredPlaceId={hoveredPlaceId}

@@ -11,6 +11,7 @@ export default function CityPlacesSection({
   onJoinToPublish,
   visiblePlaceGroups,
   firstGroupRef,
+  setPlaceGroupRef,
   isFocusMode,
   selectedPlaceId,
   hoveredPlaceId,
@@ -65,9 +66,21 @@ export default function CityPlacesSection({
       )}
 
       {visiblePlaceGroups.map((group, groupIndex) => {
+        const attachGroupRef = (node) => {
+          if (groupIndex === 0 && firstGroupRef) {
+            if (typeof firstGroupRef === "function") {
+              firstGroupRef(node);
+            } else {
+              firstGroupRef.current = node;
+            }
+          }
+          if (typeof setPlaceGroupRef === "function") {
+            setPlaceGroupRef(group.value, node);
+          }
+        };
         return (
           <div
-            ref={groupIndex === 0 ? firstGroupRef : null}
+            ref={attachGroupRef}
             key={group.value}
             className={`qa-city-section animate-cinematic-in mb-10 border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)] ${
               groupIndex % 2 === 0 ? "rounded-[34px]" : "rounded-[28px]"

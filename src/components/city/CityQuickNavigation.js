@@ -1,11 +1,30 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
+
 export default function CityQuickNavigation({
   onGoEvents,
   onGoGuide,
   onGoServices,
   onGoVenues,
+  onGoVenueType,
+  venueJumpGroups = [],
 }) {
+  const [showVenuePicker, setShowVenuePicker] = useState(false);
+
+  const venueGroups = useMemo(
+    () =>
+      (Array.isArray(venueJumpGroups) ? venueJumpGroups : [])
+        .filter((group) => String(group?.value || "").trim())
+        .map((group) => ({
+          value: String(group.value),
+          label: String(group.label || group.value),
+          count: Number(group.count || 0),
+        })),
+    [venueJumpGroups]
+  );
+
   const items = [
     {
       key: "events",
@@ -33,7 +52,9 @@ export default function CityQuickNavigation({
     },
     {
       key: "venues",
-      onClick: onGoVenues,
+      onClick: () => {
+        setShowVenuePicker((current) => !current);
+      },
       label: "Venues",
       eyebrow: "Jump to",
       className:
@@ -53,13 +74,61 @@ export default function CityQuickNavigation({
             key={item.key}
             type="button"
             onClick={item.onClick}
+            onMouseEnter={
+              item.key === "venues"
+                ? () => {
+                    setShowVenuePicker(true);
+                  }
+                : undefined
+            }
             className={`qa-cinematic-hover rounded-2xl border px-4 py-3 text-left text-sm transition ${item.className}`}
           >
             <p className="text-[10px] uppercase tracking-[0.14em] opacity-80">{item.eyebrow}</p>
-            <p className="mt-1 font-semibold">{item.label}</p>
+            <p className="mt-1 flex items-center justify-between gap-2 font-semibold">
+              <span>{item.label}</span>
+              {item.key === "venues" ? (
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition ${showVenuePicker ? "rotate-180" : "rotate-0"}`}
+                  aria-hidden="true"
+                />
+              ) : null}
+            </p>
           </button>
         ))}
       </div>
+
+      {showVenuePicker && venueGroups.length > 0 ? (
+        <div className="mt-3 rounded-2xl border border-amber-200/24 bg-[linear-gradient(140deg,rgba(251,191,36,0.13),rgba(12,10,9,0.9))] p-3">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-amber-100/75">Jump to venue vibe</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              key="venue-jump-all"
+              type="button"
+              onClick={() => {
+                onGoVenues?.();
+                setShowVenuePicker(false);
+              }}
+              className="qa-action rounded-full border border-white/30 bg-white/14 px-3 py-1.5 text-[11px] text-white transition hover:border-white/55 hover:bg-white/20"
+            >
+              All venues
+            </button>
+            {venueGroups.map((group) => (
+              <button
+                key={`venue-jump-${group.value}`}
+                type="button"
+                onClick={() => {
+                  onGoVenueType?.(group.value);
+                  setShowVenuePicker(false);
+                }}
+                className="qa-action rounded-full border border-amber-200/30 bg-amber-200/12 px-3 py-1.5 text-[11px] text-amber-100 transition hover:border-amber-200/55 hover:bg-amber-200/18"
+              >
+                {group.label}
+                {group.count > 0 ? ` • ${group.count}` : ""}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
