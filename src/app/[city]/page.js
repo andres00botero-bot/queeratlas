@@ -20,7 +20,7 @@ import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
 import { trackKpiEvent } from "@/lib/analytics";
 import { showActionFeedback } from "@/lib/actionFeedback";
-import { resolveContributionAccess } from "@/lib/adminAccess";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import { createContentSubmission } from "@/lib/contentSubmissions";
 import {
   buildVibeDualWriteFields,
@@ -376,14 +376,25 @@ export default function CityPage() {
         return;
       }
 
-      const access = await resolveContributionAccess({
+      const adminRes = await resolveAdminAccess({
         email: user?.email,
-        userId: user?.id,
       });
+      const isAdminAccess = Boolean(adminRes?.isAdmin);
+      let trustedAccess = false;
+      if (isAdminAccess) {
+        trustedAccess = true;
+      } else if (user?.id) {
+        const profileRes = await supabase
+          .from("member_profiles")
+          .select("trusted_contributor")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        trustedAccess = Boolean(profileRes?.data?.trusted_contributor);
+      }
 
       if (active) {
-        setIsAdmin(Boolean(access?.isAdmin));
-        setIsTrustedContributor(Boolean(access?.isTrustedContributor));
+        setIsAdmin(isAdminAccess);
+        setIsTrustedContributor(trustedAccess);
       }
     });
 

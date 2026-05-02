@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
 import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
-import { resolveContributionAccess } from "@/lib/adminAccess";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   createContentSubmission,
   listContentSubmissions,
@@ -445,15 +445,26 @@ export default function ContributePage() {
         let adminAccess = false;
         let trustedAccess = false;
         const notices = [];
-        const accessRes = await resolveContributionAccess({
+        const adminRes = await resolveAdminAccess({
           email: user?.email,
-          userId: user?.id,
         });
-        adminAccess = Boolean(accessRes?.isAdmin);
-        trustedAccess = Boolean(accessRes?.isTrustedContributor);
+        adminAccess = Boolean(adminRes?.isAdmin);
+        if (adminAccess) {
+          trustedAccess = true;
+        } else if (user?.id) {
+          const profileRes = await supabase
+            .from("member_profiles")
+            .select("trusted_contributor")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (profileRes.error && isMissingTableError(profileRes.error)) {
+            notices.push("Member profiles are missing trusted contributor column. Run the latest Supabase SQL scripts.");
+          }
+          trustedAccess = Boolean(profileRes?.data?.trusted_contributor);
+        }
         setIsAdmin(adminAccess);
         setIsTrustedContributor(trustedAccess);
-        if (accessRes?.error && isMissingTableError(accessRes.error)) {
+        if (adminRes?.error && isMissingTableError(adminRes.error)) {
           notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
         }
 
