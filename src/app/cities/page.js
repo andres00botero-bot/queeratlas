@@ -168,7 +168,12 @@ export default function CitiesPage() {
   const countryMapContainerRef = useRef(null);
   const countryMapRef = useRef(null);
   const { places, isLoading } = usePlaces();
-  const { profiles: countryRightsProfiles, refresh: refreshCountryRightsProfiles } = useCountryRightsProfiles();
+  const {
+    profiles: countryRightsProfiles,
+    isLoading: isCountryRightsLoading,
+    loadError: countryRightsLoadError,
+    refresh: refreshCountryRightsProfiles,
+  } = useCountryRightsProfiles();
   const lastExploredCity = useSyncExternalStore(
     subscribeLastExploredCity,
     getLastExploredCitySnapshot,
@@ -467,11 +472,17 @@ export default function CitiesPage() {
   }, [filteredCities]);
 
   const countryRightsSnapshots = useMemo(() => {
-    const dbByCountry = new Map(
-      (Array.isArray(countryRightsProfiles) ? countryRightsProfiles : [])
-        .filter((profile) => profile?.country)
-        .map((profile) => [String(profile.country), profile]),
-    );
+    const dbByCountry = new Map();
+    (Array.isArray(countryRightsProfiles) ? countryRightsProfiles : [])
+      .filter((profile) => profile?.country)
+      .forEach((profile) => {
+        const normalizedKey = normalizeCountry(profile.country);
+        if (!normalizedKey) return;
+        const existing = dbByCountry.get(normalizedKey);
+        if (!existing || String(profile.updated_at || "") > String(existing.updated_at || "")) {
+          dbByCountry.set(normalizedKey, profile);
+        }
+      });
 
     const hasMeaningfulLevels = (snapshot) => {
       if (!snapshot) return false;
@@ -482,7 +493,7 @@ export default function CitiesPage() {
     const entries = availableCountries.map((country) => [
       country,
       (() => {
-        const fromDb = buildRightsSnapshotFromProfile(dbByCountry.get(country));
+        const fromDb = buildRightsSnapshotFromProfile(dbByCountry.get(normalizeCountry(country)));
         if (hasMeaningfulLevels(fromDb)) return fromDb;
         return getCityRightsSignals({ country });
       })(),
@@ -491,11 +502,24 @@ export default function CitiesPage() {
   }, [availableCountries, countryRightsProfiles]);
 
   const countryRightsProfilesByCountry = useMemo(() => {
-    const pairs = (Array.isArray(countryRightsProfiles) ? countryRightsProfiles : [])
+    const map = {};
+    (Array.isArray(countryRightsProfiles) ? countryRightsProfiles : [])
       .filter((profile) => profile?.country)
-      .map((profile) => [String(profile.country), profile]);
-    return Object.fromEntries(pairs);
+      .forEach((profile) => {
+        const normalizedKey = normalizeCountry(profile.country);
+        if (!normalizedKey) return;
+        const existing = map[normalizedKey];
+        if (!existing || String(profile.updated_at || "") > String(existing.updated_at || "")) {
+          map[normalizedKey] = profile;
+        }
+      });
+    return map;
   }, [countryRightsProfiles]);
+
+  const countryRightsEmptyStateWarning =
+    !isCountryRightsLoading &&
+    !countryRightsLoadError &&
+    (!Array.isArray(countryRightsProfiles) || countryRightsProfiles.length === 0);
 
   const visibleCountries = Object.keys(groupedCities).sort();
   const totalCities = Object.keys(cityConfig).length;
@@ -528,7 +552,7 @@ export default function CitiesPage() {
 
   const openCountryEditor = useCallback(
     (country) => {
-      const profile = countryRightsProfilesByCountry[country] || null;
+      const profile = countryRightsProfilesByCountry[normalizeCountry(country)] || null;
       setEditingCountry(country);
       setCountryEditorDraft(createCountryRightsDraft(country, profile));
       setCountryEditorError("");
@@ -885,6 +909,16 @@ export default function CitiesPage() {
 
                   <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-3">
                     <CityRightsSignals snapshot={countryRightsSnapshots[country]} />
+                    {countryRightsLoadError ? (
+                      <p className="mt-2 text-[11px] text-rose-200/85">
+                        Could not load live country rights data from Supabase. Showing fallback signals.
+                      </p>
+                    ) : countryRightsEmptyStateWarning ? (
+                      <p className="mt-2 text-[11px] text-amber-200/85">
+                        No country rights rows are visible to this client role in Supabase. Check RLS SELECT policy for
+                        qa_country_rights_profiles.
+                      </p>
+                    ) : null}
                   </div>
                   {isAdmin && editingCountry === country && (
                     <CountryRightsAdminEditor
