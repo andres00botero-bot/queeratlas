@@ -126,7 +126,9 @@ export default function CityRightsSignals({ snapshot }) {
         })}
       </div>
 
-      <p className="qa-clamp-2 text-[12px] leading-relaxed text-white/58">{snapshot.whatThisMeans}</p>
+      <p className="break-words text-[12px] leading-relaxed text-white/58 sm:qa-clamp-2">
+        {snapshot.whatThisMeans}
+      </p>
 
       <button
         type="button"
