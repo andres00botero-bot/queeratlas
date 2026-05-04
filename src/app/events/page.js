@@ -719,6 +719,24 @@ export default function EventsPage() {
     });
   }, []);
 
+  const openNowSignal = useCallback(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const today = `${year}-${month}-${day}`;
+
+    setSelectedDate(today);
+
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      eventListSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, []);
+
   return (
     <main className="qa-page min-h-screen overflow-x-hidden bg-[#050608] text-white">
       <div className="relative">
@@ -775,7 +793,7 @@ export default function EventsPage() {
                   </div>
 
                   <button
-                    onClick={() => router.push("/now")}
+                    onClick={openNowSignal}
                     className="qa-action qa-cta-primary rounded-full border border-cyan-200/30 bg-cyan-200/14 px-4 py-2 text-xs text-cyan-50 transition hover:border-cyan-200/42 hover:bg-cyan-200/20"
                   >
                     Open Now
