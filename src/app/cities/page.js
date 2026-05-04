@@ -3,9 +3,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import mapboxgl from "mapbox-gl";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 import { cityConfig } from "@/lib/cities";
+import { buildRightsSnapshotFromProfile, getCityRightsSignals } from "@/lib/cityRightsSignals";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
+import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
+import CityRightsSignals from "@/components/cities/CityRightsSignals";
+import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
 import EmptyState from "@/components/ui/EmptyState";
 
 const COUNTRY_TONES = [
@@ -114,14 +121,44 @@ function resolveMapboxCountryToAppCountry(mapboxName, countries) {
   return null;
 }
 
+function normalizeStatusToken(value = "") {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function createCountryRightsDraft(country, profile = null) {
+  return {
+    country: String(country || ""),
+    legal_level: String(profile?.legal_level || "unknown"),
+    rights_level: String(profile?.rights_level || "unknown"),
+    safety_level: String(profile?.safety_level || "unknown"),
+    same_sex_relations_status: String(profile?.same_sex_relations_status || "unknown"),
+    union_status: String(profile?.union_status || "unknown"),
+    legal_gender_recognition_status: String(profile?.legal_gender_recognition_status || "unknown"),
+    anti_discrimination_status: String(profile?.anti_discrimination_status || "unknown"),
+    what_this_means: String(profile?.what_this_means || "").trim(),
+    confidence: String(profile?.confidence || "low"),
+    source_legal_url: String(profile?.source_legal_url || "").trim(),
+    source_rights_url: String(profile?.source_rights_url || "").trim(),
+    source_safety_url: String(profile?.source_safety_url || "").trim(),
+    needs_manual_review: Boolean(profile?.needs_manual_review),
+  };
+}
+
 export default function CitiesPage() {
   const router = useRouter();
+  const { user, isMember, isLoading: isAuthLoading } = useAuth();
   const isMapboxStylesReady = useMapboxStylesheet();
   const [query, setQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [countryPickerOpen, setCountryPickerOpen] = useState(false);
   const [countryPickerQuery, setCountryPickerQuery] = useState("");
   const [mapError, setMapError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [editingCountry, setEditingCountry] = useState("");
+  const [countryEditorDraft, setCountryEditorDraft] = useState(null);
+  const [isSavingCountryProfile, setIsSavingCountryProfile] = useState(false);
+  const [countryEditorError, setCountryEditorError] = useState("");
+  const [countryEditorSuccess, setCountryEditorSuccess] = useState("");
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
@@ -131,6 +168,7 @@ export default function CitiesPage() {
   const countryMapContainerRef = useRef(null);
   const countryMapRef = useRef(null);
   const { places, isLoading } = usePlaces();
+  const { profiles: countryRightsProfiles, refresh: refreshCountryRightsProfiles } = useCountryRightsProfiles();
   const lastExploredCity = useSyncExternalStore(
     subscribeLastExploredCity,
     getLastExploredCitySnapshot,
@@ -428,6 +466,37 @@ export default function CitiesPage() {
     }, {});
   }, [filteredCities]);
 
+  const countryRightsSnapshots = useMemo(() => {
+    const dbByCountry = new Map(
+      (Array.isArray(countryRightsProfiles) ? countryRightsProfiles : [])
+        .filter((profile) => profile?.country)
+        .map((profile) => [String(profile.country), profile]),
+    );
+
+    const hasMeaningfulLevels = (snapshot) => {
+      if (!snapshot) return false;
+      const levels = [snapshot.legal?.level, snapshot.rights?.level, snapshot.safety?.level];
+      return levels.some((level) => level && level !== "unknown");
+    };
+
+    const entries = availableCountries.map((country) => [
+      country,
+      (() => {
+        const fromDb = buildRightsSnapshotFromProfile(dbByCountry.get(country));
+        if (hasMeaningfulLevels(fromDb)) return fromDb;
+        return getCityRightsSignals({ country });
+      })(),
+    ]);
+    return Object.fromEntries(entries);
+  }, [availableCountries, countryRightsProfiles]);
+
+  const countryRightsProfilesByCountry = useMemo(() => {
+    const pairs = (Array.isArray(countryRightsProfiles) ? countryRightsProfiles : [])
+      .filter((profile) => profile?.country)
+      .map((profile) => [String(profile.country), profile]);
+    return Object.fromEntries(pairs);
+  }, [countryRightsProfiles]);
+
   const visibleCountries = Object.keys(groupedCities).sort();
   const totalCities = Object.keys(cityConfig).length;
   const totalCountries = countries.length - 1;
@@ -436,6 +505,88 @@ export default function CitiesPage() {
   const visibleCountryCount = visibleCountries.length;
   const activeFilterLabel = selectedCountry === "All" ? "All countries" : selectedCountry;
   const filterModeLabel = query ? "Search + country filter" : "Country filter";
+
+  useEffect(() => {
+    if (isAuthLoading) return;
+
+    if (!isMember || !user?.email) {
+      setIsAdmin(false);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      const result = await resolveAdminAccess({ email: user.email });
+      if (!active) return;
+      setIsAdmin(Boolean(result?.isAdmin));
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, isMember, user?.email]);
+
+  const openCountryEditor = useCallback(
+    (country) => {
+      const profile = countryRightsProfilesByCountry[country] || null;
+      setEditingCountry(country);
+      setCountryEditorDraft(createCountryRightsDraft(country, profile));
+      setCountryEditorError("");
+      setCountryEditorSuccess("");
+    },
+    [countryRightsProfilesByCountry],
+  );
+
+  const closeCountryEditor = useCallback(() => {
+    setEditingCountry("");
+    setCountryEditorDraft(null);
+    setCountryEditorError("");
+    setCountryEditorSuccess("");
+  }, []);
+
+  const saveCountryEditor = useCallback(async () => {
+    if (!isAdmin || !countryEditorDraft?.country) return;
+
+    setIsSavingCountryProfile(true);
+    setCountryEditorError("");
+    setCountryEditorSuccess("");
+
+    try {
+      const payload = {
+        country: String(countryEditorDraft.country),
+        legal_level: normalizeStatusToken(countryEditorDraft.legal_level),
+        rights_level: normalizeStatusToken(countryEditorDraft.rights_level),
+        safety_level: normalizeStatusToken(countryEditorDraft.safety_level),
+        same_sex_relations_status: normalizeStatusToken(countryEditorDraft.same_sex_relations_status),
+        union_status: normalizeStatusToken(countryEditorDraft.union_status),
+        legal_gender_recognition_status: normalizeStatusToken(countryEditorDraft.legal_gender_recognition_status),
+        anti_discrimination_status: normalizeStatusToken(countryEditorDraft.anti_discrimination_status),
+        what_this_means: String(countryEditorDraft.what_this_means || "").trim(),
+        confidence: normalizeStatusToken(countryEditorDraft.confidence),
+        source_legal_url: String(countryEditorDraft.source_legal_url || "").trim() || null,
+        source_rights_url: String(countryEditorDraft.source_rights_url || "").trim() || null,
+        source_safety_url: String(countryEditorDraft.source_safety_url || "").trim() || null,
+        needs_manual_review: Boolean(countryEditorDraft.needs_manual_review),
+        source_checked_at: new Date().toISOString().slice(0, 10),
+      };
+
+      const { error } = await supabase
+        .from("qa_country_rights_profiles")
+        .upsert(payload, { onConflict: "country" });
+
+      if (error) {
+        setCountryEditorError(String(error.message || "Could not save country rights profile."));
+        return;
+      }
+
+      setCountryEditorSuccess("Country rights profile saved.");
+      await refreshCountryRightsProfiles();
+    } catch (error) {
+      setCountryEditorError(String(error?.message || "Could not save country rights profile."));
+    } finally {
+      setIsSavingCountryProfile(false);
+    }
+  }, [countryEditorDraft, isAdmin, refreshCountryRightsProfiles]);
 
   useEffect(() => {
     if (!backRestoreCity || typeof window === "undefined") return;
@@ -721,7 +872,32 @@ export default function CitiesPage() {
                     <div className="text-xs text-white/38">
                       {groupedCities[country].length} cities · {visibleCountryCount} active countries
                     </div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => openCountryEditor(country)}
+                        className="rounded-full border border-cyan-200/28 bg-cyan-300/12 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100/88 transition hover:border-cyan-200/45 hover:text-white"
+                      >
+                        Edit rights
+                      </button>
+                    )}
                   </div>
+
+                  <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-3">
+                    <CityRightsSignals snapshot={countryRightsSnapshots[country]} />
+                  </div>
+                  {isAdmin && editingCountry === country && (
+                    <CountryRightsAdminEditor
+                      country={country}
+                      draft={countryEditorDraft}
+                      setDraft={setCountryEditorDraft}
+                      isSaving={isSavingCountryProfile}
+                      onSave={saveCountryEditor}
+                      onCancel={closeCountryEditor}
+                      saveError={countryEditorError}
+                      saveSuccess={countryEditorSuccess}
+                    />
+                  )}
 
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {groupedCities[country].map((city, cityIndex) => (
