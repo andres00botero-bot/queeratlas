@@ -12,6 +12,7 @@ import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
+import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
 
 function isThisWeek(value, now) {
@@ -1565,6 +1566,13 @@ export default function NowPage() {
                       </span>
                     </div>
                     <h3 className="mt-3 text-lg font-semibold text-white">{event.name}</h3>
+                    <VibeTagChips
+                      entity={event}
+                      tone="fuchsia"
+                      className="mt-2"
+                      includeTypeFallback
+                      includeMixedFallback
+                    />
                     <p
                       className={`mt-3 text-sm leading-6 text-white/68 transition-all ${
                         String(expandedSoonEventId) === String(event.id) ? "" : "line-clamp-2"
