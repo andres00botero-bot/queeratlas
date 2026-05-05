@@ -68,6 +68,39 @@ function eventFreshnessBoost(dateValue, nowTs) {
   return 1;
 }
 
+function namePriorityBoost(name, query) {
+  const value = normalizeValue(name);
+  if (!value || !query) return 0;
+  if (value === query) return 220;
+  if (value.startsWith(query)) return 150;
+  if (value.includes(` ${query}`)) return 95;
+  if (value.includes(query)) return 60;
+  return 0;
+}
+
+function queryIntentBoost(targetType, query) {
+  const value = normalizeValue(query);
+  if (!value) return 0;
+
+  const eventHints = ["festival", "pride", "party", "weekend", "parade", "march", "event"];
+  const placeHints = ["bar", "club", "sauna", "hotel", "cafe", "café", "beach", "cruise", "massage", "store", "service"];
+
+  const eventSignal = eventHints.some((hint) => value.includes(hint));
+  const placeSignal = placeHints.some((hint) => value.includes(hint));
+
+  if (eventSignal && !placeSignal) {
+    if (targetType === "event") return 28;
+    if (targetType === "place") return -10;
+  }
+
+  if (placeSignal && !eventSignal) {
+    if (targetType === "place") return 24;
+    if (targetType === "event") return -8;
+  }
+
+  return 0;
+}
+
 export function buildAtlasSearchResults({
   query,
   places,
@@ -101,6 +134,7 @@ export function buildAtlasSearchResults({
       const cityName = city.title.replace("Queer ", "");
       const cityKey = normalizeValue(cityName);
       const cityAffinity = preferredCityKey && cityKey === preferredCityKey ? 18 : 0;
+      const nameBoost = namePriorityBoost(cityName, normalized);
       return {
         id: key,
         key,
@@ -110,7 +144,7 @@ export function buildAtlasSearchResults({
         vibe: city.vibe || "",
         vibe_tags: cityVibeTags,
         type: "city",
-        score: baseScore + cityAffinity,
+        score: baseScore + cityAffinity + nameBoost,
       };
     })
     .filter((item) => item.score > 0)
@@ -131,8 +165,10 @@ export function buildAtlasSearchResults({
       const ratingBoost = Math.max(0, Number(place.avgRating || 0) - 3) * 7;
       const qualityScore = qualityBoost("place", place.id, qualityMap);
       const noveltyPenalty = favoriteSet.has(String(place.id)) ? -18 : 0;
+      const nameBoost = namePriorityBoost(place.name, normalized);
+      const intentBoost = queryIntentBoost("place", normalized);
       const score = Math.round(
-        baseScore + cityAffinity + socialProof + ratingBoost + qualityScore + noveltyPenalty
+        baseScore + cityAffinity + socialProof + ratingBoost + qualityScore + noveltyPenalty + nameBoost + intentBoost
       );
       return { ...place, type: "place", vibe_tags: placeVibeTags, score };
     })
@@ -153,7 +189,12 @@ export function buildAtlasSearchResults({
       const freshness = eventFreshnessBoost(event.start_date || event.startDate || event.date, nowTs);
       const qualityScore = qualityBoost("event", event.id, qualityMap);
       const noveltyPenalty = favoriteSet.has(`event-${event.id}`) ? -15 : 0;
-      const score = Math.round(baseScore + cityAffinity + freshness + qualityScore + noveltyPenalty);
+      const nameBoost = namePriorityBoost(event.name, normalized);
+      const intentBoost = queryIntentBoost("event", normalized);
+      const safeFreshness = nameBoost >= 150 ? Math.max(freshness, 0) : freshness;
+      const score = Math.round(
+        baseScore + cityAffinity + safeFreshness + qualityScore + noveltyPenalty + nameBoost + intentBoost
+      );
       return { ...event, type: "event", vibe_tags: eventVibeTags, score };
     })
     .filter((item) => item.score > 0)

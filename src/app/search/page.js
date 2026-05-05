@@ -33,6 +33,21 @@ function resolveItemVibeTags(item = {}) {
   return resolveVibeTagsForEntity(item, { max: 3 });
 }
 
+function getItemDisplayName(item = {}) {
+  return item?.type === "city" ? String(item?.title || item?.name || "").trim() : String(item?.name || "").trim();
+}
+
+function getMatchReason(item = {}, query = "") {
+  const needle = normalizeValue(query);
+  const name = normalizeValue(getItemDisplayName(item));
+  if (!needle || !name) return "Matched by relevance";
+  if (name === needle) return "Exact name match";
+  if (name.startsWith(needle)) return "Name starts with your query";
+  if (name.includes(` ${needle}`)) return "Strong word-level match";
+  if (name.includes(needle)) return "Name contains your query";
+  return "Matched by city, vibe, and quality signal";
+}
+
 function SearchResultSkeleton({ tone = "rose" }) {
   const toneClass =
     tone === "violet"
@@ -52,11 +67,7 @@ function SearchResultSkeleton({ tone = "rose" }) {
 
 export default function SearchPage() {
   const router = useRouter();
-  const [query, setQuery] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const params = new URLSearchParams(window.location.search);
-    return params.get("q") || "";
-  });
+  const [query, setQuery] = useState("");
   const [events, setEvents] = useState([]);
   const [typeFilter, setTypeFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
@@ -95,6 +106,13 @@ export default function SearchPage() {
   }, [fetchEvents]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const nextQuery = String(params.get("q") || "");
+    setQuery((current) => (current === nextQuery ? current : nextQuery));
+  }, []);
+
+  useEffect(() => {
     if (!deferredQuery.trim()) return;
     trackKpiEvent("search_opened", {
       targetType: "search",
@@ -111,8 +129,8 @@ export default function SearchPage() {
         places,
         events,
         cityLimit: 50,
-        placeLimit: 300,
-        eventLimit: 300,
+        placeLimit: 180,
+        eventLimit: 180,
         favoriteIds: favorites,
         qualityMap,
         preferredCity: cityFilter === "all" ? "" : cityFilter,
@@ -197,6 +215,33 @@ export default function SearchPage() {
       all: [...cities, ...places, ...events],
     };
   }, [filteredAll]);
+
+  const topMatches = useMemo(() => filteredAll.slice(0, 3), [filteredAll]);
+  const sectionOrder = useMemo(() => {
+    const sections = [
+      { key: "city", label: "Cities", tone: "cyan", items: filteredResults.cities },
+      { key: "place", label: "Places", tone: "rose", items: filteredResults.places },
+      { key: "event", label: "Events", tone: "violet", items: filteredResults.events },
+    ];
+
+    return sections
+      .filter((section) => section.items.length > 0)
+      .sort((a, b) => Number(b.items?.[0]?.score || 0) - Number(a.items?.[0]?.score || 0));
+  }, [filteredResults.cities, filteredResults.events, filteredResults.places]);
+
+  const requireMemberForSearchAction = useCallback(() => {
+    if (isMember) return true;
+    writeLocalValue("qa_redirect", `/search?q=${encodeURIComponent(query.trim())}`);
+    writeLocalValue("qa_post_login_target", "/");
+    router.push("/?join=true");
+    return false;
+  }, [isMember, query, router]);
+
+  const openCityFromItem = useCallback((item) => {
+    const cityValue = String(item?.city || item?.name || "").trim();
+    if (!cityValue) return;
+    router.push(cityPath(cityValue));
+  }, [router]);
 
   const toggleFavorite = (id) => {
     let updated;
@@ -391,26 +436,153 @@ export default function SearchPage() {
           </section>
         )}
 
-        {filteredResults.cities.length > 0 && (
-          <section className="mb-6 rounded-[28px] border border-cyan-300/12 bg-[linear-gradient(180deg,rgba(14,37,52,0.60),rgba(10,10,10,0.98))] p-5">
-            <h2 className="mb-4 text-lg font-semibold text-cyan-100">Cities</h2>
+        {query.trim() && !isLoading && topMatches.length > 0 && (
+          <section className="mb-6 rounded-[28px] border border-cyan-300/16 bg-[linear-gradient(180deg,rgba(18,39,56,0.62),rgba(10,10,10,0.98))] p-4 sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-cyan-100">Top matches</h2>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Highest relevance right now</p>
+            </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {filteredResults.cities.map((city) => (
-                <button key={city.id} onClick={() => openResult(city)} className="rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition hover:border-cyan-200/30">
-                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">{city.country}</p>
-                <p className="mt-2 text-base font-semibold">{city.title}</p>
-                <VibeTagChips entity={city} tone="cyan" className="mt-2" includeMixedFallback />
-              </button>
-            ))}
-          </div>
+              {topMatches.map((item) => {
+                const isCity = item.type === "city";
+                const favoriteId = isCity ? "" : (item.type === "event" ? `event-${item.id}` : String(item.id));
+                const saved = favoriteId ? favorites.includes(favoriteId) : false;
+                const toneClass =
+                  item.type === "event"
+                    ? "hover:border-violet-200/40"
+                    : item.type === "place"
+                      ? "hover:border-rose-200/40"
+                      : "hover:border-cyan-200/40";
+
+                return (
+                  <div
+                    key={`top-${item.type}-${item.id}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openResult(item)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openResult(item);
+                      }
+                    }}
+                    className={`cursor-pointer rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition ${toneClass}`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/90">
+                        {item.type === "city" ? "City" : item.type === "place" ? "Place" : "Event"}
+                      </span>
+                      {!isCity && (
+                        <button
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (!isMember) {
+                              writeLocalValue("qa_redirect", `/search?q=${encodeURIComponent(query.trim())}`);
+                              writeLocalValue("qa_post_login_target", "/");
+                              router.push("/?join=true");
+                              return;
+                            }
+                            toggleFavorite(favoriteId);
+                          }}
+                          className={`rounded-full border px-3 py-1 text-xs ${saved ? "border-rose-300/25 bg-rose-300/10 text-rose-100" : "border-white/12 bg-white/5 text-white/65"}`}
+                        >
+                          {saved ? "Saved" : "Save"}
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-2 text-base font-semibold text-white">
+                      {item.type === "city" ? item.title : item.name}
+                    </p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-white/50">
+                      {item.type === "city" ? item.country : `${item.city} | ${item.type === "event" ? "Event" : (item.type || "Place")}`}
+                    </p>
+                    <p className="mt-2 text-[11px] text-cyan-100/80">
+                      {getMatchReason(item, query)}
+                    </p>
+                    <VibeTagChips entity={item} tone={item.type === "event" ? "violet" : item.type === "place" ? "rose" : "cyan"} className="mt-2" includeTypeFallback includeMixedFallback />
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openResult(item);
+                        }}
+                        className="rounded-full border border-cyan-200/34 bg-cyan-200/14 px-3 py-1 text-[11px] font-semibold text-cyan-50 transition hover:border-cyan-200/52 hover:bg-cyan-200/22"
+                      >
+                        Open
+                      </button>
+                      {!isCity && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            if (!requireMemberForSearchAction()) return;
+                            toggleFavorite(favoriteId);
+                          }}
+                          className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${saved ? "border-rose-300/30 bg-rose-300/12 text-rose-100" : "border-white/16 bg-white/8 text-white/78 hover:border-white/28 hover:text-white"}`}
+                        >
+                          {saved ? "Saved" : "Save"}
+                        </button>
+                      )}
+                      {item.type !== "city" && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openCityFromItem(item);
+                          }}
+                          className="rounded-full border border-sky-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.92))] px-3 py-1 text-[11px] font-semibold text-cyan-50 transition hover:border-sky-200/52 hover:text-white"
+                        >
+                          Plan tonight
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </section>
         )}
 
-        {filteredResults.places.length > 0 && (
-          <section className="mb-6 rounded-[28px] border border-rose-300/12 bg-[linear-gradient(180deg,rgba(56,20,40,0.58),rgba(10,10,10,0.98))] p-5">
-            <h2 className="mb-4 text-lg font-semibold text-rose-100">Places</h2>
+        {sectionOrder.map((section) => (
+          <section
+            key={section.key}
+            className={`mb-6 rounded-[28px] p-4 sm:p-5 ${
+              section.key === "city"
+                ? "border border-cyan-300/12 bg-[linear-gradient(180deg,rgba(14,37,52,0.60),rgba(10,10,10,0.98))]"
+                : section.key === "place"
+                  ? "border border-rose-300/12 bg-[linear-gradient(180deg,rgba(56,20,40,0.58),rgba(10,10,10,0.98))]"
+                  : "border border-violet-300/12 bg-[linear-gradient(180deg,rgba(43,26,74,0.58),rgba(10,10,10,0.98))]"
+            }`}
+          >
+            <h2
+              className={`mb-4 text-lg font-semibold ${
+                section.key === "city"
+                  ? "text-cyan-100"
+                  : section.key === "place"
+                    ? "text-rose-100"
+                    : "text-violet-100"
+              }`}
+            >
+              {section.label}
+            </h2>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {filteredResults.places.map((place) => {
+              {section.key === "city" &&
+                section.items.map((city) => (
+                  <button
+                    key={city.id}
+                    onClick={() => openResult(city)}
+                    className="rounded-2xl border border-white/10 bg-black/35 p-3 sm:p-4 text-left transition hover:border-cyan-200/30"
+                  >
+                    <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">{city.country}</p>
+                    <p className="mt-1 text-base font-semibold">{city.title}</p>
+                    <p className="mt-1 text-[11px] text-cyan-100/80">{getMatchReason(city, query)}</p>
+                    <VibeTagChips entity={city} tone="cyan" className="mt-2" includeMixedFallback />
+                  </button>
+                ))}
+
+              {section.key === "place" &&
+                section.items.map((place) => {
                 const favoriteId = String(place.id);
                 const saved = favorites.includes(favoriteId);
                 const qualityStatus = getQualityStatus(
@@ -432,19 +604,14 @@ export default function SearchPage() {
                         openResult(place);
                       }
                     }}
-                    className="cursor-pointer rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition hover:border-rose-200/30"
+                    className="cursor-pointer rounded-2xl border border-white/10 bg-black/35 p-3 sm:p-4 text-left transition hover:border-rose-200/30"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold">{place.name}</p>
                       <button
                         onClick={(event) => {
                           event.stopPropagation();
-                          if (!isMember) {
-                            writeLocalValue("qa_redirect", `/search?q=${encodeURIComponent(query.trim())}`);
-                            writeLocalValue("qa_post_login_target", `/search?q=${encodeURIComponent(query.trim())}`);
-                            router.push("/?join=true");
-                            return;
-                          }
+                          if (!requireMemberForSearchAction()) return;
                           toggleFavorite(favoriteId);
                         }}
                         className={`rounded-full border px-3 py-1 text-xs ${saved ? "border-rose-300/25 bg-rose-300/10 text-rose-100" : "border-white/12 bg-white/5 text-white/65"}`}
@@ -464,19 +631,36 @@ export default function SearchPage() {
                         {qualityStatus.label}
                       </span>
                     </div>
+                    <p className="mt-1 text-[11px] text-rose-100/80">{getMatchReason(place, query)}</p>
                     <VibeTagChips entity={place} tone="rose" className="mt-2" includeTypeFallback includeMixedFallback />
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openResult(place);
+                        }}
+                        className="rounded-full border border-rose-200/34 bg-rose-200/14 px-3 py-1 text-[11px] font-semibold text-rose-50 transition hover:border-rose-200/52 hover:bg-rose-200/22"
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openCityFromItem(place);
+                        }}
+                        className="rounded-full border border-sky-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.92))] px-3 py-1 text-[11px] font-semibold text-cyan-50 transition hover:border-sky-200/52 hover:text-white"
+                      >
+                        Plan tonight
+                      </button>
+                    </div>
                   </div>
                 );
               })}
-            </div>
-          </section>
-        )}
 
-        {filteredResults.events.length > 0 && (
-          <section className="rounded-[28px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(43,26,74,0.58),rgba(10,10,10,0.98))] p-5">
-            <h2 className="mb-4 text-lg font-semibold text-violet-100">Events</h2>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {filteredResults.events.map((event) => {
+              {section.key === "event" &&
+                section.items.map((event) => {
                 const favoriteId = `event-${event.id}`;
                 const saved = favorites.includes(favoriteId);
                 const qualityStatus = getQualityStatus(
@@ -498,19 +682,14 @@ export default function SearchPage() {
                         openResult(event);
                       }
                     }}
-                    className="cursor-pointer rounded-2xl border border-white/10 bg-black/35 p-4 text-left transition hover:border-violet-200/30"
+                    className="cursor-pointer rounded-2xl border border-white/10 bg-black/35 p-3 sm:p-4 text-left transition hover:border-violet-200/30"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold">{event.name}</p>
                       <button
                         onClick={(itemEvent) => {
                           itemEvent.stopPropagation();
-                          if (!isMember) {
-                            writeLocalValue("qa_redirect", `/search?q=${encodeURIComponent(query.trim())}`);
-                            writeLocalValue("qa_post_login_target", `/search?q=${encodeURIComponent(query.trim())}`);
-                            router.push("/?join=true");
-                            return;
-                          }
+                          if (!requireMemberForSearchAction()) return;
                           toggleFavorite(favoriteId);
                         }}
                         className={`rounded-full border px-3 py-1 text-xs ${saved ? "border-rose-300/25 bg-rose-300/10 text-rose-100" : "border-white/12 bg-white/5 text-white/65"}`}
@@ -530,13 +709,36 @@ export default function SearchPage() {
                         {qualityStatus.label}
                       </span>
                     </div>
+                    <p className="mt-1 text-[11px] text-violet-100/80">{getMatchReason(event, query)}</p>
                     <VibeTagChips entity={event} tone="violet" className="mt-2" includeMixedFallback />
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(itemEvent) => {
+                          itemEvent.stopPropagation();
+                          openResult(event);
+                        }}
+                        className="rounded-full border border-violet-200/34 bg-violet-200/14 px-3 py-1 text-[11px] font-semibold text-violet-50 transition hover:border-violet-200/52 hover:bg-violet-200/22"
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(itemEvent) => {
+                          itemEvent.stopPropagation();
+                          openCityFromItem(event);
+                        }}
+                        className="rounded-full border border-sky-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.92))] px-3 py-1 text-[11px] font-semibold text-cyan-50 transition hover:border-sky-200/52 hover:text-white"
+                      >
+                        Plan tonight
+                      </button>
+                    </div>
                   </div>
                 );
               })}
             </div>
           </section>
-        )}
+        ))}
       </div>
     </main>
   );
