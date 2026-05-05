@@ -1675,34 +1675,24 @@ export default function NowPage() {
               return (
               <article
                 key={`rights-${item.id}`}
-                role="button"
-                tabIndex={0}
-                onClick={() =>
-                  setExpandedNewsId((current) =>
-                    String(current) === String(item.id) ? null : String(item.id)
-                  )
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    setExpandedNewsId((current) =>
-                      String(current) === String(item.id) ? null : String(item.id)
-                    );
-                  }
-                }}
                 className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-left transition hover:border-cyan-200/32"
               >
                 <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/80">
                   {item.city || "Global"} | {formatDateShort(item.date || item.createdAt)}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
-                <p
-                  className={`mt-2 text-xs leading-5 text-white/62 ${
-                    String(expandedNewsId) === String(item.id) ? "" : "line-clamp-2"
-                  }`}
-                >
-                  {item.whyItMatters || item.summary}
-                </p>
+                {item.summary ? (
+                  <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-white/45">Summary</p>
+                    <p className="mt-1 text-xs leading-5 text-white/70">{item.summary}</p>
+                  </div>
+                ) : null}
+                {item.whyItMatters ? (
+                  <div className="mt-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.05] px-3 py-2">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-cyan-100/75">Why it matters</p>
+                    <p className="mt-1 text-xs leading-5 text-white/72">{item.whyItMatters}</p>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex items-center justify-between gap-2">
                   <span className="text-[10px] uppercase tracking-[0.12em] text-white/40">
                     {item.sourceName || "Atlas signal"}
