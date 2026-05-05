@@ -54,6 +54,12 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .qa-page {
   --qa-section-space: var(--qa-space-6);
 }
