@@ -8,46 +8,74 @@ export default function CityContributionActions({
   onToggleAddEvent,
   onToggleAddService,
 }) {
+  const baseButton =
+    "qa-action qa-cinematic-hover relative isolate inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold tracking-[0.01em] transition duration-300";
+
+  const toneStyles = {
+    place: {
+      idle: "border-cyan-200/24 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] text-white/88 shadow-[0_18px_44px_rgba(56,189,248,0.1)] hover:border-cyan-200/42",
+      active:
+        "border-cyan-200/52 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(30,41,59,0.9),rgba(10,10,10,1))] text-cyan-50 shadow-[0_22px_58px_rgba(56,189,248,0.2)]",
+      accent: "from-cyan-300 to-sky-300",
+    },
+    event: {
+      idle: "border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] text-white/88 shadow-[0_18px_44px_rgba(217,70,239,0.1)] hover:border-fuchsia-200/42",
+      active:
+        "border-fuchsia-200/52 bg-[linear-gradient(135deg,rgba(232,121,249,0.26),rgba(46,16,73,0.82),rgba(10,10,10,1))] text-fuchsia-50 shadow-[0_22px_58px_rgba(217,70,239,0.2)]",
+      accent: "from-fuchsia-300 to-violet-300",
+    },
+    service: {
+      idle: "border-emerald-200/24 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] text-white/88 shadow-[0_18px_44px_rgba(45,212,191,0.1)] hover:border-emerald-200/42",
+      active:
+        "border-emerald-200/52 bg-[linear-gradient(135deg,rgba(52,211,153,0.24),rgba(18,52,59,0.86),rgba(10,10,10,1))] text-emerald-50 shadow-[0_22px_58px_rgba(45,212,191,0.2)]",
+      accent: "from-emerald-300 to-teal-300",
+    },
+  };
+
+  const renderButton = ({ active, onClick, ariaLabelOpen, ariaLabelClose, labelIdle, labelActive, tone }) => {
+    const toneStyle = toneStyles[tone];
+    return (
+      <button
+        onClick={onClick}
+        className={`${baseButton} ${active ? toneStyle.active : toneStyle.idle}`}
+        aria-pressed={active}
+        aria-label={active ? ariaLabelClose : ariaLabelOpen}
+      >
+        <span className={`h-1.5 w-7 rounded-full bg-gradient-to-r transition-all duration-300 ${toneStyle.accent} ${active ? "w-10" : ""}`} />
+        <span>{active ? labelActive : labelIdle}</span>
+      </button>
+    );
+  };
+
   return (
-    <div className="animate-cinematic-in mb-4 flex flex-wrap gap-2" style={{ animationDelay: "70ms" }}>
-      <button
-        onClick={onToggleAddPlace}
-        className={`qa-action qa-action-strong rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
-          addMode
-            ? "border-rose-100/80 bg-gradient-to-r from-rose-200 via-pink-200 to-orange-200 text-rose-950 shadow-[0_14px_40px_rgba(251,146,60,0.18)]"
-            : "qa-city-cta-primary border-emerald-100/70 bg-gradient-to-r from-emerald-300 to-teal-200 text-black shadow-[0_16px_44px_rgba(45,212,191,0.22)]"
-        }`}
-        aria-pressed={addMode}
-        aria-label={addMode ? "Cancel add place form" : "Open add place form"}
-      >
-        {addMode ? "Cancel adding" : "+ Add place"}
-      </button>
-
-      <button
-        onClick={onToggleAddEvent}
-        className={`qa-action qa-action-strong rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
-          addEventMode
-            ? "border-fuchsia-100/80 bg-gradient-to-r from-fuchsia-200 via-pink-200 to-violet-200 text-fuchsia-950 shadow-[0_14px_40px_rgba(217,70,239,0.18)]"
-            : "qa-city-cta-primary border-violet-100/70 bg-gradient-to-r from-violet-300 to-fuchsia-200 text-black shadow-[0_16px_44px_rgba(192,132,252,0.22)]"
-        }`}
-        aria-pressed={addEventMode}
-        aria-label={addEventMode ? "Cancel add event form" : "Open add event form"}
-      >
-        {addEventMode ? "Cancel event" : "+ Add event"}
-      </button>
-
-      <button
-        onClick={onToggleAddService}
-        className={`qa-action qa-action-strong rounded-full border px-5 py-2.5 text-sm font-semibold transition ${
-          addServiceMode
-            ? "border-rose-100/80 bg-gradient-to-r from-rose-200 via-pink-200 to-orange-200 text-rose-950 shadow-[0_14px_40px_rgba(251,146,60,0.18)]"
-            : "qa-city-cta-primary border-sky-100/70 bg-gradient-to-r from-sky-200 via-cyan-200 to-blue-200 text-black shadow-[0_16px_44px_rgba(56,189,248,0.22)] hover:brightness-105"
-        }`}
-        aria-pressed={addServiceMode}
-        aria-label={addServiceMode ? "Cancel add service form" : "Open add service form"}
-      >
-        {addServiceMode ? "Cancel service" : "+ Add service"}
-      </button>
+    <div className="animate-cinematic-in mb-4 flex flex-wrap items-center gap-2" style={{ animationDelay: "70ms" }}>
+      {renderButton({
+        active: addMode,
+        onClick: onToggleAddPlace,
+        ariaLabelOpen: "Open add place form",
+        ariaLabelClose: "Cancel add place form",
+        labelIdle: "+ Add place",
+        labelActive: "Cancel adding",
+        tone: "place",
+      })}
+      {renderButton({
+        active: addEventMode,
+        onClick: onToggleAddEvent,
+        ariaLabelOpen: "Open add event form",
+        ariaLabelClose: "Cancel add event form",
+        labelIdle: "+ Add event",
+        labelActive: "Cancel event",
+        tone: "event",
+      })}
+      {renderButton({
+        active: addServiceMode,
+        onClick: onToggleAddService,
+        ariaLabelOpen: "Open add service form",
+        ariaLabelClose: "Cancel add service form",
+        labelIdle: "+ Add service",
+        labelActive: "Cancel service",
+        tone: "service",
+      })}
     </div>
   );
 }
