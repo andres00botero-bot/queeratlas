@@ -87,6 +87,20 @@ function resolveNewsConfidence(item, canEditAdminNews) {
   return "Developing";
 }
 
+function isRightsUpdateItem(item) {
+  return String(item?.category || "").trim().toLowerCase() === "rights_safety";
+}
+
+function isVoicesMemberItem(item) {
+  const id = String(item?.id || "").trim().toLowerCase();
+  const source = String(item?.sourceName || "").trim().toLowerCase();
+  return (
+    id.startsWith("member-story-") ||
+    source.includes("member story") ||
+    source.includes("voices submission")
+  );
+}
+
 
 function compareNewsRecency(a, b) {
   const byCreatedAt =
@@ -537,6 +551,10 @@ export default function NowPage() {
       }, {}),
     []
   );
+  const mixedFeedCategories = useMemo(
+    () => PULSE_CATEGORIES.filter((item) => item.key !== "rights_safety"),
+    []
+  );
 
   const risingSpotsNews = useMemo(
     () =>
@@ -580,22 +598,32 @@ export default function NowPage() {
       .sort(compareNewsRecency)
       .slice(0, 12);
   }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
+
+  useEffect(() => {
+    if (selectedNewsCategory === "rights_safety") {
+      setSelectedNewsCategory("all");
+    }
+  }, [selectedNewsCategory]);
+
+  const mixedFeedItems = useMemo(
+    () => worldNewsItems.filter((item) => !isRightsUpdateItem(item) && !isVoicesMemberItem(item)),
+    [worldNewsItems]
+  );
+
   const displayedNewsItems = useMemo(() => {
     const scopedItems =
       selectedNewsCategory === "all"
-        ? worldNewsItems
-        : worldNewsItems.filter((item) => String(item.category || "") === selectedNewsCategory);
+        ? mixedFeedItems
+        : mixedFeedItems.filter((item) => String(item.category || "") === selectedNewsCategory);
     return scopedItems.slice(0, 8);
-  }, [selectedNewsCategory, worldNewsItems]);
+  }, [mixedFeedItems, selectedNewsCategory]);
+
   const rightsUpdates = useMemo(
-    () => worldNewsItems.filter((item) => String(item.category || "") === "rights_safety").slice(0, 6),
+    () => worldNewsItems.filter((item) => isRightsUpdateItem(item)).slice(0, 6),
     [worldNewsItems]
   );
   const communityStories = useMemo(
-    () =>
-      worldNewsItems
-        .filter((item) => String(item.sourceName || "").toLowerCase().includes("member"))
-        .slice(0, 6),
+    () => worldNewsItems.filter((item) => isVoicesMemberItem(item)).slice(0, 6),
     [worldNewsItems]
   );
   const visibleCommunityStories = useMemo(
@@ -1020,7 +1048,7 @@ export default function NowPage() {
               <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
               <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Queer World News</h1>
               <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
-                One mixed stream: what is happening now, what is rising, what changed in nightlife, rights/safety updates, major events, and culture tips.
+                Three separate editorial lanes: mixed discovery, policy & safety watch, and member voices.
               </p>
             </div>
 
@@ -1085,7 +1113,7 @@ export default function NowPage() {
                 )}
               </div>
               <div className="mb-5 flex flex-wrap gap-2">
-                {PULSE_CATEGORIES.map((category) => {
+                {mixedFeedCategories.map((category) => {
                   const isActive = selectedNewsCategory === category.key;
                   return (
                     <button
