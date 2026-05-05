@@ -124,6 +124,9 @@ const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
 const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
 const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
 const NOW_EDITORIAL_CACHE_TTL_MS = 5 * 60 * 1000;
+const MIXED_FEED_ADMIN_CATEGORIES = PULSE_CATEGORIES.filter(
+  (item) => item.key !== "all" && item.key !== "rights_safety"
+);
 function createAdminNewsFormDefault() {
   return {
     title: "",
@@ -294,6 +297,7 @@ export default function NowPage() {
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState("");
   const [adminForm, setAdminForm] = useState(() => createAdminNewsFormDefault());
+  const [adminComposerLane, setAdminComposerLane] = useState("mixed");
   const [showCommunityStoryForm, setShowCommunityStoryForm] = useState(false);
   const [isSubmittingCommunityStory, setIsSubmittingCommunityStory] = useState(false);
   const [communityStoryNotice, setCommunityStoryNotice] = useState("");
@@ -641,6 +645,7 @@ export default function NowPage() {
   const resetAdminNewsComposer = useCallback(() => {
     setEditingNewsId("");
     setAdminForm(createAdminNewsFormDefault());
+    setAdminComposerLane("mixed");
     setShowAdminForm(false);
     setShowPolicyAdminForm(false);
   }, []);
@@ -654,6 +659,7 @@ export default function NowPage() {
     if (!item) return;
     const isPolicyUpdate = String(item.category || "").trim().toLowerCase() === "rights_safety";
     setEditingNewsId(String(item.id));
+    setAdminComposerLane(isPolicyUpdate ? "policy" : "mixed");
     setShowAdminForm(!isPolicyUpdate);
     setShowPolicyAdminForm(isPolicyUpdate);
     setAdminForm({
@@ -861,11 +867,14 @@ export default function NowPage() {
     const effectiveDate = isEditingNews
       ? adminForm.date || preservedEditDate
       : adminForm.date || new Date().toISOString().slice(0, 10);
+    const sanitizedMixedCategory =
+      adminForm.category === "rights_safety" ? "culture_tip" : adminForm.category || "culture_tip";
+    const effectiveCategory = adminComposerLane === "policy" ? "rights_safety" : sanitizedMixedCategory;
     const item = {
       id: nextId,
       title: adminForm.title,
       city: adminForm.city || "Global",
-      category: adminForm.category || "culture_tip",
+      category: effectiveCategory,
       date: effectiveDate,
       summary: adminForm.summary,
       whyItMatters: adminForm.whyItMatters,
@@ -1108,6 +1117,7 @@ export default function NowPage() {
                         return;
                       }
                       setShowPolicyAdminForm(false);
+                      setAdminComposerLane("mixed");
                       setEditingNewsId("");
                       setAdminForm(createAdminNewsFormDefault());
                       setShowAdminForm(true);
@@ -1161,7 +1171,7 @@ export default function NowPage() {
                     onChange={(event) => setAdminForm((current) => ({ ...current, category: event.target.value }))}
                     className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                   >
-                    {PULSE_CATEGORIES.filter((item) => item.key !== "all").map((item) => (
+                    {MIXED_FEED_ADMIN_CATEGORIES.map((item) => (
                       <option key={item.key} value={item.key}>
                         {item.label}
                       </option>
@@ -1580,6 +1590,7 @@ export default function NowPage() {
                     return;
                   }
                   setShowAdminForm(false);
+                  setAdminComposerLane("policy");
                   setEditingNewsId("");
                   setAdminForm({
                     ...createAdminNewsFormDefault(),
