@@ -39,6 +39,22 @@ function compareNewsRecency(a, b) {
   return String(b.id || "").localeCompare(String(a.id || ""));
 }
 
+function evaluatePasswordStrength(password) {
+  const value = String(password || "");
+  return {
+    minLength: value.length >= 10,
+    lowercase: /[a-z]/.test(value),
+    uppercase: /[A-Z]/.test(value),
+    number: /\d/.test(value),
+    symbol: /[^A-Za-z0-9]/.test(value),
+  };
+}
+
+function isPasswordStrong(password) {
+  const checks = evaluatePasswordStrength(password);
+  return checks.minLength && checks.lowercase && checks.uppercase && checks.number && checks.symbol;
+}
+
 export default function Home() {
   const router = useRouter();
   const [events, setEvents] = useState([]);
@@ -56,7 +72,8 @@ export default function Home() {
   const [passwordInput, setPasswordInput] = useState("");
   const [authMode, setAuthMode] = useState("signin");
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState("");
-  const [pendingConfirmationPassword, setPendingConfirmationPassword] = useState("");
+  const [resetPasswordInput, setResetPasswordInput] = useState("");
+  const [resetPasswordConfirmInput, setResetPasswordConfirmInput] = useState("");
   const [signupForm, setSignupForm] = useState({
     displayName: "",
     pronouns: "",
@@ -79,6 +96,8 @@ export default function Home() {
     signInWithEmail,
     signInWithPassword,
     signUpWithPassword,
+    resetPasswordForEmail,
+    updatePassword,
     updateMemberProfile,
     signOut,
     user,
@@ -86,6 +105,8 @@ export default function Home() {
   const currentEmail = String(user?.email || "").trim().toLowerCase();
   const needsEmailConfirmation =
     Boolean(pendingEmailConfirmation) || authMessage.toLowerCase().includes("confirm your email");
+  const isPasswordResetNotice = authMessage.toLowerCase().includes("password reset email sent");
+  const signupPasswordChecks = evaluatePasswordStrength(signupForm.password);
 
   const getResultKey = (item) => (
     item.type === "event" ? `event-${item.id}` : String(item.id)
@@ -93,44 +114,19 @@ export default function Home() {
 
   const isSavedResult = (item) => favorites.includes(getResultKey(item));
 
-  const openSignup = useCallback((redirect = "") => {
+  const openSignup = useCallback(() => {
     setAuthMessage("");
     setAuthMode("signin");
     setPasswordInput("");
     setPendingEmailConfirmation("");
-    setPendingConfirmationPassword("");
-    if (redirect) {
-      writeLocalValue("qa_redirect", redirect);
-      writeLocalValue("qa_post_login_target", redirect);
-    } else if (typeof window !== "undefined") {
+    setResetPasswordInput("");
+    setResetPasswordConfirmInput("");
+    if (typeof window !== "undefined") {
       localStorage.removeItem("qa_redirect");
-      writeLocalValue("qa_post_login_target", "/");
     }
+    writeLocalValue("qa_post_login_target", "/");
     setShowSignup(true);
   }, []);
-
-  const takeAllowedRedirect = () => {
-    if (typeof window === "undefined") return "";
-
-    const rawRedirect = (localStorage.getItem("qa_redirect") || "").trim();
-    localStorage.removeItem("qa_redirect");
-
-    if (!rawRedirect) return "";
-    if (
-      rawRedirect === "/favorites" ||
-      rawRedirect === "/favorites/" ||
-      rawRedirect.startsWith("/favorites?")
-    ) {
-      return "";
-    }
-
-    const allowedPrefixes = ["/community", "/contribute", "/search", "/admin"];
-    return allowedPrefixes.some(
-      (prefix) => rawRedirect === prefix || rawRedirect.startsWith(`${prefix}?`)
-    )
-      ? rawRedirect
-      : "";
-  };
 
   const openResult = (item) => {
     if (item.type === "city") {
@@ -300,11 +296,6 @@ export default function Home() {
   useEffect(() => {
     if (isAuthLoading || !isMember) return;
 
-    const redirect = takeAllowedRedirect();
-    if (redirect) {
-      router.push(redirect);
-    }
-
     queueMicrotask(() => {
       setShowSignup(false);
     });
@@ -337,52 +328,14 @@ export default function Home() {
   }, [isAuthLoading, isMember, updateMemberProfile]);
 
   useEffect(() => {
-    if (!pendingEmailConfirmation || !pendingConfirmationPassword || isMember) return;
+    if (typeof window === "undefined" || isMember) return;
+    const hash = window.location.hash || "";
+    if (!hash.includes("type=recovery")) return;
 
-    let cancelled = false;
-    let checking = false;
-
-    const tryAutoSignIn = async () => {
-      if (cancelled || checking) return;
-      checking = true;
-      const { error } = await signInWithPassword(
-        pendingEmailConfirmation,
-        pendingConfirmationPassword,
-        { silent: true }
-      );
-
-      if (cancelled) return;
-
-      if (!error) {
-        setAuthMessage("Email confirmed. Signing you in...");
-        setPendingEmailConfirmation("");
-        setPendingConfirmationPassword("");
-        checking = false;
-        return;
-      }
-
-      const lower = String(error?.message || "").toLowerCase();
-      const stillPending =
-        lower.includes("confirm") ||
-        lower.includes("verification") ||
-        lower.includes("not confirmed");
-
-      if (!stillPending) {
-        setAuthMessage(error.message || "Login pending. Please try again.");
-      }
-
-      checking = false;
-    };
-
-    const initial = window.setTimeout(tryAutoSignIn, 4000);
-    const interval = window.setInterval(tryAutoSignIn, 12000);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(initial);
-      window.clearInterval(interval);
-    };
-  }, [isMember, pendingConfirmationPassword, pendingEmailConfirmation, signInWithPassword]);
+    setShowSignup(true);
+    setAuthMode("reset");
+    setAuthMessage("Recovery verified. Set a new password.");
+  }, [isMember]);
 
   useEffect(() => {
     if (isAuthLoading || !isMember) return;
@@ -566,7 +519,7 @@ export default function Home() {
         <div className="qa-shell relative flex min-h-screen w-full flex-col">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="qa-eyebrow rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur">
-              Global queer discovery
+              Experience-first queer atlas
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
@@ -624,12 +577,7 @@ export default function Home() {
 
           <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
             <section className="pt-1 xl:pt-6">
-              <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-cyan-200/26 bg-cyan-200/12 px-4 py-2 text-cyan-50/92 backdrop-blur">
-                <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.8)]" />
-                Experience-first queer atlas
-              </div>
-
-              <div className="mt-6 flex items-center gap-4 sm:gap-5">
+              <div className="flex items-center gap-4 sm:gap-5">
                 <Image
                   src="/queer-atlas-heart-logo-progress.png"
                   alt="Queer Atlas heart"
@@ -757,12 +705,6 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              <div className="mt-3 hidden flex-wrap items-center gap-2 text-[11px] text-white/55 sm:flex">
-                <span className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-100/92">Updated daily</span>
-                <span className="rounded-full border border-white/16 bg-white/7 px-3 py-1 text-white/72">Community-powered</span>
-                <span className="rounded-full border border-emerald-200/28 bg-emerald-200/12 px-3 py-1 text-emerald-100/92">Member-safe by design</span>
-              </div>
-
               <div className="mt-7 grid gap-3 sm:grid-cols-3">
                 <div className="qa-card qa-metric-card rounded-3xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
@@ -1049,6 +991,8 @@ export default function Home() {
                   onClick={() => {
                     setAuthMode("signin");
                     setAuthMessage("");
+                    setResetPasswordInput("");
+                    setResetPasswordConfirmInput("");
                   }}
                   className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                     authMode === "signin" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
@@ -1061,6 +1005,8 @@ export default function Home() {
                   onClick={() => {
                     setAuthMode("signup");
                     setAuthMessage("");
+                    setResetPasswordInput("");
+                    setResetPasswordConfirmInput("");
                   }}
                   className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                     authMode === "signup" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
@@ -1159,9 +1105,30 @@ export default function Home() {
                     >
                       {authLoading ? "Sending..." : "Send magic link instead"}
                     </button>
+                    <button
+                      onClick={async () => {
+                        if (!emailInput.trim()) {
+                          setAuthMessage("Enter your email first, then request password reset.");
+                          return;
+                        }
+                        setAuthMessage("");
+                        setAuthLoading(true);
+                        const { error } = await resetPasswordForEmail(emailInput.trim());
+                        if (error) {
+                          setAuthMessage(error.message || "Could not send password reset email.");
+                        } else {
+                          setAuthMessage("Password reset email sent. Open the link, then set your new password.");
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="mt-2 w-full rounded-xl border border-amber-200/26 bg-amber-200/12 py-2 text-xs font-semibold tracking-[0.08em] text-amber-100 transition hover:border-amber-200/44 hover:bg-amber-200/18 disabled:opacity-70"
+                    >
+                      {authLoading ? "Sending..." : "Forgot password?"}
+                    </button>
                   </div>
                 </div>
-              ) : (
+              ) : authMode === "signup" ? (
                 <div className="mt-6 rounded-2xl border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(244,114,182,0.08),rgba(0,0,0,0.22))] p-4">
                   <p className="mb-3 text-xs uppercase tracking-[0.14em] text-fuchsia-100/85">Build your member identity</p>
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -1210,6 +1177,13 @@ export default function Home() {
                       className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
                     />
                   </div>
+                  <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.08em] text-white/70">
+                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.minLength ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>10+ chars</span>
+                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.uppercase ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Uppercase</span>
+                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.lowercase ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Lowercase</span>
+                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.number ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Number</span>
+                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.symbol ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Symbol</span>
+                  </div>
 
                   <button
                     onClick={async () => {
@@ -1227,8 +1201,8 @@ export default function Home() {
                         setAuthMessage("Name, email, and password are required.");
                         return;
                       }
-                      if (password.length < 6) {
-                        setAuthMessage("Password must be at least 6 characters.");
+                      if (!isPasswordStrong(password)) {
+                        setAuthMessage("Use a stronger password: 10+ chars with uppercase, lowercase, number, and symbol.");
                         return;
                       }
                       if (password !== confirmPassword) {
@@ -1243,14 +1217,12 @@ export default function Home() {
                       if (error) {
                         setAuthMessage(error.message);
                         setPendingEmailConfirmation("");
-                        setPendingConfirmationPassword("");
                         setAuthLoading(false);
                         return;
                       }
 
                       if (data?.session) {
                         setPendingEmailConfirmation("");
-                        setPendingConfirmationPassword("");
                         const result = await updateMemberProfile(profilePayload);
                         if (result?.ok) {
                           setAuthMessage("Account ready. Welcome to Queer Atlas.");
@@ -1262,7 +1234,6 @@ export default function Home() {
                         });
                       } else {
                         setPendingEmailConfirmation(email);
-                        setPendingConfirmationPassword(password);
                         localStorage.setItem(
                           PENDING_SIGNUP_PROFILE_KEY,
                           JSON.stringify({ ...profilePayload, email })
@@ -1290,12 +1261,81 @@ export default function Home() {
                     {authLoading ? "Creating..." : "Create account"}
                   </button>
                 </div>
+              ) : (
+                <div className="mt-6 rounded-2xl border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(34,211,238,0.09),rgba(0,0,0,0.26))] p-4">
+                  <p className="mb-3 text-xs uppercase tracking-[0.14em] text-cyan-100/90">Reset password</p>
+                  <input
+                    type="password"
+                    value={resetPasswordInput}
+                    onChange={(event) => setResetPasswordInput(event.target.value)}
+                    placeholder="New password"
+                    className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                  />
+                  <input
+                    type="password"
+                    value={resetPasswordConfirmInput}
+                    onChange={(event) => setResetPasswordConfirmInput(event.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                  />
+                  <p className="mt-2 text-[11px] text-white/65">
+                    Use 10+ chars with uppercase, lowercase, number, and symbol.
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!isPasswordStrong(resetPasswordInput)) {
+                          setAuthMessage("Use a stronger password: 10+ chars with uppercase, lowercase, number, and symbol.");
+                          return;
+                        }
+                        if (resetPasswordInput !== resetPasswordConfirmInput) {
+                          setAuthMessage("Passwords do not match.");
+                          return;
+                        }
+                        setAuthMessage("");
+                        setAuthLoading(true);
+                        const { error } = await updatePassword(resetPasswordInput);
+                        if (error) {
+                          setAuthMessage(error.message || "Could not update password.");
+                        } else {
+                          setAuthMode("signin");
+                          setResetPasswordInput("");
+                          setResetPasswordConfirmInput("");
+                          setAuthMessage("Password updated. You can sign in now.");
+                          if (typeof window !== "undefined" && window.location.hash) {
+                            window.history.replaceState({}, "", window.location.pathname + window.location.search);
+                          }
+                        }
+                        setAuthLoading(false);
+                      }}
+                      disabled={authLoading}
+                      className="flex-1 rounded-xl border border-cyan-200/34 bg-cyan-200/16 py-2.5 text-sm font-semibold text-cyan-50 transition hover:border-cyan-200/54 hover:bg-cyan-200/24 disabled:opacity-70"
+                    >
+                      {authLoading ? "Updating..." : "Update password"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode("signin");
+                        setResetPasswordInput("");
+                        setResetPasswordConfirmInput("");
+                        setAuthMessage("");
+                      }}
+                      className="rounded-xl border border-white/12 bg-white/8 px-3 py-2.5 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
               )}
 
               {authMessage && (
                 <div
                   className={`mt-4 rounded-xl border px-3 py-2 text-xs ${
-                    needsEmailConfirmation
+                    isPasswordResetNotice
+                      ? "animate-pulse border-cyan-300/50 bg-cyan-300/16 text-cyan-100"
+                      : needsEmailConfirmation
                       ? "animate-pulse border-amber-300/45 bg-amber-300/15 text-amber-100"
                       : "border-white/10 bg-white/5 text-white/75"
                   }`}
@@ -1308,7 +1348,7 @@ export default function Home() {
                   <p>Check inbox + spam in 1-2 minutes, then confirm the link.</p>
                   {pendingEmailConfirmation && (
                     <p className="mt-1 text-[10px] uppercase tracking-[0.08em] text-amber-100/80">
-                      Auto-check active on this screen. After confirmation on phone, this tab signs in automatically.
+                      After confirming the email link, sign in from this screen.
                     </p>
                   )}
                   {pendingEmailConfirmation && (

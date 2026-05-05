@@ -6,7 +6,7 @@ import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
 import { captureOperationalError } from "@/lib/monitoring";
 
 const AuthContext = createContext(null);
-const ALLOWED_POST_LOGIN_PREFIXES = ["/", "/community", "/contribute", "/search"];
+const ALLOWED_POST_LOGIN_PREFIXES = ["/"];
 
 function getMemberName(user) {
   if (!user) return "Explorer";
@@ -230,6 +230,49 @@ export function AuthProvider({ children }) {
       }
     };
 
+    const resetPasswordForEmail = async (email) => {
+      try {
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const result = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: origin ? `${origin}/` : undefined,
+        });
+        if (result?.error) {
+          captureOperationalError("password_reset_request_fail", result.error, {
+            provider: "email",
+            flow: "password_reset_request",
+          });
+        }
+        return result;
+      } catch (error) {
+        captureOperationalError("password_reset_request_fail", error, {
+          provider: "email",
+          flow: "password_reset_request",
+        });
+        return { data: null, error };
+      }
+    };
+
+    const updatePassword = async (password) => {
+      try {
+        const result = await supabase.auth.updateUser({
+          password,
+        });
+        if (result?.error) {
+          captureOperationalError("password_update_fail", result.error, {
+            provider: "email",
+            flow: "password_update",
+          });
+        }
+        return result;
+      } catch (error) {
+        captureOperationalError("password_update_fail", error, {
+          provider: "email",
+          flow: "password_update",
+        });
+        return { data: null, error };
+      }
+    };
+
     const signOut = async () => {
       try {
         return await supabase.auth.signOut();
@@ -281,6 +324,8 @@ export function AuthProvider({ children }) {
       signInWithEmail,
       signInWithPassword,
       signUpWithPassword,
+      resetPasswordForEmail,
+      updatePassword,
       signOut,
     };
   }, [isLoading, memberProfile, session, user]);
