@@ -5,14 +5,13 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
-import { cityPath, citySelectionPath } from "@/lib/cityRouting";
+import { citySelectionPath } from "@/lib/cityRouting";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
-import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
 
 function isThisWeek(value, now) {
@@ -39,6 +38,51 @@ function normalizeRankingDraftItem(item) {
     country: (item?.country || "").trim(),
     signal: (item?.signal || "").trim(),
   };
+}
+
+function getNewsToneByCategory(category) {
+  const key = String(category || "");
+  if (key === "rights_safety") {
+    return {
+      accentBar: "from-rose-200/85 via-orange-200/65 to-transparent",
+      categoryBadge: "border-rose-200/30 bg-rose-200/12 text-rose-100",
+      cardHover: "hover:border-rose-200/35",
+    };
+  }
+  if (key === "major_event") {
+    return {
+      accentBar: "from-orange-200/85 via-amber-200/65 to-transparent",
+      categoryBadge: "border-orange-200/30 bg-orange-200/12 text-orange-100",
+      cardHover: "hover:border-orange-200/35",
+    };
+  }
+  if (key === "nightlife_change") {
+    return {
+      accentBar: "from-fuchsia-200/85 via-pink-200/65 to-transparent",
+      categoryBadge: "border-fuchsia-200/30 bg-fuchsia-200/12 text-fuchsia-100",
+      cardHover: "hover:border-fuchsia-200/35",
+    };
+  }
+  if (key === "rising_spot") {
+    return {
+      accentBar: "from-emerald-200/85 via-teal-200/65 to-transparent",
+      categoryBadge: "border-emerald-200/30 bg-emerald-200/12 text-emerald-100",
+      cardHover: "hover:border-emerald-200/35",
+    };
+  }
+  return {
+    accentBar: "from-cyan-200/85 via-sky-200/65 to-transparent",
+    categoryBadge: "border-cyan-200/30 bg-cyan-200/12 text-cyan-100",
+    cardHover: "hover:border-cyan-200/35",
+  };
+}
+
+function resolveNewsConfidence(item, canEditAdminNews) {
+  if (canEditAdminNews) return "Verified admin";
+  const source = String(item?.sourceName || "").toLowerCase();
+  if (source.includes("editorial") || source.includes("atlas")) return "Editorial signal";
+  if (source.includes("member")) return "Community signal";
+  return "Developing";
 }
 
 
@@ -196,8 +240,10 @@ export default function NowPage() {
   const [syncWarning, setSyncWarning] = useState("");
   const [expandedSoonEventId, setExpandedSoonEventId] = useState(null);
   const [expandedNewsId, setExpandedNewsId] = useState(null);
-  const [expandedPullPlaceId, setExpandedPullPlaceId] = useState(null);
+  const [selectedNewsCategory, setSelectedNewsCategory] = useState("all");
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
+  const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
+  const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [rankingOverrides, setRankingOverrides] = useState({});
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
@@ -431,23 +477,27 @@ export default function NowPage() {
         .slice(0, 6),
     [filteredPlaces]
   );
-
-  const cityMomentum = useMemo(
-    () =>
-      Object.values(
-        filteredPlaces.reduce((acc, place) => {
-          const city = place.city || "Unknown";
-          if (!acc[city]) {
-            acc[city] = { city, reviews: 0, places: 0 };
-          }
-          acc[city].reviews += place.reviewCount || 0;
-          acc[city].places += 1;
-          return acc;
-        }, {})
-      )
-        .sort((a, b) => b.reviews - a.reviews)
-        .slice(0, 4),
-    [filteredPlaces]
+  const monthlyUpcomingEvents = useMemo(() => {
+    if (!today) return [];
+    const end = new Date(today);
+    end.setDate(today.getDate() + 30);
+    return upcomingEvents.filter((event) => {
+      const eventDate = new Date(event.date);
+      return eventDate >= today && eventDate <= end;
+    });
+  }, [today, upcomingEvents]);
+  const upcomingBeyondTonight = useMemo(() => {
+    const tonightIds = new Set(tonightEvents.map((event) => String(event.id)));
+    return monthlyUpcomingEvents.filter((event) => !tonightIds.has(String(event.id)));
+  }, [monthlyUpcomingEvents, tonightEvents]);
+  const happeningSoonEvents = useMemo(() => {
+    const tonightTagged = tonightEvents.map((event) => ({ ...event, qaTiming: "tonight" }));
+    const nextTagged = upcomingBeyondTonight.slice(0, 8).map((event) => ({ ...event, qaTiming: "next" }));
+    return [...tonightTagged, ...nextTagged];
+  }, [tonightEvents, upcomingBeyondTonight]);
+  const visibleHappeningEvents = useMemo(
+    () => (isHappeningExpanded ? happeningSoonEvents : happeningSoonEvents.slice(0, 6)),
+    [happeningSoonEvents, isHappeningExpanded]
   );
 
   const categoryLabels = useMemo(
@@ -501,7 +551,28 @@ export default function NowPage() {
       .sort(compareNewsRecency)
       .slice(0, 12);
   }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
-  const displayedNewsItems = worldNewsItems.slice(0, 8);
+  const displayedNewsItems = useMemo(() => {
+    const scopedItems =
+      selectedNewsCategory === "all"
+        ? worldNewsItems
+        : worldNewsItems.filter((item) => String(item.category || "") === selectedNewsCategory);
+    return scopedItems.slice(0, 8);
+  }, [selectedNewsCategory, worldNewsItems]);
+  const rightsUpdates = useMemo(
+    () => worldNewsItems.filter((item) => String(item.category || "") === "rights_safety").slice(0, 6),
+    [worldNewsItems]
+  );
+  const communityStories = useMemo(
+    () =>
+      worldNewsItems
+        .filter((item) => String(item.sourceName || "").toLowerCase().includes("member"))
+        .slice(0, 6),
+    [worldNewsItems]
+  );
+  const visibleCommunityStories = useMemo(
+    () => (isCommunityExpanded ? communityStories : communityStories.slice(0, 4)),
+    [communityStories, isCommunityExpanded]
+  );
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
     [adminNews]
@@ -884,7 +955,7 @@ export default function NowPage() {
         </div>
 
         <section className="mb-6">
-          <div className="grid items-stretch gap-6 xl:grid-cols-[1.35fr_0.9fr]">
+          <div className="grid items-stretch gap-6 xl:grid-cols-[1.52fr_0.72fr]">
             <section className="qa-panel flex h-full flex-col rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(14,24,36,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.08)]">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -908,6 +979,25 @@ export default function NowPage() {
                     {showAdminForm ? "Close admin composer" : "Admin publish"}
                   </button>
                 )}
+              </div>
+              <div className="mb-5 flex flex-wrap gap-2">
+                {PULSE_CATEGORIES.map((category) => {
+                  const isActive = selectedNewsCategory === category.key;
+                  return (
+                    <button
+                      key={category.key}
+                      type="button"
+                      onClick={() => setSelectedNewsCategory(category.key)}
+                      className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] transition ${
+                        isActive
+                          ? "border-cyan-200/45 bg-cyan-200/18 text-cyan-50 shadow-[0_0_0_1px_rgba(103,232,249,0.18)]"
+                          : "border-white/14 bg-white/[0.03] text-white/65 hover:border-cyan-200/28 hover:text-cyan-100"
+                      }`}
+                    >
+                      {category.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {isAdmin && showAdminForm && (
@@ -987,14 +1077,20 @@ export default function NowPage() {
                   Read-only for members. Editing is restricted to administrator.
                 </p>
               )}
+              <p className="mb-4 text-[11px] uppercase tracking-[0.15em] text-white/45">
+                Showing {displayedNewsItems.length} stories
+                {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
+              </p>
 
-              <div className="grid flex-1 content-start gap-4 md:grid-cols-2">
+              <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto pr-1 md:grid-cols-2">
                 {displayedNewsItems.length > 0 ? (
                   displayedNewsItems.map((item) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
                     const itemDateForDisplay = canEditAdminNews
                       ? item.createdAt || item.date
                       : item.date;
+                    const tone = getNewsToneByCategory(item.category);
+                    const confidenceLabel = resolveNewsConfidence(item, canEditAdminNews);
                     return (
                     <article
                       key={item.id}
@@ -1013,11 +1109,16 @@ export default function NowPage() {
                           );
                         }
                       }}
-                      className="cursor-pointer rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 transition hover:-translate-y-[1px] hover:border-cyan-200/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
+                      className={`cursor-pointer rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 transition hover:-translate-y-[1px] ${tone.cardHover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
                     >
-                      <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-cyan-200/80 via-sky-200/65 to-transparent" />
+                      <div className={`mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r ${tone.accentBar}`} />
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs uppercase tracking-[0.16em] text-white/45">{item.city || "Global"}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs uppercase tracking-[0.16em] text-white/45">{item.city || "Global"}</p>
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${tone.categoryBadge}`}>
+                            {categoryLabels[item.category] || "News"}
+                          </span>
+                        </div>
                         <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
                           {formatDateShort(itemDateForDisplay)}
                         </span>
@@ -1041,9 +1142,7 @@ export default function NowPage() {
                         </p>
                       </div>
                       <div className="mt-4 flex items-center justify-between">
-                        <span className="text-[11px] uppercase tracking-[0.14em] text-white/36">
-                          {categoryLabels[item.category] || "News"}
-                        </span>
+                        <span className="text-[11px] uppercase tracking-[0.14em] text-white/36">{confidenceLabel}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] text-white/36">
                             {String(expandedNewsId) === String(item.id)
@@ -1172,15 +1271,8 @@ export default function NowPage() {
                   )}
                 </div>
               )}
-
-              {!isAdmin && (
-                <p className="mt-4 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/60">
-                  Read-only for members. Ranking edits are administrator-only.
-                </p>
-              )}
-
               {!isRankingEditorOpen && (
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <div className="mt-5 grid gap-3">
                   {[0, 1, 2].map((index) => {
                     const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
                     const cityKey = String(item.city || "").toLowerCase();
@@ -1219,7 +1311,7 @@ export default function NowPage() {
                           {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
                         </p>
                         <p className="mt-1 truncate text-xs text-white/65">{item.country || "Country TBA"}</p>
-                        <p className="mt-3 line-clamp-2 text-xs leading-5 text-white/70">
+                        <p className="mt-3 text-xs leading-5 text-white/70">
                           {item.signal || "Signal pending editorial update."}
                         </p>
                       </button>
@@ -1335,236 +1427,256 @@ export default function NowPage() {
           </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <section className="rounded-[28px] border border-orange-300/15 bg-[linear-gradient(180deg,rgba(44,20,10,0.95),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(249,115,22,0.08)]">
+        <section className="mt-6 rounded-[28px] border border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_34%),radial-gradient(circle_at_90%_22%,rgba(232,121,249,0.12),transparent_36%),linear-gradient(180deg,rgba(20,30,44,0.95),rgba(10,10,10,1))] p-6 shadow-[0_26px_88px_rgba(56,189,248,0.09)]">
+          <div className="mb-5">
+            <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/90">Laws & rights updates</p>
+            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Policy and safety watch</h2>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {rightsUpdates.map((item) => {
+              const canEditAdminNews = adminNewsIdSet.has(String(item.id));
+              return (
+              <article
+                key={`rights-${item.id}`}
+                role="button"
+                tabIndex={0}
+                onClick={() =>
+                  setExpandedNewsId((current) =>
+                    String(current) === String(item.id) ? null : String(item.id)
+                  )
+                }
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setExpandedNewsId((current) =>
+                      String(current) === String(item.id) ? null : String(item.id)
+                    );
+                  }
+                }}
+                className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-left transition hover:border-cyan-200/32"
+              >
+                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/80">
+                  {item.city || "Global"} | {formatDateShort(item.date || item.createdAt)}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
+                <p
+                  className={`mt-2 text-xs leading-5 text-white/62 ${
+                    String(expandedNewsId) === String(item.id) ? "" : "line-clamp-2"
+                  }`}
+                >
+                  {item.whyItMatters || item.summary}
+                </p>
+                <div className="mt-3 flex items-center justify-between gap-2">
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-white/40">
+                    {item.sourceName || "Atlas signal"}
+                  </span>
+                  {isAdmin && (
+                    <div className="flex items-center gap-2">
+                      {canEditAdminNews && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openEditNewsComposer(item);
+                          }}
+                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          deleteFeedItem(item.id);
+                        }}
+                        className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </article>
+            );
+            })}
+            {rightsUpdates.length === 0 && (
+              <EmptyState
+                title="No rights updates in this view yet."
+                description="Rights & safety updates will appear here when published."
+                className="md:col-span-2 px-4 py-8"
+              />
+            )}
+          </div>
+        </section>
+
+        <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+          <section className="rounded-[28px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.14),transparent_34%),radial-gradient(circle_at_88%_20%,rgba(56,189,248,0.14),transparent_36%),linear-gradient(180deg,rgba(42,22,50,0.95),rgba(16,16,26,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_90px_rgba(232,121,249,0.09)]">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-orange-200">Happening Soon</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-fuchsia-100/90">Happening Soon</p>
                 <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Tonight and next up</h2>
               </div>
               <button
                 onClick={() => router.push("/events")}
-                className="rounded-full border border-orange-300/30 bg-orange-300/8 px-4 py-2 text-xs text-orange-100 transition hover:border-orange-200 hover:bg-orange-300/15"
+                className="rounded-full border border-fuchsia-200/34 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-50 transition hover:border-fuchsia-100/52 hover:bg-fuchsia-200/20"
               >
                 Open all events
               </button>
             </div>
-
+            <p className="mb-4 text-xs text-fuchsia-50/70">
+              One unified flow: tonight picks first, then the next 30-day pulse.
+            </p>
             <div className="grid gap-4 md:grid-cols-2">
-              {tonightEvents.map((event) => (
-                <div
-                  key={event.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() =>
-                    setExpandedSoonEventId((current) =>
-                      String(current) === String(event.id) ? null : String(event.id)
-                    )
-                  }
-                  onKeyDown={(keyEvent) => {
-                    if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                      keyEvent.preventDefault();
+              {visibleHappeningEvents.map((event) => {
+                const isTonight = event.qaTiming === "tonight";
+                return (
+                  <div
+                    key={`happening-${event.id}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
                       setExpandedSoonEventId((current) =>
                         String(current) === String(event.id) ? null : String(event.id)
-                      );
+                      )
                     }
-                  }}
-                  className="cursor-pointer rounded-[24px] border border-orange-300/14 bg-[linear-gradient(180deg,rgba(64,29,12,0.82),rgba(11,11,11,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-orange-200/35 hover:shadow-[0_20px_50px_rgba(251,146,60,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-200/45"
-                >
-                  <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-orange-200/90 via-amber-200/65 to-transparent" />
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-orange-200/80">{event.city || "City"} | {formatDateShort(event.date)}</p>
-                    <span className="rounded-full border border-orange-200/15 bg-orange-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-orange-100">
-                      {String(expandedSoonEventId) === String(event.id) ? "Expanded" : "Live now"}
-                    </span>
-                  </div>
-                  <h3 className="mt-3 text-lg font-semibold text-white">{event.name}</h3>
-                  <p
-                    className={`mt-3 text-sm leading-6 text-white/65 transition-all ${
-                      String(expandedSoonEventId) === String(event.id) ? "" : "line-clamp-2"
-                    }`}
+                    onKeyDown={(keyEvent) => {
+                      if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+                        keyEvent.preventDefault();
+                        setExpandedSoonEventId((current) =>
+                          String(current) === String(event.id) ? null : String(event.id)
+                        );
+                      }
+                    }}
+                    className="cursor-pointer rounded-[24px] border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(68,28,74,0.72),rgba(22,16,28,0.94))] p-5 transition hover:-translate-y-[1px] hover:border-fuchsia-100/44 hover:shadow-[0_20px_58px_rgba(232,121,249,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/45"
                   >
-                    {event.description || "Community event with live momentum right now."}
-                  </p>
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <span className="text-[11px] uppercase tracking-[0.16em] text-white/45">
-                      {String(expandedSoonEventId) === String(event.id) ? "Tap again to collapse" : "Tap to expand"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(clickEvent) => {
-                        clickEvent.stopPropagation();
-                        router.push(citySelectionPath(event.city, { eventId: event.id }));
-                      }}
-                      className="rounded-full border border-orange-200/22 bg-orange-200/10 px-3 py-1 text-xs text-orange-100 transition hover:border-orange-200/40"
+                    <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-fuchsia-200/95 via-cyan-200/65 to-transparent" />
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-50/85">
+                        {event.city || "City"} | {formatDateShort(event.date)}
+                      </p>
+                      <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] ${
+                        isTonight
+                          ? "border-fuchsia-200/25 bg-fuchsia-200/16 text-fuchsia-100"
+                          : "border-cyan-200/25 bg-cyan-200/14 text-cyan-100"
+                      }`}>
+                        {isTonight ? "Tonight" : "Next"}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-lg font-semibold text-white">{event.name}</h3>
+                    <p
+                      className={`mt-3 text-sm leading-6 text-white/68 transition-all ${
+                        String(expandedSoonEventId) === String(event.id) ? "" : "line-clamp-2"
+                      }`}
                     >
-                      Open event
-                    </button>
+                      {event.description || "Upcoming community event with high signal value."}
+                    </p>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <span className="text-[11px] uppercase tracking-[0.16em] text-white/45">
+                        {String(expandedSoonEventId) === String(event.id) ? "Tap again to collapse" : "Tap to expand"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(clickEvent) => {
+                          clickEvent.stopPropagation();
+                          router.push(citySelectionPath(event.city, { eventId: event.id }));
+                        }}
+                        className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/14 px-3 py-1 text-xs text-fuchsia-50 transition hover:border-fuchsia-100/50"
+                      >
+                        Open event
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-
-              {tonightEvents.length === 0 && (
+                );
+              })}
+              {happeningSoonEvents.length === 0 && (
                 <EmptyState
                   title="No upcoming events in this view yet."
-                  description="Switch city filter or jump to full events list."
-                  className="md:col-span-2"
+                  description="Switch city filter or open all events."
+                  className="md:col-span-2 px-4 py-8"
                 >
                   <button
                     onClick={() => {
                       setSelectedCity("all");
                       router.push("/events");
                     }}
-                    className="rounded-full border border-orange-300/25 bg-orange-300/10 px-4 py-2 text-xs text-orange-100 transition hover:border-orange-200 hover:bg-orange-300/15"
+                    className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-50 transition hover:border-fuchsia-100/50 hover:bg-fuchsia-200/18"
                   >
                     Open global events
                   </button>
                 </EmptyState>
               )}
             </div>
+            {happeningSoonEvents.length > 6 && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsHappeningExpanded((current) => !current)}
+                  className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.13em] text-fuchsia-50 transition hover:border-fuchsia-100/45 hover:bg-fuchsia-200/18"
+                >
+                  {isHappeningExpanded ? "Show less events" : "Show more events"}
+                </button>
+              </div>
+            )}
           </section>
 
-          <section className="rounded-[28px] border border-cyan-300/15 bg-[linear-gradient(180deg,rgba(20,40,50,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.07)]">
-            <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">Momentum</p>
-            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Cities with signal</h2>
+          <section className="rounded-[28px] border border-fuchsia-300/15 bg-[linear-gradient(180deg,rgba(44,18,48,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(232,121,249,0.08)]">
+            <p className="text-xs uppercase tracking-[0.25em] text-fuchsia-200">Community stories</p>
+            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Voices from members</h2>
+            <p className="mt-3 text-sm leading-6 text-white/62">
+              Member stories are editorially moderated before publishing to keep signal quality high.
+            </p>
 
             <div className="mt-5 space-y-3">
-              {cityMomentum.map((city) => (
+              {visibleCommunityStories.map((story) => (
                 <button
-                  key={city.city}
-                  onClick={() => router.push(cityPath(city.city))}
-                  className="flex w-full items-center justify-between rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(22,44,56,0.72),rgba(11,11,11,0.96))] px-4 py-4 text-left transition hover:border-cyan-200/30"
+                  key={`story-${story.id}`}
+                  type="button"
+                  onClick={() =>
+                    setExpandedNewsId((current) =>
+                      String(current) === String(story.id) ? null : String(story.id)
+                    )
+                  }
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-fuchsia-200/30"
                 >
-                  <div>
-                    <p className="text-sm font-semibold text-white">{city.city}</p>
-                    <p className="mt-1 text-xs text-white/55">{city.places} places | {city.reviews} reviews</p>
-                  </div>
-                  <span className="rounded-full bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">Hot</span>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/75">
+                    {story.city || "Global"} | {formatDateShort(story.date || story.createdAt)}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-white">{story.title}</p>
+                  <p
+                    className={`mt-2 text-xs leading-5 text-white/60 ${
+                      String(expandedNewsId) === String(story.id) ? "" : "line-clamp-2"
+                    }`}
+                  >
+                    {story.summary}
+                  </p>
                 </button>
               ))}
-              {cityMomentum.length === 0 && (
+              {communityStories.length === 0 && (
                 <EmptyState
-                  title="No city momentum in this filter yet."
-                  description="Try broadening to all cities for more signal."
+                  title="No approved community stories yet."
+                  description="Members will be able to submit stories for admin approval."
                   className="px-4 py-8"
-                >
-                  {selectedCity !== "all" && (
-                    <button
-                      onClick={() => setSelectedCity("all")}
-                      className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
-                    >
-                      Show all cities
-                    </button>
-                  )}
-                </EmptyState>
+                  primaryActionLabel="Open community"
+                  onPrimaryAction={() => router.push("/community")}
+                />
               )}
             </div>
+            {communityStories.length > 4 && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsCommunityExpanded((current) => !current)}
+                  className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.13em] text-fuchsia-50 transition hover:border-fuchsia-100/45 hover:bg-fuchsia-200/18"
+                >
+                  {isCommunityExpanded ? "Show less stories" : "Show more stories"}
+                </button>
+              </div>
+            )}
           </section>
         </div>
 
-        <section className="mt-6 rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(18,30,44,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(56,189,248,0.08)]">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">This Week</p>
-              <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Build your next move</h2>
-            </div>
-            <button
-              onClick={() => router.push("/favorites")}
-              className="rounded-full border border-cyan-300/30 bg-cyan-300/8 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200 hover:bg-cyan-300/15"
-            >
-              Open favorites
-            </button>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Events this week</p>
-              <p className="mt-3 text-4xl font-semibold text-white">{thisWeekEvents.length}</p>
-              <p className="mt-2 text-sm text-white/55">Time-based queer culture you can act on now.</p>
-            </div>
-            <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Trending places</p>
-              <p className="mt-3 text-4xl font-semibold text-white">{trendingPlaces.length}</p>
-              <p className="mt-2 text-sm text-white/55">Places with the strongest review gravity in this view.</p>
-            </div>
-            <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/80">Active cities</p>
-              <p className="mt-3 text-4xl font-semibold text-white">{cityMomentum.length}</p>
-              <p className="mt-2 text-sm text-white/55">Places where signal is currently strongest.</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-[28px] border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(8,39,32,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(16,185,129,0.08)]">
-          <div className="mb-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-emerald-200">Discovery Engine</p>
-            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Places with pull</h2>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {trendingPlaces.map((place) => {
-              const isExpanded = String(expandedPullPlaceId) === String(place.id);
-              return (
-              <div
-                key={place.id}
-                role="button"
-                tabIndex={0}
-                onClick={() =>
-                  setExpandedPullPlaceId((current) =>
-                    String(current) === String(place.id) ? null : String(place.id)
-                  )
-                }
-                onKeyDown={(keyEvent) => {
-                  if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                    keyEvent.preventDefault();
-                    setExpandedPullPlaceId((current) =>
-                      String(current) === String(place.id) ? null : String(place.id)
-                    );
-                  }
-                }}
-                className={`cursor-pointer overflow-hidden rounded-[24px] border bg-[linear-gradient(180deg,rgba(10,43,33,0.76),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200/45 ${
-                  isExpanded
-                    ? "border-emerald-200/45 shadow-[0_24px_56px_rgba(16,185,129,0.2)]"
-                    : "border-white/8 hover:border-emerald-200/30 hover:shadow-[0_20px_50px_rgba(16,185,129,0.12)]"
-                }`}
-              >
-                <div className="mb-4 h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(16,185,129,0.96),rgba(52,211,153,0.55),rgba(16,185,129,0.2))]" />
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/80">{place.city}</p>
-                  <p className="text-xs text-white/55">Rating {formatRatingValue(place.avgRating)}</p>
-                </div>
-                <h3 className="mt-2 text-lg font-semibold text-white">{place.name}</h3>
-                <VibeTagChips entity={place} tone="emerald" className="mt-2" includeTypeFallback includeMixedFallback />
-                <p className={`mt-3 text-sm leading-6 text-white/65 ${isExpanded ? "" : "line-clamp-2"}`}>
-                  {place.description || "A place drawing real community attention right now."}
-                </p>
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <p className="text-xs text-emerald-200/70">{isExpanded ? "Tap again to collapse" : "Tap to expand"}</p>
-                  <button
-                    type="button"
-                    onClick={(clickEvent) => {
-                      clickEvent.stopPropagation();
-                      router.push(citySelectionPath(place.city, { placeId: place.id }));
-                    }}
-                    className="rounded-full border border-emerald-200/35 bg-emerald-300/12 px-3 py-1 text-xs font-medium text-emerald-100 transition hover:bg-emerald-300/20"
-                  >
-                    Open place
-                  </button>
-                </div>
-              </div>
-              );
-            })}
-            {trendingPlaces.length === 0 && (
-              <EmptyState
-                title="No places with momentum in this view yet."
-                description="Try another city filter or check back after new reviews."
-                className="md:col-span-2 xl:col-span-3 px-4 py-8"
-                primaryActionLabel="Show all cities"
-                onPrimaryAction={() => setSelectedCity("all")}
-              />
-            )}
-          </div>
-        </section>
       </div>
     </main>
   );
