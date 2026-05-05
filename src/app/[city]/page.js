@@ -4068,6 +4068,15 @@ export default function CityPage() {
           venueJumpGroups={venueJumpGroups}
         />
 
+        <QuickGuideSection
+          sectionRef={guideSectionRef}
+          cityName={cityName}
+          config={config}
+          placesLoading={placesLoading}
+          placesLoadError={placesLoadError}
+          reloadPlaces={reloadPlaces}
+        />
+
         <CityTonightSection
           sectionRef={tonightSectionRef}
           cityName={cityName}
@@ -4144,14 +4153,6 @@ export default function CityPage() {
           scrollToSection={scrollToSection}
           openEventContribution={openEventContribution}
           redirectToJoin={redirectToJoin}
-        />
-        <QuickGuideSection
-          sectionRef={guideSectionRef}
-          cityName={cityName}
-          config={config}
-          placesLoading={placesLoading}
-          placesLoadError={placesLoadError}
-          reloadPlaces={reloadPlaces}
         />
 
         <CityServicesSection

@@ -61,9 +61,11 @@ export default function CityTonightSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section animate-cinematic-in mb-10 rounded-[34px] border border-fuchsia-300/14 bg-[linear-gradient(180deg,rgba(38,20,44,0.84),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(217,70,239,0.08)]"
+      className="qa-city-section animate-cinematic-in relative mb-10 overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_82px_rgba(0,0,0,0.34)]"
       style={{ animationDelay: "195ms" }}
     >
+      <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 bottom-8 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
       <CityTonightHeader
         cityName={cityName}
         tonightFeedTab={tonightFeedTab}

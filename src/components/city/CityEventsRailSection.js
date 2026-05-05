@@ -34,10 +34,12 @@ export default function CityEventsRailSection({
   return (
     <div
       ref={sectionRef}
-      className="hidden qa-city-section animate-cinematic-in mb-10 rounded-[30px] border border-violet-300/14 bg-[linear-gradient(180deg,rgba(26,20,42,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_18px_52px_rgba(139,92,246,0.07)]"
+      className="hidden qa-city-section animate-cinematic-in relative mb-10 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_82px_rgba(0,0,0,0.34)]"
       style={{ animationDelay: "210ms" }}
     >
-      <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-violet-300/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-violet-200 backdrop-blur">
+      <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 bottom-8 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
+      <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-white/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-white backdrop-blur">
         Events
       </h2>
       {eventsLoadError && (

@@ -29,7 +29,7 @@ export default function TonightPublicFeedPanel({
           <p>{eventsLoadError}</p>
           <button
             onClick={fetchEvents}
-            className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
+            className="qa-action qa-city-cta-tertiary mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
           >
             Retry
           </button>

@@ -59,7 +59,7 @@ export default function CityTonightHeader({
             <button
               type="button"
               onClick={onJoinToHost}
-              className="qa-cinematic-hover qa-action qa-city-cta-secondary rounded-full border border-fuchsia-200/38 bg-fuchsia-200/18 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/56"
+              className="qa-cinematic-hover qa-action qa-city-cta-secondary rounded-full border border-white/24 bg-white/8 px-4 py-2 text-xs font-semibold text-white/90 transition hover:border-white/40"
             >
               Join to host
             </button>
@@ -76,7 +76,7 @@ export default function CityTonightHeader({
           <button
             type="button"
             onClick={onJoinToHost}
-            className="qa-cinematic-hover qa-action qa-city-cta-secondary rounded-full border border-fuchsia-200/38 bg-fuchsia-200/18 px-4 py-2 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/56"
+            className="qa-cinematic-hover qa-action qa-city-cta-secondary rounded-full border border-white/24 bg-white/8 px-4 py-2 text-xs font-semibold text-white/90 transition hover:border-white/40"
           >
             Join to host
           </button>

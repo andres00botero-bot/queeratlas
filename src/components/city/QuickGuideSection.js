@@ -14,10 +14,12 @@ export default function QuickGuideSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section animate-cinematic-in mb-10 rounded-[34px] border border-amber-200/12 bg-[linear-gradient(180deg,rgba(30,26,18,0.82),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(251,191,36,0.05)]"
+      className="qa-city-section animate-cinematic-in relative mb-10 overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_82px_rgba(0,0,0,0.34)]"
       style={{ animationDelay: "250ms" }}
     >
-      <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-amber-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-amber-100 backdrop-blur">
+      <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
+      <div className="pointer-events-none absolute -right-16 bottom-8 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
+      <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-white/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-white backdrop-blur">
         Quick Guide
       </h2>
       {placesLoading && (
@@ -42,29 +44,29 @@ export default function QuickGuideSection({
           const guideTone =
             index % 4 === 0
               ? {
-                  card: "border-amber-200/20 bg-[linear-gradient(135deg,rgba(180,83,9,0.20),rgba(251,191,36,0.08),rgba(12,12,12,0.98))] hover:border-amber-200/34",
+                  card: "border-cyan-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-cyan-200/30 shadow-[0_24px_80px_rgba(56,189,248,0.14)]",
                   strip: "from-amber-300/90 via-orange-300/60 to-transparent",
-                  type: "text-amber-100 border-amber-200/30 bg-amber-200/12",
+                  type: "text-cyan-100 border-cyan-200/30 bg-cyan-200/12",
                   vibe: "Night pulse",
                 }
               : index % 4 === 1
                 ? {
-                    card: "border-cyan-200/18 bg-[linear-gradient(180deg,rgba(14,48,64,0.36),rgba(12,12,12,0.98))] hover:border-cyan-200/30",
+                    card: "border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-fuchsia-200/30 shadow-[0_24px_80px_rgba(217,70,239,0.12)]",
                     strip: "from-cyan-300/90 via-sky-300/60 to-transparent",
-                    type: "text-cyan-100 border-cyan-200/30 bg-cyan-200/12",
+                    type: "text-fuchsia-100 border-fuchsia-200/30 bg-fuchsia-200/12",
                     vibe: "Local rhythm",
                   }
                 : index % 4 === 2
                   ? {
-                      card: "border-violet-200/18 bg-[linear-gradient(180deg,rgba(47,28,78,0.34),rgba(12,12,12,0.98))] hover:border-violet-200/30",
+                      card: "border-emerald-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-emerald-200/30 shadow-[0_24px_80px_rgba(45,212,191,0.12)]",
                       strip: "from-violet-300/90 via-fuchsia-300/60 to-transparent",
-                      type: "text-violet-100 border-violet-200/30 bg-violet-200/12",
+                      type: "text-emerald-100 border-emerald-200/30 bg-emerald-200/12",
                       vibe: "After-dark flow",
                     }
                   : {
-                      card: "border-emerald-200/18 bg-[linear-gradient(180deg,rgba(16,70,52,0.34),rgba(12,12,12,0.98))] hover:border-emerald-200/30",
+                      card: "border-amber-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-amber-200/30 shadow-[0_24px_80px_rgba(251,191,36,0.12)]",
                       strip: "from-emerald-300/90 via-teal-300/60 to-transparent",
-                      type: "text-emerald-100 border-emerald-200/30 bg-emerald-200/12",
+                      type: "text-amber-100 border-amber-200/30 bg-amber-200/12",
                       vibe: "Soft start",
                     };
           return (
