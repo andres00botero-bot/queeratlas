@@ -46,36 +46,51 @@ function getNewsToneByCategory(category) {
   const key = String(category || "");
   if (key === "rights_safety") {
     return {
-      accentBar: "from-rose-200/85 via-orange-200/65 to-transparent",
+      accentBar: "from-rose-200 via-orange-200 to-rose-100/45",
       categoryBadge: "border-rose-200/30 bg-rose-200/12 text-rose-100",
-      cardHover: "hover:border-rose-200/35",
+      cardBorder: "border-rose-200/20",
+      cardHover: "hover:border-rose-200/50 hover:shadow-[0_22px_56px_rgba(251,113,133,0.18)]",
+      overlay: "from-rose-300/28 via-orange-300/16 to-transparent",
+      glow: "shadow-[0_24px_80px_rgba(251,146,60,0.16)]",
     };
   }
   if (key === "major_event") {
     return {
-      accentBar: "from-orange-200/85 via-amber-200/65 to-transparent",
+      accentBar: "from-orange-200 via-amber-200 to-yellow-100/45",
       categoryBadge: "border-orange-200/30 bg-orange-200/12 text-orange-100",
-      cardHover: "hover:border-orange-200/35",
+      cardBorder: "border-orange-200/20",
+      cardHover: "hover:border-orange-200/50 hover:shadow-[0_22px_56px_rgba(251,146,60,0.16)]",
+      overlay: "from-orange-300/28 via-amber-300/16 to-transparent",
+      glow: "shadow-[0_24px_80px_rgba(251,146,60,0.16)]",
     };
   }
   if (key === "nightlife_change") {
     return {
-      accentBar: "from-fuchsia-200/85 via-pink-200/65 to-transparent",
+      accentBar: "from-fuchsia-200 via-pink-200 to-purple-100/45",
       categoryBadge: "border-fuchsia-200/30 bg-fuchsia-200/12 text-fuchsia-100",
-      cardHover: "hover:border-fuchsia-200/35",
+      cardBorder: "border-fuchsia-200/20",
+      cardHover: "hover:border-fuchsia-200/50 hover:shadow-[0_22px_56px_rgba(232,121,249,0.2)]",
+      overlay: "from-fuchsia-300/30 via-pink-300/18 to-transparent",
+      glow: "shadow-[0_24px_80px_rgba(217,70,239,0.14)]",
     };
   }
   if (key === "rising_spot") {
     return {
-      accentBar: "from-emerald-200/85 via-teal-200/65 to-transparent",
+      accentBar: "from-emerald-200 via-teal-200 to-cyan-100/45",
       categoryBadge: "border-emerald-200/30 bg-emerald-200/12 text-emerald-100",
-      cardHover: "hover:border-emerald-200/35",
+      cardBorder: "border-emerald-200/20",
+      cardHover: "hover:border-emerald-200/50 hover:shadow-[0_22px_56px_rgba(52,211,153,0.18)]",
+      overlay: "from-emerald-300/26 via-teal-300/16 to-transparent",
+      glow: "shadow-[0_24px_80px_rgba(45,212,191,0.14)]",
     };
   }
   return {
-    accentBar: "from-cyan-200/85 via-sky-200/65 to-transparent",
+    accentBar: "from-cyan-200 via-sky-200 to-blue-100/45",
     categoryBadge: "border-cyan-200/30 bg-cyan-200/12 text-cyan-100",
-    cardHover: "hover:border-cyan-200/35",
+    cardBorder: "border-cyan-200/20",
+    cardHover: "hover:border-cyan-200/50 hover:shadow-[0_22px_56px_rgba(34,211,238,0.2)]",
+    overlay: "from-cyan-300/28 via-sky-300/16 to-transparent",
+    glow: "shadow-[0_24px_80px_rgba(56,189,248,0.16)]",
   };
 }
 
@@ -139,9 +154,10 @@ function createAdminNewsFormDefault() {
 }
 
 const COMMUNITY_STORY_TYPES = [
-  { value: "safety_issues", label: "Safety issues", mapToCategory: "rights_safety" },
-  { value: "global_developments", label: "Global queer developments", mapToCategory: "culture_tip" },
-  { value: "nightlife_stories", label: "Nightlife stories", mapToCategory: "nightlife_change" },
+  { value: "harassment_or_violence", label: "Harassment, threats or violence", mapToCategory: "rights_safety" },
+  { value: "discrimination_or_bans", label: "Discrimination, bans or exclusion", mapToCategory: "rights_safety" },
+  { value: "shared_experiences", label: "Shared experiences and community reality", mapToCategory: "culture_tip" },
+  { value: "nightlife_safety_story", label: "Nightlife safety story", mapToCategory: "nightlife_change" },
   { value: "queer_life_in_city", label: "What it is like being queer in a city", mapToCategory: "culture_tip" },
 ];
 
@@ -247,6 +263,15 @@ function isMissingColumnError(error, columnName = "") {
 function formatSupabaseError(error) {
   if (!error) return "Unknown error";
   return String(error.message || error.details || error.hint || "Unknown error").trim();
+}
+
+function mergeEditorialCacheRanking(nextRankingOverrides) {
+  const cached = readRuntimeCache(NOW_EDITORIAL_CACHE_KEY, 24 * 60 * 60 * 1000);
+  const cachedData = cached?.data && typeof cached.data === "object" ? cached.data : {};
+  writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
+    ...cachedData,
+    rankingOverrides: nextRankingOverrides || {},
+  });
 }
 
 function createClientId(prefix) {
@@ -364,7 +389,8 @@ export default function NowPage() {
     if (cached.hit && cached.data) {
       setAdminNews(Array.isArray(cached.data.adminNews) ? cached.data.adminNews : []);
       setHiddenNewsIds(Array.isArray(cached.data.hiddenNewsIds) ? cached.data.hiddenNewsIds : []);
-      setRankingOverrides(cached.data.rankingOverrides || {});
+      const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, cached.data.rankingOverrides || {});
+      setRankingOverrides(localRankings || {});
       setSyncWarning(String(cached.data.syncWarning || ""));
       if (!cached.stale) return;
     }
@@ -835,7 +861,7 @@ export default function NowPage() {
     if (upsertError && !isMissingTableError(upsertError)) {
       setSyncWarning(`Cloud sync failed. Using local backup. ${formatSupabaseError(upsertError)}`);
     } else if (upsertError && isMissingTableError(upsertError)) {
-      setSyncWarning("Off-grid sync is unavailable right now.");
+      setSyncWarning("Ranking saved locally. Cloud sync is unavailable right now.");
     } else {
       const { error: trimError } = await supabase
         .from(RANKING_TABLE)
@@ -843,7 +869,7 @@ export default function NowPage() {
         .eq("year", year)
         .gt("rank", rows.length);
       if (trimError && !isMissingTableError(trimError)) {
-        setSyncWarning(`Cloud sync partial. ${formatSupabaseError(trimError)}`);
+        setSyncWarning(`Ranking saved. Cloud cleanup partial: ${formatSupabaseError(trimError)}`);
       } else {
         setSyncWarning("");
       }
@@ -851,6 +877,7 @@ export default function NowPage() {
 
     setRankingOverrides(next);
     writeLocalJson(RANKING_OVERRIDES_KEY, next);
+    mergeEditorialCacheRanking(next);
     setIsRankingEditorOpen(false);
   };
 
@@ -864,13 +891,14 @@ export default function NowPage() {
     if (error && !isMissingTableError(error)) {
       setSyncWarning("Cloud sync failed. Using local backup.");
     } else if (error && isMissingTableError(error)) {
-      setSyncWarning("Off-grid sync is unavailable right now.");
+      setSyncWarning("Ranking reset saved locally. Cloud sync is unavailable right now.");
     } else {
       setSyncWarning("");
     }
 
     setRankingOverrides(next);
     writeLocalJson(RANKING_OVERRIDES_KEY, next);
+    mergeEditorialCacheRanking(next);
     setIsRankingEditorOpen(false);
   };
   const rankingRenderItems = isRankingEditorOpen ? rankingDraft : rankingItems;
@@ -1078,9 +1106,9 @@ export default function NowPage() {
   }
 
   return (
-    <main className="qa-page min-h-screen bg-black text-white">
+    <main className="qa-page qa-now min-h-screen bg-black text-white">
       <div className="qa-shell">
-        <div className="qa-panel mb-8 rounded-[30px] border border-fuchsia-300/18 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.22),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(251,146,60,0.14),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(61,24,38,0.9))] p-7 shadow-[0_30px_120px_rgba(232,121,249,0.12)] sm:p-8">
+        <div className="qa-panel mb-8 rounded-[30px] border border-fuchsia-200/24 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.24),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(56,189,248,0.16),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(18,26,48,0.9))] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
@@ -1088,6 +1116,11 @@ export default function NowPage() {
               <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
                 Three separate editorial lanes: mixed discovery, policy & safety watch, and member voices.
               </p>
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-white/72">
+                <span className="rounded-full border border-cyan-200/30 bg-cyan-200/10 px-2.5 py-1 uppercase tracking-[0.12em] text-cyan-100">Mixed feed</span>
+                <span className="rounded-full border border-rose-200/30 bg-rose-200/10 px-2.5 py-1 uppercase tracking-[0.12em] text-rose-100">Policy watch</span>
+                <span className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/10 px-2.5 py-1 uppercase tracking-[0.12em] text-fuchsia-100">Voices</span>
+              </div>
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-black/25 p-4 backdrop-blur">
@@ -1125,11 +1158,13 @@ export default function NowPage() {
         </div>
 
         <section className="mb-6">
-          <div className="grid items-stretch gap-6 xl:grid-cols-[1.52fr_0.72fr]">
-            <section className="qa-panel flex h-full flex-col rounded-[28px] border border-cyan-300/14 bg-[linear-gradient(180deg,rgba(14,24,36,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(34,211,238,0.08)]">
+          <div className="grid items-stretch gap-6 xl:grid-cols-[1.6fr_0.7fr]">
+            <section className="relative flex h-full flex-col p-0">
+              <div className="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
+              <div className="pointer-events-none absolute -right-20 bottom-10 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-cyan-200/85">Mixed feed</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/80">Mixed feed</p>
                   <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
                 </div>
                 {isAdmin && (
@@ -1152,7 +1187,7 @@ export default function NowPage() {
                   </button>
                 )}
               </div>
-              <div className="mb-5 flex flex-wrap gap-2">
+              <div className="relative z-10 mb-5 flex flex-wrap gap-2">
                 {mixedFeedCategories.map((category) => {
                   const isActive = selectedNewsCategory === category.key;
                   return (
@@ -1254,7 +1289,7 @@ export default function NowPage() {
                 {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
               </p>
 
-              <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto pr-1 md:grid-cols-2">
+              <div className="relative z-10 grid min-h-0 flex-1 content-start gap-4 overflow-y-auto pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
                 {displayedNewsItems.length > 0 ? (
                   displayedNewsItems.map((item) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
@@ -1263,93 +1298,101 @@ export default function NowPage() {
                       : item.date;
                     const tone = getNewsToneByCategory(item.category);
                     const confidenceLabel = resolveNewsConfidence(item, canEditAdminNews);
+                    const isExpanded = String(expandedNewsId) === String(item.id);
                     return (
-                    <article
-                      key={item.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() =>
-                        setExpandedNewsId((current) =>
-                          String(current) === String(item.id) ? null : String(item.id)
-                        )
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          setExpandedNewsId((current) =>
-                            String(current) === String(item.id) ? null : String(item.id)
-                          );
-                        }
-                      }}
-                      className={`cursor-pointer rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 transition hover:-translate-y-[1px] ${tone.cardHover} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
-                    >
-                      <div className={`mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r ${tone.accentBar}`} />
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs uppercase tracking-[0.16em] text-white/45">{item.city || "Global"}</p>
-                          <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${tone.categoryBadge}`}>
-                            {categoryLabels[item.category] || "News"}
-                          </span>
-                        </div>
-                        <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
-                          {formatDateShort(itemDateForDisplay)}
-                        </span>
-                      </div>
-                      <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
-                      <p
-                        className={`mt-3 text-sm leading-6 text-white/66 transition-all ${
-                          String(expandedNewsId) === String(item.id) ? "" : "line-clamp-2"
-                        }`}
-                      >
-                        {item.summary}
-                      </p>
-                      <div className="mt-4 rounded-xl border border-white/8 bg-black/20 p-3">
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Why it matters</p>
-                        <p
-                          className={`mt-2 text-sm leading-6 text-white/62 transition-all ${
-                            String(expandedNewsId) === String(item.id) ? "" : "line-clamp-3"
-                          }`}
+                      <div key={item.id} className="group relative h-full pb-3">
+                        <article
+                          role="button"
+                          tabIndex={0}
+                          onClick={() =>
+                            setExpandedNewsId((current) =>
+                              String(current) === String(item.id) ? null : String(item.id)
+                            )
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              setExpandedNewsId((current) =>
+                                String(current) === String(item.id) ? null : String(item.id)
+                              );
+                            }
+                          }}
+                          className={`qa-premium-card relative z-10 h-[25.5rem] cursor-pointer overflow-hidden rounded-[24px] border ${tone.cardBorder} bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-4 transition duration-300 hover:-translate-y-[2px] ${tone.cardHover} ${tone.glow} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
                         >
-                          {item.whyItMatters}
-                        </p>
-                      </div>
-                      <div className="mt-4 flex items-center justify-between">
-                        <span className="text-[11px] uppercase tracking-[0.14em] text-white/36">{confidenceLabel}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[11px] text-white/36">
-                            {String(expandedNewsId) === String(item.id)
-                              ? item.sourceName || "Atlas signal"
-                              : "Tap to expand"}
-                          </span>
-                          {isAdmin && (
-                            <>
-                              {canEditAdminNews && (
-                                <button
-                                  type="button"
-                                  onClick={(clickEvent) => {
-                                    clickEvent.stopPropagation();
-                                    openEditNewsComposer(item);
-                                  }}
-                                  className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/38"
-                                >
-                                  Edit
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={(clickEvent) => {
-                                  clickEvent.stopPropagation();
-                                  deleteFeedItem(item.id);
-                                }}
-                                className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                          <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 transition duration-300 group-hover:opacity-80 ${tone.overlay}`} />
+                          <div className="pointer-events-none absolute inset-[1px] rounded-[22px] bg-[#0b0b0b]/96" />
+                          <div className="relative z-10 flex h-full flex-col">
+                            <div className={`mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r transition-all duration-300 group-hover:w-32 ${tone.accentBar}`} />
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs uppercase tracking-[0.16em] text-white/45">{item.city || "Global"}</p>
+                                <span className={`rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] ${tone.categoryBadge}`}>
+                                  {categoryLabels[item.category] || "News"}
+                                </span>
+                              </div>
+                              <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
+                                {formatDateShort(itemDateForDisplay)}
+                              </span>
+                            </div>
+                            <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
+                            <div className={`mt-3 min-h-0 flex-1 ${isExpanded ? "overflow-y-auto pr-1" : "overflow-hidden"}`}>
+                              <p
+                                className={`mt-2 text-sm leading-6 text-white/62 transition-all ${
+                                  isExpanded ? "" : "line-clamp-2"
+                                }`}
                               >
-                                Delete
-                              </button>
-                            </>
-                          )}
-                        </div>
+                                {item.summary}
+                              </p>
+                              <div className="mt-4 rounded-xl border border-white/8 bg-black/20 p-3">
+                                <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Why it matters</p>
+                                <p
+                                  className={`mt-2 text-sm leading-6 text-white/62 transition-all ${
+                                    isExpanded ? "" : "line-clamp-3"
+                                  }`}
+                                >
+                                  {item.whyItMatters}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex items-center justify-between">
+                              <span className="text-[11px] uppercase tracking-[0.14em] text-white/36">{confidenceLabel}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] text-white/36">
+                                  {isExpanded
+                                    ? item.sourceName || "Atlas signal"
+                                    : "Tap to expand"}
+                                </span>
+                                {isAdmin && (
+                                  <>
+                                    {canEditAdminNews && (
+                                      <button
+                                        type="button"
+                                        onClick={(clickEvent) => {
+                                          clickEvent.stopPropagation();
+                                          openEditNewsComposer(item);
+                                        }}
+                                        className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/38"
+                                      >
+                                        Edit
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={(clickEvent) => {
+                                        clickEvent.stopPropagation();
+                                        deleteFeedItem(item.id);
+                                      }}
+                                      className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                                    >
+                                      Delete
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </article>
                       </div>
-                    </article>
                     );
                   })
                 ) : (
@@ -1372,14 +1415,14 @@ export default function NowPage() {
               </div>
             </section>
 
-            <section className="qa-panel relative flex h-full flex-col overflow-hidden rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(180deg,rgba(11,44,56,0.75),rgba(9,9,9,0.96))] p-6 shadow-[0_24px_64px_rgba(34,211,238,0.10)]">
-              <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-amber-300/10 blur-3xl" />
-              <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-rose-300/8 blur-3xl" />
+            <section className="qa-panel relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/14 bg-[linear-gradient(180deg,rgba(18,22,34,0.92),rgba(9,11,18,0.97),rgba(7,8,12,1))] p-6 shadow-[0_24px_64px_rgba(2,6,23,0.35)]">
+              <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-cyan-300/8 blur-3xl" />
+              <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-fuchsia-300/6 blur-3xl" />
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">Ranking</p>
+                  <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/75">Ranking</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">Top 10 Queer Travel Destinations</h3>
-                  <div className="mt-2 inline-flex items-center rounded-full border border-cyan-200/26 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-100/90">
+                  <div className="mt-2 inline-flex items-center rounded-full border border-cyan-200/26 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/90">
                     Atlas ranking editorial
                   </div>
                 </div>
@@ -1475,7 +1518,7 @@ export default function NowPage() {
                           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/18 bg-white/10 text-sm font-semibold text-white">
                             #{index + 1}
                           </span>
-                          <span className="text-[10px] uppercase tracking-[0.14em] text-white/75">
+                          <span className="text-[11px] uppercase tracking-[0.14em] text-white/75">
                             {index === 0 ? "Global icon" : index === 1 ? "High signal" : "Rising elite"}
                           </span>
                         </div>
@@ -1582,7 +1625,7 @@ export default function NowPage() {
                             if (!cityExists) return;
                             router.push(`/${citySlug}`);
                           }}
-                          className={`rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] transition ${
+                          className={`rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
                             cityExists
                               ? "border border-cyan-200/35 bg-cyan-200/12 text-cyan-100 hover:bg-cyan-200/22"
                               : "border border-white/10 bg-white/5 text-white/35"
@@ -1599,10 +1642,10 @@ export default function NowPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-[28px] border border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_34%),radial-gradient(circle_at_90%_22%,rgba(232,121,249,0.12),transparent_36%),linear-gradient(180deg,rgba(20,30,44,0.95),rgba(10,10,10,1))] p-6 shadow-[0_26px_88px_rgba(56,189,248,0.09)]">
+        <section className="mt-8 rounded-[28px] border border-rose-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.16),transparent_34%),radial-gradient(circle_at_90%_22%,rgba(251,191,36,0.11),transparent_36%),linear-gradient(180deg,rgba(42,20,30,0.95),rgba(18,12,18,0.98),rgba(10,10,10,1))] p-6 shadow-[0_26px_88px_rgba(244,63,94,0.10)]">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/90">Laws & rights updates</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-rose-100/90">Laws & rights updates</p>
             <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Policy and safety watch</h2>
             </div>
             {isAdmin && (
@@ -1622,7 +1665,7 @@ export default function NowPage() {
                   });
                   setShowPolicyAdminForm(true);
                 }}
-                className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/46"
+                className="rounded-full border border-rose-200/35 bg-rose-200/12 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-100/60"
               >
                 {showPolicyAdminForm ? "Close policy composer" : "Publish policy update"}
               </button>
@@ -1630,8 +1673,8 @@ export default function NowPage() {
           </div>
 
           {isAdmin && showPolicyAdminForm && (
-            <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
-              <p className="md:col-span-2 text-xs uppercase tracking-[0.14em] text-cyan-100/85">
+            <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-rose-200/20 bg-rose-200/[0.06] p-4 md:grid-cols-2">
+              <p className="md:col-span-2 text-xs uppercase tracking-[0.14em] text-rose-100/90">
                 {isEditingNews ? "Edit policy update" : "Publish policy update"}
               </p>
               <input
@@ -1653,7 +1696,7 @@ export default function NowPage() {
                 type="date"
                 className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
               />
-              <div className="rounded-xl border border-cyan-200/18 bg-cyan-200/10 px-4 py-3 text-xs uppercase tracking-[0.14em] text-cyan-100/90">
+              <div className="rounded-xl border border-rose-200/18 bg-rose-200/10 px-4 py-3 text-xs uppercase tracking-[0.14em] text-rose-100/90">
                 Category: Rights & safety
               </div>
               <textarea
@@ -1673,7 +1716,7 @@ export default function NowPage() {
               <button
                 type="submit"
                 disabled={isPublishingNews}
-                className="rounded-xl bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
+                className="rounded-xl bg-gradient-to-r from-rose-300 via-fuchsia-300 to-amber-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
               >
                 {isPublishingNews
                   ? isEditingNews
@@ -1714,15 +1757,15 @@ export default function NowPage() {
                     );
                   }
                 }}
-                className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-left transition hover:border-cyan-200/32"
+                className="cursor-pointer rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-rose-200/38 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/45"
               >
-                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/80">
+                <p className="text-xs uppercase tracking-[0.14em] text-rose-100/82">
                   {item.city || "Global"} | {formatDateShort(item.date || item.createdAt)}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
                 {item.summary ? (
                   <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-white/45">Summary</p>
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-white/50">Summary</p>
                     <p
                       className={`mt-1 text-xs leading-5 text-white/70 ${
                         String(expandedNewsId) === String(item.id) ? "" : "line-clamp-2"
@@ -1734,9 +1777,9 @@ export default function NowPage() {
                 ) : null}
                 {item.whyItMatters ? (
                   <div className="mt-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.05] px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-cyan-100/75">Why it matters</p>
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-rose-100/80">Why it matters</p>
                     <p
-                      className={`mt-1 text-xs leading-5 text-white/72 ${
+                      className={`mt-1 text-sm leading-6 text-white/72 ${
                         String(expandedNewsId) === String(item.id) ? "" : "line-clamp-2"
                       }`}
                     >
@@ -1744,11 +1787,11 @@ export default function NowPage() {
                     </p>
                   </div>
                 ) : null}
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <span className="text-[10px] uppercase tracking-[0.12em] text-white/40">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[11px] uppercase tracking-[0.12em] text-white/48">
                     {item.sourceName || "Atlas signal"}
                   </span>
-                  <span className="text-[10px] text-cyan-100/72">
+                  <span className="text-[11px] text-rose-100/80">
                     {String(expandedNewsId) === String(item.id) ? "Tap to collapse" : "Tap to expand"}
                   </span>
                   {isAdmin && (
@@ -1760,7 +1803,7 @@ export default function NowPage() {
                             event.stopPropagation();
                             openEditNewsComposer(item);
                           }}
-                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
+                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
                         >
                           Edit
                         </button>
@@ -1771,7 +1814,7 @@ export default function NowPage() {
                           event.stopPropagation();
                           deleteFeedItem(item.id);
                         }}
-                        className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+                        className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
                       >
                         Delete
                       </button>
@@ -1934,8 +1977,8 @@ export default function NowPage() {
                     : "Share your story"
                   : "Join to publish"}
               </button>
-              <span className="text-[11px] text-white/52">
-                Themes: safety issues, global developments, nightlife stories, and life-in-city reality.
+              <span className="text-xs text-white/62">
+                Themes: harassment, threats, violence, discrimination, shared experiences, and life-in-city reality.
               </span>
             </div>
 
@@ -1983,7 +2026,7 @@ export default function NowPage() {
                   onChange={(event) =>
                     setCommunityStoryForm((current) => ({ ...current, summary: event.target.value }))
                   }
-                  placeholder="What happened? Keep it factual and helpful."
+                  placeholder="What happened? Include what, where, and when. Keep it factual and helpful."
                   className="min-h-[100px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
                 />
                 <textarea
@@ -1992,7 +2035,7 @@ export default function NowPage() {
                   onChange={(event) =>
                     setCommunityStoryForm((current) => ({ ...current, whyItMatters: event.target.value }))
                   }
-                  placeholder="Why should the community know this?"
+                  placeholder="Why should the community know this? Add practical safety context if relevant."
                   className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
                 />
                 <div className="flex flex-wrap gap-2">
@@ -2041,7 +2084,7 @@ export default function NowPage() {
                       );
                     }
                   }}
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-fuchsia-200/30"
+                  className="w-full cursor-pointer rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-fuchsia-200/34 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/45"
                 >
                   <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/75">
                     {story.city || "Global"} | {formatDateShort(story.date || story.createdAt)}
@@ -2055,8 +2098,11 @@ export default function NowPage() {
                     {story.summary}
                   </p>
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-[10px] uppercase tracking-[0.12em] text-white/40">
+                    <span className="text-[11px] uppercase tracking-[0.12em] text-white/48">
                       {story.sourceName || "Community signal"}
+                    </span>
+                    <span className="text-[11px] text-fuchsia-100/78">
+                      {String(expandedNewsId) === String(story.id) ? "Tap to collapse" : "Tap to expand"}
                     </span>
                     {isAdmin && (
                       <div className="flex items-center gap-2">
@@ -2067,7 +2113,7 @@ export default function NowPage() {
                               event.stopPropagation();
                               openEditNewsComposer(story);
                             }}
-                            className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
+                            className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
                           >
                             Edit
                           </button>
@@ -2078,7 +2124,7 @@ export default function NowPage() {
                             event.stopPropagation();
                             deleteFeedItem(story.id);
                           }}
-                          className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+                          className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
                         >
                           Delete
                         </button>
