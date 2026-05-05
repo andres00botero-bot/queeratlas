@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -67,7 +67,16 @@ function SearchResultSkeleton({ tone = "rose" }) {
 
 export default function SearchPage() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const hasHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const [query, setQuery] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const params = new URLSearchParams(window.location.search || "");
+    return String(params.get("q") || "");
+  });
   const [events, setEvents] = useState([]);
   const [typeFilter, setTypeFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
@@ -81,7 +90,8 @@ export default function SearchPage() {
   });
   const { places } = usePlaces();
   const { isMember } = useAuth();
-  const deferredQuery = useDeferredValue(query);
+  const activeQuery = hasHydrated ? query : "";
+  const deferredQuery = useDeferredValue(activeQuery);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
@@ -104,13 +114,6 @@ export default function SearchPage() {
       fetchEvents();
     });
   }, [fetchEvents]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const nextQuery = String(params.get("q") || "");
-    setQuery((current) => (current === nextQuery ? current : nextQuery));
-  }, []);
 
   useEffect(() => {
     if (!deferredQuery.trim()) return;
@@ -390,7 +393,7 @@ export default function SearchPage() {
           )}
         </section>
 
-        {!query.trim() && (
+        {!activeQuery.trim() && (
           <section className="qa-panel rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-8">
             <EmptyState
               title="Start with a city, venue name, event title, or vibe keyword."
@@ -401,7 +404,7 @@ export default function SearchPage() {
           </section>
         )}
 
-        {query.trim() && isLoading && (
+        {activeQuery.trim() && isLoading && (
           <section className="qa-panel mb-6 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-5">
             <p className="mb-4 text-xs uppercase tracking-[0.18em] text-white/45">Scanning atlas signal</p>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -415,7 +418,7 @@ export default function SearchPage() {
           </section>
         )}
 
-        {query.trim() && !isLoading && filteredResults.all.length === 0 && (
+        {activeQuery.trim() && !isLoading && filteredResults.all.length === 0 && (
           <section className="qa-panel rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-8">
             <EmptyState
               title="No matches yet for this query."
@@ -436,7 +439,7 @@ export default function SearchPage() {
           </section>
         )}
 
-        {query.trim() && !isLoading && topMatches.length > 0 && (
+        {activeQuery.trim() && !isLoading && topMatches.length > 0 && (
           <section className="mb-6 rounded-[28px] border border-cyan-300/16 bg-[linear-gradient(180deg,rgba(18,39,56,0.62),rgba(10,10,10,0.98))] p-4 sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-cyan-100">Top matches</h2>
