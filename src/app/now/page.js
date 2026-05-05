@@ -290,6 +290,7 @@ export default function NowPage() {
   const [hiddenNewsIds, setHiddenNewsIds] = useState([]);
   const [isAdminByTable, setIsAdminByTable] = useState(false);
   const [showAdminForm, setShowAdminForm] = useState(false);
+  const [showPolicyAdminForm, setShowPolicyAdminForm] = useState(false);
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState("");
   const [adminForm, setAdminForm] = useState(() => createAdminNewsFormDefault());
@@ -460,6 +461,7 @@ export default function NowPage() {
       setIsAdminByTable(adminState);
       if (!adminState) {
         setShowAdminForm(false);
+        setShowPolicyAdminForm(false);
         setEditingNewsId("");
         setAdminForm(createAdminNewsFormDefault());
       }
@@ -640,6 +642,7 @@ export default function NowPage() {
     setEditingNewsId("");
     setAdminForm(createAdminNewsFormDefault());
     setShowAdminForm(false);
+    setShowPolicyAdminForm(false);
   }, []);
 
   const resetCommunityStoryForm = useCallback(() => {
@@ -649,8 +652,10 @@ export default function NowPage() {
 
   const openEditNewsComposer = useCallback((item) => {
     if (!item) return;
+    const isPolicyUpdate = String(item.category || "").trim().toLowerCase() === "rights_safety";
     setEditingNewsId(String(item.id));
-    setShowAdminForm(true);
+    setShowAdminForm(!isPolicyUpdate);
+    setShowPolicyAdminForm(isPolicyUpdate);
     setAdminForm({
       title: String(item.title || ""),
       city: String(item.city || "").toLowerCase() === "global" ? "" : String(item.city || ""),
@@ -1102,6 +1107,7 @@ export default function NowPage() {
                         resetAdminNewsComposer();
                         return;
                       }
+                      setShowPolicyAdminForm(false);
                       setEditingNewsId("");
                       setAdminForm(createAdminNewsFormDefault());
                       setShowAdminForm(true);
@@ -1560,10 +1566,97 @@ export default function NowPage() {
         </section>
 
         <section className="mt-6 rounded-[28px] border border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_34%),radial-gradient(circle_at_90%_22%,rgba(232,121,249,0.12),transparent_36%),linear-gradient(180deg,rgba(20,30,44,0.95),rgba(10,10,10,1))] p-6 shadow-[0_26px_88px_rgba(56,189,248,0.09)]">
-          <div className="mb-5">
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
             <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/90">Laws & rights updates</p>
             <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Policy and safety watch</h2>
+            </div>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (showPolicyAdminForm) {
+                    resetAdminNewsComposer();
+                    return;
+                  }
+                  setShowAdminForm(false);
+                  setEditingNewsId("");
+                  setAdminForm({
+                    ...createAdminNewsFormDefault(),
+                    category: "rights_safety",
+                  });
+                  setShowPolicyAdminForm(true);
+                }}
+                className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/46"
+              >
+                {showPolicyAdminForm ? "Close policy composer" : "Publish policy update"}
+              </button>
+            )}
           </div>
+
+          {isAdmin && showPolicyAdminForm && (
+            <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
+              <p className="md:col-span-2 text-xs uppercase tracking-[0.14em] text-cyan-100/85">
+                {isEditingNews ? "Edit policy update" : "Publish policy update"}
+              </p>
+              <input
+                value={adminForm.title}
+                onChange={(event) => setAdminForm((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Policy headline"
+                className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+                required
+              />
+              <input
+                value={adminForm.city}
+                onChange={(event) => setAdminForm((current) => ({ ...current, city: event.target.value }))}
+                placeholder="City or country scope (optional)"
+                className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+              />
+              <input
+                value={adminForm.date}
+                onChange={(event) => setAdminForm((current) => ({ ...current, date: event.target.value }))}
+                type="date"
+                className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+              />
+              <div className="rounded-xl border border-cyan-200/18 bg-cyan-200/10 px-4 py-3 text-xs uppercase tracking-[0.14em] text-cyan-100/90">
+                Category: Rights & safety
+              </div>
+              <textarea
+                value={adminForm.summary}
+                onChange={(event) => setAdminForm((current) => ({ ...current, summary: event.target.value }))}
+                placeholder="What changed?"
+                className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
+                required
+              />
+              <textarea
+                value={adminForm.whyItMatters}
+                onChange={(event) => setAdminForm((current) => ({ ...current, whyItMatters: event.target.value }))}
+                placeholder="Why this matters for queer travelers/community"
+                className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
+                required
+              />
+              <button
+                type="submit"
+                disabled={isPublishingNews}
+                className="rounded-xl bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 py-3 text-sm font-semibold text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
+              >
+                {isPublishingNews
+                  ? isEditingNews
+                    ? "Updating..."
+                    : "Publishing..."
+                  : isEditingNews
+                    ? "Update policy"
+                    : "Publish policy"}
+              </button>
+              <button
+                type="button"
+                onClick={resetAdminNewsComposer}
+                className="rounded-xl border border-white/16 bg-black/30 px-4 py-3 text-sm text-white/82 transition hover:border-white/28 md:col-span-2"
+              >
+                Cancel
+              </button>
+            </form>
+          )}
 
           <div className="grid gap-3 md:grid-cols-2">
             {rightsUpdates.map((item) => {
