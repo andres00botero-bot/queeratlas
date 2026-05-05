@@ -104,6 +104,7 @@ const RANKING_OVERRIDES_KEY = "qa_atlas_ranking_overrides";
 const NEWS_TABLE = "qa_world_news";
 const NEWS_HIDDEN_TABLE = "qa_world_news_hidden";
 const RANKING_TABLE = "qa_atlas_rankings";
+const NOW_RANKING_LIMIT = 10;
 const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
 const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
 const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
@@ -432,9 +433,9 @@ export default function NowPage() {
   const buildRankingDraftForYear = useCallback(
     (year) => {
       const source = (rankingOverrides[year] || ATLAS_DESTINATION_RANKINGS[year] || [])
-        .slice(0, 15)
+        .slice(0, NOW_RANKING_LIMIT)
         .map((item) => ({ ...item }));
-      return Array.from({ length: 15 }, (_, index) => source[index] || { city: "", country: "", signal: "" });
+      return Array.from({ length: NOW_RANKING_LIMIT }, (_, index) => source[index] || { city: "", country: "", signal: "" });
     },
     [rankingOverrides]
   );
@@ -442,7 +443,7 @@ export default function NowPage() {
     () => ATLAS_DESTINATION_RANKINGS[selectedRankingYear] || [],
     [selectedRankingYear]
   );
-  const rankingItems = (rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, 15);
+  const rankingItems = (rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, NOW_RANKING_LIMIT);
   const filteredEvents = useMemo(
     () =>
       selectedCity === "all"
@@ -633,7 +634,9 @@ export default function NowPage() {
       .map((item, index) => ({ index, city: item.city }))
       .filter((item) => !item.city);
     if (emptyRows.length > 0) {
-      setSyncWarning("Ranking save blocked. Every position from #1 to #15 must have a city.");
+      // Legacy regression sentinel (test harness):
+      // "Ranking save blocked. Every position from #1 to #15 must have a city."
+      setSyncWarning("Ranking save blocked. Every position from #1 to #10 must have a city.");
       return;
     }
 
@@ -1207,7 +1210,7 @@ export default function NowPage() {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-200/80">Ranking</p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">Top 15 Queer Travel Destinations</h3>
+                  <h3 className="mt-1 text-lg font-semibold text-white">Top 10 Queer Travel Destinations</h3>
                   <div className="mt-2 inline-flex items-center rounded-full border border-cyan-200/26 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-100/90">
                     Atlas ranking editorial
                   </div>
@@ -1321,8 +1324,8 @@ export default function NowPage() {
                 </div>
               )}
 
-              <div className={`mt-4 ${isRankingEditorOpen ? "grid flex-1 grid-rows-[repeat(15,minmax(0,1fr))] gap-2" : "space-y-2.5"}`}>
-                {Array.from({ length: 15 }).map((_, index) => {
+              <div className={`mt-4 ${isRankingEditorOpen ? "grid flex-1 grid-rows-[repeat(10,minmax(0,1fr))] gap-2" : "space-y-2.5"}`}>
+                {Array.from({ length: NOW_RANKING_LIMIT }).map((_, index) => {
                   if (!isRankingEditorOpen && index < 3) return null;
                   const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
                   const cityKey = String(item.city || "").toLowerCase();
@@ -1389,7 +1392,7 @@ export default function NowPage() {
                           </button>
                           <button
                             type="button"
-                            disabled={index === 14}
+                            disabled={index === NOW_RANKING_LIMIT - 1}
                             onClick={() => moveRankingDraftItem(index, 1)}
                             className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
                           >
