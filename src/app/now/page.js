@@ -197,6 +197,9 @@ const ATLAS_DESTINATION_RANKINGS = {
 };
 
 function mapNewsRowToItem(row) {
+  const rawSource = String(row.source_name || "").trim();
+  const normalizedSource =
+    rawSource.toLowerCase().includes("atlas admin") ? "Atlas admin" : rawSource || "Atlas admin";
   return {
     id: row.id,
     title: row.title,
@@ -205,7 +208,7 @@ function mapNewsRowToItem(row) {
     date: row.date,
     summary: row.summary,
     whyItMatters: row.why_it_matters,
-    sourceName: row.source_name || "Atlas admin",
+    sourceName: normalizedSource,
     createdAt: row.created_at || "",
   };
 }
@@ -239,6 +242,11 @@ function isMissingColumnError(error, columnName = "") {
     code === "PGRST204" ||
     message.includes(String(columnName).toLowerCase())
   );
+}
+
+function formatSupabaseError(error) {
+  if (!error) return "Unknown error";
+  return String(error.message || error.details || error.hint || "Unknown error").trim();
 }
 
 function createClientId(prefix) {
@@ -286,7 +294,7 @@ export default function NowPage() {
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
-  const [rankingOverrides, setRankingOverrides] = useState({});
+  const [rankingOverrides, setRankingOverrides] = useState(() => readLocalJson(RANKING_OVERRIDES_KEY, {}));
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
   const [adminNews, setAdminNews] = useState([]);
@@ -397,11 +405,18 @@ export default function NowPage() {
       if (!isMissingTableError(rankingResponse.error)) {
         warnings.push("Ranking sync failed.");
       }
-      setRankingOverrides({});
+      const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
+      setRankingOverrides(localRankings || {});
     } else {
       const remoteRankings = groupRankingRows(rankingResponse.data || []);
-      setRankingOverrides(remoteRankings);
-      writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
+      const hasRemoteRankings = Object.keys(remoteRankings).length > 0;
+      if (hasRemoteRankings) {
+        setRankingOverrides(remoteRankings);
+        writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
+      } else {
+        const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
+        setRankingOverrides(localRankings || {});
+      }
     }
 
     const nextSyncWarning = warnings.join(" ") || "";
@@ -409,7 +424,12 @@ export default function NowPage() {
     writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
       adminNews: newsResponse.error ? [] : (newsResponse.data || []).map(mapNewsRowToItem),
       hiddenNewsIds: hiddenResponse.error ? [] : (hiddenResponse.data || []).map((row) => String(row.feed_id)),
-      rankingOverrides: rankingResponse.error ? {} : groupRankingRows(rankingResponse.data || []),
+      rankingOverrides: rankingResponse.error
+        ? readLocalJson(RANKING_OVERRIDES_KEY, {})
+        : (() => {
+            const grouped = groupRankingRows(rankingResponse.data || []);
+            return Object.keys(grouped).length > 0 ? grouped : readLocalJson(RANKING_OVERRIDES_KEY, {});
+          })(),
       syncWarning: nextSyncWarning,
     });
   }, []);
@@ -808,18 +828,22 @@ export default function NowPage() {
       updated_by_email: currentEmail || null,
     }));
 
-    const { error: deleteError } = await supabase.from(RANKING_TABLE).delete().eq("year", year);
-    if (deleteError && !isMissingTableError(deleteError)) {
-      setSyncWarning("Cloud sync failed. Using local backup.");
-    } else {
-      const { error: insertError } = rows.length
-        ? await supabase.from(RANKING_TABLE).insert(rows)
-        : { error: null };
+    const { error: upsertError } = rows.length
+      ? await supabase.from(RANKING_TABLE).upsert(rows, { onConflict: "year,rank" })
+      : { error: null };
 
-      if (insertError && !isMissingTableError(insertError)) {
-        setSyncWarning("Cloud sync failed. Using local backup.");
-      } else if (insertError && isMissingTableError(insertError)) {
-        setSyncWarning("Off-grid sync is unavailable right now.");
+    if (upsertError && !isMissingTableError(upsertError)) {
+      setSyncWarning(`Cloud sync failed. Using local backup. ${formatSupabaseError(upsertError)}`);
+    } else if (upsertError && isMissingTableError(upsertError)) {
+      setSyncWarning("Off-grid sync is unavailable right now.");
+    } else {
+      const { error: trimError } = await supabase
+        .from(RANKING_TABLE)
+        .delete()
+        .eq("year", year)
+        .gt("rank", rows.length);
+      if (trimError && !isMissingTableError(trimError)) {
+        setSyncWarning(`Cloud sync partial. ${formatSupabaseError(trimError)}`);
       } else {
         setSyncWarning("");
       }
@@ -878,7 +902,7 @@ export default function NowPage() {
       date: effectiveDate,
       summary: adminForm.summary,
       whyItMatters: adminForm.whyItMatters,
-      sourceName: `${memberName || "Admin"} | Atlas admin`,
+      sourceName: "Atlas admin",
       createdAt: new Date().toISOString(),
     };
 
