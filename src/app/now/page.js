@@ -1637,15 +1637,26 @@ export default function NowPage() {
             </p>
 
             <div className="mt-5 space-y-3">
-              {visibleCommunityStories.map((story) => (
-                <button
+              {visibleCommunityStories.map((story) => {
+                const canEditAdminNews = adminNewsIdSet.has(String(story.id));
+                return (
+                <article
                   key={`story-${story.id}`}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() =>
                     setExpandedNewsId((current) =>
                       String(current) === String(story.id) ? null : String(story.id)
                     )
                   }
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setExpandedNewsId((current) =>
+                        String(current) === String(story.id) ? null : String(story.id)
+                      );
+                    }
+                  }}
                   className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:border-fuchsia-200/30"
                 >
                   <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/75">
@@ -1659,8 +1670,40 @@ export default function NowPage() {
                   >
                     {story.summary}
                   </p>
-                </button>
-              ))}
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <span className="text-[10px] uppercase tracking-[0.12em] text-white/40">
+                      {story.sourceName || "Community signal"}
+                    </span>
+                    {isAdmin && (
+                      <div className="flex items-center gap-2">
+                        {canEditAdminNews && (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openEditNewsComposer(story);
+                            }}
+                            className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            deleteFeedItem(story.id);
+                          }}
+                          className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </article>
+                );
+              })}
               {communityStories.length === 0 && (
                 <EmptyState
                   title="No approved community stories yet."
