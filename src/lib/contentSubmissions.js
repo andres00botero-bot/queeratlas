@@ -7,7 +7,7 @@ function normalizeText(value = "") {
 }
 
 function normalizeEntityType(value = "") {
-  const allowed = new Set(["place", "event", "service"]);
+  const allowed = new Set(["place", "event", "service", "community_story"]);
   const normalized = normalizeText(value).toLowerCase();
   return allowed.has(normalized) ? normalized : "";
 }
@@ -168,7 +168,33 @@ function resolvePublishTarget(entityType = "") {
   if (normalized === "place") return "places";
   if (normalized === "event") return "events";
   if (normalized === "service") return "services";
+  if (normalized === "community_story") return "qa_world_news";
   return "";
+}
+
+function buildCommunityStoryNewsRow(submission = {}) {
+  const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
+  const sourceName = normalizeText(
+    payload.source_name || `${submission?.submitted_by_name || "Member"} | Member story`
+  );
+  const fallbackId = `member-story-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  return {
+    id: normalizeText(payload.id || `member-story-${submission?.id || fallbackId}`),
+    title: normalizeText(payload.title || payload.name || submission?.title || "Community story"),
+    city: normalizeText(payload.city || submission?.city || "Global"),
+    category: normalizeText(payload.category || "culture_tip"),
+    date: normalizeText(payload.date || new Date().toISOString().slice(0, 10)),
+    summary: normalizeText(payload.summary || payload.description || "Member report from the community."),
+    why_it_matters: normalizeText(
+      payload.why_it_matters ||
+        payload.whyItMatters ||
+        payload.details ||
+        "Community-grounded signal to help others plan safer choices."
+    ),
+    source_name: sourceName || "Member story",
+    created_by_email: normalizeText(submission?.submitted_by_email || "") || null,
+  };
 }
 
 export async function publishContentSubmission({
@@ -181,9 +207,13 @@ export async function publishContentSubmission({
     return { data: null, error: new Error("Unknown submission entity type."), tableMissing: false };
   }
 
-  const payload = submission?.payload && typeof submission.payload === "object" ? { ...submission.payload } : {};
-  if (targetTable === "service" && !payload.created_by) {
+  let payload = submission?.payload && typeof submission.payload === "object" ? { ...submission.payload } : {};
+  if (targetTable === "services" && !payload.created_by) {
     payload.created_by = normalizeText(submission?.submitted_by || "") || null;
+  }
+
+  if (targetTable === "qa_world_news") {
+    payload = buildCommunityStoryNewsRow(submission);
   }
 
   const insertResult = await insertWithFallback(targetTable, payload, client);

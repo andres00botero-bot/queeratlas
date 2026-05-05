@@ -2438,7 +2438,7 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-[0.2em] text-indigo-100/80">Moderation Queue</p>
               <h2 className="mt-1 text-xl font-semibold text-white">Pending member entries</h2>
               <p className="mt-2 text-sm text-white/65">
-                Approve or reject member-added venues, events, and services before they go live.
+                Approve or reject member-added venues, events, services, and Voices stories before they go live.
               </p>
             </div>
             <div className="flex items-center gap-2">

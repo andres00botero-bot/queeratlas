@@ -11,6 +11,7 @@ import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
+import { createContentSubmission } from "@/lib/contentSubmissions";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
@@ -118,6 +119,28 @@ function createAdminNewsFormDefault() {
     whyItMatters: "",
     date: "",
   };
+}
+
+const COMMUNITY_STORY_TYPES = [
+  { value: "safety_issues", label: "Safety issues", mapToCategory: "rights_safety" },
+  { value: "global_developments", label: "Global queer developments", mapToCategory: "culture_tip" },
+  { value: "nightlife_stories", label: "Nightlife stories", mapToCategory: "nightlife_change" },
+  { value: "queer_life_in_city", label: "What it is like being queer in a city", mapToCategory: "culture_tip" },
+];
+
+function createCommunityStoryFormDefault() {
+  return {
+    storyType: COMMUNITY_STORY_TYPES[0].value,
+    city: "",
+    title: "",
+    summary: "",
+    whyItMatters: "",
+  };
+}
+
+function getCommunityStoryCategory(storyType = "") {
+  const found = COMMUNITY_STORY_TYPES.find((item) => item.value === storyType);
+  return found?.mapToCategory || "culture_tip";
 }
 const ATLAS_DESTINATION_RANKINGS = {
   2026: [
@@ -232,7 +255,7 @@ function PulseSkeletonCard({ tone = "orange" }) {
 
 export default function NowPage() {
   const router = useRouter();
-  const { isMember, memberName, user } = useAuth();
+  const { isMember, memberName, user, memberProfile } = useAuth();
   const [ready, setReady] = useState(false);
   const [today, setToday] = useState(null);
   const [places, setPlaces] = useState([]);
@@ -256,6 +279,10 @@ export default function NowPage() {
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState("");
   const [adminForm, setAdminForm] = useState(() => createAdminNewsFormDefault());
+  const [showCommunityStoryForm, setShowCommunityStoryForm] = useState(false);
+  const [isSubmittingCommunityStory, setIsSubmittingCommunityStory] = useState(false);
+  const [communityStoryNotice, setCommunityStoryNotice] = useState("");
+  const [communityStoryForm, setCommunityStoryForm] = useState(() => createCommunityStoryFormDefault());
 
   const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
@@ -587,6 +614,11 @@ export default function NowPage() {
     setShowAdminForm(false);
   }, []);
 
+  const resetCommunityStoryForm = useCallback(() => {
+    setCommunityStoryForm(createCommunityStoryFormDefault());
+    setShowCommunityStoryForm(false);
+  }, []);
+
   const openEditNewsComposer = useCallback((item) => {
     if (!item) return;
     setEditingNewsId(String(item.id));
@@ -600,6 +632,74 @@ export default function NowPage() {
       date: toDateInputValue(item.date || item.createdAt),
     });
   }, []);
+
+  const submitCommunityStory = async (event) => {
+    event.preventDefault();
+    if (!isMember || !user?.id) {
+      localStorage.setItem("qa_post_login_target", "/now");
+      router.push("/?join=true");
+      return;
+    }
+    if (isSubmittingCommunityStory) return;
+
+    const title = String(communityStoryForm.title || "").trim();
+    const summary = String(communityStoryForm.summary || "").trim();
+    const whyItMatters = String(communityStoryForm.whyItMatters || "").trim();
+    const city = String(communityStoryForm.city || "").trim();
+    const storyType = String(communityStoryForm.storyType || "").trim();
+
+    if (!title || !summary || !whyItMatters) {
+      setCommunityStoryNotice("Fill in title, story summary, and why it matters.");
+      return;
+    }
+
+    setIsSubmittingCommunityStory(true);
+    setCommunityStoryNotice("");
+
+    try {
+      const category = getCommunityStoryCategory(storyType);
+      const payload = {
+        id: createClientId("member-story"),
+        title,
+        city: city || "Global",
+        category,
+        summary,
+        why_it_matters: whyItMatters,
+        story_type: storyType,
+        source_name: `${memberName || "Member"} | Member story`,
+        description: summary,
+      };
+
+      const submissionRes = await createContentSubmission({
+        entityType: "community_story",
+        actionType: "create",
+        city: city || "global",
+        title,
+        payload,
+        user: {
+          id: user.id,
+          email: user.email || "",
+          memberName: memberName || "Member",
+        },
+        isTrustedContributor: Boolean(memberProfile?.trustedContributor),
+      });
+
+      if (submissionRes.tableMissing) {
+        setCommunityStoryNotice("Moderation queue is not configured yet. Run supabase/content-submissions-v2-community-story.sql.");
+        return;
+      }
+
+      if (submissionRes.error) {
+        setCommunityStoryNotice(submissionRes.error.message || "Could not submit story right now.");
+        return;
+      }
+
+      setCommunityStoryNotice("Story submitted. It will appear after admin approval.");
+      resetCommunityStoryForm();
+    } finally {
+      setIsSubmittingCommunityStory(false);
+    }
+  };
 
   const updateRankingDraftField = (index, field, value) => {
     setRankingDraft((current) =>
@@ -1638,6 +1738,111 @@ export default function NowPage() {
             <p className="mt-3 text-sm leading-6 text-white/62">
               Member stories are editorially moderated before publishing to keep signal quality high.
             </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isMember) {
+                    localStorage.setItem("qa_post_login_target", "/now");
+                    router.push("/?join=true");
+                    return;
+                  }
+                  setShowCommunityStoryForm((current) => !current);
+                  setCommunityStoryNotice("");
+                }}
+                className="rounded-full border border-fuchsia-200/32 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-fuchsia-50 transition hover:border-fuchsia-100/55 hover:bg-fuchsia-200/20"
+              >
+                {isMember
+                  ? showCommunityStoryForm
+                    ? "Close story form"
+                    : "Share your story"
+                  : "Join to publish"}
+              </button>
+              <span className="text-[11px] text-white/52">
+                Themes: safety issues, global developments, nightlife stories, and life-in-city reality.
+              </span>
+            </div>
+
+            {showCommunityStoryForm && (
+              <form
+                onSubmit={submitCommunityStory}
+                className="mt-4 grid gap-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.06] p-4"
+              >
+                <p className="text-xs uppercase tracking-[0.14em] text-fuchsia-100/90">
+                  Submit to moderation queue
+                </p>
+                <select
+                  value={communityStoryForm.storyType}
+                  onChange={(event) =>
+                    setCommunityStoryForm((current) => ({ ...current, storyType: event.target.value }))
+                  }
+                  className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
+                >
+                  {COMMUNITY_STORY_TYPES.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={communityStoryForm.city}
+                  onChange={(event) =>
+                    setCommunityStoryForm((current) => ({ ...current, city: event.target.value }))
+                  }
+                  placeholder="City (optional, or leave blank for Global)"
+                  className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
+                />
+                <input
+                  required
+                  value={communityStoryForm.title}
+                  onChange={(event) =>
+                    setCommunityStoryForm((current) => ({ ...current, title: event.target.value }))
+                  }
+                  placeholder="Headline"
+                  className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
+                />
+                <textarea
+                  required
+                  value={communityStoryForm.summary}
+                  onChange={(event) =>
+                    setCommunityStoryForm((current) => ({ ...current, summary: event.target.value }))
+                  }
+                  placeholder="What happened? Keep it factual and helpful."
+                  className="min-h-[100px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
+                />
+                <textarea
+                  required
+                  value={communityStoryForm.whyItMatters}
+                  onChange={(event) =>
+                    setCommunityStoryForm((current) => ({ ...current, whyItMatters: event.target.value }))
+                  }
+                  placeholder="Why should the community know this?"
+                  className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmittingCommunityStory}
+                    className="rounded-full border border-cyan-200/35 bg-cyan-200/15 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-100/55 disabled:cursor-not-allowed disabled:opacity-65"
+                  >
+                    {isSubmittingCommunityStory ? "Submitting..." : "Submit for approval"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetCommunityStoryForm}
+                    className="rounded-full border border-white/16 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {communityStoryNotice && (
+              <div className="mt-3 rounded-xl border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-2 text-xs text-fuchsia-100">
+                {communityStoryNotice}
+              </div>
+            )}
 
             <div className="mt-5 space-y-3">
               {visibleCommunityStories.map((story) => {
