@@ -2604,7 +2604,7 @@ export default function FavoritesPage() {
             </form>
           </div>
 
-          <div className="qa-premium-card rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_10%_8%,rgba(244,114,182,0.07),transparent_28%),linear-gradient(180deg,rgba(18,18,20,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_36px_108px_rgba(0,0,0,0.48)] sm:rounded-[32px] sm:p-5">
+          <div className="qa-premium-card overflow-visible rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_10%_8%,rgba(244,114,182,0.07),transparent_28%),linear-gradient(180deg,rgba(18,18,20,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_36px_108px_rgba(0,0,0,0.48)] sm:rounded-[32px] sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-cyan-200/70">
