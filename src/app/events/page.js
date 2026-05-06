@@ -354,8 +354,8 @@ export default function EventsPage() {
       sortedCities.reduce((acc, cityKey) => {
         const cityGroup = eventsByCity[cityKey];
         const cityEvents = (cityGroup?.events || []).slice().sort((a, b) => {
-          const aStart = normalizeEventRange(a).startDate;
-          const bStart = normalizeEventRange(b).startDate;
+          const aStart = String(a?.startDate || "");
+          const bStart = String(b?.startDate || "");
           return String(aStart || "").localeCompare(String(bStart || ""));
         });
         if (cityEvents.length > 0) {
@@ -402,19 +402,29 @@ export default function EventsPage() {
     const viewDaysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const counts = {};
     if (calendarEvents.length === 0) return counts;
+    const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
+    const monthStart = `${monthPrefix}-01`;
+    const monthEnd = `${monthPrefix}-${String(viewDaysInMonth).padStart(2, "0")}`;
 
-    for (let day = 1; day <= viewDaysInMonth; day += 1) {
-      const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      let count = 0;
+    const incrementDateString = (dateStr) => {
+      const [yearPart, monthPart, dayPart] = dateStr.split("-").map((value) => Number(value));
+      const next = new Date(Date.UTC(yearPart, monthPart - 1, dayPart + 1));
+      return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-${String(next.getUTCDate()).padStart(2, "0")}`;
+    };
 
-      for (const event of calendarEvents) {
-        if (eventOverlapsDate(event, dateStr)) {
-          count += 1;
-        }
-      }
+    for (const event of calendarEvents) {
+      const startDate = String(event?.startDate || "").trim();
+      if (!startDate) continue;
+      const endDate = String(event?.endDate || startDate).trim() || startDate;
 
-      if (count > 0) {
-        counts[dateStr] = count;
+      const clampedStart = startDate < monthStart ? monthStart : startDate;
+      const clampedEnd = endDate > monthEnd ? monthEnd : endDate;
+      if (clampedStart > clampedEnd) continue;
+
+      let cursor = clampedStart;
+      while (cursor <= clampedEnd) {
+        counts[cursor] = (counts[cursor] || 0) + 1;
+        cursor = incrementDateString(cursor);
       }
     }
 
@@ -1005,7 +1015,7 @@ export default function EventsPage() {
                   {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"}
                 </div>
               </div>
-              <div className="mt-6 max-h-[900px] space-y-6 overflow-y-auto pr-1">
+              <div className="qa-defer-render mt-6 max-h-[900px] space-y-6 overflow-y-auto pr-1">
                 {isLoading && (
                   <div className="space-y-3">
                     <EventSkeletonCard tone="cyan" />
@@ -1231,7 +1241,7 @@ export default function EventsPage() {
               </div>
             )}
 
-            <div className="mt-6 space-y-3">
+            <div className="qa-defer-render mt-6 space-y-3">
               {isLoading ? (
                 <div className="space-y-3">
                   <EventSkeletonCard tone="cyan" />
