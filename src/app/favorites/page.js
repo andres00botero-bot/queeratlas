@@ -47,6 +47,7 @@ import {
 } from "@/features/favorites/favoritesStateDefaults";
 import {
   buildCheckinMapEmbedUrl,
+  buildFollowingCheckinMarkers,
   buildOpenStreetMapStaticUrl,
   buildStaticMapUrl,
   filterRecentCheckins,
@@ -759,15 +760,26 @@ export default function FavoritesPage() {
     [filteredRecentCheckins, savedEvents, savedPlaces]
   );
 
+  const followingCheckinMarkers = useMemo(
+    () => buildFollowingCheckinMarkers([]),
+    []
+  );
+
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
   const interactiveCheckinPoints = useMemo(() => {
-    return checkinMarkers.map((item) => ({
+    const mine = checkinMarkers.map((item) => ({
       ...item,
       markerId: `mine-${String(item.id)}`,
       markerKind: "mine",
     }));
-  }, [checkinMarkers]);
+    const friends = followingCheckinMarkers.map((item) => ({
+      ...item,
+      markerId: `friend-${String(item.id)}`,
+      markerKind: "friend",
+    }));
+    return [...mine, ...friends];
+  }, [checkinMarkers, followingCheckinMarkers]);
 
   const selectedCheckin = useMemo(() => {
     return getSelectedCheckin(checkinMarkers, selectedCheckinId);
@@ -778,20 +790,20 @@ export default function FavoritesPage() {
   const checkinMapCenter = useMemo(() => {
     return resolveCheckinMapCenter({
       checkinMarkers,
-      followingCheckinMarkers: [],
+      followingCheckinMarkers,
       savedPlaces,
       savedEvents,
     });
-  }, [checkinMarkers, savedEvents, savedPlaces]);
+  }, [checkinMarkers, followingCheckinMarkers, savedEvents, savedPlaces]);
 
   const staticMapUrl = useMemo(() => {
     return buildStaticMapUrl({
       checkinMapCenter,
       checkinMarkers,
-      followingCheckinMarkers: [],
+      followingCheckinMarkers,
       token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
     });
-  }, [checkinMapCenter, checkinMarkers]);
+  }, [checkinMapCenter, checkinMarkers, followingCheckinMarkers]);
 
   const checkinMapEmbedUrl = useMemo(() => {
     return buildCheckinMapEmbedUrl(checkinMapCenter);
