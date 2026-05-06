@@ -70,8 +70,8 @@ export default function PrivacyPage() {
           </p>
           <p>
             Contact:{" "}
-            <a className="text-cyan-300 underline underline-offset-2 hover:text-cyan-200" href="mailto:andres00botero@gmail.com">
-              andres00botero@gmail.com
+            <a className="text-cyan-300 underline underline-offset-2 hover:text-cyan-200" href="mailto:admin@queeratlas.app">
+              admin@queeratlas.app
             </a>
           </p>
         </section>
