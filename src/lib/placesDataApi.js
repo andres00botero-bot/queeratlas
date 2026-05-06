@@ -16,8 +16,10 @@ function applyPlacesFilters(query, filters = {}) {
 }
 
 function selectPlaces(client, table, select, options, filters) {
-  const query = applyPlacesFilters(client.from(table), filters);
-  return options ? query.select(select, options) : query.select(select);
+  const selectedQuery = options
+    ? client.from(table).select(select, options)
+    : client.from(table).select(select);
+  return applyPlacesFilters(selectedQuery, filters);
 }
 
 function normalizeRows(data) {
