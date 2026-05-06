@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
@@ -61,6 +61,15 @@ const MAPBOX_COUNTRY_ALIASES = {
 };
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";
+const CITIES_METRICS_DAILY_CACHE_KEY = "qa_cities_metrics_daily_v1";
+
+function getLocalDateKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function subscribeLastExploredCity(callback) {
   if (typeof window === "undefined") return () => {};
@@ -159,6 +168,7 @@ export default function CitiesPage() {
   const [isSavingCountryProfile, setIsSavingCountryProfile] = useState(false);
   const [countryEditorError, setCountryEditorError] = useState("");
   const [countryEditorSuccess, setCountryEditorSuccess] = useState("");
+  const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
@@ -526,9 +536,70 @@ export default function CitiesPage() {
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
   const visibleCityCount = filteredCities.length;
-  const visibleCountryCount = visibleCountries.length;
   const activeFilterLabel = selectedCountry === "All" ? "All countries" : selectedCountry;
   const filterModeLabel = query ? "Search + country filter" : "Country filter";
+  const metricsForCards = useMemo(
+    () => ({
+      cities:
+        Number.isFinite(Number(dailyMetricsSnapshot?.cities))
+          ? Number(dailyMetricsSnapshot.cities)
+          : totalCities,
+      countries:
+        Number.isFinite(Number(dailyMetricsSnapshot?.countries))
+          ? Number(dailyMetricsSnapshot.countries)
+          : totalCountries,
+      places:
+        Number.isFinite(Number(dailyMetricsSnapshot?.places))
+          ? Number(dailyMetricsSnapshot.places)
+          : totalPlaces,
+    }),
+    [dailyMetricsSnapshot, totalCities, totalCountries, totalPlaces]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem(CITIES_METRICS_DAILY_CACHE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
+      setDailyMetricsSnapshot({
+        dateKey: String(parsed.dateKey),
+        cities: Number(parsed.cities) || 0,
+        countries: Number(parsed.countries) || 0,
+        places: Number(parsed.places) || 0,
+      });
+    } catch {
+      // Ignore cache parse/storage issues.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const dateKey = getLocalDateKey();
+    setDailyMetricsSnapshot((current) => {
+      if (String(current?.dateKey || "") === dateKey) {
+        return current;
+      }
+
+      const nextSnapshot = {
+        dateKey,
+        cities: Number(totalCities) || 0,
+        countries: Number(totalCountries) || 0,
+        places: Number(totalPlaces) || 0,
+      };
+
+      try {
+        localStorage.setItem(CITIES_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
+      } catch {
+        // Ignore storage write issues.
+      }
+
+      return nextSnapshot;
+    });
+  }, [isLoading, totalCities, totalCountries, totalPlaces]);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -686,18 +757,18 @@ export default function CitiesPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-5 shadow-[0_16px_34px_rgba(236,72,153,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            <div className="qa-card qa-premium-card rounded-2xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-4 shadow-[0_14px_30px_rgba(236,72,153,0.14),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
-              <p className="mt-3 text-3xl font-semibold text-white">{totalCities}</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.cities}</p>
             </div>
-            <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 shadow-[0_16px_34px_rgba(6,182,212,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+            <div className="qa-card qa-premium-card rounded-2xl border border-cyan-200/10 bg-cyan-200/[0.05] p-4 shadow-[0_14px_30px_rgba(6,182,212,0.14),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Countries</p>
-              <p className="mt-3 text-3xl font-semibold text-white">{totalCountries}</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.countries}</p>
             </div>
-            <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-cyan-200/10 bg-cyan-200/[0.05] p-5 shadow-[0_16px_34px_rgba(34,197,94,0.14),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+            <div className="qa-card qa-premium-card rounded-2xl border border-cyan-200/10 bg-cyan-200/[0.05] p-4 shadow-[0_14px_30px_rgba(34,197,94,0.13),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Places</p>
-              <p className="mt-3 text-3xl font-semibold text-white">{totalPlaces}</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.places}</p>
             </div>
           </div>
         </section>
@@ -893,9 +964,6 @@ export default function CitiesPage() {
                       {country}
                     </div>
                     <div className={`h-px flex-1 bg-gradient-to-r ${tone.divider} to-transparent`} />
-                    <div className="text-xs text-white/38">
-                      {groupedCities[country].length} cities · {visibleCountryCount} active countries
-                    </div>
                     {isAdmin && (
                       <button
                         type="button"
@@ -1036,3 +1104,4 @@ export default function CitiesPage() {
     </main>
   );
 }
+

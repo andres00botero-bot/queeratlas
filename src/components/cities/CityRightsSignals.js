@@ -103,14 +103,14 @@ export default function CityRightsSignals({ snapshot }) {
   const activeLevels = Array.from(new Set(signals.map((signal) => String(signal.level || "unknown"))));
 
   return (
-    <div className="mt-2 space-y-2.5">
+    <div className="mt-2 space-y-3">
       <div className="flex flex-wrap gap-1.5">
         {signals.map((signal) => (
           <SignalPill key={signal.id} signal={signal} />
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-white/58">
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-white/64">
         <span className="text-white/46">Current profile:</span>
         {activeLevels.map((level) => {
           const accent = LEVEL_ACCENTS[level] || LEVEL_ACCENTS.unknown;
@@ -126,7 +126,7 @@ export default function CityRightsSignals({ snapshot }) {
         })}
       </div>
 
-      <p className="break-words text-[12px] leading-relaxed text-white/58 sm:qa-clamp-2">
+      <p className="break-words text-sm leading-7 text-white/72">
         {snapshot.whatThisMeans}
       </p>
 
@@ -134,7 +134,7 @@ export default function CityRightsSignals({ snapshot }) {
         type="button"
         onClick={() => setIsExpanded((value) => !value)}
         aria-expanded={isExpanded}
-        className="inline-flex w-full items-center justify-between rounded-xl border border-cyan-200/40 bg-cyan-300/16 px-3.5 py-2.5 text-left text-[13px] font-semibold tracking-[0.02em] text-cyan-50 transition hover:border-cyan-200/55 hover:bg-cyan-300/22"
+        className="inline-flex w-full items-center justify-between rounded-xl border border-cyan-200/46 bg-cyan-300/18 px-4 py-3 text-left text-[14px] font-semibold tracking-[0.02em] text-cyan-50 transition hover:border-cyan-200/62 hover:bg-cyan-300/24"
       >
         <span className="inline-flex items-center gap-1.5">
           <span className="text-sm leading-none">{isExpanded ? "v" : ">"}</span>
@@ -144,25 +144,25 @@ export default function CityRightsSignals({ snapshot }) {
       </button>
 
       {isExpanded && (
-        <div className="space-y-3 rounded-xl border border-white/16 bg-white/[0.05] p-4 text-[13px] leading-relaxed text-white/86">
-          <p className="text-[12px] uppercase tracking-[0.13em] text-white/62">Legal status breakdown</p>
+        <div className="space-y-3 rounded-xl border border-white/16 bg-white/[0.05] p-4 text-sm leading-7 text-white/90 sm:text-[15px]">
+          <p className="text-[12px] uppercase tracking-[0.13em] text-white/68">Legal status breakdown</p>
           <p>
-            <span className="text-white">Same-sex relations:</span>{" "}
+            <span className="font-medium text-white">Same-sex relations:</span>{" "}
             {snapshot.details?.sameSexRelations || "Unknown"}
           </p>
           <p>
-            <span className="text-white">Marriage / partnership:</span>{" "}
+            <span className="font-medium text-white">Marriage / partnership:</span>{" "}
             {snapshot.details?.unions || "Unknown"}
           </p>
           <p>
-            <span className="text-white">Legal gender recognition:</span>{" "}
+            <span className="font-medium text-white">Legal gender recognition:</span>{" "}
             {snapshot.details?.genderRecognition || "Unknown"}
           </p>
           <p>
-            <span className="text-white">Anti-discrimination laws:</span>{" "}
+            <span className="font-medium text-white">Anti-discrimination laws:</span>{" "}
             {snapshot.details?.antiDiscrimination || "Unknown"}
           </p>
-          <div className="pt-1 text-[12px] text-white/74">
+          <div className="pt-1 text-[12px] text-white/78">
             <span className="text-white/86">Sources: </span>
             {snapshot.sources?.legal ? (
               <a

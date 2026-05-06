@@ -54,6 +54,16 @@ import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 
+const EVENTS_METRICS_DAILY_CACHE_KEY = "qa_events_metrics_daily_v1";
+
+function getLocalDateKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function EventsPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
@@ -93,6 +103,7 @@ export default function EventsPage() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportDraft, setReportDraft] = useState(() => createInitialReportDraft(REPORT_REASONS[0].value));
   const [qualityModal, setQualityModal] = useState(() => createInitialQualityModal());
+  const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
   const [offgridEventParam, setOffgridEventParam] = useState(() => {
     if (typeof window === "undefined") return "";
     return String(new URLSearchParams(window.location.search).get("offgridEventId") || "").trim();
@@ -475,6 +486,68 @@ export default function EventsPage() {
     },
     [calendarEvents, currentDate]
   );
+  const metricsForCards = useMemo(
+    () => ({
+      allEvents:
+        Number.isFinite(Number(dailyMetricsSnapshot?.allEvents))
+          ? Number(dailyMetricsSnapshot.allEvents)
+          : calendarEvents.length,
+      activeCities:
+        Number.isFinite(Number(dailyMetricsSnapshot?.activeCities))
+          ? Number(dailyMetricsSnapshot.activeCities)
+          : activeCities,
+      thisMonth:
+        Number.isFinite(Number(dailyMetricsSnapshot?.thisMonth))
+          ? Number(dailyMetricsSnapshot.thisMonth)
+          : eventsThisMonth,
+    }),
+    [activeCities, calendarEvents.length, dailyMetricsSnapshot, eventsThisMonth]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem(EVENTS_METRICS_DAILY_CACHE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
+      queueMicrotask(() => {
+        setDailyMetricsSnapshot({
+          dateKey: String(parsed.dateKey),
+          allEvents: Number(parsed.allEvents) || 0,
+          activeCities: Number(parsed.activeCities) || 0,
+          thisMonth: Number(parsed.thisMonth) || 0,
+        });
+      });
+    } catch {
+      // Ignore local cache parse issues.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const dateKey = getLocalDateKey();
+    if (String(dailyMetricsSnapshot?.dateKey || "") === dateKey) return;
+
+    const nextSnapshot = {
+      dateKey,
+      allEvents: Number(calendarEvents.length) || 0,
+      activeCities: Number(activeCities) || 0,
+      thisMonth: Number(eventsThisMonth) || 0,
+    };
+
+    try {
+      localStorage.setItem(EVENTS_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
+    } catch {
+      // Ignore local cache write issues.
+    }
+
+    queueMicrotask(() => {
+      setDailyMetricsSnapshot(nextSnapshot);
+    });
+  }, [activeCities, calendarEvents.length, dailyMetricsSnapshot?.dateKey, eventsThisMonth, isLoading]);
 
   const handleReport = (event, clickEvent) => {
     clickEvent?.stopPropagation();
@@ -760,33 +833,37 @@ export default function EventsPage() {
         <div className="qa-shell relative">
           <section className="qa-panel qa-premium-card overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8">
             <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-              <div>
+              <div className="flex min-h-[380px] flex-col">
                 <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-white/72 backdrop-blur">
                   <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.9)]" />
                   Live Discovery + Event Signal
                 </div>
 
-                <h1 className="qa-display qa-h1 mt-6 text-4xl font-semibold text-white sm:text-5xl xl:text-6xl">
-                  Events Radar
-                </h1>
+                <div className="flex flex-1 items-center">
+                  <div className="mx-auto w-full max-w-3xl text-center xl:mx-0 xl:max-w-none xl:text-left">
+                    <h1 className="qa-display qa-h1 text-4xl font-semibold text-white sm:text-5xl xl:max-w-2xl xl:text-6xl">
+                      Events Radar
+                    </h1>
 
-                <p className="qa-lead mt-5 max-w-2xl text-base text-white/68 sm:text-lg">
-                  Follow the global queer calendar with precision: discover what is live,
-                  what is next, and where city energy is building right now.
-                </p>
+                    <p className="qa-lead mx-auto mt-5 max-w-2xl text-base text-white/68 sm:text-lg xl:mx-0">
+                      Follow the global queer calendar with precision: discover what is live,
+                      what is next, and where city energy is building right now.
+                    </p>
+                  </div>
+                </div>
 
-                <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-cyan-300/24 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_36px_rgba(6,182,212,0.18),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+                <div className="mt-auto grid gap-2.5 pt-6 sm:grid-cols-3">
+                  <div className="qa-card qa-premium-card rounded-2xl border border-cyan-300/24 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(255,255,255,0.03))] p-3.5 shadow-[0_14px_30px_rgba(6,182,212,0.16),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/72">All events</p>
-                    <p className="mt-3 text-3xl font-semibold text-white">{calendarEvents.length}</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.allEvents}</p>
                   </div>
-                  <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-fuchsia-300/24 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_36px_rgba(236,72,153,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+                  <div className="qa-card qa-premium-card rounded-2xl border border-fuchsia-300/24 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.03))] p-3.5 shadow-[0_14px_30px_rgba(236,72,153,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Active cities</p>
-                    <p className="mt-3 text-3xl font-semibold text-white">{activeCities}</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.activeCities}</p>
                   </div>
-                  <div className="qa-card qa-metric-card qa-premium-card rounded-3xl border border-orange-300/22 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_36px_rgba(249,115,22,0.16),0_8px_22px_rgba(0,0,0,0.26)] backdrop-blur">
+                  <div className="qa-card qa-premium-card rounded-2xl border border-orange-300/22 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-3.5 shadow-[0_14px_30px_rgba(249,115,22,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
                     <p className="text-xs uppercase tracking-[0.18em] text-orange-100/75">This month</p>
-                    <p className="mt-3 text-3xl font-semibold text-white">{eventsThisMonth}</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.thisMonth}</p>
                   </div>
                 </div>
               </div>
@@ -1011,9 +1088,6 @@ export default function EventsPage() {
                   </h2>
                 </div>
 
-                <div className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100/80">
-                  {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"}
-                </div>
               </div>
               <div className="qa-defer-render mt-6 max-h-[900px] space-y-6 overflow-y-auto pr-1">
                 {isLoading && (
@@ -1034,9 +1108,6 @@ export default function EventsPage() {
                     <section key={cityKey}>
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <h3 className="text-lg font-semibold text-white">{cityLabel}</h3>
-                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-white/42">
-                          {cityEvents.length} live
-                        </span>
                       </div>
 
                       <div className="space-y-3">

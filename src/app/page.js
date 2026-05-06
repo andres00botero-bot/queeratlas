@@ -17,7 +17,16 @@ import { ArrowUpRight, Search } from "lucide-react";
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
 const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
+const HOME_METRICS_DAILY_CACHE_KEY = "qa_home_metrics_daily_v1";
 const HomeDeferredSections = dynamic(() => import("@/components/home/HomeDeferredSections"));
+
+function getLocalDateKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 function getResultMeta(result) {
   if (result.type === "city") return `City | ${result.country || "Global"}`;
@@ -57,6 +66,17 @@ function isPasswordStrong(password) {
   return checks.minLength && checks.lowercase && checks.uppercase && checks.number && checks.symbol;
 }
 
+function scheduleIdleTask(task, timeout = 650) {
+  if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+    const idleId = window.requestIdleCallback(() => {
+      task();
+    }, { timeout });
+    return () => window.cancelIdleCallback?.(idleId);
+  }
+  const timeoutId = window.setTimeout(() => task(), 140);
+  return () => window.clearTimeout(timeoutId);
+}
+
 export default function Home() {
   const router = useRouter();
   const [events, setEvents] = useState([]);
@@ -89,6 +109,7 @@ export default function Home() {
   const [authMessage, setAuthMessage] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDeferredSections, setShowDeferredSections] = useState(false);
+  const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
   const deferredQuery = useDeferredValue(query);
   const {
     isMember,
@@ -271,18 +292,22 @@ export default function Home() {
   }, [fetchHomeData]);
 
   useEffect(() => {
-    queueMicrotask(async () => {
-      await loadHomeData();
-    });
+    return scheduleIdleTask(() => {
+      queueMicrotask(async () => {
+        await loadHomeData();
+      });
+    }, 450);
   }, [loadHomeData]);
 
   useEffect(() => {
-    queueMicrotask(() => {
-      const stored = localStorage.getItem("qa_favorites");
-      if (stored) {
-        setFavorites((readLocalJson("qa_favorites", []) || []).map((item) => String(item)));
-      }
-    });
+    return scheduleIdleTask(() => {
+      queueMicrotask(() => {
+        const stored = localStorage.getItem("qa_favorites");
+        if (stored) {
+          setFavorites((readLocalJson("qa_favorites", []) || []).map((item) => String(item)));
+        }
+      });
+    }, 900);
   }, []);
 
   useEffect(() => {
@@ -345,17 +370,20 @@ export default function Home() {
 
     let active = true;
 
-    queueMicrotask(async () => {
-      const { isAdmin: adminState } = await resolveAdminAccess({
-        email: currentEmail,
-      });
+    const cancel = scheduleIdleTask(() => {
+      queueMicrotask(async () => {
+        const { isAdmin: adminState } = await resolveAdminAccess({
+          email: currentEmail,
+        });
 
-      if (!active) return;
-      setIsAdmin(adminState);
-    });
+        if (!active) return;
+        setIsAdmin(adminState);
+      });
+    }, 1100);
 
     return () => {
       active = false;
+      cancel?.();
     };
   }, [currentEmail, isAuthLoading, isMember]);
 
@@ -466,10 +494,72 @@ export default function Home() {
   );
   const eventCount = events.length;
   const placeCount = places.length;
+  const metricsForCards = useMemo(
+    () => ({
+      cities:
+        Number.isFinite(Number(dailyMetricsSnapshot?.cities))
+          ? Number(dailyMetricsSnapshot.cities)
+          : cityCount,
+      places:
+        Number.isFinite(Number(dailyMetricsSnapshot?.places))
+          ? Number(dailyMetricsSnapshot.places)
+          : placeCount,
+      events:
+        Number.isFinite(Number(dailyMetricsSnapshot?.events))
+          ? Number(dailyMetricsSnapshot.events)
+          : eventCount,
+    }),
+    [cityCount, dailyMetricsSnapshot, eventCount, placeCount]
+  );
   const formatMetric = (value) => (value > 0 ? String(value) : "-");
-  const cityCountDisplay = isDataLoading ? "..." : formatMetric(cityCount);
-  const placeCountDisplay = isDataLoading ? "..." : formatMetric(placeCount);
-  const eventCountDisplay = isDataLoading ? "..." : formatMetric(eventCount);
+  const cityCountDisplay = isDataLoading && !dailyMetricsSnapshot ? "..." : formatMetric(metricsForCards.cities);
+  const placeCountDisplay = isDataLoading && !dailyMetricsSnapshot ? "..." : formatMetric(metricsForCards.places);
+  const eventCountDisplay = isDataLoading && !dailyMetricsSnapshot ? "..." : formatMetric(metricsForCards.events);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const raw = localStorage.getItem(HOME_METRICS_DAILY_CACHE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
+      setDailyMetricsSnapshot({
+        dateKey: String(parsed.dateKey),
+        cities: Number(parsed.cities) || 0,
+        places: Number(parsed.places) || 0,
+        events: Number(parsed.events) || 0,
+      });
+    } catch {
+      // Ignore local cache parse issues.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDataLoading) return;
+
+    const dateKey = getLocalDateKey();
+    setDailyMetricsSnapshot((current) => {
+      if (String(current?.dateKey || "") === dateKey) {
+        return current;
+      }
+
+      const nextSnapshot = {
+        dateKey,
+        cities: Number(cityCount) || 0,
+        places: Number(placeCount) || 0,
+        events: Number(eventCount) || 0,
+      };
+
+      try {
+        localStorage.setItem(HOME_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
+      } catch {
+        // Ignore local cache write issues.
+      }
+
+      return nextSnapshot;
+    });
+  }, [cityCount, eventCount, isDataLoading, placeCount]);
 
   const topLaneCards = [
     {
@@ -732,18 +822,18 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                <div className="qa-card qa-metric-card rounded-3xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+              <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
+                <div className="qa-card rounded-2xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] p-3.5 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{cityCountDisplay}</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{cityCountDisplay}</p>
                 </div>
-                <div className="qa-card qa-metric-card rounded-3xl border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                <div className="qa-card rounded-2xl border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] p-3.5 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Places</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{placeCountDisplay}</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{placeCountDisplay}</p>
                 </div>
-                <div className="qa-card qa-metric-card rounded-3xl border border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(255,255,255,0.03))] p-4 backdrop-blur">
+                <div className="qa-card rounded-2xl border border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(255,255,255,0.03))] p-3.5 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.18em] text-white/45">Events</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{eventCountDisplay}</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{eventCountDisplay}</p>
                 </div>
               </div>
             </section>

@@ -966,8 +966,7 @@ export default function TripPlannerV2({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/70">Flow Engine</p>
-          <h3 className="mt-1 text-lg font-semibold text-white">Trip planner that feels fast</h3>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/72">Planner controls</p>
           <p className="mt-1 text-xs text-white/60">Pick city, horizon, and vibe tags. Build in one tap.</p>
         </div>
         <div className="rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] text-cyan-100/90">
@@ -1374,3 +1373,4 @@ export default function TripPlannerV2({
     </div>
   );
 }
+

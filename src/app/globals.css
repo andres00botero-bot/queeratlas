@@ -555,8 +555,6 @@ body {
     border-color var(--qa-dur-base) var(--qa-ease-standard),
     background-color var(--qa-dur-base) var(--qa-ease-standard),
     color var(--qa-dur-base) var(--qa-ease-standard),
-    box-shadow var(--qa-dur-base) var(--qa-ease-standard),
-    transform var(--qa-dur-base) var(--qa-ease-standard),
     opacity var(--qa-dur-base) var(--qa-ease-standard);
 }
 
