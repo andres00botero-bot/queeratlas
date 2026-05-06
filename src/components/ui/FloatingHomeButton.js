@@ -192,11 +192,11 @@ export default function FloatingHomeButton() {
   ];
 
   return (
-    <div className="fixed bottom-4 right-4 z-[90] sm:bottom-6 sm:right-6">
+    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] right-[calc(0.75rem+env(safe-area-inset-right,0px))] z-[90] sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
       <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(56,189,248,0.22),rgba(244,114,182,0.16),transparent_72%)] blur-xl" />
       <nav
         aria-label="Quick navigation"
-        className="relative flex items-center gap-1.5 rounded-full border border-white/24 bg-[linear-gradient(135deg,rgba(10,13,20,0.95),rgba(18,20,30,0.94),rgba(10,10,10,0.98))] px-2 py-2 shadow-[0_24px_64px_rgba(2,6,20,0.62),0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur-xl"
+        className="relative flex items-center gap-1.5 rounded-full border border-white/26 bg-[linear-gradient(135deg,rgba(10,13,20,0.96),rgba(18,20,30,0.95),rgba(10,10,10,0.99))] px-2 py-2 shadow-[0_24px_64px_rgba(2,6,20,0.62),0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur-xl max-[390px]:gap-1 max-[390px]:px-1.5 max-[390px]:py-1.5"
       >
         <span
           aria-hidden="true"
@@ -212,7 +212,7 @@ export default function FloatingHomeButton() {
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               title={item.label}
-              className={`group relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${
+              className={`group relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black max-[390px]:h-10 max-[390px]:w-10 ${
                 isActive
                   ? "border-white/46 bg-[linear-gradient(135deg,rgba(255,255,255,0.24),rgba(255,255,255,0.08),rgba(10,10,10,0.86))] text-white shadow-[0_12px_34px_rgba(0,0,0,0.44)]"
                   : "border-white/16 bg-white/[0.05] text-white/78 hover:-translate-y-[1px] hover:border-white/30 hover:bg-white/[0.1]"
@@ -232,7 +232,7 @@ export default function FloatingHomeButton() {
                             : item.accent === "violet"
                               ? "text-violet-100 drop-shadow-[0_0_12px_rgba(167,139,250,0.8)]"
                               : "text-sky-100 drop-shadow-[0_0_12px_rgba(56,189,248,0.8)]"
-                    : "text-white/80"
+                    : "text-white/84"
                 }`}
                 aria-hidden="true"
               />
