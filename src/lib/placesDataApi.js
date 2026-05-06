@@ -6,8 +6,17 @@ const PLACES_FALLBACK_SELECT =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
 let skipPlacesWithStatsView = false;
 
-function selectPlaces(client, table, select, options) {
-  const query = client.from(table);
+function applyPlacesFilters(query, filters = {}) {
+  let nextQuery = query;
+  const city = String(filters?.city || "").trim();
+  if (city) {
+    nextQuery = nextQuery.eq("city", city);
+  }
+  return nextQuery;
+}
+
+function selectPlaces(client, table, select, options, filters) {
+  const query = applyPlacesFilters(client.from(table), filters);
   return options ? query.select(select, options) : query.select(select);
 }
 
@@ -87,10 +96,11 @@ export async function fetchPlacesQueryWithFallback({
   client = supabase,
   select = "*",
   options,
+  filters,
   mergeSeed = false,
 } = {}) {
   if (skipPlacesWithStatsView) {
-    const placesRes = await selectPlaces(client, "places", select, options);
+    const placesRes = await selectPlaces(client, "places", select, options, filters);
     const rows = normalizeRows(placesRes?.data);
     return {
       data: await maybeMergeSeedRows(rows, mergeSeed),
@@ -100,7 +110,7 @@ export async function fetchPlacesQueryWithFallback({
     };
   }
 
-  const statsRes = await selectPlaces(client, "places_with_stats", select, options);
+  const statsRes = await selectPlaces(client, "places_with_stats", select, options, filters);
   const statsError = statsRes?.error ?? null;
 
   if (!statsError) {
@@ -124,7 +134,7 @@ export async function fetchPlacesQueryWithFallback({
   }
 
   skipPlacesWithStatsView = true;
-  const placesRes = await selectPlaces(client, "places", select, options);
+  const placesRes = await selectPlaces(client, "places", select, options, filters);
   const rows = normalizeRows(placesRes?.data);
   return {
     data: await maybeMergeSeedRows(rows, mergeSeed),

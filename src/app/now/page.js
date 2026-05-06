@@ -1289,7 +1289,7 @@ export default function NowPage() {
                 {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
               </p>
 
-              <div className="relative z-10 grid min-h-0 flex-1 content-start gap-4 overflow-visible pr-0 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
+              <div className="qa-defer-render relative z-10 grid min-h-0 flex-1 content-start gap-4 overflow-visible pr-0 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
                 {displayedNewsItems.length > 0 ? (
                   displayedNewsItems.map((item) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
@@ -1736,7 +1736,7 @@ export default function NowPage() {
             </form>
           )}
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="qa-defer-render grid gap-3 md:grid-cols-2">
             {rightsUpdates.map((item) => {
               const canEditAdminNews = adminNewsIdSet.has(String(item.id));
               return (
@@ -1851,7 +1851,7 @@ export default function NowPage() {
             <p className="mb-4 text-xs text-fuchsia-50/70">
               One unified flow: tonight picks first, then the next 30-day pulse.
             </p>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="qa-defer-render grid gap-4 md:grid-cols-2">
               {visibleHappeningEvents.map((event) => {
                 const isTonight = event.qaTiming === "tonight";
                 return (
@@ -2063,7 +2063,7 @@ export default function NowPage() {
               </div>
             )}
 
-            <div className="mt-5 space-y-3">
+            <div className="qa-defer-render mt-5 space-y-3">
               {visibleCommunityStories.map((story) => {
                 const canEditAdminNews = adminNewsIdSet.has(String(story.id));
                 return (

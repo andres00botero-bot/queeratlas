@@ -1497,7 +1497,7 @@ export default function CommunityPage() {
                 <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
               </form>
             )}
-            <div className="max-h-[560px] space-y-4 overflow-y-auto pr-1">
+            <div className="qa-defer-render max-h-[560px] space-y-4 overflow-y-auto pr-1">
               {sortedStories.map((story) => (
                 <article key={story.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
                   <div className="flex items-center justify-between gap-3">
@@ -1574,7 +1574,7 @@ export default function CommunityPage() {
                 <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
               </form>
             )}
-            <div className="qa-guides-scroll max-h-[560px] space-y-3 overflow-y-auto pr-1">
+            <div className="qa-defer-render qa-guides-scroll max-h-[560px] space-y-3 overflow-y-auto pr-1">
               {sortedGuides.map((guide) => {
                 const isExpanded = expandedGuideIds.includes(guide.id);
                 return (
@@ -1649,7 +1649,7 @@ export default function CommunityPage() {
           </div>
           <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
             <div className="space-y-3">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+              <div className="qa-defer-render grid gap-3 md:grid-cols-2 xl:grid-cols-1">
                 {visibleTopics.map((topic) => {
                   const replies = (messages[topic.id] || []).length;
                   const active = activeTopic?.id === topic.id;
@@ -1803,7 +1803,7 @@ export default function CommunityPage() {
               </div>
             </form>
           )}
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="qa-defer-render grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {sortedIdeas.map((idea) => (
               <div key={idea.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(46,31,10,0.78),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-amber-200/30 hover:shadow-[0_24px_60px_rgba(251,191,36,0.14)]">
                 <div className="flex items-start justify-between gap-3">

@@ -258,6 +258,13 @@ body {
   transform: translateY(-2px);
 }
 
+@supports (content-visibility: auto) {
+  .qa-defer-render {
+    content-visibility: auto;
+    contain-intrinsic-size: 820px;
+  }
+}
+
 .qa-premium-card:focus-visible {
   outline: none;
   box-shadow:
