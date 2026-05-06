@@ -1289,7 +1289,7 @@ export default function NowPage() {
                 {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
               </p>
 
-              <div className="relative z-10 grid min-h-0 flex-1 content-start gap-4 overflow-y-auto pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
+              <div className="relative z-10 grid min-h-0 flex-1 content-start gap-4 overflow-visible pr-0 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
                 {displayedNewsItems.length > 0 ? (
                   displayedNewsItems.map((item) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
@@ -1317,7 +1317,7 @@ export default function NowPage() {
                               );
                             }
                           }}
-                          className={`qa-premium-card relative z-10 h-[25.5rem] cursor-pointer overflow-hidden rounded-[24px] border ${tone.cardBorder} bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-4 transition duration-300 hover:-translate-y-[2px] ${tone.cardHover} ${tone.glow} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
+                          className={`qa-premium-card relative z-10 h-auto cursor-pointer overflow-hidden rounded-[24px] border ${tone.cardBorder} bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-4 transition duration-300 hover:-translate-y-[2px] md:h-[25.5rem] ${tone.cardHover} ${tone.glow} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
                         >
                           <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 transition duration-300 group-hover:opacity-80 ${tone.overlay}`} />
                           <div className="pointer-events-none absolute inset-[1px] rounded-[22px] bg-[#0b0b0b]/96" />
@@ -1335,7 +1335,7 @@ export default function NowPage() {
                               </span>
                             </div>
                             <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
-                            <div className={`mt-3 min-h-0 flex-1 ${isExpanded ? "overflow-y-auto pr-1" : "overflow-hidden"}`}>
+                            <div className={`mt-3 md:min-h-0 md:flex-1 ${isExpanded ? "md:overflow-y-auto md:pr-1" : "overflow-hidden"}`}>
                               <p
                                 className={`mt-2 text-sm leading-6 text-white/62 transition-all ${
                                   isExpanded ? "" : "line-clamp-2"
