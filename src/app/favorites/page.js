@@ -47,7 +47,6 @@ import {
 } from "@/features/favorites/favoritesStateDefaults";
 import {
   buildCheckinMapEmbedUrl,
-  buildFollowingCheckinMarkers,
   buildOpenStreetMapStaticUrl,
   buildStaticMapUrl,
   filterRecentCheckins,
@@ -756,30 +755,19 @@ export default function FavoritesPage() {
   );
 
   const checkinMarkers = useMemo(
-    () => buildCheckinMarkers({ checkins, savedPlaces, savedEvents }),
-    [checkins, savedEvents, savedPlaces]
-  );
-
-  const followingCheckinMarkers = useMemo(
-    () => buildFollowingCheckinMarkers(recentFollowingCheckins),
-    [recentFollowingCheckins]
+    () => buildCheckinMarkers({ checkins: filteredRecentCheckins, savedPlaces, savedEvents }),
+    [filteredRecentCheckins, savedEvents, savedPlaces]
   );
 
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
   const interactiveCheckinPoints = useMemo(() => {
-    const mine = checkinMarkers.map((item) => ({
+    return checkinMarkers.map((item) => ({
       ...item,
       markerId: `mine-${String(item.id)}`,
       markerKind: "mine",
     }));
-    const friends = followingCheckinMarkers.map((item) => ({
-      ...item,
-      markerId: `friend-${String(item.id)}`,
-      markerKind: "friend",
-    }));
-    return [...mine, ...friends];
-  }, [checkinMarkers, followingCheckinMarkers]);
+  }, [checkinMarkers]);
 
   const selectedCheckin = useMemo(() => {
     return getSelectedCheckin(checkinMarkers, selectedCheckinId);
@@ -790,20 +778,20 @@ export default function FavoritesPage() {
   const checkinMapCenter = useMemo(() => {
     return resolveCheckinMapCenter({
       checkinMarkers,
-      followingCheckinMarkers,
+      followingCheckinMarkers: [],
       savedPlaces,
       savedEvents,
     });
-  }, [checkinMarkers, followingCheckinMarkers, savedEvents, savedPlaces]);
+  }, [checkinMarkers, savedEvents, savedPlaces]);
 
   const staticMapUrl = useMemo(() => {
     return buildStaticMapUrl({
       checkinMapCenter,
       checkinMarkers,
-      followingCheckinMarkers,
+      followingCheckinMarkers: [],
       token: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
     });
-  }, [checkinMapCenter, checkinMarkers, followingCheckinMarkers]);
+  }, [checkinMapCenter, checkinMarkers]);
 
   const checkinMapEmbedUrl = useMemo(() => {
     return buildCheckinMapEmbedUrl(checkinMapCenter);
@@ -2311,7 +2299,7 @@ export default function FavoritesPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-white/42">Your check-ins</p>
               <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                 <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
-                <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-cyan-100/90">Friends</span>
+                <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved check-ins</span>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {[
