@@ -192,7 +192,7 @@ export default function FloatingHomeButton() {
   ];
 
   return (
-    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] -translate-x-1/2 sm:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:left-auto sm:translate-x-0 sm:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
+    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] -translate-x-1/2 md:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:left-auto md:translate-x-0 md:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
       <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(56,189,248,0.22),rgba(244,114,182,0.16),transparent_72%)] blur-xl" />
       <nav
         aria-label="Quick navigation"
