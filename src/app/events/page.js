@@ -839,7 +839,7 @@ export default function EventsPage() {
                   Live Discovery + Event Signal
                 </div>
 
-                <div className="flex flex-1 items-center">
+                <div className="flex flex-1 items-center pt-3 sm:pt-4 xl:pt-0">
                   <div className="mx-auto w-full max-w-3xl text-center xl:mx-0 xl:max-w-none xl:text-left">
                     <h1 className="qa-display qa-h1 text-4xl font-semibold text-white sm:text-5xl xl:max-w-2xl xl:text-6xl">
                       Events Radar
