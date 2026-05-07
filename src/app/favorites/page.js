@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -149,6 +149,8 @@ const SavedPlacesPanel = dynamic(() => import("@/components/favorites/SavedPlace
 });
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
+const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
+const FAVORITES_PROFILE_AVATAR_STORAGE_KEY = "qa_favorites_profile_avatar_v1";
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -207,6 +209,23 @@ export default function FavoritesPage() {
     updateMemberProfile,
   } = useAuth();
   const { toast, showToast } = useActionToast();
+  const [activeFavoritesIntent, setActiveFavoritesIntent] = useState("go_out_tonight");
+  const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
+  const [activeProfileTab, setActiveProfileTab] = useState("activity");
+  const [isEditingAbout, setIsEditingAbout] = useState(false);
+  const [profileExtras, setProfileExtras] = useState({
+    about: "",
+    visibility: "members",
+    birthday: "",
+    vibe: "",
+    phone: "",
+    contactEmail: "",
+  });
+  const [profileAvatarDataUrl, setProfileAvatarDataUrl] = useState("");
+  const tonightSectionRef = useRef(null);
+  const tripSectionRef = useRef(null);
+  const pulseSectionRef = useRef(null);
+  const avatarFileInputRef = useRef(null);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -609,6 +628,33 @@ export default function FavoritesPage() {
     };
   }, [isReady, isMember, loadFollowingCheckins, user?.id]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = localStorage.getItem(FAVORITES_PROFILE_EXTRAS_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      setProfileExtras({
+        about: String(parsed?.about || "").slice(0, 160),
+        visibility: String(parsed?.visibility || "members") === "public" ? "public" : "members",
+        birthday: String(parsed?.birthday || "").slice(0, 20),
+        vibe: String(parsed?.vibe || "").slice(0, 80),
+        phone: String(parsed?.phone || "").slice(0, 40),
+        contactEmail: String(parsed?.contactEmail || "").slice(0, 120),
+      });
+    } catch {
+      // Ignore malformed local profile extras payload.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const avatarValue = String(localStorage.getItem(FAVORITES_PROFILE_AVATAR_STORAGE_KEY) || "");
+    if (avatarValue) {
+      setProfileAvatarDataUrl(avatarValue);
+    }
+  }, []);
+
   const favoriteIdSet = useMemo(
     () => new Set((favorites || []).map((item) => String(item))),
     [favorites]
@@ -915,6 +961,39 @@ export default function FavoritesPage() {
     () => new Set((followingUserIds || []).map((id) => String(id))),
     [followingUserIds]
   );
+  const memberDisplayNameById = useMemo(() => {
+    const map = new Map();
+    (networkMembers || []).forEach((member) => {
+      const key = String(member?.user_id || member?.id || "").trim();
+      if (!key) return;
+      const name = String(member?.display_name || member?.displayName || "").trim();
+      if (!name) return;
+      map.set(key, name);
+    });
+    return map;
+  }, [networkMembers]);
+  const followingFeedNameById = useMemo(() => {
+    const map = new Map();
+    (followingFeedRows || []).forEach((row) => {
+      const key = String(row?.owner_user_id || "").trim();
+      if (!key || map.has(key)) return;
+      const name = String(row?.display_name || "").trim();
+      if (!name || name.toLowerCase() === "member") return;
+      map.set(key, name);
+    });
+    return map;
+  }, [followingFeedRows]);
+  const followingCheckinNameById = useMemo(() => {
+    const map = new Map();
+    (followingCheckins || []).forEach((row) => {
+      const key = String(row?.ownerUserId || "").trim();
+      if (!key || map.has(key)) return;
+      const name = String(row?.ownerName || "").trim();
+      if (!name || name.toLowerCase() === "member") return;
+      map.set(key, name);
+    });
+    return map;
+  }, [followingCheckins]);
 
   const placesById = useMemo(() => {
     const map = new Map();
@@ -937,9 +1016,9 @@ export default function FavoritesPage() {
   }, [events]);
 
   const suggestedMembers = useMemo(() => {
-    if (!showSignalDeck) return [];
+    if (!showSignalDeck && activeProfileTab !== "friends") return [];
     return computeSuggestedMembers(networkMembers, user?.id);
-  }, [networkMembers, showSignalDeck, user?.id]);
+  }, [activeProfileTab, networkMembers, showSignalDeck, user?.id]);
 
   const followingFeedItems = useMemo(() => {
     return computeFollowingFeedItems({
@@ -950,13 +1029,13 @@ export default function FavoritesPage() {
   }, [eventsById, followingFeedRows, placesById]);
 
   const followingProfiles = useMemo(() => {
-    if (!showSignalDeck) return [];
+    if (!showSignalDeck && activeProfileTab !== "friends") return [];
     return computeFollowingProfiles({
       followingUserIds,
       followingFeedRows,
       networkMembers,
     });
-  }, [followingFeedRows, followingUserIds, networkMembers, showSignalDeck]);
+  }, [activeProfileTab, followingFeedRows, followingUserIds, networkMembers, showSignalDeck]);
 
   const forYouRecommendations = useMemo(() => {
     if (!showSignalDeck) return [];
@@ -1021,14 +1100,114 @@ export default function FavoritesPage() {
     setIsEditingProfile(false);
   };
 
+  const saveAboutProfile = async (event) => {
+    event.preventDefault();
+    const result = await updateMemberProfile(profileForm);
+    const sanitizedExtras = {
+      about: String(profileExtras.about || "").slice(0, 160),
+      visibility: String(profileExtras.visibility || "members") === "public" ? "public" : "members",
+      birthday: String(profileExtras.birthday || "").slice(0, 20),
+      vibe: String(profileExtras.vibe || "").slice(0, 80),
+      phone: String(profileExtras.phone || "").slice(0, 40),
+      contactEmail: String(profileExtras.contactEmail || "").slice(0, 120),
+    };
+    setProfileExtras(sanitizedExtras);
+    writeLocalJson(FAVORITES_PROFILE_EXTRAS_STORAGE_KEY, sanitizedExtras);
+    if (result?.ok) {
+      showToast("Profile updated.", { tone: "ok", duration: 2200 });
+    } else {
+      showToast("Profile saved locally. Cloud sync unavailable.", { tone: "info", duration: 2400 });
+    }
+    setIsEditingAbout(false);
+    setIsEditingProfile(false);
+  };
+
+  const openAvatarEditor = () => {
+    avatarFileInputRef.current?.click();
+  };
+
+  const onProfileAvatarSelected = (event) => {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+    if (!String(file.type || "").startsWith("image/")) {
+      showToast("Please choose an image file.", { tone: "warn", duration: 2200 });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      if (!dataUrl) return;
+      setProfileAvatarDataUrl(dataUrl);
+      writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, dataUrl);
+      showToast("Profile image updated.", { tone: "ok", duration: 1800 });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const hasProfileChanges = hasProfileFormChanges(profileForm, memberProfile || {});
   const greeting = resolveGreetingByHour();
   const displayName = resolveMemberDisplayName(memberName);
   const memberTitleMeta = getMemberTitleMeta(memberRank?.title || "");
+  const displayInitials = useMemo(() => {
+    const parts = String(displayName || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2);
+    if (parts.length === 0) return "QA";
+    return parts.map((part) => part.charAt(0).toUpperCase()).join("");
+  }, [displayName]);
   const plannerCities = useMemo(() => {
     const configCities = Object.values(cityConfig).map((item) => item.title?.replace("Queer ", "")).filter(Boolean);
     return computePlannerCities({ configCities, places, events });
   }, [events, places]);
+  const isGoOutTonightIntent = activeFavoritesIntent === "go_out_tonight";
+  const isPlanTripIntent = activeFavoritesIntent === "plan_a_trip";
+  const isFriendPulseIntent = activeFavoritesIntent === "check_friend_pulse";
+  const isProfileAboutTab = activeProfileTab === "about";
+  const isProfileActivityTab = activeProfileTab === "activity";
+  const isProfileTripsTab = activeProfileTab === "trips";
+  const isProfileFriendsTab = activeProfileTab === "friends";
+  const isProfileSavedTab = activeProfileTab === "saved";
+  const isCompactCheckinSection = showSecondaryPanels && !isGoOutTonightIntent;
+  const isCompactTripSection = showSecondaryPanels && !isPlanTripIntent;
+  const isCompactPulseSection = showSecondaryPanels && !isFriendPulseIntent;
+  const showCheckinSection = isProfileActivityTab && (isGoOutTonightIntent || showSecondaryPanels);
+  const showTripSection = (isProfileActivityTab && (isPlanTripIntent || showSecondaryPanels)) || isProfileTripsTab;
+  const showPulseSection = (isProfileActivityTab && (isFriendPulseIntent || showSecondaryPanels)) || isProfileFriendsTab;
+  const showSavedCollections = (isProfileActivityTab && (!isFriendPulseIntent || showSecondaryPanels)) || isProfileSavedTab;
+  const primaryIntentCtaLabel = isGoOutTonightIntent
+    ? "Start check-in now"
+    : isPlanTripIntent
+      ? "Open trip planner"
+      : "Open friend pulse";
+
+  const openIntentView = useCallback(
+    (nextIntent) => {
+      setActiveProfileTab("activity");
+      setActiveFavoritesIntent(nextIntent);
+      setShowSecondaryPanels(false);
+      if (nextIntent === "check_friend_pulse") {
+        setShowSignalDeck(true);
+      }
+      const targetRef =
+        nextIntent === "go_out_tonight"
+          ? tonightSectionRef
+          : nextIntent === "plan_a_trip"
+            ? tripSectionRef
+            : pulseSectionRef;
+      window.setTimeout(() => {
+        targetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 20);
+    },
+    [setShowSignalDeck]
+  );
+
+  useEffect(() => {
+    if (activeProfileTab === "friends" && !showSignalDeck) {
+      setShowSignalDeck(true);
+    }
+  }, [activeProfileTab, setShowSignalDeck, showSignalDeck]);
 
   const removeFavorite = async (favoriteId, label = "Item") => {
     const nextState = removeFavoriteLocalState({ favorites, added, favoriteId });
@@ -1495,8 +1674,8 @@ export default function FavoritesPage() {
     const vibeLabel = selectedVibeTags.length > 0
       ? selectedVibeTags.map((tag) => formatVibeTagLabel(tag) || tag).join(" + ")
       : "Mixed";
-    const title = `${cityName} Â· ${String(payload?.horizon || "trip").replaceAll("_", " ")} Â· ${vibeLabel}`;
-    const note = `V2 plan Â· vibes: ${selectedVibeTags.join(", ") || "mixed"} Â· budget: ${payload?.budget || "balanced"} Â· energy: ${payload?.energy || 70} Â· solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
+    const title = `${cityName} - ${String(payload?.horizon || "trip").replaceAll("_", " ")} - ${vibeLabel}`;
+    const note = `V2 plan - vibes: ${selectedVibeTags.join(", ") || "mixed"} - budget: ${payload?.budget || "balanced"} - energy: ${payload?.energy || 70} - solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
 
     const draftPlan = {
       id: `plan-v2-${Date.now()}`,
@@ -1571,6 +1750,34 @@ export default function FavoritesPage() {
         <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(135deg,rgba(22,22,24,0.95),rgba(10,10,10,0.99),rgba(16,18,22,0.98))] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute right-4 top-12 h-24 w-24 rounded-full bg-cyan-300/34 blur-xl sm:right-[7rem] sm:top-1/2 sm:h-40 sm:w-40 sm:-translate-y-[78%] sm:blur-2xl" />
+          <div className="pointer-events-none absolute right-4 top-12 h-20 w-20 rounded-full bg-sky-300/26 blur-md sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:blur-lg" />
+          <button
+            type="button"
+            onClick={() => {
+              setActiveProfileTab("about");
+              openAvatarEditor();
+            }}
+            className="group absolute right-4 top-12 inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-cyan-200/40 bg-cyan-200/10 text-xl font-semibold text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,0.26),0_24px_60px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:text-3xl"
+            aria-label="Edit profile image"
+          >
+            {profileAvatarDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profileAvatarDataUrl} alt="Profile" className="h-full w-full object-cover" />
+            ) : (
+              <span>{displayInitials}</span>
+            )}
+            <span className="absolute inset-x-0 bottom-0 bg-black/48 px-2 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-white/85 opacity-0 transition group-hover:opacity-100 sm:text-xs">
+              Edit
+            </span>
+          </button>
+          <input
+            ref={avatarFileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={onProfileAvatarSelected}
+            className="hidden"
+          />
           <div className="max-w-4xl">
             <p className="mt-1 bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-2xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_12px_30px_rgba(251,191,36,0.2)] sm:text-3xl">
               {greeting}, {displayName}
@@ -1604,351 +1811,461 @@ export default function FavoritesPage() {
                 {syncWarning}
               </div>
             )}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-rose-200/18 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 sm:px-3 sm:text-[11px] sm:tracking-[0.16em]">Travel memory</span>
-              <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100 sm:px-3 sm:text-[11px] sm:tracking-[0.16em]">Member signal</span>
-              <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/70 sm:px-3 sm:text-[11px] sm:tracking-[0.16em]">Live atlas</span>
-            </div>
           </div>
 
-            <div className="mt-5 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="qa-premium-card qa-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(244,114,182,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_44px_rgba(0,0,0,0.3),0_9px_24px_rgba(244,114,182,0.12)] backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved places</p>
-              <p className="mt-1.5 text-lg font-semibold text-white sm:text-xl">{totalPlaces}</p>
-            </div>
-            <div className="qa-premium-card qa-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(167,139,250,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_44px_rgba(0,0,0,0.3),0_9px_24px_rgba(167,139,250,0.12)] backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/40">Saved events</p>
-              <p className="mt-1.5 text-lg font-semibold text-white sm:text-xl">{totalEvents}</p>
-            </div>
-            <div className="qa-premium-card qa-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(34,211,238,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_44px_rgba(0,0,0,0.3),0_9px_24px_rgba(34,211,238,0.12)] backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
-              <p className="mt-1.5 text-lg font-semibold text-white sm:text-xl">{totalCities}</p>
-            </div>
-            <div className="qa-premium-card qa-card rounded-2xl border border-white/12 bg-[radial-gradient(circle_at_16%_12%,rgba(251,191,36,0.12),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_44px_rgba(0,0,0,0.3),0_9px_24px_rgba(251,191,36,0.12)] backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/40">Top vibe</p>
-              <p className="mt-1.5 text-lg font-semibold capitalize text-white sm:text-xl">
-                {topVibe}
-              </p>
+          <div className="mt-5 rounded-2xl border border-white/12 bg-black/25 p-3 sm:p-3.5">
+            <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              {[
+                { id: "about", label: "About" },
+                { id: "activity", label: "Mission control" },
+                { id: "trips", label: "Plan a trip" },
+                { id: "friends", label: "Friends" },
+                { id: "saved", label: "Saved" },
+              ].map((tab) => {
+                const isActive = activeProfileTab === tab.id;
+                const toneClasses =
+                  tab.id === "about"
+                    ? {
+                        active: "border-cyan-200/40 bg-cyan-300/14 text-cyan-100 shadow-[0_0_0_1px_rgba(103,232,249,0.26)]",
+                        idle: "border-cyan-200/18 bg-cyan-300/[0.06] text-cyan-100/78 hover:border-cyan-200/34 hover:text-cyan-100",
+                      }
+                    : tab.id === "activity"
+                      ? {
+                          active: "border-emerald-200/40 bg-emerald-300/14 text-emerald-100 shadow-[0_0_0_1px_rgba(110,231,183,0.24)]",
+                          idle: "border-emerald-200/18 bg-emerald-300/[0.06] text-emerald-100/78 hover:border-emerald-200/34 hover:text-emerald-100",
+                        }
+                      : tab.id === "trips"
+                        ? {
+                            active: "border-amber-200/40 bg-amber-300/14 text-amber-100 shadow-[0_0_0_1px_rgba(252,211,77,0.24)]",
+                            idle: "border-amber-200/18 bg-amber-300/[0.06] text-amber-100/78 hover:border-amber-200/34 hover:text-amber-100",
+                          }
+                        : tab.id === "friends"
+                          ? {
+                              active: "border-violet-200/40 bg-violet-300/14 text-violet-100 shadow-[0_0_0_1px_rgba(196,181,253,0.24)]",
+                              idle: "border-violet-200/18 bg-violet-300/[0.06] text-violet-100/78 hover:border-violet-200/34 hover:text-violet-100",
+                            }
+                          : {
+                              active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
+                              idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
+                            };
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveProfileTab(tab.id)}
+                    className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${
+                      isActive ? toneClasses.active : toneClasses.idle
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/58">
+              <span>{totalPlaces} places</span>
+              <span>|</span>
+              <span>{totalEvents} events</span>
+              <span>|</span>
+              <span>{totalCities} cities</span>
+              <span>|</span>
+              <span className="capitalize">{topVibe}</span>
             </div>
           </div>
         </section>
 
-        <section className="hidden mb-8 rounded-[34px] border border-emerald-200/12 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,rgba(13,32,28,0.94),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_100px_rgba(0,0,0,0.32)]">
-          <div className="mb-6 flex items-center justify-between gap-3">
+        {isProfileAboutTab ? (
+        <section className="qa-premium-card relative mb-6 overflow-hidden rounded-[28px] border border-emerald-200/14 bg-[linear-gradient(180deg,rgba(14,20,18,0.96),rgba(8,10,10,0.99))] p-4 shadow-[0_24px_72px_rgba(0,0,0,0.38)] sm:rounded-[30px] sm:p-5">
+          <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-emerald-300/10 blur-3xl" />
+          <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(130deg,rgba(255,255,255,0.03),transparent_32%)]" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-emerald-200/70">
-                Member identity
-              </p>
-              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
-                Profile signal
+              <p className="text-xs uppercase tracking-[0.24em] text-emerald-100/72">Member profile</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+                About
               </h2>
             </div>
-            <div className="rounded-full border border-emerald-200/16 bg-emerald-200/[0.08] px-4 py-2 text-xs text-emerald-100">
-              {contributionCounts.total} contributions
-            </div>
+            {!isEditingAbout ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileForm({
+                    displayName: memberProfile?.displayName || authMemberName || memberName,
+                    pronouns: memberProfile?.pronouns || "",
+                    homeCity: memberProfile?.homeCity || "",
+                    residentCountry: memberProfile?.residentCountry || "",
+                  });
+                  setIsEditingAbout(true);
+                  setIsEditingProfile(true);
+                }}
+                className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition hover:border-white/26"
+              >
+                Edit about
+              </button>
+            ) : null}
           </div>
 
-          <form onSubmit={saveProfile} className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {!isEditingProfile ? (
+          {!isEditingAbout ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2 rounded-2xl border border-emerald-200/20 bg-emerald-200/[0.07] p-3.5">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-100/72">Personal details</p>
+                <p className="mt-1 text-xs text-white/64">Keep this section updated so trusted members understand your profile at a glance.</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Display name</p>
+                <p className="mt-1 text-sm text-white">{displayName}</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Visibility</p>
+                <p className="mt-1 text-sm text-white">
+                  {profileExtras.visibility === "public" ? "Visible to all" : "Members only"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Location</p>
+                <p className="mt-1 text-sm text-white">
+                  {memberProfile?.homeCity || memberProfile?.residentCountry
+                    ? [memberProfile?.homeCity, memberProfile?.residentCountry].filter(Boolean).join(", ")
+                    : "Not set"}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Birthday</p>
+                <p className="mt-1 text-sm text-white">{profileExtras.birthday || "Not set"}</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Vibe</p>
+                <p className="mt-1 text-sm text-white">{profileExtras.vibe || topVibe}</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Tel (optional)</p>
+                <p className="mt-1 text-sm text-white">{profileExtras.phone || "Not set"}</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Mail (optional)</p>
+                <p className="mt-1 text-sm text-white">{profileExtras.contactEmail || "Not set"}</p>
+              </div>
+              <div className="sm:col-span-2 rounded-2xl border border-white/12 bg-black/25 p-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">About</p>
+                <p className="mt-1 text-sm leading-6 text-white/82">
+                  {profileExtras.about || "Add a short profile line to help people know your vibe."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={saveAboutProfile} className="mt-4 space-y-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Display name</p>
+                  <p className="mb-1 text-[11px] text-white/44">Shown publicly in comments, follows, and member cards.</p>
+                  <input
+                    value={profileForm.displayName}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, displayName: event.target.value }))
+                    }
+                    placeholder="How members see your name"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Pronouns</p>
+                  <p className="mb-1 text-[11px] text-white/44">Optional, but helpful for respectful interaction.</p>
+                  <input
+                    value={profileForm.pronouns}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, pronouns: event.target.value }))
+                    }
+                    placeholder="Optional, e.g. he/him, she/her, they/them"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Location</p>
+                  <p className="mb-1 text-[11px] text-white/44">Your main city so people understand your local scene.</p>
+                  <input
+                    value={profileForm.homeCity}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, homeCity: event.target.value }))
+                    }
+                    placeholder="City where you are mostly active"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Country</p>
+                  <p className="mb-1 text-[11px] text-white/44">Adds context for laws, rights, and community conditions.</p>
+                  <input
+                    value={profileForm.residentCountry}
+                    onChange={(event) =>
+                      setProfileForm((current) => ({ ...current, residentCountry: event.target.value }))
+                    }
+                    placeholder="Country for local context"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Birthday</p>
+                  <p className="mb-1 text-[11px] text-white/44">Optional. Only add this if you are comfortable sharing it.</p>
+                  <input
+                    type="date"
+                    value={profileExtras.birthday}
+                    onChange={(event) =>
+                      setProfileExtras((current) => ({
+                        ...current,
+                        birthday: String(event.target.value || "").slice(0, 20),
+                      }))
+                    }
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Vibe</p>
+                  <p className="mb-1 text-[11px] text-white/44">Short keywords about your energy, music, and social style.</p>
+                  <input
+                    value={profileExtras.vibe}
+                    onChange={(event) =>
+                      setProfileExtras((current) => ({
+                        ...current,
+                        vibe: String(event.target.value || "").slice(0, 80),
+                      }))
+                    }
+                    placeholder="Your social/nightlife vibe in a few words"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Tel (optional)</p>
+                  <p className="mb-1 text-[11px] text-white/44">For direct contact with trusted members if you choose.</p>
+                  <input
+                    value={profileExtras.phone}
+                    onChange={(event) =>
+                      setProfileExtras((current) => ({
+                        ...current,
+                        phone: String(event.target.value || "").slice(0, 40),
+                      }))
+                    }
+                    placeholder="Only if you want to share"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Mail (optional)</p>
+                  <p className="mb-1 text-[11px] text-white/44">Use an address you are okay sharing in community context.</p>
+                  <input
+                    type="email"
+                    value={profileExtras.contactEmail}
+                    onChange={(event) =>
+                      setProfileExtras((current) => ({
+                        ...current,
+                        contactEmail: String(event.target.value || "").slice(0, 120),
+                      }))
+                    }
+                    placeholder="Optional contact mail"
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Profile visibility</p>
+                  <p className="mb-1 text-[11px] text-white/44">Choose who can see your profile details in the atlas.</p>
+                  <select
+                    value={profileExtras.visibility}
+                    onChange={(event) =>
+                      setProfileExtras((current) => ({
+                        ...current,
+                        visibility: event.target.value === "public" ? "public" : "members",
+                      }))
+                    }
+                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  >
+                    <option value="members">Visible to members only</option>
+                    <option value="public">Visible to all</option>
+                  </select>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/28 p-2.5 sm:col-span-2">
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">About (max 160)</p>
+                  <p className="mb-1 text-[11px] text-white/44">Tell others what you are into and what kind of people/places you seek.</p>
+                  <textarea
+                    value={profileExtras.about}
+                    onChange={(event) =>
+                      setProfileExtras((current) => ({
+                        ...current,
+                        about: String(event.target.value || "").slice(0, 160),
+                      }))
+                    }
+                    placeholder="Tell people what you are into, what vibe you bring, and where you like to go."
+                    className="min-h-[90px] w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="submit"
+                  className="rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.11em] text-black"
+                >
+                  Save about
+                </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setProfileForm({
-                      displayName: memberProfile?.displayName || authMemberName || memberName,
-                      pronouns: memberProfile?.pronouns || "",
-                      homeCity: memberProfile?.homeCity || "",
-                      residentCountry: memberProfile?.residentCountry || "",
-                    });
-                    setIsEditingProfile(true);
+                    setIsEditingAbout(false);
+                    setIsEditingProfile(false);
                   }}
-                  className="qa-action rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
+                  className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition hover:border-white/26"
                 >
-                  Edit profile
+                  Cancel
                 </button>
-              ) : (
-                <>
-                  <button
-                    type="submit"
-                    disabled={!hasProfileChanges}
-                    className="qa-action qa-action-strong rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-5 py-2.5 text-sm font-semibold text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {hasProfileChanges ? "Save profile" : "Saved"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileForm({
-                        displayName: memberProfile?.displayName || authMemberName || memberName,
-                        pronouns: memberProfile?.pronouns || "",
-                        homeCity: memberProfile?.homeCity || "",
-                        residentCountry: memberProfile?.residentCountry || "",
-                      });
-                      setIsEditingProfile(false);
-                    }}
-                    className="qa-action rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                </>
-              )}
-            </div>
-
-            {isEditingProfile && (
-              <div className="grid gap-3 md:grid-cols-4 rounded-2xl border border-emerald-200/16 bg-emerald-200/[0.05] p-4">
-              <input
-                value={profileForm.displayName}
-                onChange={(event) =>
-                  setProfileForm((current) => ({ ...current, displayName: event.target.value }))
-                }
-                placeholder="Display name"
-                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-              />
-              <input
-                value={profileForm.pronouns}
-                onChange={(event) =>
-                  setProfileForm((current) => ({ ...current, pronouns: event.target.value }))
-                }
-                placeholder="Pronouns"
-                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-              />
-              <input
-                value={profileForm.homeCity}
-                onChange={(event) =>
-                  setProfileForm((current) => ({ ...current, homeCity: event.target.value }))
-                }
-                placeholder="Home city"
-                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-              />
-              <input
-                value={profileForm.residentCountry}
-                onChange={(event) =>
-                  setProfileForm((current) => ({ ...current, residentCountry: event.target.value }))
-                }
-                placeholder="Country"
-                className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
-              />
               </div>
-            )}
-
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/40">Your footprint</p>
-              <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/40">Current profile</p>
-                <p className="mt-2 text-sm text-white/85">
-                  {(memberProfile?.displayName || memberName || "Explorer")}
-                  {memberProfile?.pronouns ? ` Â· ${memberProfile.pronouns}` : ""}
-                </p>
-                {memberRank?.title && (
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
-                    <span className="text-[10px] text-white/65">#{memberRank.rank}</span>
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
-                      <span>{memberTitleMeta.icon}</span>
-                      {memberTitleMeta.label}
-                    </span>
-                  </div>
-                )}
-                <p className="mt-1 text-xs text-white/55">
-                  {memberProfile?.homeCity ? `Home city: ${memberProfile.homeCity}` : "Home city not set"}
-                </p>
-                <p className="mt-1 text-xs text-white/55">
-                  {memberProfile?.residentCountry ? `Country: ${memberProfile.residentCountry}` : "Country not set"}
-                </p>
-                <p className="mt-1 text-[11px] text-white/45">
-                  Last saved: {formatSavedTime(memberProfile?.updatedAt)}
-                </p>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/40">Stories</p>
-                  <p className="mt-2 text-lg font-semibold text-white">{contributionCounts.stories}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/40">Guides</p>
-                  <p className="mt-2 text-lg font-semibold text-white">{contributionCounts.guides}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/40">Ideas</p>
-                  <p className="mt-2 text-lg font-semibold text-white">{contributionCounts.ideas}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/40">Topics</p>
-                  <p className="mt-2 text-lg font-semibold text-white">{contributionCounts.topics}</p>
-                </div>
-              </div>
-            </div>
-          </form>
+            </form>
+          )}
         </section>
+        ) : null}
 
-        <section className="qa-premium-card relative mb-6 rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_top_right,rgba(244,114,182,0.07),transparent_34%),linear-gradient(180deg,rgba(20,20,22,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_36px_108px_rgba(0,0,0,0.48)] max-[390px]:p-2.5 sm:rounded-[32px] sm:p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 max-[390px]:gap-2">
+        {isProfileActivityTab ? (
+        <section className="qa-premium-card mb-6 rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(14,16,20,0.96),rgba(8,8,10,0.99))] p-4 shadow-[0_24px_72px_rgba(0,0,0,0.38)] sm:rounded-[30px] sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="qa-h2 mt-2 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent max-[390px]:mt-1 max-[390px]:text-lg sm:text-2xl">Momentum</h2>
-              <p className="mt-1.5 text-xs leading-5 text-white/56 max-[390px]:text-[11px] max-[390px]:leading-4 sm:text-sm">
-                One integrated panel for your current signal and your fastest next actions.
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/72">Mission control</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+                What do you want now?
+              </h2>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSecondaryPanels((current) => !current)}
+                className="rounded-full border border-white/14 bg-white/7 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/78 transition hover:border-white/26"
+              >
+                {showSecondaryPanels ? "Focus mode" : "Show all panels"}
+              </button>
+              <button
+                type="button"
+                onClick={() => openIntentView(activeFavoritesIntent)}
+                className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/44"
+              >
+                {primaryIntentCtaLabel}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+            {[
+              { id: "go_out_tonight", label: "Check in now", hint: "Venue/event check-ins, live energy." },
+              { id: "plan_a_trip", label: "Plan a trip", hint: "Route, stops, save flow." },
+              { id: "check_friend_pulse", label: "Check friend pulse", hint: "Friends, trusted signal." },
+            ].map((intent) => {
+              const isActive = activeFavoritesIntent === intent.id;
+              return (
+                <button
+                  key={intent.id}
+                  type="button"
+                  onClick={() => openIntentView(intent.id)}
+                  className={`rounded-2xl border px-3.5 py-3 text-left transition ${
+                    isActive
+                      ? "border-cyan-200/34 bg-cyan-200/12 shadow-[0_0_0_1px_rgba(34,211,238,0.22)]"
+                      : "border-white/10 bg-white/[0.03] hover:border-white/20"
+                  }`}
+                >
+                  <p className="text-sm font-semibold text-white">{intent.label}</p>
+                  <p className="mt-1 text-xs text-white/58">{intent.hint}</p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2.5 rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-200/26 bg-cyan-200/12 text-xs font-semibold text-cyan-100">
+              {displayInitials}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{displayName}</p>
+              <p className="truncate text-[11px] text-white/58">
+                {memberProfile?.homeCity ? memberProfile.homeCity : "Home city not set"}
+                {" | "}
+                {topVibe}
               </p>
+            </div>
+            {memberRank?.title ? (
+              <span className={`ml-auto inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
+                <span>{memberTitleMeta.icon}</span>
+                {memberTitleMeta.label}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-3 rounded-2xl border border-white/12 bg-black/25 px-3.5 py-2.5 text-xs text-white/70">
+            {isGoOutTonightIntent && checkins.length === 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span>No check-ins yet. Start with one venue or event check-in.</span>
+                <button
+                  type="button"
+                  onClick={() => tonightSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
+                >
+                  Start here
+                </button>
+              </div>
+            ) : null}
+            {isGoOutTonightIntent && checkins.length > 0 && checkins.length <= 3 ? (
+              <span>Quick flow: check in, tap vibe, and jump to saved places.</span>
+            ) : null}
+            {isGoOutTonightIntent && checkins.length > 3 ? (
+              <span>Compact mode: use filters and list scroll to manage your active check-ins.</span>
+            ) : null}
+            {isPlanTripIntent && plans.length === 0 ? (
+              <span>No plans saved yet. Build your first itinerary in one pass.</span>
+            ) : null}
+            {isPlanTripIntent && plans.length > 0 ? (
+              <span>{plans.length} saved plans ready. Open one and continue from the latest stop.</span>
+            ) : null}
+            {isFriendPulseIntent && followingUserIds.length === 0 ? (
+              <span>Follow members to unlock your trusted friend pulse feed.</span>
+            ) : null}
+            {isFriendPulseIntent && followingUserIds.length > 0 ? (
+              <span>{followingUserIds.length} trusted connections active in your pulse network.</span>
+            ) : null}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.12em] text-white/56">
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Saved</span>
+            <span className="text-white/35">â†’</span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Signal</span>
+            <span className="text-white/35">â†’</span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Route</span>
+            <span className="text-white/35">â†’</span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Share / Meet</span>
+          </div>
+          {!showSecondaryPanels ? (
+            <p className="mt-2 text-[11px] text-white/48">
+              Focus mode on: only your active intent panel is visible.
+            </p>
+          ) : null}
+        </section>
+        ) : null}
+
+
+        {showCheckinSection ? (
+        isCompactCheckinSection ? (
+        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,14,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">Check in now</p>
+              <p className="mt-1 text-sm text-white/82">{checkins.length} check-ins | {checkinCities.length} cities</p>
             </div>
             <button
-              onClick={() => router.push("/cities")}
-              className="qa-action qa-action-strong rounded-full border border-cyan-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(99,102,241,0.16),rgba(12,10,18,0.92))] px-3 py-1.5 text-[11px] font-semibold text-cyan-50 transition hover:border-cyan-200/56 max-[390px]:px-2.5 max-[390px]:py-1 max-[390px]:text-[10px]"
+              type="button"
+              onClick={() => openIntentView("go_out_tonight")}
+              className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/44"
             >
-              Explore cities
+              Open full
             </button>
           </div>
-          <div className="mt-4 max-[390px]:mt-2.5">
-            <FavoritesMomentumPanel
-              thisWeekAdds={thisWeekAdds}
-              allCitiesCount={allCities.length}
-              recentSaves={recentSaves}
-              onOpenSavedItem={(item) =>
-                router.push(
-                  citySelectionPath(item.city, {
-                    placeId: item.type === "place" ? item.id : "",
-                    eventId: item.type === "event" ? item.id : "",
-                  })
-                )
-              }
-              timeAgo={timeAgo}
-              momentumMilestones={momentumMilestones}
-            />
-          </div>
-
-          <div className="mt-2.5 grid gap-2.5 lg:grid-cols-2">
-            <div className="qa-premium-card rounded-2xl border border-indigo-200/16 bg-[radial-gradient(circle_at_top_left,rgba(129,140,248,0.16),transparent_42%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-3 shadow-[0_18px_40px_rgba(0,0,0,0.26)] max-[390px]:rounded-xl max-[390px]:p-2.5">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-indigo-200/80">Community ranking</p>
-              {memberRank?.title ? (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/75">
-                    #{memberRank.rank}
-                  </span>
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
-                    <span>{memberTitleMeta.icon}</span>
-                    {memberTitleMeta.label}
-                  </span>
-                  <span className="text-xs text-white/58">{memberRank.score} pts</span>
-                </div>
-              ) : (
-                <p className="mt-2 text-sm text-white/62">
-                  No rank yet. Add places, events, or reviews to activate your badge.
-                </p>
-              )}
-            </div>
-
-            <div className="qa-premium-card rounded-2xl border border-emerald-200/18 bg-emerald-200/[0.08] p-3 shadow-[0_14px_30px_rgba(16,185,129,0.14),0_8px_20px_rgba(0,0,0,0.24)] max-[390px]:rounded-xl max-[390px]:p-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-100/78">Your footprint</p>
-                {!isEditingProfile ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileForm({
-                        displayName: memberProfile?.displayName || authMemberName || memberName,
-                        pronouns: memberProfile?.pronouns || "",
-                        homeCity: memberProfile?.homeCity || "",
-                        residentCountry: memberProfile?.residentCountry || "",
-                      });
-                      setIsEditingProfile(true);
-                    }}
-                    className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[11px] text-white/78 transition hover:border-white/22"
-                  >
-                    Edit
-                  </button>
-                ) : null}
-              </div>
-
-              <p className="mt-2 text-sm text-white/88">
-                {(memberProfile?.displayName || memberName || "Explorer")}
-                {memberProfile?.pronouns ? ` - ${memberProfile.pronouns}` : ""}
-              </p>
-              <p className="mt-1 text-xs text-white/62">
-                {memberProfile?.homeCity ? `Home: ${memberProfile.homeCity}` : "Home city not set"}
-                {" · "}
-                {memberProfile?.residentCountry ? `Country: ${memberProfile.residentCountry}` : "Country not set"}
-              </p>
-
-              {isEditingProfile ? (
-                <form onSubmit={saveProfile} className="mt-3 space-y-3">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <input
-                      value={profileForm.displayName}
-                      onChange={(event) =>
-                        setProfileForm((current) => ({ ...current, displayName: event.target.value }))
-                      }
-                      placeholder="Display name"
-                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    />
-                    <input
-                      value={profileForm.pronouns}
-                      onChange={(event) =>
-                        setProfileForm((current) => ({ ...current, pronouns: event.target.value }))
-                      }
-                      placeholder="Pronouns"
-                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    />
-                    <input
-                      value={profileForm.homeCity}
-                      onChange={(event) =>
-                        setProfileForm((current) => ({ ...current, homeCity: event.target.value }))
-                      }
-                      placeholder="Home city"
-                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    />
-                    <input
-                      value={profileForm.residentCountry}
-                      onChange={(event) =>
-                        setProfileForm((current) => ({ ...current, residentCountry: event.target.value }))
-                      }
-                      placeholder="Country"
-                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                    />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      type="submit"
-                      disabled={!hasProfileChanges}
-                      className="rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-4 py-1.5 text-xs font-semibold text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {hasProfileChanges ? "Save profile" : "Saved"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfileForm({
-                          displayName: memberProfile?.displayName || authMemberName || memberName,
-                          pronouns: memberProfile?.pronouns || "",
-                          homeCity: memberProfile?.homeCity || "",
-                          residentCountry: memberProfile?.residentCountry || "",
-                        });
-                        setIsEditingProfile(false);
-                      }}
-                      className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[11px] text-white/78 transition hover:border-white/22"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              ) : null}
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {allCities.length > 0 ? (
-                  allCities.map((city) => (
-                    <button
-                      key={city}
-                      onClick={() => router.push(cityPath(city))}
-                      className="rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-xs text-white/72 transition hover:border-white/20 hover:text-white"
-                    >
-                      {city}
-                    </button>
-                  ))
-                ) : (
-                  <p className="text-sm text-white/45">No cities saved yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
         </section>
-
-        <section className="qa-premium-card mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_34px_104px_rgba(0,0,0,0.42)] sm:rounded-[32px] sm:p-5">
+        ) : (
+        <section
+          ref={tonightSectionRef}
+          className="qa-premium-card mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_34px_104px_rgba(0,0,0,0.42)] sm:rounded-[32px] sm:p-5"
+        >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-200/75">
@@ -1984,7 +2301,7 @@ export default function FavoritesPage() {
                 <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-3 py-1 text-[11px] text-fuchsia-100/95">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200" />
                   <span className="truncate">
-                    Selected: {selectedCheckin.label || "Check-in"} Â· {selectedCheckin.city || "City"}
+                    Selected: {selectedCheckin.label || "Check-in"} | {selectedCheckin.city || "City"}
                   </span>
                 </div>
               ) : null}
@@ -2328,7 +2645,7 @@ export default function FavoritesPage() {
                       }`}
                     >
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                        {entry.city || "Unknown city"}{entry.country ? ` Â· ${entry.country}` : ""}
+                        {entry.city || "Unknown city"}{entry.country ? ` | ${entry.country}` : ""}
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
                       {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
@@ -2399,7 +2716,7 @@ export default function FavoritesPage() {
                                 {entry.ownerName || "Member"}
                               </p>
                               <p className="mt-1 text-xs text-white/65">
-                                {entry.label || "Unnamed check-in"} Â· {entry.city || "Unknown city"}
+                                {entry.label || "Unnamed check-in"} | {entry.city || "Unknown city"}
                               </p>
                               {entry.address ? <p className="mt-1 text-[11px] text-white/52">{entry.address}</p> : null}
                             </div>
@@ -2425,8 +2742,28 @@ export default function FavoritesPage() {
             </div>
           </div>
         </section>
+        )
+        ) : null}
 
-        <section className="mb-8">
+        {showTripSection ? (
+        isCompactTripSection ? (
+        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,20,24,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/72">Plan a trip</p>
+              <p className="mt-1 text-sm text-white/82">{plans.length} saved itineraries ready</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openIntentView("plan_a_trip")}
+              className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-cyan-100 transition hover:border-cyan-200/44"
+            >
+              Open full
+            </button>
+          </div>
+        </section>
+        ) : (
+        <section ref={tripSectionRef} className="mb-8">
           <div className="hidden rounded-[34px] border border-emerald-200/16 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_30%),linear-gradient(180deg,rgba(11,38,31,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
@@ -2537,7 +2874,7 @@ export default function FavoritesPage() {
               <div className="rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-4">
                 <p className="text-sm text-white/85">
                   {(memberProfile?.displayName || memberName || "Explorer")}
-                  {memberProfile?.pronouns ? ` Â· ${memberProfile.pronouns}` : ""}
+                  {memberProfile?.pronouns ? ` | ${memberProfile.pronouns}` : ""}
                 </p>
                 {memberRank?.title && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
@@ -2711,7 +3048,7 @@ export default function FavoritesPage() {
                                 {typeof stop.trustScore === "number" && (
                                   <span className="mt-1 block truncate text-[10px] text-cyan-100/72">
                                     Trust {stop.trustScore}
-                                    {stop.trustReason ? ` Â· ${stop.trustReason}` : ""}
+                                    {stop.trustReason ? ` | ${stop.trustReason}` : ""}
                                   </span>
                                 )}
                               </span>
@@ -2739,8 +3076,117 @@ export default function FavoritesPage() {
           </div>
           </div>
         </section>
+        )
+        ) : null}
 
-                {showSignalDeck ? (
+        {showPulseSection ? (
+        isCompactPulseSection ? (
+        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,16,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
+          <div className="flex flex-wrap items-center justify-between gap-2.5">
+            <div>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-violet-100/72">Check friend pulse</p>
+              <p className="mt-1 text-sm text-white/82">{followingUserIds.length} trusted members | {followingFeedItems.length} signal saves</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openIntentView("check_friend_pulse")}
+              className="rounded-full border border-violet-200/28 bg-violet-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-violet-100 transition hover:border-violet-200/44"
+            >
+              Open full
+            </button>
+          </div>
+        </section>
+        ) : (
+        <div ref={pulseSectionRef}>
+          {isProfileFriendsTab ? (
+          <section className="qa-premium-card mb-6 rounded-[28px] border border-violet-200/16 bg-[linear-gradient(180deg,rgba(16,14,24,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.4)] sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-violet-100/70">Friends</p>
+                <h3 className="mt-1 text-xl font-semibold text-white sm:text-2xl">People you follow</h3>
+              </div>
+              <button
+                type="button"
+                onClick={loadTrustNetwork}
+                className="rounded-full border border-violet-200/26 bg-violet-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
+              >
+                Refresh
+              </button>
+            </div>
+            {followingProfiles.length > 0 ? (
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                {followingProfiles.map((profile) => {
+                  const userId = String(profile?.userId || "").trim();
+                  const fallbackName = memberDisplayNameById.get(userId) || "";
+                  const feedName = followingFeedNameById.get(userId) || "";
+                  const checkinName = followingCheckinNameById.get(userId) || "";
+                  const profileName = String(profile?.displayName || "").trim();
+                  const friendName =
+                    (profileName && profileName.toLowerCase() !== "member" && profileName) ||
+                    (fallbackName && fallbackName.toLowerCase() !== "member" && fallbackName) ||
+                    (feedName && feedName.toLowerCase() !== "member" && feedName) ||
+                    (checkinName && checkinName.toLowerCase() !== "member" && checkinName) ||
+                    "Member";
+                  const initials = friendName
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((chunk) => chunk.charAt(0).toUpperCase())
+                    .join("");
+                  return (
+                  <article
+                    key={`friends-list-${profile.userId}`}
+                    className="rounded-2xl border border-white/12 bg-white/[0.04] p-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-200/28 bg-cyan-200/10 text-xs font-semibold text-cyan-100">
+                        {initials || "M"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-white">{friendName}</p>
+                        <p className="mt-1 text-xs text-white/60">
+                          {profile.cityCount || 0} cities · {profile.score || 0} pts
+                        </p>
+                        {profile.latestItemName ? (
+                          <p className="mt-1 truncate text-[11px] text-cyan-100/72">
+                            Latest: {profile.latestItemName}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            `/messages?user=${encodeURIComponent(String(profile?.userId || ""))}&name=${encodeURIComponent(
+                              friendName
+                            )}`
+                          )
+                        }
+                        className="rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/44"
+                      >
+                        Message
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleFollowMember(String(profile?.userId || ""))}
+                        className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/26"
+                      >
+                        Unfollow
+                      </button>
+                    </div>
+                  </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/14 bg-black/25 px-4 py-6 text-sm text-white/48">
+                You are not following anyone yet. Open Mission control and add trusted members.
+              </div>
+            )}
+          </section>
+          ) : showSignalDeck ? (
           <>
             <FavoritesPeopleSignalPanel
               networkWarning={networkWarning}
@@ -2778,8 +3224,13 @@ export default function FavoritesPage() {
               }
             />
           </>
+          ) : null}
+        </div>
+        )
         ) : null}
 
+        {showSavedCollections ? (
+        <>
         <SavedPlacesPanel
           isAtlasLoading={isAtlasLoading}
           savedPlaces={savedPlaces}
@@ -2800,6 +3251,8 @@ export default function FavoritesPage() {
           onBrowseEvents={() => router.push("/events")}
           renderSkeleton={() => <FavoritesCardSkeleton />}
         />
+        </>
+        ) : null}
       </div>
     </main>
   );
