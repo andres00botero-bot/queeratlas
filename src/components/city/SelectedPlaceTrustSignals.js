@@ -7,6 +7,7 @@ export default function SelectedPlaceTrustSignals({
   selectedPlaceQuality,
   selectedPlaceQualityStatus,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
   trustedPlaceSavesCount,
 }) {
@@ -14,17 +15,23 @@ export default function SelectedPlaceTrustSignals({
     <>
       {selectedPlaceQuality && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            onClick={(clickEvent) =>
-              refreshEntityQuality(
-                { targetType: "place", targetId: selectedPlace.id, fallbackSource: selectedPlaceQuality.source || "" },
-                clickEvent
-              )
-            }
-            className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedPlaceQualityStatus?.tone || "community")}`}
-          >
-            {selectedPlaceQualityStatus?.label || "Community"}
-          </button>
+          {canRefreshQuality ? (
+            <button
+              onClick={(clickEvent) =>
+                refreshEntityQuality(
+                  { targetType: "place", targetId: selectedPlace.id, fallbackSource: selectedPlaceQuality.source || "" },
+                  clickEvent
+                )
+              }
+              className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedPlaceQualityStatus?.tone || "community")}`}
+            >
+              {selectedPlaceQualityStatus?.label || "Community"}
+            </button>
+          ) : (
+            <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] ${qualityPillClass(selectedPlaceQualityStatus?.tone || "community")}`}>
+              {selectedPlaceQualityStatus?.label || "Community"}
+            </span>
+          )}
           {selectedPlaceQuality.lastChecked && (
             <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
               Checked {formatDate(selectedPlaceQuality.lastChecked)}

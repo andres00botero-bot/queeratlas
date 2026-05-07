@@ -18,6 +18,7 @@ export default function CityDetailsLayer({
   selectedServiceQuality,
   selectedServiceQualityStatus,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
   canEditSelectedService,
   canDeleteSelectedService,
@@ -147,6 +148,7 @@ export default function CityDetailsLayer({
           selectedServiceQuality={selectedServiceQuality}
           selectedServiceQualityStatus={selectedServiceQualityStatus}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           formatDate={formatDate}
           canEditSelectedService={canEditSelectedService}
           canDeleteSelectedService={canDeleteSelectedService}
@@ -202,6 +204,7 @@ export default function CityDetailsLayer({
           selectedPlaceQuality={selectedPlaceQuality}
           selectedPlaceQualityStatus={selectedPlaceQualityStatus}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           formatDate={formatDate}
           trustedPlaceSavesCount={trustedPlaceSavesCount}
           isAdmin={isAdmin}
@@ -256,6 +259,7 @@ export default function CityDetailsLayer({
           formatDate={formatDate}
           selectedEventQualityStatus={selectedEventQualityStatus}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           trustedEventSavesCount={trustedEventSavesCount}
           isAdmin={isAdmin}
           eventAdminOpen={eventAdminOpen}

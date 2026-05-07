@@ -415,6 +415,7 @@ export default function CityPage() {
   }, [isMember, user?.email, user?.id]);
 
   const canPublishDirect = isAdmin || isTrustedContributor;
+  const canRefreshQuality = isAdmin || isTrustedContributor;
 
   useEffect(() => {
     let active = true;
@@ -4147,6 +4148,7 @@ export default function CityPage() {
           formatEventDateLabel={formatEventDateLabel}
           cityName={cityName}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           formatDate={formatDate}
           remainingEvents={remainingEvents}
           isMember={isMember}
@@ -4194,6 +4196,7 @@ export default function CityPage() {
           typeLabels={TYPE_LABELS}
           qualityMap={qualityMap}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           formatDate={formatDate}
           cityName={cityName}
           safetySignalsByPlaceId={safetySignalsByPlaceId}
@@ -4213,6 +4216,7 @@ export default function CityPage() {
         selectedServiceQuality={selectedServiceQuality}
         selectedServiceQualityStatus={selectedServiceQualityStatus}
         refreshEntityQuality={refreshEntityQuality}
+        canRefreshQuality={canRefreshQuality}
         formatDate={formatDate}
           canEditSelectedService={canEditSelectedService}
           canDeleteSelectedService={canDeleteSelectedService}

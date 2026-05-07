@@ -24,6 +24,7 @@ export default function CityEventsRailSection({
   formatEventDateLabel,
   cityName,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
   remainingEvents,
   isMember,
@@ -111,18 +112,24 @@ export default function CityEventsRailSection({
                 <VibeTagChips entity={featuredEvent} tone="amber" className="mb-2" includeMixedFallback />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-purple-200/90">Next notable event in this city</p>
-                  <button
-                    onClick={(clickEvent) =>
-                      refreshEntityQuality(
-                        { targetType: "event", targetId: featuredEvent.id, fallbackSource: featuredEvent.link || "" },
-                        clickEvent
-                      )
-                    }
-                    className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(featuredEventQualityStatus.tone)}`}
-                    aria-label={`Update quality status for event ${featuredEvent.name}`}
-                  >
-                    {featuredEventQualityStatus.label}
-                  </button>
+                  {canRefreshQuality ? (
+                    <button
+                      onClick={(clickEvent) =>
+                        refreshEntityQuality(
+                          { targetType: "event", targetId: featuredEvent.id, fallbackSource: featuredEvent.link || "" },
+                          clickEvent
+                        )
+                      }
+                      className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(featuredEventQualityStatus.tone)}`}
+                      aria-label={`Update quality status for event ${featuredEvent.name}`}
+                    >
+                      {featuredEventQualityStatus.label}
+                    </button>
+                  ) : (
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] ${qualityPillClass(featuredEventQualityStatus.tone)}`}>
+                      {featuredEventQualityStatus.label}
+                    </span>
+                  )}
                 </div>
                 {featuredEventQuality.lastChecked && (
                   <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
@@ -187,18 +194,24 @@ export default function CityEventsRailSection({
               <VibeTagChips entity={event} tone="amber" className="mb-2" includeMixedFallback />
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs text-purple-400">Community event</p>
-                <button
-                  onClick={(clickEvent) =>
-                    refreshEntityQuality(
-                      { targetType: "event", targetId: event.id, fallbackSource: event.link || "" },
-                      clickEvent
-                    )
-                  }
-                  className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
-                  aria-label={`Update quality status for event ${event.name}`}
-                >
-                  {qualityStatus.label}
-                </button>
+                {canRefreshQuality ? (
+                  <button
+                    onClick={(clickEvent) =>
+                      refreshEntityQuality(
+                        { targetType: "event", targetId: event.id, fallbackSource: event.link || "" },
+                        clickEvent
+                      )
+                    }
+                    className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
+                    aria-label={`Update quality status for event ${event.name}`}
+                  >
+                    {qualityStatus.label}
+                  </button>
+                ) : (
+                  <span className={`rounded-full border px-2 py-0.5 text-[10px] ${qualityPillClass(qualityStatus.tone)}`}>
+                    {qualityStatus.label}
+                  </span>
+                )}
               </div>
               {quality.lastChecked && (
                 <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">

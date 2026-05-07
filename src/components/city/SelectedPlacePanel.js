@@ -39,6 +39,7 @@ export default function SelectedPlacePanel({
   selectedPlaceQuality,
   selectedPlaceQualityStatus,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
   trustedPlaceSavesCount,
   isAdmin,
@@ -123,6 +124,7 @@ export default function SelectedPlacePanel({
           selectedPlaceQuality={selectedPlaceQuality}
           selectedPlaceQualityStatus={selectedPlaceQualityStatus}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           formatDate={formatDate}
           trustedPlaceSavesCount={trustedPlaceSavesCount}
         />

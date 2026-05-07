@@ -12,6 +12,7 @@ export default function SelectedServiceSummary({
   selectedServiceQuality,
   selectedServiceQualityStatus,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
 }) {
   return (
@@ -97,17 +98,23 @@ export default function SelectedServiceSummary({
 
       {selectedServiceQuality && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            onClick={(clickEvent) =>
-              refreshEntityQuality(
-                { targetType: "service", targetId: selectedService.id, fallbackSource: selectedServiceQuality.source || selectedService.link || "" },
-                clickEvent
-              )
-            }
-            className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedServiceQualityStatus?.tone || "community")}`}
-          >
-            {selectedServiceQualityStatus?.label || "Community"}
-          </button>
+          {canRefreshQuality ? (
+            <button
+              onClick={(clickEvent) =>
+                refreshEntityQuality(
+                  { targetType: "service", targetId: selectedService.id, fallbackSource: selectedServiceQuality.source || selectedService.link || "" },
+                  clickEvent
+                )
+              }
+              className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedServiceQualityStatus?.tone || "community")}`}
+            >
+              {selectedServiceQualityStatus?.label || "Community"}
+            </button>
+          ) : (
+            <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] ${qualityPillClass(selectedServiceQualityStatus?.tone || "community")}`}>
+              {selectedServiceQualityStatus?.label || "Community"}
+            </span>
+          )}
           {selectedServiceQuality.lastChecked && (
             <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70">
               Checked {formatDate(selectedServiceQuality.lastChecked)}

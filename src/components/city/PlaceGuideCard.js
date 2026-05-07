@@ -23,6 +23,7 @@ export default function PlaceGuideCard({
   typeLabels,
   qualityMap,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
   cityName,
   safetySignal,
@@ -152,18 +153,24 @@ export default function PlaceGuideCard({
           {place.reviewCount || 0} reviews
         </span>
         <div className="flex items-center gap-2">
-          <button
-            onClick={(clickEvent) =>
-              refreshEntityQuality(
-                { targetType: "place", targetId: place.id, fallbackSource: "" },
-                clickEvent
-              )
-            }
-            className={`rounded-full border px-2.5 py-1 text-[11px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
-            aria-label={`Update quality status for place ${place.name}`}
-          >
-            {qualityStatus.label}
-          </button>
+          {canRefreshQuality ? (
+            <button
+              onClick={(clickEvent) =>
+                refreshEntityQuality(
+                  { targetType: "place", targetId: place.id, fallbackSource: "" },
+                  clickEvent
+                )
+              }
+              className={`rounded-full border px-2.5 py-1 text-[11px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
+              aria-label={`Update quality status for place ${place.name}`}
+            >
+              {qualityStatus.label}
+            </button>
+          ) : (
+            <span className={`rounded-full border px-2.5 py-1 text-[11px] ${qualityPillClass(qualityStatus.tone)}`}>
+              {qualityStatus.label}
+            </span>
+          )}
           <span>{groupLabel}</span>
         </div>
       </div>

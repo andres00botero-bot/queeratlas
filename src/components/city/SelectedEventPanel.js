@@ -25,6 +25,7 @@ export default function SelectedEventPanel({
   formatDate,
   selectedEventQualityStatus,
   refreshEntityQuality,
+  canRefreshQuality,
   trustedEventSavesCount,
   isAdmin,
   eventAdminOpen,
@@ -85,6 +86,7 @@ export default function SelectedEventPanel({
           selectedEventQuality={selectedEventQuality}
           selectedEventQualityStatus={selectedEventQualityStatus}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           trustedEventSavesCount={trustedEventSavesCount}
         />
         <SelectedEventAdminControls

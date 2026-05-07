@@ -14,6 +14,7 @@ export default function SelectedServicePanel({
   selectedServiceQuality,
   selectedServiceQualityStatus,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
   canEditSelectedService,
   canDeleteSelectedService,
@@ -61,6 +62,7 @@ export default function SelectedServicePanel({
           selectedServiceQuality={selectedServiceQuality}
           selectedServiceQualityStatus={selectedServiceQualityStatus}
           refreshEntityQuality={refreshEntityQuality}
+          canRefreshQuality={canRefreshQuality}
           formatDate={formatDate}
         />
 

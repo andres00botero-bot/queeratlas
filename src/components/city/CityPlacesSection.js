@@ -23,6 +23,7 @@ export default function CityPlacesSection({
   typeLabels,
   qualityMap,
   refreshEntityQuality,
+  canRefreshQuality,
   formatDate,
   cityName,
   safetySignalsByPlaceId,
@@ -108,6 +109,7 @@ export default function CityPlacesSection({
                   typeLabels={typeLabels}
                   qualityMap={qualityMap}
                   refreshEntityQuality={refreshEntityQuality}
+                  canRefreshQuality={canRefreshQuality}
                   formatDate={formatDate}
                   cityName={cityName}
                   safetySignal={safetySignalsByPlaceId[String(place.id)] || null}

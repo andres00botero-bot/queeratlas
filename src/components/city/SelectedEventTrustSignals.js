@@ -7,27 +7,34 @@ export default function SelectedEventTrustSignals({
   selectedEventQuality,
   selectedEventQualityStatus,
   refreshEntityQuality,
+  canRefreshQuality,
   trustedEventSavesCount,
 }) {
   return (
     <>
       {selectedEventQuality && (
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            onClick={(clickEvent) =>
-              refreshEntityQuality(
-                {
-                  targetType: "event",
-                  targetId: selectedEvent.id,
-                  fallbackSource: selectedEventQuality.source || selectedEvent.link || "",
-                },
-                clickEvent
-              )
-            }
-            className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedEventQualityStatus?.tone || "community")}`}
-          >
-            {selectedEventQualityStatus?.label || "Community"}
-          </button>
+          {canRefreshQuality ? (
+            <button
+              onClick={(clickEvent) =>
+                refreshEntityQuality(
+                  {
+                    targetType: "event",
+                    targetId: selectedEvent.id,
+                    fallbackSource: selectedEventQuality.source || selectedEvent.link || "",
+                  },
+                  clickEvent
+                )
+              }
+              className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] transition hover:opacity-90 ${qualityPillClass(selectedEventQualityStatus?.tone || "community")}`}
+            >
+              {selectedEventQualityStatus?.label || "Community"}
+            </button>
+          ) : (
+            <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] ${qualityPillClass(selectedEventQualityStatus?.tone || "community")}`}>
+              {selectedEventQualityStatus?.label || "Community"}
+            </span>
+          )}
         </div>
       )}
       {trustedEventSavesCount > 0 && (
