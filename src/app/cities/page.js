@@ -59,6 +59,14 @@ const MAPBOX_COUNTRY_ALIASES = {
   "Czech Republic": ["Czech Republic", "Czechia"],
   Netherlands: ["Netherlands", "The Netherlands"],
 };
+const MAP_RISK_PALETTE = {
+  open: { label: "Open", color: "#22d3ee" },
+  steady: { label: "Steady", color: "#2dd4bf" },
+  watch: { label: "Watch", color: "#f59e0b" },
+  caution: { label: "Caution", color: "#fb7185" },
+  restricted: { label: "Restricted", color: "#ef4444" },
+  unknown: { label: "Unknown", color: "#64748b" },
+};
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";
 const CITIES_METRICS_DAILY_CACHE_KEY = "qa_cities_metrics_daily_v1";
@@ -132,6 +140,51 @@ function resolveMapboxCountryToAppCountry(mapboxName, countries) {
 
 function normalizeStatusToken(value = "") {
   return String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function normalizeSafetyLevel(value = "") {
+  const level = normalizeStatusToken(value);
+  if (level === "good" || level === "mixed" || level === "risk") return level;
+  return "unknown";
+}
+
+function normalizeRelationsStatus(value = "") {
+  const token = normalizeStatusToken(value);
+  if (token === "legal" || token === "restricted" || token === "criminalized") return token;
+  return "unknown";
+}
+
+function normalizeProtectionStatus(value = "") {
+  const token = normalizeStatusToken(value);
+  if (token === "full_coverage" || token === "partial_coverage" || token === "limited_or_none") return token;
+  return "unknown";
+}
+
+function deriveMapRiskTier(profile, snapshot) {
+  const legalLevel = normalizeStatusToken(profile?.legal_level || snapshot?.legal?.level || "unknown");
+  const rightsLevel = normalizeStatusToken(profile?.rights_level || snapshot?.rights?.level || "unknown");
+  const safetyLevel = normalizeSafetyLevel(profile?.safety_level || snapshot?.safety?.level || "unknown");
+  const relationsStatus = normalizeRelationsStatus(profile?.same_sex_relations_status || "unknown");
+  const protectionStatus = normalizeProtectionStatus(profile?.anti_discrimination_status || "unknown");
+
+  if (relationsStatus === "criminalized") return "restricted";
+  if (relationsStatus === "restricted") return "caution";
+
+  if (safetyLevel === "risk" && rightsLevel === "risk") return "caution";
+  if (legalLevel === "risk" && rightsLevel === "risk") return "caution";
+
+  if (safetyLevel === "risk") return "watch";
+  if (rightsLevel === "risk") return "watch";
+  if (protectionStatus === "limited_or_none") return "watch";
+
+  if (legalLevel === "good" && rightsLevel === "good" && safetyLevel === "good") return "open";
+  if (legalLevel === "good" && (rightsLevel === "mixed" || safetyLevel === "mixed")) return "steady";
+  if (legalLevel === "mixed" && rightsLevel === "mixed" && safetyLevel === "mixed") return "watch";
+
+  if (legalLevel === "unknown" && rightsLevel === "unknown" && safetyLevel === "unknown") return "unknown";
+  if (legalLevel === "unknown" || rightsLevel === "unknown" || safetyLevel === "unknown") return "watch";
+
+  return "steady";
 }
 
 function createCountryRightsDraft(country, profile = null) {
@@ -226,25 +279,79 @@ export default function CitiesPage() {
     const supportedNames = getSupportedMapboxNames(availableCountries);
     const selectedNames = selected === "All" ? [] : getCountryMapboxNames(selected);
     const countryNameExpression = ["coalesce", ["get", "name_en"], ["get", "name"], ["get", "name_long"], ""];
+    const dbByCountry = new Map();
+    (Array.isArray(countryRightsProfiles) ? countryRightsProfiles : [])
+      .filter((profile) => profile?.country)
+      .forEach((profile) => {
+        const key = normalizeCountry(profile.country);
+        if (!key) return;
+        const existing = dbByCountry.get(key);
+        if (!existing || String(profile.updated_at || "") > String(existing.updated_at || "")) {
+          dbByCountry.set(key, profile);
+        }
+      });
+    const openNames = [];
+    const steadyNames = [];
+    const watchNames = [];
+    const cautionNames = [];
+    const restrictedNames = [];
+    const unknownNames = [];
+
+    availableCountries.forEach((country) => {
+      const fromDb = buildRightsSnapshotFromProfile(dbByCountry.get(normalizeCountry(country)));
+      const snapshot = fromDb || getCityRightsSignals({ country });
+      const profile = dbByCountry.get(normalizeCountry(country));
+      const tier = deriveMapRiskTier(profile, snapshot);
+      const aliases = getCountryMapboxNames(country);
+      if (tier === "open") {
+        openNames.push(...aliases);
+        return;
+      }
+      if (tier === "steady") {
+        steadyNames.push(...aliases);
+        return;
+      }
+      if (tier === "watch") {
+        watchNames.push(...aliases);
+        return;
+      }
+      if (tier === "caution") {
+        cautionNames.push(...aliases);
+        return;
+      }
+      if (tier === "restricted") {
+        restrictedNames.push(...aliases);
+        return;
+      }
+      unknownNames.push(...aliases);
+    });
 
     map.setPaintProperty("qa-countries-fill", "fill-color", [
       "case",
-      ["in", countryNameExpression, ["literal", selectedNames]],
-      "#fb7185",
-      ["in", countryNameExpression, ["literal", supportedNames]],
-      "#22d3ee",
+      ["in", countryNameExpression, ["literal", restrictedNames]],
+      MAP_RISK_PALETTE.restricted.color,
+      ["in", countryNameExpression, ["literal", cautionNames]],
+      MAP_RISK_PALETTE.caution.color,
+      ["in", countryNameExpression, ["literal", watchNames]],
+      MAP_RISK_PALETTE.watch.color,
+      ["in", countryNameExpression, ["literal", steadyNames]],
+      MAP_RISK_PALETTE.steady.color,
+      ["in", countryNameExpression, ["literal", openNames]],
+      MAP_RISK_PALETTE.open.color,
+      ["in", countryNameExpression, ["literal", unknownNames]],
+      MAP_RISK_PALETTE.unknown.color,
       "#111111",
     ]);
 
     map.setPaintProperty("qa-countries-fill", "fill-opacity", [
       "case",
       ["in", countryNameExpression, ["literal", selectedNames]],
-      0.48,
+      0.5,
       ["in", countryNameExpression, ["literal", supportedNames]],
-      0.2,
+      0.27,
       0.08,
     ]);
-  }, [availableCountries]);
+  }, [availableCountries, countryRightsProfiles]);
 
   useEffect(() => {
     if (!isMapboxStylesReady) return;
@@ -779,6 +886,17 @@ export default function CitiesPage() {
               <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">
                 Interactive country filter
               </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {Object.entries(MAP_RISK_PALETTE).map(([key, item]) => (
+                  <span
+                    key={`map-safety-${key}`}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/75"
+                  >
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    {item.label}
+                  </span>
+                ))}
+              </div>
               <button
                 onClick={() => {
                   setSelectedCountry("All");
