@@ -77,6 +77,43 @@ const CITY_HERO_COPY = {
   seville: 'Hook: Andalusian heat with intimate queer nightlife lanes. Queer status: Friendly and active in selected core zones. Crowd: Locals, visitors, dance lovers, and terrace-first groups. "Slow start, blazing finish."',
 };
 
+function cleanText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
+}
+
+function firstSentence(value, maxLength = 180) {
+  const text = cleanText(value);
+  if (!text) return "";
+  const match = text.match(/^(.+?[.!?])(?:\s|$)/);
+  const sentence = cleanText(match?.[1] || text);
+  if (sentence.length <= maxLength) return sentence;
+  return `${sentence.slice(0, maxLength - 1).trimEnd()}…`;
+}
+
+function getGuideSectionText(config, title) {
+  const guide = Array.isArray(config?.guide) ? config.guide : [];
+  const match = guide.find((section) => String(section?.title || "").toLowerCase() === String(title || "").toLowerCase());
+  return cleanText(match?.text || "");
+}
+
+function buildGuideBasedHeroText({ config, cityName }) {
+  const aboutText = getGuideSectionText(config, "About");
+  const safetyText = getGuideSectionText(config, "Safety");
+  const nightlifeText = getGuideSectionText(config, "Nightlife");
+  const districtText = getGuideSectionText(config, "Districts");
+
+  const hook = firstSentence(aboutText, 190) || `${cityName} has a clear queer route with strong local signal.`;
+  const status =
+    firstSentence(safetyText, 200) ||
+    `${cityName} is active and evolving, with stronger comfort in trusted central routes and community-known venues.`;
+  const crowd =
+    firstSentence(nightlifeText, 190) ||
+    firstSentence(districtText, 190) ||
+    `Mixed locals, repeat travelers, and first-timers shape the night together through curated routes.`;
+
+  return `Hook: ${hook} Queer status: ${status} Crowd: ${crowd} "${cityName} rewards timing, routing, and trusted community signal."`;
+}
+
 export function buildCityHeroText({ config, citySlug }) {
   const key = String(citySlug || "").toLowerCase();
   const direct = CITY_HERO_COPY[key];
@@ -114,7 +151,7 @@ export function buildCityHeroText({ config, citySlug }) {
     return `Hook: ${cityName} has a real queer community signal, but the context requires care. Queer status: Visibility is limited and often event-led, with safer routes built through trusted local networks. Crowd: Mostly local regulars and informed travelers moving through curated spaces. "Plan your route, verify same-day details, and prioritize trusted venues."`;
   }
 
-  return `Hook: ${cityName} has strong queer momentum. Queer status: Visible and evolving with active community routes. Crowd: Mixed locals and travelers shaping the night together. "${cityName} rewards intention."`;
+  return buildGuideBasedHeroText({ config, cityName });
 }
 
 export function parseCityHeroText(copy = "") {
