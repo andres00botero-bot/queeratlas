@@ -83,6 +83,37 @@ export function buildCityHeroText({ config, citySlug }) {
   if (direct) return direct;
 
   const cityName = cityNameFromConfig(config, citySlug);
+  const country = String(config?.country || "").trim().toLowerCase();
+
+  const cautionCitySlugs = new Set([
+    "marrakech",
+    "moscow",
+    "saint_petersburg",
+    "kuala_lumpur",
+    "jakarta",
+    "istanbul",
+    "beijing",
+    "shanghai",
+    "new_delhi",
+    "managua",
+  ]);
+
+  const cautionCountries = new Set([
+    "morocco",
+    "russia",
+    "malaysia",
+    "indonesia",
+    "turkey",
+    "china",
+    "india",
+    "nicaragua",
+    "georgia",
+  ]);
+
+  if (cautionCitySlugs.has(key) || cautionCountries.has(country)) {
+    return `Hook: ${cityName} has a real queer community signal, but the context requires care. Queer status: Visibility is limited and often event-led, with safer routes built through trusted local networks. Crowd: Mostly local regulars and informed travelers moving through curated spaces. "Plan your route, verify same-day details, and prioritize trusted venues."`;
+  }
+
   return `Hook: ${cityName} has strong queer momentum. Queer status: Visible and evolving with active community routes. Crowd: Mixed locals and travelers shaping the night together. "${cityName} rewards intention."`;
 }
 
