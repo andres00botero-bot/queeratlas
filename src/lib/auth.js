@@ -8,6 +8,26 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 
 const AuthContext = createContext(null);
 const ALLOWED_POST_LOGIN_PREFIXES = ["/"];
+const MEMBER_AVATAR_BUCKET = "member-avatars";
+const MAX_MEMBER_AVATAR_BYTES = 5 * 1024 * 1024;
+
+function isFileLikeAvatar(value) {
+  return typeof File !== "undefined" && value instanceof File;
+}
+
+function safeAvatarPath(userId, fileType = "") {
+  const normalizedUserId = String(userId || "").trim();
+  const mimeType = String(fileType || "").toLowerCase();
+  let ext = "jpg";
+  if (mimeType.includes("png")) ext = "png";
+  if (mimeType.includes("webp")) ext = "webp";
+  if (mimeType.includes("gif")) ext = "gif";
+  return `${normalizedUserId}/avatar.${ext}`;
+}
+
+function isDataUrl(value) {
+  return /^data:/i.test(String(value || ""));
+}
 
 function getMemberName(user) {
   if (!user) return "Explorer";
@@ -61,12 +81,18 @@ export function AuthProvider({ children }) {
       return getMemberProfile();
     }
 
+    const avatarPath = String(data.avatar_path || "").trim();
+    const fallbackPublicAvatarUrl = avatarPath
+      ? supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(avatarPath)?.data?.publicUrl || ""
+      : "";
     return {
       displayName: data.display_name || "",
       pronouns: data.pronouns || "",
       homeCity: data.home_city || "",
       residentCountry: data.resident_country || "",
-      avatarUrl: data.avatar_url || "",
+      avatarUrl: data.avatar_url || fallbackPublicAvatarUrl || "",
+      avatarPath,
+      avatarVersion: Number(data.avatar_version || 1) || 1,
       trustedContributor: Boolean(data.trusted_contributor),
       updatedAt: data.updated_at || "",
     };
@@ -362,7 +388,8 @@ export function AuthProvider({ children }) {
               pronouns: localProfile.pronouns || null,
               home_city: localProfile.homeCity || null,
               resident_country: localProfile.residentCountry || null,
-              avatar_url: localProfile.avatarUrl || null,
+              avatar_url: isDataUrl(localProfile.avatarUrl) ? null : (localProfile.avatarUrl || null),
+              avatar_path: localProfile.avatarPath || null,
             },
             { onConflict: "user_id" }
           );
@@ -376,12 +403,50 @@ export function AuthProvider({ children }) {
         setMemberProfile(remoteProfile);
         return { ok: true };
       },
-      updateMemberAvatar: async (avatarUrl) => {
-        const normalizedAvatar = String(avatarUrl || "").trim();
+      updateMemberAvatar: async (avatarInput) => {
+        const localSnapshot = getMemberProfile();
+        const isFileInput = isFileLikeAvatar(avatarInput);
+        const normalizedAvatar = isFileInput ? "" : String(avatarInput || "").trim();
+
+        let uploadedAvatarUrl = normalizedAvatar;
+        let uploadedAvatarPath = "";
+
+        if (isFileInput) {
+          const avatarFile = avatarInput;
+          if (!String(avatarFile?.type || "").startsWith("image/")) {
+            return { ok: false, error: new Error("invalid_avatar_file_type") };
+          }
+          if (Number(avatarFile?.size || 0) > MAX_MEMBER_AVATAR_BYTES) {
+            return { ok: false, error: new Error("avatar_file_too_large") };
+          }
+          if (!user?.id) return { ok: false };
+
+          const path = safeAvatarPath(user.id, avatarFile.type);
+          const uploadRes = await supabase.storage
+            .from(MEMBER_AVATAR_BUCKET)
+            .upload(path, avatarFile, {
+              upsert: true,
+              cacheControl: "3600",
+              contentType: avatarFile.type || "image/jpeg",
+            });
+
+          if (uploadRes.error) {
+            return { ok: false, error: uploadRes.error };
+          }
+
+          uploadedAvatarPath = path;
+          uploadedAvatarUrl =
+            supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+          if (!uploadedAvatarUrl) {
+            return { ok: false, error: new Error("avatar_public_url_unavailable") };
+          }
+        }
+
         const nextLocalProfile = {
-          ...getMemberProfile(),
+          ...localSnapshot,
           displayName: isAdminUser ? "Admin" : (memberProfile?.displayName || ""),
-          avatarUrl: normalizedAvatar,
+          avatarUrl: uploadedAvatarUrl,
+          avatarPath: uploadedAvatarPath || localSnapshot.avatarPath || "",
         };
         saveMemberProfile(nextLocalProfile);
         setMemberProfile(nextLocalProfile);
@@ -390,7 +455,8 @@ export function AuthProvider({ children }) {
 
         const payload = {
           user_id: user.id,
-          avatar_url: normalizedAvatar || null,
+          avatar_url: uploadedAvatarUrl || null,
+          avatar_path: uploadedAvatarPath || localSnapshot.avatarPath || null,
         };
         if (isAdminUser) {
           payload.display_name = "Admin";
@@ -407,7 +473,7 @@ export function AuthProvider({ children }) {
         const remoteProfile = await loadRemoteMemberProfile(user.id);
         saveMemberProfile(remoteProfile);
         setMemberProfile(remoteProfile);
-        return { ok: true };
+        return { ok: true, avatarUrl: remoteProfile?.avatarUrl || uploadedAvatarUrl || "" };
       },
       signInWithGoogle,
       signInWithEmail,

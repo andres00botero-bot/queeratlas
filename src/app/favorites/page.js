@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { cityConfig } from "@/lib/cities";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
-import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
+import { getMemberProfile } from "@/lib/memberProfile";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
@@ -152,13 +152,25 @@ const SavedPlacesPanel = dynamic(() => import("@/components/favorites/SavedPlace
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
 const FAVORITES_PROFILE_AVATAR_STORAGE_KEY = "qa_favorites_profile_avatar_v1";
+const MEMBER_AVATAR_BUCKET = "member-avatars";
 
 function isAvatarColumnMissingError(error) {
   const code = String(error?.code || "").toUpperCase();
   const message = String(error?.message || "").toLowerCase();
   if (code === "42703" || code === "PGRST204") return true;
   if (!message) return false;
-  return message.includes("avatar_url") && (message.includes("does not exist") || message.includes("schema cache"));
+  const mentionsAvatarField =
+    message.includes("avatar_url") ||
+    message.includes("avatar_path");
+  return mentionsAvatarField && (message.includes("does not exist") || message.includes("schema cache"));
+}
+
+function resolveAvatarUrlFromRow(row) {
+  const direct = String(row?.avatar_url || "").trim();
+  if (direct) return direct;
+  const path = String(row?.avatar_path || "").trim();
+  if (!path) return "";
+  return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
 }
 
 export default function FavoritesPage() {
@@ -407,13 +419,13 @@ export default function FavoritesPage() {
     let profileRows = [];
     const profilesWithAvatarRes = await supabase
       .from("member_profiles")
-      .select("user_id, display_name, avatar_url")
+      .select("user_id, display_name, avatar_url, avatar_path")
       .in("user_id", targetIds);
 
     if (profilesWithAvatarRes.error && isAvatarColumnMissingError(profilesWithAvatarRes.error)) {
       const fallbackProfilesRes = await supabase
         .from("member_profiles")
-        .select("user_id, display_name")
+        .select("user_id, display_name, avatar_path")
         .in("user_id", targetIds);
       profileRows = Array.isArray(fallbackProfilesRes.data) ? fallbackProfilesRes.data : [];
     } else {
@@ -424,7 +436,7 @@ export default function FavoritesPage() {
     const avatarByUserId = {};
     profileRows.forEach((row) => {
       const key = String(row?.user_id || "").trim();
-      const avatar = String(row?.avatar_url || "").trim();
+      const avatar = resolveAvatarUrlFromRow(row);
       if (!key || !avatar) return;
       avatarByUserId[key] = avatar;
     });
@@ -562,7 +574,7 @@ export default function FavoritesPage() {
 
     const leaderboardWithAvatarPromise = supabase
       .from("qa_member_leaderboard")
-      .select("user_id, display_name, title, rank, avatar_url")
+      .select("user_id, display_name, title, rank, avatar_url, avatar_path")
       .order("rank", { ascending: true })
       .limit(80);
     const [leaderboardResRaw, followingRes, feedRes] = await Promise.all([
@@ -614,13 +626,13 @@ export default function FavoritesPage() {
     if (followedTargetIds.length > 0) {
       let followedProfilesRes = await supabase
         .from("member_profiles")
-        .select("user_id, display_name, avatar_url")
+        .select("user_id, display_name, avatar_url, avatar_path")
         .in("user_id", followedTargetIds);
 
       if (followedProfilesRes.error && isAvatarColumnMissingError(followedProfilesRes.error)) {
         followedProfilesRes = await supabase
           .from("member_profiles")
-          .select("user_id, display_name")
+          .select("user_id, display_name, avatar_path")
           .in("user_id", followedTargetIds);
       }
 
@@ -1058,7 +1070,7 @@ export default function FavoritesPage() {
     (networkMembers || []).forEach((member) => {
       const key = String(member?.user_id || member?.id || "").trim();
       if (!key) return;
-      const avatar = String(member?.avatar_url || member?.avatarUrl || "").trim();
+      const avatar = resolveAvatarUrlFromRow(member) || String(member?.avatarUrl || "").trim();
       if (!avatar) return;
       map.set(key, avatar);
     });
@@ -1080,7 +1092,7 @@ export default function FavoritesPage() {
     (followingFeedRows || []).forEach((row) => {
       const key = String(row?.owner_user_id || "").trim();
       if (!key || map.has(key)) return;
-      const avatar = String(row?.avatar_url || "").trim();
+      const avatar = resolveAvatarUrlFromRow(row);
       if (!avatar) return;
       map.set(key, avatar);
     });
@@ -1229,30 +1241,34 @@ export default function FavoritesPage() {
     avatarFileInputRef.current?.click();
   };
 
-  const onProfileAvatarSelected = (event) => {
+  const onProfileAvatarSelected = async (event) => {
     const file = event?.target?.files?.[0];
     if (!file) return;
     if (!String(file.type || "").startsWith("image/")) {
       showToast("Please choose an image file.", { tone: "warn", duration: 2200 });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = String(reader.result || "");
-      if (!dataUrl) return;
-      setProfileAvatarDataUrl(dataUrl);
-      writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, dataUrl);
-      saveMemberProfile({ ...(memberProfile || {}), avatarUrl: dataUrl });
-      if (typeof updateMemberAvatar === "function") {
-        const result = await updateMemberAvatar(dataUrl);
-        if (result?.error && !isAvatarColumnMissingError(result.error)) {
-          showToast("Avatar saved locally. Cloud sync unavailable.", { tone: "info", duration: 2200 });
-          return;
-        }
-      }
-      showToast("Profile image updated.", { tone: "ok", duration: 1800 });
-    };
-    reader.readAsDataURL(file);
+    if (Number(file.size || 0) > 5 * 1024 * 1024) {
+      showToast("Image is too large. Max 5MB.", { tone: "warn", duration: 2200 });
+      return;
+    }
+    if (typeof updateMemberAvatar !== "function") {
+      showToast("Avatar upload is unavailable.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const result = await updateMemberAvatar(file);
+    if (!result?.ok) {
+      showToast("Could not update image right now. Try again.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const syncedAvatar = String(result?.avatarUrl || "").trim();
+    if (syncedAvatar) {
+      setProfileAvatarDataUrl(syncedAvatar);
+      writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, syncedAvatar);
+    }
+    showToast("Profile image updated.", { tone: "ok", duration: 1800 });
   };
 
   const hasProfileChanges = hasProfileFormChanges(profileForm, memberProfile || {});

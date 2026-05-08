@@ -6,6 +6,8 @@ const defaultProfile = {
   homeCity: "",
   residentCountry: "",
   avatarUrl: "",
+  avatarPath: "",
+  avatarVersion: 1,
   trustedContributor: false,
   updatedAt: "",
 };
@@ -28,6 +30,8 @@ export function getMemberProfile() {
     homeCity: parsed.homeCity || "",
     residentCountry: parsed.residentCountry || "",
     avatarUrl: parsed.avatarUrl || "",
+    avatarPath: parsed.avatarPath || "",
+    avatarVersion: Number(parsed.avatarVersion || 1) || 1,
     trustedContributor: Boolean(parsed.trustedContributor),
     updatedAt: parsed.updatedAt || "",
   };
@@ -42,6 +46,8 @@ export function saveMemberProfile(profile) {
     homeCity: profile?.homeCity?.trim?.() || "",
     residentCountry: profile?.residentCountry?.trim?.() || "",
     avatarUrl: String(profile?.avatarUrl || "").trim(),
+    avatarPath: String(profile?.avatarPath || "").trim(),
+    avatarVersion: Number(profile?.avatarVersion || current?.avatarVersion || 1) || 1,
     trustedContributor:
       typeof profile?.trustedContributor === "boolean"
         ? profile.trustedContributor
