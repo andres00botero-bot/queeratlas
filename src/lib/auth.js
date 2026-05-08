@@ -156,10 +156,42 @@ export function AuthProvider({ children }) {
     };
   }, [user?.email, user?.id]);
 
+  useEffect(() => {
+    let active = true;
+    if (!isAdminUser || !user?.id) return () => { active = false; };
+
+    queueMicrotask(async () => {
+      const currentDisplay = String(memberProfile?.displayName || "").trim();
+      if (currentDisplay === "Admin") return;
+      const { error } = await supabase
+        .from("member_profiles")
+        .upsert(
+          {
+            user_id: user.id,
+            display_name: "Admin",
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (!active || error) return;
+      const remoteProfile = await loadRemoteMemberProfile(user.id);
+      if (!active) return;
+      saveMemberProfile(remoteProfile);
+      setMemberProfile(remoteProfile);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isAdminUser, memberProfile?.displayName, user?.id]);
+
   const value = useMemo(() => {
+    const effectiveMemberProfile = isAdminUser
+      ? { ...(memberProfile || {}), displayName: "Admin" }
+      : memberProfile;
     const computedMemberName = isAdminUser
       ? "Admin"
-      : memberProfile.displayName || getMemberName(user);
+      : effectiveMemberProfile.displayName || getMemberName(user);
 
     const signInWithGoogle = async () => {
       try {
@@ -314,7 +346,7 @@ export function AuthProvider({ children }) {
       isLoading,
       isMember: Boolean(user),
       memberName: computedMemberName,
-      memberProfile,
+      memberProfile: effectiveMemberProfile,
       updateMemberProfile: async (nextProfile) => {
         saveMemberProfile(nextProfile);
         const localProfile = getMemberProfile();
@@ -335,6 +367,39 @@ export function AuthProvider({ children }) {
             },
             { onConflict: "user_id" }
           );
+
+        if (error) {
+          return { ok: false, error };
+        }
+
+        const remoteProfile = await loadRemoteMemberProfile(user.id);
+        saveMemberProfile(remoteProfile);
+        setMemberProfile(remoteProfile);
+        return { ok: true };
+      },
+      updateMemberAvatar: async (avatarUrl) => {
+        const normalizedAvatar = String(avatarUrl || "").trim();
+        const nextLocalProfile = {
+          ...getMemberProfile(),
+          displayName: isAdminUser ? "Admin" : (memberProfile?.displayName || ""),
+          avatarUrl: normalizedAvatar,
+        };
+        saveMemberProfile(nextLocalProfile);
+        setMemberProfile(nextLocalProfile);
+
+        if (!user?.id) return { ok: false };
+
+        const payload = {
+          user_id: user.id,
+          avatar_url: normalizedAvatar || null,
+        };
+        if (isAdminUser) {
+          payload.display_name = "Admin";
+        }
+
+        const { error } = await supabase
+          .from("member_profiles")
+          .upsert(payload, { onConflict: "user_id" });
 
         if (error) {
           return { ok: false, error };

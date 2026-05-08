@@ -215,6 +215,7 @@ export default function FavoritesPage() {
     memberName: authMemberName,
     memberProfile,
     updateMemberProfile,
+    updateMemberAvatar,
   } = useAuth();
   const { toast, showToast } = useActionToast();
   const [activeFavoritesIntent, setActiveFavoritesIntent] = useState("go_out_tonight");
@@ -557,18 +558,27 @@ export default function FavoritesPage() {
     setNetworkLoading(true);
     setNetworkWarning("");
 
-    const [leaderboardRes, followingRes, feedRes] = await Promise.all([
-      supabase
-        .from("qa_member_leaderboard")
-        .select("user_id, display_name, title, rank")
-        .order("rank", { ascending: true })
-        .limit(80),
+    const leaderboardWithAvatarPromise = supabase
+      .from("qa_member_leaderboard")
+      .select("user_id, display_name, title, rank, avatar_url")
+      .order("rank", { ascending: true })
+      .limit(80);
+    const [leaderboardResRaw, followingRes, feedRes] = await Promise.all([
+      leaderboardWithAvatarPromise,
       supabase
         .from("member_following")
         .select("followed_user_id")
         .eq("follower_user_id", user.id),
       supabase.rpc("qa_following_feed_favorites", { feed_limit: 40 }),
     ]);
+    let leaderboardRes = leaderboardResRaw;
+    if (leaderboardResRaw.error && isAvatarColumnMissingError(leaderboardResRaw.error)) {
+      leaderboardRes = await supabase
+        .from("qa_member_leaderboard")
+        .select("user_id, display_name, title, rank")
+        .order("rank", { ascending: true })
+        .limit(80);
+    }
 
     const missingTable = hasTrustNetworkMissingTables({
       followingError: followingRes.error,
@@ -1012,6 +1022,17 @@ export default function FavoritesPage() {
     });
     return map;
   }, [networkMembers]);
+  const memberAvatarById = useMemo(() => {
+    const map = new Map();
+    (networkMembers || []).forEach((member) => {
+      const key = String(member?.user_id || member?.id || "").trim();
+      if (!key) return;
+      const avatar = String(member?.avatar_url || member?.avatarUrl || "").trim();
+      if (!avatar) return;
+      map.set(key, avatar);
+    });
+    return map;
+  }, [networkMembers]);
   const followingFeedNameById = useMemo(() => {
     const map = new Map();
     (followingFeedRows || []).forEach((row) => {
@@ -1020,6 +1041,17 @@ export default function FavoritesPage() {
       const name = String(row?.display_name || "").trim();
       if (!name || name.toLowerCase() === "member") return;
       map.set(key, name);
+    });
+    return map;
+  }, [followingFeedRows]);
+  const followingFeedAvatarById = useMemo(() => {
+    const map = new Map();
+    (followingFeedRows || []).forEach((row) => {
+      const key = String(row?.owner_user_id || "").trim();
+      if (!key || map.has(key)) return;
+      const avatar = String(row?.avatar_url || "").trim();
+      if (!avatar) return;
+      map.set(key, avatar);
     });
     return map;
   }, [followingFeedRows]);
@@ -1180,24 +1212,13 @@ export default function FavoritesPage() {
       setProfileAvatarDataUrl(dataUrl);
       writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, dataUrl);
       saveMemberProfile({ ...(memberProfile || {}), avatarUrl: dataUrl });
-
-      if (user?.id) {
-        const { error } = await supabase
-          .from("member_profiles")
-          .upsert(
-            {
-              user_id: user.id,
-              avatar_url: dataUrl,
-            },
-            { onConflict: "user_id" }
-          );
-
-        if (error && !isAvatarColumnMissingError(error)) {
+      if (typeof updateMemberAvatar === "function") {
+        const result = await updateMemberAvatar(dataUrl);
+        if (result?.error && !isAvatarColumnMissingError(result.error)) {
           showToast("Avatar saved locally. Cloud sync unavailable.", { tone: "info", duration: 2200 });
           return;
         }
       }
-
       showToast("Profile image updated.", { tone: "ok", duration: 1800 });
     };
     reader.readAsDataURL(file);
@@ -3180,7 +3201,12 @@ export default function FavoritesPage() {
                   const feedName = followingFeedNameById.get(userId) || "";
                   const checkinName = followingCheckinNameById.get(userId) || "";
                   const profileName = String(profile?.displayName || "").trim();
-                  const friendAvatarUrl = String(friendAvatarByUserId[userId] || "").trim();
+                  const friendAvatarUrl = String(
+                    friendAvatarByUserId[userId] ||
+                    memberAvatarById.get(userId) ||
+                    followingFeedAvatarById.get(userId) ||
+                    ""
+                  ).trim();
                   const friendName =
                     (profileName && profileName.toLowerCase() !== "member" && profileName) ||
                     (fallbackName && fallbackName.toLowerCase() !== "member" && fallbackName) ||
