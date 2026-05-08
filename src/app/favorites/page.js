@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth";
 import { cityConfig } from "@/lib/cities";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
-import { getMemberProfile } from "@/lib/memberProfile";
+import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { trackKpiEvent } from "@/lib/analytics";
@@ -152,6 +152,14 @@ const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
 const FAVORITES_PROFILE_AVATAR_STORAGE_KEY = "qa_favorites_profile_avatar_v1";
 
+function isAvatarColumnMissingError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  if (code === "42703" || code === "PGRST204") return true;
+  if (!message) return false;
+  return message.includes("avatar_url") && (message.includes("does not exist") || message.includes("schema cache"));
+}
+
 export default function FavoritesPage() {
   const router = useRouter();
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -222,6 +230,7 @@ export default function FavoritesPage() {
     contactEmail: "",
   });
   const [profileAvatarDataUrl, setProfileAvatarDataUrl] = useState("");
+  const [friendAvatarByUserId, setFriendAvatarByUserId] = useState({});
   const tonightSectionRef = useRef(null);
   const tripSectionRef = useRef(null);
   const pulseSectionRef = useRef(null);
@@ -354,6 +363,7 @@ export default function FavoritesPage() {
     if (!user?.id || !Array.isArray(followingUserIds) || followingUserIds.length === 0) {
       setFollowingCheckins([]);
       setFollowingPresenceByUserId({});
+      setFriendAvatarByUserId({});
       setFollowingCheckinsWarning("");
       return;
     }
@@ -362,11 +372,12 @@ export default function FavoritesPage() {
     if (targetIds.length === 0) {
       setFollowingCheckins([]);
       setFollowingPresenceByUserId({});
+      setFriendAvatarByUserId({});
       setFollowingCheckinsWarning("");
       return;
     }
 
-    const [checkinsRes, profilesRes, presenceRes] = await Promise.all([
+    const [checkinsRes, presenceRes] = await Promise.all([
       supabase
         .from("qa_member_checkins")
         .select("id, user_id, mode, privacy, country, city, label, address, note, place_id, event_id, lat, lng, checked_in_at, created_at")
@@ -374,10 +385,6 @@ export default function FavoritesPage() {
         .neq("privacy", "private")
         .order("checked_in_at", { ascending: false })
         .limit(150),
-      supabase
-        .from("member_profiles")
-        .select("user_id, display_name")
-        .in("user_id", targetIds),
       supabase
         .from("qa_presence")
         .select("user_id, is_online, last_seen_at")
@@ -394,7 +401,31 @@ export default function FavoritesPage() {
       return;
     }
 
-    const profileByUserId = mapProfileDisplayNamesByUserId(profilesRes.data);
+    let profileRows = [];
+    const profilesWithAvatarRes = await supabase
+      .from("member_profiles")
+      .select("user_id, display_name, avatar_url")
+      .in("user_id", targetIds);
+
+    if (profilesWithAvatarRes.error && isAvatarColumnMissingError(profilesWithAvatarRes.error)) {
+      const fallbackProfilesRes = await supabase
+        .from("member_profiles")
+        .select("user_id, display_name")
+        .in("user_id", targetIds);
+      profileRows = Array.isArray(fallbackProfilesRes.data) ? fallbackProfilesRes.data : [];
+    } else {
+      profileRows = Array.isArray(profilesWithAvatarRes.data) ? profilesWithAvatarRes.data : [];
+    }
+
+    const profileByUserId = mapProfileDisplayNamesByUserId(profileRows);
+    const avatarByUserId = {};
+    profileRows.forEach((row) => {
+      const key = String(row?.user_id || "").trim();
+      const avatar = String(row?.avatar_url || "").trim();
+      if (!key || !avatar) return;
+      avatarByUserId[key] = avatar;
+    });
+    setFriendAvatarByUserId(avatarByUserId);
     const presenceMap = mapPresenceByUserId(presenceRes.data);
     setFollowingPresenceByUserId(presenceMap);
 
@@ -654,6 +685,15 @@ export default function FavoritesPage() {
       setProfileAvatarDataUrl(avatarValue);
     }
   }, []);
+
+  useEffect(() => {
+    const remoteAvatar = String(memberProfile?.avatarUrl || "").trim();
+    if (!remoteAvatar) return;
+    setProfileAvatarDataUrl(remoteAvatar);
+    if (typeof window !== "undefined") {
+      writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, remoteAvatar);
+    }
+  }, [memberProfile?.avatarUrl]);
 
   const favoriteIdSet = useMemo(
     () => new Set((favorites || []).map((item) => String(item))),
@@ -1134,11 +1174,30 @@ export default function FavoritesPage() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const dataUrl = String(reader.result || "");
       if (!dataUrl) return;
       setProfileAvatarDataUrl(dataUrl);
       writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, dataUrl);
+      saveMemberProfile({ ...(memberProfile || {}), avatarUrl: dataUrl });
+
+      if (user?.id) {
+        const { error } = await supabase
+          .from("member_profiles")
+          .upsert(
+            {
+              user_id: user.id,
+              avatar_url: dataUrl,
+            },
+            { onConflict: "user_id" }
+          );
+
+        if (error && !isAvatarColumnMissingError(error)) {
+          showToast("Avatar saved locally. Cloud sync unavailable.", { tone: "info", duration: 2200 });
+          return;
+        }
+      }
+
       showToast("Profile image updated.", { tone: "ok", duration: 1800 });
     };
     reader.readAsDataURL(file);
@@ -1750,15 +1809,15 @@ export default function FavoritesPage() {
         <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(135deg,rgba(22,22,24,0.95),rgba(10,10,10,0.99),rgba(16,18,22,0.98))] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute right-4 top-12 h-24 w-24 rounded-full bg-cyan-300/34 blur-xl sm:right-[7rem] sm:top-1/2 sm:h-40 sm:w-40 sm:-translate-y-[78%] sm:blur-2xl" />
-          <div className="pointer-events-none absolute right-4 top-12 h-20 w-20 rounded-full bg-sky-300/26 blur-md sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:blur-lg" />
+          <div className="pointer-events-none absolute right-3 top-6 h-24 w-24 rounded-full bg-cyan-300/34 blur-xl sm:right-[7rem] sm:top-1/2 sm:h-40 sm:w-40 sm:-translate-y-[78%] sm:blur-2xl" />
+          <div className="pointer-events-none absolute right-3 top-6 h-20 w-20 rounded-full bg-sky-300/26 blur-md sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:blur-lg" />
           <button
             type="button"
             onClick={() => {
               setActiveProfileTab("about");
               openAvatarEditor();
             }}
-            className="group absolute right-4 top-12 inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-cyan-200/40 bg-cyan-200/10 text-xl font-semibold text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,0.26),0_24px_60px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:text-3xl"
+            className="group absolute right-3 top-6 inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-cyan-200/40 bg-cyan-200/10 text-xl font-semibold text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,0.26),0_24px_60px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:text-3xl"
             aria-label="Edit profile image"
           >
             {profileAvatarDataUrl ? (
@@ -1778,7 +1837,7 @@ export default function FavoritesPage() {
             onChange={onProfileAvatarSelected}
             className="hidden"
           />
-          <div className="max-w-4xl">
+          <div className="max-w-4xl pr-24 sm:pr-0">
             <p className="mt-1 bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-2xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_12px_30px_rgba(251,191,36,0.2)] sm:text-3xl">
               {greeting}, {displayName}
             </p>
@@ -3121,6 +3180,7 @@ export default function FavoritesPage() {
                   const feedName = followingFeedNameById.get(userId) || "";
                   const checkinName = followingCheckinNameById.get(userId) || "";
                   const profileName = String(profile?.displayName || "").trim();
+                  const friendAvatarUrl = String(friendAvatarByUserId[userId] || "").trim();
                   const friendName =
                     (profileName && profileName.toLowerCase() !== "member" && profileName) ||
                     (fallbackName && fallbackName.toLowerCase() !== "member" && fallbackName) ||
@@ -3139,8 +3199,13 @@ export default function FavoritesPage() {
                     className="rounded-2xl border border-white/12 bg-white/[0.04] p-3"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-200/28 bg-cyan-200/10 text-xs font-semibold text-cyan-100">
-                        {initials || "M"}
+                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/28 bg-cyan-200/10 text-xs font-semibold text-cyan-100">
+                        {friendAvatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={friendAvatarUrl} alt={friendName} className="h-full w-full object-cover" />
+                        ) : (
+                          initials || "M"
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-white">{friendName}</p>

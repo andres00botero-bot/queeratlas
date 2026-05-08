@@ -5,6 +5,7 @@ const defaultProfile = {
   pronouns: "",
   homeCity: "",
   residentCountry: "",
+  avatarUrl: "",
   trustedContributor: false,
   updatedAt: "",
 };
@@ -26,6 +27,7 @@ export function getMemberProfile() {
     pronouns: parsed.pronouns || "",
     homeCity: parsed.homeCity || "",
     residentCountry: parsed.residentCountry || "",
+    avatarUrl: parsed.avatarUrl || "",
     trustedContributor: Boolean(parsed.trustedContributor),
     updatedAt: parsed.updatedAt || "",
   };
@@ -39,6 +41,7 @@ export function saveMemberProfile(profile) {
     pronouns: profile?.pronouns?.trim?.() || "",
     homeCity: profile?.homeCity?.trim?.() || "",
     residentCountry: profile?.residentCountry?.trim?.() || "",
+    avatarUrl: String(profile?.avatarUrl || "").trim(),
     trustedContributor:
       typeof profile?.trustedContributor === "boolean"
         ? profile.trustedContributor

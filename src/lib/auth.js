@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
 import { captureOperationalError } from "@/lib/monitoring";
+import { resolveAdminAccess } from "@/lib/adminAccess";
 
 const AuthContext = createContext(null);
 const ALLOWED_POST_LOGIN_PREFIXES = ["/"];
@@ -46,6 +47,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [memberProfile, setMemberProfile] = useState(() => getMemberProfile());
+  const [isAdminUser, setIsAdminUser] = useState(false);
 
   const loadRemoteMemberProfile = async (userId) => {
     if (!userId) return getMemberProfile();
@@ -65,6 +67,7 @@ export function AuthProvider({ children }) {
       pronouns: data.pronouns || "",
       homeCity: data.home_city || "",
       residentCountry: data.resident_country || "",
+      avatarUrl: data.avatar_url || "",
       trustedContributor: Boolean(data.trusted_contributor),
       updatedAt: data.updated_at || "",
     };
@@ -134,8 +137,29 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(async () => {
+      if (!user?.id || !user?.email) {
+        if (active) setIsAdminUser(false);
+        return;
+      }
+
+      const access = await resolveAdminAccess({ email: user.email });
+      if (!active) return;
+      setIsAdminUser(Boolean(access?.isAdmin));
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [user?.email, user?.id]);
+
   const value = useMemo(() => {
-    const computedMemberName = memberProfile.displayName || getMemberName(user);
+    const computedMemberName = isAdminUser
+      ? "Admin"
+      : memberProfile.displayName || getMemberName(user);
 
     const signInWithGoogle = async () => {
       try {
@@ -303,10 +327,11 @@ export function AuthProvider({ children }) {
           .upsert(
             {
               user_id: user.id,
-              display_name: localProfile.displayName || null,
+              display_name: isAdminUser ? "Admin" : (localProfile.displayName || null),
               pronouns: localProfile.pronouns || null,
               home_city: localProfile.homeCity || null,
               resident_country: localProfile.residentCountry || null,
+              avatar_url: localProfile.avatarUrl || null,
             },
             { onConflict: "user_id" }
           );
@@ -328,7 +353,7 @@ export function AuthProvider({ children }) {
       updatePassword,
       signOut,
     };
-  }, [isLoading, memberProfile, session, user]);
+  }, [isAdminUser, isLoading, memberProfile, session, user]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
