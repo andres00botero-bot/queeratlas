@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { cityHref, formatInviteTimeline, inviteStatusLabel } from "@/lib/vipInvi
 import ActionToast from "@/components/ui/ActionToast";
 import EmptyState from "@/components/ui/EmptyState";
 import PageOpeningState from "@/components/ui/PageOpeningState";
+const MEMBER_AVATAR_BUCKET = "member-avatars";
 
 function isMissingTableError(error) {
   if (!error) return false;
@@ -59,6 +60,14 @@ function displayNameFor(profile, fallback = "Member") {
   return raw || fallback;
 }
 
+function resolveAvatarUrlFromProfile(profileLike) {
+  const direct = String(profileLike?.avatar_url || profileLike?.avatarUrl || "").trim();
+  if (direct) return direct;
+  const path = String(profileLike?.avatar_path || profileLike?.avatarPath || "").trim();
+  if (!path) return "";
+  return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+}
+
 function areVipInviteRowsEquivalent(nextRows = [], prevRows = []) {
   const next = Array.isArray(nextRows) ? nextRows : [];
   const prev = Array.isArray(prevRows) ? prevRows : [];
@@ -97,6 +106,7 @@ function normalizeMemberPickerRow(row) {
     homeCity: String(row?.home_city || "").trim(),
     residentCountry: String(row?.resident_country || "").trim(),
     trustedContributor: Boolean(row?.trusted_contributor),
+    avatarUrl: String(row?.avatar_url || "").trim(),
     isOnline: Boolean(row?.is_online),
     lastSeenAt: row?.last_seen_at || null,
     isFollowing: Boolean(row?.is_following),
@@ -368,7 +378,7 @@ export default function MessagesPage() {
     const [{ data: friendMomentumRows }, { data: profileRows }, { data: presenceRows }] = await Promise.all([
       supabase.rpc("qa_get_friend_momentum", { friend_limit: 200 }),
       otherUserIds.length > 0
-        ? supabase.from("member_profiles").select("user_id, display_name, trusted_contributor").in("user_id", otherUserIds)
+        ? supabase.from("member_profiles").select("user_id, display_name, trusted_contributor, avatar_url, avatar_path").in("user_id", otherUserIds)
         : Promise.resolve({ data: [] }),
       otherUserIds.length > 0
         ? supabase.from("qa_presence").select("user_id, is_online, last_seen_at").in("user_id", otherUserIds)
@@ -380,6 +390,7 @@ export default function MessagesPage() {
       if (!friendId) return;
       friendMetaMap.set(friendId, {
         displayName: String(row.display_name || "").trim(),
+        avatarUrl: String(row.avatar_url || "").trim(),
         unreadCount: Number(row.unread_count || 0),
         isOnline: Boolean(row.is_online),
         lastSeenAt: row.last_seen_at || null,
@@ -460,6 +471,7 @@ export default function MessagesPage() {
         return {
           ...thread,
           displayName,
+          avatarUrl: momentumMeta?.avatarUrl || resolveAvatarUrlFromProfile(profile),
           trustedContributor: Boolean(profile?.trusted_contributor),
           lastMessage,
           unreadCount,
@@ -721,20 +733,45 @@ export default function MessagesPage() {
     if (friendUserIds.length > 0) {
       const { data: profileRows } = await supabase
         .from("member_profiles")
-        .select("user_id,trusted_contributor")
+        .select("user_id,trusted_contributor,avatar_url,avatar_path")
         .in("user_id", friendUserIds);
+      const avatarByUserId = new Map();
       (profileRows || []).forEach((profile) => {
         const profileUserId = String(profile?.user_id || "").trim();
         if (!profileUserId) return;
         trustedByUserId.set(profileUserId, Boolean(profile?.trusted_contributor));
+        avatarByUserId.set(profileUserId, resolveAvatarUrlFromProfile(profile));
       });
+      const query = String(searchTerm || "").trim().toLowerCase();
+      const rows = (data || []).map((row) => {
+        const candidateUserId = String(row.user_id || "").trim();
+        return {
+          userId: String(row.user_id || ""),
+          displayName: String(row.display_name || "").trim() || "Member",
+          trustedContributor: Boolean(trustedByUserId.get(candidateUserId)),
+          avatarUrl: String(row.avatar_url || "").trim() || String(avatarByUserId.get(candidateUserId) || "").trim(),
+          isOnline: Boolean(row.is_online),
+          activeNow: Boolean(row.active_now),
+          lastSeenAt: row.last_seen_at || null,
+          latestMessageAt: row.latest_message_at || null,
+          unreadCount: Number(row.unread_count || 0),
+        };
+      });
+
+      const filtered = !query
+        ? rows
+        : rows.filter((row) => row.displayName.toLowerCase().includes(query));
+
+      setFriendCandidates(filtered);
+      return;
     }
 
     const query = String(searchTerm || "").trim().toLowerCase();
     const rows = (data || []).map((row) => ({
       userId: String(row.user_id || ""),
       displayName: String(row.display_name || "").trim() || "Member",
-      trustedContributor: Boolean(trustedByUserId.get(String(row.user_id || "").trim())),
+      trustedContributor: false,
+      avatarUrl: String(row.avatar_url || "").trim(),
       isOnline: Boolean(row.is_online),
       activeNow: Boolean(row.active_now),
       lastSeenAt: row.last_seen_at || null,
@@ -788,8 +825,26 @@ export default function MessagesPage() {
     }
 
     const normalized = (data || []).map(normalizeMemberPickerRow);
-    const hasMore = normalized.length > MEMBER_PICKER_PAGE_SIZE;
-    const visible = hasMore ? normalized.slice(0, MEMBER_PICKER_PAGE_SIZE) : normalized;
+    const candidateUserIds = normalized.map((row) => String(row.userId || "").trim()).filter(Boolean);
+    let avatarByUserId = new Map();
+    if (candidateUserIds.length > 0) {
+      const { data: profileRows } = await supabase
+        .from("member_profiles")
+        .select("user_id,avatar_url,avatar_path")
+        .in("user_id", candidateUserIds);
+      avatarByUserId = new Map(
+        (profileRows || []).map((profile) => [
+          String(profile.user_id || "").trim(),
+          resolveAvatarUrlFromProfile(profile),
+        ])
+      );
+    }
+    const withAvatars = normalized.map((row) => ({
+      ...row,
+      avatarUrl: row.avatarUrl || String(avatarByUserId.get(String(row.userId || "").trim()) || "").trim(),
+    }));
+    const hasMore = withAvatars.length > MEMBER_PICKER_PAGE_SIZE;
+    const visible = hasMore ? withAvatars.slice(0, MEMBER_PICKER_PAGE_SIZE) : withAvatars;
 
     setMemberCandidateOffset(safeOffset);
     setMemberCandidatesHasMore(hasMore);
@@ -1517,7 +1572,7 @@ export default function MessagesPage() {
                           {String(row.entity_type || "item")}
                         </span>
                         <span className="font-medium text-white/88">{String(row.title || "Untitled submission")}</span>
-                        <span className="text-white/55">• {String(row.city || "unknown city")}</span>
+                        <span className="text-white/55">â€¢ {String(row.city || "unknown city")}</span>
                         <span className="ml-auto text-white/48">{timeAgo(row.created_at)}</span>
                       </div>
                     ))}
@@ -1773,12 +1828,25 @@ export default function MessagesPage() {
                 friendCandidates.map((candidate) => {
                   const existingThread = threadByOtherUserId.get(candidate.userId);
                   const busy = Boolean(composerBusyByUserId[candidate.userId]);
+                  const initials = String(candidate.displayName || "Member")
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((chunk) => chunk.charAt(0).toUpperCase())
+                    .join("") || "M";
                   return (
                     <article key={`friend-${candidate.userId}`} className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2">
                       <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/30 bg-cyan-200/12 text-[11px] font-semibold text-cyan-100">
+                            {candidate.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={candidate.avatarUrl} alt={candidate.displayName} className="h-full w-full object-cover" />
+                            ) : initials}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="truncate text-sm font-semibold text-white">{candidate.displayName}</p>
                             {candidate.trustedContributor && (
                               <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
                                 Trusted
@@ -1789,6 +1857,7 @@ export default function MessagesPage() {
                             {candidate.activeNow ? "Active now" : timeAgo(candidate.lastSeenAt)}
                             {candidate.unreadCount > 0 ? ` · ${candidate.unreadCount} unread` : ""}
                           </p>
+                          </div>
                         </div>
                         <button
                           type="button"
@@ -1811,12 +1880,25 @@ export default function MessagesPage() {
               memberCandidates.map((candidate) => {
                 const existingThread = threadByOtherUserId.get(candidate.userId);
                 const busy = Boolean(composerBusyByUserId[candidate.userId]);
+                const initials = String(candidate.displayName || "Member")
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((chunk) => chunk.charAt(0).toUpperCase())
+                  .join("") || "M";
                 return (
                   <article key={`member-${candidate.userId}`} className="rounded-2xl border border-white/12 bg-white/[0.03] px-3 py-2">
                     <div className="flex items-center justify-between gap-3">
-                      <div>
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-200/30 bg-fuchsia-200/12 text-[11px] font-semibold text-fuchsia-100">
+                          {candidate.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={candidate.avatarUrl} alt={candidate.displayName} className="h-full w-full object-cover" />
+                          ) : initials}
+                        </div>
+                        <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <p className="text-sm font-semibold text-white">{candidate.displayName}</p>
+                          <p className="truncate text-sm font-semibold text-white">{candidate.displayName}</p>
                           {candidate.trustedContributor && (
                             <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
                               Trusted
@@ -1831,6 +1913,7 @@ export default function MessagesPage() {
                           {candidate.mutualCount > 0 ? ` · ${candidate.mutualCount} mutual` : ""}
                           {candidate.followsYou ? " · follows you" : ""}
                         </p>
+                      </div>
                       </div>
                       <button
                         type="button"
@@ -1917,6 +2000,12 @@ export default function MessagesPage() {
                 {filteredThreads.map((thread) => {
                   const selected = String(thread.id) === String(activeThreadId);
                   const active = isActiveNow(thread.presence);
+                  const initials = String(thread.displayName || "Member")
+                    .split(/\s+/)
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((chunk) => chunk.charAt(0).toUpperCase())
+                    .join("") || "M";
                   return (
                     <button
                       key={thread.id}
@@ -1929,7 +2018,13 @@ export default function MessagesPage() {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/16 bg-white/8 text-[11px] font-semibold text-white/82">
+                            {thread.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={thread.avatarUrl} alt={thread.displayName} className="h-full w-full object-cover" />
+                            ) : initials}
+                          </div>
                           <p className={`truncate text-sm ${thread.unreadCount > 0 ? "font-bold text-white" : "font-semibold text-white/92"}`}>
                             {thread.displayName}
                           </p>
@@ -1973,7 +2068,21 @@ export default function MessagesPage() {
               <>
                 <div className="mb-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-200/[0.06] px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
-                    <div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-200/30 bg-fuchsia-200/12 text-sm font-semibold text-fuchsia-100">
+                        {activeThread.avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={activeThread.avatarUrl} alt={activeThread.displayName} className="h-full w-full object-cover" />
+                        ) : (
+                          String(activeThread.displayName || "Member")
+                            .split(/\s+/)
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((chunk) => chunk.charAt(0).toUpperCase())
+                            .join("") || "M"
+                        )}
+                      </div>
+                      <div className="min-w-0">
                       <p className="text-[11px] uppercase tracking-[0.16em] text-white/55">Subject</p>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <p className="text-base font-semibold text-white">Conversation with {activeThread.displayName}</p>
@@ -1988,6 +2097,7 @@ export default function MessagesPage() {
                           ? "Active now"
                           : `Last active ${timeAgo(activeThread.presence?.lastSeenAt)}`}
                       </p>
+                    </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -2084,6 +2194,4 @@ export default function MessagesPage() {
     </main>
   );
 }
-
-
 
