@@ -95,6 +95,7 @@ import {
   mapFollowingCheckinsWithOwnerNames,
   mapPresenceByUserId,
   mapProfileDisplayNamesByUserId,
+  mergeTrustMembersWithProfileRows,
   normalizeCheckins,
   normalizeTrustNetworkRows,
   normalizeFollowingTargetIds,
@@ -608,7 +609,32 @@ export default function FavoritesPage() {
       feedRows: feedRes.data,
     });
 
-    setNetworkMembers(trustNetworkRows.members);
+    const followedTargetIds = normalizeFollowingTargetIds(trustNetworkRows.followingUserIds);
+    let followedProfileRows = [];
+    if (followedTargetIds.length > 0) {
+      let followedProfilesRes = await supabase
+        .from("member_profiles")
+        .select("user_id, display_name, avatar_url")
+        .in("user_id", followedTargetIds);
+
+      if (followedProfilesRes.error && isAvatarColumnMissingError(followedProfilesRes.error)) {
+        followedProfilesRes = await supabase
+          .from("member_profiles")
+          .select("user_id, display_name")
+          .in("user_id", followedTargetIds);
+      }
+
+      if (!followedProfilesRes.error) {
+        followedProfileRows = Array.isArray(followedProfilesRes.data) ? followedProfilesRes.data : [];
+      }
+    }
+
+    const mergedMembers = mergeTrustMembersWithProfileRows({
+      leaderboardMembers: trustNetworkRows.members,
+      followedProfileRows,
+    });
+
+    setNetworkMembers(mergedMembers);
     setFollowingUserIds(trustNetworkRows.followingUserIds);
     setFollowingFeedRows(trustNetworkRows.feedRows);
     setNetworkLoading(false);

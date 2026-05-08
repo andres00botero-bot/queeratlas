@@ -84,3 +84,59 @@ export function normalizeCheckins(rows = [], mapCheckinRow) {
     .map((row) => mapCheckinRow(row))
     .sort((a, b) => new Date(b.checkedInAt || 0) - new Date(a.checkedInAt || 0));
 }
+
+function hasMeaningfulDisplayName(value) {
+  const name = String(value || "").trim();
+  return Boolean(name) && name.toLowerCase() !== "member";
+}
+
+export function mergeTrustMembersWithProfileRows({
+  leaderboardMembers = [],
+  followedProfileRows = [],
+}) {
+  const memberByUserId = new Map();
+  const orderedIds = [];
+
+  (Array.isArray(leaderboardMembers) ? leaderboardMembers : []).forEach((member) => {
+    const key = String(member?.user_id || member?.id || "").trim();
+    if (!key) return;
+    memberByUserId.set(key, { ...member, user_id: key });
+    orderedIds.push(key);
+  });
+
+  (Array.isArray(followedProfileRows) ? followedProfileRows : []).forEach((row) => {
+    const key = String(row?.user_id || "").trim();
+    if (!key) return;
+
+    const profileDisplayName = String(row?.display_name || "").trim();
+    const profileAvatarUrl = String(row?.avatar_url || "").trim();
+    const current = memberByUserId.get(key);
+
+    if (!current) {
+      memberByUserId.set(key, {
+        user_id: key,
+        display_name: profileDisplayName || "Member",
+        title: "",
+        rank: null,
+        score: 0,
+        city_count: 0,
+        avatar_url: profileAvatarUrl || "",
+      });
+      orderedIds.push(key);
+      return;
+    }
+
+    const next = { ...current };
+    if (!hasMeaningfulDisplayName(next.display_name) && hasMeaningfulDisplayName(profileDisplayName)) {
+      next.display_name = profileDisplayName;
+    }
+    if (!String(next.avatar_url || "").trim() && profileAvatarUrl) {
+      next.avatar_url = profileAvatarUrl;
+    }
+    memberByUserId.set(key, next);
+  });
+
+  return orderedIds
+    .map((key) => memberByUserId.get(key))
+    .filter(Boolean);
+}
