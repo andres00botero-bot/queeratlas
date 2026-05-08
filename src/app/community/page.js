@@ -20,6 +20,8 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 
+const MEMBER_AVATAR_BUCKET = "member-avatars";
+
 const KEYS = {
   stories: "qa_community_stories",
   guides: "qa_community_guides",
@@ -275,7 +277,17 @@ function mapMemberSearchRow(row) {
     is_online: Boolean(row?.is_online),
     last_seen_at: String(row?.last_seen_at || ""),
     trusted_contributor: Boolean(row?.trusted_contributor),
+    avatar_url: String(row?.avatar_url || "").trim(),
+    avatar_path: String(row?.avatar_path || "").trim(),
   };
+}
+
+function resolveAvatarUrlFromProfile(profileLike) {
+  const direct = String(profileLike?.avatar_url || "").trim();
+  if (direct) return direct;
+  const path = String(profileLike?.avatar_path || "").trim();
+  if (!path) return "";
+  return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
 }
 
 function Field({ value, onChange, placeholder, area = false }) {
@@ -324,6 +336,7 @@ export default function CommunityPage() {
   const [memberSearchOffset, setMemberSearchOffset] = useState(0);
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
+  const [leaderboardAvatarByUserId, setLeaderboardAvatarByUserId] = useState({});
   const [reportModal, setReportModal] = useState({
     open: false,
     targetType: "",
@@ -336,6 +349,32 @@ export default function CommunityPage() {
   const memberUserId = String(user?.id || "");
   const memberSearchCacheRef = useRef(new Map());
   const memberSearchSentinelRef = useRef(null);
+
+  const hydrateMemberRowsWithAvatars = useCallback(async (rows = []) => {
+    const userIds = [
+      ...new Set(
+        (rows || []).map((entry) => String(entry?.user_id || "").trim()).filter(Boolean)
+      ),
+    ];
+    if (userIds.length === 0) return rows;
+    const { data: profiles } = await supabase
+      .from("member_profiles")
+      .select("user_id,avatar_url,avatar_path")
+      .in("user_id", userIds);
+
+    const avatarByUserId = {};
+    (profiles || []).forEach((profile) => {
+      const profileUserId = String(profile?.user_id || "").trim();
+      if (!profileUserId) return;
+      avatarByUserId[profileUserId] = resolveAvatarUrlFromProfile(profile);
+    });
+
+    return (rows || []).map((entry) => ({
+      ...entry,
+      avatar_url:
+        avatarByUserId[String(entry.user_id || "")] || resolveAvatarUrlFromProfile(entry),
+    }));
+  }, []);
 
   const loadCommunityData = useCallback(async () => {
     setSyncError("");
@@ -398,6 +437,26 @@ export default function CommunityPage() {
       }
     });
     const nextLeaderboard = Array.isArray(leaderboardRes?.data) ? leaderboardRes.data : [];
+    const leaderboardUserIds = [
+      ...new Set(
+        nextLeaderboard
+          .map((entry) => String(entry?.user_id || "").trim())
+          .filter(Boolean)
+      ),
+    ];
+    const nextLeaderboardAvatarByUserId = {};
+    if (leaderboardUserIds.length > 0) {
+      const { data: leaderboardProfiles } = await supabase
+        .from("member_profiles")
+        .select("user_id,avatar_url,avatar_path")
+        .in("user_id", leaderboardUserIds);
+      (leaderboardProfiles || []).forEach((profile) => {
+        const profileUserId = String(profile?.user_id || "").trim();
+        if (!profileUserId) return;
+        nextLeaderboardAvatarByUserId[profileUserId] =
+          resolveAvatarUrlFromProfile(profile);
+      });
+    }
 
     setStories(nextStories);
     setGuides(nextGuides);
@@ -406,6 +465,7 @@ export default function CommunityPage() {
     setMessageArchive(nextArchive);
     setIdeas(nextIdeas);
     setLeaderboard(nextLeaderboard);
+    setLeaderboardAvatarByUserId(nextLeaderboardAvatarByUserId);
     if (errorParts.length > 0) {
       setSyncError(`Partial cloud sync: ${errorParts.join(", ")} using local fallback.`);
     }
@@ -622,12 +682,13 @@ export default function CommunityPage() {
         ? "Member search backend is not migrated yet. Run supabase/community-member-search-v1.sql for full results."
         : "Live member search is temporarily unavailable. Showing fallback ranking.";
 
+      const fallbackRowsHydrated = await hydrateMemberRowsWithAvatars(fallbackRows);
       setMemberSearchWarning(warning);
       setMemberSearchHasMore(false);
       setMemberSearchOffset(0);
-      setMemberSearchRows(fallbackRows);
+      setMemberSearchRows(fallbackRowsHydrated);
       memberSearchCacheRef.current.set(cacheKey, {
-        rows: fallbackRows,
+        rows: fallbackRowsHydrated,
         hasMore: false,
         warning,
       });
@@ -638,15 +699,16 @@ export default function CommunityPage() {
     const mapped = (data || []).map(mapMemberSearchRow);
     const hasMore = mapped.length > MEMBER_SEARCH_PAGE_SIZE;
     const visibleRows = hasMore ? mapped.slice(0, MEMBER_SEARCH_PAGE_SIZE) : mapped;
+    const hydratedVisibleRows = await hydrateMemberRowsWithAvatars(visibleRows);
 
     setMemberSearchHasMore(hasMore);
     setMemberSearchOffset(safeOffset);
     setMemberSearchWarning("");
     setMemberSearchRows((current) => {
-      if (!append) return visibleRows;
+      if (!append) return hydratedVisibleRows;
       const seen = new Set(current.map((row) => row.user_id));
       const merged = [...current];
-      visibleRows.forEach((row) => {
+      hydratedVisibleRows.forEach((row) => {
         if (seen.has(row.user_id)) return;
         seen.add(row.user_id);
         merged.push(row);
@@ -654,7 +716,7 @@ export default function CommunityPage() {
       return merged;
     });
     memberSearchCacheRef.current.set(cacheKey, {
-      rows: visibleRows,
+      rows: hydratedVisibleRows,
       hasMore,
       warning: "",
     });
@@ -668,6 +730,7 @@ export default function CommunityPage() {
     memberSearchSort,
     memberSearchScope,
     leaderboard,
+    hydrateMemberRowsWithAvatars,
   ]);
 
   useEffect(() => {
@@ -1233,21 +1296,41 @@ export default function CommunityPage() {
               <p className="text-xs uppercase tracking-[0.22em] text-indigo-200/80">Community Ranking</p>
               <h2 className="mt-1 text-lg font-semibold text-white">Your community ranking just now</h2>
             </div>
-            <p className="text-xs text-white/55">Points: places (5) · events (4) · reviews (2)</p>
+            <p className="text-xs text-white/55">Points: places (5) Â· events (4) Â· reviews (2)</p>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {leaderboard.slice(0, 5).map((entry) => {
               const titleMeta = getMemberTitleMeta(entry.title);
+              const avatarUrl = String(
+                leaderboardAvatarByUserId[String(entry.user_id || "")] || ""
+              ).trim();
+              const initials =
+                String(entry.display_name || "Member")
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((chunk) => chunk.charAt(0).toUpperCase())
+                  .join("") || "M";
               return (
                 <article key={entry.user_id} className="qa-premium-card rounded-2xl border border-white/10 bg-white/6 p-3 shadow-[0_14px_32px_rgba(0,0,0,0.22)]">
-                  <p className="text-xs text-white/60">#{entry.rank}</p>
-                  <p className="mt-1 truncate text-sm font-semibold text-white">{entry.display_name}</p>
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/16 bg-white/8 text-[11px] font-semibold text-white/82">
+                      {avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={avatarUrl} alt={entry.display_name || "Member"} className="h-full w-full object-cover" />
+                      ) : initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs text-white/60">#{entry.rank}</p>
+                      <p className="truncate text-sm font-semibold text-white">{entry.display_name}</p>
+                    </div>
+                  </div>
                   <span className={`mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
                     <span>{titleMeta.icon}</span>
                     {titleMeta.label}
                   </span>
                   <p className="mt-2 text-xs text-white/58">
-                    {entry.score} pts · {entry.city_count || 0} cities
+                    {entry.score} pts Â· {entry.city_count || 0} cities
                   </p>
                 </article>
               );
@@ -1286,7 +1369,7 @@ export default function CommunityPage() {
                       {champion.champion}
                     </p>
                     <p className="mt-1 text-xs text-white/60">
-                      {champion.championCount} contributions · {champion.total} city posts
+                      {champion.championCount} contributions Â· {champion.total} city posts
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100/85">
@@ -1316,7 +1399,7 @@ export default function CommunityPage() {
             <p className="text-xs text-fuchsia-100/75">
               {memberSearchLoading
                 ? "Refreshing live member graph..."
-                : `${displayedMemberRows.length} loaded${memberSearchHasMore ? " · more available" : ""}`}
+                : `${displayedMemberRows.length} loaded${memberSearchHasMore ? " Â· more available" : ""}`}
             </p>
           </div>
 
@@ -1386,21 +1469,37 @@ export default function CommunityPage() {
             {displayedMemberRows.map((entry) => {
               const titleMeta = getMemberTitleMeta(entry.title || "");
               const busy = Boolean(memberSearchBusyById[entry.user_id]);
+              const avatarUrl = resolveAvatarUrlFromProfile(entry);
+              const initials =
+                String(entry.display_name || "Member")
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((chunk) => chunk.charAt(0).toUpperCase())
+                  .join("") || "M";
               return (
                 <article key={entry.user_id} className="qa-premium-card rounded-2xl border border-white/10 bg-black/28 p-4 transition hover:border-fuchsia-200/30 hover:bg-black/35 hover:shadow-[0_20px_50px_rgba(217,70,239,0.14)]">
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex min-w-0 items-start gap-2.5">
+                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 text-[11px] font-semibold text-fuchsia-100">
+                        {avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={avatarUrl} alt={entry.display_name} className="h-full w-full object-cover" />
+                        ) : initials}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
                         <p className="text-sm font-semibold text-white">{entry.display_name}</p>
                         {entry.trusted_contributor && (
                           <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
                             Trusted
                           </span>
                         )}
-                      </div>
+                        </div>
                       <p className="mt-1 text-xs text-white/62">
-                        {[entry.home_city, entry.resident_country].filter(Boolean).join(" · ") || "City not set"}
+                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" · ") || "City not set"}
                       </p>
+                    </div>
                     </div>
                     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
                       <span>{titleMeta.icon}</span>
@@ -1502,7 +1601,7 @@ export default function CommunityPage() {
                 <article key={story.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">{story.city} · {story.category}</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">{story.city} Â· {story.category}</p>
                       <h3 className="mt-2 text-lg font-semibold">{story.title}</h3>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1588,7 +1687,7 @@ export default function CommunityPage() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs uppercase tracking-[0.18em] text-violet-200/75">
-                        {guide.city} · {guide.focus}
+                        {guide.city} Â· {guide.focus}
                       </p>
                       <button
                         onClick={() => toggleGuideExpanded(guide.id)}
@@ -1615,7 +1714,7 @@ export default function CommunityPage() {
                             </span>
                           );
                         })()}{" "}
-                        · {timeAgo(guide.createdAt)}
+                        Â· {timeAgo(guide.createdAt)}
                       </p>
                       <button
                         onClick={() =>
@@ -1809,7 +1908,7 @@ export default function CommunityPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm leading-6 text-gray-300">{idea.text}</p>
-                    <p className="mt-2 text-xs text-gray-500">{idea.author} · {timeAgo(idea.createdAt)}</p>
+                    <p className="mt-2 text-xs text-gray-500">{idea.author} Â· {timeAgo(idea.createdAt)}</p>
                     <button
                       onClick={() =>
                         reportContent({
@@ -1823,7 +1922,7 @@ export default function CommunityPage() {
                       Report
                     </button>
                   </div>
-                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">▲ {idea.votes}</button>
+                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">â–² {idea.votes}</button>
                 </div>
               </div>
             ))}

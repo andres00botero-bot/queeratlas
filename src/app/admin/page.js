@@ -37,6 +37,7 @@ import ActionToast from "@/components/ui/ActionToast";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 
+const MEMBER_AVATAR_BUCKET = "member-avatars";
 const FIXED_LOG_KEY = "qa_admin_fixed_log";
 const AUDIT_LOG_KEY = "qa_admin_audit_log";
 const ROUTINE_KEY = "qa_admin_weekly_routine";
@@ -109,6 +110,14 @@ function formatPercent(part, total) {
   const denominator = Number(total || 0);
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator <= 0) return "0%";
   return `${Math.round((numerator / denominator) * 100)}%`;
+}
+
+function resolveAvatarUrlFromProfile(profileLike) {
+  const direct = String(profileLike?.avatar_url || "").trim();
+  if (direct) return direct;
+  const path = String(profileLike?.avatar_path || "").trim();
+  if (!path) return "";
+  return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
 }
 
 export default function AdminPage() {
@@ -273,14 +282,14 @@ export default function AdminPage() {
     try {
       let response = await supabase
         .from("member_profiles")
-        .select("user_id,display_name,home_city,resident_country,trusted_contributor,updated_at")
+        .select("user_id,display_name,home_city,resident_country,trusted_contributor,avatar_url,avatar_path,updated_at")
         .order("updated_at", { ascending: false })
         .limit(250);
 
       if (response.error && isMissingColumnError(response.error, "trusted_contributor")) {
         response = await supabase
           .from("member_profiles")
-          .select("user_id,display_name,home_city,resident_country,updated_at")
+          .select("user_id,display_name,home_city,resident_country,avatar_url,avatar_path,updated_at")
           .order("updated_at", { ascending: false })
           .limit(250);
       }
@@ -299,6 +308,7 @@ export default function AdminPage() {
           home_city: String(row.home_city || "").trim(),
           resident_country: String(row.resident_country || "").trim(),
           trusted_contributor: Boolean(row.trusted_contributor),
+          avatar_url: resolveAvatarUrlFromProfile(row),
           updated_at: row.updated_at || "",
         }))
       );
@@ -2185,8 +2195,25 @@ export default function AdminPage() {
                       return (
                         <tr key={`member-row-${row.user_id}`} className="border-t border-white/8">
                           <td className="px-3 py-2">
-                            <p className="font-medium text-white">{row.display_name || "Member"}</p>
-                            <p className="text-[11px] text-white/48">{row.user_id}</p>
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/16 bg-white/8 text-[11px] font-semibold text-white/82">
+                                {row.avatar_url ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={row.avatar_url} alt={row.display_name || "Member"} className="h-full w-full object-cover" />
+                                ) : (
+                                  (String(row.display_name || "Member")
+                                    .split(/\s+/)
+                                    .filter(Boolean)
+                                    .slice(0, 2)
+                                    .map((part) => part.charAt(0).toUpperCase())
+                                    .join("") || "M")
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-white">{row.display_name || "Member"}</p>
+                                <p className="truncate text-[11px] text-white/48">{row.user_id}</p>
+                              </div>
+                            </div>
                           </td>
                           <td className="px-3 py-2 text-white/78">{row.home_city || "-"}</td>
                           <td className="px-3 py-2 text-white/78">{row.resident_country || "-"}</td>
