@@ -73,7 +73,7 @@ as $$
       coalesce(
         nullif(trim(mp.display_name), ''),
         nullif(trim(lb.display_name), ''),
-        split_part(coalesce(u.email, 'member'), '@', 1)
+        'Member'
       ) as display_name,
       nullif(trim(mp.home_city), '') as home_city,
       nullif(trim(mp.resident_country), '') as resident_country,

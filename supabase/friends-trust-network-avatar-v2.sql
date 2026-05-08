@@ -33,7 +33,7 @@ as $$
     fav.favorite_id::text as favorite_id,
     fav.created_at as created_at,
     fav.user_id as owner_user_id,
-    coalesce(nullif(mp.display_name, ''), split_part(coalesce(u.email, 'member'), '@', 1))::text as display_name,
+    coalesce(nullif(mp.display_name, ''), 'Member')::text as display_name,
     coalesce(lb.title, '')::text as title,
     lb.rank::integer as rank,
     nullif(mp.avatar_url, '')::text as avatar_url

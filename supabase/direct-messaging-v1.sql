@@ -384,7 +384,7 @@ as $$
   )
   select
     f.user_id,
-    coalesce(nullif(mp.display_name, ''), split_part(coalesce(u.email, 'member'), '@', 1))::text as display_name,
+    coalesce(nullif(mp.display_name, ''), 'Member')::text as display_name,
     (to_jsonb(mp)->>'avatar_url')::text as avatar_url,
     p.last_seen_at,
     coalesce(p.is_online, false) as is_online,

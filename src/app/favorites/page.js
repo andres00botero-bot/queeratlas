@@ -231,6 +231,7 @@ export default function FavoritesPage() {
     contactEmail: "",
   });
   const [profileAvatarDataUrl, setProfileAvatarDataUrl] = useState("");
+  const [profileAvatarLoadFailed, setProfileAvatarLoadFailed] = useState(false);
   const [friendAvatarByUserId, setFriendAvatarByUserId] = useState({});
   const tonightSectionRef = useRef(null);
   const tripSectionRef = useRef(null);
@@ -704,6 +705,10 @@ export default function FavoritesPage() {
       writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, remoteAvatar);
     }
   }, [memberProfile?.avatarUrl]);
+
+  useEffect(() => {
+    setProfileAvatarLoadFailed(false);
+  }, [profileAvatarDataUrl]);
 
   const favoriteIdSet = useMemo(
     () => new Set((favorites || []).map((item) => String(item))),
@@ -1841,9 +1846,14 @@ export default function FavoritesPage() {
             className="group absolute right-3 top-6 inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-cyan-200/40 bg-cyan-200/10 text-xl font-semibold text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,0.26),0_24px_60px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:text-3xl"
             aria-label="Edit profile image"
           >
-            {profileAvatarDataUrl ? (
+            {String(profileAvatarDataUrl || "").trim() && !profileAvatarLoadFailed ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={profileAvatarDataUrl} alt="Profile" className="h-full w-full object-cover" />
+              <img
+                src={profileAvatarDataUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={() => setProfileAvatarLoadFailed(true)}
+              />
             ) : (
               <span>{displayInitials}</span>
             )}
@@ -2308,11 +2318,11 @@ export default function FavoritesPage() {
 
           <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.12em] text-white/56">
             <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Saved</span>
-            <span className="text-white/35">â†’</span>
+            <span className="text-white/35">-&gt;</span>
             <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Signal</span>
-            <span className="text-white/35">â†’</span>
+            <span className="text-white/35">-&gt;</span>
             <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Route</span>
-            <span className="text-white/35">â†’</span>
+            <span className="text-white/35">-&gt;</span>
             <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Share / Meet</span>
           </div>
           {!showSecondaryPanels ? (
@@ -3236,7 +3246,7 @@ export default function FavoritesPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-white">{friendName}</p>
                         <p className="mt-1 text-xs text-white/60">
-                          {profile.cityCount || 0} cities · {profile.score || 0} pts
+                          {profile.cityCount || 0} cities {" \u00B7 "} {profile.score || 0} pts
                         </p>
                         {profile.latestItemName ? (
                           <p className="mt-1 truncate text-[11px] text-cyan-100/72">

@@ -88,7 +88,7 @@ city_footprint as (
 users_base as (
   select
     u.id as user_id,
-    coalesce(mp.display_name, split_part(u.email, '@', 1), 'Member') as display_name,
+    coalesce(mp.display_name, 'Member') as display_name,
     u.email
   from auth.users u
   left join public.member_profiles mp on mp.user_id = u.id

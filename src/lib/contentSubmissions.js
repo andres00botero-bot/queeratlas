@@ -58,7 +58,7 @@ export async function createContentSubmission({
     payload: payload && typeof payload === "object" ? payload : {},
     submitted_by: submittedBy,
     submitted_by_email: normalizeText(user?.email || "") || null,
-    submitted_by_name: normalizeText(user?.memberName || user?.email || "Member") || "Member",
+    submitted_by_name: normalizeText(user?.memberName || "Member") || "Member",
     is_trusted_contributor: Boolean(isTrustedContributor),
     status: "pending",
   };

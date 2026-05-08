@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -1931,8 +1931,8 @@ export default function AdminPage() {
 
               <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-[11px] leading-5 text-white/70">
                 Check in Supabase:
-                <p className="mt-1">Auth â†’ Providers â†’ Email enabled</p>
-                <p>Auth â†’ URL Configuration â†’ Site URL = your live URL</p>
+                <p className="mt-1">Auth -&gt; Providers -&gt; Email enabled</p>
+                <p>Auth -&gt; URL Configuration -&gt; Site URL = your live URL</p>
                 <p>Redirect URLs include live URL + localhost for dev</p>
                 <p>Auth logs for SMTP/rate-limit errors</p>
               </div>
@@ -2188,8 +2188,8 @@ export default function AdminPage() {
                             <p className="font-medium text-white">{row.display_name || "Member"}</p>
                             <p className="text-[11px] text-white/48">{row.user_id}</p>
                           </td>
-                          <td className="px-3 py-2 text-white/78">{row.home_city || "—"}</td>
-                          <td className="px-3 py-2 text-white/78">{row.resident_country || "—"}</td>
+                          <td className="px-3 py-2 text-white/78">{row.home_city || "-"}</td>
+                          <td className="px-3 py-2 text-white/78">{row.resident_country || "-"}</td>
                           <td className="px-3 py-2">
                             <span
                               className={`rounded-full border px-2 py-1 text-[11px] ${
@@ -2771,6 +2771,7 @@ export default function AdminPage() {
     </main>
   );
 }
+
 
 
 
