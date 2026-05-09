@@ -37,11 +37,20 @@ function resolveByNameMatch(entry, placeByCityName, eventByCityName) {
   return addressMatches.length === 1 ? addressMatches[0] : null;
 }
 
-export function buildCheckinMarkers({ checkins = [], savedPlaces = [], savedEvents = [] }) {
-  const placeById = buildLookupById(savedPlaces);
-  const eventById = buildLookupById(savedEvents);
-  const placeByCityName = buildLookupByCityName(savedPlaces);
-  const eventByCityName = buildLookupByCityName(savedEvents);
+export function buildCheckinMarkers({
+  checkins = [],
+  atlasPlaces = [],
+  atlasEvents = [],
+  savedPlaces = [],
+  savedEvents = [],
+}) {
+  const placeRows = (Array.isArray(atlasPlaces) && atlasPlaces.length > 0) ? atlasPlaces : savedPlaces;
+  const eventRows = (Array.isArray(atlasEvents) && atlasEvents.length > 0) ? atlasEvents : savedEvents;
+
+  const placeById = buildLookupById(placeRows);
+  const eventById = buildLookupById(eventRows);
+  const placeByCityName = buildLookupByCityName(placeRows);
+  const eventByCityName = buildLookupByCityName(eventRows);
 
   return checkins
     .map((entry) => {

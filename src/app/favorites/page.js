@@ -174,7 +174,7 @@ function resolveAvatarUrlFromRow(row) {
 
 export default function FavoritesPage() {
   const router = useRouter();
-  useMapboxStylesheet();
+  const isMapboxStylesReady = useMapboxStylesheet();
   const {
     isReady, setIsReady,
     memberName, setMemberName,
@@ -347,9 +347,14 @@ export default function FavoritesPage() {
   }, [setAtlasLoadError, setEvents, setIsAtlasLoading, setPlaces]);
 
   const loadCheckins = useCallback(async () => {
+    const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
+    const localMapped = normalizeCheckins(localRows, mapCheckinRow);
+    if (localMapped.length > 0) {
+      setCheckins(localMapped);
+    }
+
     if (!user?.id) {
-      const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
-      setCheckins(normalizeCheckins(localRows, mapCheckinRow));
+      setCheckins(localMapped);
       return;
     }
 
@@ -366,8 +371,7 @@ export default function FavoritesPage() {
       } else {
         setCheckinsWarning("Cloud check-ins unavailable. Showing local check-ins.");
       }
-      const localRows = readLocalJson(CHECKINS_STORAGE_KEY, []);
-      setCheckins(normalizeCheckins(localRows, mapCheckinRow));
+      setCheckins(localMapped);
       return;
     }
 
@@ -951,9 +955,15 @@ export default function FavoritesPage() {
     () => (
       myMapView === "saved"
         ? savedPlaceMapMarkers
-        : buildCheckinMarkers({ checkins: filteredRecentCheckins, savedPlaces, savedEvents })
+        : buildCheckinMarkers({
+            checkins: filteredRecentCheckins,
+            atlasPlaces: places,
+            atlasEvents: events,
+            savedPlaces,
+            savedEvents,
+          })
     ),
-    [filteredRecentCheckins, myMapView, savedEvents, savedPlaceMapMarkers, savedPlaces]
+    [events, filteredRecentCheckins, myMapView, places, savedEvents, savedPlaceMapMarkers, savedPlaces]
   );
 
   const followingCheckinMarkers = useMemo(
@@ -1014,7 +1024,18 @@ export default function FavoritesPage() {
   }, [myMapView, setSelectedCheckinId]);
 
   useEffect(() => {
-    if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
+    const isMapTabActive = activeProfileTab === "map";
+    if (!isMapTabActive) {
+      if (checkinMapRef.current) {
+        checkinMapMarkersRef.current.forEach((marker) => marker.remove());
+        checkinMapMarkersRef.current = [];
+        checkinMapRef.current.remove();
+        checkinMapRef.current = null;
+      }
+      return;
+    }
+
+    if (!isMapboxStylesReady || !mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
 
     mapboxgl.accessToken = mapboxToken;
     const center = checkinMapCenter
@@ -1029,6 +1050,9 @@ export default function FavoritesPage() {
       attributionControl: false,
     });
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+    map.on("load", () => {
+      map.resize();
+    });
     checkinMapRef.current = map;
 
     return () => {
@@ -1037,7 +1061,26 @@ export default function FavoritesPage() {
       map.remove();
       checkinMapRef.current = null;
     };
-  }, [checkinMapCenter, checkinMapContainerRef, checkinMapMarkersRef, checkinMapRef, mapboxToken]);
+  }, [
+    checkinMapCenter,
+    checkinMapContainerRef,
+    checkinMapMarkersRef,
+    checkinMapRef,
+    activeProfileTab,
+    isMapboxStylesReady,
+    mapboxToken,
+  ]);
+
+  useEffect(() => {
+    const isMapTabActive = activeProfileTab === "map";
+    if (!isMapTabActive) return;
+    const map = checkinMapRef.current;
+    if (!map) return;
+    const raf = window.requestAnimationFrame(() => {
+      map.resize();
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [activeProfileTab, checkinMapRef, myMapView]);
 
   useEffect(() => {
     const map = checkinMapRef.current;
