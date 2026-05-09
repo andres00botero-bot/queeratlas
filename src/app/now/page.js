@@ -131,6 +131,7 @@ function compareNewsRecency(a, b) {
 const ADMIN_NEWS_KEY = "qa_world_news_admin";
 const HIDDEN_NEWS_KEY = "qa_world_news_hidden";
 const RANKING_OVERRIDES_KEY = "qa_atlas_ranking_overrides";
+const RANKING_PENDING_SYNC_YEARS_KEY = "qa_atlas_ranking_pending_sync_years_v1";
 const NEWS_TABLE = "qa_world_news";
 const NEWS_HIDDEN_TABLE = "qa_world_news_hidden";
 const RANKING_TABLE = "qa_atlas_rankings";
@@ -272,6 +273,46 @@ function mergeEditorialCacheRanking(nextRankingOverrides) {
     ...cachedData,
     rankingOverrides: nextRankingOverrides || {},
   });
+}
+
+function readRankingPendingSyncYears() {
+  const raw = readLocalJson(RANKING_PENDING_SYNC_YEARS_KEY, []);
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.map((value) => String(value || "").trim()).filter(Boolean))];
+}
+
+function writeRankingPendingSyncYears(years = []) {
+  const normalized = [...new Set((years || []).map((value) => String(value || "").trim()).filter(Boolean))];
+  writeLocalJson(RANKING_PENDING_SYNC_YEARS_KEY, normalized);
+  return normalized;
+}
+
+function markRankingYearPendingSync(year, isPending) {
+  const key = String(year || "").trim();
+  if (!key) return readRankingPendingSyncYears();
+  const nextSet = new Set(readRankingPendingSyncYears());
+  if (isPending) {
+    nextSet.add(key);
+  } else {
+    nextSet.delete(key);
+  }
+  return writeRankingPendingSyncYears([...nextSet]);
+}
+
+function mergeRankingOverridesWithPending({
+  remoteRankings = {},
+  localRankings = {},
+  pendingYears = [],
+}) {
+  const next = { ...(remoteRankings || {}) };
+  const pendingSet = new Set((pendingYears || []).map((value) => String(value || "").trim()).filter(Boolean));
+  pendingSet.forEach((year) => {
+    const localRows = Array.isArray(localRankings?.[year]) ? localRankings[year] : [];
+    if (localRows.length > 0) {
+      next[year] = localRows;
+    }
+  });
+  return next;
 }
 
 function createClientId(prefix) {
@@ -435,13 +476,19 @@ export default function NowPage() {
       const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
       setRankingOverrides(localRankings || {});
     } else {
+      const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
+      const pendingYears = readRankingPendingSyncYears();
       const remoteRankings = groupRankingRows(rankingResponse.data || []);
       const hasRemoteRankings = Object.keys(remoteRankings).length > 0;
       if (hasRemoteRankings) {
-        setRankingOverrides(remoteRankings);
-        writeLocalJson(RANKING_OVERRIDES_KEY, remoteRankings);
+        const mergedRankings = mergeRankingOverridesWithPending({
+          remoteRankings,
+          localRankings,
+          pendingYears,
+        });
+        setRankingOverrides(mergedRankings);
+        writeLocalJson(RANKING_OVERRIDES_KEY, mergedRankings);
       } else {
-        const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, {});
         setRankingOverrides(localRankings || {});
       }
     }
@@ -451,12 +498,7 @@ export default function NowPage() {
     writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
       adminNews: newsResponse.error ? [] : (newsResponse.data || []).map(mapNewsRowToItem),
       hiddenNewsIds: hiddenResponse.error ? [] : (hiddenResponse.data || []).map((row) => String(row.feed_id)),
-      rankingOverrides: rankingResponse.error
-        ? readLocalJson(RANKING_OVERRIDES_KEY, {})
-        : (() => {
-            const grouped = groupRankingRows(rankingResponse.data || []);
-            return Object.keys(grouped).length > 0 ? grouped : readLocalJson(RANKING_OVERRIDES_KEY, {});
-          })(),
+      rankingOverrides: readLocalJson(RANKING_OVERRIDES_KEY, {}),
       syncWarning: nextSyncWarning,
     });
   }, []);
@@ -860,8 +902,10 @@ export default function NowPage() {
       : { error: null };
 
     if (upsertError && !isMissingTableError(upsertError)) {
+      markRankingYearPendingSync(selectedRankingYear, true);
       setSyncWarning(`Cloud sync failed. Using local backup. ${formatSupabaseError(upsertError)}`);
     } else if (upsertError && isMissingTableError(upsertError)) {
+      markRankingYearPendingSync(selectedRankingYear, true);
       setSyncWarning("Ranking saved locally. Cloud sync is unavailable right now.");
     } else {
       const { error: trimError } = await supabase
@@ -870,8 +914,10 @@ export default function NowPage() {
         .eq("year", year)
         .gt("rank", rows.length);
       if (trimError && !isMissingTableError(trimError)) {
+        markRankingYearPendingSync(selectedRankingYear, true);
         setSyncWarning(`Ranking saved. Cloud cleanup partial: ${formatSupabaseError(trimError)}`);
       } else {
+        markRankingYearPendingSync(selectedRankingYear, false);
         setSyncWarning("");
       }
     }
@@ -880,6 +926,10 @@ export default function NowPage() {
     writeLocalJson(RANKING_OVERRIDES_KEY, next);
     mergeEditorialCacheRanking(next);
     setIsRankingEditorOpen(false);
+
+    if (!upsertError) {
+      await loadEditorialData({ forceRefresh: true });
+    }
   };
 
   const resetRankingYear = async () => {

@@ -75,15 +75,24 @@ function consumePostLoginTarget() {
   return allowed ? raw : "/";
 }
 
+function localProfileWithoutAvatar() {
+  const local = getMemberProfile();
+  return {
+    ...local,
+    avatarUrl: "",
+    avatarPath: "",
+  };
+}
+
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [memberProfile, setMemberProfile] = useState(() => getMemberProfile());
+  const [memberProfile, setMemberProfile] = useState(() => localProfileWithoutAvatar());
   const [isAdminUser, setIsAdminUser] = useState(false);
 
   const loadRemoteMemberProfile = async (userId) => {
-    if (!userId) return getMemberProfile();
+    if (!userId) return localProfileWithoutAvatar();
 
     const { data, error } = await supabase
       .from("member_profiles")
@@ -92,7 +101,7 @@ export function AuthProvider({ children }) {
       .maybeSingle();
 
     if (error || !data) {
-      return getMemberProfile();
+      return localProfileWithoutAvatar();
     }
 
     const avatarPath = String(data.avatar_path || "").trim();
@@ -136,7 +145,7 @@ export function AuthProvider({ children }) {
           setMemberProfile(profile);
         }
       } else {
-        setMemberProfile(getMemberProfile());
+        setMemberProfile(localProfileWithoutAvatar());
       }
       setIsLoading(false);
 
@@ -163,7 +172,7 @@ export function AuthProvider({ children }) {
           setMemberProfile(profile);
         });
       } else {
-        setMemberProfile(getMemberProfile());
+        setMemberProfile(localProfileWithoutAvatar());
       }
       setIsLoading(false);
 
@@ -484,15 +493,6 @@ export function AuthProvider({ children }) {
             return { ok: false, error: new Error("avatar_public_url_unavailable") };
           }
         }
-
-        const nextLocalProfile = {
-          ...localSnapshot,
-          displayName: isAdminUser ? "Admin" : (memberProfile?.displayName || ""),
-          avatarUrl: uploadedAvatarUrl,
-          avatarPath: uploadedAvatarPath || localSnapshot.avatarPath || "",
-        };
-        saveMemberProfile(nextLocalProfile);
-        setMemberProfile(nextLocalProfile);
 
         if (!user?.id) return { ok: false };
 

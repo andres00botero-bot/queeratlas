@@ -148,7 +148,6 @@ const SavedEventsPanel = dynamic(() => import("@/components/favorites/SavedEvent
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
-const FAVORITES_PROFILE_AVATAR_STORAGE_KEY = "qa_favorites_profile_avatar_v1";
 const FAVORITES_CALENDAR_REMINDER_STORAGE_KEY = "qa_favorites_calendar_reminders_v1";
 const FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY = "qa_favorites_calendar_last_alert_day_v1";
 const MEMBER_AVATAR_BUCKET = "member-avatars";
@@ -770,20 +769,8 @@ export default function FavoritesPage() {
   ]);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const avatarValue = String(localStorage.getItem(FAVORITES_PROFILE_AVATAR_STORAGE_KEY) || "");
-    if (avatarValue) {
-      setProfileAvatarDataUrl(avatarValue);
-    }
-  }, []);
-
-  useEffect(() => {
     const remoteAvatar = String(memberProfile?.avatarUrl || "").trim();
-    if (!remoteAvatar) return;
-    setProfileAvatarDataUrl(remoteAvatar);
-    if (typeof window !== "undefined") {
-      writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, remoteAvatar);
-    }
+    setProfileAvatarDataUrl(remoteAvatar || "");
   }, [memberProfile?.avatarUrl]);
 
   useEffect(() => {
@@ -1410,7 +1397,6 @@ export default function FavoritesPage() {
     const syncedAvatar = String(result?.avatarUrl || "").trim();
     if (syncedAvatar) {
       setProfileAvatarDataUrl(syncedAvatar);
-      writeLocalValue(FAVORITES_PROFILE_AVATAR_STORAGE_KEY, syncedAvatar);
     }
     showToast("Profile image updated.", { tone: "ok", duration: 1800 });
   };
