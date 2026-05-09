@@ -2077,15 +2077,15 @@ export default function FavoritesPage() {
         <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(135deg,rgba(22,22,24,0.95),rgba(10,10,10,0.99),rgba(16,18,22,0.98))] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute right-3 top-6 h-24 w-24 rounded-full bg-cyan-300/34 blur-xl sm:right-[7rem] sm:top-1/2 sm:h-40 sm:w-40 sm:-translate-y-[78%] sm:blur-2xl" />
-          <div className="pointer-events-none absolute right-3 top-6 h-20 w-20 rounded-full bg-sky-300/26 blur-md sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:blur-lg" />
+          <div className="pointer-events-none absolute right-2 top-3 h-20 w-20 rounded-full bg-cyan-300/30 blur-lg sm:right-[7rem] sm:top-1/2 sm:h-40 sm:w-40 sm:-translate-y-[78%] sm:blur-2xl" />
+          <div className="pointer-events-none absolute right-2 top-3 h-16 w-16 rounded-full bg-sky-300/24 blur-md sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:blur-lg" />
           <button
             type="button"
             onClick={() => {
               setActiveProfileTab("about");
               openAvatarEditor();
             }}
-            className="group absolute right-3 top-6 inline-flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-cyan-200/40 bg-cyan-200/10 text-xl font-semibold text-cyan-100 shadow-[0_0_28px_rgba(103,232,249,0.26),0_24px_60px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:text-3xl"
+            className="group absolute right-2 top-3 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-cyan-200/40 bg-cyan-200/10 text-lg font-semibold text-cyan-100 shadow-[0_0_24px_rgba(103,232,249,0.26),0_18px_40px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:text-3xl"
             aria-label="Edit profile image"
           >
             {String(profileAvatarDataUrl || "").trim() && !profileAvatarLoadFailed ? (
@@ -2110,14 +2110,14 @@ export default function FavoritesPage() {
             onChange={onProfileAvatarSelected}
             className="hidden"
           />
-          <div className="max-w-4xl pr-24 sm:pr-0">
-            <p className="mt-1 bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-2xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_12px_30px_rgba(251,191,36,0.2)] sm:text-3xl">
+          <div className="max-w-4xl pr-[5.25rem] sm:pr-0">
+            <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)] sm:text-3xl">
               {greeting}, {displayName}
             </p>
-            <h1 className="qa-display qa-h1 mt-4 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-4xl font-bold text-transparent sm:text-6xl">
+            <h1 className="qa-display qa-h1 mt-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold text-transparent sm:mt-4 sm:text-6xl">
               Your Atlas
             </h1>
-            <p className="qa-lead mt-4 max-w-2xl text-sm text-white/62 sm:mt-5 sm:text-base">
+            <p className="qa-lead mt-3 max-w-2xl text-sm text-white/64 sm:mt-5 sm:text-base">
               Your saved queer map across cities, places, and events. This is where
               discovery becomes direction.
             </p>
@@ -2145,12 +2145,12 @@ export default function FavoritesPage() {
             )}
           </div>
 
-          <div className="mt-5 rounded-2xl border border-white/12 bg-black/25 p-3 sm:p-3.5">
+          <div className="mt-4 rounded-2xl border border-white/12 bg-black/25 p-2.5 sm:mt-5 sm:p-3.5">
             <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">Page controls</p>
               <p className="text-[11px] text-white/58">Choose one lane</p>
             </div>
-            <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <nav className="flex snap-x snap-mandatory items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:overflow-visible sm:whitespace-normal sm:gap-2">
               {[
                 { id: "about", label: "Home" },
                 { id: "friends", label: "Friends" },
@@ -2194,7 +2194,7 @@ export default function FavoritesPage() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveProfileTab(tab.id)}
-                    className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${
                       isActive ? toneClasses.active : toneClasses.idle
                     }`}
                   >
@@ -2203,7 +2203,7 @@ export default function FavoritesPage() {
                 );
               })}
             </nav>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/58">
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-white/58">
               <span>{totalPlaces} places</span>
               <span>|</span>
               <span>{totalEvents} events</span>
