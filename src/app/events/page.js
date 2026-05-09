@@ -11,6 +11,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { useActionToast } from "@/lib/useActionToast";
 import { logDevError } from "@/lib/devLogger";
 import { resolveAdminAccess } from "@/lib/adminAccess";
+import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 import {
   fetchEventsData,
@@ -45,6 +46,8 @@ import { REPORT_REASONS, TRUST_ACTIONS } from "@/features/events/eventPageConsta
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
 import { resolveEventOpenIntent } from "@/features/events/eventOpenGuards";
 import { qualityPillClass } from "@/features/events/eventViewUtils";
+import { ADDED_STORAGE_KEY, FAVORITES_STORAGE_KEY } from "@/features/favorites/favoritesStateDefaults";
+import { addFavoriteLocalState, mergeFavoriteIds } from "@/features/favorites/logic/favoritesMutations";
 import CityEventEditModal from "@/components/events/CityEventEditModal";
 import EventSkeletonCard from "@/components/events/EventSkeletonCard";
 import EventReportModal from "@/components/events/EventReportModal";
@@ -62,6 +65,11 @@ function getLocalDateKey() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function isDuplicateKeyError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  return code === "23505";
 }
 
 export default function EventsPage() {
@@ -108,6 +116,8 @@ export default function EventsPage() {
     if (typeof window === "undefined") return "";
     return String(new URLSearchParams(window.location.search).get("offgridEventId") || "").trim();
   });
+  const [favoriteIds, setFavoriteIds] = useState(() => readLocalJson(FAVORITES_STORAGE_KEY, []));
+  const [addedEntries, setAddedEntries] = useState(() => readLocalJson(ADDED_STORAGE_KEY, []));
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -116,6 +126,10 @@ export default function EventsPage() {
         .map((item) => String(item.targetId))
     )
   ), [blockedItems]);
+  const favoriteIdSet = useMemo(
+    () => new Set((favoriteIds || []).map((id) => String(id))),
+    [favoriteIds]
+  );
 
   const normalizedFocusedOffgridId = useMemo(
     () => offgridEventParam.replace(/^global-/i, ""),
@@ -174,7 +188,82 @@ export default function EventsPage() {
     };
   }, [isAuthLoading, isMember, user?.email]);
 
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (!isMember || !user?.id) return;
+
+    let active = true;
+
+    queueMicrotask(async () => {
+      const localFavoriteIds = readLocalJson(FAVORITES_STORAGE_KEY, []);
+      const { data, error } = await supabase
+        .from("member_favorites")
+        .select("favorite_id")
+        .eq("user_id", user.id);
+
+      if (!active) return;
+
+      if (error) {
+        setFavoriteIds(localFavoriteIds);
+        return;
+      }
+
+      const remoteFavoriteIds = Array.isArray(data)
+        ? data.map((row) => String(row.favorite_id || "")).filter(Boolean)
+        : [];
+      const merged = mergeFavoriteIds(remoteFavoriteIds, localFavoriteIds);
+      setFavoriteIds(merged);
+      writeLocalJson(FAVORITES_STORAGE_KEY, merged);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, isMember, user?.id]);
+
   const qualityMap = getQualityMap();
+
+  const saveEventToFavorites = async (event, clickEvent) => {
+    clickEvent?.stopPropagation();
+    if (!isMember || !user?.id) {
+      showToast("Join as member to save events.", { tone: "info", duration: 2200 });
+      return;
+    }
+
+    const favoriteId = `event-${String(event?.id || "")}`;
+    const nextState = addFavoriteLocalState({
+      favorites: favoriteIds,
+      added: addedEntries,
+      favoriteId,
+      nowIso: new Date().toISOString(),
+    });
+
+    if (!nextState.isValid) return;
+
+    if (nextState.alreadySaved) {
+      showToast("Already saved in favorites.", { tone: "info", duration: 1600 });
+      return;
+    }
+
+    setFavoriteIds(nextState.favorites);
+    setAddedEntries(nextState.added);
+    writeLocalJson(FAVORITES_STORAGE_KEY, nextState.favorites);
+    writeLocalJson(ADDED_STORAGE_KEY, nextState.added);
+
+    const { error } = await supabase.from("member_favorites").insert([
+      {
+        user_id: user.id,
+        favorite_id: favoriteId,
+      },
+    ]);
+
+    if (error && !isDuplicateKeyError(error)) {
+      showToast("Saved locally. Cloud sync unavailable.", { tone: "info", duration: 2300 });
+    } else {
+      showToast("Event saved to favorites.", { tone: "success", duration: 1700 });
+    }
+  };
+
   const refreshQuality = async (event, clickEvent) => {
     clickEvent?.stopPropagation();
     if (event?.isGlobal && !isAdmin) {
@@ -1178,6 +1267,16 @@ export default function EventsPage() {
                             </div>
 
                             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                              <button
+                                onClick={(eventClick) => saveEventToFavorites(event, eventClick)}
+                                className={`rounded-2xl border px-4 py-3 text-sm transition ${
+                                  favoriteIdSet.has(`event-${String(event.id)}`)
+                                    ? "cursor-default border-emerald-200/28 bg-emerald-200/12 text-emerald-100"
+                                    : "border-emerald-200/20 bg-emerald-200/8 text-emerald-100/90 hover:border-emerald-200/34 hover:bg-emerald-200/14"
+                                }`}
+                              >
+                                {favoriteIdSet.has(`event-${String(event.id)}`) ? "Saved" : "Save event"}
+                              </button>
                               {event.link && (
                                 <a
                                   href={event.link}

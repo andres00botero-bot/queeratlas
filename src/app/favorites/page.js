@@ -145,13 +145,12 @@ const TripPlannerV2 = dynamic(() => import("@/components/planner/TripPlannerV2")
 const SavedEventsPanel = dynamic(() => import("@/components/favorites/SavedEventsPanel"), {
   loading: () => <FavoritesCardSkeleton />,
 });
-const SavedPlacesPanel = dynamic(() => import("@/components/favorites/SavedPlacesPanel"), {
-  loading: () => <FavoritesCardSkeleton />,
-});
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
 const FAVORITES_PROFILE_AVATAR_STORAGE_KEY = "qa_favorites_profile_avatar_v1";
+const FAVORITES_CALENDAR_REMINDER_STORAGE_KEY = "qa_favorites_calendar_reminders_v1";
+const FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY = "qa_favorites_calendar_last_alert_day_v1";
 const MEMBER_AVATAR_BUCKET = "member-avatars";
 
 function isAvatarColumnMissingError(error) {
@@ -233,7 +232,11 @@ export default function FavoritesPage() {
   const { toast, showToast } = useActionToast();
   const [activeFavoritesIntent, setActiveFavoritesIntent] = useState("go_out_tonight");
   const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
-  const [activeProfileTab, setActiveProfileTab] = useState("activity");
+  const [activeProfileTab, setActiveProfileTab] = useState("about");
+  const [myMapView, setMyMapView] = useState("checkins");
+  const [calendarReminderByEventId, setCalendarReminderByEventId] = useState(() =>
+    readLocalJson(FAVORITES_CALENDAR_REMINDER_STORAGE_KEY, {})
+  );
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [profileExtras, setProfileExtras] = useState({
     about: "",
@@ -768,6 +771,39 @@ export default function FavoritesPage() {
       blockedEventIds: blocked.events,
     });
   }, [blocked.events, events, favoriteIdSet]);
+  const calendarEvents = useMemo(() => {
+    return [...savedEvents]
+      .map((event) => {
+        const parsed = new Date(event?.date || "");
+        return {
+          ...event,
+          calendarDate: parsed,
+          calendarTime: parsed.getTime(),
+        };
+      })
+      .filter((event) => Number.isFinite(event.calendarTime))
+      .sort((a, b) => a.calendarTime - b.calendarTime);
+  }, [savedEvents]);
+  const todayDateKey = useMemo(() => {
+    const referenceTs = Number(nowTs || Date.now());
+    return new Date(referenceTs).toISOString().slice(0, 10);
+  }, [nowTs]);
+  const todayCalendarEvents = useMemo(
+    () =>
+      calendarEvents.filter((event) => {
+        const eventDateKey = event.calendarDate.toISOString().slice(0, 10);
+        return eventDateKey === todayDateKey;
+      }),
+    [calendarEvents, todayDateKey]
+  );
+  const upcomingCalendarEvents = useMemo(
+    () =>
+      calendarEvents.filter((event) => {
+        const eventDateKey = event.calendarDate.toISOString().slice(0, 10);
+        return eventDateKey > todayDateKey;
+      }),
+    [calendarEvents, todayDateKey]
+  );
 
   const totalPlaces = savedPlaces.length;
   const totalEvents = savedEvents.length;
@@ -879,6 +915,9 @@ export default function FavoritesPage() {
     () => getCheckinCities(checkins),
     [checkins]
   );
+  const savedPlaceCities = useMemo(() => {
+    return new Set((savedPlaces || []).map((place) => normalizeCityKey(place?.city)).filter(Boolean)).size;
+  }, [savedPlaces]);
 
   const selectedCheckinCityKey = useMemo(() => normalizeCityKey(checkinForm.city), [checkinForm.city]);
 
@@ -892,9 +931,27 @@ export default function FavoritesPage() {
     [events, selectedCheckinCityKey]
   );
 
+  const savedPlaceMapMarkers = useMemo(() => {
+    return (savedPlaces || [])
+      .filter((place) => Number.isFinite(Number(place?.lat)) && Number.isFinite(Number(place?.lng)))
+      .map((place) => ({
+        id: `saved-${String(place.id || "")}`,
+        label: String(place.name || "Saved place"),
+        city: String(place.city || ""),
+        country: "",
+        checkedInAt: String(place.addedAt || place.updatedAt || ""),
+        markerLat: Number(place.lat),
+        markerLng: Number(place.lng),
+      }));
+  }, [savedPlaces]);
+
   const checkinMarkers = useMemo(
-    () => buildCheckinMarkers({ checkins: filteredRecentCheckins, savedPlaces, savedEvents }),
-    [filteredRecentCheckins, savedEvents, savedPlaces]
+    () => (
+      myMapView === "saved"
+        ? savedPlaceMapMarkers
+        : buildCheckinMarkers({ checkins: filteredRecentCheckins, savedPlaces, savedEvents })
+    ),
+    [filteredRecentCheckins, myMapView, savedEvents, savedPlaceMapMarkers, savedPlaces]
   );
 
   const followingCheckinMarkers = useMemo(
@@ -949,6 +1006,10 @@ export default function FavoritesPage() {
   const openStreetMapStaticUrl = useMemo(() => {
     return buildOpenStreetMapStaticUrl(checkinMapCenter);
   }, [checkinMapCenter]);
+
+  useEffect(() => {
+    setSelectedCheckinId(null);
+  }, [myMapView, setSelectedCheckinId]);
 
   useEffect(() => {
     if (!isMapboxStylesReady) return;
@@ -1292,17 +1353,18 @@ export default function FavoritesPage() {
   const isPlanTripIntent = activeFavoritesIntent === "plan_a_trip";
   const isFriendPulseIntent = activeFavoritesIntent === "check_friend_pulse";
   const isProfileAboutTab = activeProfileTab === "about";
-  const isProfileActivityTab = activeProfileTab === "activity";
+  const isProfileActivityTab = false;
+  const isProfileMapTab = activeProfileTab === "map";
   const isProfileTripsTab = activeProfileTab === "trips";
   const isProfileFriendsTab = activeProfileTab === "friends";
-  const isProfileSavedTab = activeProfileTab === "saved";
+  const isProfileCalendarTab = activeProfileTab === "calendar";
   const isCompactCheckinSection = showSecondaryPanels && !isGoOutTonightIntent;
   const isCompactTripSection = showSecondaryPanels && !isPlanTripIntent;
   const isCompactPulseSection = showSecondaryPanels && !isFriendPulseIntent;
-  const showCheckinSection = isProfileActivityTab && (isGoOutTonightIntent || showSecondaryPanels);
-  const showTripSection = (isProfileActivityTab && (isPlanTripIntent || showSecondaryPanels)) || isProfileTripsTab;
-  const showPulseSection = (isProfileActivityTab && (isFriendPulseIntent || showSecondaryPanels)) || isProfileFriendsTab;
-  const showSavedCollections = (isProfileActivityTab && (!isFriendPulseIntent || showSecondaryPanels)) || isProfileSavedTab;
+  const showCheckinSection = isProfileMapTab;
+  const showTripSection = isProfileTripsTab;
+  const showPulseSection = isProfileFriendsTab;
+  const showCalendarSection = isProfileCalendarTab;
   const primaryIntentCtaLabel = isGoOutTonightIntent
     ? "Start check-in now"
     : isPlanTripIntent
@@ -1311,7 +1373,16 @@ export default function FavoritesPage() {
 
   const openIntentView = useCallback(
     (nextIntent) => {
-      setActiveProfileTab("activity");
+      const nextTab =
+        nextIntent === "plan_a_trip"
+          ? "trips"
+          : nextIntent === "check_friend_pulse"
+            ? "friends"
+            : "map";
+      setActiveProfileTab(nextTab);
+      if (nextIntent === "go_out_tonight") {
+        setMyMapView("checkins");
+      }
       setActiveFavoritesIntent(nextIntent);
       setShowSecondaryPanels(false);
       if (nextIntent === "check_friend_pulse") {
@@ -1330,11 +1401,62 @@ export default function FavoritesPage() {
     [setShowSignalDeck]
   );
 
+  const resolveFriendDisplayName = useCallback((userId, fallbackName = "") => {
+    const key = String(userId || "").trim();
+    const profileName = String(memberDisplayNameById.get(key) || "").trim();
+    const feedName = String(followingFeedNameById.get(key) || "").trim();
+    const checkinName = String(followingCheckinNameById.get(key) || "").trim();
+    const fallback = String(fallbackName || "").trim();
+    return (
+      (profileName && profileName.toLowerCase() !== "member" && profileName) ||
+      (feedName && feedName.toLowerCase() !== "member" && feedName) ||
+      (checkinName && checkinName.toLowerCase() !== "member" && checkinName) ||
+      (fallback && fallback.toLowerCase() !== "member" && fallback) ||
+      "Member"
+    );
+  }, [followingCheckinNameById, followingFeedNameById, memberDisplayNameById]);
+
+  const focusSavedPlaceOnMap = useCallback((place) => {
+    if (!place) return;
+    const markerId = `saved-${String(place.id || "")}`;
+    setSelectedCheckinId(markerId);
+    const lat = Number(place.lat);
+    const lng = Number(place.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const map = checkinMapRef.current;
+    if (!map) return;
+    map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 12), essential: true });
+  }, [checkinMapRef, setSelectedCheckinId]);
+
   useEffect(() => {
     if (activeProfileTab === "friends" && !showSignalDeck) {
       setShowSignalDeck(true);
     }
   }, [activeProfileTab, setShowSignalDeck, showSignalDeck]);
+
+  useEffect(() => {
+    writeLocalJson(FAVORITES_CALENDAR_REMINDER_STORAGE_KEY, calendarReminderByEventId || {});
+  }, [calendarReminderByEventId]);
+
+  useEffect(() => {
+    if (activeProfileTab !== "calendar") return;
+    const todayWithReminder = todayCalendarEvents.filter((event) => {
+      const mode = String(calendarReminderByEventId?.[String(event.id)] || "off");
+      return mode === "day_of";
+    });
+    if (todayWithReminder.length === 0) return;
+    const lastShownDay = String(
+      readLocalJson(FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY, "") || ""
+    );
+    if (lastShownDay === todayDateKey) return;
+    showToast(
+      `You have ${todayWithReminder.length} saved event reminder${
+        todayWithReminder.length > 1 ? "s" : ""
+      } today.`,
+      { tone: "info", duration: 2800 }
+    );
+    writeLocalJson(FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY, todayDateKey);
+  }, [activeProfileTab, calendarReminderByEventId, showToast, todayCalendarEvents, todayDateKey]);
 
   const removeFavorite = async (favoriteId, label = "Item") => {
     const nextState = removeFavoriteLocalState({ favorites, added, favoriteId });
@@ -1399,6 +1521,26 @@ export default function FavoritesPage() {
       memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
     });
   };
+
+  const setCalendarReminderMode = useCallback((eventId, mode) => {
+    const safeId = String(eventId || "").trim();
+    const safeMode = mode === "day_before" || mode === "day_of" ? mode : "off";
+    if (!safeId) return;
+    setCalendarReminderByEventId((current) => ({
+      ...(current || {}),
+      [safeId]: safeMode,
+    }));
+    if (safeMode === "off") {
+      showToast("Reminder removed.", { tone: "info", duration: 1400 });
+      return;
+    }
+    showToast(
+      safeMode === "day_before"
+        ? "Reminder set: 1 day before."
+        : "Reminder set: on event day.",
+      { tone: "ok", duration: 1600 }
+    );
+  }, [showToast]);
 
   const resolveCheckinPlaceDbId = useCallback(async (entry) => {
     const directPlaceId = resolveDirectPlaceDbId(entry?.placeId);
@@ -1946,13 +2088,17 @@ export default function FavoritesPage() {
           </div>
 
           <div className="mt-5 rounded-2xl border border-white/12 bg-black/25 p-3 sm:p-3.5">
+            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">Page controls</p>
+              <p className="text-[11px] text-white/58">Choose one lane</p>
+            </div>
             <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               {[
-                { id: "about", label: "About" },
-                { id: "activity", label: "Mission control" },
-                { id: "trips", label: "Plan a trip" },
+                { id: "about", label: "Home" },
                 { id: "friends", label: "Friends" },
-                { id: "saved", label: "Saved" },
+                { id: "map", label: "My map" },
+                { id: "trips", label: "Plan a trip" },
+                { id: "calendar", label: "My Calendar" },
               ].map((tab) => {
                 const isActive = activeProfileTab === tab.id;
                 const toneClasses =
@@ -1961,7 +2107,7 @@ export default function FavoritesPage() {
                         active: "border-cyan-200/40 bg-cyan-300/14 text-cyan-100 shadow-[0_0_0_1px_rgba(103,232,249,0.26)]",
                         idle: "border-cyan-200/18 bg-cyan-300/[0.06] text-cyan-100/78 hover:border-cyan-200/34 hover:text-cyan-100",
                       }
-                    : tab.id === "activity"
+                    : tab.id === "map"
                       ? {
                           active: "border-emerald-200/40 bg-emerald-300/14 text-emerald-100 shadow-[0_0_0_1px_rgba(110,231,183,0.24)]",
                           idle: "border-emerald-200/18 bg-emerald-300/[0.06] text-emerald-100/78 hover:border-emerald-200/34 hover:text-emerald-100",
@@ -1976,7 +2122,12 @@ export default function FavoritesPage() {
                               active: "border-violet-200/40 bg-violet-300/14 text-violet-100 shadow-[0_0_0_1px_rgba(196,181,253,0.24)]",
                               idle: "border-violet-200/18 bg-violet-300/[0.06] text-violet-100/78 hover:border-violet-200/34 hover:text-violet-100",
                             }
-                          : {
+                          : tab.id === "calendar"
+                            ? {
+                                active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
+                                idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
+                              }
+                            : {
                               active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
                               idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
                             };
@@ -2381,8 +2532,10 @@ export default function FavoritesPage() {
         <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,14,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">Check in now</p>
-              <p className="mt-1 text-sm text-white/82">{checkins.length} check-ins | {checkinCities.length} cities</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">My map</p>
+              <p className="mt-1 text-sm text-white/82">
+                {myMapView === "checkins" ? `${checkins.length} check-ins` : `${savedPlaces.length} saved places`} | {checkinCities.length} cities
+              </p>
             </div>
             <button
               type="button"
@@ -2401,23 +2554,49 @@ export default function FavoritesPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-200/75">
-                Your travel timeline
+                Atlas signal map
               </p>
               <h2 className="qa-h2 mt-2 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-2xl">
-                Check-in map
+                Live map layers
               </h2>
               <p className="mt-2 text-sm leading-6 text-white/56">
-                Check in where you are now and build your own live queer map.
+                Switch between your live check-ins and your saved venues in one premium map surface.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-white/12 bg-white/7 px-3 py-1 text-xs text-white/70">
-                {checkins.length} check-ins
+                {myMapView === "checkins" ? `${checkins.length} check-ins` : `${savedPlaces.length} saved places`}
               </span>
               <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100/85">
-                {checkinCities.length} cities
+                {myMapView === "checkins" ? checkinCities.length : savedPlaceCities} {myMapView === "checkins" ? (checkinCities.length === 1 ? "city" : "cities") : (savedPlaceCities === 1 ? "city" : "cities")}
               </span>
             </div>
+          </div>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {[
+              { id: "checkins", label: "Check-ins layer", icon: "●" },
+              { id: "saved", label: "Saved layer", icon: "◆" },
+            ].map((view) => {
+              const isActive = myMapView === view.id;
+              return (
+                <button
+                  key={view.id}
+                  type="button"
+                  onClick={() => setMyMapView(view.id)}
+                  aria-pressed={isActive}
+                  className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] transition ${
+                    isActive
+                      ? view.id === "checkins"
+                        ? "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100 shadow-[0_0_0_1px_rgba(244,114,182,0.25)]"
+                        : "border-cyan-200/45 bg-cyan-200/16 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.25)]"
+                      : "border-white/14 bg-white/6 text-white/72 hover:border-white/24 hover:text-white"
+                  }`}
+                >
+                  <span className="mr-1.5 opacity-90">{view.icon}</span>
+                  {view.label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
@@ -2472,12 +2651,14 @@ export default function FavoritesPage() {
                 </div>
               )}
 
-              <form
-                ref={checkinFormRef}
-                onSubmit={async (event) => {
-                  event.preventDefault();
-                  const sourceType = String(checkinForm.sourceType || "manual");
-                  const payload = { ...checkinForm };
+              {myMapView === "checkins" ? (
+              <>
+                <form
+                  ref={checkinFormRef}
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    const sourceType = String(checkinForm.sourceType || "manual");
+                    const payload = { ...checkinForm };
 
                   if (sourceType === "atlas_place") {
                     const selected = selectedCityPlaces.find((item) => String(item.id) === String(checkinForm.sourceId));
@@ -2524,9 +2705,9 @@ export default function FavoritesPage() {
                   }
 
                   await submitCheckin(payload);
-                }}
-                className="mt-4 grid gap-2 sm:grid-cols-2"
-              >
+                  }}
+                  className="mt-4 grid gap-2 sm:grid-cols-2"
+                >
                 <select
                   value={checkinForm.mode}
                   onChange={(event) => setCheckinForm((current) => ({ ...current, mode: event.target.value }))}
@@ -2689,8 +2870,8 @@ export default function FavoritesPage() {
                     Cancel edit
                   </button>
                 ) : null}
-              </form>
-              {pendingCheckinVibe ? (
+                </form>
+                {pendingCheckinVibe ? (
                 <div className="mt-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-200/10 p-3">
                   <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-100/80">How is it right now?</p>
                   <p className="mt-1 text-sm text-fuchsia-50/95">
@@ -2726,47 +2907,57 @@ export default function FavoritesPage() {
                     </button>
                   </div>
                 </div>
-              ) : null}
-              {checkinsWarning && (
+                ) : null}
+                {checkinsWarning && (
                 <div className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
                   {checkinsWarning}
+                </div>
+                )}
+              </>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-cyan-200/24 bg-cyan-200/10 px-4 py-3 text-xs text-cyan-100/88">
+                  Saved places mode is active. Switch to <span className="font-semibold">My check-ins</span> to create new check-ins and live vibe taps.
                 </div>
               )}
             </div>
 
             <div className="qa-premium-card rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 shadow-[0_18px_38px_rgba(0,0,0,0.28)]">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/42">Your check-ins</p>
-              <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
-                <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved check-ins</span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {[
-                  { id: "all", label: "All" },
-                  { id: "places", label: "Places" },
-                  { id: "events", label: "Events" },
-                  { id: "manual", label: "Manual" },
-                ].map((filter) => (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => setCheckinViewFilter(filter.id)}
-                    className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.11em] transition ${
-                      checkinViewFilter === filter.id
-                        ? "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100"
-                        : "border-white/14 bg-white/6 text-white/62 hover:border-white/24 hover:text-white/82"
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-              <div
-                className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
-                style={{ scrollbarGutter: "stable", maxHeight: "17.25rem" }}
-              >
-                {filteredRecentCheckins.length > 0 ? (
-                  filteredRecentCheckins.map((entry) => (
+              <p className="text-xs uppercase tracking-[0.18em] text-white/42">
+                {myMapView === "checkins" ? "Your check-ins" : "My saved places"}
+              </p>
+              {myMapView === "checkins" ? (
+              <>
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                  <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
+                  <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved check-ins</span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {[
+                    { id: "all", label: "All" },
+                    { id: "places", label: "Places" },
+                    { id: "events", label: "Events" },
+                    { id: "manual", label: "Manual" },
+                  ].map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setCheckinViewFilter(filter.id)}
+                      className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.11em] transition ${
+                        checkinViewFilter === filter.id
+                          ? "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100"
+                          : "border-white/14 bg-white/6 text-white/62 hover:border-white/24 hover:text-white/82"
+                      }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+                <div
+                  className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
+                  style={{ scrollbarGutter: "stable", maxHeight: "23rem" }}
+                >
+                  {filteredRecentCheckins.length > 0 ? (
+                    filteredRecentCheckins.map((entry) => (
                     <article
                       key={entry.id}
                       onClick={() => focusCheckinOnMap(entry)}
@@ -2811,66 +3002,83 @@ export default function FavoritesPage() {
                         </button>
                       </div>
                     </article>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
-                    <div className="mb-2 text-base">No check-ins in this filter yet.</div>
-                    <button
-                      type="button"
-                      onClick={() => checkinFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                      className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
-                    >
-                      Create check-in
-                    </button>
-                  </div>
-                )}
-              </div>
-              {followingCheckinsWarning && (
-                <div className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
-                  {followingCheckinsWarning}
-                </div>
-              )}
-              <div className="mt-4 border-t border-white/10 pt-4">
-                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friends check-ins</p>
-                <div
-                  className={FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS}
-                  style={{ scrollbarGutter: "stable", maxHeight: "17.25rem" }}
-                >
-                  {recentFollowingCheckins.length > 0 ? (
-                    recentFollowingCheckins.map((entry) => {
-                      const presence = followingPresenceByUserId[String(entry.ownerUserId || "")] || null;
-                      const activeNow = isPresenceActiveNow(presence);
-                      return (
-                        <article key={`friend-${entry.id}`} className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-white">
-                                {entry.ownerName || "Member"}
-                              </p>
-                              <p className="mt-1 text-xs text-white/65">
-                                {entry.label || "Unnamed check-in"} | {entry.city || "Unknown city"}
-                              </p>
-                              {entry.address ? <p className="mt-1 text-[11px] text-white/52">{entry.address}</p> : null}
-                            </div>
-                            <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
-                              activeNow
-                                ? "border-emerald-200/30 bg-emerald-200/16 text-emerald-100"
-                                : "border-white/16 bg-white/8 text-white/62"
-                            }`}>
-                              {activeNow ? "Active now" : "Offline"}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-[11px] text-white/55">{formatCheckinTime(entry.checkedInAt)}</p>
-                        </article>
-                      );
-                    })
+                    ))
                   ) : (
                     <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
-                      No friend check-ins yet. Follow members and their travel signal appears here.
+                      <div className="mb-2 text-base">No check-ins in this filter yet.</div>
+                      <button
+                        type="button"
+                        onClick={() => checkinFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                        className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
+                      >
+                        Create check-in
+                      </button>
                     </div>
                   )}
                 </div>
-              </div>
+              </>
+              ) : (
+                <>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                    <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-cyan-100/90">Saved</span>
+                    <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved venues</span>
+                  </div>
+                  <div
+                    className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
+                    style={{ scrollbarGutter: "stable", maxHeight: "23rem" }}
+                  >
+                    {savedPlaces.length > 0 ? (
+                      savedPlaces.map((place) => (
+                        <article
+                          key={`saved-map-${place.id}`}
+                          className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:border-white/24"
+                        >
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
+                            {place.city || "Unknown city"}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">{place.name || "Unnamed place"}</p>
+                          {place.location || place.address ? (
+                            <p className="mt-1 text-xs text-white/62">{place.location || place.address}</p>
+                          ) : null}
+                          <div className="mt-1 text-xs text-white/55">
+                            Saved {formatSavedTime(place.addedAt)}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => focusSavedPlaceOnMap(place)}
+                              className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-[11px] text-fuchsia-100/90 transition hover:border-fuchsia-200/35"
+                            >
+                              Show on map
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => router.push(citySelectionPath(place.city, { placeId: place.id }))}
+                              className="rounded-full border border-white/18 bg-white/8 px-3 py-1 text-[11px] text-white/85 transition hover:border-white/30"
+                            >
+                              Open venue
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                quickCheckinFromItem(place, "place");
+                              }}
+                              className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/35"
+                            >
+                              Check in
+                            </button>
+                          </div>
+                        </article>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
+                        No saved places yet. Save venues from city pages to build your map.
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -3259,12 +3467,10 @@ export default function FavoritesPage() {
                     followingFeedAvatarById.get(userId) ||
                     ""
                   ).trim();
-                  const friendName =
-                    (profileName && profileName.toLowerCase() !== "member" && profileName) ||
-                    (fallbackName && fallbackName.toLowerCase() !== "member" && fallbackName) ||
-                    (feedName && feedName.toLowerCase() !== "member" && feedName) ||
-                    (checkinName && checkinName.toLowerCase() !== "member" && checkinName) ||
-                    "Member";
+                  const friendName = resolveFriendDisplayName(
+                    userId,
+                    profileName || fallbackName || feedName || checkinName
+                  );
                   const initials = friendName
                     .split(/\s+/)
                     .filter(Boolean)
@@ -3325,9 +3531,60 @@ export default function FavoritesPage() {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-white/14 bg-black/25 px-4 py-6 text-sm text-white/48">
-                You are not following anyone yet. Open Mission control and add trusted members.
+                You are not following anyone yet. Add trusted members to start your friend pulse.
               </div>
             )}
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friend pulse</p>
+                <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/86">
+                  Live check-ins
+                </span>
+              </div>
+              {followingCheckinsWarning ? (
+                <div className="mb-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+                  {followingCheckinsWarning}
+                </div>
+              ) : null}
+              <div
+                className={FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS}
+                style={{ scrollbarGutter: "stable", maxHeight: "17.25rem" }}
+              >
+                {recentFollowingCheckins.length > 0 ? (
+                  recentFollowingCheckins.map((entry) => {
+                    const presence = followingPresenceByUserId[String(entry.ownerUserId || "")] || null;
+                    const activeNow = isPresenceActiveNow(presence);
+                    return (
+                      <article key={`friend-${entry.id}`} className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-white">
+                              {resolveFriendDisplayName(entry.ownerUserId, entry.ownerName)}
+                            </p>
+                            <p className="mt-1 text-xs text-white/65">
+                              {entry.label || "Unnamed check-in"} | {entry.city || "Unknown city"}
+                            </p>
+                            {entry.address ? <p className="mt-1 text-[11px] text-white/52">{entry.address}</p> : null}
+                          </div>
+                          <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
+                            activeNow
+                              ? "border-emerald-200/30 bg-emerald-200/16 text-emerald-100"
+                              : "border-white/16 bg-white/8 text-white/62"
+                          }`}>
+                            {activeNow ? "Active now" : "Offline"}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-[11px] text-white/55">{formatCheckinTime(entry.checkedInAt)}</p>
+                      </article>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
+                    No friend check-ins yet. Follow members and their travel signal appears here.
+                  </div>
+                )}
+              </div>
+            </div>
           </section>
           ) : showSignalDeck ? (
           <>
@@ -3372,29 +3629,117 @@ export default function FavoritesPage() {
         )
         ) : null}
 
-        {showSavedCollections ? (
-        <>
-        <SavedPlacesPanel
-          isAtlasLoading={isAtlasLoading}
-          savedPlaces={savedPlaces}
-          onOpenPlace={(place) => router.push(citySelectionPath(place.city, { placeId: place.id }))}
-          onQuickCheckin={(place) => quickCheckinFromItem(place, "place")}
-          onRemoveFavorite={removeFavorite}
-          onExploreCities={() => router.push("/cities")}
-          renderSkeleton={() => <FavoritesCardSkeleton />}
-        />
+        {showCalendarSection ? (
+        <section className="qa-premium-card mb-6 rounded-[30px] border border-rose-200/16 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.14),transparent_32%),radial-gradient(circle_at_85%_14%,rgba(34,211,238,0.1),transparent_28%),linear-gradient(180deg,rgba(22,14,18,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.38)] sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-rose-100/78">My Calendar</p>
+              <h3 className="mt-1 text-2xl font-semibold text-white">Your upcoming event pulse</h3>
+              <p className="mt-2 text-sm text-white/62">
+                Save events, set reminder mode, and keep your next queer moments in one timeline.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1 text-xs text-rose-100">
+                Today: {todayCalendarEvents.length}
+              </span>
+              <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">
+                Upcoming: {upcomingCalendarEvents.length}
+              </span>
+            </div>
+          </div>
 
-        <SavedEventsPanel
-          isAtlasLoading={isAtlasLoading}
-          savedEvents={savedEvents}
-          formatDate={formatDate}
-          onOpenEvent={(event) => router.push(citySelectionPath(event.city, { eventId: event.id }))}
-          onQuickCheckin={(event) => quickCheckinFromItem(event, "event")}
-          onRemoveFavorite={removeFavorite}
-          onBrowseEvents={() => router.push("/events")}
-          renderSkeleton={() => <FavoritesCardSkeleton />}
-        />
-        </>
+          {calendarEvents.length > 0 ? (
+            <div className="space-y-3">
+              {calendarEvents.map((event) => {
+                const eventId = String(event.id || "");
+                const reminderMode = String(calendarReminderByEventId?.[eventId] || "off");
+                const eventDateKey = event.calendarDate.toISOString().slice(0, 10);
+                const isToday = eventDateKey === todayDateKey;
+                const isPast = eventDateKey < todayDateKey;
+                return (
+                  <article
+                    key={`calendar-${eventId}`}
+                    className={`rounded-2xl border p-3.5 transition ${
+                      isToday
+                        ? "border-rose-200/34 bg-rose-200/12 shadow-[0_0_0_1px_rgba(251,113,133,0.24)]"
+                        : "border-white/12 bg-white/[0.03] hover:border-white/20"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2.5">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-white">{event.name}</p>
+                        <p className="mt-1 text-xs text-white/62">
+                          {formatDate(event.date)} · {formatCityLabel(event.city || "")}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {isToday ? (
+                          <span className="rounded-full border border-rose-200/30 bg-rose-200/14 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100">
+                            Today
+                          </span>
+                        ) : null}
+                        {isPast ? (
+                          <span className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/70">
+                            Past
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarReminderMode(eventId, reminderMode === "off" ? "day_of" : "off")}
+                        className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                          reminderMode === "day_of"
+                            ? "border-cyan-200/36 bg-cyan-200/16 text-cyan-100"
+                            : "border-white/14 bg-white/8 text-white/74 hover:border-white/28"
+                        }`}
+                      >
+                        Day-of reminder
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCalendarReminderMode(eventId, reminderMode === "day_before" ? "off" : "day_before")}
+                        className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                          reminderMode === "day_before"
+                            ? "border-amber-200/36 bg-amber-200/16 text-amber-100"
+                            : "border-white/14 bg-white/8 text-white/74 hover:border-white/28"
+                        }`}
+                      >
+                        1 day before
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => router.push(citySelectionPath(event.city, { eventId: event.id }))}
+                        className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/42"
+                      >
+                        Open event
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/12 bg-black/28 px-4 py-7 text-sm text-white/55">
+              No saved events yet. Save events from city pages or events page, then manage reminders here.
+            </div>
+          )}
+
+          <div className="mt-4">
+            <SavedEventsPanel
+              isAtlasLoading={isAtlasLoading}
+              savedEvents={savedEvents}
+              formatDate={formatDate}
+              onOpenEvent={(event) => router.push(citySelectionPath(event.city, { eventId: event.id }))}
+              onQuickCheckin={(event) => quickCheckinFromItem(event, "event")}
+              onRemoveFavorite={removeFavorite}
+              onBrowseEvents={() => router.push("/events")}
+              renderSkeleton={() => <FavoritesCardSkeleton />}
+            />
+          </div>
+        </section>
         ) : null}
       </div>
     </main>
