@@ -172,6 +172,19 @@ function resolveAvatarUrlFromRow(row) {
   return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
 }
 
+function sanitizeProfileExtras(raw = {}) {
+  return {
+    about: String(raw?.about || "").slice(0, 160),
+    visibility: ["friends", "members", "public"].includes(String(raw?.visibility || "members"))
+      ? String(raw?.visibility || "members")
+      : "members",
+    birthday: String(raw?.birthday || "").slice(0, 20),
+    vibe: String(raw?.vibe || "").slice(0, 80),
+    phone: String(raw?.phone || "").slice(0, 40),
+    contactEmail: String(raw?.contactEmail || "").slice(0, 120),
+  };
+}
+
 export default function FavoritesPage() {
   const router = useRouter();
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -721,20 +734,40 @@ export default function FavoritesPage() {
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
-      setProfileExtras({
-        about: String(parsed?.about || "").slice(0, 160),
-    visibility: ["friends", "members", "public"].includes(String(parsed?.visibility || "members"))
-      ? String(parsed?.visibility || "members")
-      : "members",
-        birthday: String(parsed?.birthday || "").slice(0, 20),
-        vibe: String(parsed?.vibe || "").slice(0, 80),
-        phone: String(parsed?.phone || "").slice(0, 40),
-        contactEmail: String(parsed?.contactEmail || "").slice(0, 120),
-      });
+      setProfileExtras(sanitizeProfileExtras(parsed));
     } catch {
       // Ignore malformed local profile extras payload.
     }
   }, []);
+
+  useEffect(() => {
+    const remoteExtras = sanitizeProfileExtras({
+      about: memberProfile?.about,
+      visibility: memberProfile?.visibility,
+      birthday: memberProfile?.birthday,
+      vibe: memberProfile?.vibe,
+      phone: memberProfile?.phone,
+      contactEmail: memberProfile?.contactEmail,
+    });
+    setProfileExtras((current) => {
+      const next = {
+        about: remoteExtras.about || current.about || "",
+        visibility: remoteExtras.visibility || current.visibility || "members",
+        birthday: remoteExtras.birthday || current.birthday || "",
+        vibe: remoteExtras.vibe || current.vibe || "",
+        phone: remoteExtras.phone || current.phone || "",
+        contactEmail: remoteExtras.contactEmail || current.contactEmail || "",
+      };
+      return next;
+    });
+  }, [
+    memberProfile?.about,
+    memberProfile?.visibility,
+    memberProfile?.birthday,
+    memberProfile?.vibe,
+    memberProfile?.phone,
+    memberProfile?.contactEmail,
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1332,17 +1365,11 @@ export default function FavoritesPage() {
 
   const saveAboutProfile = async (event) => {
     event.preventDefault();
-    const result = await updateMemberProfile(profileForm);
-    const sanitizedExtras = {
-      about: String(profileExtras.about || "").slice(0, 160),
-    visibility: ["friends", "members", "public"].includes(String(profileExtras.visibility || "members"))
-      ? String(profileExtras.visibility || "members")
-      : "members",
-      birthday: String(profileExtras.birthday || "").slice(0, 20),
-      vibe: String(profileExtras.vibe || "").slice(0, 80),
-      phone: String(profileExtras.phone || "").slice(0, 40),
-      contactEmail: String(profileExtras.contactEmail || "").slice(0, 120),
-    };
+    const sanitizedExtras = sanitizeProfileExtras(profileExtras);
+    const result = await updateMemberProfile({
+      ...profileForm,
+      ...sanitizedExtras,
+    });
     setProfileExtras(sanitizedExtras);
     writeLocalJson(FAVORITES_PROFILE_EXTRAS_STORAGE_KEY, sanitizedExtras);
     if (result?.ok) {

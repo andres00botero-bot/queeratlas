@@ -29,6 +29,20 @@ function isDataUrl(value) {
   return /^data:/i.test(String(value || ""));
 }
 
+function isMissingProfileExtrasColumnError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  if (code !== "42703" && code !== "PGRST204") return false;
+  return (
+    message.includes("about") ||
+    message.includes("visibility") ||
+    message.includes("birthday") ||
+    message.includes("vibe") ||
+    message.includes("phone") ||
+    message.includes("contact_email")
+  );
+}
+
 function getMemberName(user) {
   if (!user) return "Explorer";
 
@@ -90,6 +104,14 @@ export function AuthProvider({ children }) {
       pronouns: data.pronouns || "",
       homeCity: data.home_city || "",
       residentCountry: data.resident_country || "",
+      about: data.about || "",
+      visibility: ["friends", "members", "public"].includes(String(data.visibility || "members"))
+        ? String(data.visibility || "members")
+        : "members",
+      birthday: data.birthday || "",
+      vibe: data.vibe || "",
+      phone: data.phone || "",
+      contactEmail: data.contact_email || "",
       avatarUrl: data.avatar_url || fallbackPublicAvatarUrl || "",
       avatarPath,
       avatarVersion: Number(data.avatar_version || 1) || 1,
@@ -379,20 +401,41 @@ export function AuthProvider({ children }) {
 
         if (!user?.id) return { ok: false };
 
-        const { error } = await supabase
+        const fullPayload = {
+          user_id: user.id,
+          display_name: isAdminUser ? "Admin" : (localProfile.displayName || null),
+          pronouns: localProfile.pronouns || null,
+          home_city: localProfile.homeCity || null,
+          resident_country: localProfile.residentCountry || null,
+          about: localProfile.about || null,
+          visibility: ["friends", "members", "public"].includes(String(localProfile.visibility || "members"))
+            ? String(localProfile.visibility || "members")
+            : "members",
+          birthday: localProfile.birthday || null,
+          vibe: localProfile.vibe || null,
+          phone: localProfile.phone || null,
+          contact_email: localProfile.contactEmail || null,
+          avatar_url: isDataUrl(localProfile.avatarUrl) ? null : (localProfile.avatarUrl || null),
+          avatar_path: localProfile.avatarPath || null,
+        };
+
+        let { error } = await supabase
           .from("member_profiles")
-          .upsert(
-            {
-              user_id: user.id,
-              display_name: isAdminUser ? "Admin" : (localProfile.displayName || null),
-              pronouns: localProfile.pronouns || null,
-              home_city: localProfile.homeCity || null,
-              resident_country: localProfile.residentCountry || null,
-              avatar_url: isDataUrl(localProfile.avatarUrl) ? null : (localProfile.avatarUrl || null),
-              avatar_path: localProfile.avatarPath || null,
-            },
-            { onConflict: "user_id" }
-          );
+          .upsert(fullPayload, { onConflict: "user_id" });
+
+        if (error && isMissingProfileExtrasColumnError(error)) {
+          const legacyPayload = {
+            user_id: user.id,
+            display_name: isAdminUser ? "Admin" : (localProfile.displayName || null),
+            pronouns: localProfile.pronouns || null,
+            home_city: localProfile.homeCity || null,
+            resident_country: localProfile.residentCountry || null,
+            avatar_url: isDataUrl(localProfile.avatarUrl) ? null : (localProfile.avatarUrl || null),
+            avatar_path: localProfile.avatarPath || null,
+          };
+          const retryRes = await supabase.from("member_profiles").upsert(legacyPayload, { onConflict: "user_id" });
+          error = retryRes.error || null;
+        }
 
         if (error) {
           return { ok: false, error };
