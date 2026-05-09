@@ -319,6 +319,7 @@ export default function NowPage() {
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
+  const [activeNowSection, setActiveNowSection] = useState("mixed");
   const [rankingOverrides, setRankingOverrides] = useState(() => readLocalJson(RANKING_OVERRIDES_KEY, {}));
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
@@ -1067,6 +1068,12 @@ export default function NowPage() {
     });
   };
 
+  const isMixedSection = activeNowSection === "mixed";
+  const isRankingSection = activeNowSection === "rankings";
+  const isPolicySection = activeNowSection === "policy";
+  const isVoicesSection = activeNowSection === "voices";
+  const isHappeningSection = activeNowSection === "happening";
+
   if (!ready || !today) {
     return (
       <main className="qa-page min-h-screen bg-black px-6 py-8 text-white">
@@ -1106,38 +1113,15 @@ export default function NowPage() {
   }
 
   return (
-    <main className="qa-page qa-now min-h-screen bg-black text-white">
+    <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] text-white">
       <div className="qa-shell">
         <div className="qa-panel mb-8 rounded-[30px] border border-fuchsia-200/24 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.24),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(56,189,248,0.16),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(18,26,48,0.9))] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
-              <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Queer World News</h1>
-              <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
-                Three separate editorial lanes: mixed discovery, policy & safety watch, and member voices.
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-white/72">
-                <span className="rounded-full border border-cyan-200/30 bg-cyan-200/10 px-2.5 py-1 uppercase tracking-[0.12em] text-cyan-100">Mixed feed</span>
-                <span className="rounded-full border border-rose-200/30 bg-rose-200/10 px-2.5 py-1 uppercase tracking-[0.12em] text-rose-100">Policy watch</span>
-                <span className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/10 px-2.5 py-1 uppercase tracking-[0.12em] text-fuchsia-100">Voices</span>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-4 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/50">Focus city</p>
-              <select
-                value={selectedCity}
-                onChange={(event) => setSelectedCity(event.target.value)}
-                className="mt-3 w-full rounded-xl border border-white/15 bg-black px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-300"
-              >
-                <option value="all">All cities</option>
-                {cityOptions.map((city) => (
-                  <option key={city} value={city}>
-                    {city.charAt(0).toUpperCase() + city.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div className="max-w-3xl">
+            <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
+            <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Queer World News</h1>
+            <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
+              Real-time queer signal across discovery, rights, and community narratives - curated in one premium flow.
+            </p>
           </div>
           {loadError && (
             <div className="mt-5 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
@@ -1157,8 +1141,58 @@ export default function NowPage() {
           )}
         </div>
 
+        <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3 shadow-[0_16px_44px_rgba(0,0,0,0.28)] sm:p-4">
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Now controls</p>
+            <p className="text-[11px] text-white/62">One section at a time</p>
+          </div>
+          <div className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {[
+              { id: "mixed", label: "Mixed feed", tone: "cyan" },
+              { id: "rankings", label: "Rankings", tone: "emerald" },
+              { id: "policy", label: "Policy watch", tone: "rose" },
+              { id: "voices", label: "Voices", tone: "fuchsia" },
+              { id: "happening", label: "Happening soon", tone: "violet" },
+            ].map((section) => {
+              const isActive = activeNowSection === section.id;
+              const toneClass =
+                section.tone === "fuchsia"
+                  ? (isActive
+                    ? "border-fuchsia-100/65 bg-[linear-gradient(135deg,rgba(244,114,182,0.34),rgba(217,70,239,0.26),rgba(56,189,248,0.2))] text-fuchsia-50 shadow-[0_0_0_1px_rgba(244,114,182,0.42),0_14px_36px_rgba(217,70,239,0.24)]"
+                    : "border-fuchsia-200/34 bg-[linear-gradient(135deg,rgba(217,70,239,0.18),rgba(244,114,182,0.12))] text-fuchsia-100 hover:border-fuchsia-100/56 hover:text-fuchsia-50 hover:shadow-[0_10px_26px_rgba(217,70,239,0.22)]")
+                  : section.tone === "rose"
+                    ? (isActive
+                      ? "border-rose-200/45 bg-rose-300/16 text-rose-100 shadow-[0_0_0_1px_rgba(251,113,133,0.28)]"
+                      : "border-rose-200/20 bg-rose-300/[0.06] text-rose-100/82 hover:border-rose-200/34 hover:text-rose-100")
+                    : section.tone === "emerald"
+                      ? (isActive
+                        ? "border-emerald-200/45 bg-emerald-300/16 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.28)]"
+                        : "border-emerald-200/20 bg-emerald-300/[0.06] text-emerald-100/82 hover:border-emerald-200/34 hover:text-emerald-100")
+                      : section.tone === "violet"
+                        ? (isActive
+                          ? "border-violet-200/45 bg-violet-300/16 text-violet-100 shadow-[0_0_0_1px_rgba(167,139,250,0.28)]"
+                          : "border-violet-200/20 bg-violet-300/[0.06] text-violet-100/82 hover:border-violet-200/34 hover:text-violet-100")
+                        : (isActive
+                          ? "border-cyan-200/45 bg-cyan-300/16 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.28)]"
+                          : "border-cyan-200/20 bg-cyan-300/[0.06] text-cyan-100/82 hover:border-cyan-200/34 hover:text-cyan-100");
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveNowSection(section.id)}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
+                >
+                  {section.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {(isMixedSection || isRankingSection) && (
         <section className="mb-6">
-          <div className="grid items-stretch gap-6 xl:grid-cols-[1.6fr_0.7fr]">
+          <div className="grid items-stretch gap-6">
+            {isMixedSection && (
             <section className="relative flex h-full flex-col p-0">
               <div className="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
               <div className="pointer-events-none absolute -right-20 bottom-10 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
@@ -1414,7 +1448,9 @@ export default function NowPage() {
                 )}
               </div>
             </section>
+            )}
 
+            {isRankingSection && (
             <section className="qa-panel relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/14 bg-[linear-gradient(180deg,rgba(18,22,34,0.92),rgba(9,11,18,0.97),rgba(7,8,12,1))] p-6 shadow-[0_24px_64px_rgba(2,6,23,0.35)]">
               <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-cyan-300/8 blur-3xl" />
               <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-fuchsia-300/6 blur-3xl" />
@@ -1639,9 +1675,12 @@ export default function NowPage() {
                 })}
               </div>
             </section>
+            )}
           </div>
         </section>
+        )}
 
+        {isPolicySection && (
         <section className="mt-8 rounded-[28px] border border-rose-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.16),transparent_34%),radial-gradient(circle_at_90%_22%,rgba(251,191,36,0.11),transparent_36%),linear-gradient(180deg,rgba(42,20,30,0.95),rgba(18,12,18,0.98),rgba(10,10,10,1))] p-6 shadow-[0_26px_88px_rgba(244,63,94,0.10)]">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -1833,8 +1872,10 @@ export default function NowPage() {
             )}
           </div>
         </section>
+        )}
 
-        <div className="mt-8 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
+        {isHappeningSection && (
+        <div className="mt-8">
           <section className="rounded-[28px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.14),transparent_34%),radial-gradient(circle_at_88%_20%,rgba(56,189,248,0.14),transparent_36%),linear-gradient(180deg,rgba(42,22,50,0.95),rgba(16,16,26,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_90px_rgba(232,121,249,0.09)]">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
@@ -1950,7 +1991,11 @@ export default function NowPage() {
               </div>
             )}
           </section>
+        </div>
+        )}
 
+        {isVoicesSection && (
+        <div className="mt-8">
           <section className="rounded-[28px] border border-fuchsia-300/15 bg-[linear-gradient(180deg,rgba(44,18,48,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(232,121,249,0.08)]">
             <p className="text-xs uppercase tracking-[0.25em] text-fuchsia-200">Community stories</p>
             <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Voices from members</h2>
@@ -1977,9 +2022,17 @@ export default function NowPage() {
                     : "Share your story"
                   : "Join to publish"}
               </button>
-              <span className="text-xs text-white/62">
-                Themes: harassment, threats, violence, discrimination, shared experiences, and life-in-city reality.
+              <span className="text-xs font-medium text-fuchsia-100/88">
+                Share verified realities that help others navigate safely.
               </span>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-fuchsia-200/28 bg-[linear-gradient(135deg,rgba(217,70,239,0.14),rgba(56,189,248,0.08),rgba(10,10,10,0.3))] px-4 py-3 shadow-[0_16px_42px_rgba(217,70,239,0.14)]">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/92">What to report here</p>
+              <p className="mt-1.5 text-sm leading-6 text-white/84">
+                Use Voices to report harassment, threats, violence, discrimination, and real queer lived experiences in each city.
+                These reports are reviewed before publication to keep signal quality high and actionable.
+              </p>
             </div>
 
             {showCommunityStoryForm && (
@@ -2157,6 +2210,7 @@ export default function NowPage() {
             )}
           </section>
         </div>
+        )}
 
       </div>
     </main>

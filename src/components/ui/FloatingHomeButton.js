@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Home, MapPinned, MessageCircle, Star, Users } from "lucide-react";
+import { CalendarDays, Home, MapPinned, MessageCircle, Newspaper, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { supabase } from "@/lib/supabase";
@@ -168,6 +168,12 @@ export default function FloatingHomeButton() {
       accent: "cyan",
     },
     {
+      href: "/now",
+      label: "News",
+      icon: Newspaper,
+      accent: "rose",
+    },
+    {
       href: "/cities",
       label: "Cities",
       icon: MapPinned,
@@ -192,19 +198,38 @@ export default function FloatingHomeButton() {
   ];
 
   return (
-    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] -translate-x-1/2 md:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:left-auto md:translate-x-0 md:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
+    <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] w-[min(96vw,30rem)] -translate-x-1/2 px-2 md:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:left-auto md:w-auto md:translate-x-0 md:px-0 md:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
       <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(56,189,248,0.22),rgba(244,114,182,0.16),transparent_72%)] blur-xl" />
+      <div className="mb-1.5 flex justify-center md:mb-2 md:justify-end">
+        <span className="rounded-full border border-white/24 bg-black/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/78 shadow-[0_8px_20px_rgba(0,0,0,0.32)]">
+          Navigate
+        </span>
+      </div>
       <nav
         aria-label="Quick navigation"
-        className="relative flex items-center gap-1.5 rounded-full border border-white/26 bg-[linear-gradient(135deg,rgba(10,13,20,0.96),rgba(18,20,30,0.95),rgba(10,10,10,0.99))] px-2 py-2 shadow-[0_24px_64px_rgba(2,6,20,0.62),0_0_0_1px_rgba(255,255,255,0.06)] backdrop-blur-xl max-[390px]:gap-1 max-[390px]:px-1.5 max-[390px]:py-1.5"
+        className="relative flex w-full items-center justify-center gap-1 rounded-full border border-white/34 bg-[linear-gradient(135deg,rgba(6,9,18,0.98),rgba(20,21,36,0.97),rgba(8,8,8,0.99))] px-1.5 py-1.5 shadow-[0_24px_64px_rgba(2,6,20,0.66),0_0_0_1px_rgba(255,255,255,0.09)] backdrop-blur-xl md:w-auto md:gap-1.5 md:px-2 md:py-2"
       >
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-4 top-1 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
+          className="pointer-events-none absolute inset-x-4 top-1 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"
         />
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
+          const inactiveToneClass =
+            item.accent === "fuchsia"
+              ? "border-fuchsia-300/28 bg-fuchsia-300/[0.1] hover:border-fuchsia-200/55 hover:bg-fuchsia-300/[0.18]"
+              : item.accent === "amber"
+                ? "border-amber-300/28 bg-amber-300/[0.1] hover:border-amber-200/55 hover:bg-amber-300/[0.18]"
+                : item.accent === "cyan"
+                  ? "border-cyan-300/28 bg-cyan-300/[0.1] hover:border-cyan-200/55 hover:bg-cyan-300/[0.18]"
+                  : item.accent === "emerald"
+                    ? "border-emerald-300/28 bg-emerald-300/[0.1] hover:border-emerald-200/55 hover:bg-emerald-300/[0.18]"
+                    : item.accent === "violet"
+                      ? "border-violet-300/28 bg-violet-300/[0.1] hover:border-violet-200/55 hover:bg-violet-300/[0.18]"
+                      : item.accent === "rose"
+                        ? "border-rose-300/28 bg-rose-300/[0.1] hover:border-rose-200/55 hover:bg-rose-300/[0.18]"
+                        : "border-sky-300/28 bg-sky-300/[0.1] hover:border-sky-200/55 hover:bg-sky-300/[0.18]";
           return (
             <Link
               key={item.href}
@@ -212,10 +237,10 @@ export default function FloatingHomeButton() {
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               title={item.label}
-              className={`group relative inline-flex h-11 w-11 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black max-[390px]:h-10 max-[390px]:w-10 ${
+              className={`group relative inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-[400px]:h-10 min-[400px]:w-10 md:h-11 md:w-11 ${
                 isActive
-                  ? "border-white/46 bg-[linear-gradient(135deg,rgba(255,255,255,0.24),rgba(255,255,255,0.08),rgba(10,10,10,0.86))] text-white shadow-[0_12px_34px_rgba(0,0,0,0.44)]"
-                  : "border-white/16 bg-white/[0.05] text-white/78 hover:-translate-y-[1px] hover:border-white/30 hover:bg-white/[0.1]"
+                  ? "border-white/55 bg-[linear-gradient(135deg,rgba(255,255,255,0.26),rgba(255,255,255,0.1),rgba(10,10,10,0.86))] text-white shadow-[0_12px_34px_rgba(0,0,0,0.44)]"
+                  : `${inactiveToneClass} text-white/90 hover:-translate-y-[1px]`
               }`}
             >
               <Icon
@@ -231,8 +256,22 @@ export default function FloatingHomeButton() {
                             ? "text-emerald-100 drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]"
                             : item.accent === "violet"
                               ? "text-violet-100 drop-shadow-[0_0_12px_rgba(167,139,250,0.8)]"
+                              : item.accent === "rose"
+                                ? "text-rose-100 drop-shadow-[0_0_12px_rgba(251,113,133,0.85)]"
                               : "text-sky-100 drop-shadow-[0_0_12px_rgba(56,189,248,0.8)]"
-                    : "text-white/84"
+                    : item.accent === "fuchsia"
+                      ? "text-fuchsia-100/95 drop-shadow-[0_0_8px_rgba(244,114,182,0.45)]"
+                      : item.accent === "amber"
+                        ? "text-amber-100/95 drop-shadow-[0_0_8px_rgba(251,191,36,0.45)]"
+                        : item.accent === "cyan"
+                          ? "text-cyan-100/95 drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]"
+                          : item.accent === "emerald"
+                            ? "text-emerald-100/95 drop-shadow-[0_0_8px_rgba(16,185,129,0.45)]"
+                            : item.accent === "violet"
+                              ? "text-violet-100/95 drop-shadow-[0_0_8px_rgba(167,139,250,0.45)]"
+                              : item.accent === "rose"
+                                ? "text-rose-100/95 drop-shadow-[0_0_8px_rgba(251,113,133,0.45)]"
+                                : "text-sky-100/95 drop-shadow-[0_0_8px_rgba(56,189,248,0.45)]"
                 }`}
                 aria-hidden="true"
               />
@@ -253,6 +292,8 @@ export default function FloatingHomeButton() {
                             ? "bg-emerald-200 shadow-[0_0_12px_rgba(16,185,129,0.95)]"
                             : item.accent === "violet"
                               ? "bg-violet-200 shadow-[0_0_12px_rgba(167,139,250,0.95)]"
+                              : item.accent === "rose"
+                                ? "bg-rose-200 shadow-[0_0_12px_rgba(251,113,133,0.95)]"
                               : "bg-sky-200 shadow-[0_0_12px_rgba(56,189,248,0.95)]"
                   }`}
                 />
