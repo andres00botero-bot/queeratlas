@@ -2192,8 +2192,6 @@ export default function NowPage() {
                   title="No approved community stories yet."
                   description="Members will be able to submit stories for admin approval."
                   className="px-4 py-8"
-                  primaryActionLabel="Open community"
-                  onPrimaryAction={() => router.push("/community")}
                 />
               )}
             </div>
