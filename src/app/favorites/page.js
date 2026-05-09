@@ -174,7 +174,7 @@ function resolveAvatarUrlFromRow(row) {
 
 export default function FavoritesPage() {
   const router = useRouter();
-  const isMapboxStylesReady = useMapboxStylesheet();
+  useMapboxStylesheet();
   const {
     isReady, setIsReady,
     memberName, setMemberName,
@@ -719,7 +719,9 @@ export default function FavoritesPage() {
       const parsed = JSON.parse(raw);
       setProfileExtras({
         about: String(parsed?.about || "").slice(0, 160),
-        visibility: String(parsed?.visibility || "members") === "public" ? "public" : "members",
+    visibility: ["friends", "members", "public"].includes(String(parsed?.visibility || "members"))
+      ? String(parsed?.visibility || "members")
+      : "members",
         birthday: String(parsed?.birthday || "").slice(0, 20),
         vibe: String(parsed?.vibe || "").slice(0, 80),
         phone: String(parsed?.phone || "").slice(0, 40),
@@ -1012,7 +1014,6 @@ export default function FavoritesPage() {
   }, [myMapView, setSelectedCheckinId]);
 
   useEffect(() => {
-    if (!isMapboxStylesReady) return;
     if (!mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
 
     mapboxgl.accessToken = mapboxToken;
@@ -1036,7 +1037,7 @@ export default function FavoritesPage() {
       map.remove();
       checkinMapRef.current = null;
     };
-  }, [checkinMapCenter, checkinMapContainerRef, checkinMapMarkersRef, checkinMapRef, isMapboxStylesReady, mapboxToken]);
+  }, [checkinMapCenter, checkinMapContainerRef, checkinMapMarkersRef, checkinMapRef, mapboxToken]);
 
   useEffect(() => {
     const map = checkinMapRef.current;
@@ -1212,6 +1213,16 @@ export default function FavoritesPage() {
       networkMembers,
     });
   }, [activeProfileTab, followingFeedRows, followingUserIds, networkMembers, showSignalDeck]);
+  const followingProfileNameByUserId = useMemo(() => {
+    const map = new Map();
+    (followingProfiles || []).forEach((profile) => {
+      const key = String(profile?.userId || "").trim();
+      const name = String(profile?.displayName || "").trim();
+      if (!key || !name || name.toLowerCase() === "member") return;
+      map.set(key, name);
+    });
+    return map;
+  }, [followingProfiles]);
 
   const forYouRecommendations = useMemo(() => {
     if (!showSignalDeck) return [];
@@ -1281,7 +1292,9 @@ export default function FavoritesPage() {
     const result = await updateMemberProfile(profileForm);
     const sanitizedExtras = {
       about: String(profileExtras.about || "").slice(0, 160),
-      visibility: String(profileExtras.visibility || "members") === "public" ? "public" : "members",
+    visibility: ["friends", "members", "public"].includes(String(profileExtras.visibility || "members"))
+      ? String(profileExtras.visibility || "members")
+      : "members",
       birthday: String(profileExtras.birthday || "").slice(0, 20),
       vibe: String(profileExtras.vibe || "").slice(0, 80),
       phone: String(profileExtras.phone || "").slice(0, 40),
@@ -1403,18 +1416,20 @@ export default function FavoritesPage() {
 
   const resolveFriendDisplayName = useCallback((userId, fallbackName = "") => {
     const key = String(userId || "").trim();
+    const profileListName = String(followingProfileNameByUserId.get(key) || "").trim();
     const profileName = String(memberDisplayNameById.get(key) || "").trim();
     const feedName = String(followingFeedNameById.get(key) || "").trim();
     const checkinName = String(followingCheckinNameById.get(key) || "").trim();
     const fallback = String(fallbackName || "").trim();
     return (
+      (profileListName && profileListName.toLowerCase() !== "member" && profileListName) ||
       (profileName && profileName.toLowerCase() !== "member" && profileName) ||
       (feedName && feedName.toLowerCase() !== "member" && feedName) ||
       (checkinName && checkinName.toLowerCase() !== "member" && checkinName) ||
       (fallback && fallback.toLowerCase() !== "member" && fallback) ||
       "Member"
     );
-  }, [followingCheckinNameById, followingFeedNameById, memberDisplayNameById]);
+  }, [followingCheckinNameById, followingFeedNameById, followingProfileNameByUserId, memberDisplayNameById]);
 
   const focusSavedPlaceOnMap = useCallback((place) => {
     if (!place) return;
@@ -2158,16 +2173,21 @@ export default function FavoritesPage() {
         </section>
 
         {isProfileAboutTab ? (
-        <section className="qa-premium-card relative mb-6 overflow-hidden rounded-[28px] border border-emerald-200/14 bg-[linear-gradient(180deg,rgba(14,20,18,0.96),rgba(8,10,10,0.99))] p-4 shadow-[0_24px_72px_rgba(0,0,0,0.38)] sm:rounded-[30px] sm:p-5">
-          <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-emerald-300/10 blur-3xl" />
-          <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-cyan-400/10 blur-3xl" />
+        <section className="qa-premium-card relative mb-6 overflow-hidden rounded-[28px] border border-white/12 bg-[radial-gradient(circle_at_14%_18%,rgba(34,211,238,0.12),transparent_36%),radial-gradient(circle_at_82%_12%,rgba(236,72,153,0.1),transparent_34%),linear-gradient(180deg,rgba(16,18,24,0.97),rgba(8,10,12,0.99))] p-4 shadow-[0_30px_88px_rgba(0,0,0,0.44)] sm:rounded-[30px] sm:p-5">
+          <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-fuchsia-400/10 blur-3xl" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(130deg,rgba(255,255,255,0.03),transparent_32%)]" />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-emerald-100/72">Member profile</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/72">Member profile</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
                 About
               </h2>
+              <div className="mt-2 rounded-xl border border-cyan-200/16 bg-cyan-200/[0.06] px-3 py-2">
+                <p className="mt-1 text-sm font-medium leading-6 text-white/88 sm:text-base">
+                  {profileExtras.about || "Add a short profile line to help people know your vibe."}
+                </p>
+              </div>
             </div>
             {!isEditingAbout ? (
               <button
@@ -2191,8 +2211,8 @@ export default function FavoritesPage() {
 
           {!isEditingAbout ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2 rounded-2xl border border-emerald-200/20 bg-emerald-200/[0.07] p-3.5">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-emerald-100/72">Personal details</p>
+              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/20 bg-cyan-200/[0.08] p-3.5">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/78">Personal details</p>
                 <p className="mt-1 text-xs text-white/64">Keep this section updated so trusted members understand your profile at a glance.</p>
               </div>
               <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
@@ -2202,7 +2222,11 @@ export default function FavoritesPage() {
               <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Visibility</p>
                 <p className="mt-1 text-sm text-white">
-                  {profileExtras.visibility === "public" ? "Visible to all" : "Members only"}
+                  {profileExtras.visibility === "public"
+                    ? "Visible to all"
+                    : profileExtras.visibility === "friends"
+                      ? "Visible to friends"
+                      : "Visible to members"}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
@@ -2228,12 +2252,6 @@ export default function FavoritesPage() {
               <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Mail (optional)</p>
                 <p className="mt-1 text-sm text-white">{profileExtras.contactEmail || "Not set"}</p>
-              </div>
-              <div className="sm:col-span-2 rounded-2xl border border-white/12 bg-black/25 p-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">About</p>
-                <p className="mt-1 text-sm leading-6 text-white/82">
-                  {profileExtras.about || "Add a short profile line to help people know your vibe."}
-                </p>
               </div>
             </div>
           ) : (
@@ -2356,11 +2374,14 @@ export default function FavoritesPage() {
                     onChange={(event) =>
                       setProfileExtras((current) => ({
                         ...current,
-                        visibility: event.target.value === "public" ? "public" : "members",
+                        visibility: ["friends", "members", "public"].includes(String(event.target.value || ""))
+                          ? String(event.target.value)
+                          : "members",
                       }))
                     }
                     className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
                   >
+                    <option value="friends">Visible to friends only</option>
                     <option value="members">Visible to members only</option>
                     <option value="public">Visible to all</option>
                   </select>
@@ -2954,67 +2975,69 @@ export default function FavoritesPage() {
                 </div>
                 <div
                   className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
-                  style={{ scrollbarGutter: "stable", maxHeight: "23rem" }}
+                  style={{ scrollbarGutter: "stable", minHeight: "31rem", maxHeight: "31rem" }}
                 >
-                  {filteredRecentCheckins.length > 0 ? (
-                    filteredRecentCheckins.map((entry) => (
-                    <article
-                      key={entry.id}
-                      onClick={() => focusCheckinOnMap(entry)}
-                      className={`cursor-pointer rounded-2xl border bg-black/20 p-3 transition ${
-                        String(selectedCheckinId) === String(entry.id)
-                          ? "border-fuchsia-200/45 shadow-[0_0_0_1px_rgba(244,114,182,0.25)]"
-                          : "border-white/10 hover:border-white/24"
-                      }`}
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                        {entry.city || "Unknown city"}{entry.country ? ` | ${entry.country}` : ""}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
-                      {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/55">
-                        <span>{formatCheckinTime(entry.checkedInAt)}</span>
-                        <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/78">
-                          {String(entry.mode).replaceAll("_", " ")}
-                        </span>
-                      </div>
-                      {entry.note ? <p className="mt-1 text-xs text-white/62">{entry.note}</p> : null}
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            startEditCheckin(entry);
-                          }}
-                          className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/35"
+                {filteredRecentCheckins.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {filteredRecentCheckins.map((entry) => (
+                        <article
+                          key={entry.id}
+                          onClick={() => focusCheckinOnMap(entry)}
+                          className={`cursor-pointer rounded-2xl border bg-black/20 p-3 transition ${
+                            String(selectedCheckinId) === String(entry.id)
+                              ? "border-fuchsia-200/45 shadow-[0_0_0_1px_rgba(244,114,182,0.25)]"
+                              : "border-white/10 hover:border-white/24"
+                          }`}
                         >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            deleteCheckin(entry);
-                          }}
-                          className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/35"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </article>
-                    ))
-                  ) : (
-                    <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
-                      <div className="mb-2 text-base">No check-ins in this filter yet.</div>
-                      <button
-                        type="button"
-                        onClick={() => checkinFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                        className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
-                      >
-                        Create check-in
-                      </button>
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
+                            {entry.city || "Unknown city"}{entry.country ? ` | ${entry.country}` : ""}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
+                          {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/55">
+                            <span>{formatCheckinTime(entry.checkedInAt)}</span>
+                            <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/78">
+                              {String(entry.mode).replaceAll("_", " ")}
+                            </span>
+                          </div>
+                          {entry.note ? <p className="mt-1 text-xs text-white/62">{entry.note}</p> : null}
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                startEditCheckin(entry);
+                              }}
+                              className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/35"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                deleteCheckin(entry);
+                              }}
+                              className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100/90 transition hover:border-rose-200/35"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </article>
+                      ))}
                     </div>
-                  )}
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
+                    <div className="mb-2 text-base">No check-ins in this filter yet.</div>
+                    <button
+                      type="button"
+                      onClick={() => checkinFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                      className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
+                    >
+                      Create check-in
+                    </button>
+                  </div>
+                )}
                 </div>
               </>
               ) : (
@@ -3025,10 +3048,11 @@ export default function FavoritesPage() {
                   </div>
                   <div
                     className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
-                    style={{ scrollbarGutter: "stable", maxHeight: "23rem" }}
+                    style={{ scrollbarGutter: "stable", maxHeight: "13.25rem" }}
                   >
                     {savedPlaces.length > 0 ? (
-                      savedPlaces.map((place) => (
+                      <div className="space-y-2.5">
+                      {savedPlaces.map((place) => (
                         <article
                           key={`saved-map-${place.id}`}
                           className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:border-white/24"
@@ -3070,7 +3094,8 @@ export default function FavoritesPage() {
                             </button>
                           </div>
                         </article>
-                      ))
+                      ))}
+                      </div>
                     ) : (
                       <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
                         No saved places yet. Save venues from city pages to build your map.
