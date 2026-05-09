@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
@@ -37,6 +37,27 @@ function getResultMeta(result) {
 function parseNewsTimestamp(value) {
   const timestamp = Date.parse(value || "");
   return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function parseEventTimestamp(value) {
+  const timestamp = Date.parse(value || "");
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getFreshnessSignal(value) {
+  const timestamp = Date.parse(String(value || ""));
+  if (Number.isNaN(timestamp)) return { label: "PENDING", tone: "neutral" };
+  const diffMinutes = Math.max(0, (Date.now() - timestamp) / 60000);
+  if (diffMinutes <= 15) return { label: "JUST UPDATED", tone: "live" };
+  if (diffMinutes <= 24 * 60) return { label: "UPDATED TODAY", tone: "today" };
+  if (diffMinutes <= 7 * 24 * 60) return { label: "UPDATED THIS WEEK", tone: "week" };
+  return { label: "EARLIER UPDATE", tone: "neutral" };
+}
+
+function formatCityLabel(value) {
+  return String(value || "Global")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function compareNewsRecency(a, b) {
@@ -462,6 +483,7 @@ export default function Home() {
     () => [...worldNews].sort(compareNewsRecency).slice(0, 3),
     [worldNews]
   );
+  const latestPulseNews = homeNewsItems[0] || null;
 
   const topCities = useMemo(
     () =>
@@ -486,6 +508,25 @@ export default function Home() {
         .sort((a, b) => b.reviews - a.reviews)
         .slice(0, 3),
     [places]
+  );
+  const strongestCitySignal = topCities[0] || null;
+  const nextUpcomingEvent = useMemo(() => {
+    const nowTimestamp = Date.now();
+    const upcoming = [...events]
+      .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
+      .filter((event) => event.__ts > 0 && event.__ts >= nowTimestamp)
+      .sort((a, b) => a.__ts - b.__ts);
+
+    if (upcoming.length > 0) return upcoming[0];
+
+    return [...events]
+      .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
+      .filter((event) => event.__ts > 0)
+      .sort((a, b) => b.__ts - a.__ts)[0] || null;
+  }, [events]);
+  const nextEventFreshness = useMemo(
+    () => getFreshnessSignal(nextUpcomingEvent?.date),
+    [nextUpcomingEvent]
   );
 
   const cityCount = useMemo(
@@ -625,6 +666,9 @@ export default function Home() {
       },
     },
   ];
+  const heroIdentityLabel = isMember
+    ? `${memberName || "Alias"} | ${memberProfile?.pronouns || "Pronomen"}`
+    : "Alias | Pronomen";
 
   return (
     <main className="qa-page min-h-screen overflow-x-hidden bg-[#050505] text-white">
@@ -636,16 +680,10 @@ export default function Home() {
         <div className="qa-shell relative flex min-h-screen w-full flex-col">
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
             <div className="qa-eyebrow rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur">
-              Experience-first queer atlas
+              {heroIdentityLabel}
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              {isMember && (
-                <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white/72 backdrop-blur sm:block">
-                  {memberName}{memberProfile?.pronouns ? ` | ${memberProfile.pronouns}` : ""}
-                </div>
-              )}
-
               {!isMember ? (
                 <button
                   onClick={() => openSignup()}
@@ -715,22 +753,6 @@ export default function Home() {
                 Find the city. Feel the signal. The global queer database for discovery,
                 vibe, community, and culture.
               </p>
-              <div className="mt-5 flex flex-wrap justify-center gap-2.5 sm:justify-start">
-                <button
-                  type="button"
-                  onClick={() => router.push("/cities")}
-                  className="qa-action qa-action-strong qa-cta-primary rounded-full border border-cyan-200/44 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.92))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-50 hover:border-cyan-200/62"
-                >
-                  Start with cities
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push("/events")}
-                  className="qa-action qa-cta-secondary rounded-full border border-white/16 bg-white/7 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/82 hover:border-white/26"
-                >
-                  See events now
-                </button>
-              </div>
               {isDataLoading && (
                 <p className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
               )}
@@ -839,56 +861,106 @@ export default function Home() {
             </section>
 
             <aside className="grid gap-4">
-              <div className="overflow-hidden rounded-[28px] border border-sky-300/28 bg-[radial-gradient(circle_at_10%_8%,rgba(56,189,248,0.20),transparent_34%),linear-gradient(155deg,rgba(7,27,46,0.98),rgba(6,12,22,0.99))] p-4 shadow-[0_28px_94px_rgba(8,47,73,0.34)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-sky-100/84">
-                      Queer world news
-                    </p>
-                    <h2 className="qa-h2 mt-2 text-xl font-semibold text-sky-50">
-                      Live now
-                    </h2>
+              <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-[radial-gradient(circle_at_12%_8%,rgba(56,189,248,0.12),transparent_36%),radial-gradient(circle_at_86%_20%,rgba(244,114,182,0.1),transparent_38%),linear-gradient(165deg,rgba(8,10,18,0.98),rgba(5,6,10,0.99))] p-4 shadow-[0_26px_90px_rgba(2,6,23,0.42)]">
+                <div className="pointer-events-none absolute -left-10 top-24 h-32 w-32 rounded-full bg-cyan-300/12 blur-3xl" />
+                <div className="pointer-events-none absolute -right-10 bottom-8 h-32 w-32 rounded-full bg-fuchsia-300/10 blur-3xl" />
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.24em] text-white/62">Live Atlas Pulse</p>
+                      <h2 className="qa-h2 mt-2 text-xl font-semibold text-white">Atlas Live Desk</h2>
+                      <p className="mt-2 text-xs leading-5 text-white/58">
+                        Choose your next move.
+                      </p>
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => router.push("/now")}
-                    className="qa-action qa-action-strong qa-cta-primary rounded-full border border-sky-200/36 bg-sky-200/16 px-3 py-1.5 text-[11px] text-sky-50 transition hover:border-sky-200/52 hover:bg-sky-200/24"
-                  >
-                    Open news
-                  </button>
-                </div>
-
-                <div className="mt-3 space-y-2.5">
-                  {homeNewsItems.map((item) => (
+                  <div className="mt-4 space-y-2.5">
                     <button
-                      key={item.id}
-                      onClick={() => router.push("/now")}
-                      className="qa-list-card qa-premium-card w-full rounded-2xl border border-sky-200/24 bg-[linear-gradient(180deg,rgba(12,32,50,0.72),rgba(10,16,28,0.9))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-sky-200/42"
+                      onClick={() => {
+                        if (nextUpcomingEvent?.city && nextUpcomingEvent?.id) {
+                          router.push(citySelectionPath(nextUpcomingEvent.city, { eventId: nextUpcomingEvent.id }));
+                          return;
+                        }
+                        router.push("/events");
+                      }}
+                      className="qa-list-card qa-premium-card w-full rounded-2xl border border-amber-200/26 bg-[linear-gradient(180deg,rgba(44,28,14,0.78),rgba(16,12,8,0.94))] p-4 text-left transition hover:-translate-y-[1px] hover:border-amber-200/46"
                     >
-                      <div className="mb-2 flex items-center justify-between gap-3">
-                        <p className="rounded-full border border-white/18 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/88">
-                          {[item.city || "Global", formatDateShort(item.date)].join(" | ")}
-                        </p>
-                        <span className="rounded-full border border-sky-200/28 bg-sky-200/14 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-sky-100">
-                          {item.categoryLabel || "news"}
+                      <div className="mb-2 h-1.5 w-28 rounded-full bg-gradient-to-r from-amber-200 via-orange-200 to-transparent" />
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/92">Next event</p>
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
+                            nextEventFreshness.tone === "live"
+                              ? "border-cyan-200/35 bg-cyan-200/14 text-cyan-100"
+                              : nextEventFreshness.tone === "today"
+                                ? "border-amber-200/35 bg-amber-200/14 text-amber-100"
+                                : nextEventFreshness.tone === "week"
+                                  ? "border-violet-200/35 bg-violet-200/14 text-violet-100"
+                                  : "border-white/22 bg-white/8 text-white/80"
+                          }`}
+                        >
+                          {nextEventFreshness.label}
                         </span>
                       </div>
-                      <p className="mt-2 text-[15px] font-semibold text-white">{item.title || "Queer world update"}</p>
-                      <p className="mt-1.5 line-clamp-1 text-xs leading-5 text-white/54">
-                        {item.summary || "Fresh global queer signal from the atlas feed."}
+                      <p className="text-[16px] font-semibold text-white">
+                        {nextUpcomingEvent?.name || "No upcoming event signal yet"}
                       </p>
-                      <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/38">
-                        Open news
-                        <ArrowUpRight size={12} />
+                      <p className="mt-1.5 text-xs leading-5 text-white/62">
+                        {formatCityLabel(nextUpcomingEvent?.city)} - {nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : "No date available"}.
+                      </p>
+                      <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/44">
+                        Open event <ArrowUpRight size={12} />
                       </span>
                     </button>
-                  ))}
 
-                  {!isDataLoading && homeNewsItems.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-white/10 px-4 py-8 text-sm text-white/45">
-                      No world news signal yet.
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <button
+                        onClick={() => router.push("/now")}
+                        className="qa-list-card qa-premium-card w-full rounded-2xl border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-cyan-200/44"
+                      >
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/86">Latest News</p>
+                        </div>
+                        <p className="text-[15px] font-semibold text-white">
+                          {latestPulseNews?.title || "No published news yet"}
+                        </p>
+                        <p className="mt-1 text-xs text-white/58">
+                          {formatCityLabel(latestPulseNews?.city)} - Global queer news, verified and fresh.
+                        </p>
+                        <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/42">
+                          Open story <ArrowUpRight size={12} />
+                        </span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (strongestCitySignal?.city) {
+                            router.push(cityPath(strongestCitySignal.city));
+                            return;
+                          }
+                          router.push("/cities");
+                        }}
+                        className="qa-list-card qa-premium-card w-full rounded-2xl border border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(42,16,36,0.72),rgba(14,10,16,0.92))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-fuchsia-200/44"
+                      >
+                        <div className="mb-2 space-y-1.5">
+                          <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-100/90">Top city right now</p>
+                          <span className="inline-flex rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/90">
+                            {strongestCitySignal ? `${strongestCitySignal.reviews || 0} reviews` : "Pending"}
+                          </span>
+                        </div>
+                        <p className="text-[15px] font-semibold text-white">
+                          {strongestCitySignal?.city ? formatCityLabel(strongestCitySignal.city) : "Signal is still warming up"}
+                        </p>
+                        <p className="mt-1 text-xs text-white/58">
+                          Highest current community pull in the atlas feed.
+                        </p>
+                        <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/42">
+                          Open city <ArrowUpRight size={12} />
+                        </span>
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </aside>
