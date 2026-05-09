@@ -1,52 +1,63 @@
--- QueerAtlas Community Ranking V1
--- Safe to run multiple times.
+-- Community ranking display-name source fix (v2)
 -- Purpose:
--- 1) Ensure created_by tracking exists on contribution tables
--- 2) Create a reusable leaderboard view with score + title
+-- 1) Keep member aliases stable in source (Supabase) without exposing email aliases
+-- 2) Rebuild qa_member_leaderboard with robust display_name resolution
+-- 3) Ensure admin alias is always "Admin"
+--
+-- Safe to run multiple times.
 
 begin;
 
--- -----------------------------
--- Contribution identity columns
--- -----------------------------
-alter table if exists public.places
-  add column if not exists created_by uuid references auth.users(id) on delete set null;
+-- Ensure every auth user has a profile row.
+insert into public.member_profiles (user_id, display_name, updated_at)
+select
+  u.id,
+  coalesce(
+    nullif(trim(u.raw_user_meta_data->>'preferred_username'), ''),
+    nullif(trim(u.raw_user_meta_data->>'full_name'), ''),
+    nullif(trim(u.raw_user_meta_data->>'name'), ''),
+    'Member'
+  ) as display_name,
+  now()
+from auth.users u
+left join public.member_profiles mp
+  on mp.user_id = u.id
+where mp.user_id is null;
 
-alter table if exists public.events
-  add column if not exists created_by uuid references auth.users(id) on delete set null;
+-- Fill only generic/blank aliases from safe auth metadata (never from email local-part).
+update public.member_profiles mp
+set
+  display_name = src.safe_name,
+  updated_at = now()
+from (
+  select
+    u.id as user_id,
+    coalesce(
+      nullif(trim(u.raw_user_meta_data->>'preferred_username'), ''),
+      nullif(trim(u.raw_user_meta_data->>'full_name'), ''),
+      nullif(trim(u.raw_user_meta_data->>'name'), ''),
+      'Member'
+    ) as safe_name
+  from auth.users u
+) src
+where mp.user_id = src.user_id
+  and (
+    coalesce(trim(mp.display_name), '') = ''
+    or lower(trim(mp.display_name)) = 'member'
+  )
+  and src.safe_name <> 'Member';
 
-alter table if exists public.reviews
-  add column if not exists created_by uuid references auth.users(id) on delete set null;
+-- Force admin alias.
+update public.member_profiles mp
+set
+  display_name = 'Admin',
+  updated_at = now()
+where mp.user_id in (
+  select u.id
+  from auth.users u
+  where lower(coalesce(u.email, '')) = 'andres00botero@gmail.com'
+);
 
-alter table if exists public.global_events
-  add column if not exists created_by uuid references auth.users(id) on delete set null;
-
--- Default writer identity for new rows created by authenticated users.
-alter table if exists public.places
-  alter column created_by set default auth.uid();
-
-alter table if exists public.events
-  alter column created_by set default auth.uid();
-
-alter table if exists public.reviews
-  alter column created_by set default auth.uid();
-
-alter table if exists public.global_events
-  alter column created_by set default auth.uid();
-
--- Helpful indexes for leaderboard queries.
-create index if not exists idx_places_created_by on public.places(created_by);
-create index if not exists idx_events_created_by on public.events(created_by);
-create index if not exists idx_reviews_created_by on public.reviews(created_by);
-create index if not exists idx_global_events_created_by on public.global_events(created_by);
-
--- -------------------------------------------------
--- Leaderboard view
--- Score model:
---   place   = 5 points
---   event   = 4 points (city + global)
---   review  = 2 points
--- -------------------------------------------------
 drop view if exists public.qa_member_leaderboard;
 
 create view public.qa_member_leaderboard as
@@ -145,7 +156,6 @@ select
 from ranked
 order by rank asc, user_id asc;
 
--- Public read access for client-side leaderboard widgets.
 grant select on public.qa_member_leaderboard to anon, authenticated;
 
 commit;

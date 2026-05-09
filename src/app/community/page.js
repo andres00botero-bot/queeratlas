@@ -92,6 +92,10 @@ function normalizeMemberKey(value = "") {
     .replace(/[^a-z0-9 @._-]/g, "");
 }
 
+function isGenericMemberName(value = "") {
+  return normalizeMemberKey(value) === "member";
+}
+
 function formatCityLabel(value = "") {
   return String(value || "")
     .replaceAll("_", " ")
@@ -336,6 +340,7 @@ export default function CommunityPage() {
   const [memberSearchOffset, setMemberSearchOffset] = useState(0);
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
+  const [activeCommunityPanel, setActiveCommunityPanel] = useState("ranking");
   const [leaderboardAvatarByUserId, setLeaderboardAvatarByUserId] = useState({});
   const [reportModal, setReportModal] = useState({
     open: false,
@@ -445,18 +450,59 @@ export default function CommunityPage() {
       ),
     ];
     const nextLeaderboardAvatarByUserId = {};
+    const nextLeaderboardDisplayNameByUserId = {};
     if (leaderboardUserIds.length > 0) {
       const { data: leaderboardProfiles } = await supabase
         .from("member_profiles")
-        .select("user_id,avatar_url,avatar_path")
+        .select("user_id,display_name,avatar_url,avatar_path")
         .in("user_id", leaderboardUserIds);
       (leaderboardProfiles || []).forEach((profile) => {
         const profileUserId = String(profile?.user_id || "").trim();
         if (!profileUserId) return;
+        const profileDisplayName = String(profile?.display_name || "").trim();
+        if (profileDisplayName) {
+          nextLeaderboardDisplayNameByUserId[profileUserId] = profileDisplayName;
+        }
         nextLeaderboardAvatarByUserId[profileUserId] =
           resolveAvatarUrlFromProfile(profile);
       });
     }
+    const nextLeaderboardRpcNameByUserId = {};
+    if (memberUserId) {
+      const { data: searchRows, error: searchError } = await supabase.rpc("qa_search_members", {
+        search_query: "",
+        city_filter: "",
+        sort_mode: "best",
+        friends_only: false,
+        result_limit: 300,
+        result_offset: 0,
+      });
+      if (!searchError) {
+        (searchRows || []).forEach((row) => {
+          const rowUserId = String(row?.user_id || "").trim();
+          const rowDisplayName = String(row?.display_name || "").trim();
+          if (!rowUserId || !rowDisplayName) return;
+          nextLeaderboardRpcNameByUserId[rowUserId] = rowDisplayName;
+        });
+      }
+    }
+    const resolvedLeaderboard = nextLeaderboard.map((entry) => {
+      const profileName = String(
+        nextLeaderboardDisplayNameByUserId[String(entry?.user_id || "").trim()] || ""
+      ).trim();
+      const rpcName = String(
+        nextLeaderboardRpcNameByUserId[String(entry?.user_id || "").trim()] || ""
+      ).trim();
+      const currentName = String(entry?.display_name || "").trim();
+      const safeName = profileName
+        || rpcName
+        || (!isGenericMemberName(currentName) ? currentName : "")
+        || "Member";
+      return {
+        ...entry,
+        display_name: safeName,
+      };
+    });
 
     setStories(nextStories);
     setGuides(nextGuides);
@@ -464,12 +510,12 @@ export default function CommunityPage() {
     setMessages(Object.keys(cappedMessages).length > 0 ? cappedMessages : baseMessages);
     setMessageArchive(nextArchive);
     setIdeas(nextIdeas);
-    setLeaderboard(nextLeaderboard);
+    setLeaderboard(resolvedLeaderboard);
     setLeaderboardAvatarByUserId(nextLeaderboardAvatarByUserId);
     if (errorParts.length > 0) {
       setSyncError(`Partial cloud sync: ${errorParts.join(", ")} using local fallback.`);
     }
-  }, []);
+  }, [memberUserId]);
 
   useEffect(() => {
     if (!isReady || !isMember) return () => {};
@@ -815,8 +861,6 @@ export default function CommunityPage() {
       replies: (messages[topic.id] || []).filter((message) => !isBlocked("community-message", message.id)).length,
     }))
     .sort((a, b) => b.replies - a.replies)[0];
-  const topCities = [...new Set(sortedStories.map((story) => story.city).filter(Boolean))].slice(0, 3);
-  const myRankMeta = getMemberTitleMeta(myRank?.title || "");
   const rankMetaByAuthor = (() => {
     const map = new Map();
     leaderboard.forEach((entry) => {
@@ -1248,21 +1292,28 @@ export default function CommunityPage() {
     );
   };
 
+  const isRankingPanel = activeCommunityPanel === "ranking";
+  const isDiscoveryPanel = activeCommunityPanel === "discovery";
+  const isStoriesPanel = activeCommunityPanel === "stories";
+  const isGuidesPanel = activeCommunityPanel === "guides";
+  const isChatPanel = activeCommunityPanel === "chat";
+  const isImprovePanel = activeCommunityPanel === "improve";
+
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(244,114,182,0.10),transparent_26%),radial-gradient(circle_at_88%_10%,rgba(34,211,238,0.10),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_52%,#040406_100%)] text-white px-6 py-8">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(34,211,238,0.06),transparent_24%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.06),transparent_24%),linear-gradient(180deg,#040406_0%,#05070b_52%,#040406_100%)] px-4 py-6 text-white sm:px-6 sm:py-8">
       <ActionToast toast={toast} />
       <div className="qa-shell relative mx-auto max-w-7xl">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.06),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(59,130,246,0.06),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.04),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(59,130,246,0.05),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.015),transparent_30%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div className="mb-8 qa-premium-card overflow-hidden rounded-[34px] border border-emerald-400/20 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_26%),radial-gradient(circle_at_80%_20%,rgba(34,197,94,0.20),transparent_28%),linear-gradient(135deg,rgba(6,78,59,0.66),rgba(10,10,10,0.96),rgba(76,29,149,0.44))] p-8 shadow-[0_42px_140px_rgba(16,185,129,0.16),0_22px_60px_rgba(0,0,0,0.36)]">
-          <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-rose-400/12 blur-3xl" />
-          <div className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="qa-premium-card mb-7 overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_12%_18%,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_88%_14%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(165deg,rgba(10,12,16,0.96),rgba(6,8,12,0.98))] p-5 shadow-[0_40px_120px_rgba(0,0,0,0.46)] sm:mb-8 sm:rounded-[34px] sm:p-8">
+          <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl" />
+          <div className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full bg-fuchsia-300/10 blur-3xl" />
           <div className="max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/90">Members Only</p>
-            <h1 className="qa-display mt-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">Community</h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-200">Stories, discussions, guides, and product ideas from queer travelers, locals, and regulars shaping the atlas together.</p>
-            <p className="mt-3 text-xs text-emerald-100/75">
-              Safety first. Read our{" "}
+            <p className="text-xs uppercase tracking-[0.35em] text-white/68">Community Signal</p>
+            <h1 className="qa-display mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:mt-3 sm:text-5xl">Community</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:mt-4 sm:leading-7">Live member signal, practical city knowledge, and trusted conversations in one focused flow.</p>
+            <p className="mt-2 text-xs text-white/64 sm:mt-3">
+              Safety-first participation. Read our{" "}
               <Link href="/community-policy" className="underline underline-offset-2 transition hover:text-white">
                 Community Policy & Reporting
               </Link>
@@ -1273,30 +1324,61 @@ export default function CommunityPage() {
                 {syncError}
               </p>
             )}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {topCities.map((city) => (
-                <span key={city} className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white shadow-[0_0_24px_rgba(255,255,255,0.06)] backdrop-blur">{city}</span>
-              ))}
-            </div>
-            {myRank && (
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-3 py-1.5 text-xs">
-                <span className="text-white/75">Your community rank: #{myRank.rank}</span>
-                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${myRankMeta.className}`}>
-                  <span>{myRankMeta.icon}</span>
-                  {myRankMeta.label}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
-        <section className="qa-premium-card mb-6 rounded-[26px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-5 shadow-[0_28px_90px_rgba(99,102,241,0.14),0_14px_34px_rgba(0,0,0,0.30)]">
+        <section className="qa-premium-card sticky top-2 z-20 mb-6 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] backdrop-blur sm:top-3 sm:rounded-[24px]">
+          <div className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {[
+              { id: "ranking", label: "Community ranking", tone: "border-indigo-200/45 bg-indigo-200/16 text-indigo-100" },
+              { id: "discovery", label: "Member discovery", tone: "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100" },
+              { id: "stories", label: "Stories", tone: "border-rose-200/45 bg-rose-200/16 text-rose-100" },
+              { id: "guides", label: "Member guides", tone: "border-violet-200/45 bg-violet-200/16 text-violet-100" },
+              { id: "chat", label: "Live chat", tone: "border-cyan-200/45 bg-cyan-200/16 text-cyan-100" },
+              { id: "improve", label: "Improve atlas", tone: "border-amber-200/45 bg-amber-200/16 text-amber-100" },
+            ].map((item) => {
+              const isActive = activeCommunityPanel === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setActiveCommunityPanel(item.id)}
+                  className={`snap-start whitespace-nowrap rounded-full border px-3 py-2.5 text-[11px] uppercase tracking-[0.12em] transition sm:py-2 ${
+                    isActive
+                      ? `${item.tone} shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_8px_20px_rgba(0,0,0,0.22)]`
+                      : "border-white/14 bg-white/6 text-white/74 hover:border-white/24 hover:text-white"
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {isRankingPanel ? (
+        <section className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-4 shadow-[0_28px_90px_rgba(99,102,241,0.14),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-indigo-200/80">Community Ranking</p>
               <h2 className="mt-1 text-lg font-semibold text-white">Your community ranking just now</h2>
             </div>
-            <p className="text-xs text-white/55">Points: places (5) Â· events (4) Â· reviews (2)</p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-white/55">Points: places (5) · events (4) · reviews (2)</p>
+              {myRank ? (
+                <span className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[11px] text-white/78">
+                  Your rank #{myRank.rank}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setActiveCommunityPanel("discovery")}
+                className="qa-action qa-action-strong rounded-full border border-indigo-200/40 bg-indigo-200/16 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-100 transition hover:border-indigo-200/62"
+              >
+                Find members
+              </button>
+            </div>
           </div>
           <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             {leaderboard.slice(0, 5).map((entry) => {
@@ -1330,7 +1412,7 @@ export default function CommunityPage() {
                     {titleMeta.label}
                   </span>
                   <p className="mt-2 text-xs text-white/58">
-                    {entry.score} pts Â· {entry.city_count || 0} cities
+                    {entry.score} pts · {entry.city_count || 0} cities
                   </p>
                 </article>
               );
@@ -1369,7 +1451,7 @@ export default function CommunityPage() {
                       {champion.champion}
                     </p>
                     <p className="mt-1 text-xs text-white/60">
-                      {champion.championCount} contributions Â· {champion.total} city posts
+                      {champion.championCount} contributions · {champion.total} city posts
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100/85">
@@ -1389,8 +1471,10 @@ export default function CommunityPage() {
             </div>
           </div>
         </section>
+        ) : null}
 
-        <section className="qa-premium-card mb-6 rounded-[26px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-5 shadow-[0_30px_96px_rgba(217,70,239,0.15),0_14px_34px_rgba(0,0,0,0.30)]">
+        {isDiscoveryPanel ? (
+        <section className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_30px_96px_rgba(217,70,239,0.15),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/85">Member Discovery</p>
@@ -1399,7 +1483,7 @@ export default function CommunityPage() {
             <p className="text-xs text-fuchsia-100/75">
               {memberSearchLoading
                 ? "Refreshing live member graph..."
-                : `${displayedMemberRows.length} loaded${memberSearchHasMore ? " Â· more available" : ""}`}
+                : `${displayedMemberRows.length} loaded${memberSearchHasMore ? " · more available" : ""}`}
             </p>
           </div>
 
@@ -1571,8 +1655,11 @@ export default function CommunityPage() {
             )}
           </div>
         </section>
+        ) : null}
 
+        {isStoriesPanel || isGuidesPanel ? (
         <div className="relative grid gap-6 xl:grid-cols-2">
+          {isStoriesPanel ? (
           <section className="qa-premium-card rounded-[30px] border border-rose-400/15 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.18),transparent_26%),linear-gradient(180deg,rgba(38,14,28,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(244,114,182,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
@@ -1601,7 +1688,7 @@ export default function CommunityPage() {
                 <article key={story.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">{story.city} Â· {story.category}</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">{story.city} · {story.category}</p>
                       <h3 className="mt-2 text-lg font-semibold">{story.title}</h3>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1649,7 +1736,9 @@ export default function CommunityPage() {
               ))}
             </div>
           </section>
+          ) : null}
 
+          {isGuidesPanel ? (
           <section className="qa-premium-card rounded-[30px] border border-violet-400/15 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.18),transparent_26%),linear-gradient(180deg,rgba(24,18,44,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(139,92,246,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
@@ -1687,7 +1776,7 @@ export default function CommunityPage() {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-xs uppercase tracking-[0.18em] text-violet-200/75">
-                        {guide.city} Â· {guide.focus}
+                        {guide.city} · {guide.focus}
                       </p>
                       <button
                         onClick={() => toggleGuideExpanded(guide.id)}
@@ -1714,7 +1803,7 @@ export default function CommunityPage() {
                             </span>
                           );
                         })()}{" "}
-                        Â· {timeAgo(guide.createdAt)}
+                        · {timeAgo(guide.createdAt)}
                       </p>
                       <button
                         onClick={() =>
@@ -1739,12 +1828,27 @@ export default function CommunityPage() {
               )}
             </div>
           </section>
+          ) : null}
         </div>
+        ) : null}
 
-        <section className="qa-premium-card mt-6 rounded-[30px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
-          <div className="mb-5">
-            <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Discussions</p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Live chat</h2>
+        {isChatPanel ? (
+        <section className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Discussions</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Live chat</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const node = document.getElementById("community-topic-form");
+                if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+              className="qa-action qa-action-strong rounded-full border border-cyan-200/42 bg-cyan-200/16 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/62"
+            >
+              Start topic
+            </button>
           </div>
           <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
             <div className="space-y-3">
@@ -1776,7 +1880,7 @@ export default function CommunityPage() {
                   );
                 })}
               </div>
-              <form onSubmit={createTopic} className="rounded-2xl border border-cyan-400/20 bg-cyan-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <form id="community-topic-form" onSubmit={createTopic} className="rounded-2xl border border-cyan-400/20 bg-cyan-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Start a topic</p>
                 <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-1">
                   <Field value={topicForm.name} onChange={(event) => setTopicForm((current) => ({ ...current, name: event.target.value }))} placeholder="Topic name" />
@@ -1885,8 +1989,10 @@ export default function CommunityPage() {
             </div>
           </div>
         </section>
+        ) : null}
 
-        <section className="qa-premium-card mt-6 rounded-[30px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
+        {isImprovePanel ? (
+        <section className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Improve Queer Atlas</p>
@@ -1908,7 +2014,7 @@ export default function CommunityPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm leading-6 text-gray-300">{idea.text}</p>
-                    <p className="mt-2 text-xs text-gray-500">{idea.author} Â· {timeAgo(idea.createdAt)}</p>
+                    <p className="mt-2 text-xs text-gray-500">{idea.author} · {timeAgo(idea.createdAt)}</p>
                     <button
                       onClick={() =>
                         reportContent({
@@ -1922,12 +2028,13 @@ export default function CommunityPage() {
                       Report
                     </button>
                   </div>
-                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">â–² {idea.votes}</button>
+                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">▲ {idea.votes}</button>
                 </div>
               </div>
             ))}
           </div>
         </section>
+        ) : null}
       </div>
       {reportModal.open && (
         <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
