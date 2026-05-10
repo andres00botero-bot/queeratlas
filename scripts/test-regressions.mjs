@@ -200,6 +200,16 @@ function testUsePlacesUsesFallbackLoader() {
     usePlacesSource.includes("fetchPlacesQueryWithFallback({"),
     "usePlaces loader: hook should use fetchPlacesQueryWithFallback"
   );
+  assert(
+    usePlacesSource.includes('select: "*"'),
+    "usePlaces loader: stats fallback query should use wildcard select to avoid schema-mismatch column errors"
+  );
+  assert(
+    usePlacesSource.includes('setLoadError("Live stats view is unavailable. Showing direct place data.");') &&
+      usePlacesSource.includes("setPlaces(mergedWithSeed);") &&
+      usePlacesSource.includes("setIsLoading(false);"),
+    "usePlaces loader: stats view errors should degrade gracefully without blocking place rendering"
+  );
 }
 
 function testPlacesWithStatsMissingLocationGuard() {
@@ -294,6 +304,71 @@ function testPlacesAtlasNormalizesRatingFields() {
   assert(
     source.includes('.from("reviews")'),
     "places atlas stats: data layer should query reviews for fallback rating stats"
+  );
+  assert(
+    source.includes('selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined)'),
+    "places atlas stats: atlas loader should read directly from places table"
+  );
+}
+
+function testPlacesFallbackRetriesWithWildcardOnColumnMismatch() {
+  const source = readFileSync(new URL("../src/lib/placesDataApi.js", import.meta.url), "utf8");
+  assert(
+    source.includes("isMissingColumnSelectionError"),
+    "places fallback retry: places data API should define missing-column fallback guard"
+  );
+  assert(
+    source.includes('selectPlaces(client, "places", "*", options, filters)'),
+    "places fallback retry: places data API should retry with wildcard select on places fallback"
+  );
+  assert(
+    source.includes('code === "42703" || code === "PGRST204"') &&
+      source.includes("referencesPlacesProjection"),
+    "places fallback retry: missing-column retry guard should be constrained to known projection error signals"
+  );
+  const skipGateIndex = source.indexOf("if (skipPlacesWithStatsView)");
+  const statsResIndex = source.indexOf('const statsRes = await selectPlaces(client, "places_with_stats", select, options, filters);');
+  assert(
+    skipGateIndex >= 0 && statsResIndex > skipGateIndex,
+    "places fallback retry: skipPlacesWithStatsView gate should execute before places_with_stats query"
+  );
+}
+
+function testMapInitGuardFallbackContract() {
+  const source = readFileSync(new URL("../src/lib/mapInitGuard.js", import.meta.url), "utf8");
+  assert(
+    source.includes('return { ready: false, reason: "token_missing" };'),
+    "map init guard: readiness should fail with token_missing when map token is absent"
+  );
+  assert(
+    source.includes('return { ready: false, reason: "webgl_unsupported" };'),
+    "map init guard: readiness should fail with webgl_unsupported when WebGL is unavailable"
+  );
+  assert(
+    source.includes('normalizedReason === "webgl_unsupported" || normalizedReason === "token_missing"'),
+    "map init guard: fallback should trigger for webgl_unsupported and token_missing only"
+  );
+}
+
+function testMapPagesUseSharedReadinessGuard() {
+  const citiesSource = readFileSync(new URL("../src/app/cities/page.js", import.meta.url), "utf8");
+  const citySource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const favoritesSource = readFileSync(new URL("../src/app/favorites/page.js", import.meta.url), "utf8");
+
+  assert(
+    citiesSource.includes("evaluateMapInitReadiness({") &&
+      citiesSource.includes("shouldTriggerMapFallback("),
+    "map guard usage: cities page should use evaluateMapInitReadiness and shared fallback trigger"
+  );
+  assert(
+    citySource.includes("evaluateMapInitReadiness({") &&
+      citySource.includes("shouldTriggerMapFallback("),
+    "map guard usage: city page should use evaluateMapInitReadiness and shared fallback trigger"
+  );
+  assert(
+    favoritesSource.includes("evaluateMapInitReadiness({") &&
+      favoritesSource.includes("shouldTriggerMapFallback("),
+    "map guard usage: favorites page should use evaluateMapInitReadiness and shared fallback trigger"
   );
 }
 
@@ -650,6 +725,9 @@ function run() {
   testNowNewsAdminControls();
   testNowRankingAdminControls();
   testPlacesAtlasNormalizesRatingFields();
+  testPlacesFallbackRetriesWithWildcardOnColumnMismatch();
+  testMapInitGuardFallbackContract();
+  testMapPagesUseSharedReadinessGuard();
   testSharedAdminAccessResolverUsage();
   testSharedDateDisplayUsage();
   testVibeTaxonomyContract();

@@ -41,13 +41,21 @@ function getSupabaseErrorSignals(error) {
 
 export function isMissingPlacesWithStatsLocation(error) {
   const { codes, messages } = getSupabaseErrorSignals(error);
+  const hasSchemaCacheSignal = messages.some(
+    (message) => message.includes("schema cache") || message.includes("could not find")
+  );
   const hasMissingLocationMessage = messages.some(
     (message) =>
       message.includes("places_with_stats.location") ||
-      (message.includes("places_with_stats") && message.includes("location") && message.includes("does not exist"))
+      (message.includes("places_with_stats") && message.includes("location") && message.includes("does not exist")) ||
+      (message.includes("places_with_stats") && message.includes("location") && hasSchemaCacheSignal)
   );
   if (!hasMissingLocationMessage) return false;
-  return codes.has("42703") || messages.some((message) => message.includes("42703"));
+  return (
+    codes.has("42703") ||
+    codes.has("PGRST204") ||
+    messages.some((message) => message.includes("42703") || message.includes("pgrst204"))
+  );
 }
 
 export function isMissingPlacesWithStatsView(error) {

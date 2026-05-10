@@ -26,6 +26,23 @@ function normalizeRows(data) {
   return Array.isArray(data) ? data : [];
 }
 
+function isMissingColumnSelectionError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  const details = String(error?.details || "").toLowerCase();
+  const hint = String(error?.hint || "").toLowerCase();
+  const text = `${message} ${details} ${hint}`;
+  const referencesPlacesProjection =
+    text.includes("places.") ||
+    text.includes("places_with_stats") ||
+    text.includes("schema cache");
+  return (
+    (code === "42703" || code === "PGRST204") &&
+    referencesPlacesProjection &&
+    (text.includes("column") || text.includes("schema cache") || text.includes("could not find"))
+  );
+}
+
 async function maybeMergeSeedRows(rows, mergeSeed) {
   if (!mergeSeed) return rows;
   return mergeSeedPlacesAsync(rows);
@@ -102,7 +119,10 @@ export async function fetchPlacesQueryWithFallback({
   mergeSeed = false,
 } = {}) {
   if (skipPlacesWithStatsView) {
-    const placesRes = await selectPlaces(client, "places", select, options, filters);
+    let placesRes = await selectPlaces(client, "places", select, options, filters);
+    if (placesRes?.error && select !== "*" && isMissingColumnSelectionError(placesRes.error)) {
+      placesRes = await selectPlaces(client, "places", "*", options, filters);
+    }
     const rows = normalizeRows(placesRes?.data);
     return {
       data: await maybeMergeSeedRows(rows, mergeSeed),
@@ -136,7 +156,10 @@ export async function fetchPlacesQueryWithFallback({
   }
 
   skipPlacesWithStatsView = true;
-  const placesRes = await selectPlaces(client, "places", select, options, filters);
+  let placesRes = await selectPlaces(client, "places", select, options, filters);
+  if (placesRes?.error && select !== "*" && isMissingColumnSelectionError(placesRes.error)) {
+    placesRes = await selectPlaces(client, "places", "*", options, filters);
+  }
   const rows = normalizeRows(placesRes?.data);
   return {
     data: await maybeMergeSeedRows(rows, mergeSeed),
@@ -147,11 +170,7 @@ export async function fetchPlacesQueryWithFallback({
 }
 
 export async function fetchPlacesForAtlas({ client = supabase } = {}) {
-  const placesRes = await fetchPlacesQueryWithFallback({
-    client,
-    select: PLACES_FALLBACK_SELECT,
-    mergeSeed: false,
-  });
+  const placesRes = await selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined);
 
   const baseRows = normalizeRows(placesRes?.data);
   const basePlaceIds = baseRows.map((row) => row?.id);
@@ -164,6 +183,6 @@ export async function fetchPlacesForAtlas({ client = supabase } = {}) {
     data: normalizedMergedRows,
     error: placesRes?.error ?? null,
     count: placesRes?.count ?? null,
-    source: placesRes?.source || "places",
+    source: "places",
   };
 }

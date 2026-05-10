@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { cityConfig } from "@/lib/cities";
 import { buildRightsSnapshotFromProfile, getCityRightsSignals } from "@/lib/cityRightsSignals";
+import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
@@ -354,19 +355,20 @@ export default function CitiesPage() {
   }, [availableCountries, countryRightsProfiles]);
 
   useEffect(() => {
-    if (!isMapboxStylesReady) return;
-    if (!countryMapContainerRef.current || countryMapRef.current) return;
-    if (!mapboxToken) return;
-
-    const hasWebGlSupport =
-      typeof mapboxgl.supported === "function"
-        ? mapboxgl.supported({ failIfMajorPerformanceCaveat: false })
-        : true;
-
-    if (!hasWebGlSupport) {
-      queueMicrotask(() => {
-        setMapError("World map is unavailable in this browser or device (WebGL not supported).");
-      });
+    const readiness = evaluateMapInitReadiness({
+      mapboxgl,
+      isMapboxStylesReady,
+      mapboxToken,
+      container: countryMapContainerRef.current,
+      mapInstance: countryMapRef.current,
+      requireWebGl: true,
+    });
+    if (!readiness.ready) {
+      if (shouldTriggerMapFallback(readiness.reason)) {
+        queueMicrotask(() => {
+          setMapError("World map is unavailable in this browser or device (WebGL not supported).");
+        });
+      }
       return;
     }
 

@@ -2,6 +2,7 @@ import "./globals.css"; //
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
 import DeferredGlobalChrome from "@/components/ui/DeferredGlobalChrome";
+import DevErrorProbe from "@/components/ui/DevErrorProbe";
 
 const baseUrl = "https://www.queeratlas.app";
 
@@ -103,6 +104,7 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <AuthProvider>
+          <DevErrorProbe />
           {children}
           <DeferredGlobalChrome />
         </AuthProvider>

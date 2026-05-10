@@ -39,6 +39,7 @@ import {
 } from "@/lib/liveVibe";
 import { usePlaces } from "@/lib/usePlaces";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
+import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
@@ -131,10 +132,10 @@ export default function CityPage() {
   const cityName = cityNameFromConfig(config, city);
   const cityHeroText = buildCityHeroText({ config, citySlug: city });
   const cityHero = parseCityHeroText(cityHeroText);
-  const placeId = searchParams.get("placeId");
-  const eventId = searchParams.get("eventId");
-  const serviceId = searchParams.get("serviceId");
-  const contributeMode = searchParams.get("contribute");
+  const placeId = searchParams?.get("placeId") || "";
+  const eventId = searchParams?.get("eventId") || "";
+  const serviceId = searchParams?.get("serviceId") || "";
+  const contributeMode = searchParams?.get("contribute") || "";
 
   useEffect(() => {
     if (!city) return;
@@ -1829,14 +1830,21 @@ export default function CityPage() {
   }, [contributeMode]);
 
   useEffect(() => {
-    if (!isMapboxStylesReady) return;
-    if (!mapContainerRef.current || mapRef.current) return;
-
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) {
-      queueMicrotask(() => {
-        setMapError("Map is unavailable right now. You can still browse venues and events below.");
-      });
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+    const readiness = evaluateMapInitReadiness({
+      mapboxgl,
+      isMapboxStylesReady,
+      mapboxToken: token,
+      container: mapContainerRef.current,
+      mapInstance: mapRef.current,
+      requireWebGl: true,
+    });
+    if (!readiness.ready) {
+      if (shouldTriggerMapFallback(readiness.reason)) {
+        queueMicrotask(() => {
+          setMapError("Map is unavailable right now. You can still browse venues and events below.");
+        });
+      }
       return;
     }
 

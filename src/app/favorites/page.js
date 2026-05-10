@@ -19,6 +19,7 @@ import { useActionToast } from "@/lib/useActionToast";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
+import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
 import { resolvePrimaryVibeKey, resolvePrimaryVibeLabel } from "@/lib/vibeDisplay";
 import { formatVibeTagLabel, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
@@ -1055,7 +1056,20 @@ export default function FavoritesPage() {
       return;
     }
 
-    if (!isMapboxStylesReady || !mapboxToken || !checkinMapContainerRef.current || checkinMapRef.current) return;
+    const readiness = evaluateMapInitReadiness({
+      mapboxgl,
+      isMapboxStylesReady,
+      mapboxToken,
+      container: checkinMapContainerRef.current,
+      mapInstance: checkinMapRef.current,
+      requireWebGl: true,
+    });
+    if (!readiness.ready) {
+      if (shouldTriggerMapFallback(readiness.reason)) {
+        setCheckinMapLoadFailed(true);
+      }
+      return;
+    }
 
     mapboxgl.accessToken = mapboxToken;
     const center = checkinMapCenter
@@ -1067,6 +1081,7 @@ export default function FavoritesPage() {
       style: "mapbox://styles/mapbox/dark-v11",
       center,
       zoom,
+      projection: "mercator",
       attributionControl: false,
     });
     map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
@@ -1084,6 +1099,7 @@ export default function FavoritesPage() {
   }, [
     checkinMapCenter,
     checkinMapContainerRef,
+    setCheckinMapLoadFailed,
     checkinMapMarkersRef,
     checkinMapRef,
     activeProfileTab,
@@ -2693,7 +2709,7 @@ export default function FavoritesPage() {
                   </span>
                 </div>
               ) : null}
-              {mapboxToken ? (
+              {mapboxToken && !checkinMapLoadFailed ? (
                 <div
                   ref={checkinMapContainerRef}
                   className="h-[230px] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/25 sm:h-[280px]"
