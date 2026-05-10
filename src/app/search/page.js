@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 import { usePlaces } from "@/lib/usePlaces";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { buildAtlasSearchResults } from "@/lib/search";
-import { cityConfig } from "@/lib/cities";
+import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { useAuth } from "@/lib/auth";
 import { getEntityQuality, getQualityMap, getQualityStatus } from "@/lib/quality";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";

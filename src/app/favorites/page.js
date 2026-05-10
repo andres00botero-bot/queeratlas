@@ -1,14 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import mapboxgl from "mapbox-gl";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
-import { cityConfig } from "@/lib/cities";
+import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getMemberProfile } from "@/lib/memberProfile";
@@ -20,6 +19,7 @@ import { showActionFeedback } from "@/lib/actionFeedback";
 import { LIVE_VIBE_OPTIONS, isMissingTableError as isMissingLiveVibeTableError } from "@/lib/liveVibe";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
+import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { resolvePrimaryVibeKey, resolvePrimaryVibeLabel } from "@/lib/vibeDisplay";
 import { formatVibeTagLabel, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
@@ -247,6 +247,7 @@ export default function FavoritesPage() {
   const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
   const [activeProfileTab, setActiveProfileTab] = useState("about");
   const [myMapView, setMyMapView] = useState("checkins");
+  const [checkinMapReadyTick, setCheckinMapReadyTick] = useState(0);
   const [calendarReminderByEventId, setCalendarReminderByEventId] = useState(() =>
     readLocalJson(FAVORITES_CALENDAR_REMINDER_STORAGE_KEY, {})
   );
@@ -266,6 +267,7 @@ export default function FavoritesPage() {
   const tripSectionRef = useRef(null);
   const pulseSectionRef = useRef(null);
   const avatarFileInputRef = useRef(null);
+  const mapboxGlRef = useRef(null);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -1046,6 +1048,7 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     const isMapTabActive = activeProfileTab === "map";
+    let isCancelled = false;
     if (!isMapTabActive) {
       if (checkinMapRef.current) {
         checkinMapMarkersRef.current.forEach((marker) => marker.remove());
@@ -1055,45 +1058,62 @@ export default function FavoritesPage() {
       }
       return;
     }
+    let map = null;
 
-    const readiness = evaluateMapInitReadiness({
-      mapboxgl,
-      isMapboxStylesReady,
-      mapboxToken,
-      container: checkinMapContainerRef.current,
-      mapInstance: checkinMapRef.current,
-      requireWebGl: true,
-    });
-    if (!readiness.ready) {
-      if (shouldTriggerMapFallback(readiness.reason)) {
-        setCheckinMapLoadFailed(true);
+    (async () => {
+      try {
+        const mapboxgl = await loadMapboxGl();
+        if (isCancelled) return;
+        mapboxGlRef.current = mapboxgl;
+
+        const readiness = evaluateMapInitReadiness({
+          mapboxgl,
+          isMapboxStylesReady,
+          mapboxToken,
+          container: checkinMapContainerRef.current,
+          mapInstance: checkinMapRef.current,
+          requireWebGl: true,
+        });
+        if (!readiness.ready) {
+          if (shouldTriggerMapFallback(readiness.reason)) {
+            setCheckinMapLoadFailed(true);
+          }
+          return;
+        }
+
+        mapboxgl.accessToken = mapboxToken;
+        const center = checkinMapCenter
+          ? [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)]
+          : [11, 20];
+        const zoom = checkinMapCenter ? 4.2 : 2;
+        map = new mapboxgl.Map({
+          container: checkinMapContainerRef.current,
+          style: "mapbox://styles/mapbox/dark-v11",
+          center,
+          zoom,
+          projection: "mercator",
+          attributionControl: false,
+        });
+        map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
+        map.on("load", () => {
+          map.resize();
+        });
+        checkinMapRef.current = map;
+        setCheckinMapReadyTick((tick) => tick + 1);
+      } catch {
+        if (!isCancelled) {
+          setCheckinMapLoadFailed(true);
+        }
       }
-      return;
-    }
-
-    mapboxgl.accessToken = mapboxToken;
-    const center = checkinMapCenter
-      ? [Number(checkinMapCenter.lng), Number(checkinMapCenter.lat)]
-      : [11, 20];
-    const zoom = checkinMapCenter ? 4.2 : 2;
-    const map = new mapboxgl.Map({
-      container: checkinMapContainerRef.current,
-      style: "mapbox://styles/mapbox/dark-v11",
-      center,
-      zoom,
-      projection: "mercator",
-      attributionControl: false,
-    });
-    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
-    map.on("load", () => {
-      map.resize();
-    });
-    checkinMapRef.current = map;
+    })();
 
     return () => {
+      isCancelled = true;
       checkinMapMarkersRef.current.forEach((marker) => marker.remove());
       checkinMapMarkersRef.current = [];
-      map.remove();
+      if (map) {
+        map.remove();
+      }
       checkinMapRef.current = null;
     };
   }, [
@@ -1120,7 +1140,8 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     const map = checkinMapRef.current;
-    if (!map) return;
+    const mapboxgl = mapboxGlRef.current;
+    if (!map || !mapboxgl) return;
 
     checkinMapMarkersRef.current.forEach((marker) => marker.remove());
     checkinMapMarkersRef.current = [];
@@ -1181,7 +1202,7 @@ export default function FavoritesPage() {
       }
       map.fitBounds(bounds, { padding: 44, maxZoom: 11, duration: 650 });
     }
-  }, [checkinMapCenter, checkinMapMarkersRef, checkinMapRef, interactiveCheckinPoints, selectedCheckinId, setSelectedCheckinId]);
+  }, [checkinMapCenter, checkinMapMarkersRef, checkinMapRef, interactiveCheckinPoints, selectedCheckinId, setSelectedCheckinId, checkinMapReadyTick]);
 
   useEffect(() => {
     setCheckinMapLoadFailed(false);
@@ -2667,8 +2688,8 @@ export default function FavoritesPage() {
           </div>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {[
-              { id: "checkins", label: "Check-ins layer", icon: "●" },
-              { id: "saved", label: "Saved layer", icon: "◆" },
+              { id: "checkins", label: "Check-ins layer", icon: "?" },
+              { id: "saved", label: "Saved layer", icon: "?" },
             ].map((view) => {
               const isActive = myMapView === view.id;
               return (
@@ -3767,7 +3788,7 @@ export default function FavoritesPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-white">{event.name}</p>
                         <p className="mt-1 text-xs text-white/62">
-                          {formatDate(event.date)} · {formatCityLabel(event.city || "")}
+                          {formatDate(event.date)} � {formatCityLabel(event.city || "")}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-1.5">

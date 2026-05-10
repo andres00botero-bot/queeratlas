@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
-import mapboxgl from "mapbox-gl";
 import "../signal-motion.css";
-import { cityConfig } from "@/lib/cities";
+import { cityCoreConfig } from "@/lib/cityCore";
+import { cityGuideConfig } from "@/lib/cityGuides";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import {
@@ -40,6 +40,7 @@ import {
 import { usePlaces } from "@/lib/usePlaces";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
+import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
@@ -128,7 +129,16 @@ export default function CityPage() {
     return fromPath || "berlin";
   }, [cityParam, pathname]);
 
-  const config = cityConfig[city] || cityConfig.berlin;
+  const coreConfig = cityCoreConfig[city] || cityCoreConfig.berlin;
+  const fallbackGuide = Array.isArray(cityGuideConfig.berlin) ? cityGuideConfig.berlin : [];
+  const cityGuide = Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : fallbackGuide;
+  const config = useMemo(
+    () => ({
+      ...coreConfig,
+      guide: cityGuide,
+    }),
+    [coreConfig, cityGuide]
+  );
   const cityName = cityNameFromConfig(config, city);
   const cityHeroText = buildCityHeroText({ config, citySlug: city });
   const cityHero = parseCityHeroText(cityHeroText);
@@ -321,6 +331,7 @@ export default function CityPage() {
   const addEventFormRef = useRef(null);
   const addServiceFormRef = useRef(null);
   const mapRef = useRef(null);
+  const mapboxGlRef = useRef(null);
   const hoverPopupRef = useRef(null);
   const markersRef = useRef([]);
   const placeMarkersRef = useRef(new Map());
@@ -1831,55 +1842,75 @@ export default function CityPage() {
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
-    const readiness = evaluateMapInitReadiness({
-      mapboxgl,
-      isMapboxStylesReady,
-      mapboxToken: token,
-      container: mapContainerRef.current,
-      mapInstance: mapRef.current,
-      requireWebGl: true,
-    });
-    if (!readiness.ready) {
-      if (shouldTriggerMapFallback(readiness.reason)) {
-        queueMicrotask(() => {
-          setMapError("Map is unavailable right now. You can still browse venues and events below.");
+    let isCancelled = false;
+
+    (async () => {
+      try {
+        const mapboxgl = await loadMapboxGl();
+        if (isCancelled) return;
+        mapboxGlRef.current = mapboxgl;
+
+        const readiness = evaluateMapInitReadiness({
+          mapboxgl,
+          isMapboxStylesReady,
+          mapboxToken: token,
+          container: mapContainerRef.current,
+          mapInstance: mapRef.current,
+          requireWebGl: true,
         });
+        if (!readiness.ready) {
+          if (shouldTriggerMapFallback(readiness.reason)) {
+            queueMicrotask(() => {
+              setMapError("Map is unavailable right now. You can still browse venues and events below.");
+            });
+          }
+          return;
+        }
+
+        queueMicrotask(() => {
+          setMapError("");
+        });
+
+        mapboxgl.accessToken = token;
+        mapRef.current = new mapboxgl.Map({
+          container: mapContainerRef.current,
+          style: "mapbox://styles/mapbox/dark-v11",
+          center: config.center,
+          zoom: 11,
+        });
+        hoverPopupRef.current = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          closeOnMove: false,
+          anchor: "top",
+          offset: 22,
+          className: styles.mapHoverPopup,
+        });
+
+        mapRef.current.on("error", handleMapError);
+        mapRef.current.on("dragstart", beginInteraction);
+        mapRef.current.on("dragend", endInteraction);
+        mapRef.current.on("zoomstart", beginInteraction);
+        mapRef.current.on("zoomend", endInteraction);
+        mapRef.current.on("rotatestart", beginInteraction);
+        mapRef.current.on("rotateend", endInteraction);
+        mapRef.current.on("pitchstart", beginInteraction);
+        mapRef.current.on("pitchend", endInteraction);
+      } catch {
+        if (!isCancelled) {
+          queueMicrotask(() => {
+            setMapError("Map failed to initialize. You can still browse venues and events below.");
+          });
+        }
+        return;
       }
-      return;
-    }
+    })();
 
-    queueMicrotask(() => {
-      setMapError("");
-    });
-
-    try {
-      mapboxgl.accessToken = token;
-      mapRef.current = new mapboxgl.Map({
-        container: mapContainerRef.current,
-        style: "mapbox://styles/mapbox/dark-v11",
-        center: config.center,
-        zoom: 11,
-      });
-      hoverPopupRef.current = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        closeOnMove: false,
-        anchor: "top",
-        offset: 22,
-        className: styles.mapHoverPopup,
-      });
-    } catch {
-      queueMicrotask(() => {
-        setMapError("Map failed to initialize. You can still browse venues and events below.");
-      });
-      return;
-    }
-
-    mapRef.current.on("error", () => {
+    const handleMapError = () => {
       queueMicrotask(() => {
         setMapError("Map had trouble loading. Venue and event lists are still fully available.");
       });
-    });
+    };
 
     const beginInteraction = () => {
       isMapInteractingRef.current = true;
@@ -1891,15 +1922,6 @@ export default function CityPage() {
       setIsMapInteracting(false);
     };
 
-    mapRef.current.on("dragstart", beginInteraction);
-    mapRef.current.on("dragend", endInteraction);
-    mapRef.current.on("zoomstart", beginInteraction);
-    mapRef.current.on("zoomend", endInteraction);
-    mapRef.current.on("rotatestart", beginInteraction);
-    mapRef.current.on("rotateend", endInteraction);
-    mapRef.current.on("pitchstart", beginInteraction);
-    mapRef.current.on("pitchend", endInteraction);
-
     const handleResize = () => mapRef.current?.resize();
     window.addEventListener("resize", handleResize);
 
@@ -1908,6 +1930,8 @@ export default function CityPage() {
     });
 
     return () => {
+      isCancelled = true;
+      mapRef.current?.off("error", handleMapError);
       mapRef.current?.off("dragstart", beginInteraction);
       mapRef.current?.off("dragend", endInteraction);
       mapRef.current?.off("zoomstart", beginInteraction);
@@ -1927,7 +1951,8 @@ export default function CityPage() {
   }, [config.center, isMapboxStylesReady]);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    const mapboxgl = mapboxGlRef.current;
+    if (!mapRef.current || !mapboxgl) return;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];

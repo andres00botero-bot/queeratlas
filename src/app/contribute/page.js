@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { cityConfig } from "@/lib/cities";
+import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { useAuth } from "@/lib/auth";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { usePlaces } from "@/lib/usePlaces";

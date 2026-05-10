@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 const MAPBOX_STYLESHEET_ID = "qa-mapbox-gl-stylesheet";
-const MAPBOX_STYLESHEET_HREF = "https://api.mapbox.com/mapbox-gl-js/v3.20.0/mapbox-gl.css";
+const MAPBOX_STYLESHEET_HREF = "https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css";
 
 export function useMapboxStylesheet() {
   const [isReady, setIsReady] = useState(false);

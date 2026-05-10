@@ -1,14 +1,14 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import mapboxgl from "mapbox-gl";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
-import { cityConfig } from "@/lib/cities";
+import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { buildRightsSnapshotFromProfile, getCityRightsSignals } from "@/lib/cityRightsSignals";
 import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
+import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
@@ -355,114 +355,123 @@ export default function CitiesPage() {
   }, [availableCountries, countryRightsProfiles]);
 
   useEffect(() => {
-    const readiness = evaluateMapInitReadiness({
-      mapboxgl,
-      isMapboxStylesReady,
-      mapboxToken,
-      container: countryMapContainerRef.current,
-      mapInstance: countryMapRef.current,
-      requireWebGl: true,
-    });
-    if (!readiness.ready) {
-      if (shouldTriggerMapFallback(readiness.reason)) {
-        queueMicrotask(() => {
-          setMapError("World map is unavailable in this browser or device (WebGL not supported).");
-        });
-      }
-      return;
-    }
-
-    mapboxgl.accessToken = mapboxToken;
-
+    let isCancelled = false;
     let map;
-    try {
-      map = new mapboxgl.Map({
-        container: countryMapContainerRef.current,
-        style: "mapbox://styles/mapbox/dark-v11",
-        projection: "mercator",
-        center: [8, 20],
-        zoom: 0.85,
-        minZoom: 0.7,
-        maxZoom: 3.3,
-        renderWorldCopies: false,
-        maxBounds: [
-          [-180, -85],
-          [180, 85],
-        ],
-        attributionControl: false,
-      });
-    } catch (error) {
-      console.warn("Map initialization skipped:", error);
-      queueMicrotask(() => {
-        setMapError("Could not start world map on this device right now.");
-      });
-      return;
-    }
+    (async () => {
+      try {
+        const mapboxgl = await loadMapboxGl();
+        if (isCancelled) return;
 
-    countryMapRef.current = map;
-
-    map.on("load", () => {
-      if (!map.getSource("qa-country-boundaries")) {
-        map.addSource("qa-country-boundaries", {
-          type: "vector",
-          url: "mapbox://mapbox.country-boundaries-v1",
+        const readiness = evaluateMapInitReadiness({
+          mapboxgl,
+          isMapboxStylesReady,
+          mapboxToken,
+          container: countryMapContainerRef.current,
+          mapInstance: countryMapRef.current,
+          requireWebGl: true,
         });
+        if (!readiness.ready) {
+          if (shouldTriggerMapFallback(readiness.reason)) {
+            queueMicrotask(() => {
+              setMapError("World map is unavailable in this browser or device (WebGL not supported).");
+            });
+          }
+          return;
+        }
+
+        mapboxgl.accessToken = mapboxToken;
+        map = new mapboxgl.Map({
+          container: countryMapContainerRef.current,
+          style: "mapbox://styles/mapbox/dark-v11",
+          projection: "mercator",
+          center: [8, 20],
+          zoom: 0.85,
+          minZoom: 0.7,
+          maxZoom: 3.3,
+          renderWorldCopies: false,
+          maxBounds: [
+            [-180, -85],
+            [180, 85],
+          ],
+          attributionControl: false,
+        });
+
+        countryMapRef.current = map;
+
+        map.on("load", () => {
+          if (!map.getSource("qa-country-boundaries")) {
+            map.addSource("qa-country-boundaries", {
+              type: "vector",
+              url: "mapbox://mapbox.country-boundaries-v1",
+            });
+          }
+
+          map.addLayer({
+            id: "qa-countries-fill",
+            type: "fill",
+            source: "qa-country-boundaries",
+            "source-layer": "country_boundaries",
+            paint: {
+              "fill-color": "#111111",
+              "fill-opacity": 0.12,
+            },
+          });
+
+          map.addLayer({
+            id: "qa-countries-line",
+            type: "line",
+            source: "qa-country-boundaries",
+            "source-layer": "country_boundaries",
+            paint: {
+              "line-color": "rgba(255,255,255,0.24)",
+              "line-width": 0.45,
+            },
+          });
+
+          updateCountryMapStyles(selectedCountry);
+        });
+
+        map.on("mouseenter", "qa-countries-fill", () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+
+        map.on("mouseleave", "qa-countries-fill", () => {
+          map.getCanvas().style.cursor = "";
+        });
+
+        map.on("click", "qa-countries-fill", (event) => {
+          const feature = event.features?.[0];
+          const rawCountry = feature?.properties?.name_en || feature?.properties?.name || feature?.properties?.name_long;
+          const matchedCountry = resolveMapboxCountryToAppCountry(rawCountry, availableCountries);
+
+          if (!matchedCountry) {
+            return;
+          }
+
+          setSelectedCountry(matchedCountry);
+          setCountryPickerOpen(false);
+          setCountryPickerQuery("");
+          scrollToCountrySection(matchedCountry);
+        });
+
+        map.on("error", () => {
+          setMapError("Could not load world map right now.");
+        });
+      } catch (error) {
+        console.warn("Map initialization skipped:", error);
+        if (!isCancelled) {
+          queueMicrotask(() => {
+            setMapError("Could not start world map on this device right now.");
+          });
+        }
       }
-
-      map.addLayer({
-        id: "qa-countries-fill",
-        type: "fill",
-        source: "qa-country-boundaries",
-        "source-layer": "country_boundaries",
-        paint: {
-          "fill-color": "#111111",
-          "fill-opacity": 0.12,
-        },
-      });
-
-      map.addLayer({
-        id: "qa-countries-line",
-        type: "line",
-        source: "qa-country-boundaries",
-        "source-layer": "country_boundaries",
-        paint: {
-          "line-color": "rgba(255,255,255,0.24)",
-          "line-width": 0.45,
-        },
-      });
-
-      updateCountryMapStyles(selectedCountry);
-    });
-
-    map.on("mouseenter", "qa-countries-fill", () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-
-    map.on("mouseleave", "qa-countries-fill", () => {
-      map.getCanvas().style.cursor = "";
-    });
-
-    map.on("click", "qa-countries-fill", (event) => {
-      const feature = event.features?.[0];
-      const rawCountry = feature?.properties?.name_en || feature?.properties?.name || feature?.properties?.name_long;
-      const matchedCountry = resolveMapboxCountryToAppCountry(rawCountry, availableCountries);
-
-      if (!matchedCountry) {
-        return;
-      }
-
-      setSelectedCountry(matchedCountry);
-      setCountryPickerOpen(false);
-      setCountryPickerQuery("");
-      scrollToCountrySection(matchedCountry);
-    });
-
-    map.on("error", () => {
-      setMapError("Could not load world map right now.");
-    });
+    })();
 
     return () => {
-      map.remove();
+      isCancelled = true;
+      if (map) {
+        map.remove();
+      }
       countryMapRef.current = null;
     };
   }, [availableCountries, isMapboxStylesReady, mapboxToken, scrollToCountrySection, selectedCountry, updateCountryMapStyles]);

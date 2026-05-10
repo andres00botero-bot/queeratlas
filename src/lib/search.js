@@ -1,4 +1,4 @@
-import { cityConfig } from "@/lib/cities";
+import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import {
   formatVibeTagLabel,
   inferVibeTagsFromLegacyVibe,
