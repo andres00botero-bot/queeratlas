@@ -1,5 +1,5 @@
 export const metadata = {
-  title: "Now",
+  title: "Queer World News & Live Updates",
   description:
     "Real-time queer world news and momentum updates across cities in the Queer Atlas network.",
   alternates: {

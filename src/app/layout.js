@@ -8,7 +8,7 @@ const baseUrl = "https://www.queeratlas.app";
 export const metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "Queer Atlas",
+    default: "Queer Atlas - Global Queer Guide, Events & Venues",
     template: "%s | Queer Atlas",
   },
   description:
@@ -49,7 +49,7 @@ export const metadata = {
     "community guides",
   ],
   openGraph: {
-    title: "Queer Atlas",
+    title: "Queer Atlas - Global Queer Guide, Events & Venues",
     description:
       "Find the city. Feel the signal. Global queer discovery for places, events, and community.",
     url: "https://www.queeratlas.app",
@@ -67,7 +67,7 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Queer Atlas",
+    title: "Queer Atlas - Global Queer Guide, Events & Venues",
     description:
       "Global queer discovery for venues, events, and community signal.",
     images: ["/queer-atlas-heart-logo-progress.png"],
