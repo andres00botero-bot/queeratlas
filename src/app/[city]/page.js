@@ -295,6 +295,7 @@ export default function CityPage() {
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [hoveredServiceId, setHoveredServiceId] = useState(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
+  const [activeCitySection, setActiveCitySection] = useState("map");
   const { isMember, user, memberName } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isTrustedContributor, setIsTrustedContributor] = useState(false);
@@ -372,6 +373,43 @@ export default function CityPage() {
       return;
     }
     venueGroupRefs.current[key] = node;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const sections = [
+      { key: "map", ref: mapWrapperRef },
+      { key: "guide", ref: guideSectionRef },
+      { key: "events", ref: tonightSectionRef },
+      { key: "services", ref: servicesSectionRef },
+      { key: "venues", ref: placesSectionRef },
+    ];
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible.length === 0) return;
+        const key = visible[0].target.getAttribute("data-section-key");
+        if (key) setActiveCitySection(key);
+      },
+      {
+        root: null,
+        threshold: [0.35, 0.6, 0.85],
+        rootMargin: "-10% 0px -45% 0px",
+      }
+    );
+
+    sections.forEach((section) => {
+      const node = section.ref?.current;
+      if (!node) return;
+      node.setAttribute("data-section-key", section.key);
+      observer.observe(node);
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   const handleDesktopPanelWheel = useCallback((event) => {
@@ -4093,13 +4131,32 @@ export default function CityPage() {
           }}
         />
 
+        <div className="mb-6 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)]">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-cyan-100">
+              {cityPlaces.length} venues
+            </span>
+            <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-fuchsia-100">
+              {cityEventCount} events
+            </span>
+            <span className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-emerald-100">
+              {cityServiceCount} services
+            </span>
+            <span className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-white/80">
+              Active section: {activeCitySection}
+            </span>
+          </div>
+        </div>
+
         <CityQuickNavigation
+          onGoMap={() => scrollToSection(mapWrapperRef)}
           onGoEvents={() => scrollToSection(tonightSectionRef)}
           onGoGuide={() => scrollToSection(guideSectionRef)}
           onGoServices={() => scrollToSection(servicesSectionRef)}
           onGoVenues={() => scrollToSection(placesSectionRef)}
           onGoVenueType={handleGoVenueType}
           venueJumpGroups={venueJumpGroups}
+          activeSection={activeCitySection}
         />
 
         <QuickGuideSection

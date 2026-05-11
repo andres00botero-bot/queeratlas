@@ -1,6 +1,9 @@
-"use client";
+﻿"use client";
 
+import { useMemo, useState } from "react";
 import PlaceGuideCard from "@/components/city/PlaceGuideCard";
+
+const DEFAULT_VISIBLE = 6;
 
 export default function CityPlacesSection({
   placesLoading,
@@ -28,6 +31,13 @@ export default function CityPlacesSection({
   cityName,
   safetySignalsByPlaceId,
 }) {
+  const [expandedGroups, setExpandedGroups] = useState({});
+
+  const totalVenues = useMemo(
+    () => visiblePlaceGroups.reduce((sum, group) => sum + (Array.isArray(group.items) ? group.items.length : 0), 0),
+    [visiblePlaceGroups]
+  );
+
   return (
     <>
       {!placesLoading && !hasAnyPlaces && (
@@ -66,6 +76,15 @@ export default function CityPlacesSection({
         </div>
       )}
 
+      {hasAnyPlaces ? (
+        <div className="qa-city-section mb-6 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)]">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-white/52">Venues</p>
+          <p className="mt-1 text-xs text-white/66">
+            {totalVenues} total venues. Open each section for full list.
+          </p>
+        </div>
+      ) : null}
+
       {visiblePlaceGroups.map((group, groupIndex) => {
         const attachGroupRef = (node) => {
           if (groupIndex === 0 && firstGroupRef) {
@@ -79,6 +98,11 @@ export default function CityPlacesSection({
             setPlaceGroupRef(group.value, node);
           }
         };
+
+        const expanded = Boolean(expandedGroups[group.value]);
+        const items = Array.isArray(group.items) ? group.items : [];
+        const visibleItems = expanded ? items : items.slice(0, DEFAULT_VISIBLE);
+
         return (
           <div
             ref={attachGroupRef}
@@ -88,34 +112,54 @@ export default function CityPlacesSection({
             }`}
             style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
           >
-            <h2 className="sticky top-0 z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 text-lg tracking-wide text-white/82 backdrop-blur">
-              {group.label}
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
-              {group.items.map((place, index) => (
-                <PlaceGuideCard
-                  key={place.id}
-                  place={place}
-                  index={index}
-                  groupLabel={group.label}
-                  isFocusMode={isFocusMode}
-                  selectedPlaceId={selectedPlaceId}
-                  hoveredPlaceId={hoveredPlaceId}
-                  openPlace={openPlace}
-                  setHoveredPlaceId={setHoveredPlaceId}
-                  toggleFavorite={toggleFavorite}
-                  favorites={favorites}
-                  typeStyles={typeStyles}
-                  typeLabels={typeLabels}
-                  qualityMap={qualityMap}
-                  refreshEntityQuality={refreshEntityQuality}
-                  canRefreshQuality={canRefreshQuality}
-                  formatDate={formatDate}
-                  cityName={cityName}
-                  safetySignal={safetySignalsByPlaceId[String(place.id)] || null}
-                />
-              ))}
+            <div className="sticky top-[66px] z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 backdrop-blur">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg tracking-wide text-white/82">{group.label}</h2>
+                <span className="rounded-full border border-white/12 bg-white/8 px-2.5 py-1 text-[11px] text-white/72">
+                  {items.length} venues
+                </span>
+              </div>
             </div>
+
+            <div className={`${expanded ? "max-h-[980px] overflow-y-auto pr-1" : ""}`}>
+              <div className="grid gap-4 md:grid-cols-2">
+                {visibleItems.map((place, index) => (
+                  <PlaceGuideCard
+                    key={place.id}
+                    place={place}
+                    index={index}
+                    groupLabel={group.label}
+                    isFocusMode={isFocusMode}
+                    selectedPlaceId={selectedPlaceId}
+                    hoveredPlaceId={hoveredPlaceId}
+                    openPlace={openPlace}
+                    setHoveredPlaceId={setHoveredPlaceId}
+                    toggleFavorite={toggleFavorite}
+                    favorites={favorites}
+                    typeStyles={typeStyles}
+                    typeLabels={typeLabels}
+                    qualityMap={qualityMap}
+                    refreshEntityQuality={refreshEntityQuality}
+                    canRefreshQuality={canRefreshQuality}
+                    formatDate={formatDate}
+                    cityName={cityName}
+                    safetySignal={safetySignalsByPlaceId[String(place.id)] || null}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {items.length > DEFAULT_VISIBLE ? (
+              <div className="mt-4 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setExpandedGroups((current) => ({ ...current, [group.value]: !expanded }))}
+                  className="rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/82 transition hover:border-white/30 hover:text-white"
+                >
+                  {expanded ? "Show less" : `Show all (${items.length})`}
+                </button>
+              </div>
+            ) : null}
           </div>
         );
       })}

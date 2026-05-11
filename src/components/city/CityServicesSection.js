@@ -23,7 +23,7 @@ export default function CityServicesSection({
       className="qa-city-section animate-cinematic-in mb-10 rounded-[30px] border border-emerald-200/12 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(16,185,129,0.06)]"
       style={{ animationDelay: "270ms" }}
     >
-      <h2 className="sticky top-0 z-20 -mx-2 mb-4 border-b border-emerald-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-emerald-100 backdrop-blur">
+      <h2 className="sticky top-[66px] z-10 -mx-2 mb-4 border-b border-emerald-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-emerald-100 backdrop-blur">
         Services
       </h2>
       <p className="mb-4 text-sm text-white/65">

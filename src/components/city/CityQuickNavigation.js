@@ -1,15 +1,17 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 export default function CityQuickNavigation({
+  onGoMap,
   onGoEvents,
   onGoGuide,
   onGoServices,
   onGoVenues,
   onGoVenueType,
   venueJumpGroups = [],
+  activeSection = "",
 }) {
   const [showVenuePicker, setShowVenuePicker] = useState(false);
 
@@ -27,9 +29,17 @@ export default function CityQuickNavigation({
 
   const items = [
     {
+      key: "map",
+      onClick: onGoMap,
+      label: "Map",
+      eyebrow: "Primary jump",
+      className:
+        "border-cyan-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(59,130,246,0.20),rgba(12,10,18,0.94))] text-cyan-50 shadow-[0_14px_34px_rgba(34,211,238,0.18)] hover:border-cyan-200/55",
+    },
+    {
       key: "events",
       onClick: onGoEvents,
-      label: "Events",
+      label: "Tonight",
       eyebrow: "Primary jump",
       className:
         "border-fuchsia-200/34 bg-[linear-gradient(135deg,rgba(232,121,249,0.24),rgba(99,102,241,0.20),rgba(12,10,18,0.94))] text-fuchsia-50 shadow-[0_14px_34px_rgba(217,70,239,0.2)] hover:border-fuchsia-200/55",
@@ -64,11 +74,14 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className="qa-city-panel-cq animate-cinematic-in mb-8 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_16px_50px_rgba(0,0,0,0.26)]"
+      className="qa-city-panel-cq animate-cinematic-in sticky top-3 z-30 mb-8 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_50px_rgba(0,0,0,0.26)] backdrop-blur"
       style={{ animationDelay: "170ms" }}
     >
-      <p className="text-[11px] uppercase tracking-[0.18em] text-white/50">Quick Navigation</p>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-white/50">Quick Navigation</p>
+        <p className="text-[11px] text-white/62">You are here: {activeSection || "overview"}</p>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {items.map((item) => (
           <button
             key={item.key}
@@ -81,7 +94,11 @@ export default function CityQuickNavigation({
                   }
                 : undefined
             }
-            className={`qa-cinematic-hover rounded-2xl border px-4 py-3 text-left text-sm transition ${item.className}`}
+            className={`qa-cinematic-hover rounded-2xl border px-4 py-3 text-left text-sm transition ${item.className} ${
+              activeSection === item.key || (activeSection === "venues" && item.key === "venues")
+                ? "ring-1 ring-white/45"
+                : ""
+            }`}
           >
             <p className="text-[10px] uppercase tracking-[0.14em] opacity-80">{item.eyebrow}</p>
             <p className="mt-1 flex items-center justify-between gap-2 font-semibold">
@@ -132,3 +149,4 @@ export default function CityQuickNavigation({
     </div>
   );
 }
+

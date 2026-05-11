@@ -1,9 +1,12 @@
-"use client";
+﻿"use client";
 
+import { useState } from "react";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
+
+const INITIAL_EVENTS_LIMIT = 6;
 
 export default function TonightPublicFeedPanel({
   eventsLoadError,
@@ -22,6 +25,9 @@ export default function TonightPublicFeedPanel({
   openEventContribution,
   redirectToJoin,
 }) {
+  const [showAllEvents, setShowAllEvents] = useState(false);
+  const visibleEvents = showAllEvents ? remainingEvents : remainingEvents.slice(0, INITIAL_EVENTS_LIMIT);
+
   return (
     <div className="space-y-3 rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5">
       {eventsLoadError ? (
@@ -82,7 +88,7 @@ export default function TonightPublicFeedPanel({
         </div>
       ) : null}
 
-      {!eventsLoading && remainingEvents.slice(0, 8).map((event) => (
+      {!eventsLoading && visibleEvents.map((event) => (
         <div
           key={event.id}
           onClick={() => openEvent(event)}
@@ -123,6 +129,18 @@ export default function TonightPublicFeedPanel({
         </div>
       ))}
 
+      {!eventsLoading && remainingEvents.length > INITIAL_EVENTS_LIMIT ? (
+        <div className="flex justify-center pt-2">
+          <button
+            type="button"
+            onClick={() => setShowAllEvents((current) => !current)}
+            className="rounded-full border border-violet-200/30 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-200/50"
+          >
+            {showAllEvents ? "Show fewer events" : `Show more events (${remainingEvents.length - INITIAL_EVENTS_LIMIT})`}
+          </button>
+        </div>
+      ) : null}
+
       {!eventsLoading && !featuredEvent && remainingEvents.length === 0 ? (
         <EventPulseEmptyState
           isMember={isMember}
@@ -137,3 +155,4 @@ export default function TonightPublicFeedPanel({
     </div>
   );
 }
+
