@@ -286,6 +286,13 @@ function mapMemberSearchRow(row) {
   };
 }
 
+function isAvatarFieldMissingError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  if (code === "42703" || code === "PGRST204") return true;
+  return message.includes("avatar_") && (message.includes("does not exist") || message.includes("schema cache"));
+}
+
 function resolveAvatarUrlFromProfile(profileLike) {
   const direct = String(profileLike?.avatar_url || "").trim();
   if (direct) return direct;
@@ -328,7 +335,6 @@ export default function CommunityPage() {
   const [syncError, setSyncError] = useState("");
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [leaderboard, setLeaderboard] = useState([]);
-  const [myRank, setMyRank] = useState(null);
   const [memberSearchTerm, setMemberSearchTerm] = useState("");
   const [memberSearchCity, setMemberSearchCity] = useState("");
   const [memberSearchSort, setMemberSearchSort] = useState("best");
@@ -339,9 +345,11 @@ export default function CommunityPage() {
   const [memberSearchOffset, setMemberSearchOffset] = useState(0);
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
-  const [activeCommunityPanel, setActiveCommunityPanel] = useState("ranking");
+  const [memberProfilePreview, setMemberProfilePreview] = useState(null);
+  const [memberProfilePreviewLoading, setMemberProfilePreviewLoading] = useState(false);
+  const [memberProfilePreviewError, setMemberProfilePreviewError] = useState("");
+  const [activeCommunityPanel, setActiveCommunityPanel] = useState("discovery");
   const [communityFeedMode, setCommunityFeedMode] = useState("all");
-  const [leaderboardAvatarByUserId, setLeaderboardAvatarByUserId] = useState({});
   const [reportModal, setReportModal] = useState({
     open: false,
     targetType: "",
@@ -458,12 +466,11 @@ export default function CommunityPage() {
           .filter(Boolean)
       ),
     ];
-    const nextLeaderboardAvatarByUserId = {};
     const nextLeaderboardDisplayNameByUserId = {};
     if (leaderboardUserIds.length > 0) {
       const { data: leaderboardProfiles } = await supabase
         .from("member_profiles")
-        .select("user_id,display_name,avatar_url,avatar_path")
+        .select("user_id,display_name")
         .in("user_id", leaderboardUserIds);
       (leaderboardProfiles || []).forEach((profile) => {
         const profileUserId = String(profile?.user_id || "").trim();
@@ -472,8 +479,6 @@ export default function CommunityPage() {
         if (profileDisplayName) {
           nextLeaderboardDisplayNameByUserId[profileUserId] = profileDisplayName;
         }
-        nextLeaderboardAvatarByUserId[profileUserId] =
-          resolveAvatarUrlFromProfile(profile);
       });
     }
     const nextLeaderboardRpcNameByUserId = {};
@@ -520,7 +525,6 @@ export default function CommunityPage() {
     setMessageArchive(nextArchive);
     setIdeas(nextIdeas);
     setLeaderboard(resolvedLeaderboard);
-    setLeaderboardAvatarByUserId(nextLeaderboardAvatarByUserId);
     if (errorParts.length > 0) {
       setSyncError(`Partial cloud sync: ${errorParts.join(", ")} using local fallback.`);
     }
@@ -606,30 +610,6 @@ export default function CommunityPage() {
       setBlockedItems(items || []);
     });
   }, [isReady, isMember]);
-
-  useEffect(() => {
-    if (!isReady || !isMember || !user?.id) return;
-    let active = true;
-
-    queueMicrotask(async () => {
-      const { data, error } = await supabase
-        .from("qa_member_leaderboard")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (!active) return;
-      if (error || !data) {
-        setMyRank(null);
-        return;
-      }
-      setMyRank(data);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [isReady, isMember, user?.id]);
 
   useEffect(() => {
     if (!isReady || !isMember || !user?.email) return;
@@ -918,50 +898,6 @@ export default function CommunityPage() {
     return null;
   };
 
-  const cityChampions = (() => {
-    const cityBuckets = new Map();
-    const records = [...visibleStories, ...visibleGuides];
-
-    records.forEach((entry) => {
-      const rawCity = String(entry.city || "").trim();
-      const normalizedCity = normalizeMemberKey(rawCity);
-      const authorKey = normalizeMemberKey(entry.author || "");
-      if (!normalizedCity || !authorKey) return;
-      if (normalizedCity === "multi-city" || normalizedCity === "multi city") return;
-
-      if (!cityBuckets.has(normalizedCity)) {
-        cityBuckets.set(normalizedCity, {
-          city: rawCity,
-          total: 0,
-          authors: new Map(),
-        });
-      }
-
-      const bucket = cityBuckets.get(normalizedCity);
-      bucket.total += 1;
-      const current = bucket.authors.get(authorKey) || {
-        author: entry.author || "Member",
-        count: 0,
-      };
-      current.count += 1;
-      bucket.authors.set(authorKey, current);
-    });
-
-    return [...cityBuckets.values()]
-      .map((bucket) => {
-        const topAuthor = [...bucket.authors.values()].sort((a, b) => b.count - a.count)[0];
-        return {
-          city: formatCityLabel(bucket.city),
-          total: bucket.total,
-          champion: topAuthor?.author || "Member",
-          championCount: topAuthor?.count || 0,
-          titleMeta: getAuthorIdentityMeta(topAuthor?.author || ""),
-        };
-      })
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 3);
-  })();
-
   const memberDiscoveryCities = (() => {
     const fromSearch = memberSearchRows.map((row) => row.home_city).filter(Boolean);
     const fromStories = visibleStories.map((story) => story.city).filter(Boolean);
@@ -1230,6 +1166,66 @@ export default function CommunityPage() {
     router.push(`/messages?user=${encodeURIComponent(targetId)}&name=${encodeURIComponent(safeName)}`);
   };
 
+  const openMemberProfilePreview = async (entry) => {
+    const targetId = String(entry?.user_id || "").trim();
+    if (!targetId) return;
+
+    const fallbackProfile = {
+      user_id: targetId,
+      display_name: String(entry?.display_name || "Member"),
+      pronouns: String(entry?.pronouns || ""),
+      home_city: String(entry?.home_city || ""),
+      resident_country: String(entry?.resident_country || ""),
+      title: String(entry?.title || ""),
+      about: "",
+      vibe: "",
+      visibility: "members",
+      avatar_url: String(entry?.avatar_url || "").trim(),
+      avatar_path: String(entry?.avatar_path || "").trim(),
+    };
+
+    setMemberProfilePreview(fallbackProfile);
+    setMemberProfilePreviewError("");
+    setMemberProfilePreviewLoading(true);
+
+    const baseSelect = "user_id,display_name,pronouns,home_city,resident_country,about,vibe,visibility";
+    let profileRes = await supabase
+      .from("member_profiles")
+      .select(`${baseSelect},avatar_url,avatar_path`)
+      .eq("user_id", targetId)
+      .maybeSingle();
+
+    if (profileRes.error && isAvatarFieldMissingError(profileRes.error)) {
+      profileRes = await supabase
+        .from("member_profiles")
+        .select(baseSelect)
+        .eq("user_id", targetId)
+        .maybeSingle();
+    }
+
+    if (profileRes.error) {
+      setMemberProfilePreviewLoading(false);
+      setMemberProfilePreviewError("Could not load full profile details right now.");
+      return;
+    }
+
+    const row = profileRes.data || {};
+    setMemberProfilePreview({
+      user_id: targetId,
+      display_name: String(row?.display_name || fallbackProfile.display_name || "Member"),
+      pronouns: String(row?.pronouns || fallbackProfile.pronouns || ""),
+      home_city: String(row?.home_city || fallbackProfile.home_city || ""),
+      resident_country: String(row?.resident_country || fallbackProfile.resident_country || ""),
+      title: String(row?.title || fallbackProfile.title || ""),
+      about: String(row?.about || ""),
+      vibe: String(row?.vibe || ""),
+      visibility: String(row?.visibility || "members"),
+      avatar_url: String(row?.avatar_url || fallbackProfile.avatar_url || "").trim(),
+      avatar_path: String(row?.avatar_path || fallbackProfile.avatar_path || "").trim(),
+    });
+    setMemberProfilePreviewLoading(false);
+  };
+
   const toggleMemberFollow = async (entry) => {
     const targetId = String(entry?.user_id || "").trim();
     if (!targetId || !user?.id) return;
@@ -1321,8 +1317,7 @@ export default function CommunityPage() {
     );
   };
 
-  const isRankingPanel = activeCommunityPanel === "ranking";
-  const isDiscoveryPanel = activeCommunityPanel === "discovery";
+    const isDiscoveryPanel = activeCommunityPanel === "discovery";
   const isStoriesPanel = activeCommunityPanel === "stories";
   const isGuidesPanel = activeCommunityPanel === "guides";
   const isChatPanel = activeCommunityPanel === "chat";
@@ -1372,11 +1367,10 @@ export default function CommunityPage() {
               className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:pl-2 sm:pr-2"
             >
             {[
+              { id: "discovery", label: "Member discovery", tone: "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100" },
               { id: "stories", label: "Stories", tone: "border-rose-200/45 bg-rose-200/16 text-rose-100" },
               { id: "guides", label: "Member guides", tone: "border-violet-200/45 bg-violet-200/16 text-violet-100" },
               { id: "chat", label: "Live chat", tone: "border-cyan-200/45 bg-cyan-200/16 text-cyan-100" },
-              { id: "ranking", label: "Community ranking", tone: "border-indigo-200/45 bg-indigo-200/16 text-indigo-100" },
-              { id: "discovery", label: "Member discovery", tone: "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100" },
               { id: "improve", label: "Improve atlas", tone: "border-amber-200/45 bg-amber-200/16 text-amber-100" },
             ].map((item) => {
               const isActive = activeCommunityPanel === item.id;
@@ -1414,123 +1408,6 @@ export default function CommunityPage() {
           </div>
           <p className="mt-2 text-[11px] text-white/56 sm:hidden">‹ Swipe horizontally to view more sections ›</p>
         </section>
-
-        {isRankingPanel ? (
-        <section aria-labelledby="community-ranking-heading" className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-4 shadow-[0_28px_90px_rgba(99,102,241,0.14),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-indigo-200/80">Community Ranking</p>
-              <h2 id="community-ranking-heading" className="mt-1 text-lg font-semibold text-white">Your community ranking this cycle</h2>
-              <p className="mt-1 text-xs text-white/66">Signal based on places, events, and review quality.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-white/68">Points: places (5) · events (4) · reviews (2)</p>
-              {myRank ? (
-                <span className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[11px] text-white/78">
-                  Your rank #{myRank.rank}
-                </span>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setActiveCommunityPanel("discovery")}
-                className="qa-action qa-action-strong rounded-full border border-indigo-200/40 bg-indigo-200/16 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-100 transition hover:border-indigo-200/62"
-              >
-                Find members
-              </button>
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            {leaderboard.slice(0, 5).map((entry) => {
-              const titleMeta = getMemberTitleMeta(entry.title);
-              const avatarUrl = String(
-                leaderboardAvatarByUserId[String(entry.user_id || "")] || ""
-              ).trim();
-              const initials =
-                String(entry.display_name || "Member")
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((chunk) => chunk.charAt(0).toUpperCase())
-                  .join("") || "M";
-              return (
-                <article key={entry.user_id} className="qa-premium-card rounded-2xl border border-white/10 bg-white/6 p-3 shadow-[0_14px_32px_rgba(0,0,0,0.22)]">
-                  <div className="flex items-center gap-2">
-                    <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/16 bg-white/8 text-[11px] font-semibold text-white/82">
-                      {avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={avatarUrl} alt={entry.display_name || "Member"} className="h-full w-full object-cover" />
-                      ) : initials}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-white/60">#{entry.rank}</p>
-                      <p className="truncate text-sm font-semibold text-white">{entry.display_name}</p>
-                    </div>
-                  </div>
-                  <span className={`mt-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
-                    <span>{titleMeta.icon}</span>
-                    {titleMeta.label}
-                  </span>
-                  <p className="mt-2 text-xs text-white/62">
-                    {entry.score} pts · {entry.city_count || 0} cities
-                  </p>
-                </article>
-              );
-            })}
-            {leaderboard.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-5 text-sm text-white/68 md:col-span-2 xl:col-span-5">
-                Ranking will appear as members add places, events, and reviews.
-              </div>
-            )}
-          </div>
-          <div className="mt-5 rounded-2xl border border-indigo-200/16 bg-indigo-200/[0.06] p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-indigo-100/80">City champions</p>
-              <p className="text-[11px] text-white/68">Top member signal per city this cycle</p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              {cityChampions.length > 0 ? (
-                cityChampions.map((champion) => (
-                  <article
-                    key={`champion-${normalizeMemberKey(champion.city)}`}
-                    className="qa-premium-card rounded-2xl border border-white/10 bg-black/25 p-3 shadow-[0_14px_30px_rgba(0,0,0,0.22)]"
-                  >
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-indigo-100/75">
-                      {champion.city}
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-white">
-                      {champion.titleMeta?.icon ? (
-                        <span
-                          className={`mr-1.5 ${champion.titleMeta.iconClass || "text-white/70"}`}
-                          title={champion.titleMeta.label}
-                          aria-label={champion.titleMeta.label}
-                        >
-                          {champion.titleMeta.icon}
-                        </span>
-                      ) : null}
-                      {champion.champion}
-                    </p>
-                    <p className="mt-1 text-xs text-white/60">
-                      {champion.championCount} contributions · {champion.total} city posts
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100/85">
-                        Featured
-                      </span>
-                      <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/85">
-                        Trusted
-                      </span>
-                    </div>
-                  </article>
-                ))
-              ) : (
-                <div className="rounded-xl border border-dashed border-white/14 px-3 py-4 text-xs text-white/68 md:col-span-3">
-                  City champions appear as members publish stories and guides for each city.
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-        ) : null}
 
         {isDiscoveryPanel ? (
         <section aria-labelledby="community-discovery-heading" className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_30px_96px_rgba(217,70,239,0.15),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
@@ -1608,7 +1485,8 @@ export default function CommunityPage() {
             </p>
           )}
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-4 max-h-[62vh] overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {displayedMemberRows.map((entry) => {
               const titleMeta = getMemberTitleMeta(entry.title || "");
               const busy = Boolean(memberSearchBusyById[entry.user_id]);
@@ -1666,24 +1544,28 @@ export default function CommunityPage() {
                     )}
                   </div>
 
-                  <p className="mt-3 text-xs text-white/62">
-                    {entry.score} pts · {entry.city_count} cities {entry.pronouns ? `· ${entry.pronouns}` : ""}
-                  </p>
-
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="mt-3 grid gap-2">
                     <button
-                      onClick={() => openMemberThread(entry)}
-                      className="qa-action rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/50"
+                      onClick={() => openMemberProfilePreview(entry)}
+                      className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.22),rgba(99,102,241,0.16),rgba(14,10,20,0.94))] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62"
                     >
-                      Message
+                      Open profile
                     </button>
-                    <button
-                      onClick={() => toggleMemberFollow(entry)}
-                      disabled={busy}
-                      className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.22),rgba(99,102,241,0.16),rgba(14,10,20,0.94))] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62 disabled:cursor-wait disabled:opacity-65"
-                    >
-                      {busy ? "Saving..." : entry.is_following ? "Following" : "Add friend"}
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => openMemberThread(entry)}
+                        className="qa-action rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/50"
+                      >
+                        Message
+                      </button>
+                      <button
+                        onClick={() => toggleMemberFollow(entry)}
+                        disabled={busy}
+                        className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.22),rgba(99,102,241,0.16),rgba(14,10,20,0.94))] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62 disabled:cursor-wait disabled:opacity-65"
+                      >
+                        {busy ? "Saving..." : entry.is_following ? "Following" : "Add friend"}
+                      </button>
+                    </div>
                   </div>
                 </article>
               );
@@ -1693,6 +1575,7 @@ export default function CommunityPage() {
                 No members match this filter yet. Try another city or broaden your search.
               </div>
             )}
+            </div>
           </div>
           <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
           <div className="mt-3 flex items-center justify-between gap-3">
@@ -2062,6 +1945,98 @@ export default function CommunityPage() {
         </section>
         ) : null}
       </div>
+      {memberProfilePreview ? (
+        <div className="fixed inset-0 z-[91] flex items-end justify-center bg-black/68 p-3 sm:items-center sm:p-6">
+          <div className="qa-premium-card w-full max-w-lg rounded-[22px] border border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(24,12,32,0.98),rgba(10,10,12,0.99))] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.52)] sm:rounded-[26px] sm:p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-200/82">Member profile</p>
+                <h3 className="mt-1 text-lg font-semibold text-white">
+                  {memberProfilePreview.display_name || "Member"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMemberProfilePreview(null);
+                  setMemberProfilePreviewError("");
+                  setMemberProfilePreviewLoading(false);
+                }}
+                className="rounded-lg border border-white/14 bg-white/8 px-2.5 py-1 text-xs text-white/78 transition hover:border-white/24 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {memberProfilePreview.title ? (
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${getMemberTitleMeta(memberProfilePreview.title).className}`}>
+                  <span>{getMemberTitleMeta(memberProfilePreview.title).icon}</span>
+                  {getMemberTitleMeta(memberProfilePreview.title).label}
+                </span>
+              ) : null}
+              {memberProfilePreview.pronouns ? (
+                <span className="rounded-full border border-white/14 bg-white/6 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/72">
+                  {memberProfilePreview.pronouns}
+                </span>
+              ) : null}
+              <span className="rounded-full border border-white/14 bg-white/6 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/72">
+                {[memberProfilePreview.home_city, memberProfilePreview.resident_country].filter(Boolean).join(" · ") || "City not set"}
+              </span>
+            </div>
+
+            {memberProfilePreviewLoading ? (
+              <p className="mt-3 text-sm text-white/66">Loading profile details...</p>
+            ) : null}
+            {memberProfilePreviewError ? (
+              <p className="mt-3 rounded-xl border border-amber-200/24 bg-amber-200/12 px-3 py-2 text-xs text-amber-100">
+                {memberProfilePreviewError}
+              </p>
+            ) : null}
+
+            <div className="mt-3 rounded-xl border border-white/12 bg-black/28 p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">About</p>
+              <p className="mt-1 text-sm text-white/86">
+                {String(memberProfilePreview.about || "").trim() || "No public about text yet."}
+              </p>
+            </div>
+
+            <div className="mt-3 rounded-xl border border-white/12 bg-black/28 p-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">Vibe</p>
+              <p className="mt-1 text-sm text-white/86">
+                {String(memberProfilePreview.vibe || "").trim() || "No vibe keywords yet."}
+              </p>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/messages?user=${encodeURIComponent(String(memberProfilePreview.user_id || ""))}&name=${encodeURIComponent(
+                      String(memberProfilePreview.display_name || "Member")
+                    )}`
+                  )
+                }
+                className="qa-action rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/50"
+              >
+                Message
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMemberProfilePreview(null);
+                  setMemberProfilePreviewError("");
+                  setMemberProfilePreviewLoading(false);
+                }}
+                className="qa-action rounded-xl border border-white/16 bg-white/8 px-3 py-2 text-xs font-semibold text-white/86 transition hover:border-white/28 hover:text-white"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {reportModal.open && (
         <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
           <div className="flex min-h-full items-center justify-center">

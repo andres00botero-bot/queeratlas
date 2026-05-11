@@ -428,11 +428,13 @@ export function AuthProvider({ children }) {
           avatar_path: localProfile.avatarPath || null,
         };
 
+        let degradedMissingExtrasColumns = false;
         let { error } = await supabase
           .from("member_profiles")
           .upsert(fullPayload, { onConflict: "user_id" });
 
         if (error && isMissingProfileExtrasColumnError(error)) {
+          degradedMissingExtrasColumns = true;
           const legacyPayload = {
             user_id: user.id,
             display_name: isAdminUser ? "Admin" : (localProfile.displayName || null),
@@ -453,7 +455,7 @@ export function AuthProvider({ children }) {
         const remoteProfile = await loadRemoteMemberProfile(user.id);
         saveMemberProfile(remoteProfile);
         setMemberProfile(remoteProfile);
-        return { ok: true };
+        return { ok: !degradedMissingExtrasColumns, degradedMissingExtrasColumns };
       },
       updateMemberAvatar: async (avatarInput) => {
         const localSnapshot = getMemberProfile();

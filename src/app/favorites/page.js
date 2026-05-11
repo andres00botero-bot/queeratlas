@@ -149,6 +149,7 @@ const SavedEventsPanel = dynamic(() => import("@/components/favorites/SavedEvent
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
+const FAVORITES_PROFILE_MEMORIES_STORAGE_KEY = "qa_favorites_profile_memories_v1";
 const FAVORITES_CALENDAR_REMINDER_STORAGE_KEY = "qa_favorites_calendar_reminders_v1";
 const FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY = "qa_favorites_calendar_last_alert_day_v1";
 const MEMBER_AVATAR_BUCKET = "member-avatars";
@@ -164,6 +165,13 @@ function isAvatarColumnMissingError(error) {
   return mentionsAvatarField && (message.includes("does not exist") || message.includes("schema cache"));
 }
 
+function isProfileMemoriesTableMissingError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  if (code === "42P01" || code === "PGRST204") return true;
+  return message.includes("qa_member_profile_memories") && message.includes("does not exist");
+}
+
 function resolveAvatarUrlFromRow(row) {
   const direct = String(row?.avatar_url || "").trim();
   if (direct) return direct;
@@ -174,7 +182,7 @@ function resolveAvatarUrlFromRow(row) {
 
 function sanitizeProfileExtras(raw = {}) {
   return {
-    about: String(raw?.about || "").slice(0, 160),
+    about: String(raw?.about || "").slice(0, 300),
     visibility: ["friends", "members", "public"].includes(String(raw?.visibility || "members"))
       ? String(raw?.visibility || "members")
       : "members",
@@ -183,6 +191,82 @@ function sanitizeProfileExtras(raw = {}) {
     phone: String(raw?.phone || "").slice(0, 40),
     contactEmail: String(raw?.contactEmail || "").slice(0, 120),
   };
+}
+
+const PREMIUM_VIBE_CHIP_META = {
+  midnight_pulse: { label: "Midnight Pulse", tone: "border-fuchsia-300/70 bg-fuchsia-300/26 text-fuchsia-50" },
+  festival_heart: { label: "Festival Heart", tone: "border-amber-300/70 bg-amber-300/26 text-amber-50" },
+  soft_chaos: { label: "Soft Chaos", tone: "border-pink-300/70 bg-pink-300/26 text-pink-50" },
+  underground_ritual: { label: "Underground Ritual", tone: "border-violet-300/70 bg-violet-300/26 text-violet-50" },
+  chosen_family: { label: "Chosen Family", tone: "border-emerald-300/70 bg-emerald-300/26 text-emerald-50" },
+  techno: { label: "Techno", tone: "border-indigo-300/70 bg-indigo-300/26 text-indigo-50" },
+  electronic: { label: "Neon Current", tone: "border-cyan-300/70 bg-cyan-300/26 text-cyan-50" },
+  neon_current: { label: "Neon Current", tone: "border-cyan-300/70 bg-cyan-300/26 text-cyan-50" },
+  festivals: { label: "Festival Heart", tone: "border-amber-300/70 bg-amber-300/26 text-amber-50" },
+  festival: { label: "Festival Heart", tone: "border-amber-300/70 bg-amber-300/26 text-amber-50" },
+  underground: { label: "Underground Ritual", tone: "border-violet-300/70 bg-violet-300/26 text-violet-50" },
+  late: { label: "Late Night Rituals", tone: "border-rose-300/70 bg-rose-300/26 text-rose-50" },
+  nights: { label: "Late Night Rituals", tone: "border-rose-300/70 bg-rose-300/26 text-rose-50" },
+  late_night_rituals: { label: "Late Night Rituals", tone: "border-rose-300/70 bg-rose-300/26 text-rose-50" },
+  social: { label: "Chosen Family Energy", tone: "border-emerald-300/70 bg-emerald-300/26 text-emerald-50" },
+  mixed: { label: "Open Circle", tone: "border-sky-300/70 bg-sky-300/26 text-sky-50" },
+  leather: { label: "Leather Signal", tone: "border-stone-300/70 bg-stone-300/26 text-stone-50" },
+  leather_signal: { label: "Leather Signal", tone: "border-stone-300/70 bg-stone-300/26 text-stone-50" },
+  house_heat: { label: "House Heat", tone: "border-orange-300/70 bg-orange-300/26 text-orange-50" },
+  ballroom_energy: { label: "Ballroom Energy", tone: "border-teal-300/70 bg-teal-300/26 text-teal-50" },
+  drag_after_dark: { label: "Drag After Dark", tone: "border-fuchsia-400/70 bg-fuchsia-400/26 text-fuchsia-50" },
+  rooftop_sunset: { label: "Rooftop Sunset", tone: "border-yellow-300/70 bg-yellow-300/26 text-yellow-50" },
+  art_house_nights: { label: "Art House Nights", tone: "border-purple-300/70 bg-purple-300/26 text-purple-50" },
+  queer_wellness: { label: "Queer Wellness", tone: "border-lime-300/70 bg-lime-300/26 text-lime-50" },
+  pop: { label: "Pop Euphoria", tone: "border-pink-300/70 bg-pink-300/26 text-pink-50" },
+};
+
+const PROFILE_VIBE_PRESETS = [
+  { key: "midnight_pulse", label: "Midnight Pulse" },
+  { key: "festival_heart", label: "Festival Heart" },
+  { key: "soft_chaos", label: "Soft Chaos" },
+  { key: "underground_ritual", label: "Underground Ritual" },
+  { key: "chosen_family", label: "Chosen Family" },
+  { key: "techno", label: "Techno" },
+  { key: "neon_current", label: "Neon Current" },
+  { key: "late_night_rituals", label: "Late Night Rituals" },
+  { key: "leather_signal", label: "Leather Signal" },
+  { key: "house_heat", label: "House Heat" },
+  { key: "ballroom_energy", label: "Ballroom Energy" },
+  { key: "drag_after_dark", label: "Drag After Dark" },
+  { key: "rooftop_sunset", label: "Rooftop Sunset" },
+  { key: "art_house_nights", label: "Art House Nights" },
+  { key: "queer_wellness", label: "Queer Wellness" },
+];
+
+function resolveProfileVibeChips(vibeRaw = "", fallbackVibe = "") {
+  const source = String(vibeRaw || "").trim();
+  const tokens = (source || String(fallbackVibe || "mixed"))
+    .split(/[,+/|]/)
+    .map((token) => token.trim().toLowerCase())
+    .filter(Boolean);
+
+  const uniqueTokens = [];
+  tokens.forEach((token) => {
+    if (!uniqueTokens.includes(token)) {
+      uniqueTokens.push(token);
+    }
+  });
+
+  return uniqueTokens.slice(0, 5).map((token) => {
+    const preset = PREMIUM_VIBE_CHIP_META[token];
+    if (preset) {
+      return { key: token, label: preset.label, tone: preset.tone };
+    }
+    return {
+      key: token,
+      label: token
+        .split(/\s+/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
+      tone: "border-white/22 bg-white/10 text-white/86",
+    };
+  });
 }
 
 export default function FavoritesPage() {
@@ -263,12 +347,16 @@ export default function FavoritesPage() {
   const [profileAvatarDataUrl, setProfileAvatarDataUrl] = useState("");
   const [profileAvatarLoadFailed, setProfileAvatarLoadFailed] = useState(false);
   const [friendAvatarByUserId, setFriendAvatarByUserId] = useState({});
+  const [profileMemories, setProfileMemories] = useState(() =>
+    readLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, [])
+  );
   const tonightSectionRef = useRef(null);
   const tripSectionRef = useRef(null);
   const pulseSectionRef = useRef(null);
   const favoritesControlsRef = useRef(null);
   const favoritesControlButtonsRef = useRef({});
   const avatarFileInputRef = useRef(null);
+  const memoryFileInputRef = useRef(null);
   const mapboxGlRef = useRef(null);
 
   useEffect(() => {
@@ -749,6 +837,54 @@ export default function FavoritesPage() {
       // Ignore malformed local profile extras payload.
     }
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = localStorage.getItem(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setProfileMemories(parsed.slice(0, 5));
+      }
+    } catch {
+      // Ignore malformed local memory payload.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isReady || !isMember || !user?.id) return;
+    let cancelled = false;
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("qa_member_profile_memories")
+        .select("id,user_id,image_url,storage_path,created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (cancelled) return;
+      if (error) {
+        if (!isProfileMemoriesTableMissingError(error)) {
+          showToast("Could not sync memories from cloud. Using local data.", { tone: "info", duration: 2400 });
+        }
+        return;
+      }
+      const normalized = (Array.isArray(data) ? data : [])
+        .map((row) => ({
+          id: String(row?.id || ""),
+          url: String(row?.image_url || "").trim(),
+          storagePath: String(row?.storage_path || "").trim(),
+          createdAt: String(row?.created_at || ""),
+        }))
+        .filter((row) => row.id && row.url)
+        .slice(0, 5);
+      setProfileMemories(normalized);
+      writeLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, normalized);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isMember, isReady, showToast, user?.id]);
 
   useEffect(() => {
     const remoteExtras = sanitizeProfileExtras({
@@ -1385,7 +1521,13 @@ export default function FavoritesPage() {
 
   const saveProfile = async (event) => {
     event.preventDefault();
-    const result = await updateMemberProfile(profileForm);
+    const sanitizedExtras = sanitizeProfileExtras(profileExtras);
+    const result = await updateMemberProfile({
+      ...profileForm,
+      ...sanitizedExtras,
+    });
+    setProfileExtras(sanitizedExtras);
+    writeLocalJson(FAVORITES_PROFILE_EXTRAS_STORAGE_KEY, sanitizedExtras);
     setMemberName(profileForm.displayName || authMemberName || "Explorer");
     if (result?.ok) {
       showToast("Profile updated.", { tone: "ok", duration: 2200 });
@@ -1415,6 +1557,9 @@ export default function FavoritesPage() {
 
   const openAvatarEditor = () => {
     avatarFileInputRef.current?.click();
+  };
+  const openMemoriesEditor = () => {
+    memoryFileInputRef.current?.click();
   };
 
   const onProfileAvatarSelected = async (event) => {
@@ -1446,10 +1591,163 @@ export default function FavoritesPage() {
     showToast("Profile image updated.", { tone: "ok", duration: 1800 });
   };
 
+  const onProfileMemoriesSelected = async (event) => {
+    const files = Array.from(event?.target?.files || []).filter((file) =>
+      String(file?.type || "").startsWith("image/")
+    );
+    if (!user?.id) {
+      showToast("Join as member to upload memories.", { tone: "info", duration: 2200 });
+      return;
+    }
+    if (files.length === 0) {
+      showToast("Choose at least one image.", { tone: "warn", duration: 1800 });
+      return;
+    }
+    if ((profileMemories?.length || 0) >= 5) {
+      showToast("Memory limit reached (5).", { tone: "warn", duration: 1800 });
+      return;
+    }
+    const allowedCount = Math.max(0, 5 - (profileMemories?.length || 0));
+    const uploadBatch = files.slice(0, allowedCount);
+    const nextItems = [...(profileMemories || [])];
+    const insertedRows = [];
+
+    for (let idx = 0; idx < uploadBatch.length; idx += 1) {
+      const file = uploadBatch[idx];
+      const mime = String(file.type || "").toLowerCase();
+      const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : mime.includes("gif") ? "gif" : "jpg";
+      const path = `${String(user.id)}/memories/${Date.now()}-${idx}.${ext}`;
+      const uploadRes = await supabase.storage
+        .from(MEMBER_AVATAR_BUCKET)
+        .upload(path, file, {
+          upsert: false,
+          cacheControl: "3600",
+          contentType: file.type || "image/jpeg",
+        });
+      if (uploadRes.error) continue;
+      const publicUrl = supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+      if (!publicUrl) continue;
+      const createdAtIso = new Date().toISOString();
+      const localEntry = {
+        id: `memory-local-${Date.now()}-${idx}`,
+        url: publicUrl,
+        storagePath: path,
+        createdAt: createdAtIso,
+      };
+      nextItems.push(localEntry);
+      insertedRows.push({
+        user_id: user.id,
+        image_url: publicUrl,
+        storage_path: path,
+        created_at: createdAtIso,
+      });
+    }
+
+    if (insertedRows.length > 0) {
+      const { error } = await supabase.from("qa_member_profile_memories").insert(insertedRows);
+      if (error && !isProfileMemoriesTableMissingError(error)) {
+        showToast("Memories uploaded, but cloud list sync failed.", { tone: "info", duration: 2200 });
+      }
+    }
+
+    const { data: cloudRows, error: loadCloudError } = await supabase
+      .from("qa_member_profile_memories")
+      .select("id,user_id,image_url,storage_path,created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    const limited = !loadCloudError && Array.isArray(cloudRows)
+      ? cloudRows
+          .map((row) => ({
+            id: String(row?.id || ""),
+            url: String(row?.image_url || "").trim(),
+            storagePath: String(row?.storage_path || "").trim(),
+            createdAt: String(row?.created_at || ""),
+          }))
+          .filter((row) => row.id && row.url)
+          .slice(0, 5)
+      : nextItems.slice(0, 5);
+
+    setProfileMemories(limited);
+    writeLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, limited);
+    if (event?.target) {
+      event.target.value = "";
+    }
+    showToast("Memories updated.", { tone: "ok", duration: 1800 });
+  };
+
+  const removeProfileMemory = (memoryId) => {
+    const target = (profileMemories || []).find((item) => String(item?.id) === String(memoryId));
+    const next = (profileMemories || []).filter((item) => String(item?.id) !== String(memoryId));
+    setProfileMemories(next);
+    writeLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, next);
+    queueMicrotask(async () => {
+      if (!user?.id || !target) return;
+      const idValue = String(target.id || "").trim();
+      if (idValue && !idValue.startsWith("memory-local-")) {
+        await supabase
+          .from("qa_member_profile_memories")
+          .delete()
+          .eq("id", idValue)
+          .eq("user_id", user.id);
+      } else if (String(target.storagePath || "").trim()) {
+        await supabase
+          .from("qa_member_profile_memories")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("storage_path", String(target.storagePath || "").trim());
+      }
+    });
+  };
+
   const hasProfileChanges = hasProfileFormChanges(profileForm, memberProfile || {});
   const greeting = resolveGreetingByHour();
   const displayName = resolveMemberDisplayName(memberName);
   const memberTitleMeta = getMemberTitleMeta(memberRank?.title || "");
+  const profileVibeChips = useMemo(
+    () => resolveProfileVibeChips(profileExtras.vibe, topVibe),
+    [profileExtras.vibe, topVibe]
+  );
+  const profileAboutMe = String(profileExtras.about || "").trim();
+  const atlasCredScore = Number(contributionCounts?.total || 0);
+  const atlasCredLevel =
+    atlasCredScore >= 60
+      ? "Icon"
+      : atlasCredScore >= 30
+        ? "Connector"
+        : atlasCredScore >= 12
+          ? "Curator"
+          : "Scout";
+  const atlasCredBadges = useMemo(() => {
+    const badges = [];
+    if ((contributionCounts?.stories || 0) >= 1) badges.push("Story Starter");
+    if ((contributionCounts?.guides || 0) >= 1) badges.push("Guide Builder");
+    if ((contributionCounts?.ideas || 0) >= 2) badges.push("Idea Engine");
+    if ((contributionCounts?.topics || 0) >= 2) badges.push("Conversation Driver");
+    if (Number.isFinite(Number(memberRank?.rank)) && Number(memberRank.rank) <= 50) {
+      badges.push("Top 50 Contributor");
+    }
+    if (badges.length === 0) badges.push("Rising Voice");
+    return badges.slice(0, 6);
+  }, [contributionCounts?.guides, contributionCounts?.ideas, contributionCounts?.stories, contributionCounts?.topics, memberRank?.rank]);
+  const joinedSinceLabel = useMemo(() => {
+    const raw = String(user?.created_at || "").trim();
+    if (!raw) return "Recently joined";
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return "Recently joined";
+    return `Joined ${parsed.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+    })}`;
+  }, [user?.created_at]);
+  const publicHighlights = useMemo(() => {
+    return [
+      { label: "Top contribution", value: `${atlasCredScore} total posts` },
+      { label: "Current level", value: atlasCredLevel },
+      { label: "Membership", value: joinedSinceLabel },
+    ];
+  }, [atlasCredLevel, atlasCredScore, joinedSinceLabel]);
   const displayInitials = useMemo(() => {
     const parts = String(displayName || "")
       .trim()
@@ -2135,15 +2433,15 @@ export default function FavoritesPage() {
         <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(135deg,rgba(22,22,24,0.95),rgba(10,10,10,0.99),rgba(16,18,22,0.98))] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute right-2 top-3 h-20 w-20 rounded-full bg-cyan-300/30 blur-lg sm:right-[7rem] sm:top-1/2 sm:h-40 sm:w-40 sm:-translate-y-[78%] sm:blur-2xl" />
-          <div className="pointer-events-none absolute right-2 top-3 h-16 w-16 rounded-full bg-sky-300/24 blur-md sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:blur-lg" />
+          <div className="pointer-events-none absolute right-2 top-[38%] h-20 w-20 -translate-y-1/2 rounded-full bg-cyan-300/30 blur-lg sm:right-[7rem] sm:h-40 sm:w-40 sm:blur-2xl" />
+          <div className="pointer-events-none absolute right-2 top-[38%] h-16 w-16 -translate-y-1/2 rounded-full bg-sky-300/24 blur-md sm:right-[7rem] sm:h-36 sm:w-36 sm:blur-lg" />
           <button
             type="button"
             onClick={() => {
               setActiveProfileTab("about");
               openAvatarEditor();
             }}
-            className="group absolute right-2 top-3 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-cyan-200/40 bg-cyan-200/10 text-lg font-semibold text-cyan-100 shadow-[0_0_24px_rgba(103,232,249,0.26),0_18px_40px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:top-1/2 sm:h-36 sm:w-36 sm:-translate-y-[78%] sm:text-3xl"
+            className="group absolute right-2 top-[38%] inline-flex h-16 w-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-cyan-200/40 bg-cyan-200/10 text-lg font-semibold text-cyan-100 shadow-[0_0_24px_rgba(103,232,249,0.26),0_18px_40px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:h-36 sm:w-36 sm:rounded-[22px] sm:text-3xl"
             aria-label="Edit profile image"
           >
             {String(profileAvatarDataUrl || "").trim() && !profileAvatarLoadFailed ? (
@@ -2202,88 +2500,87 @@ export default function FavoritesPage() {
               </div>
             )}
           </div>
-
           <div className="mt-4 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] sm:mt-5 sm:p-3.5">
             <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">Page controls</p>
               <p className="text-[11px] text-white/62">Swipe or tap to switch sections</p>
             </div>
             <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
-            <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                ‹
-              </span>
-            </div>
-            <nav
-              ref={favoritesControlsRef}
-              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto whitespace-nowrap pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2 sm:pl-2 sm:pr-2"
-            >
-              {[
-                { id: "about", label: "Home" },
-                { id: "friends", label: "Friends" },
-                { id: "map", label: "My map" },
-                { id: "trips", label: "Plan a trip" },
-                { id: "calendar", label: "My Calendar" },
-              ].map((tab) => {
-                const isActive = activeProfileTab === tab.id;
-                const toneClasses =
-                  tab.id === "about"
-                    ? {
-                        active: "border-cyan-200/40 bg-cyan-300/14 text-cyan-100 shadow-[0_0_0_1px_rgba(103,232,249,0.26)]",
-                        idle: "border-cyan-200/18 bg-cyan-300/[0.06] text-cyan-100/78 hover:border-cyan-200/34 hover:text-cyan-100",
-                      }
-                    : tab.id === "map"
+              <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                  {"<"}
+                </span>
+              </div>
+              <nav
+                ref={favoritesControlsRef}
+                className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto whitespace-nowrap pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2 sm:pl-2 sm:pr-2"
+              >
+                {[
+                  { id: "about", label: "Home" },
+                  { id: "friends", label: "Friends" },
+                  { id: "map", label: "My map" },
+                  { id: "trips", label: "Plan a trip" },
+                  { id: "calendar", label: "My Calendar" },
+                ].map((tab) => {
+                  const isActive = activeProfileTab === tab.id;
+                  const toneClasses =
+                    tab.id === "about"
                       ? {
-                          active: "border-emerald-200/40 bg-emerald-300/14 text-emerald-100 shadow-[0_0_0_1px_rgba(110,231,183,0.24)]",
-                          idle: "border-emerald-200/18 bg-emerald-300/[0.06] text-emerald-100/78 hover:border-emerald-200/34 hover:text-emerald-100",
+                          active: "border-cyan-200/40 bg-cyan-300/14 text-cyan-100 shadow-[0_0_0_1px_rgba(103,232,249,0.26)]",
+                          idle: "border-cyan-200/18 bg-cyan-300/[0.06] text-cyan-100/78 hover:border-cyan-200/34 hover:text-cyan-100",
                         }
-                      : tab.id === "trips"
+                      : tab.id === "map"
                         ? {
-                            active: "border-amber-200/40 bg-amber-300/14 text-amber-100 shadow-[0_0_0_1px_rgba(252,211,77,0.24)]",
-                            idle: "border-amber-200/18 bg-amber-300/[0.06] text-amber-100/78 hover:border-amber-200/34 hover:text-amber-100",
+                            active: "border-emerald-200/40 bg-emerald-300/14 text-emerald-100 shadow-[0_0_0_1px_rgba(110,231,183,0.24)]",
+                            idle: "border-emerald-200/18 bg-emerald-300/[0.06] text-emerald-100/78 hover:border-emerald-200/34 hover:text-emerald-100",
                           }
-                        : tab.id === "friends"
+                        : tab.id === "trips"
                           ? {
-                              active: "border-violet-200/40 bg-violet-300/14 text-violet-100 shadow-[0_0_0_1px_rgba(196,181,253,0.24)]",
-                              idle: "border-violet-200/18 bg-violet-300/[0.06] text-violet-100/78 hover:border-violet-200/34 hover:text-violet-100",
+                              active: "border-amber-200/40 bg-amber-300/14 text-amber-100 shadow-[0_0_0_1px_rgba(252,211,77,0.24)]",
+                              idle: "border-amber-200/18 bg-amber-300/[0.06] text-amber-100/78 hover:border-amber-200/34 hover:text-amber-100",
                             }
-                          : tab.id === "calendar"
+                          : tab.id === "friends"
                             ? {
-                                active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
-                                idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
+                                active: "border-violet-200/40 bg-violet-300/14 text-violet-100 shadow-[0_0_0_1px_rgba(196,181,253,0.24)]",
+                                idle: "border-violet-200/18 bg-violet-300/[0.06] text-violet-100/78 hover:border-violet-200/34 hover:text-violet-100",
                               }
-                            : {
-                              active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
-                              idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
-                            };
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    ref={(node) => {
-                      favoritesControlButtonsRef.current[tab.id] = node;
-                    }}
-                    onClick={() => {
-                      setActiveProfileTab(tab.id);
-                    }}
-                    className={`shrink-0 rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.12em] transition ${
-                      isActive ? toneClasses.active : toneClasses.idle
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </nav>
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
-            <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                ›
-              </span>
+                            : tab.id === "calendar"
+                              ? {
+                                  active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
+                                  idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
+                                }
+                              : {
+                                  active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
+                                  idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
+                                };
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      ref={(node) => {
+                        favoritesControlButtonsRef.current[tab.id] = node;
+                      }}
+                      onClick={() => {
+                        setActiveProfileTab(tab.id);
+                      }}
+                      className={`shrink-0 rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.12em] transition ${
+                        isActive ? toneClasses.active : toneClasses.idle
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </nav>
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
+              <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                  {">"}
+                </span>
+              </div>
             </div>
-            </div>
-            <p className="mt-2 text-[11px] text-white/56 sm:hidden">‹ Swipe horizontally to view more sections ›</p>
+            <p className="mt-2 text-[11px] text-white/56 sm:hidden">&lt; Swipe horizontally to view more sections &gt;</p>
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-white/58">
               <span>{totalPlaces} places</span>
               <span>|</span>
@@ -2297,53 +2594,51 @@ export default function FavoritesPage() {
         </section>
 
         {isProfileAboutTab ? (
-        <section className="qa-premium-card relative mb-6 overflow-hidden rounded-[28px] border border-white/12 bg-[radial-gradient(circle_at_14%_18%,rgba(34,211,238,0.12),transparent_36%),radial-gradient(circle_at_82%_12%,rgba(236,72,153,0.1),transparent_34%),linear-gradient(180deg,rgba(16,18,24,0.97),rgba(8,10,12,0.99))] p-4 shadow-[0_30px_88px_rgba(0,0,0,0.44)] sm:rounded-[30px] sm:p-5">
+        <section className="qa-premium-card relative mb-6 overflow-hidden rounded-[28px] border border-fuchsia-200/18 bg-[radial-gradient(circle_at_12%_16%,rgba(34,211,238,0.18),transparent_38%),radial-gradient(circle_at_84%_10%,rgba(244,114,182,0.18),transparent_36%),radial-gradient(circle_at_52%_88%,rgba(168,85,247,0.14),transparent_42%),linear-gradient(180deg,rgba(18,14,28,0.97),rgba(8,8,12,0.99))] p-4 shadow-[0_34px_108px_rgba(0,0,0,0.5)] sm:rounded-[30px] sm:p-5">
           <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-fuchsia-400/10 blur-3xl" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(130deg,rgba(255,255,255,0.03),transparent_32%)]" />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/72">Member profile</p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
-                About
+              <h2 className="mt-1 bg-gradient-to-r from-cyan-100 via-fuchsia-100 to-amber-100 bg-clip-text text-2xl font-semibold tracking-[-0.02em] text-transparent drop-shadow-[0_10px_26px_rgba(217,70,239,0.24)] sm:text-3xl">
+                Queer Signal
               </h2>
-              <div className="mt-2 rounded-xl border border-cyan-200/16 bg-cyan-200/[0.06] px-3 py-2">
-                <p className="mt-1 text-sm font-medium leading-6 text-white/88 sm:text-base">
-                  {profileExtras.about || "Add a short profile line to help people know your vibe."}
-                </p>
-              </div>
             </div>
-            {!isEditingAbout ? (
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setProfileForm({
-                    displayName: memberProfile?.displayName || authMemberName || memberName,
-                    pronouns: memberProfile?.pronouns || "",
-                    homeCity: memberProfile?.homeCity || "",
-                    residentCountry: memberProfile?.residentCountry || "",
-                  });
-                  setIsEditingAbout(true);
-                  setIsEditingProfile(true);
-                }}
-                className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition hover:border-white/26"
+                className="rounded-full border border-cyan-200/36 bg-cyan-200/16 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.11em] text-cyan-100 shadow-[0_10px_24px_rgba(34,211,238,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/24 active:translate-y-0"
               >
-                Edit about
+                Follow
               </button>
-            ) : null}
+              <button
+                type="button"
+                className="rounded-full border border-emerald-200/36 bg-emerald-200/16 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.11em] text-emerald-100 shadow-[0_10px_24px_rgba(16,185,129,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-100/60 hover:bg-emerald-200/24 active:translate-y-0"
+              >
+                Message
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-rose-200/36 bg-rose-200/16 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.11em] text-rose-100 shadow-[0_10px_24px_rgba(251,113,133,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/60 hover:bg-rose-200/24 active:translate-y-0"
+              >
+                Report
+              </button>
+            </div>
           </div>
 
           {!isEditingAbout ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/20 bg-cyan-200/[0.08] p-3.5">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/78">Personal details</p>
-                <p className="mt-1 text-xs text-white/64">Keep this section updated so trusted members understand your profile at a glance.</p>
+              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.11] p-3.5 shadow-[0_16px_32px_rgba(34,211,238,0.09)]">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/78">Identity Aura</p>
+                <p className="mt-1 text-xs text-white/64">
+                  Your profile is your queer energy on display: style, scene, and signal in one clean presence.
+                </p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Display name</p>
                 <p className="mt-1 text-sm text-white">{displayName}</p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Visibility</p>
                 <p className="mt-1 text-sm text-white">
                   {profileExtras.visibility === "public"
@@ -2353,7 +2648,7 @@ export default function FavoritesPage() {
                       : "Visible to members"}
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
+              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Location</p>
                 <p className="mt-1 text-sm text-white">
                   {memberProfile?.homeCity || memberProfile?.residentCountry
@@ -2361,21 +2656,142 @@ export default function FavoritesPage() {
                     : "Not set"}
                 </p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Birthday</p>
-                <p className="mt-1 text-sm text-white">{profileExtras.birthday || "Not set"}</p>
+              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Pronouns</p>
+                <p className="mt-1 text-sm text-white">{memberProfile?.pronouns || "Not set"}</p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Vibe</p>
-                <p className="mt-1 text-sm text-white">{profileExtras.vibe || topVibe}</p>
+              <div className="sm:col-span-2 rounded-2xl border border-white/14 bg-black/30 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/56">About me</p>
+                <p className="mt-1 text-sm leading-6 text-white/88">
+                  {profileAboutMe || "No about text yet."}
+                </p>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Tel (optional)</p>
-                <p className="mt-1 text-sm text-white">{profileExtras.phone || "Not set"}</p>
+              <div className="sm:col-span-2 rounded-2xl border border-fuchsia-200/26 bg-fuchsia-200/[0.12] p-3.5 shadow-[0_18px_36px_rgba(217,70,239,0.11)]">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/86">Vibe DNA</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {profileVibeChips.length > 0 ? (
+                    profileVibeChips.map((chip) => (
+                      <span
+                        key={`profile-vibe-${chip.key}`}
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.11em] shadow-[0_8px_22px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-0.5 ${chip.tone}`}
+                      >
+                        {chip.label}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="rounded-full border border-white/20 bg-white/8 px-2.5 py-1 text-[11px] uppercase tracking-[0.11em] text-white/76">
+                      Open Circle
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="rounded-2xl border border-white/12 bg-black/25 p-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Mail (optional)</p>
-                <p className="mt-1 text-sm text-white">{profileExtras.contactEmail || "Not set"}</p>
+              <div className="sm:col-span-2 rounded-2xl border border-white/14 bg-black/30 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/78">Memories (max 5)</p>
+                  <button
+                    type="button"
+                    onClick={openMemoriesEditor}
+                    className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-cyan-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/20"
+                  >
+                    Upload
+                  </button>
+                </div>
+                <input
+                  ref={memoryFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={onProfileMemoriesSelected}
+                  className="hidden"
+                />
+                {profileMemories.length > 0 ? (
+                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                    {profileMemories.map((memory) => (
+                      <article key={String(memory.id)} className="relative overflow-hidden rounded-xl border border-white/12 bg-black/30 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={String(memory.url || "")}
+                          alt=""
+                          className="h-32 w-full object-cover object-center sm:h-36"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeProfileMemory(memory.id)}
+                          className="absolute right-1 top-1 rounded-full border border-black/45 bg-black/55 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/90"
+                        >
+                          Remove
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-white/62">No memories yet. Upload up to 5 profile moments.</p>
+                )}
+              </div>
+              <div className="sm:col-span-2 rounded-2xl border border-amber-200/26 bg-amber-200/[0.11] p-3.5 shadow-[0_18px_34px_rgba(245,158,11,0.1)]">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/86">Atlas Cred</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white">
+                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] ${memberTitleMeta.className}`}>
+                    {memberTitleMeta.label || "Contributor"}
+                  </span>
+                  {Number.isFinite(Number(memberRank?.rank)) ? (
+                    <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
+                      Rank #{Number(memberRank.rank)}
+                    </span>
+                  ) : null}
+                  <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
+                    {contributionCounts.total} contributions
+                  </span>
+                  <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
+                    Level {atlasCredLevel}
+                  </span>
+                </div>
+                <p className="mt-2 text-xs text-white/62">
+                  How earned: contributions, consistency, and community quality signals.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {atlasCredBadges.map((badge) => (
+                    <span
+                      key={`atlas-badge-${badge}`}
+                      className="inline-flex items-center rounded-full border border-amber-200/28 bg-amber-100/12 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-amber-100/90"
+                    >
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.1] p-3.5 shadow-[0_16px_30px_rgba(34,211,238,0.08)]">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/84">Public highlights</p>
+                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  {publicHighlights.map((item) => (
+                    <article
+                      key={`public-highlight-${item.label}`}
+                      className="rounded-xl border border-white/12 bg-black/25 px-3 py-2.5"
+                    >
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-white/56">{item.label}</p>
+                      <p className="mt-1 text-sm text-white/90">{item.value}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+              <div className="sm:col-span-2 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileForm({
+                      displayName: memberProfile?.displayName || authMemberName || memberName,
+                      pronouns: memberProfile?.pronouns || "",
+                      homeCity: memberProfile?.homeCity || "",
+                      residentCountry: memberProfile?.residentCountry || "",
+                    });
+                    setIsEditingAbout(true);
+                    setIsEditingProfile(true);
+                  }}
+                  className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition duration-300 hover:-translate-y-0.5 hover:border-white/26"
+                  title="Edit profile home"
+                >
+                  Edit about
+                </button>
               </div>
             </div>
           ) : (
@@ -2445,8 +2861,8 @@ export default function FavoritesPage() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Vibe</p>
-                  <p className="mb-1 text-[11px] text-white/44">Short keywords about your energy, music, and social style.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">What I&apos;m into</p>
+                  <p className="mb-1 text-[11px] text-white/44">Choose up to 5 keywords. These power your Vibe DNA chips.</p>
                   <input
                     value={profileExtras.vibe}
                     onChange={(event) =>
@@ -2455,9 +2871,44 @@ export default function FavoritesPage() {
                         vibe: String(event.target.value || "").slice(0, 80),
                       }))
                     }
-                    placeholder="Your social/nightlife vibe in a few words"
+                    placeholder="Techno, late nights, festivals, underground..."
                     className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
                   />
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {PROFILE_VIBE_PRESETS.map((preset) => {
+                      const selected = String(profileExtras.vibe || "")
+                        .toLowerCase()
+                        .split(/[,+/|]/)
+                        .map((token) => token.trim())
+                        .includes(preset.key);
+                      return (
+                        <button
+                          key={`vibe-preset-${preset.key}`}
+                          type="button"
+                          onClick={() => {
+                            const tokens = String(profileExtras.vibe || "")
+                              .split(/[,+/|]/)
+                              .map((token) => token.trim().toLowerCase())
+                              .filter(Boolean);
+                            const nextTokens = selected
+                              ? tokens.filter((token) => token !== preset.key)
+                              : [...tokens, preset.key];
+                            setProfileExtras((current) => ({
+                              ...current,
+                              vibe: nextTokens.slice(0, 5).join(", "),
+                            }));
+                          }}
+                          className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.1em] transition ${
+                            selected
+                              ? "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100"
+                              : "border-white/18 bg-white/8 text-white/78 hover:border-white/30"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
                   <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Tel (optional)</p>
@@ -2511,17 +2962,17 @@ export default function FavoritesPage() {
                   </select>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5 sm:col-span-2">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">About (max 160)</p>
-                  <p className="mb-1 text-[11px] text-white/44">Tell others what you are into and what kind of people/places you seek.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">About me (max 300)</p>
+                  <p className="mb-1 text-[11px] text-white/44">A short profile line so people quickly understand you.</p>
                   <textarea
                     value={profileExtras.about}
                     onChange={(event) =>
                       setProfileExtras((current) => ({
                         ...current,
-                        about: String(event.target.value || "").slice(0, 160),
+                        about: String(event.target.value || "").slice(0, 300),
                       }))
                     }
-                    placeholder="Tell people what you are into, what vibe you bring, and where you like to go."
+                    placeholder="Short intro about who you are and your social vibe."
                     className="min-h-[90px] w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
                   />
                 </div>
@@ -2531,7 +2982,7 @@ export default function FavoritesPage() {
                   type="submit"
                   className="rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.11em] text-black"
                 >
-                  Save about
+                  Save profile home
                 </button>
                 <button
                   type="button"
@@ -2539,7 +2990,7 @@ export default function FavoritesPage() {
                     setIsEditingAbout(false);
                     setIsEditingProfile(false);
                   }}
-                  className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition hover:border-white/26"
+                  className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition duration-300 hover:-translate-y-0.5 hover:border-white/26"
                 >
                   Cancel
                 </button>
@@ -3894,4 +4345,6 @@ export default function FavoritesPage() {
     </main>
   );
 }
+
+
 
