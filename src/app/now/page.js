@@ -377,44 +377,50 @@ export default function NowPage() {
   const [isSubmittingCommunityStory, setIsSubmittingCommunityStory] = useState(false);
   const [communityStoryNotice, setCommunityStoryNotice] = useState("");
   const [communityStoryForm, setCommunityStoryForm] = useState(() => createCommunityStoryFormDefault());
+  const [isRefreshingPulse, setIsRefreshingPulse] = useState(false);
 
   const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
     setToday(now);
     setLoadError("");
-    setReady(false);
+    setReady((prev) => (prev ? prev : false));
+    setIsRefreshingPulse(true);
 
-    const cached = forceRefresh
-      ? { hit: false, stale: true }
-      : readRuntimeCache(NOW_PULSE_CACHE_KEY, NOW_PULSE_CACHE_TTL_MS);
+    try {
+      const cached = forceRefresh
+        ? { hit: false, stale: true }
+        : readRuntimeCache(NOW_PULSE_CACHE_KEY, NOW_PULSE_CACHE_TTL_MS);
 
-    if (cached.hit && cached.data) {
-      setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
-      setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
+      if (cached.hit && cached.data) {
+        setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
+        setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
+        setReady(true);
+        if (!cached.stale) return;
+      }
+
+      const [{ data: eventsData, error: eventsError }, placesRes] = await Promise.all([
+        supabase.from("events").select("*").order("date", { ascending: true }),
+        fetchPlacesForAtlas(),
+      ]);
+      const placesData = placesRes?.data || [];
+      const placesError = placesRes?.error || null;
+
+      if (eventsError || placesError) {
+        setLoadError("Live pulse could not fully load. Showing available data.");
+      }
+
+      const nextEvents = await mergeSeedEventsAsync(eventsData || []);
+      const nextPlaces = placesData;
+      setEvents(nextEvents);
+      setPlaces(nextPlaces);
+      writeRuntimeCache(NOW_PULSE_CACHE_KEY, {
+        events: nextEvents,
+        places: nextPlaces,
+      });
       setReady(true);
-      if (!cached.stale) return;
+    } finally {
+      setIsRefreshingPulse(false);
     }
-
-    const [{ data: eventsData, error: eventsError }, placesRes] = await Promise.all([
-      supabase.from("events").select("*").order("date", { ascending: true }),
-      fetchPlacesForAtlas(),
-    ]);
-    const placesData = placesRes?.data || [];
-    const placesError = placesRes?.error || null;
-
-    if (eventsError || placesError) {
-      setLoadError("Live pulse could not fully load. Showing available data.");
-    }
-
-    const nextEvents = await mergeSeedEventsAsync(eventsData || []);
-    const nextPlaces = placesData;
-    setEvents(nextEvents);
-    setPlaces(nextPlaces);
-    writeRuntimeCache(NOW_PULSE_CACHE_KEY, {
-      events: nextEvents,
-      places: nextPlaces,
-    });
-    setReady(true);
   }, []);
 
   useEffect(() => {
@@ -724,6 +730,16 @@ export default function NowPage() {
   const visibleCommunityStories = useMemo(
     () => (isCommunityExpanded ? communityStories : communityStories.slice(0, 4)),
     [communityStories, isCommunityExpanded]
+  );
+  const nowSections = useMemo(
+    () => [
+      { id: "mixed", label: "Mixed feed", tone: "cyan", count: displayedNewsItems.length },
+      { id: "rankings", label: "Rankings", tone: "emerald", count: rankingItems.length },
+      { id: "policy", label: "Policy watch", tone: "rose", count: rightsUpdates.length },
+      { id: "voices", label: "Voices", tone: "fuchsia", count: communityStories.length },
+      { id: "happening", label: "Happening soon", tone: "violet", count: happeningSoonEvents.length },
+    ],
+    [communityStories.length, displayedNewsItems.length, happeningSoonEvents.length, rankingItems.length, rightsUpdates.length]
   );
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
@@ -1194,16 +1210,12 @@ export default function NowPage() {
         <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3 shadow-[0_16px_44px_rgba(0,0,0,0.28)] sm:p-4">
           <div className="mb-2.5 flex items-center justify-between gap-2">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Now controls</p>
-            <p className="text-[11px] text-white/62">One section at a time</p>
+            <p className="text-[11px] text-white/62">
+              {isRefreshingPulse ? "Refreshing live pulse..." : "One section at a time"}
+            </p>
           </div>
           <div className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {[
-              { id: "mixed", label: "Mixed feed", tone: "cyan" },
-              { id: "rankings", label: "Rankings", tone: "emerald" },
-              { id: "policy", label: "Policy watch", tone: "rose" },
-              { id: "voices", label: "Voices", tone: "fuchsia" },
-              { id: "happening", label: "Happening soon", tone: "violet" },
-            ].map((section) => {
+            {nowSections.map((section) => {
               const isActive = activeNowSection === section.id;
               const toneClass =
                 section.tone === "fuchsia"
@@ -1232,7 +1244,10 @@ export default function NowPage() {
                   onClick={() => setActiveNowSection(section.id)}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
                 >
-                  {section.label}
+                  <span>{section.label}</span>
+                  <span className="ml-1.5 rounded-full border border-white/20 bg-white/12 px-1.5 py-0.5 text-[10px] tracking-normal">
+                    {section.count}
+                  </span>
                 </button>
               );
             })}
