@@ -320,7 +320,6 @@ export default function CommunityPage() {
   const [expandedStoryIds, setExpandedStoryIds] = useState([]);
   const [expandedGuideIds, setExpandedGuideIds] = useState([]);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
-  const [guideId, setGuideId] = useState("g1");
   const [storyForm, setStoryForm] = useState({ title: "", city: "", category: "Experience", excerpt: "", body: "" });
   const [guideForm, setGuideForm] = useState({ title: "", city: "", focus: "", summary: "", content: "" });
   const [messageForm, setMessageForm] = useState({ text: "" });
@@ -341,6 +340,7 @@ export default function CommunityPage() {
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
   const [activeCommunityPanel, setActiveCommunityPanel] = useState("ranking");
+  const [communityFeedMode, setCommunityFeedMode] = useState("all");
   const [leaderboardAvatarByUserId, setLeaderboardAvatarByUserId] = useState({});
   const [reportModal, setReportModal] = useState({
     open: false,
@@ -354,6 +354,7 @@ export default function CommunityPage() {
   const memberUserId = String(user?.id || "");
   const memberSearchCacheRef = useRef(new Map());
   const memberSearchSentinelRef = useRef(null);
+  const chatMessagesRef = useRef(null);
 
   const hydrateMemberRowsWithAvatars = useCallback(async (rows = []) => {
     const userIds = [
@@ -821,6 +822,13 @@ export default function CommunityPage() {
     return () => observer.disconnect();
   }, [memberSearchLoading, memberSearchHasMore, loadMoreMemberDiscovery]);
 
+  useEffect(() => {
+    if (activeCommunityPanel !== "chat") return;
+    const node = chatMessagesRef.current;
+    if (!node) return;
+    node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+  }, [activeCommunityPanel, topicId, messages]);
+
   if (!isReady || !isMember) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
@@ -847,8 +855,22 @@ export default function CommunityPage() {
 
   const sortedStories = [...visibleStories].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const sortedGuides = [...visibleGuides].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  const resolvedGuideId = sortedGuides.some((guide) => guide.id === guideId) ? guideId : sortedGuides[0]?.id;
-  const activeGuide = sortedGuides.find((guide) => guide.id === resolvedGuideId) || null;
+  const unifiedFeedItems = [...sortedStories.map((story) => ({
+    id: `story-${story.id}`,
+    type: "story",
+    createdAt: story.createdAt,
+    payload: story,
+  })), ...sortedGuides.map((guide) => ({
+    id: `guide-${guide.id}`,
+    type: "guide",
+    createdAt: guide.createdAt,
+    payload: guide,
+  }))].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const filteredFeedItems = unifiedFeedItems.filter((item) => {
+    if (communityFeedMode === "stories") return item.type === "story";
+    if (communityFeedMode === "guides") return item.type === "guide";
+    return true;
+  });
   const sortedIdeas = [...visibleIdeas].sort((a, b) => b.votes - a.votes);
   const resolvedTopicId = visibleTopics.some((topic) => topic.id === topicId) ? topicId : visibleTopics[0]?.id;
   const activeTopic = visibleTopics.find((topic) => topic.id === resolvedTopicId) || null;
@@ -1052,7 +1074,6 @@ export default function CommunityPage() {
 
     const item = error || !data ? fallbackItem : mapGuideRow(data);
     setGuides((current) => [item, ...current]);
-    setGuideId(item.id);
     setGuideForm({ title: "", city: "", focus: "", summary: "", content: "" });
     setShowGuideForm(false);
     showToast(error ? "Guide saved locally. Supabase sync unavailable." : "Guide published.", { tone: error ? "info" : "ok", duration: 2400 });
@@ -1320,7 +1341,7 @@ export default function CommunityPage() {
               .
             </p>
             {syncError && (
-              <p className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+              <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
                 {syncError}
               </p>
             )}
@@ -1342,7 +1363,11 @@ export default function CommunityPage() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setActiveCommunityPanel(item.id)}
+                  onClick={() => {
+                    setActiveCommunityPanel(item.id);
+                    if (item.id === "stories") setCommunityFeedMode("stories");
+                    if (item.id === "guides") setCommunityFeedMode("guides");
+                  }}
                   className={`snap-start whitespace-nowrap rounded-full border px-3 py-2.5 text-[11px] uppercase tracking-[0.12em] transition sm:py-2 ${
                     isActive
                       ? `${item.tone} shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_8px_20px_rgba(0,0,0,0.22)]`
@@ -1358,14 +1383,15 @@ export default function CommunityPage() {
         </section>
 
         {isRankingPanel ? (
-        <section className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-4 shadow-[0_28px_90px_rgba(99,102,241,0.14),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
+        <section aria-labelledby="community-ranking-heading" className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-indigo-300/14 bg-[linear-gradient(180deg,rgba(20,26,52,0.82),rgba(10,10,10,0.96))] p-4 shadow-[0_28px_90px_rgba(99,102,241,0.14),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-indigo-200/80">Community Ranking</p>
-              <h2 className="mt-1 text-lg font-semibold text-white">Your community ranking just now</h2>
+              <h2 id="community-ranking-heading" className="mt-1 text-lg font-semibold text-white">Your community ranking this cycle</h2>
+              <p className="mt-1 text-xs text-white/66">Signal based on places, events, and review quality.</p>
             </div>
             <div className="flex items-center gap-2">
-              <p className="text-xs text-white/55">Points: places (5) · events (4) · reviews (2)</p>
+              <p className="text-xs text-white/68">Points: places (5) · events (4) · reviews (2)</p>
               {myRank ? (
                 <span className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[11px] text-white/78">
                   Your rank #{myRank.rank}
@@ -1411,22 +1437,22 @@ export default function CommunityPage() {
                     <span>{titleMeta.icon}</span>
                     {titleMeta.label}
                   </span>
-                  <p className="mt-2 text-xs text-white/58">
+                  <p className="mt-2 text-xs text-white/62">
                     {entry.score} pts · {entry.city_count || 0} cities
                   </p>
                 </article>
               );
             })}
             {leaderboard.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-5 text-sm text-white/55 md:col-span-2 xl:col-span-5">
-                Ranking goes live as members add places, events, and reviews.
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-5 text-sm text-white/68 md:col-span-2 xl:col-span-5">
+                Ranking will appear as members add places, events, and reviews.
               </div>
             )}
           </div>
           <div className="mt-5 rounded-2xl border border-indigo-200/16 bg-indigo-200/[0.06] p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-xs uppercase tracking-[0.18em] text-indigo-100/80">City champions</p>
-              <p className="text-[11px] text-white/55">Top member signal per city this cycle</p>
+              <p className="text-[11px] text-white/68">Top member signal per city this cycle</p>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               {cityChampions.length > 0 ? (
@@ -1464,8 +1490,8 @@ export default function CommunityPage() {
                   </article>
                 ))
               ) : (
-                <div className="rounded-xl border border-dashed border-white/14 px-3 py-4 text-xs text-white/55 md:col-span-3">
-                  City champions unlock as members publish stories and guides for each city.
+                <div className="rounded-xl border border-dashed border-white/14 px-3 py-4 text-xs text-white/68 md:col-span-3">
+                  City champions appear as members publish stories and guides for each city.
                 </div>
               )}
             </div>
@@ -1474,16 +1500,16 @@ export default function CommunityPage() {
         ) : null}
 
         {isDiscoveryPanel ? (
-        <section className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_30px_96px_rgba(217,70,239,0.15),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
+        <section aria-labelledby="community-discovery-heading" className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_30px_96px_rgba(217,70,239,0.15),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/85">Member Discovery</p>
-              <h2 className="mt-1 text-lg font-semibold text-white">Find people by name, city, and signal</h2>
+              <h2 id="community-discovery-heading" className="mt-1 text-lg font-semibold text-white">Find people by name, city, and signal</h2>
             </div>
-            <p className="text-xs text-fuchsia-100/75">
+            <p className="text-xs text-fuchsia-100/75" aria-live="polite">
               {memberSearchLoading
                 ? "Refreshing live member graph..."
-                : `${displayedMemberRows.length} loaded${memberSearchHasMore ? " · more available" : ""}`}
+                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " · more available" : ""}`}
             </p>
           </div>
 
@@ -1631,14 +1657,14 @@ export default function CommunityPage() {
             })}
             {!memberSearchLoading && displayedMemberRows.length === 0 && (
               <div className="rounded-2xl border border-dashed border-fuchsia-200/26 px-4 py-6 text-sm text-white/62 md:col-span-2 xl:col-span-3">
-                No members matched this filter yet. Try another city or a broader search.
+                No members match this filter yet. Try another city or broaden your search.
               </div>
             )}
           </div>
           <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
           <div className="mt-3 flex items-center justify-between gap-3">
             <p className="text-[11px] text-fuchsia-100/65">
-              Stable paging: {displayedMemberRows.length} loaded
+              Stable paging: {displayedMemberRows.length} members loaded
             </p>
             {memberSearchHasMore && (
               <button
@@ -1648,9 +1674,9 @@ export default function CommunityPage() {
                   });
                 }}
                 disabled={memberSearchLoading}
-                className="qa-action rounded-full border border-fuchsia-200/36 bg-fuchsia-200/16 px-3 py-1 text-[11px] font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/56 disabled:opacity-60"
+                className="qa-action qa-action-strong rounded-full border border-fuchsia-200/36 bg-fuchsia-200/16 px-3 py-1 text-[11px] font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/56 disabled:opacity-60"
               >
-                {memberSearchLoading ? "Loading..." : "Load more"}
+                      {memberSearchLoading ? "Loading..." : "Load more members"}
               </button>
             )}
           </div>
@@ -1658,186 +1684,110 @@ export default function CommunityPage() {
         ) : null}
 
         {isStoriesPanel || isGuidesPanel ? (
-        <div className="relative grid gap-6 xl:grid-cols-2">
-          {isStoriesPanel ? (
-          <section className="qa-premium-card rounded-[30px] border border-rose-400/15 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.18),transparent_26%),linear-gradient(180deg,rgba(38,14,28,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(244,114,182,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-rose-300">Stories</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Member experiences</h2>
-              </div>
-              <button onClick={() => setShowStoryForm((current) => !current)} className="qa-action rounded-full border border-rose-400/34 bg-rose-300/10 px-4 py-2 text-xs font-semibold text-rose-100 transition hover:border-rose-300 hover:bg-rose-300/16 hover:text-white">{showStoryForm ? "Close form" : "Write a story"}</button>
+        <section aria-labelledby="community-feed-heading" className="qa-premium-card rounded-[30px] border border-violet-300/16 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.14),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(180deg,rgba(20,16,34,0.95),rgba(10,10,10,1))] p-5 shadow-[0_34px_110px_rgba(139,92,246,0.12),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-violet-200/80">Community Feed</p>
+              <h2 id="community-feed-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Stories + Guides in one stream</h2>
+              <p className="mt-1 text-xs text-violet-100/70">Switch between all posts, stories, or guides without leaving the flow.</p>
             </div>
-            {showStoryForm && (
-              <form onSubmit={publishStory} className="mb-5 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
-                  <div className="rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm text-white/75">
-                    Posting as <span className="font-medium text-white">{memberName || "Member"}</span>
-                  </div>
-                </div>
-                <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
-                <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
-                <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder="Write your experience" area />
-                <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
-              </form>
-            )}
-            <div className="qa-defer-render max-h-[560px] space-y-4 overflow-y-auto pr-1">
-              {sortedStories.map((story) => (
-                <article key={story.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-5 transition hover:-translate-y-[1px] hover:border-rose-300/35 hover:shadow-[0_24px_60px_rgba(244,114,182,0.14)]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-rose-200/70">{story.city} · {story.category}</p>
-                      <h3 className="mt-2 text-lg font-semibold">{story.title}</h3>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-full border border-rose-300/15 bg-rose-300/10 px-3 py-1 text-xs text-rose-100">
-                        {(() => {
-                          const rankMeta = getAuthorIdentityMeta(story.author);
-                          return (
-                            <span className="inline-flex items-center gap-1.5">
-                              {rankMeta?.icon ? (
-                                <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
-                                  {rankMeta.icon}
-                                </span>
-                              ) : null}
-                              <span>{story.author}</span>
-                            </span>
-                          );
-                        })()}
-                      </span>
-                      <button
-                        onClick={() =>
-                          reportContent({
-                            targetType: "community-story",
-                            targetId: story.id,
-                            title: story.title,
-                          })
-                        }
-                        className="qa-action rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/34"
-                      >
-                        Report
-                      </button>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-sm leading-7 text-gray-300">{story.excerpt}</p>
-                  {expandedStoryIds.includes(story.id) && (
-                    <p className="mt-3 text-sm leading-7 text-gray-400">{story.body}</p>
-                  )}
-                  <button
-                    onClick={() => toggleStoryExpanded(story.id)}
-                    className="qa-action mt-3 rounded-full border border-rose-200/22 bg-rose-200/10 px-3 py-1 text-xs text-rose-100 transition hover:border-rose-200/38"
-                  >
-                    {expandedStoryIds.includes(story.id) ? "Show less" : "Read full story"}
-                  </button>
-                  <p className="mt-4 text-xs text-gray-500">{timeAgo(story.createdAt)}</p>
-                </article>
-              ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
+                {showStoryForm ? "Close story form" : "Write story"}
+              </button>
+              <button onClick={() => setShowGuideForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-violet-300/34 bg-violet-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-violet-100 transition hover:border-violet-200/62">
+                {showGuideForm ? "Close guide form" : "New guide"}
+              </button>
             </div>
-          </section>
-          ) : null}
+          </div>
 
-          {isGuidesPanel ? (
-          <section className="qa-premium-card rounded-[30px] border border-violet-400/15 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.18),transparent_26%),linear-gradient(180deg,rgba(24,18,44,0.96),rgba(10,10,10,1))] p-6 shadow-[0_32px_100px_rgba(139,92,246,0.13),0_14px_34px_rgba(0,0,0,0.30)]">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-violet-300">Member Guides</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Practical wisdom</h2>
+          <div className="mb-4 inline-flex rounded-full border border-white/16 bg-black/35 p-1">
+            <button onClick={() => setCommunityFeedMode("all")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "all" ? "bg-white/16 text-white" : "text-white/72 hover:text-white"}`}>All</button>
+            <button onClick={() => setCommunityFeedMode("stories")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "stories" ? "bg-rose-300/22 text-rose-50" : "text-white/72 hover:text-white"}`}>Stories</button>
+            <button onClick={() => setCommunityFeedMode("guides")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "guides" ? "bg-violet-300/22 text-violet-50" : "text-white/72 hover:text-white"}`}>Guides</button>
+          </div>
+
+          {showStoryForm && (
+            <form id="community-story-form-feed" onSubmit={publishStory} className="mb-4 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4">
+              <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
               </div>
-              <button onClick={() => setShowGuideForm((current) => !current)} className="qa-action rounded-full border border-violet-400/34 bg-violet-300/10 px-4 py-2 text-xs font-semibold text-violet-100 transition hover:border-violet-300 hover:bg-violet-300/16 hover:text-white">{showGuideForm ? "Close form" : "New guide"}</button>
-            </div>
-            {showGuideForm && (
-              <form onSubmit={publishGuide} className="mb-5 space-y-3 rounded-2xl border border-violet-400/20 bg-violet-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" />
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field value={guideForm.city} onChange={(event) => setGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or region" />
-                  <div className="rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm text-white/75">
-                    Posting as <span className="font-medium text-white">{memberName || "Member"}</span>
-                  </div>
-                </div>
+              <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
+              <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder="Write your experience" area />
+              <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
+            </form>
+          )}
+
+          {showGuideForm && (
+            <form id="community-guide-form-feed" onSubmit={publishGuide} className="mb-4 space-y-3 rounded-2xl border border-violet-400/20 bg-violet-300/6 p-4">
+              <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" />
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field value={guideForm.city} onChange={(event) => setGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or region" />
                 <Field value={guideForm.focus} onChange={(event) => setGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder="Focus" />
-                <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Short summary" area />
-                <Field value={guideForm.content} onChange={(event) => setGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the guide" area />
-                <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
-              </form>
-            )}
-            <div className="qa-defer-render qa-guides-scroll max-h-[560px] space-y-3 overflow-y-auto pr-1">
-              {sortedGuides.map((guide) => {
-                const isExpanded = expandedGuideIds.includes(guide.id);
+              </div>
+              <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Short summary" area />
+              <Field value={guideForm.content} onChange={(event) => setGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the guide" area />
+              <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
+            </form>
+          )}
+
+          <div className="qa-defer-render max-h-[700px] space-y-3 overflow-y-auto pr-1">
+            {filteredFeedItems.map((item) => {
+              if (item.type === "story") {
+                const story = item.payload;
                 return (
-                  <article
-                    key={guide.id}
-                    className={`rounded-2xl border p-4 text-left break-normal transition ${
-                      isExpanded
-                        ? "border-violet-300/35 bg-violet-300/12 shadow-[0_14px_34px_rgba(139,92,246,0.14)]"
-                        : "border-white/8 bg-[linear-gradient(180deg,rgba(23,19,42,0.72),rgba(11,11,11,0.96))] hover:border-violet-300/24"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-violet-200/75">
-                        {guide.city} · {guide.focus}
-                      </p>
-                      <button
-                        onClick={() => toggleGuideExpanded(guide.id)}
-                        className="qa-action rounded-full border border-violet-200/22 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/37"
-                      >
-                        {isExpanded ? "Show less" : "Expand guide"}
-                      </button>
-                    </div>
-                    <h3 className="mt-2 text-sm font-semibold text-white">{guide.title}</h3>
-                    <p className="mt-2 text-xs leading-5 text-white/55">{guide.summary}</p>
-                    {isExpanded && <p className="mt-3 text-sm leading-7 text-gray-300">{guide.content}</p>}
+                  <article key={item.id} className="qa-premium-card rounded-2xl border border-rose-300/22 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-4">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">Story · {story.city} · {story.category}</p>
+                    <h3 className="mt-2 text-base font-semibold text-white">{story.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-white/78">{story.excerpt}</p>
+                    {expandedStoryIds.includes(story.id) && <p className="mt-2 text-sm leading-7 text-white/72">{story.body}</p>}
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[11px] text-white/38">
-                        {(() => {
-                          const rankMeta = getAuthorIdentityMeta(guide.author);
-                          return (
-                            <span className="inline-flex items-center gap-1.5">
-                              {rankMeta?.icon ? (
-                                <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
-                                  {rankMeta.icon}
-                                </span>
-                              ) : null}
-                              <span>{guide.author}</span>
-                            </span>
-                          );
-                        })()}{" "}
-                        · {timeAgo(guide.createdAt)}
-                      </p>
-                      <button
-                        onClick={() =>
-                          reportContent({
-                            targetType: "community-guide",
-                            targetId: guide.id,
-                            title: guide.title,
-                          })
-                        }
-                        className="qa-action rounded-full border border-violet-200/22 bg-violet-200/10 px-3 py-1 text-xs text-violet-100 transition hover:border-violet-200/37"
-                      >
-                        Report
-                      </button>
+                      <p className="text-xs text-white/62">{story.author} · {timeAgo(story.createdAt)}</p>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
+                        <button onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
+                      </div>
                     </div>
                   </article>
                 );
-              })}
-              {sortedGuides.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-white/12 px-4 py-8 text-sm text-white/50">
-                  No guides yet.
-                </div>
-              )}
-            </div>
-          </section>
-          ) : null}
-        </div>
+              }
+
+              const guide = item.payload;
+              const isExpanded = expandedGuideIds.includes(guide.id);
+              return (
+                <article key={item.id} className="qa-premium-card rounded-2xl border border-violet-300/22 bg-[linear-gradient(180deg,rgba(23,19,42,0.78),rgba(11,11,11,0.96))] p-4">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-violet-200/80">Guide · {guide.city} · {guide.focus}</p>
+                  <h3 className="mt-2 text-base font-semibold text-white">{guide.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-white/78">{guide.summary}</p>
+                  {isExpanded && <p className="mt-2 text-sm leading-7 text-white/72">{guide.content}</p>}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-white/62">{guide.author} · {timeAgo(guide.createdAt)}</p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read more"}</button>
+                      <button onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+            {filteredFeedItems.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-white/16 px-4 py-8 text-sm text-white/62">
+                No posts in this filter yet. Switch filter or publish the first post.
+              </div>
+            )}
+          </div>
+        </section>
         ) : null}
 
         {isChatPanel ? (
-        <section className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <section aria-labelledby="community-chat-heading" className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Discussions</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Live chat</h2>
+              <h2 id="community-chat-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Live chat</h2>
+              <p className="mt-1 text-xs text-cyan-100/70">Fast questions, local context, and real-time signal.</p>
             </div>
             <button
               type="button"
@@ -1849,6 +1799,22 @@ export default function CommunityPage() {
             >
               Start topic
             </button>
+          </div>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {[
+              "Anyone around this area tonight?",
+              "Best low-key spot for first-time visitors?",
+              "How's the vibe this weekend?",
+            ].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => setMessageForm({ text: preset })}
+                className="qa-action rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/40"
+              >
+                {preset}
+              </button>
+            ))}
           </div>
           <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
             <div className="space-y-3">
@@ -1863,8 +1829,8 @@ export default function CommunityPage() {
                           <h3 className="text-sm font-semibold">{topic.name}</h3>
                           <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-xs text-cyan-200">{topic.mood}</span>
                         </div>
-                        <p className="mt-2 text-xs leading-5 text-gray-400">{topic.description}</p>
-                        <p className="mt-3 text-xs text-gray-500">{replies} replies</p>
+                        <p className="mt-2 text-xs leading-5 text-white/72">{topic.description}</p>
+                        <p className="mt-3 text-xs text-white/60">{replies} replies</p>
                       </button>
                       {canDeleteTopic(topic) && (
                         <div className="mt-3 flex justify-end">
@@ -1889,7 +1855,7 @@ export default function CommunityPage() {
                     <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder="What should people discuss here?" area />
                   </div>
                   <div className="md:col-span-3 xl:col-span-1">
-                    <button type="submit" className="qa-action qa-action-strong w-full rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Create topic</button>
+                    <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Create topic</button>
                   </div>
                 </div>
               </form>
@@ -1917,19 +1883,19 @@ export default function CommunityPage() {
                         )}
                       </div>
                     </div>
-                    <p className="mt-2 text-sm leading-5 text-gray-400 sm:leading-6">{activeTopic.description}</p>
+                    <p className="mt-2 text-sm leading-5 text-white/72 sm:leading-6">{activeTopic.description}</p>
                     <p className="mt-2 text-[11px] text-cyan-100/60">
                       Topic policy: max {MAX_TOPICS} topics, kept for {TOPIC_RETENTION_DAYS} days.
                     </p>
                   </div>
                   <div className="mt-3 rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,28,36,0.8),rgba(8,8,8,0.96))] p-2.5 sm:mt-4 sm:p-3">
                     <div className="mb-3 flex flex-col gap-1.5 border-b border-white/10 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                      <p className="text-xs text-gray-300">Signed in as <span className="font-semibold text-cyan-200">{memberName || "Member"}</span></p>
-                      <p className="text-xs text-gray-500">{activeMessages.length} messages</p>
+                      <p className="text-xs text-white/74">Signed in as <span className="font-semibold text-cyan-200">{memberName || "Member"}</span></p>
+                      <p className="text-xs text-white/60">{activeMessages.length} messages in this topic</p>
                     </div>
-                    <div className="h-[300px] space-y-2.5 overflow-y-auto pr-0.5 sm:h-[340px] sm:space-y-3 sm:pr-1">
+                    <div ref={chatMessagesRef} className="h-[300px] space-y-2.5 overflow-y-auto pr-0.5 sm:h-[340px] sm:space-y-3 sm:pr-1">
                       {activeMessages.length === 0 && (
-                        <div className="rounded-2xl border border-dashed border-gray-700 px-4 py-6 text-sm text-gray-500">No messages yet. Start the conversation.</div>
+                        <div className="rounded-2xl border border-dashed border-gray-700 px-4 py-6 text-sm text-white/60">No messages yet. Be first to start this conversation.</div>
                       )}
                       {activeMessages.map((message) => {
                         const isMine = message.author === (memberName || "Member");
@@ -1942,7 +1908,7 @@ export default function CommunityPage() {
                             )}
                             <div className={`max-w-[92%] rounded-2xl px-3 py-2.5 sm:max-w-[85%] sm:px-4 sm:py-3 ${isMine ? "border border-cyan-300/35 bg-cyan-300/18" : "border border-white/10 bg-black/35"}`}>
                               <div className="flex flex-col gap-1 sm:gap-1.5">
-                                <p className="text-[11px] font-semibold text-gray-200 sm:text-xs">
+                                <p className="text-[11px] font-semibold text-white/76 sm:text-xs">
                                   {(() => {
                                     const rankMeta = getAuthorIdentityMeta(message.author);
                                     return (
@@ -1958,7 +1924,7 @@ export default function CommunityPage() {
                                   })()}
                                 </p>
                                 <div className="flex items-center gap-2">
-                                  <p className="text-xs text-gray-500">{timeAgo(message.createdAt)}</p>
+                                  <p className="text-xs text-white/60">{timeAgo(message.createdAt)}</p>
                                   <button
                                     onClick={() =>
                                       reportContent({
@@ -1973,16 +1939,30 @@ export default function CommunityPage() {
                                   </button>
                                 </div>
                               </div>
-                              <p className="mt-1.5 text-sm leading-5 text-gray-200 sm:leading-6">{message.text}</p>
+                              <p className="mt-1.5 text-sm leading-5 text-white/82 sm:leading-6">{message.text}</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <p className="text-[11px] text-cyan-100/65">Messages auto-scroll to the latest in this topic.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const node = chatMessagesRef.current;
+                        if (!node) return;
+                        node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+                      }}
+                      className="qa-action rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/45"
+                    >
+                      Jump to latest
+                    </button>
+                  </div>
                   <form onSubmit={sendMessage} className="mt-3 grid gap-2.5 md:mt-4 md:grid-cols-[1fr_auto] md:gap-3">
                     <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder="Write a message to the topic" />
-                    <button type="submit" className="qa-action qa-action-strong rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
+                    <button type="submit" className="qa-action qa-action-strong min-h-[44px] rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
                   </form>
                 </>
               )}
@@ -1992,19 +1972,27 @@ export default function CommunityPage() {
         ) : null}
 
         {isImprovePanel ? (
-        <section className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
-          <div className="mb-5 flex items-center justify-between gap-3">
+        <section aria-labelledby="community-ideas-heading" className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Improve Queer Atlas</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Member ideas</h2>
+              <h2 id="community-ideas-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Member ideas</h2>
+              <p className="mt-1 text-xs text-amber-100/70">Propose what we should build next together.</p>
             </div>
-            <button onClick={() => setShowIdeaForm((current) => !current)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-4 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">{showIdeaForm ? "Close form" : "Suggest an improvement"}</button>
+            <button
+              onClick={() => setShowIdeaForm((current) => !current)}
+              aria-expanded={showIdeaForm}
+              aria-controls="community-idea-form"
+              className="qa-action qa-action-strong rounded-full border border-amber-300/34 bg-amber-300/10 px-4 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white"
+            >
+              {showIdeaForm ? "Close form" : "Suggest an improvement"}
+            </button>
           </div>
           {showIdeaForm && (
-            <form onSubmit={publishIdea} className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <form id="community-idea-form" onSubmit={publishIdea} className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What should we improve in the app?" />
-                <button type="submit" className="qa-action qa-action-strong rounded-xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
+                <button type="submit" className="qa-action qa-action-strong min-h-[44px] rounded-xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
               </div>
             </form>
           )}
@@ -2013,8 +2001,8 @@ export default function CommunityPage() {
               <div key={idea.id} className="qa-premium-card animate-rise-in rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(46,31,10,0.78),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-amber-200/30 hover:shadow-[0_24px_60px_rgba(251,191,36,0.14)]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm leading-6 text-gray-300">{idea.text}</p>
-                    <p className="mt-2 text-xs text-gray-500">{idea.author} · {timeAgo(idea.createdAt)}</p>
+                    <p className="text-sm leading-6 text-white/74">{idea.text}</p>
+                    <p className="mt-2 text-xs text-white/60">{idea.author} · {timeAgo(idea.createdAt)}</p>
                     <button
                       onClick={() =>
                         reportContent({
@@ -2032,6 +2020,11 @@ export default function CommunityPage() {
                 </div>
               </div>
             ))}
+            {sortedIdeas.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-amber-300/26 px-4 py-8 text-sm text-white/62 md:col-span-2 xl:col-span-3">
+                No ideas yet. Suggest the first improvement for Queer Atlas.
+              </div>
+            )}
           </div>
         </section>
         ) : null}
@@ -2048,7 +2041,7 @@ export default function CommunityPage() {
 
               <div className="space-y-4 px-5 py-5">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/58">Reason</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/66">Reason</p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {REPORT_REASON_OPTIONS.map((item) => {
                       const active = reportModal.reasonKey === item.value;
@@ -2071,7 +2064,7 @@ export default function CommunityPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs uppercase tracking-[0.18em] text-white/58" htmlFor="community-report-details">
+                  <label className="text-xs uppercase tracking-[0.18em] text-white/66" htmlFor="community-report-details">
                     Extra details (optional)
                   </label>
                   <textarea
