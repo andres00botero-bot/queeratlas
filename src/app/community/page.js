@@ -340,6 +340,7 @@ export default function CommunityPage() {
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
   const [activeCommunityPanel, setActiveCommunityPanel] = useState("ranking");
+  const [hasUsedCommunityControls, setHasUsedCommunityControls] = useState(false);
   const [communityFeedMode, setCommunityFeedMode] = useState("all");
   const [leaderboardAvatarByUserId, setLeaderboardAvatarByUserId] = useState({});
   const [reportModal, setReportModal] = useState({
@@ -355,6 +356,14 @@ export default function CommunityPage() {
   const memberSearchCacheRef = useRef(new Map());
   const memberSearchSentinelRef = useRef(null);
   const chatMessagesRef = useRef(null);
+  const communityControlsRef = useRef(null);
+  const communityControlButtonsRef = useRef({});
+
+  useEffect(() => {
+    const button = communityControlButtonsRef.current[activeCommunityPanel];
+    if (!button || typeof button.scrollIntoView !== "function") return;
+    button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeCommunityPanel]);
 
   const hydrateMemberRowsWithAvatars = useCallback(async (rows = []) => {
     const userIds = [
@@ -1349,7 +1358,12 @@ export default function CommunityPage() {
         </div>
 
         <section className="qa-premium-card sticky top-2 z-20 mb-6 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] backdrop-blur sm:top-3 sm:rounded-[24px]">
-          <div className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="relative">
+            <div
+              ref={communityControlsRef}
+              onScroll={() => setHasUsedCommunityControls(true)}
+              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
             {[
               { id: "ranking", label: "Community ranking", tone: "border-indigo-200/45 bg-indigo-200/16 text-indigo-100" },
               { id: "discovery", label: "Member discovery", tone: "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100" },
@@ -1362,8 +1376,12 @@ export default function CommunityPage() {
               return (
                 <button
                   key={item.id}
+                  ref={(node) => {
+                    communityControlButtonsRef.current[item.id] = node;
+                  }}
                   type="button"
                   onClick={() => {
+                    setHasUsedCommunityControls(true);
                     setActiveCommunityPanel(item.id);
                     if (item.id === "stories") setCommunityFeedMode("stories");
                     if (item.id === "guides") setCommunityFeedMode("guides");
@@ -1379,7 +1397,13 @@ export default function CommunityPage() {
                 </button>
               );
             })}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
           </div>
+          {!hasUsedCommunityControls ? (
+            <p className="mt-2 text-[11px] text-white/56 sm:hidden">Svep för fler</p>
+          ) : null}
         </section>
 
         {isRankingPanel ? (

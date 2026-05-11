@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -361,6 +361,7 @@ export default function NowPage() {
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [activeNowSection, setActiveNowSection] = useState("mixed");
+  const [hasUsedNowControls, setHasUsedNowControls] = useState(false);
   const [rankingOverrides, setRankingOverrides] = useState(() => readLocalJson(RANKING_OVERRIDES_KEY, {}));
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
@@ -378,6 +379,14 @@ export default function NowPage() {
   const [communityStoryNotice, setCommunityStoryNotice] = useState("");
   const [communityStoryForm, setCommunityStoryForm] = useState(() => createCommunityStoryFormDefault());
   const [isRefreshingPulse, setIsRefreshingPulse] = useState(false);
+  const nowControlsRef = useRef(null);
+  const nowControlButtonsRef = useRef({});
+
+  useEffect(() => {
+    const button = nowControlButtonsRef.current[activeNowSection];
+    if (!button || typeof button.scrollIntoView !== "function") return;
+    button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [activeNowSection]);
 
   const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
@@ -1214,7 +1223,12 @@ export default function NowPage() {
               {isRefreshingPulse ? "Refreshing live pulse..." : "One section at a time"}
             </p>
           </div>
-          <div className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="relative">
+            <div
+              ref={nowControlsRef}
+              onScroll={() => setHasUsedNowControls(true)}
+              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
             {nowSections.map((section) => {
               const isActive = activeNowSection === section.id;
               const toneClass =
@@ -1240,8 +1254,14 @@ export default function NowPage() {
               return (
                 <button
                   key={section.id}
+                  ref={(node) => {
+                    nowControlButtonsRef.current[section.id] = node;
+                  }}
                   type="button"
-                  onClick={() => setActiveNowSection(section.id)}
+                  onClick={() => {
+                    setHasUsedNowControls(true);
+                    setActiveNowSection(section.id);
+                  }}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
                 >
                   <span>{section.label}</span>
@@ -1251,7 +1271,13 @@ export default function NowPage() {
                 </button>
               );
             })}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#0b0b0c] via-[#0b0b0c]/72 to-transparent sm:hidden" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#0b0b0c] via-[#0b0b0c]/72 to-transparent sm:hidden" />
           </div>
+          {!hasUsedNowControls ? (
+            <p className="mt-2 text-[11px] text-white/56 sm:hidden">Svep för fler</p>
+          ) : null}
         </section>
 
         {(isMixedSection || isRankingSection) && (
