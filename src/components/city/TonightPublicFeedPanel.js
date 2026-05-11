@@ -1,12 +1,11 @@
-﻿"use client";
+"use client";
 
-import { useState } from "react";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
 
-const INITIAL_EVENTS_LIMIT = 6;
+const DEFAULT_VISIBLE_EVENTS = 5;
 
 export default function TonightPublicFeedPanel({
   eventsLoadError,
@@ -25,8 +24,7 @@ export default function TonightPublicFeedPanel({
   openEventContribution,
   redirectToJoin,
 }) {
-  const [showAllEvents, setShowAllEvents] = useState(false);
-  const visibleEvents = showAllEvents ? remainingEvents : remainingEvents.slice(0, INITIAL_EVENTS_LIMIT);
+  const isEventsScrollable = remainingEvents.length > DEFAULT_VISIBLE_EVENTS;
 
   return (
     <div className="space-y-3 rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5">
@@ -88,56 +86,48 @@ export default function TonightPublicFeedPanel({
         </div>
       ) : null}
 
-      {!eventsLoading && visibleEvents.map((event) => (
-        <div
-          key={event.id}
-          onClick={() => openEvent(event)}
-          role="button"
-          tabIndex={0}
-          aria-label={`Open event details for ${event.name}`}
-          onMouseEnter={() => setHoveredEventId(String(event.id))}
-          onMouseLeave={() => setHoveredEventId(null)}
-          onKeyDown={(keyEvent) => {
-            if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-              keyEvent.preventDefault();
-              openEvent(event);
-            }
-          }}
-          className={`qa-cinematic-hover animate-rise-in cursor-pointer rounded-[20px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
-            String(selectedEvent?.id) === String(event.id)
-              ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
-              : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${
-                isFocusMode ? "opacity-55 saturate-75" : ""
-              }`
-          } ${
-            String(hoveredEventId) === String(event.id)
-              ? "border-violet-200/45 shadow-[0_18px_48px_rgba(139,92,246,0.18)]"
-              : ""
-          }`}
-        >
-          <div className="mb-1 flex items-center justify-between">
-            <h3 className="font-semibold">{event.name}</h3>
-            {normalizeEventRange(event).startDate ? (
-              <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
-                {formatEventDateLabel(event)}
-              </span>
-            ) : null}
-          </div>
-          <p className="line-clamp-2 text-sm leading-6 text-white/70">
-            {polishEventDescription(event, cityName)}
-          </p>
-        </div>
-      ))}
-
-      {!eventsLoading && remainingEvents.length > INITIAL_EVENTS_LIMIT ? (
-        <div className="flex justify-center pt-2">
-          <button
-            type="button"
-            onClick={() => setShowAllEvents((current) => !current)}
-            className="rounded-full border border-violet-200/30 bg-violet-200/12 px-4 py-2 text-xs text-violet-100 transition hover:border-violet-200/50"
-          >
-            {showAllEvents ? "Show fewer events" : `Show more events (${remainingEvents.length - INITIAL_EVENTS_LIMIT})`}
-          </button>
+      {!eventsLoading ? (
+        <div className={`${isEventsScrollable ? "max-h-[560px] space-y-3 overflow-y-auto pr-1 md:max-h-[680px]" : "space-y-3"}`}>
+          {remainingEvents.map((event) => (
+            <div
+              key={event.id}
+              onClick={() => openEvent(event)}
+              role="button"
+              tabIndex={0}
+              aria-label={`Open event details for ${event.name}`}
+              onMouseEnter={() => setHoveredEventId(String(event.id))}
+              onMouseLeave={() => setHoveredEventId(null)}
+              onKeyDown={(keyEvent) => {
+                if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+                  keyEvent.preventDefault();
+                  openEvent(event);
+                }
+              }}
+              className={`qa-cinematic-hover animate-rise-in cursor-pointer rounded-[20px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                String(selectedEvent?.id) === String(event.id)
+                  ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
+                  : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${
+                    isFocusMode ? "opacity-55 saturate-75" : ""
+                  }`
+              } ${
+                String(hoveredEventId) === String(event.id)
+                  ? "border-violet-200/45 shadow-[0_18px_48px_rgba(139,92,246,0.18)]"
+                  : ""
+              }`}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="font-semibold">{event.name}</h3>
+                {normalizeEventRange(event).startDate ? (
+                  <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
+                    {formatEventDateLabel(event)}
+                  </span>
+                ) : null}
+              </div>
+              <p className="line-clamp-2 text-sm leading-6 text-white/70">
+                {polishEventDescription(event, cityName)}
+              </p>
+            </div>
+          ))}
         </div>
       ) : null}
 
@@ -155,4 +145,3 @@ export default function TonightPublicFeedPanel({
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import PlaceGuideCard from "@/components/city/PlaceGuideCard";
 
 const DEFAULT_VISIBLE = 6;
@@ -31,8 +31,6 @@ export default function CityPlacesSection({
   cityName,
   safetySignalsByPlaceId,
 }) {
-  const [expandedGroups, setExpandedGroups] = useState({});
-
   const totalVenues = useMemo(
     () => visiblePlaceGroups.reduce((sum, group) => sum + (Array.isArray(group.items) ? group.items.length : 0), 0),
     [visiblePlaceGroups]
@@ -80,7 +78,7 @@ export default function CityPlacesSection({
         <div className="qa-city-section mb-6 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)]">
           <p className="text-[11px] uppercase tracking-[0.18em] text-white/52">Venues</p>
           <p className="mt-1 text-xs text-white/66">
-            {totalVenues} total venues. Open each section for full list.
+            {totalVenues} total venues. Scroll inside each section for the full list.
           </p>
         </div>
       ) : null}
@@ -99,9 +97,8 @@ export default function CityPlacesSection({
           }
         };
 
-        const expanded = Boolean(expandedGroups[group.value]);
         const items = Array.isArray(group.items) ? group.items : [];
-        const visibleItems = expanded ? items : items.slice(0, DEFAULT_VISIBLE);
+        const isScrollableGroup = items.length > DEFAULT_VISIBLE;
 
         return (
           <div
@@ -121,45 +118,33 @@ export default function CityPlacesSection({
               </div>
             </div>
 
-            <div className={`${expanded ? "max-h-[980px] overflow-y-auto pr-1" : ""}`}>
+            <div className={isScrollableGroup ? "max-h-[620px] overflow-y-auto pr-1 md:max-h-[980px]" : ""}>
               <div className="grid gap-4 md:grid-cols-2">
-                {visibleItems.map((place, index) => (
-                  <PlaceGuideCard
-                    key={place.id}
-                    place={place}
-                    index={index}
-                    groupLabel={group.label}
-                    isFocusMode={isFocusMode}
-                    selectedPlaceId={selectedPlaceId}
-                    hoveredPlaceId={hoveredPlaceId}
-                    openPlace={openPlace}
-                    setHoveredPlaceId={setHoveredPlaceId}
-                    toggleFavorite={toggleFavorite}
-                    favorites={favorites}
-                    typeStyles={typeStyles}
-                    typeLabels={typeLabels}
-                    qualityMap={qualityMap}
-                    refreshEntityQuality={refreshEntityQuality}
-                    canRefreshQuality={canRefreshQuality}
-                    formatDate={formatDate}
-                    cityName={cityName}
-                    safetySignal={safetySignalsByPlaceId[String(place.id)] || null}
-                  />
+                {items.map((place, index) => (
+                    <PlaceGuideCard
+                      key={place.id}
+                      place={place}
+                      index={index}
+                      groupLabel={group.label}
+                      isFocusMode={isFocusMode}
+                      selectedPlaceId={selectedPlaceId}
+                      hoveredPlaceId={hoveredPlaceId}
+                      openPlace={openPlace}
+                      setHoveredPlaceId={setHoveredPlaceId}
+                      toggleFavorite={toggleFavorite}
+                      favorites={favorites}
+                      typeStyles={typeStyles}
+                      typeLabels={typeLabels}
+                      qualityMap={qualityMap}
+                      refreshEntityQuality={refreshEntityQuality}
+                      canRefreshQuality={canRefreshQuality}
+                      formatDate={formatDate}
+                      cityName={cityName}
+                      safetySignal={safetySignalsByPlaceId[String(place.id)] || null}
+                    />
                 ))}
               </div>
             </div>
-
-            {items.length > DEFAULT_VISIBLE ? (
-              <div className="mt-4 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => setExpandedGroups((current) => ({ ...current, [group.value]: !expanded }))}
-                  className="rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/82 transition hover:border-white/30 hover:text-white"
-                >
-                  {expanded ? "Show less" : `Show all (${items.length})`}
-                </button>
-              </div>
-            ) : null}
           </div>
         );
       })}
