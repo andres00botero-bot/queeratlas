@@ -2466,7 +2466,7 @@ export default function FavoritesPage() {
             onChange={onProfileAvatarSelected}
             className="hidden"
           />
-          <div className="max-w-4xl pr-[5.25rem] sm:pr-0">
+          <div className="max-w-4xl pr-[6rem] sm:pr-0">
             <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)] sm:text-3xl">
               {greeting}, {displayName}
             </p>
@@ -2604,22 +2604,22 @@ export default function FavoritesPage() {
                 Queer Signal
               </h2>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
               <button
                 type="button"
-                className="rounded-full border border-cyan-200/36 bg-cyan-200/16 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.11em] text-cyan-100 shadow-[0_10px_24px_rgba(34,211,238,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/24 active:translate-y-0"
+                className="rounded-full border border-cyan-200/36 bg-cyan-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-cyan-100 shadow-[0_10px_24px_rgba(34,211,238,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
               >
                 Follow
               </button>
               <button
                 type="button"
-                className="rounded-full border border-emerald-200/36 bg-emerald-200/16 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.11em] text-emerald-100 shadow-[0_10px_24px_rgba(16,185,129,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-100/60 hover:bg-emerald-200/24 active:translate-y-0"
+                className="rounded-full border border-emerald-200/36 bg-emerald-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-emerald-100 shadow-[0_10px_24px_rgba(16,185,129,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-100/60 hover:bg-emerald-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
               >
                 Message
               </button>
               <button
                 type="button"
-                className="rounded-full border border-rose-200/36 bg-rose-200/16 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.11em] text-rose-100 shadow-[0_10px_24px_rgba(251,113,133,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/60 hover:bg-rose-200/24 active:translate-y-0"
+                className="rounded-full border border-rose-200/36 bg-rose-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-rose-100 shadow-[0_10px_24px_rgba(251,113,133,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/60 hover:bg-rose-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
               >
                 Report
               </button>
