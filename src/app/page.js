@@ -74,17 +74,15 @@ function compareNewsRecency(a, b) {
 function evaluatePasswordStrength(password) {
   const value = String(password || "");
   return {
-    minLength: value.length >= 10,
-    lowercase: /[a-z]/.test(value),
+    minLength: value.length >= 6,
     uppercase: /[A-Z]/.test(value),
-    number: /\d/.test(value),
     symbol: /[^A-Za-z0-9]/.test(value),
   };
 }
 
 function isPasswordStrong(password) {
   const checks = evaluatePasswordStrength(password);
-  return checks.minLength && checks.lowercase && checks.uppercase && checks.number && checks.symbol;
+  return checks.minLength && checks.uppercase && checks.symbol;
 }
 
 function scheduleIdleTask(task, timeout = 650) {
@@ -117,6 +115,11 @@ export default function Home() {
   const [pendingEmailConfirmation, setPendingEmailConfirmation] = useState("");
   const [resetPasswordInput, setResetPasswordInput] = useState("");
   const [resetPasswordConfirmInput, setResetPasswordConfirmInput] = useState("");
+  const [showSigninPassword, setShowSigninPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
   const [signupForm, setSignupForm] = useState({
     displayName: "",
     pronouns: "",
@@ -1064,13 +1067,22 @@ export default function Home() {
                       placeholder="you@email.com"
                       className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
                     />
-                    <input
-                      value={passwordInput}
-                      onChange={(event) => setPasswordInput(event.target.value)}
-                      type="password"
-                      placeholder="Password"
-                      className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
-                    />
+                    <div className="mb-2 flex gap-2">
+                      <input
+                        value={passwordInput}
+                        onChange={(event) => setPasswordInput(event.target.value)}
+                        type={showSigninPassword ? "text" : "password"}
+                        placeholder="Password"
+                        className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSigninPassword((current) => !current)}
+                        className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white"
+                      >
+                        {showSigninPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
                     <button
                       onClick={async () => {
                         if (!emailInput.trim() || !passwordInput.trim()) {
@@ -1178,26 +1190,42 @@ export default function Home() {
                       placeholder="Email"
                       className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30 sm:col-span-2"
                     />
-                    <input
-                      type="password"
-                      value={signupForm.password}
-                      onChange={(event) => setSignupForm((current) => ({ ...current, password: event.target.value }))}
-                      placeholder="Choose password"
-                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
-                    />
-                    <input
-                      type="password"
-                      value={signupForm.confirmPassword}
-                      onChange={(event) => setSignupForm((current) => ({ ...current, confirmPassword: event.target.value }))}
-                      placeholder="Confirm password"
-                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type={showSignupPassword ? "text" : "password"}
+                        value={signupForm.password}
+                        onChange={(event) => setSignupForm((current) => ({ ...current, password: event.target.value }))}
+                        placeholder="Choose password"
+                        className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupPassword((current) => !current)}
+                        className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white"
+                      >
+                        {showSignupPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type={showSignupConfirmPassword ? "text" : "password"}
+                        value={signupForm.confirmPassword}
+                        onChange={(event) => setSignupForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                        placeholder="Confirm password"
+                        className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignupConfirmPassword((current) => !current)}
+                        className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white"
+                      >
+                        {showSignupConfirmPassword ? "Hide" : "Show"}
+                      </button>
+                    </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.08em] text-white/70">
-                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.minLength ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>10+ chars</span>
+                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.minLength ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>6+ chars</span>
                     <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.uppercase ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Uppercase</span>
-                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.lowercase ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Lowercase</span>
-                    <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.number ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Number</span>
                     <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.symbol ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Symbol</span>
                   </div>
 
@@ -1218,7 +1246,7 @@ export default function Home() {
                         return;
                       }
                       if (!isPasswordStrong(password)) {
-                        setAuthMessage("Use a stronger password: 10+ chars with uppercase, lowercase, number, and symbol.");
+                        setAuthMessage("Use a stronger password: at least 6 characters, one uppercase letter, and one symbol.");
                         return;
                       }
                       if (password !== confirmPassword) {
@@ -1280,29 +1308,47 @@ export default function Home() {
               ) : (
                 <div className="mt-6 rounded-2xl border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(34,211,238,0.09),rgba(0,0,0,0.26))] p-4">
                   <p className="mb-3 text-xs uppercase tracking-[0.14em] text-cyan-100/90">Reset password</p>
-                  <input
-                    type="password"
-                    value={resetPasswordInput}
-                    onChange={(event) => setResetPasswordInput(event.target.value)}
-                    placeholder="New password"
-                    className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
-                  />
-                  <input
-                    type="password"
-                    value={resetPasswordConfirmInput}
-                    onChange={(event) => setResetPasswordConfirmInput(event.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
-                  />
+                  <div className="mb-2 flex gap-2">
+                    <input
+                      type={showResetPassword ? "text" : "password"}
+                      value={resetPasswordInput}
+                      onChange={(event) => setResetPasswordInput(event.target.value)}
+                      placeholder="New password"
+                      className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword((current) => !current)}
+                      className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white"
+                    >
+                      {showResetPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type={showResetConfirmPassword ? "text" : "password"}
+                      value={resetPasswordConfirmInput}
+                      onChange={(event) => setResetPasswordConfirmInput(event.target.value)}
+                      placeholder="Confirm new password"
+                      className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirmPassword((current) => !current)}
+                      className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white"
+                    >
+                      {showResetConfirmPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
                   <p className="mt-2 text-[11px] text-white/65">
-                    Use 10+ chars with uppercase, lowercase, number, and symbol.
+                    Use at least 6 characters, one uppercase letter, and one symbol.
                   </p>
                   <div className="mt-3 flex gap-2">
                     <button
                       type="button"
                       onClick={async () => {
                         if (!isPasswordStrong(resetPasswordInput)) {
-                          setAuthMessage("Use a stronger password: 10+ chars with uppercase, lowercase, number, and symbol.");
+                          setAuthMessage("Use a stronger password: at least 6 characters, one uppercase letter, and one symbol.");
                           return;
                         }
                         if (resetPasswordInput !== resetPasswordConfirmInput) {
