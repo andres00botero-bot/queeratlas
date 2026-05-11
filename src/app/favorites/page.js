@@ -246,7 +246,6 @@ export default function FavoritesPage() {
   const [activeFavoritesIntent, setActiveFavoritesIntent] = useState("go_out_tonight");
   const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
   const [activeProfileTab, setActiveProfileTab] = useState("about");
-  const [hasUsedFavoritesControls, setHasUsedFavoritesControls] = useState(false);
   const [myMapView, setMyMapView] = useState("checkins");
   const [checkinMapReadyTick, setCheckinMapReadyTick] = useState(0);
   const [calendarReminderByEventId, setCalendarReminderByEventId] = useState(() =>
@@ -1494,7 +1493,6 @@ export default function FavoritesPage() {
           : nextIntent === "check_friend_pulse"
             ? "friends"
             : "map";
-      setHasUsedFavoritesControls(true);
       setActiveProfileTab(nextTab);
       if (nextIntent === "go_out_tonight") {
         setMyMapView("checkins");
@@ -2205,16 +2203,20 @@ export default function FavoritesPage() {
             )}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-white/12 bg-black/25 p-2.5 sm:mt-5 sm:p-3.5">
+          <div className="mt-4 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] sm:mt-5 sm:p-3.5">
             <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">Page controls</p>
-              <p className="text-[11px] text-white/58">Choose one lane</p>
+              <p className="text-[11px] text-white/62">Swipe or tap to switch sections</p>
             </div>
-            <div className="relative">
+            <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
+            <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                ‹
+              </span>
+            </div>
             <nav
               ref={favoritesControlsRef}
-              onScroll={() => setHasUsedFavoritesControls(true)}
-              className="flex snap-x snap-mandatory items-center gap-1.5 overflow-x-auto whitespace-nowrap pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:overflow-visible sm:whitespace-normal sm:gap-2 sm:pr-0"
+              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto whitespace-nowrap pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2 sm:pl-2 sm:pr-2"
             >
               {[
                 { id: "about", label: "Home" },
@@ -2262,10 +2264,9 @@ export default function FavoritesPage() {
                       favoritesControlButtonsRef.current[tab.id] = node;
                     }}
                     onClick={() => {
-                      setHasUsedFavoritesControls(true);
                       setActiveProfileTab(tab.id);
                     }}
-                    className={`shrink-0 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${
+                    className={`shrink-0 rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.12em] transition ${
                       isActive ? toneClasses.active : toneClasses.idle
                     }`}
                   >
@@ -2276,10 +2277,13 @@ export default function FavoritesPage() {
             </nav>
             <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
+            <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                ›
+              </span>
             </div>
-            {!hasUsedFavoritesControls ? (
-              <p className="mt-2 text-[11px] text-white/56 sm:hidden">Svep för fler</p>
-            ) : null}
+            </div>
+            <p className="mt-2 text-[11px] text-white/56 sm:hidden">‹ Swipe horizontally to view more sections ›</p>
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-white/58">
               <span>{totalPlaces} places</span>
               <span>|</span>

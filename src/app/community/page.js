@@ -340,7 +340,6 @@ export default function CommunityPage() {
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
   const [activeCommunityPanel, setActiveCommunityPanel] = useState("ranking");
-  const [hasUsedCommunityControls, setHasUsedCommunityControls] = useState(false);
   const [communityFeedMode, setCommunityFeedMode] = useState("all");
   const [leaderboardAvatarByUserId, setLeaderboardAvatarByUserId] = useState({});
   const [reportModal, setReportModal] = useState({
@@ -1358,18 +1357,26 @@ export default function CommunityPage() {
         </div>
 
         <section className="qa-premium-card sticky top-2 z-20 mb-6 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] backdrop-blur sm:top-3 sm:rounded-[24px]">
-          <div className="relative">
+          <div className="mb-2.5 flex items-center justify-between gap-2 px-1">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Page controls</p>
+            <p className="text-[11px] text-white/62">Swipe or tap to switch sections</p>
+          </div>
+          <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
+            <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                ‹
+              </span>
+            </div>
             <div
               ref={communityControlsRef}
-              onScroll={() => setHasUsedCommunityControls(true)}
-              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:pl-2 sm:pr-2"
             >
             {[
-              { id: "ranking", label: "Community ranking", tone: "border-indigo-200/45 bg-indigo-200/16 text-indigo-100" },
-              { id: "discovery", label: "Member discovery", tone: "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100" },
               { id: "stories", label: "Stories", tone: "border-rose-200/45 bg-rose-200/16 text-rose-100" },
               { id: "guides", label: "Member guides", tone: "border-violet-200/45 bg-violet-200/16 text-violet-100" },
               { id: "chat", label: "Live chat", tone: "border-cyan-200/45 bg-cyan-200/16 text-cyan-100" },
+              { id: "ranking", label: "Community ranking", tone: "border-indigo-200/45 bg-indigo-200/16 text-indigo-100" },
+              { id: "discovery", label: "Member discovery", tone: "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100" },
               { id: "improve", label: "Improve atlas", tone: "border-amber-200/45 bg-amber-200/16 text-amber-100" },
             ].map((item) => {
               const isActive = activeCommunityPanel === item.id;
@@ -1381,12 +1388,11 @@ export default function CommunityPage() {
                   }}
                   type="button"
                   onClick={() => {
-                    setHasUsedCommunityControls(true);
                     setActiveCommunityPanel(item.id);
                     if (item.id === "stories") setCommunityFeedMode("stories");
                     if (item.id === "guides") setCommunityFeedMode("guides");
                   }}
-                  className={`snap-start whitespace-nowrap rounded-full border px-3 py-2.5 text-[11px] uppercase tracking-[0.12em] transition sm:py-2 ${
+                  className={`snap-start whitespace-nowrap rounded-full border px-3.5 py-2 text-[11px] uppercase tracking-[0.12em] transition ${
                     isActive
                       ? `${item.tone} shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_8px_20px_rgba(0,0,0,0.22)]`
                       : "border-white/14 bg-white/6 text-white/74 hover:border-white/24 hover:text-white"
@@ -1400,10 +1406,13 @@ export default function CommunityPage() {
             </div>
             <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
+            <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                ›
+              </span>
+            </div>
           </div>
-          {!hasUsedCommunityControls ? (
-            <p className="mt-2 text-[11px] text-white/56 sm:hidden">Svep för fler</p>
-          ) : null}
+          <p className="mt-2 text-[11px] text-white/56 sm:hidden">‹ Swipe horizontally to view more sections ›</p>
         </section>
 
         {isRankingPanel ? (

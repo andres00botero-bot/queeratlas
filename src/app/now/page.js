@@ -361,7 +361,6 @@ export default function NowPage() {
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [activeNowSection, setActiveNowSection] = useState("mixed");
-  const [hasUsedNowControls, setHasUsedNowControls] = useState(false);
   const [rankingOverrides, setRankingOverrides] = useState(() => readLocalJson(RANKING_OVERRIDES_KEY, {}));
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
@@ -1216,18 +1215,22 @@ export default function NowPage() {
           )}
         </div>
 
-        <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3 shadow-[0_16px_44px_rgba(0,0,0,0.28)] sm:p-4">
+        <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-3 shadow-[0_20px_54px_rgba(0,0,0,0.34)] sm:p-4">
           <div className="mb-2.5 flex items-center justify-between gap-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Now controls</p>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Page controls</p>
             <p className="text-[11px] text-white/62">
-              {isRefreshingPulse ? "Refreshing live pulse..." : "One section at a time"}
+              {isRefreshingPulse ? "Refreshing live pulse..." : "Swipe or tap to switch sections"}
             </p>
           </div>
-          <div className="relative">
+          <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
+            <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                ‹
+              </span>
+            </div>
             <div
               ref={nowControlsRef}
-              onScroll={() => setHasUsedNowControls(true)}
-              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:pl-2 sm:pr-2"
             >
             {nowSections.map((section) => {
               const isActive = activeNowSection === section.id;
@@ -1259,10 +1262,9 @@ export default function NowPage() {
                   }}
                   type="button"
                   onClick={() => {
-                    setHasUsedNowControls(true);
                     setActiveNowSection(section.id);
                   }}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
+                  className={`shrink-0 rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
                 >
                   <span>{section.label}</span>
                   <span className="ml-1.5 rounded-full border border-white/20 bg-white/12 px-1.5 py-0.5 text-[10px] tracking-normal">
@@ -1274,10 +1276,13 @@ export default function NowPage() {
             </div>
             <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#0b0b0c] via-[#0b0b0c]/72 to-transparent sm:hidden" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#0b0b0c] via-[#0b0b0c]/72 to-transparent sm:hidden" />
+            <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                ›
+              </span>
+            </div>
           </div>
-          {!hasUsedNowControls ? (
-            <p className="mt-2 text-[11px] text-white/56 sm:hidden">Svep för fler</p>
-          ) : null}
+          <p className="mt-2 text-[11px] text-white/56 sm:hidden">‹ Swipe horizontally to view more sections ›</p>
         </section>
 
         {(isMixedSection || isRankingSection) && (
