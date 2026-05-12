@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -271,7 +271,11 @@ function resolveProfileVibeChips(vibeRaw = "", fallbackVibe = "") {
 
 export default function FavoritesPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [profileRouteParams, setProfileRouteParams] = useState({
+    member: "",
+    memberName: "",
+    tab: "",
+  });
   const isMapboxStylesReady = useMapboxStylesheet();
   const {
     isReady, setIsReady,
@@ -364,10 +368,20 @@ export default function FavoritesPage() {
   const avatarFileInputRef = useRef(null);
   const memoryFileInputRef = useRef(null);
   const mapboxGlRef = useRef(null);
-  const viewedMemberId = String(searchParams?.get("member") || "").trim();
-  const viewedMemberNameParam = String(searchParams?.get("member_name") || "").trim();
-  const viewedTab = String(searchParams?.get("tab") || "").trim().toLowerCase();
+  const viewedMemberId = String(profileRouteParams.member || "").trim();
+  const viewedMemberNameParam = String(profileRouteParams.memberName || "").trim();
+  const viewedTab = String(profileRouteParams.tab || "").trim().toLowerCase();
   const isViewingAnotherMember = Boolean(viewedMemberId && viewedMemberId !== String(user?.id || ""));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search || "");
+    setProfileRouteParams({
+      member: String(params.get("member") || "").trim(),
+      memberName: String(params.get("member_name") || "").trim(),
+      tab: String(params.get("tab") || "").trim(),
+    });
+  }, []);
 
   useEffect(() => {
     if (viewedTab === "about") {
