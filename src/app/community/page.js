@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -345,9 +345,6 @@ export default function CommunityPage() {
   const [memberSearchOffset, setMemberSearchOffset] = useState(0);
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
-  const [memberProfilePreview, setMemberProfilePreview] = useState(null);
-  const [memberProfilePreviewLoading, setMemberProfilePreviewLoading] = useState(false);
-  const [memberProfilePreviewError, setMemberProfilePreviewError] = useState("");
   const [activeCommunityPanel, setActiveCommunityPanel] = useState("discovery");
   const [communityFeedMode, setCommunityFeedMode] = useState("all");
   const [reportModal, setReportModal] = useState({
@@ -1166,64 +1163,13 @@ export default function CommunityPage() {
     router.push(`/messages?user=${encodeURIComponent(targetId)}&name=${encodeURIComponent(safeName)}`);
   };
 
-  const openMemberProfilePreview = async (entry) => {
+  const openMemberProfile = (entry) => {
     const targetId = String(entry?.user_id || "").trim();
     if (!targetId) return;
-
-    const fallbackProfile = {
-      user_id: targetId,
-      display_name: String(entry?.display_name || "Member"),
-      pronouns: String(entry?.pronouns || ""),
-      home_city: String(entry?.home_city || ""),
-      resident_country: String(entry?.resident_country || ""),
-      title: String(entry?.title || ""),
-      about: "",
-      vibe: "",
-      visibility: "members",
-      avatar_url: String(entry?.avatar_url || "").trim(),
-      avatar_path: String(entry?.avatar_path || "").trim(),
-    };
-
-    setMemberProfilePreview(fallbackProfile);
-    setMemberProfilePreviewError("");
-    setMemberProfilePreviewLoading(true);
-
-    const baseSelect = "user_id,display_name,pronouns,home_city,resident_country,about,vibe,visibility";
-    let profileRes = await supabase
-      .from("member_profiles")
-      .select(`${baseSelect},avatar_url,avatar_path`)
-      .eq("user_id", targetId)
-      .maybeSingle();
-
-    if (profileRes.error && isAvatarFieldMissingError(profileRes.error)) {
-      profileRes = await supabase
-        .from("member_profiles")
-        .select(baseSelect)
-        .eq("user_id", targetId)
-        .maybeSingle();
-    }
-
-    if (profileRes.error) {
-      setMemberProfilePreviewLoading(false);
-      setMemberProfilePreviewError("Could not load full profile details right now.");
-      return;
-    }
-
-    const row = profileRes.data || {};
-    setMemberProfilePreview({
-      user_id: targetId,
-      display_name: String(row?.display_name || fallbackProfile.display_name || "Member"),
-      pronouns: String(row?.pronouns || fallbackProfile.pronouns || ""),
-      home_city: String(row?.home_city || fallbackProfile.home_city || ""),
-      resident_country: String(row?.resident_country || fallbackProfile.resident_country || ""),
-      title: String(row?.title || fallbackProfile.title || ""),
-      about: String(row?.about || ""),
-      vibe: String(row?.vibe || ""),
-      visibility: String(row?.visibility || "members"),
-      avatar_url: String(row?.avatar_url || fallbackProfile.avatar_url || "").trim(),
-      avatar_path: String(row?.avatar_path || fallbackProfile.avatar_path || "").trim(),
-    });
-    setMemberProfilePreviewLoading(false);
+    const safeName = String(entry?.display_name || "Member").trim() || "Member";
+    router.push(
+      `/favorites?tab=about&member=${encodeURIComponent(targetId)}&member_name=${encodeURIComponent(safeName)}`
+    );
   };
 
   const toggleMemberFollow = async (entry) => {
@@ -1359,7 +1305,7 @@ export default function CommunityPage() {
           <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
             <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                ‹
+                â€¹
               </span>
             </div>
             <div
@@ -1402,11 +1348,11 @@ export default function CommunityPage() {
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
             <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                ›
+                â€º
               </span>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-white/56 sm:hidden">‹ Swipe horizontally to view more sections ›</p>
+          <p className="mt-2 text-[11px] text-white/56 sm:hidden">â€¹ Swipe horizontally to view more sections â€º</p>
         </section>
 
         {isDiscoveryPanel ? (
@@ -1419,7 +1365,7 @@ export default function CommunityPage() {
             <p className="text-xs text-fuchsia-100/75" aria-live="polite">
               {memberSearchLoading
                 ? "Refreshing live member graph..."
-                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " · more available" : ""}`}
+                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " Â· more available" : ""}`}
             </p>
           </div>
 
@@ -1518,7 +1464,7 @@ export default function CommunityPage() {
                         )}
                         </div>
                       <p className="mt-1 text-xs text-white/62">
-                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" · ") || "City not set"}
+                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" Â· ") || "City not set"}
                       </p>
                     </div>
                     </div>
@@ -1546,7 +1492,7 @@ export default function CommunityPage() {
 
                   <div className="mt-3 grid gap-2">
                     <button
-                      onClick={() => openMemberProfilePreview(entry)}
+                      onClick={() => openMemberProfile(entry)}
                       className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.22),rgba(99,102,241,0.16),rgba(14,10,20,0.94))] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62"
                     >
                       Open profile
@@ -1655,12 +1601,12 @@ export default function CommunityPage() {
                 const story = item.payload;
                 return (
                   <article key={item.id} className="qa-premium-card rounded-2xl border border-rose-300/22 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-4">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">Story · {story.city} · {story.category}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">Story Â· {story.city} Â· {story.category}</p>
                     <h3 className="mt-2 text-base font-semibold text-white">{story.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-white/78">{story.excerpt}</p>
                     {expandedStoryIds.includes(story.id) && <p className="mt-2 text-sm leading-7 text-white/72">{story.body}</p>}
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs text-white/62">{story.author} · {timeAgo(story.createdAt)}</p>
+                      <p className="text-xs text-white/62">{story.author} Â· {timeAgo(story.createdAt)}</p>
                       <div className="flex items-center gap-2">
                         <button onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
                         <button onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
@@ -1674,12 +1620,12 @@ export default function CommunityPage() {
               const isExpanded = expandedGuideIds.includes(guide.id);
               return (
                 <article key={item.id} className="qa-premium-card rounded-2xl border border-violet-300/22 bg-[linear-gradient(180deg,rgba(23,19,42,0.78),rgba(11,11,11,0.96))] p-4">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-violet-200/80">Guide · {guide.city} · {guide.focus}</p>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-violet-200/80">Guide Â· {guide.city} Â· {guide.focus}</p>
                   <h3 className="mt-2 text-base font-semibold text-white">{guide.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-white/78">{guide.summary}</p>
                   {isExpanded && <p className="mt-2 text-sm leading-7 text-white/72">{guide.content}</p>}
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs text-white/62">{guide.author} · {timeAgo(guide.createdAt)}</p>
+                    <p className="text-xs text-white/62">{guide.author} Â· {timeAgo(guide.createdAt)}</p>
                     <div className="flex items-center gap-2">
                       <button onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read more"}</button>
                       <button onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
@@ -1918,7 +1864,7 @@ export default function CommunityPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm leading-6 text-white/74">{idea.text}</p>
-                    <p className="mt-2 text-xs text-white/60">{idea.author} · {timeAgo(idea.createdAt)}</p>
+                    <p className="mt-2 text-xs text-white/60">{idea.author} Â· {timeAgo(idea.createdAt)}</p>
                     <button
                       onClick={() =>
                         reportContent({
@@ -1932,7 +1878,7 @@ export default function CommunityPage() {
                       Report
                     </button>
                   </div>
-                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">▲ {idea.votes}</button>
+                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">â–² {idea.votes}</button>
                 </div>
               </div>
             ))}
@@ -1945,98 +1891,6 @@ export default function CommunityPage() {
         </section>
         ) : null}
       </div>
-      {memberProfilePreview ? (
-        <div className="fixed inset-0 z-[91] flex items-end justify-center bg-black/68 p-3 sm:items-center sm:p-6">
-          <div className="qa-premium-card w-full max-w-lg rounded-[22px] border border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(24,12,32,0.98),rgba(10,10,12,0.99))] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.52)] sm:rounded-[26px] sm:p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-200/82">Member profile</p>
-                <h3 className="mt-1 text-lg font-semibold text-white">
-                  {memberProfilePreview.display_name || "Member"}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setMemberProfilePreview(null);
-                  setMemberProfilePreviewError("");
-                  setMemberProfilePreviewLoading(false);
-                }}
-                className="rounded-lg border border-white/14 bg-white/8 px-2.5 py-1 text-xs text-white/78 transition hover:border-white/24 hover:text-white"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {memberProfilePreview.title ? (
-                <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${getMemberTitleMeta(memberProfilePreview.title).className}`}>
-                  <span>{getMemberTitleMeta(memberProfilePreview.title).icon}</span>
-                  {getMemberTitleMeta(memberProfilePreview.title).label}
-                </span>
-              ) : null}
-              {memberProfilePreview.pronouns ? (
-                <span className="rounded-full border border-white/14 bg-white/6 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/72">
-                  {memberProfilePreview.pronouns}
-                </span>
-              ) : null}
-              <span className="rounded-full border border-white/14 bg-white/6 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/72">
-                {[memberProfilePreview.home_city, memberProfilePreview.resident_country].filter(Boolean).join(" · ") || "City not set"}
-              </span>
-            </div>
-
-            {memberProfilePreviewLoading ? (
-              <p className="mt-3 text-sm text-white/66">Loading profile details...</p>
-            ) : null}
-            {memberProfilePreviewError ? (
-              <p className="mt-3 rounded-xl border border-amber-200/24 bg-amber-200/12 px-3 py-2 text-xs text-amber-100">
-                {memberProfilePreviewError}
-              </p>
-            ) : null}
-
-            <div className="mt-3 rounded-xl border border-white/12 bg-black/28 p-3">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">About</p>
-              <p className="mt-1 text-sm text-white/86">
-                {String(memberProfilePreview.about || "").trim() || "No public about text yet."}
-              </p>
-            </div>
-
-            <div className="mt-3 rounded-xl border border-white/12 bg-black/28 p-3">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-white/58">Vibe</p>
-              <p className="mt-1 text-sm text-white/86">
-                {String(memberProfilePreview.vibe || "").trim() || "No vibe keywords yet."}
-              </p>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  router.push(
-                    `/messages?user=${encodeURIComponent(String(memberProfilePreview.user_id || ""))}&name=${encodeURIComponent(
-                      String(memberProfilePreview.display_name || "Member")
-                    )}`
-                  )
-                }
-                className="qa-action rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/50"
-              >
-                Message
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMemberProfilePreview(null);
-                  setMemberProfilePreviewError("");
-                  setMemberProfilePreviewLoading(false);
-                }}
-                className="qa-action rounded-xl border border-white/16 bg-white/8 px-3 py-2 text-xs font-semibold text-white/86 transition hover:border-white/28 hover:text-white"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
       {reportModal.open && (
         <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
           <div className="flex min-h-full items-center justify-center">
@@ -2109,3 +1963,4 @@ export default function CommunityPage() {
     </main>
   );
 }
+

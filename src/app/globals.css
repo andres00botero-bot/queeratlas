@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
   --qa-font-body:
     var(--font-geist-sans), "Avenir Next", "Avenir", "Segoe UI", "Helvetica Neue", "Noto Sans",
     sans-serif;
@@ -40,13 +40,6 @@ html {
   max-width: 100%;
   overflow-x: clip;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
@@ -56,6 +49,11 @@ body {
   text-rendering: optimizeLegibility;
   max-width: 100%;
   overflow-x: clip;
+}
+
+html,
+body {
+  background-color: #0a0a0a;
 }
 
 #__next,

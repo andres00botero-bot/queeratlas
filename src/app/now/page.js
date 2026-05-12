@@ -2218,40 +2218,23 @@ export default function NowPage() {
                 return (
                 <article
                   key={`story-${story.id}`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() =>
-                    setExpandedNewsId((current) =>
-                      String(current) === String(story.id) ? null : String(story.id)
-                    )
-                  }
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      setExpandedNewsId((current) =>
-                        String(current) === String(story.id) ? null : String(story.id)
-                      );
-                    }
-                  }}
-                  className="w-full cursor-pointer rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-fuchsia-200/34 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/45"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-fuchsia-200/34"
                 >
                   <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/75">
                     {story.city || "Global"} | {formatDateShort(story.date || story.createdAt)}
                   </p>
                   <p className="mt-2 text-sm font-semibold text-white">{story.title}</p>
-                  <p
-                    className={`mt-2 text-xs leading-5 text-white/60 ${
-                      String(expandedNewsId) === String(story.id) ? "" : "line-clamp-2"
-                    }`}
-                  >
+                  <p className="mt-2 text-xs leading-5 text-white/60">
                     {story.summary}
                   </p>
+                  {story.whyItMatters ? (
+                    <p className="mt-2 text-xs leading-5 text-white/72">
+                      {story.whyItMatters}
+                    </p>
+                  ) : null}
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <span className="text-[11px] uppercase tracking-[0.12em] text-white/48">
                       {story.sourceName || "Community signal"}
-                    </span>
-                    <span className="text-[11px] text-fuchsia-100/78">
-                      {String(expandedNewsId) === String(story.id) ? "Tap to collapse" : "Tap to expand"}
                     </span>
                     {isAdmin && (
                       <div className="flex items-center gap-2">

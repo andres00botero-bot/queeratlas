@@ -2,14 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
-import { subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
+import { addReport, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
 import { getMemberProfile } from "@/lib/memberProfile";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
@@ -271,6 +271,7 @@ function resolveProfileVibeChips(vibeRaw = "", fallbackVibe = "") {
 
 export default function FavoritesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isMapboxStylesReady = useMapboxStylesheet();
   const {
     isReady, setIsReady,
@@ -350,6 +351,11 @@ export default function FavoritesPage() {
   const [profileMemories, setProfileMemories] = useState(() =>
     readLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, [])
   );
+  const [viewedProfile, setViewedProfile] = useState(null);
+  const [viewedProfileLoading, setViewedProfileLoading] = useState(false);
+  const [viewedProfileError, setViewedProfileError] = useState("");
+  const [viewedProfileMemories, setViewedProfileMemories] = useState([]);
+  const [viewedProfileMemoriesLoading, setViewedProfileMemoriesLoading] = useState(false);
   const tonightSectionRef = useRef(null);
   const tripSectionRef = useRef(null);
   const pulseSectionRef = useRef(null);
@@ -358,6 +364,92 @@ export default function FavoritesPage() {
   const avatarFileInputRef = useRef(null);
   const memoryFileInputRef = useRef(null);
   const mapboxGlRef = useRef(null);
+  const viewedMemberId = String(searchParams?.get("member") || "").trim();
+  const viewedMemberNameParam = String(searchParams?.get("member_name") || "").trim();
+  const viewedTab = String(searchParams?.get("tab") || "").trim().toLowerCase();
+  const isViewingAnotherMember = Boolean(viewedMemberId && viewedMemberId !== String(user?.id || ""));
+
+  useEffect(() => {
+    if (viewedTab === "about") {
+      setActiveProfileTab("about");
+    }
+  }, [viewedTab]);
+
+  useEffect(() => {
+    if (!isViewingAnotherMember) return;
+    setIsEditingAbout(false);
+    setIsEditingProfile(false);
+  }, [isViewingAnotherMember, setIsEditingAbout, setIsEditingProfile]);
+
+  useEffect(() => {
+    let active = true;
+
+    if (isAuthLoading || !isMember) {
+      setViewedProfile(null);
+      setViewedProfileLoading(false);
+      setViewedProfileError("");
+      return () => {
+        active = false;
+      };
+    }
+
+    if (!isViewingAnotherMember) {
+      setViewedProfile(null);
+      setViewedProfileLoading(false);
+      setViewedProfileError("");
+      return () => {
+        active = false;
+      };
+    }
+
+    setViewedProfile({
+      userId: viewedMemberId,
+      displayName: viewedMemberNameParam || "Member",
+      pronouns: "",
+      homeCity: "",
+      residentCountry: "",
+      about: "",
+      vibe: "",
+      visibility: "members",
+      avatarUrl: "",
+    });
+    setViewedProfileLoading(true);
+    setViewedProfileError("");
+
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("member_profiles")
+        .select("user_id, display_name, pronouns, home_city, resident_country, about, vibe, visibility, avatar_url, avatar_path")
+        .eq("user_id", viewedMemberId)
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (error || !data) {
+        setViewedProfileLoading(false);
+        setViewedProfileError("Profile opened with limited details.");
+        return;
+      }
+
+      setViewedProfile({
+        userId: String(data.user_id || viewedMemberId),
+        displayName: String(data.display_name || viewedMemberNameParam || "Member"),
+        pronouns: String(data.pronouns || ""),
+        homeCity: String(data.home_city || ""),
+        residentCountry: String(data.resident_country || ""),
+        about: String(data.about || ""),
+        vibe: String(data.vibe || ""),
+        visibility: String(data.visibility || "members"),
+        avatarUrl: resolveAvatarUrlFromRow(data),
+      });
+      setViewedProfileLoading(false);
+      setViewedProfileError("");
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId, viewedMemberNameParam, user?.id]);
 
   useEffect(() => {
     const button = favoritesControlButtonsRef.current[activeProfileTab];
@@ -887,6 +979,58 @@ export default function FavoritesPage() {
   }, [isMember, isReady, showToast, user?.id]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    if (isAuthLoading || !isMember) {
+      setViewedProfileMemories([]);
+      setViewedProfileMemoriesLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!isViewingAnotherMember || !viewedMemberId) {
+      setViewedProfileMemories([]);
+      setViewedProfileMemoriesLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setViewedProfileMemoriesLoading(true);
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("qa_member_profile_memories")
+        .select("id,user_id,image_url,storage_path,created_at")
+        .eq("user_id", viewedMemberId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (cancelled) return;
+      if (error) {
+        setViewedProfileMemories([]);
+        setViewedProfileMemoriesLoading(false);
+        return;
+      }
+      const normalized = (Array.isArray(data) ? data : [])
+        .map((row) => ({
+          id: String(row?.id || ""),
+          url: String(row?.image_url || "").trim(),
+          storagePath: String(row?.storage_path || "").trim(),
+          createdAt: String(row?.created_at || ""),
+        }))
+        .filter((row) => row.id && row.url)
+        .slice(0, 5);
+      setViewedProfileMemories(normalized);
+      setViewedProfileMemoriesLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId, user?.id]);
+
+  useEffect(() => {
     const remoteExtras = sanitizeProfileExtras({
       about: memberProfile?.about,
       visibility: memberProfile?.visibility,
@@ -922,7 +1066,7 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     setProfileAvatarLoadFailed(false);
-  }, [profileAvatarDataUrl]);
+  }, [profileAvatarDataUrl, viewedProfile?.avatarUrl]);
 
   const favoriteIdSet = useMemo(
     () => new Set((favorites || []).map((item) => String(item))),
@@ -1559,6 +1703,7 @@ export default function FavoritesPage() {
     avatarFileInputRef.current?.click();
   };
   const openMemoriesEditor = () => {
+    if (isReadOnlyPublicProfileView) return;
     memoryFileInputRef.current?.click();
   };
 
@@ -1592,6 +1737,7 @@ export default function FavoritesPage() {
   };
 
   const onProfileMemoriesSelected = async (event) => {
+    if (isReadOnlyPublicProfileView) return;
     const files = Array.from(event?.target?.files || []).filter((file) =>
       String(file?.type || "").startsWith("image/")
     );
@@ -1678,6 +1824,7 @@ export default function FavoritesPage() {
   };
 
   const removeProfileMemory = (memoryId) => {
+    if (isReadOnlyPublicProfileView) return;
     const target = (profileMemories || []).find((item) => String(item?.id) === String(memoryId));
     const next = (profileMemories || []).filter((item) => String(item?.id) !== String(memoryId));
     setProfileMemories(next);
@@ -1704,12 +1851,28 @@ export default function FavoritesPage() {
   const hasProfileChanges = hasProfileFormChanges(profileForm, memberProfile || {});
   const greeting = resolveGreetingByHour();
   const displayName = resolveMemberDisplayName(memberName);
+  const viewedDisplayName = String(viewedProfile?.displayName || viewedMemberNameParam || "Member").trim() || "Member";
+  const effectiveDisplayName = isViewingAnotherMember ? viewedDisplayName : displayName;
+  const effectivePronouns = isViewingAnotherMember ? String(viewedProfile?.pronouns || "") : String(memberProfile?.pronouns || "");
+  const effectiveHomeCity = isViewingAnotherMember ? String(viewedProfile?.homeCity || "") : String(memberProfile?.homeCity || "");
+  const effectiveResidentCountry = isViewingAnotherMember ? String(viewedProfile?.residentCountry || "") : String(memberProfile?.residentCountry || "");
+  const effectiveAbout = isViewingAnotherMember
+    ? String(viewedProfile?.about || "").trim()
+    : String(profileExtras.about || "").trim();
+  const effectiveVibe = isViewingAnotherMember
+    ? String(viewedProfile?.vibe || "").trim()
+    : String(profileExtras.vibe || "").trim();
+  const viewedTargetUserId = isViewingAnotherMember ? String(viewedProfile?.userId || viewedMemberId).trim() : "";
+  const isReadOnlyPublicProfileView = isViewingAnotherMember;
+  const isViewedProfileFollowed = Boolean(
+    isViewingAnotherMember && viewedTargetUserId && followingIdSet.has(viewedTargetUserId)
+  );
   const memberTitleMeta = getMemberTitleMeta(memberRank?.title || "");
   const profileVibeChips = useMemo(
-    () => resolveProfileVibeChips(profileExtras.vibe, topVibe),
-    [profileExtras.vibe, topVibe]
+    () => resolveProfileVibeChips(effectiveVibe, topVibe),
+    [effectiveVibe, topVibe]
   );
-  const profileAboutMe = String(profileExtras.about || "").trim();
+  const profileAboutMe = effectiveAbout;
   const atlasCredScore = Number(contributionCounts?.total || 0);
   const atlasCredLevel =
     atlasCredScore >= 60
@@ -1749,14 +1912,29 @@ export default function FavoritesPage() {
     ];
   }, [atlasCredLevel, atlasCredScore, joinedSinceLabel]);
   const displayInitials = useMemo(() => {
-    const parts = String(displayName || "")
+    const parts = String(effectiveDisplayName || "")
       .trim()
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2);
     if (parts.length === 0) return "QA";
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
-  }, [displayName]);
+  }, [effectiveDisplayName]);
+  const canEditOwnAvatar = !isReadOnlyPublicProfileView;
+  const effectiveAvatarUrl = isReadOnlyPublicProfileView
+    ? String(viewedProfile?.avatarUrl || "").trim()
+    : String(profileAvatarDataUrl || "").trim();
+  const effectiveProfileMemories = isReadOnlyPublicProfileView ? viewedProfileMemories : profileMemories;
+  const shouldRenderAvatarImage = Boolean(effectiveAvatarUrl) && !profileAvatarLoadFailed;
+  const profileTabs = isReadOnlyPublicProfileView
+    ? [{ id: "about", label: "Profile Home" }]
+    : [
+        { id: "about", label: "Home" },
+        { id: "friends", label: "Friends" },
+        { id: "map", label: "My map" },
+        { id: "trips", label: "Plan a trip" },
+        { id: "calendar", label: "My Calendar" },
+      ];
   const plannerCities = useMemo(() => {
     const configCities = Object.values(cityConfig).map((item) => item.title?.replace("Queer ", "")).filter(Boolean);
     return computePlannerCities({ configCities, places, events });
@@ -2292,6 +2470,38 @@ export default function FavoritesPage() {
     await loadTrustNetwork();
   };
 
+  const openProfileMessage = () => {
+    if (!isViewingAnotherMember || !viewedTargetUserId) {
+      showToast("Open another member profile to send a message.", { tone: "info", duration: 2200 });
+      return;
+    }
+    router.push(`/messages?user=${encodeURIComponent(viewedTargetUserId)}&name=${encodeURIComponent(viewedDisplayName)}`);
+  };
+
+  const toggleProfileFollow = async () => {
+    if (!isViewingAnotherMember || !viewedTargetUserId) {
+      showToast("Open another member profile to follow them.", { tone: "info", duration: 2200 });
+      return;
+    }
+    await toggleFollowMember(viewedTargetUserId);
+  };
+
+  const reportProfile = () => {
+    if (!isViewingAnotherMember || !viewedTargetUserId) {
+      showToast("Open another member profile to report.", { tone: "info", duration: 2200 });
+      return;
+    }
+    addReport({
+      targetType: "member-profile",
+      targetId: viewedTargetUserId,
+      city: effectiveHomeCity || "",
+      title: viewedDisplayName,
+      reason: "Safety concern",
+      message: "Reported from Favorites profile view.",
+    });
+    showToast("Report sent. Thanks for keeping the atlas safe.", { tone: "info", duration: 2400 });
+  };
+
   const removePlan = async (planId) => {
     setPlans((current) => removePlanLocalState({ plans: current, planId }).plans);
     setExpandedPlanId((current) => removePlanLocalState({ expandedPlanId: current, planId }).expandedPlanId);
@@ -2438,16 +2648,17 @@ export default function FavoritesPage() {
           <button
             type="button"
             onClick={() => {
+              if (!canEditOwnAvatar) return;
               setActiveProfileTab("about");
               openAvatarEditor();
             }}
             className="group absolute right-2 top-[38%] inline-flex h-16 w-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-cyan-200/40 bg-cyan-200/10 text-lg font-semibold text-cyan-100 shadow-[0_0_24px_rgba(103,232,249,0.26),0_18px_40px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:h-36 sm:w-36 sm:rounded-[22px] sm:text-3xl"
-            aria-label="Edit profile image"
+            aria-label={canEditOwnAvatar ? "Edit profile image" : "Member profile image"}
           >
-            {String(profileAvatarDataUrl || "").trim() && !profileAvatarLoadFailed ? (
+            {shouldRenderAvatarImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={profileAvatarDataUrl}
+                src={effectiveAvatarUrl}
                 alt=""
                 className="h-full w-full object-cover"
                 onError={() => setProfileAvatarLoadFailed(true)}
@@ -2455,9 +2666,11 @@ export default function FavoritesPage() {
             ) : (
               <span>{displayInitials}</span>
             )}
-            <span className="absolute inset-x-0 bottom-0 bg-black/48 px-2 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-white/85 opacity-0 transition group-hover:opacity-100 sm:text-xs">
-              Edit
-            </span>
+            {canEditOwnAvatar ? (
+              <span className="absolute inset-x-0 bottom-0 bg-black/48 px-2 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-white/85 opacity-0 transition group-hover:opacity-100 sm:text-xs">
+                Edit
+              </span>
+            ) : null}
           </button>
           <input
             ref={avatarFileInputRef}
@@ -2468,21 +2681,22 @@ export default function FavoritesPage() {
           />
           <div className="max-w-4xl pr-[6rem] sm:pr-0">
             <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)] sm:text-3xl">
-              {greeting}, {displayName}
+              {isReadOnlyPublicProfileView ? `${effectiveDisplayName}'s profile` : `${greeting}, ${displayName}`}
             </p>
             <h1 className="qa-display qa-h1 mt-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold text-transparent sm:mt-4 sm:text-6xl">
-              Your Atlas
+              {isReadOnlyPublicProfileView ? "Member Profile" : "Your Atlas"}
             </h1>
             <p className="qa-lead mt-3 max-w-2xl text-sm text-white/64 sm:mt-5 sm:text-base">
-              Your saved queer map across cities, places, and events. This is where
-              discovery becomes direction.
+              {isReadOnlyPublicProfileView
+                ? "Public queer signal across identity, vibe, and contributor presence."
+                : "Your saved queer map across cities, places, and events. This is where discovery becomes direction."}
             </p>
-            {isAtlasLoading && (
+            {!isReadOnlyPublicProfileView && isAtlasLoading && (
               <div className="mt-4 max-w-sm animate-pulse" aria-hidden="true">
                 <div className="h-3 w-40 rounded-full bg-white/12" />
               </div>
             )}
-            {atlasLoadError && (
+            {!isReadOnlyPublicProfileView && atlasLoadError && (
               <div className="mt-4 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
                 <span>{atlasLoadError}</span>
                 <button
@@ -2494,7 +2708,7 @@ export default function FavoritesPage() {
                 </button>
               </div>
             )}
-            {syncWarning && (
+            {!isReadOnlyPublicProfileView && syncWarning && (
               <div className="mt-3 inline-flex rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
                 {syncWarning}
               </div>
@@ -2515,13 +2729,7 @@ export default function FavoritesPage() {
                 ref={favoritesControlsRef}
                 className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto whitespace-nowrap pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2 sm:pl-2 sm:pr-2"
               >
-                {[
-                  { id: "about", label: "Home" },
-                  { id: "friends", label: "Friends" },
-                  { id: "map", label: "My map" },
-                  { id: "trips", label: "Plan a trip" },
-                  { id: "calendar", label: "My Calendar" },
-                ].map((tab) => {
+                {profileTabs.map((tab) => {
                   const isActive = activeProfileTab === tab.id;
                   const toneClasses =
                     tab.id === "about"
@@ -2582,13 +2790,25 @@ export default function FavoritesPage() {
             </div>
             <p className="mt-2 text-[11px] text-white/56 sm:hidden">&lt; Swipe horizontally to view more sections &gt;</p>
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-white/58">
-              <span>{totalPlaces} places</span>
-              <span>|</span>
-              <span>{totalEvents} events</span>
-              <span>|</span>
-              <span>{totalCities} cities</span>
-              <span>|</span>
-              <span className="capitalize">{topVibe}</span>
+              {isReadOnlyPublicProfileView ? (
+                <>
+                  <span>Public profile view</span>
+                  <span>|</span>
+                  <span>{effectiveHomeCity || "City not set"}</span>
+                  <span>|</span>
+                  <span className="capitalize">{effectiveVibe || "No vibe tags yet"}</span>
+                </>
+              ) : (
+                <>
+                  <span>{totalPlaces} places</span>
+                  <span>|</span>
+                  <span>{totalEvents} events</span>
+                  <span>|</span>
+                  <span>{totalCities} cities</span>
+                  <span>|</span>
+                  <span className="capitalize">{topVibe}</span>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -2604,27 +2824,44 @@ export default function FavoritesPage() {
                 Queer Signal
               </h2>
             </div>
+            {isViewingAnotherMember ? (
             <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
               <button
                 type="button"
+                onClick={toggleProfileFollow}
+                disabled={!viewedTargetUserId || viewedProfileLoading}
                 className="rounded-full border border-cyan-200/36 bg-cyan-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-cyan-100 shadow-[0_10px_24px_rgba(34,211,238,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
               >
-                Follow
+                {isViewedProfileFollowed ? "Following" : "Follow"}
               </button>
               <button
                 type="button"
+                onClick={openProfileMessage}
+                disabled={!viewedTargetUserId || viewedProfileLoading}
                 className="rounded-full border border-emerald-200/36 bg-emerald-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-emerald-100 shadow-[0_10px_24px_rgba(16,185,129,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-100/60 hover:bg-emerald-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
               >
                 Message
               </button>
               <button
                 type="button"
+                onClick={reportProfile}
+                disabled={!viewedTargetUserId || viewedProfileLoading}
                 className="rounded-full border border-rose-200/36 bg-rose-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-rose-100 shadow-[0_10px_24px_rgba(251,113,133,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/60 hover:bg-rose-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
               >
                 Report
               </button>
             </div>
+            ) : null}
           </div>
+
+          {isViewingAnotherMember && viewedProfileLoading ? (
+            <p className="mt-3 text-xs text-white/66">Loading member profile...</p>
+          ) : null}
+          {isViewingAnotherMember && viewedProfileError ? (
+            <p className="mt-3 rounded-xl border border-amber-200/24 bg-amber-200/12 px-3 py-2 text-xs text-amber-100">
+              {viewedProfileError}
+            </p>
+          ) : null}
 
           {!isEditingAbout ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -2636,14 +2873,14 @@ export default function FavoritesPage() {
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Display name</p>
-                <p className="mt-1 text-sm text-white">{displayName}</p>
+                <p className="mt-1 text-sm text-white">{effectiveDisplayName}</p>
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Visibility</p>
                 <p className="mt-1 text-sm text-white">
-                  {profileExtras.visibility === "public"
+                  {(isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility) === "public"
                     ? "Visible to all"
-                    : profileExtras.visibility === "friends"
+                    : (isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility) === "friends"
                       ? "Visible to friends"
                       : "Visible to members"}
                 </p>
@@ -2651,14 +2888,14 @@ export default function FavoritesPage() {
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Location</p>
                 <p className="mt-1 text-sm text-white">
-                  {memberProfile?.homeCity || memberProfile?.residentCountry
-                    ? [memberProfile?.homeCity, memberProfile?.residentCountry].filter(Boolean).join(", ")
+                  {effectiveHomeCity || effectiveResidentCountry
+                    ? [effectiveHomeCity, effectiveResidentCountry].filter(Boolean).join(", ")
                     : "Not set"}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Pronouns</p>
-                <p className="mt-1 text-sm text-white">{memberProfile?.pronouns || "Not set"}</p>
+                <p className="mt-1 text-sm text-white">{effectivePronouns || "Not set"}</p>
               </div>
               <div className="sm:col-span-2 rounded-2xl border border-white/14 bg-black/30 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/56">About me</p>
@@ -2687,14 +2924,18 @@ export default function FavoritesPage() {
               </div>
               <div className="sm:col-span-2 rounded-2xl border border-white/14 bg-black/30 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/78">Memories (max 5)</p>
-                  <button
-                    type="button"
-                    onClick={openMemoriesEditor}
-                    className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-cyan-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/20"
-                  >
-                    Upload
-                  </button>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/78">
+                    {isReadOnlyPublicProfileView ? "Memories" : "Memories (max 5)"}
+                  </p>
+                  {!isReadOnlyPublicProfileView ? (
+                    <button
+                      type="button"
+                      onClick={openMemoriesEditor}
+                      className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-cyan-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/20"
+                    >
+                      Upload
+                    </button>
+                  ) : null}
                 </div>
                 <input
                   ref={memoryFileInputRef}
@@ -2704,9 +2945,12 @@ export default function FavoritesPage() {
                   onChange={onProfileMemoriesSelected}
                   className="hidden"
                 />
-                {profileMemories.length > 0 ? (
+                {isReadOnlyPublicProfileView && viewedProfileMemoriesLoading ? (
+                  <p className="mt-2 text-xs text-white/62">Loading memories...</p>
+                ) : null}
+                {effectiveProfileMemories.length > 0 ? (
                   <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {profileMemories.map((memory) => (
+                    {effectiveProfileMemories.map((memory) => (
                       <article key={String(memory.id)} className="relative overflow-hidden rounded-xl border border-white/12 bg-black/30 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -2714,18 +2958,24 @@ export default function FavoritesPage() {
                           alt=""
                           className="h-32 w-full object-cover object-center sm:h-36"
                         />
-                        <button
-                          type="button"
-                          onClick={() => removeProfileMemory(memory.id)}
-                          className="absolute right-1 top-1 rounded-full border border-black/45 bg-black/55 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/90"
-                        >
-                          Remove
-                        </button>
+                        {!isReadOnlyPublicProfileView ? (
+                          <button
+                            type="button"
+                            onClick={() => removeProfileMemory(memory.id)}
+                            className="absolute right-1 top-1 rounded-full border border-black/45 bg-black/55 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/90"
+                          >
+                            Remove
+                          </button>
+                        ) : null}
                       </article>
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-2 text-xs text-white/62">No memories yet. Upload up to 5 profile moments.</p>
+                  <p className="mt-2 text-xs text-white/62">
+                    {isReadOnlyPublicProfileView
+                      ? "No public memories yet."
+                      : "No memories yet. Upload up to 5 profile moments."}
+                  </p>
                 )}
               </div>
               <div className="sm:col-span-2 rounded-2xl border border-amber-200/26 bg-amber-200/[0.11] p-3.5 shadow-[0_18px_34px_rgba(245,158,11,0.1)]">
@@ -2774,25 +3024,27 @@ export default function FavoritesPage() {
                   ))}
                 </div>
               </div>
-              <div className="sm:col-span-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setProfileForm({
-                      displayName: memberProfile?.displayName || authMemberName || memberName,
-                      pronouns: memberProfile?.pronouns || "",
-                      homeCity: memberProfile?.homeCity || "",
-                      residentCountry: memberProfile?.residentCountry || "",
-                    });
-                    setIsEditingAbout(true);
-                    setIsEditingProfile(true);
-                  }}
-                  className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition duration-300 hover:-translate-y-0.5 hover:border-white/26"
-                  title="Edit profile home"
-                >
-                  Edit about
-                </button>
-              </div>
+              {!isViewingAnotherMember ? (
+                <div className="sm:col-span-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProfileForm({
+                        displayName: memberProfile?.displayName || authMemberName || memberName,
+                        pronouns: memberProfile?.pronouns || "",
+                        homeCity: memberProfile?.homeCity || "",
+                        residentCountry: memberProfile?.residentCountry || "",
+                      });
+                      setIsEditingAbout(true);
+                      setIsEditingProfile(true);
+                    }}
+                    className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition duration-300 hover:-translate-y-0.5 hover:border-white/26"
+                    title="Edit profile home"
+                  >
+                    Edit about
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <form onSubmit={saveAboutProfile} className="mt-4 space-y-3">
