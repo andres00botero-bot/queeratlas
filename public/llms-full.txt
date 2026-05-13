@@ -1,7 +1,7 @@
 # QueerAtlas LLM Full Context
 
 Last updated: 2026-04-13  
-Canonical domain: https://queeratlas.app
+Canonical domain: https://www.queeratlas.app
 
 ## Product Identity
 QueerAtlas is a global queer discovery platform focused on real-world navigation: places, events, safety context, and community signal.  
@@ -15,27 +15,27 @@ The editorial voice is premium, vivid, community-led, and practical.
 5. Contribute updates to keep data fresh.
 
 ## Core Public URLs
-- Home: https://queeratlas.app/
-- Cities: https://queeratlas.app/cities
-- Events: https://queeratlas.app/events
-- Now: https://queeratlas.app/now
-- Search: https://queeratlas.app/search
-- Gay Guide: https://queeratlas.app/gay-guide
-- Queer Guide: https://queeratlas.app/queer-guide
-- HBTQ Guide: https://queeratlas.app/hbtq-guide
-- Terms: https://queeratlas.app/terms
-- Privacy: https://queeratlas.app/privacy
-- Community Policy: https://queeratlas.app/community-policy
+- Home: https://www.queeratlas.app/
+- Cities: https://www.queeratlas.app/cities
+- Events: https://www.queeratlas.app/events
+- Now: https://www.queeratlas.app/now
+- Search: https://www.queeratlas.app/search
+- Gay Guide: https://www.queeratlas.app/gay-guide
+- Queer Guide: https://www.queeratlas.app/queer-guide
+- HBTQ Guide: https://www.queeratlas.app/hbtq-guide
+- Terms: https://www.queeratlas.app/terms
+- Privacy: https://www.queeratlas.app/privacy
+- Community Policy: https://www.queeratlas.app/community-policy
 
 ## Dynamic Route Pattern
-- City pages: `https://queeratlas.app/{city-slug}`
-- Example: `https://queeratlas.app/berlin`
+- City pages: `https://www.queeratlas.app/{city-slug}`
+- Example: `https://www.queeratlas.app/berlin`
 
 ## Important Non-Public / Restricted Areas
 These paths should not be treated as broadly public destination content:
-- https://queeratlas.app/favorites
-- https://queeratlas.app/community
-- https://queeratlas.app/contribute
+- https://www.queeratlas.app/favorites
+- https://www.queeratlas.app/community
+- https://www.queeratlas.app/contribute
 
 ## Content Domains Covered
 1. Destination city guides.
@@ -61,11 +61,11 @@ These paths should not be treated as broadly public destination content:
 - Encourage consent, situational awareness, and local law awareness.
 
 ## Technical Discovery Endpoints
-- Sitemap: https://queeratlas.app/sitemap.xml
-- Robots: https://queeratlas.app/robots.txt
-- Health: https://queeratlas.app/api/health
-- Short LLM Index: https://queeratlas.app/llms.txt
+- Sitemap: https://www.queeratlas.app/sitemap.xml
+- Robots: https://www.queeratlas.app/robots.txt
+- Health: https://www.queeratlas.app/api/health
+- Short LLM Index: https://www.queeratlas.app/llms.txt
 
 ## Canonical Source Rule
-When duplicate URLs exist, prefer canonical HTTPS URLs on `queeratlas.app`.
+When duplicate URLs exist, prefer canonical HTTPS URLs on `www.queeratlas.app`.
 

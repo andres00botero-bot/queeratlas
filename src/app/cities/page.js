@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -650,6 +651,10 @@ export default function CitiesPage() {
     (!Array.isArray(countryRightsProfiles) || countryRightsProfiles.length === 0);
 
   const visibleCountries = Object.keys(groupedCities).sort();
+  const crawlPathCities = useMemo(
+    () => filteredCities.slice(0, 24).map((city) => city?.key).filter(Boolean),
+    [filteredCities]
+  );
   const totalCities = Object.keys(cityConfig).length;
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
@@ -835,6 +840,18 @@ export default function CitiesPage() {
 
   return (
     <main className="qa-page min-h-screen bg-[#050505] text-white">
+      <nav aria-label="Internal city links" className="sr-only">
+        <Link href="/cities">Cities</Link>
+        <Link href="/events">Events</Link>
+        <Link href="/now">Now</Link>
+        <Link href="/gay-guide">Gay Travel Guide</Link>
+        <Link href="/queer-guide">Queer Travel Guide</Link>
+        {crawlPathCities.map((cityKey) => (
+          <Link key={`crawl-city-${cityKey}`} href={`/${cityKey}`}>
+            {cityKey}
+          </Link>
+        ))}
+      </nav>
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_76%_14%,rgba(96,165,250,0.08),transparent_20%),radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.06),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />

@@ -4,7 +4,7 @@ import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 export const metadata = {
   title: "HBTQ Guide 2026 | Queer Atlas",
   description:
-    "Internationell HBTQ-guide med stader, venues, events och community-signal for tryggare och smartare queer discovery.",
+    "Global HBTQ guide for queer-friendly cities, LGBTQ events, safer nightlife, and trusted community signal.",
   keywords: [
     keywordOwnership.hbtqGuide.primary,
     ...keywordOwnership.hbtqGuide.secondary,
@@ -15,7 +15,7 @@ export const metadata = {
   openGraph: {
     title: "HBTQ Guide 2026 | Queer Atlas",
     description:
-      "Global HBTQ guide for city discovery, nightlife flow, event planning, and trusted community signal.",
+      "Find HBTQ-friendly cities, nightlife flow, events, and local community-backed travel signal.",
     url: "https://www.queeratlas.app/hbtq-guide",
     siteName: "Queer Atlas",
     type: "article",
@@ -24,7 +24,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "HBTQ Guide 2026 | Queer Atlas",
     description:
-      "Find HBTQ-friendly cities, venues, and events with quality signal and community-first context.",
+      "HBTQ city discovery with queer-safe nightlife context, venues, and events.",
   },
 };
 

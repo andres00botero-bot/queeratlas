@@ -4,7 +4,7 @@ import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 export const metadata = {
   title: "Gay Travel Guide 2026 | Queer Atlas",
   description:
-    "Plan smarter queer travel with a global gay guide for nightlife, events, hotels, and neighborhood signal across top cities.",
+    "Gay travel guide for LGBTQ-friendly cities, safe queer nightlife, events, and trusted local venue signal.",
   keywords: [
     keywordOwnership.gayGuide.primary,
     ...keywordOwnership.gayGuide.secondary,
@@ -15,7 +15,7 @@ export const metadata = {
   openGraph: {
     title: "Gay Travel Guide 2026 | Queer Atlas",
     description:
-      "Global gay travel guide for city discovery, nightlife mapping, events, and community-backed venue signal.",
+      "Plan gay travel with city-by-city nightlife guides, events, and queer-friendly places.",
     url: "https://www.queeratlas.app/gay-guide",
     siteName: "Queer Atlas",
     type: "article",
@@ -24,7 +24,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Gay Travel Guide 2026 | Queer Atlas",
     description:
-      "Find gay-friendly cities, venues, events, and real-time community signal in one global guide.",
+      "Find gay-friendly cities, events, and safe nightlife routes in one global travel guide.",
   },
 };
 

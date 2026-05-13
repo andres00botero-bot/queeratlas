@@ -22,7 +22,15 @@ export async function generateMetadata({ params }) {
   return {
     title: `Queer ${cityName} Guide (2026): Bars, Clubs, Saunas & Events`,
     description: `${ownership.primary} and queer nightlife in ${cityName}: discover bars, clubs, saunas, events, and trusted local signal. Updated for 2026.`,
-    keywords: [ownership.primary, ...ownership.secondary],
+    keywords: [
+      ownership.primary,
+      ...ownership.secondary,
+      `queer travel ${cityName}`,
+      `gay travel ${cityName}`,
+      `LGBTQ events ${cityName}`,
+      `queer friendly places ${cityName}`,
+      `safe queer nightlife ${cityName}`,
+    ],
     alternates: {
       canonical,
     },

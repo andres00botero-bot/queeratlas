@@ -13,7 +13,7 @@ export const metadata = {
     template: "%s | Queer Atlas",
   },
   description:
-    "Global queer discovery atlas for venues, events, guides, and member community signal.",
+    "Global queer travel atlas for LGBTQ-safe places, inclusive nightlife, events, and trusted community signal.",
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || process.env.GOOGLE_SITE_VERIFICATION || undefined,
   },
@@ -44,6 +44,23 @@ export const metadata = {
   keywords: [
     "Queer Atlas",
     "LGBTQ travel",
+    "gay travel",
+    "queer travel",
+    "gay travel guide",
+    "LGBTQ friendly countries",
+    "safest countries for LGBTQ travelers",
+    "queer vibe",
+    "safe queer nightlife",
+    "queer traveler guide",
+    "inclusive nightlife",
+    "queer neighborhoods",
+    "LGBTQ nightlife",
+    "gay bars near me",
+    "queer friendly places",
+    "LGBTQ events",
+    "LGBTQ safety map",
+    "LGBTQ travel safety",
+    "queer safe spaces",
     "queer venues",
     "queer events",
     "gay bars",
@@ -52,7 +69,7 @@ export const metadata = {
   openGraph: {
     title: "Queer Atlas - Global Queer Guide, Events & Venues",
     description:
-      "Find the city. Feel the signal. Global queer discovery for places, events, and community.",
+      "Find LGBTQ-friendly cities, safe queer nightlife, events, and trusted local signal.",
     url: "https://www.queeratlas.app",
     siteName: "Queer Atlas",
     images: [
@@ -70,7 +87,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Queer Atlas - Global Queer Guide, Events & Venues",
     description:
-      "Global queer discovery for venues, events, and community signal.",
+      "LGBTQ travel, queer-safe nightlife, events, and trusted city-by-city signal.",
     images: ["/queer-atlas-heart-logo-progress.png"],
   },
 };
@@ -79,6 +96,7 @@ export default function RootLayout({ children }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${baseUrl}/#website`,
     name: "Queer Atlas",
     url: baseUrl,
     description:
@@ -86,8 +104,13 @@ export default function RootLayout({ children }) {
     inLanguage: "en",
     publisher: {
       "@type": "Organization",
+      "@id": `${baseUrl}/#organization`,
       name: "Queer Atlas",
       url: baseUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: `${baseUrl}/icons/icon-512.png`,
+      },
     },
     potentialAction: {
       "@type": "SearchAction",

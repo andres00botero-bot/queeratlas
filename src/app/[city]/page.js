@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import "../signal-motion.css";
 import { cityCoreConfig } from "@/lib/cityCore";
@@ -966,6 +967,74 @@ export default function CityPage() {
   const cityPlaceCount = cityPlaces.length;
   const cityEventCount = cityEvents.length;
   const cityServiceCount = cityServices.length;
+  const cityCanonicalUrl = `https://www.queeratlas.app/${city}`;
+  const cityBreadcrumbJsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Cities",
+          item: "https://www.queeratlas.app/cities",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: cityName,
+          item: cityCanonicalUrl,
+        },
+      ],
+    }),
+    [cityCanonicalUrl, cityName]
+  );
+  const cityPlacesItemListJsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `Queer venues in ${cityName}`,
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      numberOfItems: cityPlaceCount,
+      itemListElement: cityPlaces.slice(0, 12).map((place, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Place",
+          name: String(place?.name || "Venue"),
+          address: String(place?.location || ""),
+          url: cityCanonicalUrl,
+        },
+      })),
+    }),
+    [cityCanonicalUrl, cityName, cityPlaceCount, cityPlaces]
+  );
+  const cityEventsItemListJsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `LGBTQ events in ${cityName}`,
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      numberOfItems: cityEventCount,
+      itemListElement: sortedEvents.slice(0, 12).map((event, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Event",
+          name: String(event?.name || "Event"),
+          startDate: String(event?.date || ""),
+          eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+          eventStatus: "https://schema.org/EventScheduled",
+          location: {
+            "@type": "Place",
+            name: String(event?.location || cityName),
+          },
+          url: cityCanonicalUrl,
+        },
+      })),
+    }),
+    [cityCanonicalUrl, cityEventCount, cityName, sortedEvents]
+  );
   const hasAnyPlaces = cityPlaceCount > 0;
   const hasAnyServices = cityServiceCount > 0;
   const placesChipLabel = placesLoading
@@ -4032,6 +4101,26 @@ export default function CityPage() {
 
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
+      <nav aria-label="Internal city crawl path links" className="sr-only">
+        <Link href="/cities">Cities</Link>
+        <Link href="/events">LGBTQ events</Link>
+        <Link href="/now">LGBTQ safety map</Link>
+        <Link href="/gay-guide">Gay Travel Guide</Link>
+        <Link href="/queer-guide">Queer Travel Guide</Link>
+        <Link href={`/${city}`}>Queer nightlife {cityName}</Link>
+      </nav>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityBreadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityPlacesItemListJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityEventsItemListJsonLd) }}
+      />
       <ActionToast toast={toast} />
       <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8">
         <CityHeroCard
