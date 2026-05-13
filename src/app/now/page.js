@@ -728,7 +728,10 @@ export default function NowPage() {
   }, [mixedFeedItems, selectedNewsCategory]);
 
   const rightsUpdates = useMemo(
-    () => worldNewsItems.filter((item) => isRightsUpdateItem(item)).slice(0, 6),
+    () =>
+      worldNewsItems
+        .filter((item) => isRightsUpdateItem(item) && !isVoicesMemberItem(item))
+        .slice(0, 6),
     [worldNewsItems]
   );
   const communityStories = useMemo(
@@ -930,7 +933,7 @@ export default function NowPage() {
       setSyncWarning(`Cloud sync failed. Using local backup. ${formatSupabaseError(upsertError)}`);
     } else if (upsertError && isMissingTableError(upsertError)) {
       markRankingYearPendingSync(selectedRankingYear, true);
-      setSyncWarning("Ranking saved locally. Cloud sync is unavailable right now.");
+      setSyncWarning("Ranking saved locally. Run supabase/world-news-sync.sql to enable cloud sync.");
     } else {
       const { error: trimError } = await supabase
         .from(RANKING_TABLE)
@@ -966,7 +969,7 @@ export default function NowPage() {
     if (error && !isMissingTableError(error)) {
       setSyncWarning("Cloud sync failed. Using local backup.");
     } else if (error && isMissingTableError(error)) {
-      setSyncWarning("Ranking reset saved locally. Cloud sync is unavailable right now.");
+      setSyncWarning("Ranking reset saved locally. Run supabase/world-news-sync.sql to enable cloud sync.");
     } else {
       setSyncWarning("");
     }
@@ -1069,7 +1072,7 @@ export default function NowPage() {
       }
 
       if (error && isMissingTableError(error)) {
-        setSyncWarning("Off-grid sync is unavailable right now.");
+        setSyncWarning("Off-grid sync is unavailable. Run supabase/world-news-sync.sql.");
         return;
       }
 
@@ -1121,7 +1124,7 @@ export default function NowPage() {
       (deleteNewsError && isMissingTableError(deleteNewsError)) ||
       (hideError && isMissingTableError(hideError))
     ) {
-      setSyncWarning("Off-grid sync is unavailable right now.");
+      setSyncWarning("Off-grid sync is unavailable. Run supabase/world-news-sync.sql.");
     } else if (!deleteNewsError && !hideError) {
       setSyncWarning("");
     }
@@ -2092,12 +2095,20 @@ export default function NowPage() {
 
         {isVoicesSection && (
         <div className="mt-8">
-          <section className="rounded-[28px] border border-fuchsia-300/15 bg-[linear-gradient(180deg,rgba(44,18,48,0.92),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(232,121,249,0.08)]">
-            <p className="text-xs uppercase tracking-[0.25em] text-fuchsia-200">Community stories</p>
-            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Voices from members</h2>
-            <p className="mt-3 text-sm leading-6 text-white/62">
-              Member stories are editorially moderated before publishing to keep signal quality high.
-            </p>
+          <section className="rounded-[30px] border border-fuchsia-200/18 bg-[linear-gradient(155deg,rgba(58,21,68,0.9),rgba(18,16,36,0.96)_44%,rgba(8,8,8,1))] p-6 shadow-[0_30px_95px_rgba(217,70,239,0.12)]">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.27em] text-fuchsia-200/95">Community voices</p>
+                <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Voices from members</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/66">
+                  Real member stories, reviewed before publishing, so the signal stays clear and useful.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-fuchsia-200/26 bg-fuchsia-300/[0.08] px-3.5 py-2.5 text-right shadow-[0_10px_30px_rgba(217,70,239,0.14)]">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-100/80">Approved stories</p>
+                <p className="mt-1 text-lg font-semibold text-white">{communityStories.length}</p>
+              </div>
+            </div>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -2218,23 +2229,31 @@ export default function NowPage() {
                 return (
                 <article
                   key={`story-${story.id}`}
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-fuchsia-200/34"
+                  className="group w-full rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] px-4 py-3 text-left shadow-[0_14px_40px_rgba(0,0,0,0.24)] transition hover:-translate-y-[1px] hover:border-fuchsia-200/34"
                 >
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/75">
-                    {story.city || "Global"} | {formatDateShort(story.date || story.createdAt)}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/95">
+                      {story.city || "Global"}
+                    </span>
+                    <span className="rounded-full border border-white/16 bg-white/[0.06] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/72">
+                      {formatDateShort(story.date || story.createdAt)}
+                    </span>
+                    <span className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-100/90">
+                      Moderated
+                    </span>
+                  </div>
                   <p className="mt-2 text-sm font-semibold text-white">{story.title}</p>
-                  <p className="mt-2 text-xs leading-5 text-white/60">
+                  <p className="mt-2 text-xs leading-5 text-white/67">
                     {story.summary}
                   </p>
                   {story.whyItMatters ? (
-                    <p className="mt-2 text-xs leading-5 text-white/72">
+                    <p className="mt-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-xs leading-5 text-white/78">
                       {story.whyItMatters}
                     </p>
                   ) : null}
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-[11px] uppercase tracking-[0.12em] text-white/48">
-                      {story.sourceName || "Community signal"}
+                    <span className="text-[11px] uppercase tracking-[0.12em] text-white/55">
+                      {resolveNewsConfidence(story, canEditAdminNews)} | {story.sourceName || "Community signal"}
                     </span>
                     {isAdmin && (
                       <div className="flex items-center gap-2">
