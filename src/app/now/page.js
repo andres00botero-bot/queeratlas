@@ -1190,7 +1190,7 @@ export default function NowPage() {
   }
 
   return (
-    <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] text-white">
+    <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-white sm:px-6 sm:py-8 sm:pb-12">
       <div className="qa-shell">
         <div className="qa-panel mb-8 rounded-[30px] border border-fuchsia-200/24 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.24),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(56,189,248,0.16),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(18,26,48,0.9))] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="max-w-3xl">
@@ -1218,11 +1218,11 @@ export default function NowPage() {
           )}
         </div>
 
-        <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-3 shadow-[0_20px_54px_rgba(0,0,0,0.34)] sm:p-4">
+        <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-3 shadow-[0_20px_54px_rgba(0,0,0,0.34)] transition-all duration-300 sm:p-4">
           <div className="mb-2.5 flex items-center justify-between gap-2">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Page controls</p>
             <p className="text-[11px] text-white/62">
-              {isRefreshingPulse ? "Refreshing live pulse..." : "Swipe or tap to switch sections"}
+              {isRefreshingPulse ? "Refreshing live pulse..." : "Swipe left or right to switch sections"}
             </p>
           </div>
           <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
@@ -1267,7 +1267,7 @@ export default function NowPage() {
                   onClick={() => {
                     setActiveNowSection(section.id);
                   }}
-                  className={`shrink-0 rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
+                  className={`shrink-0 rounded-full border px-3.5 py-2.5 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
                 >
                   <span>{section.label}</span>
                   <span className="ml-1.5 rounded-full border border-white/20 bg-white/12 px-1.5 py-0.5 text-[10px] tracking-normal">
@@ -1285,7 +1285,7 @@ export default function NowPage() {
               </span>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-white/56 sm:hidden">Swipe horizontally to view more sections</p>
+          <p className="mt-2 text-[11px] text-white/56 sm:hidden">Use the arrows or swipe left/right to view all sections</p>
         </section>
 
         {(isMixedSection || isRankingSection) && (
@@ -2238,7 +2238,7 @@ export default function NowPage() {
                     <span className="rounded-full border border-white/16 bg-white/[0.06] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/72">
                       {formatDateShort(story.date || story.createdAt)}
                     </span>
-                    <span className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-100/90">
+                    <span className="hidden rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-100/90 sm:inline-flex">
                       Moderated
                     </span>
                   </div>

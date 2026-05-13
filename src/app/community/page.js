@@ -1270,7 +1270,7 @@ export default function CommunityPage() {
   const isImprovePanel = activeCommunityPanel === "improve";
 
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(34,211,238,0.06),transparent_24%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.06),transparent_24%),linear-gradient(180deg,#040406_0%,#05070b_52%,#040406_100%)] px-4 py-6 text-white sm:px-6 sm:py-8">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(34,211,238,0.06),transparent_24%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.06),transparent_24%),linear-gradient(180deg,#040406_0%,#05070b_52%,#040406_100%)] px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-white sm:px-6 sm:py-8 sm:pb-12">
       <ActionToast toast={toast} />
       <div className="qa-shell relative mx-auto max-w-7xl">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.04),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(59,130,246,0.05),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.015),transparent_30%)]" />
@@ -1297,10 +1297,10 @@ export default function CommunityPage() {
           </div>
         </div>
 
-        <section className="qa-premium-card sticky top-2 z-20 mb-6 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] backdrop-blur sm:top-3 sm:rounded-[24px]">
+        <section className="qa-premium-card sticky top-3 z-20 mb-6 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] backdrop-blur transition-all duration-300 sm:top-3 sm:rounded-[24px]">
           <div className="mb-2.5 flex items-center justify-between gap-2 px-1">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Page controls</p>
-            <p className="text-[11px] text-white/62">Swipe or tap to switch sections</p>
+            <p className="text-[11px] text-white/62">Swipe left or right to switch sections</p>
           </div>
           <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
             <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
@@ -1332,7 +1332,7 @@ export default function CommunityPage() {
                     if (item.id === "stories") setCommunityFeedMode("stories");
                     if (item.id === "guides") setCommunityFeedMode("guides");
                   }}
-                  className={`snap-start whitespace-nowrap rounded-full border px-3.5 py-2 text-[11px] uppercase tracking-[0.12em] transition ${
+                  className={`snap-start whitespace-nowrap rounded-full border px-3.5 py-2.5 text-[11px] uppercase tracking-[0.12em] transition ${
                     isActive
                       ? `${item.tone} shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_8px_20px_rgba(0,0,0,0.22)]`
                       : "border-white/14 bg-white/6 text-white/74 hover:border-white/24 hover:text-white"
@@ -1352,7 +1352,7 @@ export default function CommunityPage() {
               </span>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-white/56 sm:hidden">&lt; Swipe horizontally to view more sections &gt;</p>
+          <p className="mt-2 text-[11px] text-white/56 sm:hidden">Use the arrows or swipe left/right to view all sections</p>
         </section>
 
         {isDiscoveryPanel ? (
@@ -1601,7 +1601,10 @@ export default function CommunityPage() {
                 const story = item.payload;
                 return (
                   <article key={item.id} className="qa-premium-card rounded-2xl border border-rose-300/22 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-4">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">Story · {story.city} · {story.category}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">
+                      Story · {story.city}
+                      <span className="hidden sm:inline"> · {story.category}</span>
+                    </p>
                     <h3 className="mt-2 text-base font-semibold text-white">{story.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-white/78">{story.excerpt}</p>
                     {expandedStoryIds.includes(story.id) && <p className="mt-2 text-sm leading-7 text-white/72">{story.body}</p>}
@@ -1620,7 +1623,10 @@ export default function CommunityPage() {
               const isExpanded = expandedGuideIds.includes(guide.id);
               return (
                 <article key={item.id} className="qa-premium-card rounded-2xl border border-violet-300/22 bg-[linear-gradient(180deg,rgba(23,19,42,0.78),rgba(11,11,11,0.96))] p-4">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-violet-200/80">Guide · {guide.city} · {guide.focus}</p>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-violet-200/80">
+                    Guide · {guide.city}
+                    <span className="hidden sm:inline"> · {guide.focus}</span>
+                  </p>
                   <h3 className="mt-2 text-base font-semibold text-white">{guide.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-white/78">{guide.summary}</p>
                   {isExpanded && <p className="mt-2 text-sm leading-7 text-white/72">{guide.content}</p>}

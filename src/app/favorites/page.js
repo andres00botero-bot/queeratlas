@@ -2761,7 +2761,7 @@ export default function FavoritesPage() {
   }
 
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_9%,rgba(56,189,248,0.11),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_48%,#040406_100%)] text-white">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_9%,rgba(56,189,248,0.11),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_48%,#040406_100%)] px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-white sm:px-6 sm:py-8 sm:pb-12">
       <ActionToast toast={toast} />
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.14),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />
@@ -2843,10 +2843,10 @@ export default function FavoritesPage() {
               </div>
             )}
           </div>
-          <div className="mt-4 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] sm:mt-5 sm:p-3.5">
+          <div className="mt-4 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] transition-all duration-300 sm:mt-5 sm:p-3.5">
             <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">Page controls</p>
-              <p className="text-[11px] text-white/62">Swipe or tap to switch sections</p>
+              <p className="text-[11px] text-white/62">Swipe left or right to switch sections</p>
             </div>
             <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
               <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
@@ -2902,7 +2902,7 @@ export default function FavoritesPage() {
                       onClick={() => {
                         setActiveProfileTab(tab.id);
                       }}
-                      className={`shrink-0 rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.12em] transition ${
+                      className={`shrink-0 rounded-full border px-3.5 py-2.5 text-xs uppercase tracking-[0.12em] transition ${
                         isActive ? toneClasses.active : toneClasses.idle
                       }`}
                     >
@@ -2919,7 +2919,7 @@ export default function FavoritesPage() {
                 </span>
               </div>
             </div>
-            <p className="mt-2 text-[11px] text-white/56 sm:hidden">&lt; Swipe horizontally to view more sections &gt;</p>
+            <p className="mt-2 text-[11px] text-white/56 sm:hidden">Use the arrows or swipe left/right to view all sections</p>
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-white/58">
               {isReadOnlyPublicProfileView ? (
                 <>
@@ -2931,13 +2931,14 @@ export default function FavoritesPage() {
                 </>
               ) : (
                 <>
-                  <span>{totalPlaces} places</span>
-                  <span>|</span>
-                  <span>{totalEvents} events</span>
-                  <span>|</span>
-                  <span>{totalCities} cities</span>
-                  <span>|</span>
-                  <span className="capitalize">{topVibe}</span>
+                  <span className="sm:hidden">{totalPlaces} places · {totalEvents} events · {totalCities} cities</span>
+                  <span className="hidden sm:inline">{totalPlaces} places</span>
+                  <span className="hidden sm:inline">|</span>
+                  <span className="hidden sm:inline">{totalEvents} events</span>
+                  <span className="hidden sm:inline">|</span>
+                  <span className="hidden sm:inline">{totalCities} cities</span>
+                  <span className="hidden sm:inline">|</span>
+                  <span className="hidden capitalize sm:inline">{topVibe}</span>
                 </>
               )}
             </div>
