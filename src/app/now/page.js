@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -181,7 +181,7 @@ const ATLAS_DESTINATION_RANKINGS = {
     { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
     { city: "new_york", country: "USA", signal: "Historic queer legacy + constant reinvention across boroughs." },
     { city: "sao_paulo", country: "Brazil", signal: "Massive scene scale, iconic nightlife, bold community pulse." },
-    { city: "madrid", country: "Spain", signal: "Late-night social flow with one of Europe’s strongest queer cores." },
+    { city: "madrid", country: "Spain", signal: "Late-night social flow with one of Europeâ€™s strongest queer cores." },
     { city: "toronto", country: "Canada", signal: "Safe, inclusive, and packed with year-round queer programming." },
     { city: "san_francisco", country: "USA", signal: "Foundational queer history with deeply rooted local community." },
     { city: "paris", country: "France", signal: "Creative queer nightlife and culture-rich neighborhood discovery." },
@@ -1225,7 +1225,7 @@ export default function NowPage() {
           <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
             <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                ‹
+                <span aria-hidden="true">{"<"}</span>
               </span>
             </div>
             <div
@@ -1278,11 +1278,11 @@ export default function NowPage() {
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#0b0b0c] via-[#0b0b0c]/72 to-transparent sm:hidden" />
             <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                ›
+                <span aria-hidden="true">{">"}</span>
               </span>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-white/56 sm:hidden">‹ Swipe horizontally to view more sections ›</p>
+          <p className="mt-2 text-[11px] text-white/56 sm:hidden">Swipe horizontally to view more sections</p>
         </section>
 
         {(isMixedSection || isRankingSection) && (
@@ -2293,5 +2293,6 @@ export default function NowPage() {
     </main>
   );
 }
+
 
 

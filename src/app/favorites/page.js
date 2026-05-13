@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -360,6 +360,14 @@ export default function FavoritesPage() {
   const [viewedProfileError, setViewedProfileError] = useState("");
   const [viewedProfileMemories, setViewedProfileMemories] = useState([]);
   const [viewedProfileMemoriesLoading, setViewedProfileMemoriesLoading] = useState(false);
+  const [viewedMemberRank, setViewedMemberRank] = useState(null);
+  const [viewedContributionCounts, setViewedContributionCounts] = useState({
+    stories: 0,
+    guides: 0,
+    ideas: 0,
+    topics: 0,
+    total: 0,
+  });
   const tonightSectionRef = useRef(null);
   const tripSectionRef = useRef(null);
   const pulseSectionRef = useRef(null);
@@ -402,6 +410,14 @@ export default function FavoritesPage() {
       setViewedProfile(null);
       setViewedProfileLoading(false);
       setViewedProfileError("");
+      setViewedMemberRank(null);
+      setViewedContributionCounts({
+        stories: 0,
+        guides: 0,
+        ideas: 0,
+        topics: 0,
+        total: 0,
+      });
       return () => {
         active = false;
       };
@@ -411,6 +427,14 @@ export default function FavoritesPage() {
       setViewedProfile(null);
       setViewedProfileLoading(false);
       setViewedProfileError("");
+      setViewedMemberRank(null);
+      setViewedContributionCounts({
+        stories: 0,
+        guides: 0,
+        ideas: 0,
+        topics: 0,
+        total: 0,
+      });
       return () => {
         active = false;
       };
@@ -441,7 +465,7 @@ export default function FavoritesPage() {
 
       if (error || !data) {
         setViewedProfileLoading(false);
-        setViewedProfileError("Profile opened with limited details.");
+        setViewedProfileError("Profile opened, but some member details are private or unavailable.");
         return;
       }
 
@@ -464,6 +488,89 @@ export default function FavoritesPage() {
       active = false;
     };
   }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId, viewedMemberNameParam, user?.id]);
+
+  useEffect(() => {
+    let active = true;
+    if (isAuthLoading || !isMember || !isViewingAnotherMember || !viewedMemberId) {
+      setViewedMemberRank(null);
+      setViewedContributionCounts({
+        stories: 0,
+        guides: 0,
+        ideas: 0,
+        topics: 0,
+        total: 0,
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    queueMicrotask(async () => {
+      const leaderboardPromise = supabase
+        .from("qa_member_leaderboard")
+        .select("*")
+        .eq("user_id", viewedMemberId)
+        .maybeSingle();
+
+      const countStoriesPromise = supabase
+        .from("community_stories")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", viewedMemberId);
+      const countGuidesPromise = supabase
+        .from("community_guides")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", viewedMemberId);
+      const countIdeasPromise = supabase
+        .from("community_ideas")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", viewedMemberId);
+      const countTopicsPromise = supabase
+        .from("community_topics")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", viewedMemberId);
+
+      const [leaderboardRes, storiesRes, guidesRes, ideasRes, topicsRes] = await Promise.all([
+        leaderboardPromise,
+        countStoriesPromise,
+        countGuidesPromise,
+        countIdeasPromise,
+        countTopicsPromise,
+      ]);
+
+      if (!active) return;
+
+      setViewedMemberRank(leaderboardRes?.error ? null : leaderboardRes?.data || null);
+
+      const stories = Number(storiesRes?.count || 0);
+      const guides = Number(guidesRes?.count || 0);
+      const ideas = Number(ideasRes?.count || 0);
+      const topics = Number(topicsRes?.count || 0);
+      const total = stories + guides + ideas + topics;
+
+      if (
+        storiesRes?.error ||
+        guidesRes?.error ||
+        ideasRes?.error ||
+        topicsRes?.error
+      ) {
+        const fallbackTotal = Number(leaderboardRes?.data?.score || 0);
+        setViewedContributionCounts({
+          stories: 0,
+          guides: 0,
+          ideas: 0,
+          topics: 0,
+          total: Number.isFinite(fallbackTotal) ? fallbackTotal : 0,
+        });
+        return;
+      }
+
+      setViewedContributionCounts({ stories, guides, ideas, topics, total });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId]);
 
   useEffect(() => {
     const button = favoritesControlButtonsRef.current[activeProfileTab];
@@ -1881,13 +1988,15 @@ export default function FavoritesPage() {
   const isViewedProfileFollowed = Boolean(
     isViewingAnotherMember && viewedTargetUserId && followingIdSet.has(viewedTargetUserId)
   );
-  const memberTitleMeta = getMemberTitleMeta(memberRank?.title || "");
+  const activeMemberRank = isViewingAnotherMember ? viewedMemberRank : memberRank;
+  const activeContributionCounts = isViewingAnotherMember ? viewedContributionCounts : contributionCounts;
+  const memberTitleMeta = getMemberTitleMeta(activeMemberRank?.title || "");
   const profileVibeChips = useMemo(
     () => resolveProfileVibeChips(effectiveVibe, topVibe),
     [effectiveVibe, topVibe]
   );
   const profileAboutMe = effectiveAbout;
-  const atlasCredScore = Number(contributionCounts?.total || 0);
+  const atlasCredScore = Number(activeContributionCounts?.total || 0);
   const atlasCredLevel =
     atlasCredScore >= 60
       ? "Icon"
@@ -1898,16 +2007,22 @@ export default function FavoritesPage() {
           : "Scout";
   const atlasCredBadges = useMemo(() => {
     const badges = [];
-    if ((contributionCounts?.stories || 0) >= 1) badges.push("Story Starter");
-    if ((contributionCounts?.guides || 0) >= 1) badges.push("Guide Builder");
-    if ((contributionCounts?.ideas || 0) >= 2) badges.push("Idea Engine");
-    if ((contributionCounts?.topics || 0) >= 2) badges.push("Conversation Driver");
-    if (Number.isFinite(Number(memberRank?.rank)) && Number(memberRank.rank) <= 50) {
+    if ((activeContributionCounts?.stories || 0) >= 1) badges.push("Story Starter");
+    if ((activeContributionCounts?.guides || 0) >= 1) badges.push("Guide Builder");
+    if ((activeContributionCounts?.ideas || 0) >= 2) badges.push("Idea Engine");
+    if ((activeContributionCounts?.topics || 0) >= 2) badges.push("Conversation Driver");
+    if (Number.isFinite(Number(activeMemberRank?.rank)) && Number(activeMemberRank.rank) <= 50) {
       badges.push("Top 50 Contributor");
     }
     if (badges.length === 0) badges.push("Rising Voice");
     return badges.slice(0, 6);
-  }, [contributionCounts?.guides, contributionCounts?.ideas, contributionCounts?.stories, contributionCounts?.topics, memberRank?.rank]);
+  }, [
+    activeContributionCounts?.guides,
+    activeContributionCounts?.ideas,
+    activeContributionCounts?.stories,
+    activeContributionCounts?.topics,
+    activeMemberRank?.rank,
+  ]);
   const joinedSinceLabel = useMemo(() => {
     const raw = String(user?.created_at || "").trim();
     if (!raw) return "Recently joined";
@@ -2736,7 +2851,9 @@ export default function FavoritesPage() {
             <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
               <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
+                  <span aria-hidden="true">
                   {"<"}
+                  </span>
                 </span>
               </div>
               <nav
@@ -2880,10 +2997,8 @@ export default function FavoritesPage() {
           {!isEditingAbout ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.11] p-3.5 shadow-[0_16px_32px_rgba(34,211,238,0.09)]">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/78">Identity Aura</p>
-                <p className="mt-1 text-xs text-white/64">
-                  Your profile is your queer energy on display: style, scene, and signal in one clean presence.
-                </p>
+                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/78">Profile signal</p>
+                <p className="mt-1 text-xs text-white/64">Keep your profile clear, current, and true to your vibe.</p>
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Display name</p>
@@ -2998,9 +3113,9 @@ export default function FavoritesPage() {
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] ${memberTitleMeta.className}`}>
                     {memberTitleMeta.label || "Contributor"}
                   </span>
-                  {Number.isFinite(Number(memberRank?.rank)) ? (
+                  {Number.isFinite(Number(activeMemberRank?.rank)) ? (
                     <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
-                      Rank #{Number(memberRank.rank)}
+                      Rank #{Number(activeMemberRank.rank)}
                     </span>
                   ) : null}
                   <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
@@ -4536,7 +4651,7 @@ export default function FavoritesPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-white">{event.name}</p>
                         <p className="mt-1 text-xs text-white/62">
-                          {formatDate(event.date)} � {formatCityLabel(event.city || "")}
+                          {formatDate(event.date)} - {formatCityLabel(event.city || "")}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -4611,6 +4726,7 @@ export default function FavoritesPage() {
     </main>
   );
 }
+
 
 
 

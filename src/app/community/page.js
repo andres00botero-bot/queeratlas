@@ -1305,7 +1305,7 @@ export default function CommunityPage() {
           <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
             <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                â€¹
+                <span aria-hidden="true">{"<"}</span>
               </span>
             </div>
             <div
@@ -1348,11 +1348,11 @@ export default function CommunityPage() {
             <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
             <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                â€º
+                {">"}
               </span>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-white/56 sm:hidden">â€¹ Swipe horizontally to view more sections â€º</p>
+          <p className="mt-2 text-[11px] text-white/56 sm:hidden">&lt; Swipe horizontally to view more sections &gt;</p>
         </section>
 
         {isDiscoveryPanel ? (
@@ -1365,7 +1365,7 @@ export default function CommunityPage() {
             <p className="text-xs text-fuchsia-100/75" aria-live="polite">
               {memberSearchLoading
                 ? "Refreshing live member graph..."
-                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " Â· more available" : ""}`}
+                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " · more available" : ""}`}
             </p>
           </div>
 
@@ -1464,7 +1464,7 @@ export default function CommunityPage() {
                         )}
                         </div>
                       <p className="mt-1 text-xs text-white/62">
-                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" Â· ") || "City not set"}
+                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" · ") || "City not set"}
                       </p>
                     </div>
                     </div>
@@ -1601,12 +1601,12 @@ export default function CommunityPage() {
                 const story = item.payload;
                 return (
                   <article key={item.id} className="qa-premium-card rounded-2xl border border-rose-300/22 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-4">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">Story Â· {story.city} Â· {story.category}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">Story · {story.city} · {story.category}</p>
                     <h3 className="mt-2 text-base font-semibold text-white">{story.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-white/78">{story.excerpt}</p>
                     {expandedStoryIds.includes(story.id) && <p className="mt-2 text-sm leading-7 text-white/72">{story.body}</p>}
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-xs text-white/62">{story.author} Â· {timeAgo(story.createdAt)}</p>
+                      <p className="text-xs text-white/62">{story.author} · {timeAgo(story.createdAt)}</p>
                       <div className="flex items-center gap-2">
                         <button onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
                         <button onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
@@ -1620,12 +1620,12 @@ export default function CommunityPage() {
               const isExpanded = expandedGuideIds.includes(guide.id);
               return (
                 <article key={item.id} className="qa-premium-card rounded-2xl border border-violet-300/22 bg-[linear-gradient(180deg,rgba(23,19,42,0.78),rgba(11,11,11,0.96))] p-4">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-violet-200/80">Guide Â· {guide.city} Â· {guide.focus}</p>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-violet-200/80">Guide · {guide.city} · {guide.focus}</p>
                   <h3 className="mt-2 text-base font-semibold text-white">{guide.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-white/78">{guide.summary}</p>
                   {isExpanded && <p className="mt-2 text-sm leading-7 text-white/72">{guide.content}</p>}
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs text-white/62">{guide.author} Â· {timeAgo(guide.createdAt)}</p>
+                    <p className="text-xs text-white/62">{guide.author} · {timeAgo(guide.createdAt)}</p>
                     <div className="flex items-center gap-2">
                       <button onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read more"}</button>
                       <button onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
@@ -1864,7 +1864,7 @@ export default function CommunityPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm leading-6 text-white/74">{idea.text}</p>
-                    <p className="mt-2 text-xs text-white/60">{idea.author} Â· {timeAgo(idea.createdAt)}</p>
+                    <p className="mt-2 text-xs text-white/60">{idea.author} · {timeAgo(idea.createdAt)}</p>
                     <button
                       onClick={() =>
                         reportContent({
@@ -1878,7 +1878,7 @@ export default function CommunityPage() {
                       Report
                     </button>
                   </div>
-                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">â–² {idea.votes}</button>
+                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">▲ {idea.votes}</button>
                 </div>
               </div>
             ))}
