@@ -379,6 +379,7 @@ export default function NowPage() {
   const [readingNewsItem, setReadingNewsItem] = useState(null);
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState("");
+  const isEditingNews = Boolean(editingNewsId);
   const [adminForm, setAdminForm] = useState(() => createAdminNewsFormDefault());
   const [adminComposerLane, setAdminComposerLane] = useState("mixed");
   const [showCommunityStoryForm, setShowCommunityStoryForm] = useState(false);
@@ -388,12 +389,18 @@ export default function NowPage() {
   const [isRefreshingPulse, setIsRefreshingPulse] = useState(false);
   const nowControlsRef = useRef(null);
   const nowControlButtonsRef = useRef({});
+  const adminComposerRef = useRef(null);
 
   useEffect(() => {
     const button = nowControlButtonsRef.current[activeNowSection];
     if (!button || typeof button.scrollIntoView !== "function") return;
     button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [activeNowSection]);
+  useEffect(() => {
+    if (!isEditingNews) return;
+    if (!showAdminForm && !showPolicyAdminForm) return;
+    adminComposerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [isEditingNews, showAdminForm, showPolicyAdminForm]);
 
   const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
@@ -761,7 +768,6 @@ export default function NowPage() {
     () => new Set((adminNews || []).map((item) => String(item.id))),
     [adminNews]
   );
-  const isEditingNews = Boolean(editingNewsId);
 
   const resetAdminNewsComposer = useCallback(() => {
     setEditingNewsId("");
@@ -781,6 +787,7 @@ export default function NowPage() {
 
   const openEditNewsComposer = useCallback((item) => {
     if (!item) return;
+    setActiveNowSection("mixed");
     setEditingNewsId(String(item.id));
     setAdminComposerLane("mixed");
     setShowAdminForm(true);
@@ -1435,7 +1442,7 @@ export default function NowPage() {
               </div>
 
               {isAdmin && showAdminForm && (
-                <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
+                <form ref={adminComposerRef} onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
                   <p className="md:col-span-2 text-xs uppercase tracking-[0.14em] text-cyan-100/85">
                     {isEditingNews ? "Edit admin news" : "Publish admin news"}
                   </p>
@@ -1621,16 +1628,42 @@ export default function NowPage() {
                       {leadNewsItem.imageCredit ? <span>{leadNewsItem.imageCredit}</span> : null}
                       <span>{leadNewsItem.sourceName || "Atlas signal"}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setReadingNewsItem(leadNewsItem);
-                      }}
-                      className="rounded-full border border-fuchsia-100/70 bg-[linear-gradient(135deg,rgba(244,114,182,0.95),rgba(236,72,153,0.92),rgba(168,85,247,0.9))] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_12px_30px_rgba(217,70,239,0.35)] transition hover:-translate-y-[1px] hover:brightness-110 hover:shadow-[0_18px_40px_rgba(217,70,239,0.45)]"
-                    >
-                      Open article
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setReadingNewsItem(leadNewsItem);
+                        }}
+                        className="rounded-full border border-fuchsia-100/70 bg-[linear-gradient(135deg,rgba(244,114,182,0.95),rgba(236,72,153,0.92),rgba(168,85,247,0.9))] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_12px_30px_rgba(217,70,239,0.35)] transition hover:-translate-y-[1px] hover:brightness-110 hover:shadow-[0_18px_40px_rgba(217,70,239,0.45)]"
+                      >
+                        Open article
+                      </button>
+                      {isAdmin && adminNewsIdSet.has(String(leadNewsItem.id)) ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openEditNewsComposer(leadNewsItem);
+                            }}
+                            className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              deleteFeedItem(leadNewsItem.id);
+                            }}
+                            className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </article>
               ) : null}
