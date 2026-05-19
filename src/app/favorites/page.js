@@ -2781,7 +2781,7 @@ export default function FavoritesPage() {
         <div className="pointer-events-none absolute -left-10 top-20 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-12 top-28 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
 
-        <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
+        <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.44)] sm:rounded-[34px] sm:p-6 sm:shadow-[0_42px_132px_rgba(0,0,0,0.56)]">
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/favorites/favorites-hero-wave-v2.png"
@@ -2791,13 +2791,13 @@ export default function FavoritesPage() {
               sizes="100vw"
               className="object-cover"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,14,0.48),rgba(4,7,14,0.74)_56%,rgba(4,7,14,0.9)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_16%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_82%_22%,rgba(56,189,248,0.14),transparent_30%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,14,0.58),rgba(4,7,14,0.8)_56%,rgba(4,7,14,0.92)_100%)] sm:bg-[linear-gradient(180deg,rgba(4,7,14,0.48),rgba(4,7,14,0.74)_56%,rgba(4,7,14,0.9)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_16%,rgba(244,114,182,0.08),transparent_28%),radial-gradient(circle_at_82%_22%,rgba(56,189,248,0.08),transparent_30%)] sm:bg-[radial-gradient(circle_at_16%_16%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_82%_22%,rgba(56,189,248,0.14),transparent_30%)]" />
           </div>
-          <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
-          <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute right-2 top-[38%] h-20 w-20 -translate-y-1/2 rounded-full bg-cyan-300/30 blur-lg sm:right-[7rem] sm:h-40 sm:w-40 sm:blur-2xl" />
-          <div className="pointer-events-none absolute right-2 top-[38%] h-16 w-16 -translate-y-1/2 rounded-full bg-sky-300/24 blur-md sm:right-[7rem] sm:h-36 sm:w-36 sm:blur-lg" />
+          <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/8 blur-3xl sm:bg-rose-400/12" />
+          <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/7 blur-3xl sm:bg-cyan-400/10" />
+          <div className="pointer-events-none absolute right-2 top-[38%] h-16 w-16 -translate-y-1/2 rounded-full bg-cyan-300/18 blur-md sm:right-[7rem] sm:h-40 sm:w-40 sm:bg-cyan-300/30 sm:blur-2xl" />
+          <div className="pointer-events-none absolute right-2 top-[38%] h-12 w-12 -translate-y-1/2 rounded-full bg-sky-300/12 blur-sm sm:right-[7rem] sm:h-36 sm:w-36 sm:bg-sky-300/24 sm:blur-lg" />
           <button
             type="button"
             onClick={() => {
@@ -2805,7 +2805,7 @@ export default function FavoritesPage() {
               setActiveProfileTab("about");
               openAvatarEditor();
             }}
-            className="group absolute right-2 top-[38%] inline-flex h-16 w-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-cyan-200/40 bg-cyan-200/10 text-lg font-semibold text-cyan-100 shadow-[0_0_24px_rgba(103,232,249,0.26),0_18px_40px_rgba(0,0,0,0.42)] transition hover:border-cyan-200/58 sm:right-[7rem] sm:h-36 sm:w-36 sm:rounded-[22px] sm:text-3xl"
+            className="group absolute right-2 top-[38%] inline-flex h-16 w-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-cyan-200/34 bg-cyan-200/8 text-lg font-semibold text-cyan-100 shadow-[0_10px_24px_rgba(0,0,0,0.34)] transition hover:border-cyan-200/52 sm:right-[7rem] sm:h-36 sm:w-36 sm:rounded-[22px] sm:text-3xl sm:shadow-[0_0_24px_rgba(103,232,249,0.26),0_18px_40px_rgba(0,0,0,0.42)]"
             aria-label={canEditOwnAvatar ? "Edit profile image" : "Member profile image"}
           >
             {shouldRenderAvatarImage ? (
@@ -2833,7 +2833,7 @@ export default function FavoritesPage() {
             className="hidden"
           />
           <div className="relative z-10 max-w-4xl pr-[6rem] sm:pr-0">
-            <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)] sm:text-3xl">
+            <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-lg font-semibold tracking-[-0.01em] text-transparent sm:text-3xl sm:drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)]">
               {isReadOnlyPublicProfileView ? `${effectiveDisplayName}'s profile` : `${greeting}, ${displayName}`}
             </p>
             <h1 className="qa-display qa-h1 mt-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold text-transparent sm:mt-4 sm:text-6xl">
@@ -2869,9 +2869,32 @@ export default function FavoritesPage() {
           </div>
           <div className="relative z-10 mt-4 sm:mt-5">
             <PageControls
+              variant="favorites-desktop-luxe"
               controlsRef={favoritesControlsRef}
               controlButtonsRef={favoritesControlButtonsRef}
               buttons={profileTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+              activeButtonThemeById={{
+                about: {
+                  className:
+                    "sm:bg-[#A855F7] sm:text-white",
+                },
+                friends: {
+                  className:
+                    "sm:bg-emerald-300 sm:text-[#041514]",
+                },
+                map: {
+                  className:
+                    "sm:bg-violet-300 sm:text-[#0d1230]",
+                },
+                trips: {
+                  className:
+                    "sm:bg-[#8B5CF6] sm:text-white",
+                },
+                calendar: {
+                  className:
+                    "sm:bg-fuchsia-300 sm:text-[#2b0c15]",
+                },
+              }}
               activeId={activeProfileTab}
               onSelect={(tabId) => setActiveProfileTab(tabId)}
             />
@@ -2880,12 +2903,12 @@ export default function FavoritesPage() {
 
         {isProfileAboutTab ? (
         <section className="qa-premium-card relative mb-6 overflow-hidden rounded-[28px] border border-fuchsia-200/18 bg-[radial-gradient(circle_at_12%_16%,rgba(34,211,238,0.18),transparent_38%),radial-gradient(circle_at_84%_10%,rgba(244,114,182,0.18),transparent_36%),radial-gradient(circle_at_52%_88%,rgba(168,85,247,0.14),transparent_42%),linear-gradient(180deg,rgba(18,14,28,0.97),rgba(8,8,12,0.99))] p-4 shadow-[0_34px_108px_rgba(0,0,0,0.5)] sm:rounded-[30px] sm:p-5">
-          <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-fuchsia-400/10 blur-3xl" />
+          <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-cyan-400/7 blur-3xl sm:bg-cyan-400/10" />
+          <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-fuchsia-400/7 blur-3xl sm:bg-fuchsia-400/10" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(130deg,rgba(255,255,255,0.03),transparent_32%)]" />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="mt-1 bg-gradient-to-r from-cyan-100 via-fuchsia-100 to-amber-100 bg-clip-text text-2xl font-semibold tracking-[-0.02em] text-transparent drop-shadow-[0_10px_26px_rgba(217,70,239,0.24)] sm:text-3xl">
+              <h2 className="mt-1 bg-gradient-to-r from-cyan-100 via-fuchsia-100 to-amber-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-3xl sm:drop-shadow-[0_10px_26px_rgba(217,70,239,0.24)]">
                 Queer Signal
               </h2>
             </div>
@@ -2895,7 +2918,7 @@ export default function FavoritesPage() {
                 type="button"
                 onClick={toggleProfileFollow}
                 disabled={!viewedTargetUserId || viewedProfileLoading}
-                className="rounded-full border border-cyan-200/36 bg-cyan-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-cyan-100 shadow-[0_10px_24px_rgba(34,211,238,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
+                className="rounded-full border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-cyan-100 transition duration-300 hover:border-cyan-100/60 hover:bg-cyan-200/24 sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em] sm:shadow-[0_10px_24px_rgba(34,211,238,0.2)] sm:hover:-translate-y-0.5 sm:active:translate-y-0"
               >
                 {isViewedProfileFollowed ? "Following" : "Follow"}
               </button>
@@ -2903,7 +2926,7 @@ export default function FavoritesPage() {
                 type="button"
                 onClick={openProfileMessage}
                 disabled={!viewedTargetUserId || viewedProfileLoading}
-                className="rounded-full border border-emerald-200/36 bg-emerald-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-emerald-100 shadow-[0_10px_24px_rgba(16,185,129,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-emerald-100/60 hover:bg-emerald-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
+                className="rounded-full border border-emerald-200/30 bg-emerald-200/14 px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-emerald-100 transition duration-300 hover:border-emerald-100/60 hover:bg-emerald-200/24 sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em] sm:shadow-[0_10px_24px_rgba(16,185,129,0.2)] sm:hover:-translate-y-0.5 sm:active:translate-y-0"
               >
                 Message
               </button>
@@ -2911,7 +2934,7 @@ export default function FavoritesPage() {
                 type="button"
                 onClick={reportProfile}
                 disabled={!viewedTargetUserId || viewedProfileLoading}
-                className="rounded-full border border-rose-200/36 bg-rose-200/16 px-2.5 py-1.5 text-[10px] uppercase tracking-[0.1em] text-rose-100 shadow-[0_10px_24px_rgba(251,113,133,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/60 hover:bg-rose-200/24 active:translate-y-0 sm:px-3.5 sm:text-[11px] sm:tracking-[0.11em]"
+                className="rounded-full border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-rose-100 transition duration-300 hover:border-rose-100/60 hover:bg-rose-200/24 sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em] sm:shadow-[0_10px_24px_rgba(251,113,133,0.2)] sm:hover:-translate-y-0.5 sm:active:translate-y-0"
               >
                 Report
               </button>
@@ -2930,16 +2953,16 @@ export default function FavoritesPage() {
 
           {!isEditingAbout ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.11] p-3.5 shadow-[0_16px_32px_rgba(34,211,238,0.09)]">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/78">Profile signal</p>
+              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.10] p-3.5 sm:shadow-[0_16px_32px_rgba(34,211,238,0.09)]">
+                <p className="text-xs uppercase tracking-[0.12em] text-cyan-100/78">Profile signal</p>
                 <p className="mt-1 text-xs text-white/64">Keep your profile clear, current, and true to your vibe.</p>
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Display name</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Display name</p>
                 <p className="mt-1 text-sm text-white">{effectiveDisplayName}</p>
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Visibility</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Visibility</p>
                 <p className="mt-1 text-sm text-white">
                   {(isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility) === "public"
                     ? "Visible to all"
@@ -2949,7 +2972,7 @@ export default function FavoritesPage() {
                 </p>
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Location</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Location</p>
                 <p className="mt-1 text-sm text-white">
                   {effectiveHomeCity || effectiveResidentCountry
                     ? [effectiveHomeCity, effectiveResidentCountry].filter(Boolean).join(", ")
@@ -2957,23 +2980,23 @@ export default function FavoritesPage() {
                 </p>
               </div>
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/52">Pronouns</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Pronouns</p>
                 <p className="mt-1 text-sm text-white">{effectivePronouns || "Not set"}</p>
               </div>
               <div className="sm:col-span-2 rounded-2xl border border-white/14 bg-black/30 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/56">About me</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-white/56">About me</p>
                 <p className="mt-1 text-sm leading-6 text-white/88">
                   {profileAboutMe || "No about text yet."}
                 </p>
               </div>
-              <div className="sm:col-span-2 rounded-2xl border border-fuchsia-200/26 bg-fuchsia-200/[0.12] p-3.5 shadow-[0_18px_36px_rgba(217,70,239,0.11)]">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/86">Vibe DNA</p>
+              <div className="sm:col-span-2 rounded-2xl border border-fuchsia-200/26 bg-fuchsia-200/[0.11] p-3.5 sm:shadow-[0_18px_36px_rgba(217,70,239,0.11)]">
+                <p className="text-xs uppercase tracking-[0.12em] text-fuchsia-100/86">Vibe DNA</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {profileVibeChips.length > 0 ? (
                     profileVibeChips.map((chip) => (
                       <span
                         key={`profile-vibe-${chip.key}`}
-                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.11em] shadow-[0_8px_22px_rgba(0,0,0,0.28)] transition duration-300 hover:-translate-y-0.5 ${chip.tone}`}
+                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.11em] transition duration-300 sm:shadow-[0_8px_22px_rgba(0,0,0,0.28)] sm:hover:-translate-y-0.5 ${chip.tone}`}
                       >
                         {chip.label}
                       </span>
@@ -3041,8 +3064,8 @@ export default function FavoritesPage() {
                   </p>
                 )}
               </div>
-              <div className="sm:col-span-2 rounded-2xl border border-amber-200/26 bg-amber-200/[0.11] p-3.5 shadow-[0_18px_34px_rgba(245,158,11,0.1)]">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/86">Atlas Cred</p>
+              <div className="sm:col-span-2 rounded-2xl border border-amber-200/26 bg-amber-200/[0.1] p-3.5 sm:shadow-[0_18px_34px_rgba(245,158,11,0.1)]">
+                <p className="text-xs uppercase tracking-[0.12em] text-amber-100/86">Atlas Cred</p>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white">
                   <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] ${memberTitleMeta.className}`}>
                     {memberTitleMeta.label || "Contributor"}
@@ -3073,15 +3096,15 @@ export default function FavoritesPage() {
                   ))}
                 </div>
               </div>
-              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.1] p-3.5 shadow-[0_16px_30px_rgba(34,211,238,0.08)]">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/84">Public highlights</p>
+              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.09] p-3.5 sm:shadow-[0_16px_30px_rgba(34,211,238,0.08)]">
+                <p className="text-xs uppercase tracking-[0.12em] text-cyan-100/84">Public highlights</p>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   {publicHighlights.map((item) => (
                     <article
                       key={`public-highlight-${item.label}`}
                       className="rounded-xl border border-white/12 bg-black/25 px-3 py-2.5"
                     >
-                      <p className="text-[10px] uppercase tracking-[0.12em] text-white/56">{item.label}</p>
+                      <p className="text-[11px] uppercase tracking-[0.1em] text-white/56">{item.label}</p>
                       <p className="mt-1 text-sm text-white/90">{item.value}</p>
                     </article>
                   ))}
@@ -3316,7 +3339,7 @@ export default function FavoritesPage() {
         ) : null}
 
         {isProfileActivityTab ? (
-        <section className="qa-premium-card mb-6 rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(14,16,20,0.96),rgba(8,8,10,0.99))] p-4 shadow-[0_24px_72px_rgba(0,0,0,0.38)] sm:rounded-[30px] sm:p-5">
+        <section className="qa-premium-card mb-6 rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(14,16,20,0.96),rgba(8,8,10,0.99))] p-4 shadow-[0_16px_40px_rgba(0,0,0,0.3)] sm:rounded-[30px] sm:p-5 sm:shadow-[0_24px_72px_rgba(0,0,0,0.38)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/72">Mission control</p>
@@ -3440,7 +3463,7 @@ export default function FavoritesPage() {
 
         {showCheckinSection ? (
         isCompactCheckinSection ? (
-        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,14,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
+        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,14,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.28)] sm:shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
               <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">My map</p>
@@ -3460,7 +3483,7 @@ export default function FavoritesPage() {
         ) : (
         <section
           ref={tonightSectionRef}
-          className="qa-premium-card mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_34px_104px_rgba(0,0,0,0.42)] sm:rounded-[32px] sm:p-5"
+          className="qa-premium-card mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5 sm:shadow-[0_34px_104px_rgba(0,0,0,0.42)]"
         >
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -4002,7 +4025,7 @@ export default function FavoritesPage() {
 
         {showTripSection ? (
         isCompactTripSection ? (
-        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,20,24,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
+        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,20,24,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.28)] sm:shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
               <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/72">Plan a trip</p>
@@ -4174,7 +4197,7 @@ export default function FavoritesPage() {
             </form>
           </div>
 
-          <div className="qa-premium-card overflow-visible rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_10%_8%,rgba(244,114,182,0.07),transparent_28%),linear-gradient(180deg,rgba(18,18,20,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_36px_108px_rgba(0,0,0,0.48)] sm:rounded-[32px] sm:p-5">
+          <div className="qa-premium-card overflow-visible rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_10%_8%,rgba(244,114,182,0.07),transparent_28%),linear-gradient(180deg,rgba(18,18,20,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_18px_54px_rgba(0,0,0,0.34)] sm:rounded-[32px] sm:p-5 sm:shadow-[0_36px_108px_rgba(0,0,0,0.48)]">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-2xl font-semibold tracking-[-0.02em] text-white sm:text-3xl">
@@ -4336,7 +4359,7 @@ export default function FavoritesPage() {
 
         {showPulseSection ? (
         isCompactPulseSection ? (
-        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,16,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
+        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,16,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.28)] sm:shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
               <p className="text-[11px] uppercase tracking-[0.16em] text-violet-100/72">Check friend pulse</p>
@@ -4354,7 +4377,7 @@ export default function FavoritesPage() {
         ) : (
         <div ref={pulseSectionRef}>
           {isProfileFriendsTab ? (
-          <section className="qa-premium-card mb-6 rounded-[28px] border border-violet-200/16 bg-[linear-gradient(180deg,rgba(16,14,24,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.4)] sm:p-5">
+          <section className="qa-premium-card mb-6 rounded-[28px] border border-violet-200/16 bg-[linear-gradient(180deg,rgba(16,14,24,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.3)] sm:p-5 sm:shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-violet-100/70">Friends</p>
@@ -4545,7 +4568,7 @@ export default function FavoritesPage() {
         ) : null}
 
         {showCalendarSection ? (
-        <section className="qa-premium-card mb-6 rounded-[30px] border border-rose-200/16 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.14),transparent_32%),radial-gradient(circle_at_85%_14%,rgba(34,211,238,0.1),transparent_28%),linear-gradient(180deg,rgba(22,14,18,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.38)] sm:p-5">
+        <section className="qa-premium-card mb-6 rounded-[30px] border border-rose-200/16 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.14),transparent_32%),radial-gradient(circle_at_85%_14%,rgba(34,211,238,0.1),transparent_28%),linear-gradient(180deg,rgba(22,14,18,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_16px_46px_rgba(0,0,0,0.3)] sm:p-5 sm:shadow-[0_30px_90px_rgba(0,0,0,0.38)]">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-rose-100/78">My Calendar</p>
