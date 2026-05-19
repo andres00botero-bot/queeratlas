@@ -136,6 +136,9 @@ const RANKING_PENDING_SYNC_YEARS_KEY = "qa_atlas_ranking_pending_sync_years_v1";
 const NEWS_TABLE = "qa_world_news";
 const NEWS_HIDDEN_TABLE = "qa_world_news_hidden";
 const RANKING_TABLE = "qa_atlas_rankings";
+const NOW_NEWS_IMAGE_BUCKET = "qa-now-news";
+const NOW_NEWS_IMAGE_MAX_BYTES = 6 * 1024 * 1024;
+const NOW_NEWS_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const NOW_RANKING_LIMIT = 10;
 const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
 const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
@@ -381,6 +384,8 @@ export default function NowPage() {
   const [editingNewsId, setEditingNewsId] = useState("");
   const isEditingNews = Boolean(editingNewsId);
   const [adminForm, setAdminForm] = useState(() => createAdminNewsFormDefault());
+  const [adminImageFile, setAdminImageFile] = useState(null);
+  const [removeAdminImage, setRemoveAdminImage] = useState(false);
   const [adminComposerLane, setAdminComposerLane] = useState("mixed");
   const [showCommunityStoryForm, setShowCommunityStoryForm] = useState(false);
   const [isSubmittingCommunityStory, setIsSubmittingCommunityStory] = useState(false);
@@ -772,6 +777,8 @@ export default function NowPage() {
   const resetAdminNewsComposer = useCallback(() => {
     setEditingNewsId("");
     setAdminForm(createAdminNewsFormDefault());
+    setAdminImageFile(null);
+    setRemoveAdminImage(false);
     setAdminComposerLane("mixed");
     setShowAdminForm(false);
     setShowPolicyAdminForm(false);
@@ -803,6 +810,40 @@ export default function NowPage() {
       imageAlt: String(item.imageAlt || ""),
       imageCredit: String(item.imageCredit || ""),
     });
+    setAdminImageFile(null);
+    setRemoveAdminImage(false);
+  }, []);
+
+  const uploadNowNewsImage = useCallback(async ({ newsId, file }) => {
+    if (!file) return { url: "" };
+    if (!NOW_NEWS_IMAGE_MIME_TYPES.has(file.type)) {
+      throw new Error("Unsupported image type. Use JPG, PNG, or WebP.");
+    }
+    if (file.size > NOW_NEWS_IMAGE_MAX_BYTES) {
+      throw new Error("Image is too large. Maximum size is 6MB.");
+    }
+
+    const extension = String(file.name || "")
+      .split(".")
+      .pop()
+      ?.toLowerCase();
+    const fallbackExt =
+      file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    const safeExt = extension && extension.length <= 5 ? extension : fallbackExt;
+    const path = `${String(newsId)}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+
+    const uploadRes = await supabase.storage.from(NOW_NEWS_IMAGE_BUCKET).upload(path, file, {
+      cacheControl: "31536000",
+      upsert: false,
+    });
+    if (uploadRes.error) throw uploadRes.error;
+
+    const publicUrl =
+      supabase.storage.from(NOW_NEWS_IMAGE_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+    if (!publicUrl) {
+      throw new Error("Could not generate public URL for uploaded image.");
+    }
+    return { url: publicUrl, path };
   }, []);
 
   const submitCommunityStory = async (event) => {
@@ -1015,6 +1056,20 @@ export default function NowPage() {
       ? adminForm.date || preservedEditDate
       : adminForm.date || new Date().toISOString().slice(0, 10);
     const effectiveCategory = adminForm.category || "culture_tip";
+    let imageUrl = String(adminForm.imageUrl || "").trim();
+    if (removeAdminImage) {
+      imageUrl = "";
+    }
+    if (adminImageFile) {
+      try {
+        const uploaded = await uploadNowNewsImage({ newsId: nextId, file: adminImageFile });
+        imageUrl = uploaded.url;
+      } catch (uploadError) {
+        setSyncWarning(`Image upload failed. ${formatSupabaseError(uploadError)}`);
+        return;
+      }
+    }
+
     const item = {
       id: nextId,
       title: adminForm.title,
@@ -1025,7 +1080,7 @@ export default function NowPage() {
       whyItMatters: adminForm.whyItMatters,
       sourceName: "Atlas admin",
       createdAt: new Date().toISOString(),
-      imageUrl: String(adminForm.imageUrl || "").trim(),
+      imageUrl,
       imageAlt: String(adminForm.imageAlt || "").trim(),
       imageCredit: String(adminForm.imageCredit || "").trim(),
     };
@@ -1412,6 +1467,8 @@ export default function NowPage() {
                       setShowPolicyAdminForm(false);
                       setAdminComposerLane("mixed");
                       setEditingNewsId("");
+                      setAdminImageFile(null);
+                      setRemoveAdminImage(false);
                       setAdminForm(createAdminNewsFormDefault());
                       setShowAdminForm(true);
                     }}
@@ -1490,12 +1547,37 @@ export default function NowPage() {
                     className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                     required
                   />
-                  <input
-                    value={adminForm.imageUrl}
-                    onChange={(event) => setAdminForm((current) => ({ ...current, imageUrl: event.target.value }))}
-                    placeholder="Image URL (optional)"
-                    className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
-                  />
+                  <div className="grid gap-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3 md:col-span-2">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/85">
+                      Article image (Supabase storage)
+                    </p>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] || null;
+                        setAdminImageFile(file);
+                        if (file) {
+                          setRemoveAdminImage(false);
+                        }
+                      }}
+                      className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-xs outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-200/20 file:px-3 file:py-1.5 file:text-xs file:text-cyan-100 hover:file:bg-cyan-200/30"
+                    />
+                    <label className="inline-flex items-center gap-2 text-xs text-white/72">
+                      <input
+                        type="checkbox"
+                        checked={removeAdminImage}
+                        onChange={(event) => setRemoveAdminImage(event.target.checked)}
+                        className="h-4 w-4 rounded border-white/30 bg-black/40"
+                      />
+                      Remove current image on save
+                    </label>
+                    {adminImageFile ? (
+                      <p className="text-xs text-cyan-100/82">
+                        New file: {adminImageFile.name}
+                      </p>
+                    ) : null}
+                  </div>
                   <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
                     <input
                       value={adminForm.imageAlt}
@@ -1510,7 +1592,7 @@ export default function NowPage() {
                       className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                     />
                   </div>
-                  {adminForm.imageUrl ? (
+                  {adminForm.imageUrl && !removeAdminImage ? (
                     <a
                       href={adminForm.imageUrl}
                       target="_blank"
@@ -1821,6 +1903,8 @@ export default function NowPage() {
                     onPrimaryAction={() => {
                       if (isAdmin) {
                         setEditingNewsId("");
+                        setAdminImageFile(null);
+                        setRemoveAdminImage(false);
                         setAdminForm(createAdminNewsFormDefault());
                         setShowAdminForm(true);
                         return;
@@ -2081,6 +2165,8 @@ export default function NowPage() {
                   setShowAdminForm(false);
                   setAdminComposerLane("policy");
                   setEditingNewsId("");
+                  setAdminImageFile(null);
+                  setRemoveAdminImage(false);
                   setAdminForm({
                     ...createAdminNewsFormDefault(),
                     category: "rights_safety",
@@ -2135,12 +2221,37 @@ export default function NowPage() {
                 className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                 required
               />
-              <input
-                value={adminForm.imageUrl}
-                onChange={(event) => setAdminForm((current) => ({ ...current, imageUrl: event.target.value }))}
-                placeholder="Image URL (optional)"
-                className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
-              />
+              <div className="grid gap-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3 md:col-span-2">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-rose-100/90">
+                  Policy image (Supabase storage)
+                </p>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    setAdminImageFile(file);
+                    if (file) {
+                      setRemoveAdminImage(false);
+                    }
+                  }}
+                  className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-xs outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-rose-200/20 file:px-3 file:py-1.5 file:text-xs file:text-rose-100 hover:file:bg-rose-200/30"
+                />
+                <label className="inline-flex items-center gap-2 text-xs text-white/72">
+                  <input
+                    type="checkbox"
+                    checked={removeAdminImage}
+                    onChange={(event) => setRemoveAdminImage(event.target.checked)}
+                    className="h-4 w-4 rounded border-white/30 bg-black/40"
+                  />
+                  Remove current image on save
+                </label>
+                {adminImageFile ? (
+                  <p className="text-xs text-rose-100/85">
+                    New file: {adminImageFile.name}
+                  </p>
+                ) : null}
+              </div>
               <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
                 <input
                   value={adminForm.imageAlt}
@@ -2155,7 +2266,7 @@ export default function NowPage() {
                   className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                 />
               </div>
-              {adminForm.imageUrl ? (
+              {adminForm.imageUrl && !removeAdminImage ? (
                 <a
                   href={adminForm.imageUrl}
                   target="_blank"
