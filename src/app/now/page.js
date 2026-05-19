@@ -2763,13 +2763,13 @@ export default function NowPage() {
                 </div>
                 <div className="max-h-[calc(100vh-3.2rem)] overflow-y-auto sm:max-h-[calc(94vh-3.2rem)]">
                   {readingNewsItem.imageUrl ? (
-                    <div className="relative h-52 w-full sm:h-72">
+                    <div className="relative h-56 w-full overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),rgba(10,10,10,0.98)_62%)] sm:h-80">
                       <Image
                         src={readingNewsItem.imageUrl}
                         alt={readingNewsItem.imageAlt || readingNewsItem.title || "News image"}
                         fill
                         sizes="(max-width: 640px) 100vw, 75vw"
-                        className="object-cover"
+                        className="object-contain"
                       />
                     </div>
                   ) : null}
