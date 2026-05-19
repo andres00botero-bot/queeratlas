@@ -374,7 +374,9 @@ function testMapPagesUseSharedReadinessGuard() {
 
 function testSharedAdminAccessResolverUsage() {
   const resolverSource = readFileSync(new URL("../src/lib/adminAccess.js", import.meta.url), "utf8");
-  const homeSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
+  const homePageSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
+  const homeClientSource = readFileSync(new URL("../src/components/home/HomePageClient.js", import.meta.url), "utf8");
+  const homeSource = `${homePageSource}\n${homeClientSource}`;
   const contributeSource = readFileSync(new URL("../src/app/contribute/page.js", import.meta.url), "utf8");
   const eventsSource = readFileSync(new URL("../src/app/events/page.js", import.meta.url), "utf8");
   const communitySource = readFileSync(new URL("../src/app/community/page.js", import.meta.url), "utf8");
@@ -418,7 +420,9 @@ function testSharedAdminAccessResolverUsage() {
 function testSharedDateDisplayUsage() {
   const dateDisplaySource = readFileSync(new URL("../src/lib/dateDisplay.js", import.meta.url), "utf8");
   const nowSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
-  const homeSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
+  const homePageSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
+  const homeClientSource = readFileSync(new URL("../src/components/home/HomePageClient.js", import.meta.url), "utf8");
+  const homeSource = `${homePageSource}\n${homeClientSource}`;
   const eventDateSource = readFileSync(new URL("../src/features/events/eventDateUtils.js", import.meta.url), "utf8");
   const cityEventDateSource = readFileSync(new URL("../src/features/city/eventRailFeature.js", import.meta.url), "utf8");
   const favoritesDateSource = readFileSync(new URL("../src/features/favorites/favoritesPageUtils.js", import.meta.url), "utf8");

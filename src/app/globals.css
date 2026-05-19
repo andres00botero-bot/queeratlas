@@ -587,8 +587,7 @@ body > div:first-child {
 :where(p, li) {
   text-wrap: pretty;
   line-height: 1.7;
-  text-align: justify;
-  text-justify: inter-word;
+  text-align: start;
   hyphens: auto;
   overflow-wrap: anywhere;
 }

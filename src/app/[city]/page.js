@@ -46,16 +46,16 @@ import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
 import ActionToast from "@/components/ui/ActionToast";
-import CityContributionStack from "@/components/city/CityContributionStack";
 import CityDetailsLayer from "@/components/city/CityDetailsLayer";
 import CityEventsRailSection from "@/components/city/CityEventsRailSection";
-import CityHeroCard from "@/components/city/CityHeroCard";
+import CityGuideCluster from "@/components/city/CityGuideCluster";
 import CityMapSection from "@/components/city/CityMapSection";
-import CityPlacesSection from "@/components/city/CityPlacesSection";
-import CityQuickNavigation from "@/components/city/CityQuickNavigation";
-import CityServicesSection from "@/components/city/CityServicesSection";
-import CityTonightSection from "@/components/city/CityTonightSection";
-import QuickGuideSection from "@/components/city/QuickGuideSection";
+import CityNavigationCluster from "@/components/city/CityNavigationCluster";
+import CityPlacesCluster from "@/components/city/CityPlacesCluster";
+import CityServicesCluster from "@/components/city/CityServicesCluster";
+import CitySeoScaffold from "@/components/city/CitySeoScaffold";
+import CityTopCluster from "@/components/city/CityTopCluster";
+import CityTonightCluster from "@/components/city/CityTonightCluster";
 import SafetyShields from "@/components/city/SafetyShields";
 import { buildEventAdminDraft, buildPlaceAdminDraft, buildServiceAdminDraft, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
@@ -4205,36 +4205,20 @@ export default function CityPage() {
 
   return (
     <main className="flex min-h-screen bg-[#050505] text-white">
-      <nav aria-label="Internal city crawl path links" className="sr-only">
-        <Link href="/cities">Cities</Link>
-        <Link href="/events">LGBTQ events</Link>
-        <Link href="/now">LGBTQ safety map</Link>
-        <Link href="/gay-guide">Gay Travel Guide</Link>
-        <Link href="/queer-guide">Queer Travel Guide</Link>
-        <Link href={`/${city}`}>Queer nightlife {cityName}</Link>
-      </nav>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityBreadcrumbJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityPlacesItemListJsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityEventsItemListJsonLd) }}
+      <CitySeoScaffold
+        city={city}
+        cityName={cityName}
+        cityBreadcrumbJsonLd={cityBreadcrumbJsonLd}
+        cityPlacesItemListJsonLd={cityPlacesItemListJsonLd}
+        cityEventsItemListJsonLd={cityEventsItemListJsonLd}
       />
       <ActionToast toast={toast} />
       <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8">
-        <CityHeroCard
+        <CityTopCluster
           cityName={cityName}
           placesChipLabel={placesChipLabel}
           eventsChipLabel={eventsChipLabel}
           cityHero={cityHero}
-        />
-
-        <CityContributionStack
           addMode={addMode}
           addEventMode={addEventMode}
           addServiceMode={addServiceMode}
@@ -4324,24 +4308,11 @@ export default function CityPage() {
           }}
         />
 
-        <div className="mb-6 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)]">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-cyan-100">
-              {cityPlaces.length} venues
-            </span>
-            <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-fuchsia-100">
-              {cityEventCount} events
-            </span>
-            <span className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-emerald-100">
-              {cityServiceCount} services
-            </span>
-            <span className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-white/80">
-              Active section: {activeCitySection}
-            </span>
-          </div>
-        </div>
-
-        <CityQuickNavigation
+        <CityNavigationCluster
+          cityPlacesCount={cityPlaces.length}
+          cityEventCount={cityEventCount}
+          cityServiceCount={cityServiceCount}
+          activeCitySection={activeCitySection}
           onGoMap={() => scrollToSection(mapWrapperRef)}
           onGoEvents={() => scrollToSection(tonightSectionRef)}
           onGoGuide={() => scrollToSection(guideSectionRef)}
@@ -4349,11 +4320,10 @@ export default function CityPage() {
           onGoVenues={() => scrollToSection(placesSectionRef)}
           onGoVenueType={handleGoVenueType}
           venueJumpGroups={venueJumpGroups}
-          activeSection={activeCitySection}
         />
 
-        <QuickGuideSection
-          sectionRef={guideSectionRef}
+        <CityGuideCluster
+          guideSectionRef={guideSectionRef}
           cityName={cityName}
           config={config}
           placesLoading={placesLoading}
@@ -4361,7 +4331,7 @@ export default function CityPage() {
           reloadPlaces={reloadPlaces}
         />
 
-        <CityTonightSection
+        <CityTonightCluster
           sectionRef={tonightSectionRef}
           cityName={cityName}
           tonightFeedTab={tonightFeedTab}
@@ -4440,8 +4410,8 @@ export default function CityPage() {
           redirectToJoin={redirectToJoin}
         />
 
-        <CityServicesSection
-          sectionRef={servicesSectionRef}
+        <CityServicesCluster
+          servicesSectionRef={servicesSectionRef}
           servicesLoading={servicesLoading}
           cityServiceCount={cityServiceCount}
           visibleServiceGroups={visibleServiceGroups}
@@ -4455,7 +4425,7 @@ export default function CityPage() {
           serviceTypeStyles={SERVICE_TYPE_STYLES}
         />
 
-        <CityPlacesSection
+        <CityPlacesCluster
           placesLoading={placesLoading}
           hasAnyPlaces={hasAnyPlaces}
           onReadGuide={() => scrollToSection(guideSectionRef)}
@@ -4466,8 +4436,8 @@ export default function CityPage() {
           }}
           onJoinToPublish={redirectToJoin}
           visiblePlaceGroups={visiblePlaceGroups}
-          firstGroupRef={placesSectionRef}
-          setPlaceGroupRef={setVenueGroupRef}
+          placesSectionRef={placesSectionRef}
+          setVenueGroupRef={setVenueGroupRef}
           isFocusMode={isFocusMode}
           selectedPlaceId={selectedPlace?.id}
           hoveredPlaceId={hoveredPlaceId}

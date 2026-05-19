@@ -1,9 +1,9 @@
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 
 const BASE_URL = "https://www.queeratlas.app";
+const LAST_CONTENT_UPDATE = new Date("2026-05-19T00:00:00.000Z");
 
 export default function sitemap() {
-  const now = new Date();
   const staticRoutes = [
     "",
     "/cities",
@@ -19,7 +19,7 @@ export default function sitemap() {
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${BASE_URL}${route}`,
-    lastModified: now,
+    lastModified: LAST_CONTENT_UPDATE,
     changeFrequency: route === "" || route === "/now" ? "daily" : "weekly",
     priority:
       route === ""
@@ -33,7 +33,7 @@ export default function sitemap() {
 
   const cityEntries = Object.keys(cityConfig).map((city) => ({
     url: `${BASE_URL}/${city}`,
-    lastModified: now,
+    lastModified: LAST_CONTENT_UPDATE,
     changeFrequency: "weekly",
     priority: 0.9,
   }));

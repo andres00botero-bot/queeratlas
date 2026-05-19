@@ -26,11 +26,6 @@ const nextConfig = {
       },
     ],
   },
-  typescript: {
-    // Windows environments can intermittently fail with `spawn EPERM`
-    // during Next's internal type-check worker spawn.
-    ignoreBuildErrors: true,
-  },
   async redirects() {
     return [
       {
