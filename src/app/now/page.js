@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
@@ -141,7 +142,7 @@ const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
 const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
 const NOW_EDITORIAL_CACHE_TTL_MS = 5 * 60 * 1000;
 const MIXED_FEED_ADMIN_CATEGORIES = PULSE_CATEGORIES.filter(
-  (item) => item.key !== "all" && item.key !== "rights_safety"
+  (item) => item.key !== "all"
 );
 function createAdminNewsFormDefault() {
   return {
@@ -151,6 +152,9 @@ function createAdminNewsFormDefault() {
     summary: "",
     whyItMatters: "",
     date: "",
+    imageUrl: "",
+    imageAlt: "",
+    imageCredit: "",
   };
 }
 
@@ -227,6 +231,9 @@ function mapNewsRowToItem(row) {
     whyItMatters: row.why_it_matters,
     sourceName: normalizedSource,
     createdAt: row.created_at || "",
+    imageUrl: row.image_url || "",
+    imageAlt: row.image_alt || "",
+    imageCredit: row.image_credit || "",
   };
 }
 
@@ -369,6 +376,7 @@ export default function NowPage() {
   const [isAdminByTable, setIsAdminByTable] = useState(false);
   const [showAdminForm, setShowAdminForm] = useState(false);
   const [showPolicyAdminForm, setShowPolicyAdminForm] = useState(false);
+  const [readingNewsItem, setReadingNewsItem] = useState(null);
   const [isPublishingNews, setIsPublishingNews] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState("");
   const [adminForm, setAdminForm] = useState(() => createAdminNewsFormDefault());
@@ -652,16 +660,18 @@ export default function NowPage() {
     [happeningSoonEvents, isHappeningExpanded]
   );
 
-  const categoryLabels = useMemo(
-    () =>
-      PULSE_CATEGORIES.reduce((acc, item) => {
-        acc[item.key] = item.label;
-        return acc;
-      }, {}),
-    []
-  );
+  const categoryLabels = useMemo(() => {
+    const base = PULSE_CATEGORIES.reduce((acc, item) => {
+      acc[item.key] = item.label;
+      return acc;
+    }, {});
+    base.culture_tip = "Culture and lifestyle";
+    base.rights_safety = "Politics & Policy";
+    base.rising_spot = "Travel";
+    return base;
+  }, []);
   const mixedFeedCategories = useMemo(
-    () => PULSE_CATEGORIES.filter((item) => item.key !== "rights_safety"),
+    () => PULSE_CATEGORIES.filter((item) => item.key !== "all"),
     []
   );
 
@@ -708,14 +718,8 @@ export default function NowPage() {
       .slice(0, 12);
   }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
 
-  useEffect(() => {
-    if (selectedNewsCategory === "rights_safety") {
-      setSelectedNewsCategory("all");
-    }
-  }, [selectedNewsCategory]);
-
   const mixedFeedItems = useMemo(
-    () => worldNewsItems.filter((item) => !isRightsUpdateItem(item) && !isVoicesMemberItem(item)),
+    () => worldNewsItems.filter((item) => !isVoicesMemberItem(item)),
     [worldNewsItems]
   );
 
@@ -726,6 +730,8 @@ export default function NowPage() {
         : mixedFeedItems.filter((item) => String(item.category || "") === selectedNewsCategory);
     return scopedItems.slice(0, 8);
   }, [mixedFeedItems, selectedNewsCategory]);
+  const leadNewsItem = displayedNewsItems[0] || null;
+  const secondaryNewsItems = displayedNewsItems.slice(1);
 
   const rightsUpdates = useMemo(
     () =>
@@ -746,11 +752,10 @@ export default function NowPage() {
     () => [
       { id: "mixed", label: "Mixed feed", tone: "cyan", count: displayedNewsItems.length },
       { id: "rankings", label: "Rankings", tone: "emerald", count: rankingItems.length },
-      { id: "policy", label: "Policy watch", tone: "rose", count: rightsUpdates.length },
       { id: "voices", label: "Voices", tone: "fuchsia", count: communityStories.length },
       { id: "happening", label: "Happening soon", tone: "violet", count: happeningSoonEvents.length },
     ],
-    [communityStories.length, displayedNewsItems.length, happeningSoonEvents.length, rankingItems.length, rightsUpdates.length]
+    [communityStories.length, displayedNewsItems.length, happeningSoonEvents.length, rankingItems.length]
   );
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
@@ -770,14 +775,16 @@ export default function NowPage() {
     setCommunityStoryForm(createCommunityStoryFormDefault());
     setShowCommunityStoryForm(false);
   }, []);
+  const closeNewsReader = useCallback(() => {
+    setReadingNewsItem(null);
+  }, []);
 
   const openEditNewsComposer = useCallback((item) => {
     if (!item) return;
-    const isPolicyUpdate = String(item.category || "").trim().toLowerCase() === "rights_safety";
     setEditingNewsId(String(item.id));
-    setAdminComposerLane(isPolicyUpdate ? "policy" : "mixed");
-    setShowAdminForm(!isPolicyUpdate);
-    setShowPolicyAdminForm(isPolicyUpdate);
+    setAdminComposerLane("mixed");
+    setShowAdminForm(true);
+    setShowPolicyAdminForm(false);
     setAdminForm({
       title: String(item.title || ""),
       city: String(item.city || "").toLowerCase() === "global" ? "" : String(item.city || ""),
@@ -785,6 +792,9 @@ export default function NowPage() {
       summary: String(item.summary || ""),
       whyItMatters: String(item.whyItMatters || ""),
       date: toDateInputValue(item.date || item.createdAt),
+      imageUrl: String(item.imageUrl || ""),
+      imageAlt: String(item.imageAlt || ""),
+      imageCredit: String(item.imageCredit || ""),
     });
   }, []);
 
@@ -997,9 +1007,7 @@ export default function NowPage() {
     const effectiveDate = isEditingNews
       ? adminForm.date || preservedEditDate
       : adminForm.date || new Date().toISOString().slice(0, 10);
-    const sanitizedMixedCategory =
-      adminForm.category === "rights_safety" ? "culture_tip" : adminForm.category || "culture_tip";
-    const effectiveCategory = adminComposerLane === "policy" ? "rights_safety" : sanitizedMixedCategory;
+    const effectiveCategory = adminForm.category || "culture_tip";
     const item = {
       id: nextId,
       title: adminForm.title,
@@ -1010,6 +1018,9 @@ export default function NowPage() {
       whyItMatters: adminForm.whyItMatters,
       sourceName: "Atlas admin",
       createdAt: new Date().toISOString(),
+      imageUrl: String(adminForm.imageUrl || "").trim(),
+      imageAlt: String(adminForm.imageAlt || "").trim(),
+      imageCredit: String(adminForm.imageCredit || "").trim(),
     };
 
     setIsPublishingNews(true);
@@ -1023,11 +1034,14 @@ export default function NowPage() {
         summary: item.summary,
         why_it_matters: item.whyItMatters,
         source_name: item.sourceName,
+        image_url: item.imageUrl || null,
+        image_alt: item.imageAlt || null,
+        image_credit: item.imageCredit || null,
       };
 
       let error = null;
       if (isEditingNews) {
-        const updateRes = await supabase
+        let updateRes = await supabase
           .from(NEWS_TABLE)
           .update({
             title: item.title,
@@ -1037,9 +1051,36 @@ export default function NowPage() {
             summary: item.summary,
             why_it_matters: item.whyItMatters,
             source_name: item.sourceName,
+            image_url: item.imageUrl || null,
+            image_alt: item.imageAlt || null,
+            image_credit: item.imageCredit || null,
           })
           .eq("id", item.id);
         error = updateRes.error;
+
+        if (
+          error &&
+          (isMissingColumnError(error, "image_url") ||
+            isMissingColumnError(error, "image_alt") ||
+            isMissingColumnError(error, "image_credit"))
+        ) {
+          updateRes = await supabase
+            .from(NEWS_TABLE)
+            .update({
+              title: item.title,
+              city: item.city,
+              category: item.category,
+              date: item.date,
+              summary: item.summary,
+              why_it_matters: item.whyItMatters,
+              source_name: item.sourceName,
+            })
+            .eq("id", item.id);
+          error = updateRes.error;
+          if (!error) {
+            setSyncWarning("News updated. Image columns missing in DB, so image fields were skipped.");
+          }
+        }
       } else {
         // Prefer canonical created_by (uuid) when available.
         const insertRes = await supabase.from(NEWS_TABLE).insert({
@@ -1061,6 +1102,54 @@ export default function NowPage() {
         if (error && (isMissingColumnError(error, "created_by_email") || isMissingColumnError(error, "created_by"))) {
           const retry = await supabase.from(NEWS_TABLE).insert(basePayload);
           error = retry.error;
+        }
+
+        if (
+          error &&
+          (isMissingColumnError(error, "image_url") ||
+            isMissingColumnError(error, "image_alt") ||
+            isMissingColumnError(error, "image_credit"))
+        ) {
+          let retry = await supabase.from(NEWS_TABLE).insert({
+            id: item.id,
+            title: item.title,
+            city: item.city,
+            category: item.category,
+            date: item.date,
+            summary: item.summary,
+            why_it_matters: item.whyItMatters,
+            source_name: item.sourceName,
+            created_by: user?.id || null,
+          });
+          let retryError = retry.error;
+
+          if (retryError && isMissingColumnError(retryError, "created_by")) {
+            retry = await supabase.from(NEWS_TABLE).insert({
+              id: item.id,
+              title: item.title,
+              city: item.city,
+              category: item.category,
+              date: item.date,
+              summary: item.summary,
+              why_it_matters: item.whyItMatters,
+              source_name: item.sourceName,
+              created_by_email: currentEmail || null,
+            });
+            retryError = retry.error;
+          }
+
+          if (
+            retryError &&
+            (isMissingColumnError(retryError, "created_by_email") || isMissingColumnError(retryError, "created_by"))
+          ) {
+            retry = await supabase.from(NEWS_TABLE).insert(basePayload);
+            retryError = retry.error;
+          }
+
+          error = retryError;
+          if (!error) {
+            setSyncWarning("News published. Image columns missing in DB, so image fields were skipped.");
+          }
         }
       }
 
@@ -1150,6 +1239,11 @@ export default function NowPage() {
   const isPolicySection = activeNowSection === "policy";
   const isVoicesSection = activeNowSection === "voices";
   const isHappeningSection = activeNowSection === "happening";
+  useEffect(() => {
+    if (activeNowSection === "policy") {
+      setActiveNowSection("mixed");
+    }
+  }, [activeNowSection]);
 
   if (!ready || !today) {
     return (
@@ -1221,7 +1315,7 @@ export default function NowPage() {
         <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-3 shadow-[0_20px_54px_rgba(0,0,0,0.34)] transition-all duration-300 sm:p-4">
           <div className="mb-2.5 flex items-center justify-between gap-2">
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Page controls</p>
-            <p className="text-[11px] text-white/62">
+            <p className="text-[11px] text-white/62 sm:hidden">
               {isRefreshingPulse ? "Refreshing live pulse..." : "Swipe left or right to switch sections"}
             </p>
           </div>
@@ -1334,7 +1428,7 @@ export default function NowPage() {
                           : "border-white/14 bg-white/[0.03] text-white/65 hover:border-cyan-200/28 hover:text-cyan-100"
                       }`}
                     >
-                      {category.label}
+                      {categoryLabels[category.key] || category.label}
                     </button>
                   );
                 })}
@@ -1389,6 +1483,36 @@ export default function NowPage() {
                     className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                     required
                   />
+                  <input
+                    value={adminForm.imageUrl}
+                    onChange={(event) => setAdminForm((current) => ({ ...current, imageUrl: event.target.value }))}
+                    placeholder="Image URL (optional)"
+                    className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
+                  />
+                  <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
+                    <input
+                      value={adminForm.imageAlt}
+                      onChange={(event) => setAdminForm((current) => ({ ...current, imageAlt: event.target.value }))}
+                      placeholder="Image alt text (optional)"
+                      className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+                    />
+                    <input
+                      value={adminForm.imageCredit}
+                      onChange={(event) => setAdminForm((current) => ({ ...current, imageCredit: event.target.value }))}
+                      placeholder="Image credit (optional)"
+                      className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+                    />
+                  </div>
+                  {adminForm.imageUrl ? (
+                    <a
+                      href={adminForm.imageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl border border-cyan-200/25 bg-cyan-200/8 px-4 py-3 text-xs text-cyan-100 transition hover:border-cyan-200/45 md:col-span-2"
+                    >
+                      Open current image
+                    </a>
+                  ) : null}
                   <button
                     type="submit"
                     disabled={isPublishingNews}
@@ -1422,9 +1546,98 @@ export default function NowPage() {
                 {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
               </p>
 
-              <div className="qa-defer-render relative z-10 grid min-h-0 flex-1 content-start gap-4 overflow-visible pr-0 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
-                {displayedNewsItems.length > 0 ? (
-                  displayedNewsItems.map((item) => {
+              {leadNewsItem ? (
+                <article
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setReadingNewsItem(leadNewsItem)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setReadingNewsItem(leadNewsItem);
+                    }
+                  }}
+                  className="qa-premium-card relative z-10 mb-5 overflow-hidden rounded-[24px] border border-cyan-200/28 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-4 shadow-[0_26px_70px_rgba(34,211,238,0.16)] transition hover:-translate-y-[1px] hover:border-cyan-200/48 sm:rounded-[26px] sm:p-5"
+                >
+                  <div className="mb-4 overflow-hidden rounded-2xl border border-cyan-200/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(217,70,239,0.16),rgba(12,12,12,0.7))]">
+                    {leadNewsItem.imageUrl ? (
+                      <div className="relative h-48 w-full sm:h-56">
+                        <Image
+                          src={leadNewsItem.imageUrl}
+                          alt={leadNewsItem.imageAlt || leadNewsItem.title || "News image"}
+                          fill
+                          sizes="(max-width: 640px) 100vw, 70vw"
+                          className="object-cover"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/18 to-transparent" />
+                        {leadNewsItem.imageCredit && (
+                          <div className="pointer-events-none absolute bottom-2 left-2 right-2 flex flex-wrap items-center justify-between gap-2">
+                            {leadNewsItem.imageCredit ? (
+                              <span className="rounded-full border border-white/18 bg-black/45 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80">
+                                Photo: {leadNewsItem.imageCredit}
+                              </span>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex aspect-[16/9] items-end justify-between px-3 py-2.5 sm:aspect-[16/8] sm:px-4 sm:py-3">
+                        <span className="rounded-full border border-white/16 bg-black/35 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/80">
+                          Editorial image slot
+                        </span>
+                        <span className="hidden rounded-full border border-white/16 bg-black/35 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/80 sm:inline-flex">
+                          Atlas desk
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-transparent" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-cyan-200/34 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100">
+                      Lead story
+                    </span>
+                    <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
+                      {leadNewsItem.city || "Global"}
+                    </span>
+                    <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
+                      {formatDateShort(leadNewsItem.createdAt || leadNewsItem.date)}
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-lg font-semibold leading-tight text-white sm:text-2xl">{leadNewsItem.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/74 sm:leading-7">
+                    {leadNewsItem.summary}
+                  </p>
+                  {leadNewsItem.whyItMatters ? (
+                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Why it matters</p>
+                      <p className="mt-2 text-sm leading-6 text-white/72 line-clamp-4 sm:line-clamp-none">{leadNewsItem.whyItMatters}</p>
+                    </div>
+                  ) : null}
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[11px] uppercase tracking-[0.14em] text-white/55">
+                      {resolveNewsConfidence(leadNewsItem, adminNewsIdSet.has(String(leadNewsItem.id)))}
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/58">
+                      {leadNewsItem.imageCredit ? <span>{leadNewsItem.imageCredit}</span> : null}
+                      <span>{leadNewsItem.sourceName || "Atlas signal"}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setReadingNewsItem(leadNewsItem);
+                      }}
+                      className="rounded-full border border-fuchsia-100/70 bg-[linear-gradient(135deg,rgba(244,114,182,0.95),rgba(236,72,153,0.92),rgba(168,85,247,0.9))] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_12px_30px_rgba(217,70,239,0.35)] transition hover:-translate-y-[1px] hover:brightness-110 hover:shadow-[0_18px_40px_rgba(217,70,239,0.45)]"
+                    >
+                      Open article
+                    </button>
+                  </div>
+                </article>
+              ) : null}
+
+              <div className="qa-defer-render relative z-10 grid min-h-0 flex-1 content-start gap-3 overflow-visible pr-0 md:gap-4 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
+                {secondaryNewsItems.length > 0 ? (
+                  secondaryNewsItems.map((item) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
                     const itemDateForDisplay = canEditAdminNews
                       ? item.createdAt || item.date
@@ -1450,28 +1663,56 @@ export default function NowPage() {
                               );
                             }
                           }}
-                          className={`qa-premium-card relative z-10 h-auto cursor-pointer overflow-hidden rounded-[24px] border ${tone.cardBorder} bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-4 transition duration-300 hover:-translate-y-[2px] md:h-[25.5rem] ${tone.cardHover} ${tone.glow} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
+                          className={`qa-premium-card relative z-10 h-auto cursor-pointer overflow-hidden rounded-[22px] border ${tone.cardBorder} bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-3.5 transition duration-300 hover:-translate-y-[2px] sm:rounded-[24px] sm:p-4 md:h-[25.5rem] ${tone.cardHover} ${tone.glow} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
                         >
                           <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 transition duration-300 group-hover:opacity-80 ${tone.overlay}`} />
                           <div className="pointer-events-none absolute inset-[1px] rounded-[22px] bg-[#0b0b0b]/96" />
                           <div className="relative z-10 flex h-full flex-col">
-                            <div className={`mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r transition-all duration-300 group-hover:w-32 ${tone.accentBar}`} />
+                            <div className="mb-3 overflow-hidden rounded-xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02),rgba(8,8,8,0.72))]">
+                              {item.imageUrl ? (
+                                <div className="relative h-[120px] w-full">
+                                  <Image
+                                    src={item.imageUrl}
+                                    alt={item.imageAlt || item.title || "News image"}
+                                    fill
+                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                    className="object-cover"
+                                  />
+                                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                                  {item.imageCredit ? (
+                                    <span className="pointer-events-none absolute bottom-2 right-2 rounded-full border border-white/18 bg-black/45 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/78">
+                                      {item.imageCredit}
+                                    </span>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <div className="flex aspect-[16/8] items-end justify-between px-3 py-2">
+                                  <span className="rounded-full border border-white/16 bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/75">
+                                    Cover
+                                  </span>
+                                  <span className="rounded-full border border-white/16 bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/75">
+                                    Newsroom
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className={`mb-3 h-1.5 w-20 rounded-full bg-gradient-to-r transition-all duration-300 group-hover:w-28 sm:mb-4 sm:w-24 sm:group-hover:w-32 ${tone.accentBar}`} />
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
-                                <p className="text-xs uppercase tracking-[0.16em] text-white/45">{item.city || "Global"}</p>
+                                <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">{item.city || "Global"}</p>
                                 <span className={`rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] ${tone.categoryBadge}`}>
                                   {categoryLabels[item.category] || "News"}
                                 </span>
                               </div>
-                              <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
+                              <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1 text-[10px] text-white/72 sm:px-3 sm:text-[11px]">
                                 {formatDateShort(itemDateForDisplay)}
                               </span>
                             </div>
-                            <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3>
+                            <h3 className="mt-2.5 text-base font-semibold leading-6 text-white sm:mt-3 sm:text-lg">{item.title}</h3>
                             <div className={`mt-3 md:min-h-0 md:flex-1 ${isExpanded ? "md:overflow-y-auto md:pr-1" : "overflow-hidden"}`}>
                               <p
                                 className={`mt-2 text-sm leading-6 text-white/62 transition-all ${
-                                  isExpanded ? "" : "line-clamp-2"
+                                  isExpanded ? "" : "line-clamp-3 sm:line-clamp-2"
                                 }`}
                               >
                                 {item.summary}
@@ -1490,6 +1731,16 @@ export default function NowPage() {
                             <div className="mt-4 flex items-center justify-between">
                               <span className="text-[11px] uppercase tracking-[0.14em] text-white/36">{confidenceLabel}</span>
                               <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={(clickEvent) => {
+                                    clickEvent.stopPropagation();
+                                    setReadingNewsItem(item);
+                                  }}
+                                  className="rounded-full border border-fuchsia-100/65 bg-[linear-gradient(135deg,rgba(244,114,182,0.94),rgba(217,70,239,0.9))] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] transition hover:-translate-y-[1px] hover:brightness-110"
+                                >
+                                  Open article
+                                </button>
                                 <span className="text-[11px] text-white/36">
                                   {isExpanded
                                     ? item.sourceName || "Atlas signal"
@@ -1528,7 +1779,7 @@ export default function NowPage() {
                       </div>
                     );
                   })
-                ) : (
+                ) : displayedNewsItems.length === 0 ? (
                   <EmptyState
                     title="No world news items yet."
                     description="Add an admin news item or check back after new signals."
@@ -1544,7 +1795,7 @@ export default function NowPage() {
                       router.push("/events");
                     }}
                   />
-                )}
+                ) : null}
               </div>
             </section>
             )}
@@ -1851,6 +2102,36 @@ export default function NowPage() {
                 className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                 required
               />
+              <input
+                value={adminForm.imageUrl}
+                onChange={(event) => setAdminForm((current) => ({ ...current, imageUrl: event.target.value }))}
+                placeholder="Image URL (optional)"
+                className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
+              />
+              <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
+                <input
+                  value={adminForm.imageAlt}
+                  onChange={(event) => setAdminForm((current) => ({ ...current, imageAlt: event.target.value }))}
+                  placeholder="Image alt text (optional)"
+                  className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+                />
+                <input
+                  value={adminForm.imageCredit}
+                  onChange={(event) => setAdminForm((current) => ({ ...current, imageCredit: event.target.value }))}
+                  placeholder="Image credit (optional)"
+                  className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
+                />
+              </div>
+              {adminForm.imageUrl ? (
+                <a
+                  href={adminForm.imageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border border-rose-200/25 bg-rose-200/8 px-4 py-3 text-xs text-rose-100 transition hover:border-rose-200/45 md:col-span-2"
+                >
+                  Open current image
+                </a>
+              ) : null}
               <button
                 type="submit"
                 disabled={isPublishingNews}
@@ -2307,6 +2588,71 @@ export default function NowPage() {
           </section>
         </div>
         )}
+
+        {readingNewsItem ? (
+          <div
+            className="fixed inset-0 z-[95] bg-black/75 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="now-news-reader-title"
+            onClick={closeNewsReader}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") closeNewsReader();
+            }}
+          >
+            <div className="flex min-h-full items-end justify-center p-0 sm:p-4">
+              <article
+                className="w-full max-w-4xl max-h-[100vh] overflow-hidden rounded-t-[22px] border border-white/14 bg-[linear-gradient(180deg,rgba(18,18,20,0.99),rgba(10,10,10,1))] shadow-[0_35px_120px_rgba(0,0,0,0.56)] sm:max-h-[94vh] sm:rounded-[24px]"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md sm:px-6">
+                  <p className="text-[11px] uppercase tracking-[0.15em] text-white/70">
+                    {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={closeNewsReader}
+                    className="rounded-full border border-white/24 bg-white/10 px-3 py-1 text-xs text-white/90 transition hover:border-white/40"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="max-h-[calc(100vh-3.2rem)] overflow-y-auto sm:max-h-[calc(94vh-3.2rem)]">
+                  {readingNewsItem.imageUrl ? (
+                    <div className="relative h-52 w-full sm:h-72">
+                      <Image
+                        src={readingNewsItem.imageUrl}
+                        alt={readingNewsItem.imageAlt || readingNewsItem.title || "News image"}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 75vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="p-4 sm:p-6">
+                    <p className="text-[11px] uppercase tracking-[0.15em] text-white/58">
+                      {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                    </p>
+                    <h3 id="now-news-reader-title" className="mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
+                      {readingNewsItem.title}
+                    </h3>
+                    <p className="mt-4 text-[15px] leading-8 text-white/86">{readingNewsItem.summary}</p>
+                    {readingNewsItem.whyItMatters ? (
+                      <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/55">Why it matters</p>
+                        <p className="mt-2 text-[15px] leading-8 text-white/82">{readingNewsItem.whyItMatters}</p>
+                      </div>
+                    ) : null}
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4 text-xs text-white/62">
+                      <span>{readingNewsItem.sourceName || "Atlas signal"}</span>
+                      {readingNewsItem.imageCredit ? <span>Photo: {readingNewsItem.imageCredit}</span> : null}
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        ) : null}
 
       </div>
     </main>

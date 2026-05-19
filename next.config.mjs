@@ -14,6 +14,18 @@ const nextConfig = {
     // Stabilize Windows builds by limiting static worker fan-out.
     cpus: 1,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "**.supabase.co",
+      },
+    ],
+  },
   typescript: {
     // Windows environments can intermittently fail with `spawn EPERM`
     // during Next's internal type-check worker spawn.
