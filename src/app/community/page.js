@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -19,6 +19,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import ActionToast from "@/components/ui/ActionToast";
+import PageControls from "@/components/ui/PageControls";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 
 const MEMBER_AVATAR_BUCKET = "member-avatars";
@@ -1311,62 +1312,25 @@ export default function CommunityPage() {
           </div>
         </div>
 
-        <section className="qa-premium-card sticky top-3 z-20 mb-6 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] backdrop-blur transition-all duration-300 sm:top-3 sm:rounded-[24px]">
-          <div className="mb-2.5 flex items-center justify-between gap-2 px-1">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Page controls</p>
-            <p className="text-[11px] text-white/62">Swipe left or right to switch sections</p>
-          </div>
-          <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
-            <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                <span aria-hidden="true">{"<"}</span>
-              </span>
-            </div>
-            <div
-              ref={communityControlsRef}
-              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:pl-2 sm:pr-2"
-            >
-            {[
-              { id: "discovery", label: "Member discovery", tone: "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100" },
-              { id: "stories", label: "Stories", tone: "border-rose-200/45 bg-rose-200/16 text-rose-100" },
-              { id: "guides", label: "Member guides", tone: "border-violet-200/45 bg-violet-200/16 text-violet-100" },
-              { id: "chat", label: "Live chat", tone: "border-cyan-200/45 bg-cyan-200/16 text-cyan-100" },
-              { id: "improve", label: "Improve atlas", tone: "border-amber-200/45 bg-amber-200/16 text-amber-100" },
-            ].map((item) => {
-              const isActive = activeCommunityPanel === item.id;
-              return (
-                <button
-                  key={item.id}
-                  ref={(node) => {
-                    communityControlButtonsRef.current[item.id] = node;
-                  }}
-                  type="button"
-                  onClick={() => {
-                    setActiveCommunityPanel(item.id);
-                    if (item.id === "stories") setCommunityFeedMode("stories");
-                    if (item.id === "guides") setCommunityFeedMode("guides");
-                  }}
-                  className={`snap-start whitespace-nowrap rounded-full border px-3.5 py-2.5 text-[11px] uppercase tracking-[0.12em] transition ${
-                    isActive
-                      ? `${item.tone} shadow-[0_0_0_1px_rgba(255,255,255,0.07),0_8px_20px_rgba(0,0,0,0.22)]`
-                      : "border-white/14 bg-white/6 text-white/74 hover:border-white/24 hover:text-white"
-                  }`}
-                  aria-pressed={isActive}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-            </div>
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#090b10] via-[#090b10]/72 to-transparent sm:hidden" />
-            <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                {">"}
-              </span>
-            </div>
-          </div>
-          <p className="mt-2 text-[11px] text-white/56 sm:hidden">Use the arrows or swipe left/right to view all sections</p>
+        <section className="mb-6">
+          <PageControls
+            className="qa-premium-card sticky top-3 z-20"
+            controlsRef={communityControlsRef}
+            controlButtonsRef={communityControlButtonsRef}
+            buttons={[
+              { id: "discovery", label: "Member discovery" },
+              { id: "stories", label: "Stories" },
+              { id: "guides", label: "Member guides" },
+              { id: "chat", label: "Live chat" },
+              { id: "improve", label: "Improve atlas" },
+            ]}
+            activeId={activeCommunityPanel}
+            onSelect={(panelId) => {
+              setActiveCommunityPanel(panelId);
+              if (panelId === "stories") setCommunityFeedMode("stories");
+              if (panelId === "guides") setCommunityFeedMode("guides");
+            }}
+          />
         </section>
 
         {isDiscoveryPanel ? (
@@ -1898,7 +1862,7 @@ export default function CommunityPage() {
                       Report
                     </button>
                   </div>
-                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">▲ {idea.votes}</button>
+                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">? {idea.votes}</button>
                 </div>
               </div>
             ))}
@@ -1983,4 +1947,5 @@ export default function CommunityPage() {
     </main>
   );
 }
+
 

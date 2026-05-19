@@ -134,6 +134,7 @@ import {
   FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS,
 } from "@/features/favorites/favoritesUiConstants";
 import ActionToast from "@/components/ui/ActionToast";
+import PageControls from "@/components/ui/PageControls";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
 import FavoritesMomentumPanel from "@/components/favorites/FavoritesMomentumPanel";
@@ -2056,15 +2057,25 @@ export default function FavoritesPage() {
     : String(profileAvatarDataUrl || "").trim();
   const effectiveProfileMemories = isReadOnlyPublicProfileView ? viewedProfileMemories : profileMemories;
   const shouldRenderAvatarImage = Boolean(effectiveAvatarUrl) && !profileAvatarLoadFailed;
-  const profileTabs = isReadOnlyPublicProfileView
-    ? [{ id: "about", label: "Profile Home" }]
-    : [
-        { id: "about", label: "Home" },
-        { id: "friends", label: "Friends" },
-        { id: "map", label: "My map" },
-        { id: "trips", label: "Plan a trip" },
-        { id: "calendar", label: "My Calendar" },
-      ];
+  const profileTabs = useMemo(
+    () =>
+      isReadOnlyPublicProfileView
+        ? [{ id: "about", label: "Profile Home" }]
+        : [
+            { id: "about", label: "Home" },
+            { id: "friends", label: "Friends" },
+            { id: "map", label: "My map" },
+            { id: "trips", label: "Plan a trip" },
+            { id: "calendar", label: "My Calendar" },
+          ],
+    [isReadOnlyPublicProfileView]
+  );
+  useEffect(() => {
+    if (!Array.isArray(profileTabs) || profileTabs.length === 0) return;
+    const firstTabId = String(profileTabs[0]?.id || "");
+    if (!firstTabId) return;
+    setActiveProfileTab(firstTabId);
+  }, [profileTabs]);
   const plannerCities = useMemo(() => {
     const configCities = Object.values(cityConfig).map((item) => item.title?.replace("Queer ", "")).filter(Boolean);
     return computePlannerCities({ configCities, places, events });
@@ -2856,105 +2867,14 @@ export default function FavoritesPage() {
               </div>
             )}
           </div>
-          <div className="relative z-10 mt-4 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] transition-all duration-300 sm:mt-5 sm:p-3.5">
-            <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">Page controls</p>
-              <p className="text-[11px] text-white/62">Swipe left or right to switch sections</p>
-            </div>
-            <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
-              <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                  <span aria-hidden="true">
-                  {"<"}
-                  </span>
-                </span>
-              </div>
-              <nav
-                ref={favoritesControlsRef}
-                className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto whitespace-nowrap pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2 sm:pl-2 sm:pr-2"
-              >
-                {profileTabs.map((tab) => {
-                  const isActive = activeProfileTab === tab.id;
-                  const toneClasses =
-                    tab.id === "about"
-                      ? {
-                          active: "border-cyan-200/40 bg-cyan-300/14 text-cyan-100 shadow-[0_0_0_1px_rgba(103,232,249,0.26)]",
-                          idle: "border-cyan-200/18 bg-cyan-300/[0.06] text-cyan-100/78 hover:border-cyan-200/34 hover:text-cyan-100",
-                        }
-                      : tab.id === "map"
-                        ? {
-                            active: "border-emerald-200/40 bg-emerald-300/14 text-emerald-100 shadow-[0_0_0_1px_rgba(110,231,183,0.24)]",
-                            idle: "border-emerald-200/18 bg-emerald-300/[0.06] text-emerald-100/78 hover:border-emerald-200/34 hover:text-emerald-100",
-                          }
-                        : tab.id === "trips"
-                          ? {
-                              active: "border-amber-200/40 bg-amber-300/14 text-amber-100 shadow-[0_0_0_1px_rgba(252,211,77,0.24)]",
-                              idle: "border-amber-200/18 bg-amber-300/[0.06] text-amber-100/78 hover:border-amber-200/34 hover:text-amber-100",
-                            }
-                          : tab.id === "friends"
-                            ? {
-                                active: "border-violet-200/40 bg-violet-300/14 text-violet-100 shadow-[0_0_0_1px_rgba(196,181,253,0.24)]",
-                                idle: "border-violet-200/18 bg-violet-300/[0.06] text-violet-100/78 hover:border-violet-200/34 hover:text-violet-100",
-                              }
-                            : tab.id === "calendar"
-                              ? {
-                                  active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
-                                  idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
-                                }
-                              : {
-                                  active: "border-rose-200/40 bg-rose-300/14 text-rose-100 shadow-[0_0_0_1px_rgba(251,191,188,0.24)]",
-                                  idle: "border-rose-200/18 bg-rose-300/[0.06] text-rose-100/78 hover:border-rose-200/34 hover:text-rose-100",
-                                };
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      ref={(node) => {
-                        favoritesControlButtonsRef.current[tab.id] = node;
-                      }}
-                      onClick={() => {
-                        setActiveProfileTab(tab.id);
-                      }}
-                      className={`shrink-0 rounded-full border px-3.5 py-2.5 text-xs uppercase tracking-[0.12em] transition ${
-                        isActive ? toneClasses.active : toneClasses.idle
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </nav>
-              <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#121018] via-[#121018]/72 to-transparent sm:hidden" />
-              <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                  {">"}
-                </span>
-              </div>
-            </div>
-            <p className="mt-2 text-[11px] text-white/56 sm:hidden">Use the arrows or swipe left/right to view all sections</p>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-white/58">
-              {isReadOnlyPublicProfileView ? (
-                <>
-                  <span>Public profile view</span>
-                  <span>|</span>
-                  <span>{effectiveHomeCity || "City not set"}</span>
-                  <span>|</span>
-                  <span className="capitalize">{effectiveVibe || "No vibe tags yet"}</span>
-                </>
-              ) : (
-                <>
-                  <span className="sm:hidden">{totalPlaces} places · {totalEvents} events · {totalCities} cities</span>
-                  <span className="hidden sm:inline">{totalPlaces} places</span>
-                  <span className="hidden sm:inline">|</span>
-                  <span className="hidden sm:inline">{totalEvents} events</span>
-                  <span className="hidden sm:inline">|</span>
-                  <span className="hidden sm:inline">{totalCities} cities</span>
-                  <span className="hidden sm:inline">|</span>
-                  <span className="hidden capitalize sm:inline">{topVibe}</span>
-                </>
-              )}
-            </div>
+          <div className="relative z-10 mt-4 sm:mt-5">
+            <PageControls
+              controlsRef={favoritesControlsRef}
+              controlButtonsRef={favoritesControlButtonsRef}
+              buttons={profileTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+              activeId={activeProfileTab}
+              onSelect={(tabId) => setActiveProfileTab(tabId)}
+            />
           </div>
         </section>
 
@@ -4740,6 +4660,7 @@ export default function FavoritesPage() {
     </main>
   );
 }
+
 
 
 

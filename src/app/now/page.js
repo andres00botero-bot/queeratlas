@@ -16,6 +16,7 @@ import { createContentSubmission } from "@/lib/contentSubmissions";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
+import PageControls from "@/components/ui/PageControls";
 
 function isThisWeek(value, now) {
   const date = new Date(value);
@@ -34,7 +35,7 @@ function clampSeoText(value, max = 260) {
     .replace(/\s+/g, " ")
     .trim();
   if (normalized.length <= max) return normalized;
-  return `${normalized.slice(0, max - 1)}…`;
+  return `${normalized.slice(0, max - 1)}â€¦`;
 }
 
 function formatRatingValue(value) {
@@ -196,7 +197,7 @@ const ATLAS_DESTINATION_RANKINGS = {
     { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
     { city: "new_york", country: "USA", signal: "Historic queer legacy + constant reinvention across boroughs." },
     { city: "sao_paulo", country: "Brazil", signal: "Massive scene scale, iconic nightlife, bold community pulse." },
-    { city: "madrid", country: "Spain", signal: "Late-night social flow with one of Europeâ€™s strongest queer cores." },
+    { city: "madrid", country: "Spain", signal: "Late-night social flow with one of EuropeÃ¢â‚¬â„¢s strongest queer cores." },
     { city: "toronto", country: "Canada", signal: "Safe, inclusive, and packed with year-round queer programming." },
     { city: "san_francisco", country: "USA", signal: "Foundational queer history with deeply rooted local community." },
     { city: "paris", country: "France", signal: "Creative queer nightlife and culture-rich neighborhood discovery." },
@@ -1457,75 +1458,16 @@ export default function NowPage() {
           )}
         </div>
 
-        <section className="mb-6 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-3 shadow-[0_20px_54px_rgba(0,0,0,0.34)] transition-all duration-300 sm:p-4">
-          <div className="mb-2.5 flex items-center justify-between gap-2">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-white/52">Page controls</p>
-            <p className="text-[11px] text-white/62 sm:hidden">
-              {isRefreshingPulse ? "Refreshing live pulse..." : "Swipe left or right to switch sections"}
-            </p>
-          </div>
-          <div className="relative rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))] px-2 py-2">
-            <div className="pointer-events-none absolute left-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                <span aria-hidden="true">{"<"}</span>
-              </span>
-            </div>
-            <div
-              ref={nowControlsRef}
-              className="flex snap-x snap-mandatory items-center gap-2 overflow-x-auto pl-7 pr-7 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:pl-2 sm:pr-2"
-            >
-            {nowSections.map((section) => {
-              const isActive = activeNowSection === section.id;
-              const toneClass =
-                section.tone === "fuchsia"
-                  ? (isActive
-                    ? "border-fuchsia-100/65 bg-[linear-gradient(135deg,rgba(244,114,182,0.34),rgba(217,70,239,0.26),rgba(56,189,248,0.2))] text-fuchsia-50 shadow-[0_0_0_1px_rgba(244,114,182,0.42),0_14px_36px_rgba(217,70,239,0.24)]"
-                    : "border-fuchsia-200/34 bg-[linear-gradient(135deg,rgba(217,70,239,0.18),rgba(244,114,182,0.12))] text-fuchsia-100 hover:border-fuchsia-100/56 hover:text-fuchsia-50 hover:shadow-[0_10px_26px_rgba(217,70,239,0.22)]")
-                  : section.tone === "rose"
-                    ? (isActive
-                      ? "border-rose-200/45 bg-rose-300/16 text-rose-100 shadow-[0_0_0_1px_rgba(251,113,133,0.28)]"
-                      : "border-rose-200/20 bg-rose-300/[0.06] text-rose-100/82 hover:border-rose-200/34 hover:text-rose-100")
-                    : section.tone === "emerald"
-                      ? (isActive
-                        ? "border-emerald-200/45 bg-emerald-300/16 text-emerald-100 shadow-[0_0_0_1px_rgba(16,185,129,0.28)]"
-                        : "border-emerald-200/20 bg-emerald-300/[0.06] text-emerald-100/82 hover:border-emerald-200/34 hover:text-emerald-100")
-                      : section.tone === "violet"
-                        ? (isActive
-                          ? "border-violet-200/45 bg-violet-300/16 text-violet-100 shadow-[0_0_0_1px_rgba(167,139,250,0.28)]"
-                          : "border-violet-200/20 bg-violet-300/[0.06] text-violet-100/82 hover:border-violet-200/34 hover:text-violet-100")
-                        : (isActive
-                          ? "border-cyan-200/45 bg-cyan-300/16 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.28)]"
-                          : "border-cyan-200/20 bg-cyan-300/[0.06] text-cyan-100/82 hover:border-cyan-200/34 hover:text-cyan-100");
-              return (
-                <button
-                  key={section.id}
-                  ref={(node) => {
-                    nowControlButtonsRef.current[section.id] = node;
-                  }}
-                  type="button"
-                  onClick={() => {
-                    setActiveNowSection(section.id);
-                  }}
-                  className={`shrink-0 rounded-full border px-3.5 py-2.5 text-xs uppercase tracking-[0.12em] transition ${toneClass}`}
-                >
-                  <span>{section.label}</span>
-                  <span className="ml-1.5 rounded-full border border-white/20 bg-white/12 px-1.5 py-0.5 text-[10px] tracking-normal">
-                    {section.count}
-                  </span>
-                </button>
-              );
-            })}
-            </div>
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#0b0b0c] via-[#0b0b0c]/72 to-transparent sm:hidden" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#0b0b0c] via-[#0b0b0c]/72 to-transparent sm:hidden" />
-            <div className="pointer-events-none absolute right-2 top-1/2 z-10 -translate-y-1/2 sm:hidden">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/18 bg-white/10 text-[11px] text-white/78">
-                <span aria-hidden="true">{">"}</span>
-              </span>
-            </div>
-          </div>
-          <p className="mt-2 text-[11px] text-white/56 sm:hidden">Use the arrows or swipe left/right to view all sections</p>
-        </section>
+        <PageControls
+          className="mb-6 transition-all duration-300"
+          controlsRef={nowControlsRef}
+          controlButtonsRef={nowControlButtonsRef}
+          buttons={nowSections.map((section) => ({ id: section.id, label: section.label }))}
+          activeId={activeNowSection}
+          onSelect={(sectionId) => {
+            setActiveNowSection(sectionId);
+          }}
+        />
 
         {(isMixedSection || isRankingSection) && (
         <section className="mb-6">
@@ -2850,7 +2792,7 @@ export default function NowPage() {
               >
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md sm:px-6">
                   <p className="text-[11px] uppercase tracking-[0.15em] text-white/70">
-                    {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                    {readingNewsItem.city || "Global"} Â· {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
                   </p>
                   <button
                     type="button"
@@ -2874,7 +2816,7 @@ export default function NowPage() {
                   ) : null}
                   <div className="p-4 sm:p-6">
                     <p className="text-[11px] uppercase tracking-[0.15em] text-white/58">
-                      {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                      {readingNewsItem.city || "Global"} Â· {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
                     </p>
                     <h3 id="now-news-reader-title" className="mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
                       {readingNewsItem.title}
@@ -2901,6 +2843,9 @@ export default function NowPage() {
     </main>
   );
 }
+
+
+
 
 
 
