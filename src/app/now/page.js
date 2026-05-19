@@ -762,7 +762,7 @@ export default function NowPage() {
   );
   const nowSections = useMemo(
     () => [
-      { id: "mixed", label: "Mixed feed", tone: "cyan", count: displayedNewsItems.length },
+      { id: "mixed", label: "News feed", tone: "cyan", count: displayedNewsItems.length },
       { id: "rankings", label: "Rankings", tone: "emerald", count: rankingItems.length },
       { id: "voices", label: "Voices", tone: "fuchsia", count: communityStories.length },
       { id: "happening", label: "Happening soon", tone: "violet", count: happeningSoonEvents.length },
@@ -1453,7 +1453,7 @@ export default function NowPage() {
               <div className="pointer-events-none absolute -right-20 bottom-10 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/80">Mixed feed</p>
+                  <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/80">News feed</p>
                   <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
                 </div>
                 {isAdmin && (
@@ -1481,16 +1481,32 @@ export default function NowPage() {
               <div className="relative z-10 mb-5 flex flex-wrap gap-2">
                 {mixedFeedCategories.map((category) => {
                   const isActive = selectedNewsCategory === category.key;
+                  const toneClassByCategory =
+                    category.key === "rising_spot"
+                      ? isActive
+                        ? "border-emerald-200/60 bg-emerald-200/20 text-emerald-50 shadow-[0_0_0_1px_rgba(110,231,183,0.22)]"
+                        : "border-emerald-200/26 bg-emerald-300/[0.07] text-emerald-100/78 hover:border-emerald-200/44 hover:text-emerald-100"
+                      : category.key === "rights_safety"
+                        ? isActive
+                          ? "border-rose-200/65 bg-rose-200/22 text-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.24)]"
+                          : "border-rose-200/28 bg-rose-300/[0.07] text-rose-100/80 hover:border-rose-200/46 hover:text-rose-100"
+                        : category.key === "nightlife_change"
+                          ? isActive
+                            ? "border-amber-200/62 bg-amber-200/20 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.22)]"
+                            : "border-amber-200/28 bg-amber-300/[0.07] text-amber-100/80 hover:border-amber-200/46 hover:text-amber-100"
+                          : category.key === "major_event"
+                            ? isActive
+                              ? "border-violet-200/62 bg-violet-200/20 text-violet-50 shadow-[0_0_0_1px_rgba(196,181,253,0.24)]"
+                              : "border-violet-200/28 bg-violet-300/[0.07] text-violet-100/80 hover:border-violet-200/46 hover:text-violet-100"
+                            : isActive
+                              ? "border-cyan-200/62 bg-cyan-200/20 text-cyan-50 shadow-[0_0_0_1px_rgba(103,232,249,0.24)]"
+                              : "border-cyan-200/28 bg-cyan-300/[0.07] text-cyan-100/82 hover:border-cyan-200/46 hover:text-cyan-100";
                   return (
                     <button
                       key={category.key}
                       type="button"
                       onClick={() => setSelectedNewsCategory(category.key)}
-                      className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] transition ${
-                        isActive
-                          ? "border-cyan-200/45 bg-cyan-200/18 text-cyan-50 shadow-[0_0_0_1px_rgba(103,232,249,0.18)]"
-                          : "border-white/14 bg-white/[0.03] text-white/65 hover:border-cyan-200/28 hover:text-cyan-100"
-                      }`}
+                      className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] transition ${toneClassByCategory}`}
                     >
                       {categoryLabels[category.key] || category.label}
                     </button>
