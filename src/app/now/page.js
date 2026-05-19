@@ -1418,8 +1418,21 @@ export default function NowPage() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(nowNewsJsonLd) }}
         />
-        <div className="qa-panel mb-8 rounded-[30px] border border-fuchsia-200/24 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.24),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(56,189,248,0.16),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(18,26,48,0.9))] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
-          <div className="max-w-3xl">
+        <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
+          <div className="pointer-events-none absolute inset-0">
+            <Image
+              src="/now/now-hero-newsroom.png"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+              style={{ objectPosition: "center 8%" }}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,18,0.44),rgba(5,8,18,0.72)_56%,rgba(5,8,18,0.92)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(56,189,248,0.2),transparent_30%),radial-gradient(circle_at_82%_20%,rgba(244,114,182,0.2),transparent_28%)]" />
+          </div>
+          <div className="relative z-10 max-w-3xl">
             <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
             <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Queer World News</h1>
             <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">

@@ -2060,6 +2060,7 @@ export default function CityPage() {
   useEffect(() => {
     const mapboxgl = mapboxGlRef.current;
     if (!mapRef.current || !mapboxgl) return;
+    const useNeonMarkers = true;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
@@ -2087,11 +2088,65 @@ export default function CityPage() {
       hoverPopupRef.current?.remove();
     };
 
+    const createNeonPinElement = (baseColor = "#9ca3af") => {
+      const wrapper = document.createElement("div");
+      wrapper.dataset.neonColor = baseColor;
+      wrapper.style.width = "22px";
+      wrapper.style.height = "30px";
+      wrapper.style.display = "flex";
+      wrapper.style.alignItems = "flex-start";
+      wrapper.style.justifyContent = "center";
+      wrapper.style.filter = "saturate(1.9) brightness(1.16)";
+      wrapper.style.transform = "translateY(-3px)";
+
+      const pin = document.createElement("div");
+      pin.className = "qa-neon-pin";
+      pin.style.width = "20px";
+      pin.style.height = "20px";
+      pin.style.transform = "rotate(-45deg)";
+      pin.style.borderRadius = "999px 999px 999px 2px";
+      pin.style.background = `radial-gradient(circle at 22% 16%,rgba(255,255,255,0.82),${baseColor} 34%)`;
+      pin.style.border = "1.6px solid rgba(255,255,255,0.92)";
+      pin.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.16), 0 0 8px ${baseColor}, 0 0 16px ${baseColor}`;
+
+      const core = document.createElement("div");
+      core.style.width = "6px";
+      core.style.height = "6px";
+      core.style.borderRadius = "999px";
+      core.style.background = "rgba(10,10,15,0.82)";
+      core.style.border = "1px solid rgba(255,255,255,0.7)";
+      core.style.position = "absolute";
+      core.style.left = "50%";
+      core.style.top = "50%";
+      core.style.transform = "translate(-50%, -50%) rotate(45deg)";
+
+      pin.style.position = "relative";
+      pin.appendChild(core);
+      wrapper.appendChild(pin);
+      return wrapper;
+    };
+    const BERLIN_NEON_PALETTE = ["#00d9ff", "#ff2ec4", "#ff8a00", "#8d4dff", "#00f5b0", "#2f8bff"];
+    const resolveBerlinNeonColor = (token, fallback = "#36e5ff") => {
+      const key = String(token || "").trim().toLowerCase();
+      if (!key) return fallback;
+      let hash = 0;
+      for (let index = 0; index < key.length; index += 1) {
+        hash = (hash * 31 + key.charCodeAt(index)) % 100000;
+      }
+      return BERLIN_NEON_PALETTE[Math.abs(hash) % BERLIN_NEON_PALETTE.length] || fallback;
+    };
+
     cityPlaces.forEach((place) => {
       if (place.lat == null || place.lng == null) return;
 
       const typeConfig = TYPES.find((item) => item.value === place.type);
-      const marker = new mapboxgl.Marker({ color: typeConfig?.color || "#9ca3af" })
+      const neonColor = useNeonMarkers
+        ? resolveBerlinNeonColor(`${place.type}|${place.name}|${place.id}`, typeConfig?.color || "#36e5ff")
+        : typeConfig?.color || "#9ca3af";
+      const marker = useNeonMarkers
+        ? new mapboxgl.Marker(createNeonPinElement(neonColor))
+        : new mapboxgl.Marker({ color: neonColor });
+      marker
         .setLngLat([place.lng, place.lat])
         .addTo(mapRef.current);
 
@@ -2114,13 +2169,20 @@ export default function CityPage() {
 
     cityEvents.forEach((event) => {
       if (event.lat == null || event.lng == null) return;
+      const eventNeonColor = useNeonMarkers
+        ? resolveBerlinNeonColor(`event|${event.name}|${event.id}`, "#ff4ec4")
+        : "#8b5cf6";
 
-      const element = document.createElement("div");
-      element.style.width = "16px";
-      element.style.height = "16px";
-      element.style.background = "#8b5cf6";
-      element.style.borderRadius = "4px";
-      element.style.border = "2px solid white";
+      const element = useNeonMarkers
+        ? createNeonPinElement(eventNeonColor)
+        : document.createElement("div");
+      if (!useNeonMarkers) {
+        element.style.width = "16px";
+        element.style.height = "16px";
+        element.style.background = "#8b5cf6";
+        element.style.borderRadius = "4px";
+        element.style.border = "2px solid white";
+      }
 
       const marker = new mapboxgl.Marker(element)
         .setLngLat([event.lng, event.lat])
@@ -2148,13 +2210,20 @@ export default function CityPage() {
       const lng = Number(service?.lng);
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       const typeConfig = SERVICE_TYPES.find((item) => item.value === service.type);
+      const serviceNeonColor = useNeonMarkers
+        ? resolveBerlinNeonColor(`service|${service.type}|${service.name}|${service.id}`, typeConfig?.color || "#2ef2c8")
+        : typeConfig?.color || "#10b981";
 
-      const element = document.createElement("div");
-      element.style.width = "14px";
-      element.style.height = "14px";
-      element.style.background = typeConfig?.color || "#10b981";
-      element.style.borderRadius = "999px";
-      element.style.border = "2px solid rgba(255,255,255,0.95)";
+      const element = useNeonMarkers
+        ? createNeonPinElement(serviceNeonColor)
+        : document.createElement("div");
+      if (!useNeonMarkers) {
+        element.style.width = "14px";
+        element.style.height = "14px";
+        element.style.background = typeConfig?.color || "#10b981";
+        element.style.borderRadius = "999px";
+        element.style.border = "2px solid rgba(255,255,255,0.95)";
+      }
 
       const marker = new mapboxgl.Marker(element)
         .setLngLat([lng, lat])
@@ -2176,16 +2245,28 @@ export default function CityPage() {
       markersRef.current.push(marker);
       serviceMarkersRef.current.set(String(service.id), marker);
     });
-  }, [cityEvents, cityPlaces, cityServices, openEvent, openPlace, openService]);
+  }, [city, cityEvents, cityPlaces, cityServices, openEvent, openPlace, openService]);
 
   useEffect(() => {
+    const useNeonMarkers = true;
     placeMarkersRef.current.forEach((marker, id) => {
       const hovered = !isMapInteracting && hoveredPlaceId && String(id) === String(hoveredPlaceId);
       const selected = selectedPlace && String(id) === String(selectedPlace.id);
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
+      const neonPin = el.querySelector(".qa-neon-pin");
       el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
-      el.style.boxShadow = active ? "0 0 0 4px rgba(255,255,255,0.22), 0 0 22px rgba(255,255,255,0.35)" : "none";
+      if (useNeonMarkers) {
+        const markerColor = el.dataset.neonColor || "#9ca3af";
+        el.style.boxShadow = "none";
+        if (neonPin) {
+          neonPin.style.boxShadow = active
+            ? `0 0 0 2px rgba(255,255,255,0.22), 0 0 18px ${markerColor}, 0 0 36px ${markerColor}`
+            : `0 0 0 1px rgba(255,255,255,0.14), 0 0 12px ${markerColor}, 0 0 24px ${markerColor}`;
+        }
+      } else {
+        el.style.boxShadow = active ? "0 0 0 4px rgba(255,255,255,0.22), 0 0 22px rgba(255,255,255,0.35)" : "none";
+      }
       el.style.filter = active ? "saturate(1.2)" : "saturate(1)";
       el.style.zIndex = active ? "30" : "10";
     });
@@ -2195,8 +2276,19 @@ export default function CityPage() {
       const selected = selectedEvent && String(id) === String(selectedEvent.id);
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
+      const neonPin = el.querySelector(".qa-neon-pin");
       el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
-      el.style.boxShadow = active ? "0 0 0 4px rgba(139,92,246,0.24), 0 0 22px rgba(139,92,246,0.45)" : "none";
+      if (useNeonMarkers) {
+        const markerColor = el.dataset.neonColor || "#8b5cf6";
+        el.style.boxShadow = "none";
+        if (neonPin) {
+          neonPin.style.boxShadow = active
+            ? `0 0 0 2px rgba(255,255,255,0.22), 0 0 18px ${markerColor}, 0 0 36px ${markerColor}`
+            : `0 0 0 1px rgba(255,255,255,0.14), 0 0 12px ${markerColor}, 0 0 24px ${markerColor}`;
+        }
+      } else {
+        el.style.boxShadow = active ? "0 0 0 4px rgba(139,92,246,0.24), 0 0 22px rgba(139,92,246,0.45)" : "none";
+      }
       el.style.filter = active ? "brightness(1.15)" : "brightness(1)";
       el.style.zIndex = active ? "32" : "12";
     });
@@ -2205,12 +2297,24 @@ export default function CityPage() {
       const selected = selectedService && String(id) === String(selectedService.id);
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
+      const neonPin = el.querySelector(".qa-neon-pin");
       el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
-      el.style.boxShadow = active ? "0 0 0 4px rgba(16,185,129,0.24), 0 0 22px rgba(16,185,129,0.42)" : "none";
+      if (useNeonMarkers) {
+        const markerColor = el.dataset.neonColor || "#10b981";
+        el.style.boxShadow = "none";
+        if (neonPin) {
+          neonPin.style.boxShadow = active
+            ? `0 0 0 2px rgba(255,255,255,0.22), 0 0 18px ${markerColor}, 0 0 36px ${markerColor}`
+            : `0 0 0 1px rgba(255,255,255,0.14), 0 0 12px ${markerColor}, 0 0 24px ${markerColor}`;
+        }
+      } else {
+        el.style.boxShadow = active ? "0 0 0 4px rgba(16,185,129,0.24), 0 0 22px rgba(16,185,129,0.42)" : "none";
+      }
       el.style.filter = active ? "brightness(1.15)" : "brightness(1)";
       el.style.zIndex = active ? "34" : "14";
     });
   }, [
+    city,
     hoveredEventId,
     hoveredPlaceId,
     hoveredServiceId,

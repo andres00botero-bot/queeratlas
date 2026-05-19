@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
@@ -858,8 +859,21 @@ export default function CitiesPage() {
         <div className="pointer-events-none absolute -left-14 top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-10 top-20 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-        <section className="qa-panel qa-premium-card relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.10),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(45,212,191,0.10),transparent_24%),linear-gradient(135deg,rgba(29,23,18,0.98),rgba(10,10,10,0.99),rgba(19,24,27,0.97))] p-8 shadow-[0_36px_126px_rgba(0,0,0,0.42)]">
-          <div className="max-w-4xl">
+        <section className="qa-panel qa-premium-card relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[#0f0618] p-8 shadow-[0_36px_126px_rgba(0,0,0,0.42)]">
+          <div className="pointer-events-none absolute inset-0">
+            <Image
+              src="/cities/cities-hero-network-v2.png"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+              style={{ objectPosition: "center 38%" }}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,6,18,0.42),rgba(11,6,18,0.70)_56%,rgba(11,6,18,0.9)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_14%,rgba(251,191,36,0.16),transparent_28%),radial-gradient(circle_at_84%_20%,rgba(244,114,182,0.15),transparent_26%)]" />
+          </div>
+          <div className="relative z-10 max-w-4xl">
             <p className="qa-eyebrow text-white/45">
               Live Discovery + Atlas Signal
             </p>
@@ -892,7 +906,7 @@ export default function CitiesPage() {
             </div>
           </div>
 
-          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+          <div className="relative z-10 mt-7 grid gap-3 sm:grid-cols-3">
             <div className="qa-card qa-premium-card rounded-2xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-4 shadow-[0_14px_30px_rgba(236,72,153,0.14),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
               <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.cities}</p>

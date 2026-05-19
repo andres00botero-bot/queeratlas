@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
@@ -2769,7 +2770,19 @@ export default function FavoritesPage() {
         <div className="pointer-events-none absolute -left-10 top-20 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-12 top-28 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
 
-        <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(135deg,rgba(22,22,24,0.95),rgba(10,10,10,0.99),rgba(16,18,22,0.98))] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
+        <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_42px_132px_rgba(0,0,0,0.56)] sm:rounded-[34px] sm:p-6">
+          <div className="pointer-events-none absolute inset-0">
+            <Image
+              src="/favorites/favorites-hero-wave-v2.png"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,14,0.48),rgba(4,7,14,0.74)_56%,rgba(4,7,14,0.9)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_16%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_82%_22%,rgba(56,189,248,0.14),transparent_30%)]" />
+          </div>
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/12 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="pointer-events-none absolute right-2 top-[38%] h-20 w-20 -translate-y-1/2 rounded-full bg-cyan-300/30 blur-lg sm:right-[7rem] sm:h-40 sm:w-40 sm:blur-2xl" />
@@ -2808,7 +2821,7 @@ export default function FavoritesPage() {
             onChange={onProfileAvatarSelected}
             className="hidden"
           />
-          <div className="max-w-4xl pr-[6rem] sm:pr-0">
+          <div className="relative z-10 max-w-4xl pr-[6rem] sm:pr-0">
             <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.01em] text-transparent drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)] sm:text-3xl">
               {isReadOnlyPublicProfileView ? `${effectiveDisplayName}'s profile` : `${greeting}, ${displayName}`}
             </p>
@@ -2843,7 +2856,7 @@ export default function FavoritesPage() {
               </div>
             )}
           </div>
-          <div className="mt-4 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] transition-all duration-300 sm:mt-5 sm:p-3.5">
+          <div className="relative z-10 mt-4 rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(10,12,16,0.95),rgba(8,8,8,0.98))] p-2.5 shadow-[0_20px_54px_rgba(0,0,0,0.34)] transition-all duration-300 sm:mt-5 sm:p-3.5">
             <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">Page controls</p>
               <p className="text-[11px] text-white/62">Swipe left or right to switch sections</p>

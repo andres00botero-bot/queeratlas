@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import "../signal-motion.css";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -1275,10 +1276,23 @@ export default function CommunityPage() {
       <div className="qa-shell relative mx-auto max-w-7xl">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.04),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(59,130,246,0.05),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.015),transparent_30%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div className="qa-premium-card mb-7 overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_12%_18%,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_88%_14%,rgba(244,114,182,0.08),transparent_30%),linear-gradient(165deg,rgba(10,12,16,0.96),rgba(6,8,12,0.98))] p-5 shadow-[0_40px_120px_rgba(0,0,0,0.46)] sm:mb-8 sm:rounded-[34px] sm:p-8">
+        <div className="qa-premium-card relative mb-7 overflow-hidden rounded-[30px] border border-white/10 bg-[#060910] p-5 shadow-[0_40px_120px_rgba(0,0,0,0.46)] sm:mb-8 sm:rounded-[34px] sm:p-8">
+          <div className="pointer-events-none absolute inset-0">
+            <Image
+              src="/community/community-hero-neon-network.png"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+              style={{ objectPosition: "center 36%" }}
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,14,0.48),rgba(4,7,14,0.74)_56%,rgba(4,7,14,0.9)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(244,114,182,0.15),transparent_28%),radial-gradient(circle_at_82%_20%,rgba(56,189,248,0.14),transparent_30%)]" />
+          </div>
           <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full bg-fuchsia-300/10 blur-3xl" />
-          <div className="max-w-3xl">
+          <div className="relative z-10 max-w-3xl">
             <p className="text-xs uppercase tracking-[0.35em] text-white/68">Community Signal</p>
             <h1 className="qa-display mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:mt-3 sm:text-5xl">Community</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:mt-4 sm:leading-7">Live member signal, practical city knowledge, and trusted conversations in one focused flow.</p>
