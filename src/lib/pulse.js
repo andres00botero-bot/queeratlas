@@ -22,19 +22,6 @@ export const EDITORIAL_PULSE_ITEMS = [
     sourceName: "Queer Atlas editorial",
   },
   {
-    id: "pulse-opening-latam-01",
-    category: "nightlife_change",
-    title: "LatAm nights are diversifying beyond legacy gay districts",
-    city: "Buenos Aires, Mexico City, Bogota",
-    country: "Argentina / Mexico / Colombia",
-    date: "2026-04-07",
-    summary:
-      "Members report stronger mixed-format venues: queer nights inside broader club ecosystems, with faster trend rotation.",
-    whyItMatters:
-      "Discovery now depends less on one classic district and more on tracking event-led micro-scenes week by week.",
-    sourceName: "Member reports",
-  },
-  {
     id: "pulse-culture-nightflow-01",
     category: "culture_tip",
     title: "Best city strategy right now: soft start, hard finish",
