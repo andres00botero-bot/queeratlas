@@ -1,29 +1,56 @@
 export const metadata = {
-  title: "Queer World News & Live Updates",
+  title: "Queer News Feed: LGBTQ World News, Travel & Safety",
   description:
-    "Real-time queer world news, LGBTQ travel safety signals, and safe queer nightlife updates across cities.",
+    "Daily queer news feed with LGBTQ world updates, travel safety signals, inclusive nightlife shifts, and community policy watch across major cities.",
   keywords: [
-    "LGBTQ safety map",
-    "LGBTQ travel safety",
+    "queer news",
+    "LGBTQ news",
+    "gay news today",
+    "queer community news",
+    "LGBTQ travel news",
+    "queer travel safety",
     "safe queer nightlife",
-    "queer safe spaces",
     "inclusive nightlife",
+    "LGBTQ policy updates",
+    "queer rights news",
+    "LGBTQ events news",
+    "queer city updates",
   ],
   alternates: {
     canonical: "/now",
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   openGraph: {
-    title: "Queer World News | Queer Atlas",
+    title: "Queer News Feed | Queer Atlas",
     description:
-      "Follow LGBTQ safety updates, queer nightlife changes, and live city momentum.",
+      "Track LGBTQ world news, queer travel safety, nightlife changes, and policy shifts in one live editorial feed.",
     url: "/now",
     type: "website",
+    images: [
+      {
+        url: "/queer-atlas-heart-logo-progress.png",
+        width: 1200,
+        height: 630,
+        alt: "Queer Atlas Now - queer news feed",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LGBTQ Safety & Live Queer Updates | Queer Atlas",
+    title: "Queer News Feed | Queer Atlas",
     description:
-      "Live LGBTQ safety map signals, nightlife updates, and city trend shifts.",
+      "Daily LGBTQ world news, queer travel safety updates, nightlife shifts, and policy watch.",
+    images: ["/queer-atlas-heart-logo-progress.png"],
   },
 };
 

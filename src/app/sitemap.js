@@ -20,8 +20,15 @@ export default function sitemap() {
   const staticEntries = staticRoutes.map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: now,
-    changeFrequency: route === "" ? "daily" : "weekly",
-    priority: route === "" ? 1 : route === "/cities" || route === "/events" ? 0.9 : 0.75,
+    changeFrequency: route === "" || route === "/now" ? "daily" : "weekly",
+    priority:
+      route === ""
+        ? 1
+        : route === "/now"
+          ? 0.95
+          : route === "/cities" || route === "/events"
+            ? 0.9
+            : 0.75,
   }));
 
   const cityEntries = Object.keys(cityConfig).map((city) => ({

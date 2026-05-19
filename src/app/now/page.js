@@ -29,6 +29,14 @@ function parseNewsTimestamp(value) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+function clampSeoText(value, max = 260) {
+  const normalized = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (normalized.length <= max) return normalized;
+  return `${normalized.slice(0, max - 1)}…`;
+}
+
 function formatRatingValue(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return "N/A";
@@ -744,6 +752,64 @@ export default function NowPage() {
   }, [mixedFeedItems, selectedNewsCategory]);
   const leadNewsItem = displayedNewsItems[0] || null;
   const secondaryNewsItems = displayedNewsItems.slice(1);
+  const nowNewsJsonLd = useMemo(() => {
+    const baseUrl = "https://www.queeratlas.app";
+    const topItems = displayedNewsItems.slice(0, 10);
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "@id": `${baseUrl}/now#collection`,
+      url: `${baseUrl}/now`,
+      name: "Queer News Feed",
+      description:
+        "Daily LGBTQ world news, queer travel safety updates, nightlife changes, and policy watch across major cities.",
+      inLanguage: "en",
+      isPartOf: {
+        "@type": "WebSite",
+        "@id": `${baseUrl}/#website`,
+        name: "Queer Atlas",
+      },
+      mainEntity: {
+        "@type": "ItemList",
+        itemListOrder: "https://schema.org/ItemListOrderDescending",
+        numberOfItems: topItems.length,
+        itemListElement: topItems.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${baseUrl}/now#${String(item.id || `story-${index + 1}`)}`,
+          item: {
+            "@type": "NewsArticle",
+            headline: clampSeoText(item.title, 110),
+            datePublished: item.date || item.createdAt || undefined,
+            dateModified: item.createdAt || item.date || undefined,
+            articleSection: categoryLabels[item.category] || "Queer news",
+            description: clampSeoText(item.summary || item.whyItMatters || "", 220),
+            inLanguage: "en",
+            about: [
+              "Queer news",
+              "LGBTQ community",
+              "Queer travel",
+              "Inclusive nightlife",
+            ],
+            author: {
+              "@type": "Organization",
+              name: item.sourceName || "Queer Atlas Editorial",
+            },
+            publisher: {
+              "@type": "Organization",
+              name: "Queer Atlas",
+              logo: {
+                "@type": "ImageObject",
+                url: `${baseUrl}/icons/icon-512.png`,
+              },
+            },
+            image: item.imageUrl ? [item.imageUrl] : undefined,
+          },
+        })),
+      },
+    };
+  }, [categoryLabels, displayedNewsItems]);
 
   const rightsUpdates = useMemo(
     () =>
@@ -1348,6 +1414,10 @@ export default function NowPage() {
   return (
     <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-white sm:px-6 sm:py-8 sm:pb-12">
       <div className="qa-shell">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowNewsJsonLd) }}
+        />
         <div className="qa-panel mb-8 rounded-[30px] border border-fuchsia-200/24 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.24),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(56,189,248,0.16),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(18,26,48,0.9))] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="max-w-3xl">
             <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
