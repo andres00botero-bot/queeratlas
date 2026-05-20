@@ -3510,8 +3510,8 @@ export default function FavoritesPage() {
           </div>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {[
-              { id: "checkins", label: "Check-ins layer", icon: "?" },
-              { id: "saved", label: "Saved layer", icon: "?" },
+              { id: "checkins", label: "My check ins" },
+              { id: "saved", label: "My saved places" },
             ].map((view) => {
               const isActive = myMapView === view.id;
               return (
@@ -3520,15 +3520,14 @@ export default function FavoritesPage() {
                   type="button"
                   onClick={() => setMyMapView(view.id)}
                   aria-pressed={isActive}
-                  className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] transition ${
+                  className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-colors ${
                     isActive
                       ? view.id === "checkins"
-                        ? "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100 shadow-[0_0_0_1px_rgba(244,114,182,0.25)]"
-                        : "border-cyan-200/45 bg-cyan-200/16 text-cyan-100 shadow-[0_0_0_1px_rgba(34,211,238,0.25)]"
-                      : "border-white/14 bg-white/6 text-white/72 hover:border-white/24 hover:text-white"
+                        ? "border-fuchsia-300/70 bg-fuchsia-500/34 text-fuchsia-50"
+                        : "border-cyan-300/70 bg-cyan-500/34 text-cyan-50"
+                      : "border-white/16 bg-white/8 text-white/78 hover:border-white/26 hover:bg-white/12 hover:text-white"
                   }`}
                 >
-                  <span className="mr-1.5 opacity-90">{view.icon}</span>
                   {view.label}
                 </button>
               );
