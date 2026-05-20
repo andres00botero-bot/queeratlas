@@ -2915,7 +2915,14 @@ export default function FavoritesPage() {
               </h2>
             </div>
             {isViewingAnotherMember ? (
-            <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+              <button
+                type="button"
+                onClick={() => router.push("/community")}
+                className="rounded-full border border-rose-200/60 bg-[linear-gradient(135deg,rgba(251,113,133,0.34),rgba(217,70,239,0.26),rgba(24,10,24,0.92))] px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.34),0_0_26px_rgba(244,114,182,0.34)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/80 hover:shadow-[0_0_0_1px_rgba(251,113,133,0.5),0_0_32px_rgba(244,114,182,0.42)] sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em]"
+              >
+                Close
+              </button>
               <button
                 type="button"
                 onClick={toggleProfileFollow}
@@ -2955,10 +2962,12 @@ export default function FavoritesPage() {
 
           {!isEditingAbout ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.10] p-3.5 sm:shadow-[0_16px_32px_rgba(34,211,238,0.09)]">
-                <p className="text-xs uppercase tracking-[0.12em] text-cyan-100/78">Profile signal</p>
-                <p className="mt-1 text-xs text-white/64">Keep your profile clear, current, and true to your vibe.</p>
-              </div>
+              {!isViewingAnotherMember ? (
+                <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.10] p-3.5 sm:shadow-[0_16px_32px_rgba(34,211,238,0.09)]">
+                  <p className="text-xs uppercase tracking-[0.12em] text-cyan-100/78">Profile signal</p>
+                  <p className="mt-1 text-xs text-white/64">Keep your profile clear, current, and true to your vibe.</p>
+                </div>
+              ) : null}
               <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
                 <p className="text-xs uppercase tracking-[0.12em] text-white/52">Display name</p>
                 <p className="mt-1 text-sm text-white">{effectiveDisplayName}</p>

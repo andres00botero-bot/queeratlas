@@ -1265,9 +1265,8 @@ export default function CommunityPage() {
     );
   };
 
-    const isDiscoveryPanel = activeCommunityPanel === "discovery";
-  const isStoriesPanel = activeCommunityPanel === "stories";
-  const isGuidesPanel = activeCommunityPanel === "guides";
+  const isDiscoveryPanel = activeCommunityPanel === "discovery";
+  const isFeedPanel = activeCommunityPanel === "feed";
   const isChatPanel = activeCommunityPanel === "chat";
   const isImprovePanel = activeCommunityPanel === "improve";
 
@@ -1319,16 +1318,14 @@ export default function CommunityPage() {
             controlButtonsRef={communityControlButtonsRef}
             buttons={[
               { id: "discovery", label: "Member discovery" },
-              { id: "stories", label: "Stories" },
-              { id: "guides", label: "Member guides" },
+              { id: "feed", label: "Member stories & guides" },
               { id: "chat", label: "Live chat" },
               { id: "improve", label: "Improve atlas" },
             ]}
             activeId={activeCommunityPanel}
             onSelect={(panelId) => {
               setActiveCommunityPanel(panelId);
-              if (panelId === "stories") setCommunityFeedMode("stories");
-              if (panelId === "guides") setCommunityFeedMode("guides");
+              if (panelId === "feed" && communityFeedMode === "all") setCommunityFeedMode("stories");
             }}
           />
         </section>
@@ -1523,7 +1520,7 @@ export default function CommunityPage() {
         </section>
         ) : null}
 
-        {isStoriesPanel || isGuidesPanel ? (
+        {isFeedPanel ? (
         <section aria-labelledby="community-feed-heading" className="qa-premium-card rounded-[30px] border border-violet-300/16 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.14),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(180deg,rgba(20,16,34,0.95),rgba(10,10,10,1))] p-5 shadow-[0_34px_110px_rgba(139,92,246,0.12),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
             <div>
