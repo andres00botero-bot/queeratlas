@@ -5,6 +5,7 @@ import {
   normalizeVibeTag,
   normalizeVibeTags,
 } from "@/lib/vibeTaxonomy";
+import { getIntentSignalBoost, inferSearchIntent } from "@/lib/searchIntent";
 
 function scoreMatch(text, query) {
   if (!text) return 0;
@@ -112,6 +113,7 @@ export function buildAtlasSearchResults({
   qualityMap = {},
   preferredCity = "",
   nowTs = Date.now(),
+  intentProfile = null,
 }) {
   const normalized = query?.trim().toLowerCase();
 
@@ -121,6 +123,7 @@ export function buildAtlasSearchResults({
 
   const favoriteSet = new Set((favoriteIds || []).map((item) => String(item)));
   const preferredCityKey = normalizeValue(preferredCity);
+  const resolvedIntent = intentProfile || inferSearchIntent(normalized || "");
 
   const cityResults = Object.entries(cityConfig)
     .map(([key, city]) => {
@@ -135,6 +138,11 @@ export function buildAtlasSearchResults({
       const cityKey = normalizeValue(cityName);
       const cityAffinity = preferredCityKey && cityKey === preferredCityKey ? 18 : 0;
       const nameBoost = namePriorityBoost(cityName, normalized);
+      const intentBoost = getIntentSignalBoost({
+        targetType: "city",
+        entity: { ...city, name: cityName, city: cityName },
+        intent: resolvedIntent,
+      });
       return {
         id: key,
         key,
@@ -144,7 +152,7 @@ export function buildAtlasSearchResults({
         vibe: city.vibe || "",
         vibe_tags: cityVibeTags,
         type: "city",
-        score: baseScore + cityAffinity + nameBoost,
+        score: baseScore + cityAffinity + nameBoost + intentBoost,
       };
     })
     .filter((item) => item.score > 0)
@@ -167,8 +175,21 @@ export function buildAtlasSearchResults({
       const noveltyPenalty = favoriteSet.has(String(place.id)) ? -18 : 0;
       const nameBoost = namePriorityBoost(place.name, normalized);
       const intentBoost = queryIntentBoost("place", normalized);
+      const semanticBoost = getIntentSignalBoost({
+        targetType: "place",
+        entity: place,
+        intent: resolvedIntent,
+      });
       const score = Math.round(
-        baseScore + cityAffinity + socialProof + ratingBoost + qualityScore + noveltyPenalty + nameBoost + intentBoost
+        baseScore +
+          cityAffinity +
+          socialProof +
+          ratingBoost +
+          qualityScore +
+          noveltyPenalty +
+          nameBoost +
+          intentBoost +
+          semanticBoost
       );
       return { ...place, type: "place", vibe_tags: placeVibeTags, score };
     })
@@ -191,9 +212,21 @@ export function buildAtlasSearchResults({
       const noveltyPenalty = favoriteSet.has(`event-${event.id}`) ? -15 : 0;
       const nameBoost = namePriorityBoost(event.name, normalized);
       const intentBoost = queryIntentBoost("event", normalized);
+      const semanticBoost = getIntentSignalBoost({
+        targetType: "event",
+        entity: event,
+        intent: resolvedIntent,
+      });
       const safeFreshness = nameBoost >= 150 ? Math.max(freshness, 0) : freshness;
       const score = Math.round(
-        baseScore + cityAffinity + safeFreshness + qualityScore + noveltyPenalty + nameBoost + intentBoost
+        baseScore +
+          cityAffinity +
+          safeFreshness +
+          qualityScore +
+          noveltyPenalty +
+          nameBoost +
+          intentBoost +
+          semanticBoost
       );
       return { ...event, type: "event", vibe_tags: eventVibeTags, score };
     })
