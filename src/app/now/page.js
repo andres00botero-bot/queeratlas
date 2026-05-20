@@ -1509,23 +1509,23 @@ export default function NowPage() {
                   const toneClassByCategory =
                     category.key === "rising_spot"
                       ? isActive
-                        ? "border-emerald-200/60 bg-emerald-200/20 text-emerald-50 shadow-[0_0_0_1px_rgba(110,231,183,0.22)]"
-                        : "border-emerald-200/26 bg-emerald-300/[0.07] text-emerald-100/78 hover:border-emerald-200/44 hover:text-emerald-100"
+                        ? "border-emerald-200/70 bg-emerald-200/30 text-emerald-50 shadow-[0_0_0_1px_rgba(110,231,183,0.28)]"
+                        : "border-emerald-200/34 bg-emerald-300/[0.12] text-emerald-100/86 hover:border-emerald-200/52 hover:text-emerald-100"
                       : category.key === "rights_safety"
                         ? isActive
-                          ? "border-rose-200/65 bg-rose-200/22 text-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.24)]"
-                          : "border-rose-200/28 bg-rose-300/[0.07] text-rose-100/80 hover:border-rose-200/46 hover:text-rose-100"
+                          ? "border-rose-200/72 bg-rose-200/32 text-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.3)]"
+                          : "border-rose-200/36 bg-rose-300/[0.12] text-rose-100/86 hover:border-rose-200/54 hover:text-rose-100"
                         : category.key === "nightlife_change"
                           ? isActive
-                            ? "border-amber-200/62 bg-amber-200/20 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.22)]"
-                            : "border-amber-200/28 bg-amber-300/[0.07] text-amber-100/80 hover:border-amber-200/46 hover:text-amber-100"
+                            ? "border-amber-200/70 bg-amber-200/30 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.28)]"
+                            : "border-amber-200/36 bg-amber-300/[0.12] text-amber-100/86 hover:border-amber-200/54 hover:text-amber-100"
                           : category.key === "major_event"
                             ? isActive
-                              ? "border-violet-200/62 bg-violet-200/20 text-violet-50 shadow-[0_0_0_1px_rgba(196,181,253,0.24)]"
-                              : "border-violet-200/28 bg-violet-300/[0.07] text-violet-100/80 hover:border-violet-200/46 hover:text-violet-100"
+                              ? "border-violet-200/70 bg-violet-200/30 text-violet-50 shadow-[0_0_0_1px_rgba(196,181,253,0.3)]"
+                              : "border-violet-200/36 bg-violet-300/[0.12] text-violet-100/86 hover:border-violet-200/54 hover:text-violet-100"
                             : isActive
-                              ? "border-cyan-200/62 bg-cyan-200/20 text-cyan-50 shadow-[0_0_0_1px_rgba(103,232,249,0.24)]"
-                              : "border-cyan-200/28 bg-cyan-300/[0.07] text-cyan-100/82 hover:border-cyan-200/46 hover:text-cyan-100";
+                              ? "border-cyan-200/70 bg-cyan-200/30 text-cyan-50 shadow-[0_0_0_1px_rgba(103,232,249,0.3)]"
+                              : "border-cyan-200/36 bg-cyan-300/[0.12] text-cyan-100/88 hover:border-cyan-200/54 hover:text-cyan-100";
                   return (
                     <button
                       key={category.key}
@@ -1666,11 +1666,6 @@ export default function NowPage() {
                 </form>
               )}
 
-              {!isAdmin && (
-                <p className="mb-4 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/60">
-                  Read-only for members. Editing is restricted to administrator.
-                </p>
-              )}
               <p className="mb-4 text-[11px] uppercase tracking-[0.15em] text-white/45">
                 Showing {displayedNewsItems.length} stories
                 {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
@@ -1687,11 +1682,11 @@ export default function NowPage() {
                       setReadingNewsItem(leadNewsItem);
                     }
                   }}
-                  className="qa-premium-card relative z-10 mb-5 overflow-hidden rounded-[24px] border border-cyan-200/28 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-4 shadow-[0_26px_70px_rgba(34,211,238,0.16)] transition hover:-translate-y-[1px] hover:border-cyan-200/48 sm:rounded-[26px] sm:p-5"
+                  className="qa-premium-card relative z-10 mb-5 overflow-hidden rounded-[24px] border border-cyan-200/28 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-4 shadow-[0_26px_70px_rgba(34,211,238,0.16)] transition hover:-translate-y-[1px] hover:border-cyan-200/48 sm:rounded-[22px] sm:p-3.5 sm:shadow-[0_14px_38px_rgba(34,211,238,0.1)]"
                 >
                   <div className="mb-4 overflow-hidden rounded-2xl border border-cyan-200/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(217,70,239,0.16),rgba(12,12,12,0.7))]">
                     {leadNewsItem.imageUrl ? (
-                      <div className="relative h-48 w-full sm:h-56">
+                      <div className="relative h-48 w-full sm:h-36">
                         <Image
                           src={leadNewsItem.imageUrl}
                           alt={leadNewsItem.imageAlt || leadNewsItem.title || "News image"}
@@ -1721,29 +1716,29 @@ export default function NowPage() {
                       </div>
                     )}
                   </div>
-                  <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-transparent" />
+                  <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-transparent sm:w-14" />
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-cyan-200/34 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100">
+                    <span className="rounded-full border border-cyan-200/34 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 sm:px-2.5 sm:text-[10px] sm:tracking-[0.12em]">
                       Lead story
                     </span>
-                    <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
+                    <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72 sm:px-2.5 sm:text-[10px] sm:tracking-[0.12em]">
                       {leadNewsItem.city || "Global"}
                     </span>
-                    <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72">
+                    <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72 sm:px-2.5 sm:text-[10px]">
                       {formatDateShort(leadNewsItem.createdAt || leadNewsItem.date)}
                     </span>
                   </div>
-                  <h3 className="mt-3 text-lg font-semibold leading-tight text-white sm:text-2xl">{leadNewsItem.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/74 sm:leading-7">
+                  <h3 className="mt-3 text-lg font-semibold leading-tight text-white sm:text-lg">{leadNewsItem.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/74 sm:line-clamp-2 sm:leading-6">
                     {leadNewsItem.summary}
                   </p>
                   {leadNewsItem.whyItMatters ? (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:mt-3">
                       <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Why it matters</p>
-                      <p className="mt-2 text-sm leading-6 text-white/72 line-clamp-4 sm:line-clamp-none">{leadNewsItem.whyItMatters}</p>
+                      <p className="mt-2 text-sm leading-6 text-white/72 line-clamp-4 sm:line-clamp-2">{leadNewsItem.whyItMatters}</p>
                     </div>
                   ) : null}
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 sm:mt-3">
                     <span className="text-[11px] uppercase tracking-[0.14em] text-white/55">
                       {resolveNewsConfidence(leadNewsItem, adminNewsIdSet.has(String(leadNewsItem.id)))}
                     </span>

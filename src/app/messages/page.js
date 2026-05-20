@@ -1572,7 +1572,7 @@ export default function MessagesPage() {
                           {String(row.entity_type || "item")}
                         </span>
                         <span className="font-medium text-white/88">{String(row.title || "Untitled submission")}</span>
-                        <span className="text-white/55">â€¢ {String(row.city || "unknown city")}</span>
+                        <span className="text-white/55">• {String(row.city || "unknown city")}</span>
                         <span className="ml-auto text-white/48">{timeAgo(row.created_at)}</span>
                       </div>
                     ))}

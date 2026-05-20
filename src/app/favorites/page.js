@@ -2796,8 +2796,6 @@ export default function FavoritesPage() {
           </div>
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/8 blur-3xl sm:bg-rose-400/12" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/7 blur-3xl sm:bg-cyan-400/10" />
-          <div className="pointer-events-none absolute right-2 top-[38%] h-16 w-16 -translate-y-1/2 rounded-full bg-cyan-300/18 blur-md sm:right-[7rem] sm:h-40 sm:w-40 sm:bg-cyan-300/30 sm:blur-2xl" />
-          <div className="pointer-events-none absolute right-2 top-[38%] h-12 w-12 -translate-y-1/2 rounded-full bg-sky-300/12 blur-sm sm:right-[7rem] sm:h-36 sm:w-36 sm:bg-sky-300/24 sm:blur-lg" />
           <button
             type="button"
             onClick={() => {
@@ -2805,19 +2803,23 @@ export default function FavoritesPage() {
               setActiveProfileTab("about");
               openAvatarEditor();
             }}
-            className="group absolute right-2 top-[38%] inline-flex h-16 w-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-cyan-200/34 bg-cyan-200/8 text-lg font-semibold text-cyan-100 shadow-[0_10px_24px_rgba(0,0,0,0.34)] transition hover:border-cyan-200/52 sm:right-[7rem] sm:h-36 sm:w-36 sm:rounded-[22px] sm:text-3xl sm:shadow-[0_0_24px_rgba(103,232,249,0.26),0_18px_40px_rgba(0,0,0,0.42)]"
+            className="group absolute right-2 top-[calc(38%-19px)] inline-flex h-16 w-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-black/22 text-lg font-semibold text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] transition hover:border-white/34 before:pointer-events-none before:absolute before:inset-[-3px] before:-z-10 before:rounded-[18px] before:border before:border-white/10 before:bg-black/28 sm:right-[7rem] sm:h-36 sm:w-36 sm:rounded-[22px] sm:text-3xl sm:shadow-[0_16px_34px_rgba(0,0,0,0.36)] sm:before:rounded-[24px]"
             aria-label={canEditOwnAvatar ? "Edit profile image" : "Member profile image"}
           >
+            <span className="pointer-events-none absolute inset-0 rounded-[inherit] border border-white/16" aria-hidden="true" />
+            <span className="pointer-events-none absolute inset-[1px] rounded-[inherit] border border-white/10" aria-hidden="true" />
             {shouldRenderAvatarImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={effectiveAvatarUrl}
                 alt=""
-                className="h-full w-full object-cover"
+                className="h-[80%] w-[80%] rounded-[14px] object-cover"
                 onError={() => setProfileAvatarLoadFailed(true)}
               />
             ) : (
-              <span>{displayInitials}</span>
+              <span className="inline-flex h-[80%] w-[80%] items-center justify-center rounded-[14px] bg-black/18">
+                {displayInitials}
+              </span>
             )}
             {canEditOwnAvatar ? (
               <span className="absolute inset-x-0 bottom-0 bg-black/48 px-2 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-white/85 opacity-0 transition group-hover:opacity-100 sm:text-xs">

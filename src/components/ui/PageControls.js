@@ -58,9 +58,9 @@ export default function PageControls({
           const isActive = activeId === button.id;
           const activeTheme = activeButtonThemeById?.[button.id] || {};
           const activeClassName = String(activeTheme.className || "").trim();
-          const useCustomActiveTheme = isFavoritesDesktopLuxe && Boolean(activeClassName);
+          const useCustomActiveTheme = Boolean(activeClassName);
           const activeBaseClass = useCustomActiveTheme
-            ? "border-transparent bg-white/10 text-white"
+            ? "border-white/45 bg-white/10 text-white"
             : "border-cyan-100/70 bg-[linear-gradient(180deg,rgba(56,189,248,0.16),rgba(34,211,238,0.09))] text-cyan-50 -translate-y-[1px] ring-1 ring-cyan-300/32 inset-ring-1 inset-ring-cyan-100/58 shadow-[0_6px_16px_rgba(0,0,0,0.2)]";
           return (
             <button
