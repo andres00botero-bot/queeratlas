@@ -381,6 +381,11 @@ body > div:first-child {
     font-size: 0.95rem;
     line-height: 1.56;
   }
+
+  .qa-now .qa-copy-justify {
+    text-align: justify;
+    text-justify: inter-word;
+  }
 }
 
 .qa-city-cta-primary {

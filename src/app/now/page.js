@@ -1531,7 +1531,7 @@ export default function NowPage() {
                       key={category.key}
                       type="button"
                       onClick={() => setSelectedNewsCategory(category.key)}
-                      className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] transition ${toneClassByCategory}`}
+                      className={`rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.1em] transition sm:px-3 sm:py-1.5 sm:text-[11px] sm:tracking-[0.14em] ${toneClassByCategory}`}
                     >
                       {categoryLabels[category.key] || category.label}
                     </button>
@@ -1682,11 +1682,11 @@ export default function NowPage() {
                       setReadingNewsItem(leadNewsItem);
                     }
                   }}
-                  className="qa-premium-card relative z-10 mb-5 overflow-hidden rounded-[24px] border border-cyan-200/28 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-4 shadow-[0_26px_70px_rgba(34,211,238,0.16)] transition hover:-translate-y-[1px] hover:border-cyan-200/48 sm:rounded-[22px] sm:p-3.5 sm:shadow-[0_14px_38px_rgba(34,211,238,0.1)]"
+                  className="qa-premium-card relative z-10 mb-4 overflow-hidden rounded-[22px] border border-cyan-200/26 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-3.5 shadow-[0_18px_50px_rgba(34,211,238,0.12)] transition hover:-translate-y-[1px] hover:border-cyan-200/44 sm:mb-5 sm:rounded-[22px] sm:p-3.5 sm:shadow-[0_14px_38px_rgba(34,211,238,0.1)]"
                 >
-                  <div className="mb-4 overflow-hidden rounded-2xl border border-cyan-200/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(217,70,239,0.16),rgba(12,12,12,0.7))]">
+                  <div className="mb-3 overflow-hidden rounded-xl border border-cyan-200/18 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(217,70,239,0.14),rgba(12,12,12,0.7))] sm:mb-4 sm:rounded-2xl sm:border-cyan-200/20">
                     {leadNewsItem.imageUrl ? (
-                      <div className="relative h-48 w-full sm:h-36">
+                      <div className="relative h-32 w-full sm:h-36">
                         <Image
                           src={leadNewsItem.imageUrl}
                           alt={leadNewsItem.imageAlt || leadNewsItem.title || "News image"}
@@ -1716,7 +1716,7 @@ export default function NowPage() {
                       </div>
                     )}
                   </div>
-                  <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-transparent sm:w-14" />
+                  <div className="mb-3 h-1.5 w-20 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-transparent sm:mb-4 sm:w-14" />
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full border border-cyan-200/34 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 sm:px-2.5 sm:text-[10px] sm:tracking-[0.12em]">
                       Lead story
@@ -1728,17 +1728,17 @@ export default function NowPage() {
                       {formatDateShort(leadNewsItem.createdAt || leadNewsItem.date)}
                     </span>
                   </div>
-                  <h3 className="mt-3 text-lg font-semibold leading-tight text-white sm:text-lg">{leadNewsItem.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/74 sm:line-clamp-2 sm:leading-6">
+                  <h3 className="mt-2.5 text-base font-semibold leading-tight text-white sm:mt-3 sm:text-lg">{leadNewsItem.title}</h3>
+                  <p className="qa-copy-justify mt-2.5 line-clamp-3 text-sm leading-6 text-white/74 sm:mt-3 sm:line-clamp-2 sm:leading-6">
                     {leadNewsItem.summary}
                   </p>
                   {leadNewsItem.whyItMatters ? (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:mt-3">
+                    <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:mt-3">
                       <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Why it matters</p>
-                      <p className="mt-2 text-sm leading-6 text-white/72 line-clamp-4 sm:line-clamp-2">{leadNewsItem.whyItMatters}</p>
+                      <p className="qa-copy-justify mt-2 text-sm leading-6 text-white/72 line-clamp-2 sm:line-clamp-2">{leadNewsItem.whyItMatters}</p>
                     </div>
                   ) : null}
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 sm:mt-3">
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 sm:mt-3">
                     <span className="text-[11px] uppercase tracking-[0.14em] text-white/55">
                       {resolveNewsConfidence(leadNewsItem, adminNewsIdSet.has(String(leadNewsItem.id)))}
                     </span>
@@ -1862,8 +1862,8 @@ export default function NowPage() {
                             <h3 className="mt-2.5 text-base font-semibold leading-6 text-white sm:mt-3 sm:text-lg">{item.title}</h3>
                             <div className={`mt-3 md:min-h-0 md:flex-1 ${isExpanded ? "md:overflow-y-auto md:pr-1" : "overflow-hidden"}`}>
                               <p
-                                className={`mt-2 text-sm leading-6 text-white/62 transition-all ${
-                                  isExpanded ? "" : "line-clamp-3 sm:line-clamp-2"
+                                className={`qa-copy-justify mt-2 text-sm leading-6 text-white/62 transition-all ${
+                                  isExpanded ? "" : "line-clamp-2 sm:line-clamp-2"
                                 }`}
                               >
                                 {item.summary}
@@ -1871,8 +1871,8 @@ export default function NowPage() {
                               <div className="mt-4 rounded-xl border border-white/8 bg-black/20 p-3">
                                 <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Why it matters</p>
                                 <p
-                                  className={`mt-2 text-sm leading-6 text-white/62 transition-all ${
-                                    isExpanded ? "" : "line-clamp-3"
+                                  className={`qa-copy-justify mt-2 text-sm leading-6 text-white/62 transition-all ${
+                                    isExpanded ? "" : "line-clamp-2"
                                   }`}
                                 >
                                   {item.whyItMatters}
