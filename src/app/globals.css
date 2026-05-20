@@ -91,6 +91,10 @@ body > div:first-child {
   padding-block: clamp(1.2rem, 1rem + 0.7vw, 2.1rem);
 }
 
+.qa-shell-home {
+  padding-top: 0 !important;
+}
+
 .qa-panel {
   border-radius: clamp(1.55rem, 1.42rem + 0.6vw, 2.25rem);
   padding: clamp(1.2rem, 1rem + 0.78vw, 2rem);
@@ -259,7 +263,7 @@ body > div:first-child {
 .qa-premium-card:hover::before {
   transform: translateX(120%);
   opacity: 1;
-  transition: transform 520ms var(--qa-ease-standard), opacity 220ms var(--qa-ease-standard);
+  transition: transform 170ms var(--qa-ease-standard), opacity 170ms var(--qa-ease-standard);
 }
 
 .qa-premium-card:hover {

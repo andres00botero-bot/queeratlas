@@ -675,28 +675,108 @@ export default function HomePageClient({ initialHomeData = null }) {
       },
     },
   ];
+  const livePulseCards = [
+    {
+      key: "next-event",
+      subtitle: "Next event",
+      title: nextUpcomingEvent?.name || "No upcoming event signal yet",
+      description: `${formatCityLabel(nextUpcomingEvent?.city)} - ${
+        nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : "No date available"
+      }.`,
+      badge: nextEventFreshness.label,
+      badgeClass:
+        nextEventFreshness.tone === "live"
+          ? "border-cyan-200/35 bg-cyan-200/14 text-cyan-100"
+          : nextEventFreshness.tone === "today"
+            ? "border-amber-200/35 bg-amber-200/14 text-amber-100"
+            : nextEventFreshness.tone === "week"
+              ? "border-violet-200/35 bg-violet-200/14 text-violet-100"
+              : "border-white/22 bg-white/8 text-white/80",
+      cardClass:
+        "border-amber-200/26 bg-[linear-gradient(180deg,rgba(44,28,14,0.78),rgba(16,12,8,0.94))] hover:border-amber-200/46",
+      ctaLabel: "Open event",
+      onClick: () => {
+        if (nextUpcomingEvent?.city && nextUpcomingEvent?.id) {
+          router.push(citySelectionPath(nextUpcomingEvent.city, { eventId: nextUpcomingEvent.id }));
+          return;
+        }
+        router.push("/events");
+      },
+    },
+    {
+      key: "latest-news",
+      subtitle: "Latest news",
+      title: latestPulseNews?.title || "No published news yet",
+      description: `${formatCityLabel(latestPulseNews?.city)} - Global queer news, verified and fresh.`,
+      badge: "",
+      badgeClass: "",
+      cardClass:
+        "border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] hover:border-cyan-200/44",
+      ctaLabel: "Open story",
+      onClick: () => router.push("/now"),
+    },
+    {
+      key: "top-city",
+      subtitle: "Top city right now",
+      title: strongestCitySignal?.city
+        ? formatCityLabel(strongestCitySignal.city)
+        : "Signal is still warming up",
+      description: "Highest current community pull in the atlas feed.",
+      badge: strongestCitySignal ? `${strongestCitySignal.reviews || 0} reviews` : "Pending",
+      badgeClass: "border-fuchsia-200/24 bg-fuchsia-200/12 text-fuchsia-100/90",
+      cardClass:
+        "border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(42,16,36,0.72),rgba(14,10,16,0.92))] hover:border-fuchsia-200/44",
+      ctaLabel: "Open city",
+      onClick: () => {
+        if (strongestCitySignal?.city) {
+          router.push(cityPath(strongestCitySignal.city));
+          return;
+        }
+        router.push("/cities");
+      },
+    },
+  ];
   const heroIdentityLabel = isMember
     ? `${memberName || "Alias"} | ${memberProfile?.pronouns || "Pronomen"}`
     : "Alias | Pronomen";
 
   return (
-    <main className="qa-page min-h-screen overflow-x-hidden bg-[#050505] text-white">
+    <main className="qa-page min-h-screen overflow-x-hidden bg-[#01010C] text-white">
       <div className="relative">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(244,114,182,0.09),transparent_24%),radial-gradient(circle_at_88%_12%,rgba(56,189,248,0.11),transparent_25%),linear-gradient(180deg,#040406_0%,#070912_52%,#040406_100%)]" />
-        <div className="pointer-events-none absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-rose-500/7 blur-3xl" />
-        <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(244,114,182,0.05),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(56,189,248,0.06),transparent_27%),linear-gradient(180deg,#01010C_0%,#02020E_52%,#01010C_100%)]" />
+        <div className="pointer-events-none absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-rose-500/4 blur-3xl" />
+        <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/5 blur-3xl" />
 
-        <div className="qa-shell relative flex min-h-screen w-full flex-col">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
+          <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-5 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 xl:px-8 xl:py-8">
+            <div className="pointer-events-none absolute inset-0 hidden lg:block">
+              <Image
+                src="/home/home-hero-background-v4.png"
+                alt=""
+                fill
+                priority
+                quality={100}
+                sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
+                className="object-cover object-center opacity-96"
+              />
+            </div>
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(104deg,rgba(3,6,18,0.9)_0%,rgba(5,7,16,0.74)_38%,rgba(7,7,12,0.22)_68%,rgba(7,7,12,0.5)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#05060f]/88 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070912]/55 to-[#01010C]" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-28 bg-gradient-to-r from-[#05060f]/86 to-transparent lg:block" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-28 bg-gradient-to-l from-[#05060f]/86 to-transparent lg:block" />
+
+            <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-4.5rem)] w-full max-w-[1720px] flex-col justify-between">
+          <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
             <div className="qa-eyebrow rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur">
               {heroIdentityLabel}
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3">
               {!isMember ? (
                 <button
                   onClick={() => openSignup()}
-                  className="qa-action qa-action-strong rounded-full bg-gradient-to-r from-rose-300 via-fuchsia-300 to-orange-200 px-5 py-2 text-sm font-semibold text-black shadow-[0_18px_50px_rgba(244,114,182,0.20)] transition hover:scale-[1.01] hover:opacity-95"
+                  className="qa-action qa-action-strong inline-flex h-10 items-center justify-center rounded-full border border-white/55 bg-gradient-to-r from-rose-300 via-fuchsia-300 to-orange-200 px-5 text-sm font-semibold text-black shadow-[0_18px_50px_rgba(244,114,182,0.2)] transition hover:scale-[1.01] hover:opacity-95"
                 >
                   Join Queer Atlas
                 </button>
@@ -704,20 +784,20 @@ export default function HomePageClient({ initialHomeData = null }) {
                 <>
                 <button
                   onClick={() => router.push("/favorites")}
-                  className="qa-action qa-action-strong rounded-full border border-fuchsia-200/34 bg-[linear-gradient(135deg,rgba(232,121,249,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.94))] px-4 py-2 text-sm font-semibold text-white transition hover:border-fuchsia-200/58"
+                  className="qa-action qa-action-strong inline-flex h-10 items-center justify-center rounded-full border border-fuchsia-200/48 bg-[linear-gradient(135deg,rgba(232,121,249,0.32),rgba(99,102,241,0.22),rgba(14,10,20,0.95))] px-4 text-sm font-semibold text-white transition hover:border-fuchsia-200/70"
                 >
                   Your Atlas
                 </button>
                 <button
                   onClick={() => router.push("/community")}
-                  className="qa-action hidden rounded-full border border-emerald-200/22 bg-emerald-200/10 px-4 py-2 text-sm text-emerald-100/90 backdrop-blur transition hover:border-emerald-200/44 hover:text-emerald-50 sm:inline-flex"
+                  className="qa-action hidden h-10 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 text-sm font-medium text-emerald-100/92 backdrop-blur transition hover:border-emerald-200/52 hover:text-emerald-50 sm:inline-flex"
                 >
                   Community
                 </button>
                   {isAdmin && (
                   <button
                     onClick={() => router.push("/admin")}
-                    className="qa-action hidden rounded-full border border-cyan-200/30 bg-cyan-200/14 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/50 sm:inline-flex"
+                    className="qa-action hidden h-10 items-center justify-center rounded-full border border-cyan-200/34 bg-cyan-200/14 px-4 text-sm font-medium text-cyan-100 transition hover:border-cyan-200/54 sm:inline-flex"
                   >
                     Admin
                   </button>
@@ -731,7 +811,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                     await signOut();
                     setShowSignup(false);
                   }}
-                  className="qa-action rounded-full border border-white/10 bg-transparent px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white"
+                  className="qa-action inline-flex h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.02] px-4 text-sm font-medium text-white/70 transition hover:border-white/28 hover:text-white"
                 >
                   Sign out
                 </button>
@@ -739,8 +819,8 @@ export default function HomePageClient({ initialHomeData = null }) {
             </div>
           </div>
 
-          <div className="grid items-start gap-8 xl:grid-cols-[1.28fr_0.72fr] xl:items-end">
-            <section className="pt-1 xl:pt-6">
+          <div>
+            <section className="pt-4 xl:pt-14">
               <div className="flex items-center gap-4 sm:gap-5">
                 <Image
                   src="/queer-atlas-heart-logo-progress.png"
@@ -750,17 +830,22 @@ export default function HomePageClient({ initialHomeData = null }) {
                   priority
                   className="h-16 w-16 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
                 />
-                <h1 className="qa-display qa-h1 max-w-5xl text-4xl font-bold text-white sm:text-6xl xl:text-7xl">
-                  <span className="text-white">Queer</span>{" "}
-                  <span className="bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 bg-clip-text text-transparent">
-                    Atlas
-                  </span>
-                </h1>
+                <div>
+                  <h1 className="qa-display qa-h1 max-w-5xl text-4xl font-bold leading-[0.95] tracking-[-0.028em] text-white sm:text-6xl xl:text-7xl">
+                    <span className="text-white">Queer</span>{" "}
+                    <span className="bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 bg-clip-text text-transparent">
+                      Atlas
+                    </span>
+                  </h1>
+                  <p className="mt-3.5 text-[1.08rem] font-medium leading-[1.35] tracking-[-0.01em] text-white/84 sm:text-[1.42rem]">
+                    Explore the queer world.
+                  </p>
+                </div>
               </div>
 
-              <p className="qa-lead mt-5 max-w-2xl text-base text-white/78 sm:text-lg">
-                Find the city. Feel the signal. The global queer database for discovery,
-                vibe, community, and culture.
+              <p className="qa-lead mt-7 max-w-[52ch] text-[1.02rem] leading-[1.62] tracking-[0.002em] text-white/76 sm:text-[1.16rem]">
+                Discover places, events, and communities across 300+ cities with verified
+                local signal for nightlife, culture, and safe spaces.
               </p>
               {isDataLoading && (
                 <p className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
@@ -778,12 +863,12 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className="relative mt-7 w-full max-w-3xl rounded-[28px] border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-3 shadow-[0_24px_66px_rgba(0,0,0,0.28)] sm:p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="relative mt-8 w-full max-w-[44rem] rounded-[30px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.035))] p-3.5 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:p-[18px]">
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
-                      className="absolute left-5 top-1/2 -translate-y-1/2 text-white/35"
-                      size={18}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 text-white/38"
+                      size={17}
                     />
 
                     <input
@@ -791,7 +876,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                       onChange={(event) => setQuery(event.target.value)}
                       onFocus={() => setShowResults(true)}
                       placeholder="Search cities, places, events"
-                      className="w-full rounded-[22px] border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] py-4 pl-11 pr-4 text-[13px] text-white outline-none backdrop-blur placeholder:text-white/45 focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/20 sm:py-5 sm:pl-14 sm:text-base"
+                      className="h-12 w-full rounded-[21px] border border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] py-0 pl-11 pr-4 text-[15px] leading-none text-white outline-none backdrop-blur placeholder:text-white/42 focus:border-cyan-300/48 focus:ring-2 focus:ring-cyan-300/22 sm:h-[52px] sm:text-base"
                     />
                   </div>
 
@@ -799,14 +884,14 @@ export default function HomePageClient({ initialHomeData = null }) {
                     onClick={() => {
                       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
                     }}
-                    className="qa-action qa-action-strong w-full shrink-0 rounded-full border border-cyan-100/70 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-3 py-2 text-[11px] font-semibold text-black transition hover:scale-[1.01] sm:w-auto sm:px-4 sm:py-2 sm:text-xs"
+                    className="qa-action qa-action-strong h-12 w-full shrink-0 rounded-full border border-cyan-100/72 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 text-sm font-semibold text-black transition hover:scale-[1.01] sm:h-[52px] sm:w-auto sm:px-5"
                   >
                     Explore
                   </button>
                 </div>
 
                   {showResults && results.length > 0 && (
-                    <div className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-3xl border border-white/10 bg-[#111111]/95 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur">
+                    <div className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl">
                       {results.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}
@@ -848,137 +933,35 @@ export default function HomePageClient({ initialHomeData = null }) {
                     </div>
                   )}
                   {showResults && query.trim().length > 0 && results.length === 0 && (
-                    <div className="absolute top-full z-50 mt-3 w-full rounded-3xl border border-white/10 bg-[#111111]/95 px-5 py-4 text-sm text-white/60 shadow-[0_25px_80px_rgba(0,0,0,0.45)] backdrop-blur">
+                    <div className="absolute top-full z-50 mt-3 w-full rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl">
                       No instant matches yet. Press Explore for full search.
                     </div>
                   )}
                 </div>
-              <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
-                <div className="qa-card rounded-2xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] p-3.5 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cities</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{cityCountDisplay}</p>
+              <div className="mt-5 grid w-full max-w-[44rem] grid-cols-3 gap-2.5">
+                <div className="qa-card flex h-[82px] flex-col items-center justify-center rounded-xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] px-3.5 py-2.5 text-center backdrop-blur">
+                  <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{cityCountDisplay}</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Cities</p>
                 </div>
-                <div className="qa-card rounded-2xl border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] p-3.5 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/45">Places</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{placeCountDisplay}</p>
+                <div className="qa-card flex h-[82px] flex-col items-center justify-center rounded-xl border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] px-3.5 py-2.5 text-center backdrop-blur">
+                  <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{placeCountDisplay}</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Places</p>
                 </div>
-                <div className="qa-card rounded-2xl border border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(255,255,255,0.03))] p-3.5 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/45">Events</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{eventCountDisplay}</p>
+                <div className="qa-card flex h-[82px] flex-col items-center justify-center rounded-xl border border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(255,255,255,0.03))] px-3.5 py-2.5 text-center backdrop-blur">
+                  <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{eventCountDisplay}</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Events</p>
                 </div>
               </div>
             </section>
-
-            <aside className="grid gap-4">
-              <div className="relative overflow-hidden rounded-[28px] border border-white/12 bg-[radial-gradient(circle_at_12%_8%,rgba(56,189,248,0.12),transparent_36%),radial-gradient(circle_at_86%_20%,rgba(244,114,182,0.1),transparent_38%),linear-gradient(165deg,rgba(8,10,18,0.98),rgba(5,6,10,0.99))] p-4 shadow-[0_26px_90px_rgba(2,6,23,0.42)]">
-                <div className="pointer-events-none absolute -left-10 top-24 h-32 w-32 rounded-full bg-cyan-300/12 blur-3xl" />
-                <div className="pointer-events-none absolute -right-10 bottom-8 h-32 w-32 rounded-full bg-fuchsia-300/10 blur-3xl" />
-                <div className="relative z-10">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-white/62">Live Atlas Pulse</p>
-                      <h2 className="qa-h2 mt-2 text-xl font-semibold text-white">Atlas Live Desk</h2>
-                      <p className="mt-2 text-xs leading-5 text-white/58">
-                        Choose your next move.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 space-y-2.5">
-                    <button
-                      onClick={() => {
-                        if (nextUpcomingEvent?.city && nextUpcomingEvent?.id) {
-                          router.push(citySelectionPath(nextUpcomingEvent.city, { eventId: nextUpcomingEvent.id }));
-                          return;
-                        }
-                        router.push("/events");
-                      }}
-                      className="qa-list-card qa-premium-card w-full rounded-2xl border border-amber-200/26 bg-[linear-gradient(180deg,rgba(44,28,14,0.78),rgba(16,12,8,0.94))] p-4 text-left transition hover:-translate-y-[1px] hover:border-amber-200/46"
-                    >
-                      <div className="mb-2 h-1.5 w-28 rounded-full bg-gradient-to-r from-amber-200 via-orange-200 to-transparent" />
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/92">Next event</p>
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
-                            nextEventFreshness.tone === "live"
-                              ? "border-cyan-200/35 bg-cyan-200/14 text-cyan-100"
-                              : nextEventFreshness.tone === "today"
-                                ? "border-amber-200/35 bg-amber-200/14 text-amber-100"
-                                : nextEventFreshness.tone === "week"
-                                  ? "border-violet-200/35 bg-violet-200/14 text-violet-100"
-                                  : "border-white/22 bg-white/8 text-white/80"
-                          }`}
-                        >
-                          {nextEventFreshness.label}
-                        </span>
-                      </div>
-                      <p className="text-[16px] font-semibold text-white">
-                        {nextUpcomingEvent?.name || "No upcoming event signal yet"}
-                      </p>
-                      <p className="mt-1.5 text-xs leading-5 text-white/62">
-                        {formatCityLabel(nextUpcomingEvent?.city)} - {nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : "No date available"}.
-                      </p>
-                      <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/44">
-                        Open event <ArrowUpRight size={12} />
-                      </span>
-                    </button>
-
-                    <div className="grid gap-2.5 sm:grid-cols-2">
-                      <button
-                        onClick={() => router.push("/now")}
-                        className="qa-list-card qa-premium-card w-full rounded-2xl border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-cyan-200/44"
-                      >
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/86">Latest News</p>
-                        </div>
-                        <p className="text-[15px] font-semibold text-white">
-                          {latestPulseNews?.title || "No published news yet"}
-                        </p>
-                        <p className="mt-1 text-xs text-white/58">
-                          {formatCityLabel(latestPulseNews?.city)} - Global queer news, verified and fresh.
-                        </p>
-                        <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/42">
-                          Open story <ArrowUpRight size={12} />
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          if (strongestCitySignal?.city) {
-                            router.push(cityPath(strongestCitySignal.city));
-                            return;
-                          }
-                          router.push("/cities");
-                        }}
-                        className="qa-list-card qa-premium-card w-full rounded-2xl border border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(42,16,36,0.72),rgba(14,10,16,0.92))] p-3.5 text-left transition hover:-translate-y-[1px] hover:border-fuchsia-200/44"
-                      >
-                        <div className="mb-2 space-y-1.5">
-                          <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-100/90">Top city right now</p>
-                          <span className="inline-flex rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/90">
-                            {strongestCitySignal ? `${strongestCitySignal.reviews || 0} reviews` : "Pending"}
-                          </span>
-                        </div>
-                        <p className="text-[15px] font-semibold text-white">
-                          {strongestCitySignal?.city ? formatCityLabel(strongestCitySignal.city) : "Signal is still warming up"}
-                        </p>
-                        <p className="mt-1 text-xs text-white/58">
-                          Highest current community pull in the atlas feed.
-                        </p>
-                        <span className="mt-2 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/42">
-                          Open city <ArrowUpRight size={12} />
-                        </span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </aside>
           </div>
+            </div>
+          </section>
 
           {showDeferredSections ? (
             <HomeDeferredSections
               topLaneCards={topLaneCards}
               bottomLaneCards={bottomLaneCards}
+              livePulseCards={livePulseCards}
               topCities={topCities}
               onOpenCities={() => router.push("/cities")}
             />

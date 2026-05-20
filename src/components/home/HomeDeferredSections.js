@@ -7,6 +7,7 @@ import { cityPath } from "@/lib/cityRouting";
 export default function HomeDeferredSections({
   topLaneCards = [],
   bottomLaneCards = [],
+  livePulseCards = [],
   topCities = [],
   onOpenCities,
 }) {
@@ -15,47 +16,35 @@ export default function HomeDeferredSections({
       <section className="mt-12 qa-defer-render">
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-white/40">
-              Discovery lanes
-            </p>
             <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.03em] text-white">
               Move through the atlas
             </h2>
-            <p className="mt-1.5 text-sm text-white/56">One clear path per intent. No noise, just flow.</p>
           </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          {topLaneCards.map((item, index) => (
+          {topLaneCards.map((item) => (
             <button
               type="button"
               key={item.title}
               onClick={item.onClick}
-              className={`group qa-premium-card relative h-full w-full cursor-pointer overflow-hidden ${
-                index % 2 === 0 ? "rounded-[30px]" : "rounded-[24px]"
-              } border ${
-                index % 2 === 0 ? "border-cyan-200/20" : "border-fuchsia-200/20"
-              } ${
-                index % 2 === 0
-                  ? "bg-[linear-gradient(180deg,rgba(17,24,39,0.92),rgba(9,9,11,0.98))]"
-                  : "bg-[linear-gradient(180deg,rgba(35,20,48,0.92),rgba(9,9,11,0.98))]"
-              } p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow}`}
+              className={`group qa-premium-card relative h-full w-full cursor-pointer overflow-hidden rounded-[24px] border border-white/14 bg-[linear-gradient(180deg,rgba(16,19,30,0.94),rgba(9,9,12,0.98))] p-6 text-left shadow-[0_20px_60px_rgba(0,0,0,0.34)] backdrop-blur transition duration-[170ms] hover:-translate-y-[2px] hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow}`}
             >
-              <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
-              <div className="absolute inset-[1px] rounded-[25px] bg-[#0b0b0b]/96" />
+              <div className={`absolute inset-0 opacity-0 transition duration-[170ms] group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
+              <div className="absolute inset-[1px] rounded-[23px] bg-[#0b0b0b]/96" />
 
-              <div className="relative z-10">
+              <div className="relative z-10 flex h-full flex-col">
                 <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                   {item.subtitle}
                 </p>
-                <h3 className="mt-2 text-3xl font-semibold text-white sm:text-4xl">
+                <h3 className="mt-2 text-[2rem] font-semibold leading-[1.05] tracking-[-0.02em] text-white">
                   {item.title}
                 </h3>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-white/64">
                   {item.description}
                 </p>
-                <div className="mt-6 flex items-center justify-between">
-                  <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r transition-all duration-300 group-hover:w-32 ${item.accent}`} />
+                <div className="mt-6 flex items-center justify-between pt-2">
+                  <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r transition-[width] duration-[170ms] group-hover:w-32 ${item.accent}`} />
                   <span className="qa-lane-cta">
                     Enter lane
                     <ArrowUpRight size={12} />
@@ -67,42 +56,28 @@ export default function HomeDeferredSections({
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          {bottomLaneCards.map((item, index) => (
+          {bottomLaneCards.map((item) => (
             <button
               type="button"
               key={item.title}
               onClick={item.onClick}
-              className={`group qa-premium-card relative h-full w-full cursor-pointer overflow-hidden ${
-                index === 1 ? "rounded-[30px]" : "rounded-[24px]"
-              } border ${
-                index === 0
-                  ? "border-cyan-200/18"
-                  : index === 1
-                    ? "border-fuchsia-200/18"
-                    : "border-emerald-200/18"
-              } ${
-                index % 3 === 0
-                  ? "bg-[linear-gradient(180deg,rgba(12,26,47,0.92),rgba(9,9,11,0.98))]"
-                  : index % 3 === 1
-                    ? "bg-[linear-gradient(180deg,rgba(28,18,44,0.92),rgba(9,9,11,0.98))]"
-                    : "bg-[linear-gradient(180deg,rgba(12,32,30,0.92),rgba(9,9,11,0.98))]"
-              } p-6 text-left backdrop-blur transition duration-300 hover:-translate-y-[2px] hover:border-white/28 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow}`}
+              className={`group qa-premium-card relative h-full w-full cursor-pointer overflow-hidden rounded-[24px] border border-white/14 bg-[linear-gradient(180deg,rgba(16,19,30,0.94),rgba(9,9,12,0.98))] p-6 text-left shadow-[0_20px_60px_rgba(0,0,0,0.34)] backdrop-blur transition duration-[170ms] hover:-translate-y-[2px] hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${item.glow}`}
             >
-              <div className={`absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
-              <div className="absolute inset-[1px] rounded-[25px] bg-[#0b0b0b]/96" />
+              <div className={`absolute inset-0 opacity-0 transition duration-[170ms] group-hover:opacity-80 bg-gradient-to-br ${item.accent}`} />
+              <div className="absolute inset-[1px] rounded-[23px] bg-[#0b0b0b]/96" />
 
-              <div className="relative z-10">
+              <div className="relative z-10 flex h-full flex-col">
                 <p className="text-xs uppercase tracking-[0.22em] text-white/40">
                   {item.subtitle}
                 </p>
-                <h3 className="mt-3 text-2xl font-semibold text-white">
+                <h3 className="mt-3 text-[1.72rem] font-semibold leading-[1.08] tracking-[-0.016em] text-white">
                   {item.title}
                 </h3>
                 <p className="mt-3 max-w-sm text-sm leading-6 text-white/64">
                   {item.description}
                 </p>
-                <div className="mt-6 flex items-center justify-between">
-                  <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r transition-all duration-300 group-hover:w-32 ${item.accent}`} />
+                <div className="mt-6 flex items-center justify-between pt-2">
+                  <div className={`h-1.5 w-24 rounded-full bg-gradient-to-r transition-[width] duration-[170ms] group-hover:w-32 ${item.accent}`} />
                   <span className="qa-lane-cta">
                     Open lane
                     <ArrowUpRight size={12} />
@@ -112,7 +87,43 @@ export default function HomeDeferredSections({
             </button>
           ))}
         </div>
+
       </section>
+
+      {livePulseCards.length > 0 && (
+        <section className="mt-8 qa-defer-render">
+          <div className="rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(18,18,22,0.92),rgba(10,10,14,0.98))] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.32)]">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-xs uppercase tracking-[0.24em] text-white/52">Live Atlas Pulse</p>
+              <span className="text-[11px] text-white/42">Choose your next move</span>
+            </div>
+            <div className="grid gap-3 lg:grid-cols-3">
+              {livePulseCards.map((item) => (
+                <button
+                  type="button"
+                  key={item.key}
+                  onClick={item.onClick}
+                  className={`qa-list-card qa-premium-card w-full rounded-[22px] border border-white/14 bg-[linear-gradient(180deg,rgba(14,14,18,0.94),rgba(10,10,14,0.98))] p-4 text-left shadow-[0_16px_40px_rgba(0,0,0,0.28)] transition duration-[170ms] hover:-translate-y-[1px] hover:border-white/28 ${item.cardClass}`}
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/86">{item.subtitle}</p>
+                    {item.badge ? (
+                      <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${item.badgeClass}`}>
+                        {item.badge}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-[15px] font-semibold text-white">{item.title}</p>
+                  <p className="mt-1 text-xs text-white/60">{item.description}</p>
+                  <span className="mt-3 inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.14em] text-white/44">
+                    {item.ctaLabel} <ArrowUpRight size={12} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="mt-12 qa-defer-render">
         <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.32)]">
