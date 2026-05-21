@@ -7,7 +7,10 @@ export default function CityMapSection({
   onContinueInListMode,
 }) {
   return (
-    <div ref={mapWrapperRef} className="qa-city-section animate-cinematic-in mb-8 rounded-[34px]" style={{ animationDelay: "120ms" }}>
+    <div
+      ref={mapWrapperRef}
+      className="qa-city-section mb-8 mt-0 rounded-[34px] xl:mb-0 xl:mt-0"
+    >
       <div className="relative h-[460px] w-full overflow-hidden rounded-[32px] border border-white/10 shadow-[0_22px_70px_rgba(0,0,0,0.30)]">
         <div
           ref={mapContainerRef}

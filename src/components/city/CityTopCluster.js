@@ -17,27 +17,35 @@ export default function CityTopCluster({
   placeFormProps,
   eventFormProps,
   serviceFormProps,
+  showHero = true,
+  showContribution = true,
+  showContributionActions = true,
 }) {
   return (
     <>
-      <CityHeroCard
-        cityName={cityName}
-        placesChipLabel={placesChipLabel}
-        eventsChipLabel={eventsChipLabel}
-        cityHero={cityHero}
-      />
+      {showHero ? (
+        <CityHeroCard
+          cityName={cityName}
+          placesChipLabel={placesChipLabel}
+          eventsChipLabel={eventsChipLabel}
+          cityHero={cityHero}
+        />
+      ) : null}
 
-      <CityContributionStack
-        addMode={addMode}
-        addEventMode={addEventMode}
-        addServiceMode={addServiceMode}
-        onToggleAddPlace={onToggleAddPlace}
-        onToggleAddEvent={onToggleAddEvent}
-        onToggleAddService={onToggleAddService}
-        placeFormProps={placeFormProps}
-        eventFormProps={eventFormProps}
-        serviceFormProps={serviceFormProps}
-      />
+      {showContribution ? (
+        <CityContributionStack
+          addMode={addMode}
+          addEventMode={addEventMode}
+          addServiceMode={addServiceMode}
+          onToggleAddPlace={onToggleAddPlace}
+          onToggleAddEvent={onToggleAddEvent}
+          onToggleAddService={onToggleAddService}
+          placeFormProps={placeFormProps}
+          eventFormProps={eventFormProps}
+          serviceFormProps={serviceFormProps}
+          showActions={showContributionActions}
+        />
+      ) : null}
     </>
   );
 }

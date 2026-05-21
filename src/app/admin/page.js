@@ -326,7 +326,9 @@ export default function AdminPage() {
       localStorage.setItem("qa_redirect", "/admin");
       localStorage.setItem("qa_post_login_target", "/admin");
       router.replace("/?join=true");
-      setIsReady(true);
+      queueMicrotask(() => {
+        setIsReady(true);
+      });
       return;
     }
 
@@ -367,7 +369,9 @@ export default function AdminPage() {
   }, [weeklyRoutine]);
 
   useEffect(() => {
-    setKpiSummary(getKpiSummary(7));
+    queueMicrotask(() => {
+      setKpiSummary(getKpiSummary(7));
+    });
     const timer = window.setInterval(() => {
       setKpiSummary(getKpiSummary(7));
     }, 30000);
@@ -695,12 +699,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     const allowed = new Set(filteredRefreshQueue.map((item) => String(item.key)));
-    setSelectedQueueKeys((current) => current.filter((key) => allowed.has(String(key))));
+    queueMicrotask(() => {
+      setSelectedQueueKeys((current) => current.filter((key) => allowed.has(String(key))));
+    });
   }, [filteredRefreshQueue]);
 
   useEffect(() => {
     const allowed = new Set(filteredVibeQueue.map((item) => String(item.key)));
-    setSelectedVibeKeys((current) => current.filter((key) => allowed.has(String(key))));
+    queueMicrotask(() => {
+      setSelectedVibeKeys((current) => current.filter((key) => allowed.has(String(key))));
+    });
   }, [filteredVibeQueue]);
 
   const appendAuditLog = (action, detail = "") => {
@@ -817,8 +825,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!isAdmin) {
-      setPendingSubmissions([]);
-      setSubmissionSyncNotice("");
+      queueMicrotask(() => {
+        setPendingSubmissions([]);
+        setSubmissionSyncNotice("");
+      });
       return;
     }
     queueMicrotask(() => {

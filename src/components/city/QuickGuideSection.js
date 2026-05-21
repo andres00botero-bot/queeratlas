@@ -14,14 +14,21 @@ export default function QuickGuideSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section animate-cinematic-in relative mb-10 overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_82px_rgba(0,0,0,0.34)]"
+      className="qa-city-section animate-cinematic-in relative mb-10 overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 text-justify shadow-[0_24px_82px_rgba(0,0,0,0.34)]"
       style={{ animationDelay: "250ms" }}
     >
       <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
       <div className="pointer-events-none absolute -right-16 bottom-8 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
-      <h2 className="sticky top-[66px] z-10 -mx-2 mb-4 border-b border-white/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-white backdrop-blur">
-        Quick Guide
-      </h2>
+      <div className="mb-7">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">Guide Lane</p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-2xl font-semibold tracking-[-0.015em] text-white">Quick Guide</h2>
+          <span className="inline-flex items-center rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-amber-100/90">
+            {Array.isArray(config?.guide) ? config.guide.length : 0} tips
+          </span>
+        </div>
+        <div className="mt-3 h-px w-full bg-gradient-to-r from-amber-200/35 via-white/10 to-transparent" />
+      </div>
       {placesLoading && (
         <div className="mb-4 rounded-2xl border border-amber-200/10 bg-amber-200/[0.03] p-4">
           <p className="mb-3 text-xs uppercase tracking-[0.16em] text-amber-100/60">Loading guide signal</p>
@@ -39,7 +46,7 @@ export default function QuickGuideSection({
           </button>
         </div>
       )}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4">
         {config.guide.map((item, index) => {
           const guideTone =
             index % 4 === 0
@@ -72,12 +79,12 @@ export default function QuickGuideSection({
           return (
             <div
               key={`${item.title}-${index}`}
-              className={`qa-cinematic-hover qa-city-card rounded-[24px] border p-5 ${guideTone.card} ${index === 0 ? "md:col-span-2" : ""}`}
+              className={`qa-cinematic-hover qa-city-card rounded-[24px] border p-5 ${guideTone.card}`}
             >
               <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${guideTone.strip}`} />
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h3 className={`${index === 0 ? "text-xl md:text-2xl" : "text-lg"} font-semibold leading-tight tracking-[-0.01em] text-white`}>
+                  <h3 className="text-lg font-semibold leading-tight tracking-[-0.01em] text-white">
                     {item.title}
                   </h3>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -92,7 +99,7 @@ export default function QuickGuideSection({
               </div>
 
               <div className="rounded-2xl border border-white/8 bg-black/24 p-4">
-                <p className={`${index === 0 ? "text-sm leading-7" : "text-sm leading-6"} text-white/68`}>
+                <p className="qa-copy-justify text-sm leading-7 text-white/78">
                   {polishGuideText(item.text, {
                     sectionTitle: item.title,
                     cityName,

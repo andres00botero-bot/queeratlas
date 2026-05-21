@@ -688,11 +688,13 @@ export default function CitiesPage() {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
-      setDailyMetricsSnapshot({
-        dateKey: String(parsed.dateKey),
-        cities: Number(parsed.cities) || 0,
-        countries: Number(parsed.countries) || 0,
-        places: Number(parsed.places) || 0,
+      queueMicrotask(() => {
+        setDailyMetricsSnapshot({
+          dateKey: String(parsed.dateKey),
+          cities: Number(parsed.cities) || 0,
+          countries: Number(parsed.countries) || 0,
+          places: Number(parsed.places) || 0,
+        });
       });
     } catch {
       // Ignore cache parse/storage issues.
@@ -703,25 +705,27 @@ export default function CitiesPage() {
     if (isLoading) return;
 
     const dateKey = getLocalDateKey();
-    setDailyMetricsSnapshot((current) => {
-      if (String(current?.dateKey || "") === dateKey) {
-        return current;
-      }
+    queueMicrotask(() => {
+      setDailyMetricsSnapshot((current) => {
+        if (String(current?.dateKey || "") === dateKey) {
+          return current;
+        }
 
-      const nextSnapshot = {
-        dateKey,
-        cities: Number(totalCities) || 0,
-        countries: Number(totalCountries) || 0,
-        places: Number(totalPlaces) || 0,
-      };
+        const nextSnapshot = {
+          dateKey,
+          cities: Number(totalCities) || 0,
+          countries: Number(totalCountries) || 0,
+          places: Number(totalPlaces) || 0,
+        };
 
-      try {
-        localStorage.setItem(CITIES_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
-      } catch {
-        // Ignore storage write issues.
-      }
+        try {
+          localStorage.setItem(CITIES_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
+        } catch {
+          // Ignore storage write issues.
+        }
 
-      return nextSnapshot;
+        return nextSnapshot;
+      });
     });
   }, [isLoading, totalCities, totalCountries, totalPlaces]);
 
@@ -729,7 +733,9 @@ export default function CitiesPage() {
     if (isAuthLoading) return;
 
     if (!isMember || !user?.email) {
-      setIsAdmin(false);
+      queueMicrotask(() => {
+        setIsAdmin(false);
+      });
       return;
     }
 

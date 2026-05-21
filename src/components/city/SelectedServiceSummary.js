@@ -32,7 +32,7 @@ export default function SelectedServiceSummary({
       </div>
       <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedService.name}</h2>
       <VibeTagChips entity={selectedService} tone="cyan" className="mb-2" includeMixedFallback />
-      <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
+      <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/68">
         Area: {getEntityAddressLabel(selectedService) || "City-wide"}
       </p>
       <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-sky-300" />
@@ -71,7 +71,7 @@ export default function SelectedServiceSummary({
       {selectedService.description && (
         <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About service</p>
-          <p className="text-sm leading-relaxed text-white/72">{String(selectedService.description)}</p>
+          <p className="qa-copy-justify text-sm leading-7 text-white/82">{String(selectedService.description)}</p>
         </div>
       )}
 

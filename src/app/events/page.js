@@ -983,17 +983,16 @@ export default function EventsPage() {
                       <EventSkeletonCard tone="cyan" />
                     </div>
                   )}
-                  {upcomingEvents.map((event) => (
-                    (() => {
-                      const quality = getEntityQuality({
-                        targetType: "event",
-                        targetId: event.id,
-                        entity: event,
-                        map: qualityMap,
-                      });
-                      const qualityStatus = getQualityStatus(quality);
+                  {upcomingEvents.map((event) => {
+                    const quality = getEntityQuality({
+                      targetType: "event",
+                      targetId: event.id,
+                      entity: event,
+                      map: qualityMap,
+                    });
+                    const qualityStatus = getQualityStatus(quality);
 
-                      return (
+                    return (
                     <div
                       key={`${event.isGlobal ? "global" : "city"}-${event.id}`}
                       role="button"
@@ -1025,9 +1024,8 @@ export default function EventsPage() {
                         </p>
                       )}
                     </div>
-                      );
-                    })()
-                  ))}
+                    );
+                  })}
 
                   {!isLoading && upcomingEvents.length === 0 && (
                     <EmptyState

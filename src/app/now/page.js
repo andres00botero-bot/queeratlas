@@ -582,7 +582,9 @@ export default function NowPage() {
 
   useEffect(() => {
     if (!isMember) {
-      setIsAdminByTable(false);
+      queueMicrotask(() => {
+        setIsAdminByTable(false);
+      });
       return;
     }
 
@@ -1370,7 +1372,9 @@ export default function NowPage() {
   const isHappeningSection = activeNowSection === "happening";
   useEffect(() => {
     if (activeNowSection === "policy") {
-      setActiveNowSection("mixed");
+      queueMicrotask(() => {
+        setActiveNowSection("mixed");
+      });
     }
   }, [activeNowSection]);
 

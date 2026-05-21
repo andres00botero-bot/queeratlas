@@ -29,14 +29,14 @@ export default function SelectedEventSummary({
       </div>
       <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedEvent.name}</h2>
       <VibeTagChips entity={selectedEvent} tone="amber" className="mb-2" includeMixedFallback />
-      <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/60">
+      <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/68">
         Address: {getEntityAddressLabel(selectedEvent)}
       </p>
       <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
       {polishEventDescription(selectedEvent, cityName) && (
         <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">
           <p className="mb-1 text-xs uppercase tracking-[0.16em] text-white/45">About event</p>
-          <p className="text-sm leading-relaxed text-white/68">{polishEventDescription(selectedEvent, cityName)}</p>
+          <p className="qa-copy-justify text-sm leading-7 text-white/80">{polishEventDescription(selectedEvent, cityName)}</p>
         </div>
       )}
     </>

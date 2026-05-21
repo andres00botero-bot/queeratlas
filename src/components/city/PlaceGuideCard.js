@@ -46,6 +46,7 @@ export default function PlaceGuideCard({
       onClick={() => openPlace(place)}
       role="button"
       tabIndex={0}
+      aria-pressed={isSelected}
       aria-label={`Open place details for ${place.name}`}
       onMouseEnter={() => setHoveredPlaceId(String(place.id))}
       onMouseLeave={() => setHoveredPlaceId(null)}
@@ -57,12 +58,10 @@ export default function PlaceGuideCard({
       }}
       style={{ animationDelay: `${Math.min(index * 45, 280)}ms` }}
       className={`qa-cinematic-hover qa-city-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 ${
-        index === 0 ? "md:col-span-2" : ""
-      } ${
         isFocusMode && !isSelected ? "opacity-60 saturate-75" : ""
       } ${
         isSelected
-          ? style.selected
+          ? `${style.selected} ring-1 ring-cyan-200/45`
           : `${style.card} hover:border-white/16`
       } ${
         isHovered
@@ -74,11 +73,16 @@ export default function PlaceGuideCard({
       <div className={`mb-5 h-1.5 w-36 rounded-full bg-gradient-to-r ${style.line}`} />
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h3 className={`${index === 0 ? "text-xl md:text-[1.65rem]" : "text-lg"} font-semibold leading-tight tracking-[-0.015em] text-white`}>{place.name}</h3>
+          <h3 className="text-lg font-semibold leading-tight tracking-[-0.015em] text-white">{place.name}</h3>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className={`rounded-full border border-white/16 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${style.label}`}>
               {typeLabels[place.type] || "Place"}
             </span>
+            {isSelected && (
+              <span className="rounded-full border border-cyan-200/35 bg-cyan-200/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
+                Selected
+              </span>
+            )}
             <VibeTagChips entity={place} tone="cyan" className="" includeTypeFallback includeMixedFallback />
           </div>
         </div>
@@ -122,17 +126,25 @@ export default function PlaceGuideCard({
 
       {venueDescription && (
         <div className="mb-4 rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(0,0,0,0.34),rgba(0,0,0,0.52))] p-4">
-          <p className={`${index === 0 ? "line-clamp-4 text-sm leading-7" : "line-clamp-3 text-sm leading-6"} text-white/68`}>
+          <p className={`qa-copy-justify ${index === 0 ? "line-clamp-4 text-sm leading-7" : "line-clamp-3 text-sm leading-7"} text-white/74`}>
             {venueDescription}
           </p>
         </div>
       )}
 
-      <div className="mb-4 rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">Opening Hours</p>
-        <p className="mt-1 text-xs leading-6 text-cyan-50/90">
-          {String(place.hours || "").trim() || "Hours vary by night. Check official channels before going."}
-        </p>
+      <div className="mb-4 grid grid-cols-1 gap-3">
+        <div className="rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.07] p-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/75">Opening Hours</p>
+          <p className="mt-1 text-xs leading-6 text-cyan-50/90">
+            {String(place.hours || "").trim() || "Hours vary by night. Check official channels before going."}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-white/60">Location</p>
+          <p className="mt-1 line-clamp-2 text-xs leading-6 text-white/82">
+            {String(place.location || "").trim() || cityName}
+          </p>
+        </div>
       </div>
       {place.link && (
         <div className="mb-4">
@@ -149,7 +161,7 @@ export default function PlaceGuideCard({
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
+        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
           {place.reviewCount || 0} reviews
         </span>
         <div className="flex items-center gap-2">
@@ -171,7 +183,7 @@ export default function PlaceGuideCard({
               {qualityStatus.label}
             </span>
           )}
-          <span>{groupLabel}</span>
+          <span className="text-white/55">{groupLabel}</span>
         </div>
       </div>
       {quality.lastChecked && (

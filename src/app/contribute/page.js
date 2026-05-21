@@ -289,35 +289,45 @@ export default function ContributePage() {
 
     if (citySlug) {
       const mappedCity = cityConfig[citySlug]?.title?.replace("Queer ", "") || "";
-      setSelectedCity(citySlug);
-      setPlaceForm((current) => ({ ...current, city: mappedCity }));
-      setEventForm((current) => ({ ...current, city: mappedCity }));
-      setServiceForm((current) => ({ ...current, city: mappedCity }));
-      setRequestForm((current) => ({ ...current, city: mappedCity }));
+      queueMicrotask(() => {
+        setSelectedCity(citySlug);
+        setPlaceForm((current) => ({ ...current, city: mappedCity }));
+        setEventForm((current) => ({ ...current, city: mappedCity }));
+        setServiceForm((current) => ({ ...current, city: mappedCity }));
+        setRequestForm((current) => ({ ...current, city: mappedCity }));
+      });
     }
 
     if (queryEntity === "service") {
-      setAddServiceMode(true);
-      setAddMode(false);
-      setAddEventMode(false);
-      setShouldScrollToServiceForm(true);
-      if (queryServiceId) {
-        setEditingServiceId(queryServiceId);
-      }
+      queueMicrotask(() => {
+        setAddServiceMode(true);
+        setAddMode(false);
+        setAddEventMode(false);
+        setShouldScrollToServiceForm(true);
+        if (queryServiceId) {
+          setEditingServiceId(queryServiceId);
+        }
+      });
     } else if (queryEntity === "event") {
-      setAddEventMode(true);
-      setAddMode(false);
-      setAddServiceMode(false);
+      queueMicrotask(() => {
+        setAddEventMode(true);
+        setAddMode(false);
+        setAddServiceMode(false);
+      });
     } else if (queryEntity === "place") {
-      setAddMode(true);
-      setAddEventMode(false);
-      setAddServiceMode(false);
+      queueMicrotask(() => {
+        setAddMode(true);
+        setAddEventMode(false);
+        setAddServiceMode(false);
+      });
     }
     if (queryFocus === "service-form") {
-      setShouldScrollToServiceForm(true);
-      if (queryServiceId) {
-        setEditingServiceId(queryServiceId);
-      }
+      queueMicrotask(() => {
+        setShouldScrollToServiceForm(true);
+        if (queryServiceId) {
+          setEditingServiceId(queryServiceId);
+        }
+      });
     }
 
     const nextParams = new URLSearchParams(currentParams.toString());
@@ -503,7 +513,9 @@ export default function ContributePage() {
 
   useEffect(() => {
     if (!isMember || !isAdmin) {
-      setQaSnapshot({ places: [], events: [], services: [], loading: false, error: "" });
+      queueMicrotask(() => {
+        setQaSnapshot({ places: [], events: [], services: [], loading: false, error: "" });
+      });
       return;
     }
 
@@ -595,8 +607,10 @@ export default function ContributePage() {
 
   useEffect(() => {
     if (!isAdmin) {
-      setPendingSubmissions([]);
-      setSubmissionSyncNotice("");
+      queueMicrotask(() => {
+        setPendingSubmissions([]);
+        setSubmissionSyncNotice("");
+      });
       return;
     }
     queueMicrotask(() => {

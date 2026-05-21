@@ -13,17 +13,20 @@ export default function CityContributionStack({
   placeFormProps,
   eventFormProps,
   serviceFormProps,
+  showActions = true,
 }) {
   return (
     <>
-      <CityContributionActions
-        addMode={addMode}
-        addEventMode={addEventMode}
-        addServiceMode={addServiceMode}
-        onToggleAddPlace={onToggleAddPlace}
-        onToggleAddEvent={onToggleAddEvent}
-        onToggleAddService={onToggleAddService}
-      />
+      {showActions ? (
+        <CityContributionActions
+          addMode={addMode}
+          addEventMode={addEventMode}
+          addServiceMode={addServiceMode}
+          onToggleAddPlace={onToggleAddPlace}
+          onToggleAddEvent={onToggleAddEvent}
+          onToggleAddService={onToggleAddService}
+        />
+      ) : null}
 
       {addMode && <AddPlaceInlineForm {...placeFormProps} />}
 

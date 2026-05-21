@@ -8,6 +8,7 @@ export default function CityNavigationCluster({
   cityEventCount,
   cityServiceCount,
   activeCitySection,
+  onGoHome,
   onGoMap,
   onGoEvents,
   onGoGuide,
@@ -15,7 +16,44 @@ export default function CityNavigationCluster({
   onGoVenues,
   onGoVenueType,
   venueJumpGroups,
+  activeVenueFilter = "",
+  onAddPlace,
+  onAddEvent,
+  onAddService,
+  variant = "default",
 }) {
+  if (variant === "contribute") {
+    return (
+      <CityQuickNavigation
+        onAddPlace={onAddPlace}
+        onAddEvent={onAddEvent}
+        onAddService={onAddService}
+        variant="contribute"
+      />
+    );
+  }
+
+  if (variant === "rail") {
+    return (
+      <CityQuickNavigation
+        onGoHome={onGoHome}
+        onGoMap={onGoMap}
+        onGoEvents={onGoEvents}
+        onGoGuide={onGoGuide}
+        onGoServices={onGoServices}
+        onGoVenues={onGoVenues}
+        onGoVenueType={onGoVenueType}
+        venueJumpGroups={venueJumpGroups}
+        activeSection={activeCitySection}
+        activeVenueFilter={activeVenueFilter}
+        onAddPlace={onAddPlace}
+        onAddEvent={onAddEvent}
+        onAddService={onAddService}
+        variant="rail"
+      />
+    );
+  }
+
   return (
     <>
       <CitySignalSummaryBar
@@ -26,6 +64,7 @@ export default function CityNavigationCluster({
       />
 
       <CityQuickNavigation
+        onGoHome={onGoHome}
         onGoMap={onGoMap}
         onGoEvents={onGoEvents}
         onGoGuide={onGoGuide}
@@ -34,6 +73,7 @@ export default function CityNavigationCluster({
         onGoVenueType={onGoVenueType}
         venueJumpGroups={venueJumpGroups}
         activeSection={activeCitySection}
+        activeVenueFilter={activeVenueFilter}
       />
     </>
   );

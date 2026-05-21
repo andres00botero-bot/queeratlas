@@ -20,19 +20,23 @@ export default function CityServicesSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section animate-cinematic-in mb-10 rounded-[30px] border border-emerald-200/12 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 shadow-[0_18px_52px_rgba(16,185,129,0.06)]"
+      className="qa-city-section animate-cinematic-in mb-10 rounded-[30px] border border-emerald-200/12 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 text-justify shadow-[0_18px_52px_rgba(16,185,129,0.06)]"
       style={{ animationDelay: "270ms" }}
     >
-      <h2 className="sticky top-[66px] z-10 -mx-2 mb-4 border-b border-emerald-200/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-emerald-100 backdrop-blur">
-        Services
-      </h2>
+      <div className="mb-7">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-emerald-100/55">Service Lane</p>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h2 className="text-2xl font-semibold tracking-[-0.015em] text-emerald-100">Services</h2>
+          <span className="inline-flex items-center rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/90">
+            {servicesLoading ? "Services syncing" : `${cityServiceCount} listed`}
+          </span>
+        </div>
+        <div className="mt-3 h-px w-full bg-gradient-to-r from-emerald-200/35 via-white/10 to-transparent" />
+      </div>
       <p className="mb-4 text-sm text-white/65">
         Private services curated for this city: massage, tours, concierge, and premium support lanes.
       </p>
       <div className="mb-4 flex flex-wrap gap-2">
-        <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/90">
-          {servicesLoading ? "Services syncing" : `${cityServiceCount} listed`}
-        </span>
         <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
           {visibleServiceGroups.length} categories
         </span>

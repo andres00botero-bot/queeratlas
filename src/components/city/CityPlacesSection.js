@@ -1,9 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
 import PlaceGuideCard from "@/components/city/PlaceGuideCard";
-
-const DEFAULT_VISIBLE = 6;
 
 export default function CityPlacesSection({
   placesLoading,
@@ -31,11 +28,6 @@ export default function CityPlacesSection({
   cityName,
   safetySignalsByPlaceId,
 }) {
-  const totalVenues = useMemo(
-    () => visiblePlaceGroups.reduce((sum, group) => sum + (Array.isArray(group.items) ? group.items.length : 0), 0),
-    [visiblePlaceGroups]
-  );
-
   return (
     <>
       {!placesLoading && !hasAnyPlaces && (
@@ -74,15 +66,6 @@ export default function CityPlacesSection({
         </div>
       )}
 
-      {hasAnyPlaces ? (
-        <div className="qa-city-section mb-6 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)]">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-white/52">Venues</p>
-          <p className="mt-1 text-xs text-white/66">
-            {totalVenues} total venues. Scroll inside each section for the full list.
-          </p>
-        </div>
-      ) : null}
-
       {visiblePlaceGroups.map((group, groupIndex) => {
         const attachGroupRef = (node) => {
           if (groupIndex === 0 && firstGroupRef) {
@@ -98,28 +81,29 @@ export default function CityPlacesSection({
         };
 
         const items = Array.isArray(group.items) ? group.items : [];
-        const isScrollableGroup = items.length > DEFAULT_VISIBLE;
 
         return (
-          <div
-            ref={attachGroupRef}
-            key={group.value}
-            className={`qa-city-section animate-cinematic-in mb-10 border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_18px_52px_rgba(0,0,0,0.24)] ${
-              groupIndex % 2 === 0 ? "rounded-[34px]" : "rounded-[28px]"
-            }`}
+        <div
+          ref={attachGroupRef}
+          key={group.value}
+          className={`qa-city-section animate-cinematic-in mb-10 border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 text-justify shadow-[0_18px_52px_rgba(0,0,0,0.24)] ${
+            groupIndex % 2 === 0 ? "rounded-[34px]" : "rounded-[28px]"
+          }`}
             style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
           >
-            <div className="sticky top-[66px] z-20 -mx-2 mb-6 border-b border-white/8 bg-[#050505]/92 px-2 py-3 backdrop-blur">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-lg tracking-wide text-white/82">{group.label}</h2>
-                <span className="rounded-full border border-white/12 bg-white/8 px-2.5 py-1 text-[11px] text-white/72">
+            <div className="mb-7">
+              <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">Venue Category</p>
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <h2 className="text-2xl font-semibold tracking-[-0.015em] text-white">{group.label}</h2>
+                <span className="inline-flex items-center rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-cyan-100/88">
                   {items.length} venues
                 </span>
               </div>
+              <div className="mt-3 h-px w-full bg-gradient-to-r from-cyan-200/35 via-white/10 to-transparent" />
             </div>
 
-            <div className={isScrollableGroup ? "max-h-[620px] overflow-y-auto pr-1 md:max-h-[980px]" : ""}>
-              <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <div className="grid grid-cols-1 gap-4">
                 {items.map((place, index) => (
                     <PlaceGuideCard
                       key={place.id}

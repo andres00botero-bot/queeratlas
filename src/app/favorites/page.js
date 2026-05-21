@@ -386,39 +386,47 @@ export default function FavoritesPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search || "");
-    setProfileRouteParams({
-      member: String(params.get("member") || "").trim(),
-      memberName: String(params.get("member_name") || "").trim(),
-      tab: String(params.get("tab") || "").trim(),
+    queueMicrotask(() => {
+      setProfileRouteParams({
+        member: String(params.get("member") || "").trim(),
+        memberName: String(params.get("member_name") || "").trim(),
+        tab: String(params.get("tab") || "").trim(),
+      });
     });
   }, []);
 
   useEffect(() => {
     if (viewedTab === "about") {
-      setActiveProfileTab("about");
+      queueMicrotask(() => {
+        setActiveProfileTab("about");
+      });
     }
   }, [viewedTab]);
 
   useEffect(() => {
     if (!isViewingAnotherMember) return;
-    setIsEditingAbout(false);
-    setIsEditingProfile(false);
+    queueMicrotask(() => {
+      setIsEditingAbout(false);
+      setIsEditingProfile(false);
+    });
   }, [isViewingAnotherMember, setIsEditingAbout, setIsEditingProfile]);
 
   useEffect(() => {
     let active = true;
 
     if (isAuthLoading || !isMember) {
-      setViewedProfile(null);
-      setViewedProfileLoading(false);
-      setViewedProfileError("");
-      setViewedMemberRank(null);
-      setViewedContributionCounts({
-        stories: 0,
-        guides: 0,
-        ideas: 0,
-        topics: 0,
-        total: 0,
+      queueMicrotask(() => {
+        setViewedProfile(null);
+        setViewedProfileLoading(false);
+        setViewedProfileError("");
+        setViewedMemberRank(null);
+        setViewedContributionCounts({
+          stories: 0,
+          guides: 0,
+          ideas: 0,
+          topics: 0,
+          total: 0,
+        });
       });
       return () => {
         active = false;
@@ -426,35 +434,41 @@ export default function FavoritesPage() {
     }
 
     if (!isViewingAnotherMember) {
-      setViewedProfile(null);
-      setViewedProfileLoading(false);
-      setViewedProfileError("");
-      setViewedMemberRank(null);
-      setViewedContributionCounts({
-        stories: 0,
-        guides: 0,
-        ideas: 0,
-        topics: 0,
-        total: 0,
+      queueMicrotask(() => {
+        setViewedProfile(null);
+        setViewedProfileLoading(false);
+        setViewedProfileError("");
+        setViewedMemberRank(null);
+        setViewedContributionCounts({
+          stories: 0,
+          guides: 0,
+          ideas: 0,
+          topics: 0,
+          total: 0,
+        });
       });
       return () => {
         active = false;
       };
     }
 
-    setViewedProfile({
-      userId: viewedMemberId,
-      displayName: viewedMemberNameParam || "Member",
-      pronouns: "",
-      homeCity: "",
-      residentCountry: "",
-      about: "",
-      vibe: "",
-      visibility: "members",
-      avatarUrl: "",
+    queueMicrotask(() => {
+      setViewedProfile({
+        userId: viewedMemberId,
+        displayName: viewedMemberNameParam || "Member",
+        pronouns: "",
+        homeCity: "",
+        residentCountry: "",
+        about: "",
+        vibe: "",
+        visibility: "members",
+        avatarUrl: "",
+      });
     });
-    setViewedProfileLoading(true);
-    setViewedProfileError("");
+    queueMicrotask(() => {
+      setViewedProfileLoading(true);
+      setViewedProfileError("");
+    });
 
     queueMicrotask(async () => {
       const { data, error } = await supabase
@@ -494,13 +508,15 @@ export default function FavoritesPage() {
   useEffect(() => {
     let active = true;
     if (isAuthLoading || !isMember || !isViewingAnotherMember || !viewedMemberId) {
-      setViewedMemberRank(null);
-      setViewedContributionCounts({
-        stories: 0,
-        guides: 0,
-        ideas: 0,
-        topics: 0,
-        total: 0,
+      queueMicrotask(() => {
+        setViewedMemberRank(null);
+        setViewedContributionCounts({
+          stories: 0,
+          guides: 0,
+          ideas: 0,
+          topics: 0,
+          total: 0,
+        });
       });
       return () => {
         active = false;
@@ -705,7 +721,7 @@ export default function FavoritesPage() {
     setCheckins(mapped);
     writeLocalJson(CHECKINS_STORAGE_KEY, mapped);
     setCheckinsWarning("");
-  }, [setCheckins, setCheckinsWarning, user?.id]);
+  }, [setCheckins, setCheckinsWarning, user]);
 
   const loadFollowingCheckins = useCallback(async () => {
     if (!user?.id || !Array.isArray(followingUserIds) || followingUserIds.length === 0) {
@@ -983,7 +999,7 @@ export default function FavoritesPage() {
     setFollowingUserIds(trustNetworkRows.followingUserIds);
     setFollowingFeedRows(trustNetworkRows.feedRows);
     setNetworkLoading(false);
-  }, [isMember, setFollowingFeedRows, setFollowingUserIds, setNetworkLoading, setNetworkMembers, setNetworkWarning, user?.id]);
+  }, [isMember, setFollowingFeedRows, setFollowingUserIds, setNetworkLoading, setNetworkMembers, setNetworkWarning, user]);
 
   useEffect(() => {
     if (!isReady || !isMember || !user?.id) return;
@@ -1047,7 +1063,9 @@ export default function FavoritesPage() {
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
-      setProfileExtras(sanitizeProfileExtras(parsed));
+      queueMicrotask(() => {
+        setProfileExtras(sanitizeProfileExtras(parsed));
+      });
     } catch {
       // Ignore malformed local profile extras payload.
     }
@@ -1060,7 +1078,9 @@ export default function FavoritesPage() {
     try {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        setProfileMemories(parsed.slice(0, 5));
+        queueMicrotask(() => {
+          setProfileMemories(parsed.slice(0, 5));
+        });
       }
     } catch {
       // Ignore malformed local memory payload.
@@ -1105,22 +1125,28 @@ export default function FavoritesPage() {
     let cancelled = false;
 
     if (isAuthLoading || !isMember) {
-      setViewedProfileMemories([]);
-      setViewedProfileMemoriesLoading(false);
+      queueMicrotask(() => {
+        setViewedProfileMemories([]);
+        setViewedProfileMemoriesLoading(false);
+      });
       return () => {
         cancelled = true;
       };
     }
 
     if (!isViewingAnotherMember || !viewedMemberId) {
-      setViewedProfileMemories([]);
-      setViewedProfileMemoriesLoading(false);
+      queueMicrotask(() => {
+        setViewedProfileMemories([]);
+        setViewedProfileMemoriesLoading(false);
+      });
       return () => {
         cancelled = true;
       };
     }
 
-    setViewedProfileMemoriesLoading(true);
+    queueMicrotask(() => {
+      setViewedProfileMemoriesLoading(true);
+    });
     queueMicrotask(async () => {
       const { data, error } = await supabase
         .from("qa_member_profile_memories")
@@ -1162,16 +1188,18 @@ export default function FavoritesPage() {
       phone: memberProfile?.phone,
       contactEmail: memberProfile?.contactEmail,
     });
-    setProfileExtras((current) => {
-      const next = {
-        about: remoteExtras.about || current.about || "",
-        visibility: remoteExtras.visibility || current.visibility || "members",
-        birthday: remoteExtras.birthday || current.birthday || "",
-        vibe: remoteExtras.vibe || current.vibe || "",
-        phone: remoteExtras.phone || current.phone || "",
-        contactEmail: remoteExtras.contactEmail || current.contactEmail || "",
-      };
-      return next;
+    queueMicrotask(() => {
+      setProfileExtras((current) => {
+        const next = {
+          about: remoteExtras.about || current.about || "",
+          visibility: remoteExtras.visibility || current.visibility || "members",
+          birthday: remoteExtras.birthday || current.birthday || "",
+          vibe: remoteExtras.vibe || current.vibe || "",
+          phone: remoteExtras.phone || current.phone || "",
+          contactEmail: remoteExtras.contactEmail || current.contactEmail || "",
+        };
+        return next;
+      });
     });
   }, [
     memberProfile?.about,
@@ -1184,11 +1212,15 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     const remoteAvatar = String(memberProfile?.avatarUrl || "").trim();
-    setProfileAvatarDataUrl(remoteAvatar || "");
+    queueMicrotask(() => {
+      setProfileAvatarDataUrl(remoteAvatar || "");
+    });
   }, [memberProfile?.avatarUrl]);
 
   useEffect(() => {
-    setProfileAvatarLoadFailed(false);
+    queueMicrotask(() => {
+      setProfileAvatarLoadFailed(false);
+    });
   }, [profileAvatarDataUrl, viewedProfile?.avatarUrl]);
 
   const favoriteIdSet = useMemo(
@@ -1225,7 +1257,7 @@ export default function FavoritesPage() {
       .sort((a, b) => a.calendarTime - b.calendarTime);
   }, [savedEvents]);
   const todayDateKey = useMemo(() => {
-    const referenceTs = Number(nowTs || Date.now());
+    const referenceTs = Number(nowTs || 0);
     return new Date(referenceTs).toISOString().slice(0, 10);
   }, [nowTs]);
   const todayCalendarEvents = useMemo(
@@ -2018,13 +2050,7 @@ export default function FavoritesPage() {
     }
     if (badges.length === 0) badges.push("Rising Voice");
     return badges.slice(0, 6);
-  }, [
-    activeContributionCounts?.guides,
-    activeContributionCounts?.ideas,
-    activeContributionCounts?.stories,
-    activeContributionCounts?.topics,
-    activeMemberRank?.rank,
-  ]);
+  }, [activeContributionCounts, activeMemberRank]);
   const joinedSinceLabel = useMemo(() => {
     const raw = String(user?.created_at || "").trim();
     if (!raw) return "Recently joined";
@@ -2074,7 +2100,9 @@ export default function FavoritesPage() {
     if (!Array.isArray(profileTabs) || profileTabs.length === 0) return;
     const firstTabId = String(profileTabs[0]?.id || "");
     if (!firstTabId) return;
-    setActiveProfileTab(firstTabId);
+    queueMicrotask(() => {
+      setActiveProfileTab(firstTabId);
+    });
   }, [profileTabs]);
   const plannerCities = useMemo(() => {
     const configCities = Object.values(cityConfig).map((item) => item.title?.replace("Queer ", "")).filter(Boolean);

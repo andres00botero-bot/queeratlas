@@ -52,6 +52,9 @@ import CityGuideCluster from "@/components/city/CityGuideCluster";
 import CityMapSection from "@/components/city/CityMapSection";
 import CityNavigationCluster from "@/components/city/CityNavigationCluster";
 import CityPlacesCluster from "@/components/city/CityPlacesCluster";
+import SelectedEventPanel from "@/components/city/SelectedEventPanel";
+import SelectedPlacePanel from "@/components/city/SelectedPlacePanel";
+import SelectedServicePanel from "@/components/city/SelectedServicePanel";
 import CityServicesCluster from "@/components/city/CityServicesCluster";
 import CitySeoScaffold from "@/components/city/CitySeoScaffold";
 import CityTopCluster from "@/components/city/CityTopCluster";
@@ -297,6 +300,8 @@ export default function CityPage() {
   const [hoveredServiceId, setHoveredServiceId] = useState(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
   const [activeCitySection, setActiveCitySection] = useState("map");
+  const [desktopContentSection, setDesktopContentSection] = useState("home");
+  const [activeVenueFilter, setActiveVenueFilter] = useState("");
   const { isMember, user, memberName } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isTrustedContributor, setIsTrustedContributor] = useState(false);
@@ -324,6 +329,7 @@ export default function CityPage() {
   const mapContainerRef = useRef(null);
   const mapWrapperRef = useRef(null);
   const mainScrollRef = useRef(null);
+  const centerColumnScrollRef = useRef(null);
   const eventsSectionRef = useRef(null);
   const tonightSectionRef = useRef(null);
   const guideSectionRef = useRef(null);
@@ -365,6 +371,41 @@ export default function CityPage() {
       block: "start",
     });
   }, []);
+
+  const showDesktopSection = useCallback((sectionKey) => {
+    setDesktopContentSection(String(sectionKey || "home"));
+    requestAnimationFrame(() => {
+      const scrollContainer = centerColumnScrollRef.current || mainScrollRef.current;
+      scrollContainer?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }, []);
+
+  const handleDesktopSectionNav = useCallback((sectionKey, ref) => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+      showDesktopSection(sectionKey);
+      return;
+    }
+    scrollToSection(ref);
+  }, [scrollToSection, showDesktopSection]);
+
+  const resetMapToCityOverview = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !Array.isArray(config?.center) || config.center.length < 2) return;
+    map.flyTo({
+      center: config.center,
+      zoom: 11,
+      essential: true,
+      duration: 900,
+    });
+  }, [config?.center]);
+
+  const handleGoHomeDesktop = useCallback(() => {
+    setAddMode(false);
+    setAddEventMode(false);
+    setAddServiceMode(false);
+    handleDesktopSectionNav("home", guideSectionRef);
+    resetMapToCityOverview();
+  }, [handleDesktopSectionNav, resetMapToCityOverview]);
 
   const setVenueGroupRef = useCallback((groupValue, node) => {
     const key = String(groupValue || "").trim();
@@ -413,16 +454,25 @@ export default function CityPage() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    document.documentElement.classList.add("qa-city-scroll-lock");
+    document.body.classList.add("qa-city-scroll-lock");
+    return () => {
+      document.documentElement.classList.remove("qa-city-scroll-lock");
+      document.body.classList.remove("qa-city-scroll-lock");
+    };
+  }, []);
+
   const handleDesktopPanelWheel = useCallback((event) => {
     if (typeof window === "undefined") return;
     if (window.innerWidth < 1024) return;
 
     event.preventDefault();
-    const scrollContainer = mainScrollRef.current;
+    const scrollContainer = centerColumnScrollRef.current || mainScrollRef.current;
     if (scrollContainer) {
       scrollContainer.scrollTop += event.deltaY;
     }
-    window.scrollBy({ top: event.deltaY, left: 0, behavior: "auto" });
   }, []);
 
   useEffect(() => {
@@ -572,7 +622,9 @@ export default function CityPage() {
       .filter(Boolean);
 
     if (placeIds.length === 0) {
-      setSafetySignalsByPlaceId({});
+      queueMicrotask(() => {
+        if (active) setSafetySignalsByPlaceId({});
+      });
       return () => {
         active = false;
       };
@@ -655,33 +707,24 @@ export default function CityPage() {
   }, [cityPlaces]);
 
   useEffect(() => {
-    if (!selectedPlace) {
+    queueMicrotask(() => {
       setPlaceAdminOpen(false);
-      setPlaceAdminDraft(buildPlaceAdminDraft(null));
-      return;
-    }
-    setPlaceAdminOpen(false);
-    setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace));
+      setPlaceAdminDraft(buildPlaceAdminDraft(selectedPlace || null));
+    });
   }, [selectedPlace]);
 
   useEffect(() => {
-    if (!selectedEvent) {
+    queueMicrotask(() => {
       setEventAdminOpen(false);
-      setEventAdminDraft(buildEventAdminDraft(null));
-      return;
-    }
-    setEventAdminOpen(false);
-    setEventAdminDraft(buildEventAdminDraft(selectedEvent));
+      setEventAdminDraft(buildEventAdminDraft(selectedEvent || null));
+    });
   }, [selectedEvent]);
 
   useEffect(() => {
-    if (!selectedService) {
+    queueMicrotask(() => {
       setServiceAdminOpen(false);
-      setServiceAdminDraft(buildServiceAdminDraft(null));
-      return;
-    }
-    setServiceAdminOpen(false);
-    setServiceAdminDraft(buildServiceAdminDraft(selectedService));
+      setServiceAdminDraft(buildServiceAdminDraft(selectedService || null));
+    });
   }, [selectedService]);
 
   useEffect(() => {
@@ -793,12 +836,16 @@ export default function CityPage() {
   );
 
   useEffect(() => {
-    setShowLiveVibeMomentum(false);
+    queueMicrotask(() => {
+      setShowLiveVibeMomentum(false);
+    });
   }, [selectedPlace?.id]);
 
   useEffect(() => {
-    setEventLiveVibeSignalKey("");
-    setEventLiveVibeJustSentKey("");
+    queueMicrotask(() => {
+      setEventLiveVibeSignalKey("");
+      setEventLiveVibeJustSentKey("");
+    });
   }, [selectedEvent?.id]);
 
   const selectedPlaceQuality = selectedPlace
@@ -878,9 +925,21 @@ export default function CityPage() {
       })),
     [placesByType]
   );
+  const activeVenueFilterValues = useMemo(() => {
+    const key = String(activeVenueFilter || "").trim();
+    if (!key) return [];
+    if (key === "cafe_restaurant") return ["cafe", "restaurant"];
+    return [key];
+  }, [activeVenueFilter]);
   const visiblePlaceGroups = useMemo(
-    () => groupedPlaces.filter((group) => group.items.length > 0),
-    [groupedPlaces]
+    () =>
+      groupedPlaces.filter((group) => {
+        const hasItems = group.items.length > 0;
+        if (!hasItems) return false;
+        if (activeVenueFilterValues.length === 0) return true;
+        return activeVenueFilterValues.includes(String(group.value || ""));
+      }),
+    [activeVenueFilterValues, groupedPlaces]
   );
   const venueJumpGroups = useMemo(
     () =>
@@ -892,26 +951,47 @@ export default function CityPage() {
     [visiblePlaceGroups]
   );
   const handleGoVenueType = useCallback((groupValue) => {
-    const key = String(groupValue || "").trim();
-    if (!key) {
+    const rawKey = String(groupValue || "").trim();
+    const venueKeys = rawKey === "cafe_restaurant" ? ["cafe", "restaurant"] : [rawKey];
+    const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
+    setActiveVenueFilter(rawKey);
+
+    if (isDesktop) {
+      showDesktopSection("venues");
+    }
+
+    if (!rawKey) {
       scrollToSection(placesSectionRef);
       return;
     }
 
-    const targetNode = venueGroupRefs.current[key];
-    if (targetNode) {
-      targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
+    const scrollToTargetVenue = () => {
+      const targetNode = venueKeys
+        .map((key) => venueGroupRefs.current[key])
+        .find(Boolean);
+
+      if (targetNode) {
+        targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        scrollToSection(placesSectionRef);
+      }
+    };
+
+    if (isDesktop) {
+      window.setTimeout(scrollToTargetVenue, 90);
     } else {
-      scrollToSection(placesSectionRef);
+      scrollToTargetVenue();
     }
 
-    const targetGroup = visiblePlaceGroups.find((group) => String(group?.value || "") === key);
+    const targetGroup = visiblePlaceGroups.find((group) =>
+      venueKeys.includes(String(group?.value || ""))
+    );
     const firstPlace = targetGroup?.items?.[0];
     if (firstPlace?.id) {
       setHoveredPlaceId(String(firstPlace.id));
       window.setTimeout(() => setHoveredPlaceId(null), 1200);
     }
-  }, [scrollToSection, visiblePlaceGroups]);
+  }, [scrollToSection, showDesktopSection, visiblePlaceGroups]);
 
   const servicesByType = useMemo(
     () =>
@@ -1104,6 +1184,9 @@ export default function CityPage() {
   const openEvent = useCallback(
     (event, { origin = "list", ...options } = {}) => {
       selectionOriginRef.current = origin;
+      if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+        setDesktopContentSection("events");
+      }
       routeOpenEvent(event, options);
     },
     [routeOpenEvent]
@@ -1148,6 +1231,13 @@ export default function CityPage() {
     },
     [routeCloseAllDetails]
   );
+
+  const effectiveDesktopContentSection = useMemo(() => {
+    if (eventId) return "events";
+    if (placeId) return "venues";
+    if (serviceId) return "services";
+    return desktopContentSection;
+  }, [desktopContentSection, eventId, placeId, serviceId]);
 
   const { redirectToJoin, redirectToJoinWithReturnTarget } = useJoinRedirect({
     pathname,
@@ -1835,7 +1925,9 @@ export default function CityPage() {
   }, [cityPrivateEvents, fetchPrivateInviteRequests]);
 
   useEffect(() => {
-    setPrivateFeedNowTick(Date.now());
+    queueMicrotask(() => {
+      setPrivateFeedNowTick(Date.now());
+    });
     const id = setInterval(() => {
       setPrivateFeedNowTick(Date.now());
     }, 60 * 1000);
@@ -2003,6 +2095,7 @@ export default function CityPage() {
         mapRef.current.on("rotateend", endInteraction);
         mapRef.current.on("pitchstart", beginInteraction);
         mapRef.current.on("pitchend", endInteraction);
+        mapRef.current.on("load", handleMapLoad);
       } catch {
         if (!isCancelled) {
           queueMicrotask(() => {
@@ -2028,6 +2121,22 @@ export default function CityPage() {
       isMapInteractingRef.current = false;
       setIsMapInteracting(false);
     };
+    const handleMapLoad = () => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      // Force a stable camera/fog state to avoid fog opacity runtime crashes in Mapbox internals.
+      try {
+        map.setProjection("mercator");
+      } catch {
+        // Projection override is optional across style/runtime combinations.
+      }
+      try {
+        map.setFog(null);
+      } catch {
+        // Fog may be absent depending on style/runtime.
+      }
+    };
 
     const handleResize = () => mapRef.current?.resize();
     window.addEventListener("resize", handleResize);
@@ -2047,6 +2156,7 @@ export default function CityPage() {
       mapRef.current?.off("rotateend", endInteraction);
       mapRef.current?.off("pitchstart", beginInteraction);
       mapRef.current?.off("pitchend", endInteraction);
+      mapRef.current?.off("load", handleMapLoad);
       window.removeEventListener("resize", handleResize);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
@@ -4204,7 +4314,7 @@ export default function CityPage() {
   }, [closeService, fetchServices, isAdmin, resolveServiceDbId, selectedService, showToast]);
 
   return (
-    <main className="flex min-h-screen bg-[#050505] text-white">
+    <main className="qa-city flex min-h-screen bg-[#050505] text-white xl:h-screen xl:overflow-hidden">
       <CitySeoScaffold
         city={city}
         cityName={cityName}
@@ -4213,247 +4323,480 @@ export default function CityPage() {
         cityEventsItemListJsonLd={cityEventsItemListJsonLd}
       />
       <ActionToast toast={toast} />
-      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8">
-        <CityTopCluster
-          cityName={cityName}
-          placesChipLabel={placesChipLabel}
-          eventsChipLabel={eventsChipLabel}
-          cityHero={cityHero}
-          addMode={addMode}
-          addEventMode={addEventMode}
-          addServiceMode={addServiceMode}
-          onToggleAddPlace={onToggleAddPlace}
-          onToggleAddEvent={onToggleAddEvent}
-          onToggleAddService={onToggleAddService}
-          placeFormProps={{
-            name,
-            setName,
-            description,
-            setDescription,
-            vibeTags,
-            setVibeTags,
-            vibe,
-            setVibe,
-            placeHours,
-            setPlaceHours,
-            placeLink,
-            setPlaceLink,
-            address,
-            setAddress,
-            type,
-            setType,
-            types: TYPES,
-            onSave: handleAddPlace,
-          }}
-          eventFormProps={{
-            addEventFormRef,
-            eventName,
-            setEventName,
-            eventDescription,
-            setEventDescription,
-            eventVibeTags,
-            setEventVibeTags,
-            eventVibe,
-            setEventVibe,
-            eventLink,
-            setEventLink,
-            eventAddress,
-            setEventAddress,
-            eventStartDate,
-            setEventStartDate,
-            eventEndDate,
-            setEventEndDate,
-            onSaveEvent: handleAddEvent,
-          }}
-          serviceFormProps={{
-            addServiceFormRef,
-            serviceName,
-            setServiceName,
-            serviceDescription,
-            setServiceDescription,
-            serviceVibeTags,
-            setServiceVibeTags,
-            serviceVibe,
-            setServiceVibe,
-            serviceAddress,
-            setServiceAddress,
-            serviceType,
-            setServiceType,
-            serviceTypes: SERVICE_TYPES,
-            servicePriceTier,
-            setServicePriceTier,
-            servicePriceTierOptions: SERVICE_PRICE_TIER_OPTIONS,
-            serviceHours,
-            setServiceHours,
-            serviceProviderName,
-            setServiceProviderName,
-            serviceContact,
-            setServiceContact,
-            serviceBookingLink,
-            setServiceBookingLink,
-            serviceLink,
-            setServiceLink,
-            serviceImageUrlsInput,
-            setServiceImageUrlsInput,
-            onSaveService: handleAddService,
-          }}
-        />
+      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
+        <div className="mx-auto w-full max-w-[1900px]">
+          <div className="xl:grid xl:grid-cols-[224px_minmax(0,1fr)_minmax(360px,440px)] xl:items-start xl:gap-[0.9rem]">
+            <aside className="hidden xl:self-start xl:block">
+              <div className="sticky top-6">
+                <CityNavigationCluster
+                  cityPlacesCount={cityPlaces.length}
+                  cityEventCount={cityEventCount}
+                  cityServiceCount={cityServiceCount}
+                  activeCitySection={effectiveDesktopContentSection}
+                  onGoHome={handleGoHomeDesktop}
+                  onGoMap={() => scrollToSection(mapWrapperRef)}
+                  onGoEvents={() => handleDesktopSectionNav("events", tonightSectionRef)}
+                  onGoGuide={() => handleDesktopSectionNav("guide", guideSectionRef)}
+                  onGoServices={() => handleDesktopSectionNav("services", servicesSectionRef)}
+                  onGoVenues={() => handleDesktopSectionNav("venues", placesSectionRef)}
+                  onGoVenueType={handleGoVenueType}
+                  onAddPlace={() => {
+                    handleDesktopSectionNav("guide", guideSectionRef);
+                    onToggleAddPlace();
+                  }}
+                  onAddEvent={() => {
+                    handleDesktopSectionNav("events", tonightSectionRef);
+                    onToggleAddEvent();
+                  }}
+                  onAddService={() => {
+                    handleDesktopSectionNav("services", servicesSectionRef);
+                    onToggleAddService();
+                  }}
+                  venueJumpGroups={venueJumpGroups}
+                  activeVenueFilter={activeVenueFilter}
+                  variant="rail"
+                />
+                <div className="mt-3">
+                  <CityNavigationCluster
+                    onAddPlace={() => {
+                      handleDesktopSectionNav("guide", guideSectionRef);
+                      onToggleAddPlace();
+                    }}
+                    onAddEvent={() => {
+                      handleDesktopSectionNav("events", tonightSectionRef);
+                      onToggleAddEvent();
+                    }}
+                    onAddService={() => {
+                      handleDesktopSectionNav("services", servicesSectionRef);
+                      onToggleAddService();
+                    }}
+                    variant="contribute"
+                  />
+                </div>
+              </div>
+            </aside>
 
-        <CityMapSection
-          mapWrapperRef={mapWrapperRef}
-          mapContainerRef={mapContainerRef}
-          mapError={mapError}
-          onContinueInListMode={() => {
-            mapWrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }}
-        />
+            <aside className="min-w-0 xl:col-start-3 xl:row-start-1 xl:self-start">
+              <div className="xl:sticky xl:top-6">
+                <CityMapSection
+                  mapWrapperRef={mapWrapperRef}
+                  mapContainerRef={mapContainerRef}
+                  mapError={mapError}
+                  onContinueInListMode={() => {
+                    mapWrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                />
+              </div>
+            </aside>
 
-        <CityNavigationCluster
-          cityPlacesCount={cityPlaces.length}
-          cityEventCount={cityEventCount}
-          cityServiceCount={cityServiceCount}
-          activeCitySection={activeCitySection}
-          onGoMap={() => scrollToSection(mapWrapperRef)}
-          onGoEvents={() => scrollToSection(tonightSectionRef)}
-          onGoGuide={() => scrollToSection(guideSectionRef)}
-          onGoServices={() => scrollToSection(servicesSectionRef)}
-          onGoVenues={() => scrollToSection(placesSectionRef)}
-          onGoVenueType={handleGoVenueType}
-          venueJumpGroups={venueJumpGroups}
-        />
+            <section
+              ref={centerColumnScrollRef}
+              className="min-w-0 xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto"
+            >
+              <CityTopCluster
+                cityName={cityName}
+                placesChipLabel={placesChipLabel}
+                eventsChipLabel={eventsChipLabel}
+                cityHero={cityHero}
+                addMode={addMode}
+                addEventMode={addEventMode}
+                addServiceMode={addServiceMode}
+                onToggleAddPlace={onToggleAddPlace}
+                onToggleAddEvent={onToggleAddEvent}
+                onToggleAddService={onToggleAddService}
+                showHero={effectiveDesktopContentSection === "home"}
+                showContributionActions={false}
+                placeFormProps={{
+                  name,
+                  setName,
+                  description,
+                  setDescription,
+                  vibeTags,
+                  setVibeTags,
+                  vibe,
+                  setVibe,
+                  placeHours,
+                  setPlaceHours,
+                  placeLink,
+                  setPlaceLink,
+                  address,
+                  setAddress,
+                  type,
+                  setType,
+                  types: TYPES,
+                  onSave: handleAddPlace,
+                }}
+                eventFormProps={{
+                  addEventFormRef,
+                  eventName,
+                  setEventName,
+                  eventDescription,
+                  setEventDescription,
+                  eventVibeTags,
+                  setEventVibeTags,
+                  eventVibe,
+                  setEventVibe,
+                  eventLink,
+                  setEventLink,
+                  eventAddress,
+                  setEventAddress,
+                  eventStartDate,
+                  setEventStartDate,
+                  eventEndDate,
+                  setEventEndDate,
+                  onSaveEvent: handleAddEvent,
+                }}
+                serviceFormProps={{
+                  addServiceFormRef,
+                  serviceName,
+                  setServiceName,
+                  serviceDescription,
+                  setServiceDescription,
+                  serviceVibeTags,
+                  setServiceVibeTags,
+                  serviceVibe,
+                  setServiceVibe,
+                  serviceAddress,
+                  setServiceAddress,
+                  serviceType,
+                  setServiceType,
+                  serviceTypes: SERVICE_TYPES,
+                  servicePriceTier,
+                  setServicePriceTier,
+                  servicePriceTierOptions: SERVICE_PRICE_TIER_OPTIONS,
+                  serviceHours,
+                  setServiceHours,
+                  serviceProviderName,
+                  setServiceProviderName,
+                  serviceContact,
+                  setServiceContact,
+                  serviceBookingLink,
+                  setServiceBookingLink,
+                  serviceLink,
+                  setServiceLink,
+                  serviceImageUrlsInput,
+                  setServiceImageUrlsInput,
+                  onSaveService: handleAddService,
+                }}
+              />
 
-        <CityGuideCluster
-          guideSectionRef={guideSectionRef}
-          cityName={cityName}
-          config={config}
-          placesLoading={placesLoading}
-          placesLoadError={placesLoadError}
-          reloadPlaces={reloadPlaces}
-        />
+              <div className="xl:hidden">
+                <CityNavigationCluster
+                  cityPlacesCount={cityPlaces.length}
+                  cityEventCount={cityEventCount}
+                  cityServiceCount={cityServiceCount}
+                  activeCitySection={activeCitySection}
+                  onGoHome={() => scrollToSection(guideSectionRef)}
+                  onGoMap={() => scrollToSection(mapWrapperRef)}
+                  onGoEvents={() => scrollToSection(tonightSectionRef)}
+                  onGoGuide={() => scrollToSection(guideSectionRef)}
+                  onGoServices={() => scrollToSection(servicesSectionRef)}
+                  onGoVenues={() => scrollToSection(placesSectionRef)}
+                  onGoVenueType={handleGoVenueType}
+                  venueJumpGroups={venueJumpGroups}
+                  activeVenueFilter={activeVenueFilter}
+                />
+              </div>
 
-        <CityTonightCluster
-          sectionRef={tonightSectionRef}
-          cityName={cityName}
-          tonightFeedTab={tonightFeedTab}
-          setTonightFeedTab={setTonightFeedTab}
-          isMember={isMember}
-          hostPrivateEventOpen={hostPrivateEventOpen}
-          setHostPrivateEventOpen={setHostPrivateEventOpen}
-          redirectToJoin={redirectToJoin}
-          eventsLoadError={eventsLoadError}
-          fetchEvents={fetchEvents}
-          eventsLoading={eventsLoading}
-          featuredEvent={featuredEvent}
-          openEvent={openEvent}
-          setHoveredEventId={setHoveredEventId}
-          hoveredEventId={hoveredEventId}
-          isFocusMode={isFocusMode}
-          selectedEvent={selectedEvent}
-          formatEventDateLabel={formatEventDateLabel}
-          remainingEvents={remainingEvents}
-          openEventContribution={openEventContribution}
-          privateEventsTableMissing={privateEventsTableMissing}
-          privateEventsError={privateEventsError}
-          privateEventsLoading={privateEventsLoading}
-          cityPrivateEvents={cityPrivateEvents}
-          getPrivateEventStatus={getPrivateEventStatus}
-          user={user}
-          privateEventInvites={privateEventInvites}
-          privateInviteRequestsByEvent={privateInviteRequestsByEvent}
-          pendingPrivateInviteCountByEvent={pendingPrivateInviteCountByEvent}
-          expandedPrivateHostEventId={expandedPrivateHostEventId}
-          setExpandedPrivateHostEventId={setExpandedPrivateHostEventId}
-          formatEndsIn={formatEndsIn}
-          privateFeedNowTick={privateFeedNowTick}
-          privateEventTypeLabels={PRIVATE_EVENT_TYPE_LABELS}
-          formatDateTime={formatDateTime}
-          deletePrivateEvent={deletePrivateEvent}
-          deletingPrivateEventId={deletingPrivateEventId}
-          isSubmittingPrivateInvite={isSubmittingPrivateInvite}
-          requestPrivateInvite={requestPrivateInvite}
-          privateInviteRequesterProfiles={privateInviteRequesterProfiles}
-          formatDate={formatDate}
-          respondPrivateInviteRequest={respondPrivateInviteRequest}
-          isUpdatingPrivateInviteStatus={isUpdatingPrivateInviteStatus}
-          privateEventForm={privateEventForm}
-          setPrivateEventForm={setPrivateEventForm}
-          privateEventStartPreview={privateEventStartPreview}
-          privateEventExpiresPreview={privateEventExpiresPreview}
-          submitPrivateEvent={submitPrivateEvent}
-          isSubmittingPrivateEvent={isSubmittingPrivateEvent}
-          privateEventTypes={PRIVATE_EVENT_TYPES}
-          todayIso={todayIso}
-          router={router}
-        />
-        <CityEventsRailSection
-          sectionRef={eventsSectionRef}
-          guideSectionRef={guideSectionRef}
-          eventsLoadError={eventsLoadError}
-          fetchEvents={fetchEvents}
-          eventsLoading={eventsLoading}
-          featuredEvent={featuredEvent}
-          qualityMap={qualityMap}
-          openEvent={openEvent}
-          setHoveredEventId={setHoveredEventId}
-          hoveredEventId={hoveredEventId}
-          isFocusMode={isFocusMode}
-          selectedEvent={selectedEvent}
-          formatEventDateLabel={formatEventDateLabel}
-          cityName={cityName}
-          refreshEntityQuality={refreshEntityQuality}
-          canRefreshQuality={canRefreshQuality}
-          formatDate={formatDate}
-          remainingEvents={remainingEvents}
-          isMember={isMember}
-          scrollToSection={scrollToSection}
-          openEventContribution={openEventContribution}
-          redirectToJoin={redirectToJoin}
-        />
+              <div className={effectiveDesktopContentSection === "guide" ? "xl:block" : "xl:hidden"}>
+                <CityGuideCluster
+                  guideSectionRef={guideSectionRef}
+                  cityName={cityName}
+                  config={config}
+                  placesLoading={placesLoading}
+                  placesLoadError={placesLoadError}
+                  reloadPlaces={reloadPlaces}
+                />
+              </div>
 
-        <CityServicesCluster
-          servicesSectionRef={servicesSectionRef}
-          servicesLoading={servicesLoading}
-          cityServiceCount={cityServiceCount}
-          visibleServiceGroups={visibleServiceGroups}
-          servicesLoadError={servicesLoadError}
-          fetchServices={fetchServices}
-          hasAnyServices={hasAnyServices}
-          openService={openService}
-          setHoveredServiceId={setHoveredServiceId}
-          serviceId={serviceId}
-          serviceTypeLabels={SERVICE_TYPE_LABELS}
-          serviceTypeStyles={SERVICE_TYPE_STYLES}
-        />
+              <div className={effectiveDesktopContentSection === "events" ? "xl:block" : "xl:hidden"}>
+                {selectedEvent && (
+                  <div className="mb-6 hidden xl:block">
+                    <SelectedEventPanel
+                      selectedEvent={selectedEvent}
+                      inlineMode
+                      onWheel={handleDesktopPanelWheel}
+                      onClose={closeEvent}
+                      cityLabel={config.title?.replace("Queer ", "")}
+                      cityName={cityName}
+                      liveVibeOptions={LIVE_VIBE_OPTIONS}
+                      eventLiveVibeSignalKey={eventLiveVibeSignalKey}
+                      isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
+                      eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
+                      eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
+                      handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
+                      isMember={isMember}
+                      eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
+                      selectedEventQuality={selectedEventQuality}
+                      formatDate={formatDate}
+                      selectedEventQualityStatus={selectedEventQualityStatus}
+                      refreshEntityQuality={refreshEntityQuality}
+                      canRefreshQuality={canRefreshQuality}
+                      trustedEventSavesCount={trustedEventSavesCount}
+                      isAdmin={isAdmin}
+                      eventAdminOpen={eventAdminOpen}
+                      onToggleEventAdmin={toggleEventAdminEditor}
+                      eventAdminDraft={eventAdminDraft}
+                      setEventAdminDraft={setEventAdminDraft}
+                      handleAdminSaveEventAddressOnly={handleAdminSaveEventAddressOnly}
+                      isSavingEventAddressOnly={isSavingEventAddressOnly}
+                      handleAdminSaveEvent={handleAdminSaveEvent}
+                      isSavingEventAdmin={isSavingEventAdmin}
+                      handleAdminDeleteEvent={handleAdminDeleteEvent}
+                      isDeletingEventAdmin={isDeletingEventAdmin}
+                      favorites={favorites}
+                      toggleFavorite={toggleFavorite}
+                      showEventOnMap={showEventOnMap}
+                      handleReport={handleReport}
+                    />
+                  </div>
+                )}
+                {!selectedEvent && (
+                  <>
+                    <CityTonightCluster
+                      sectionRef={tonightSectionRef}
+                      cityName={cityName}
+                      tonightFeedTab={tonightFeedTab}
+                      setTonightFeedTab={setTonightFeedTab}
+                      isMember={isMember}
+                      hostPrivateEventOpen={hostPrivateEventOpen}
+                      setHostPrivateEventOpen={setHostPrivateEventOpen}
+                      redirectToJoin={redirectToJoin}
+                      eventsLoadError={eventsLoadError}
+                      fetchEvents={fetchEvents}
+                      eventsLoading={eventsLoading}
+                      featuredEvent={featuredEvent}
+                      openEvent={openEvent}
+                      setHoveredEventId={setHoveredEventId}
+                      hoveredEventId={hoveredEventId}
+                      isFocusMode={isFocusMode}
+                      selectedEvent={selectedEvent}
+                      formatEventDateLabel={formatEventDateLabel}
+                      remainingEvents={remainingEvents}
+                      openEventContribution={openEventContribution}
+                      privateEventsTableMissing={privateEventsTableMissing}
+                      privateEventsError={privateEventsError}
+                      privateEventsLoading={privateEventsLoading}
+                      cityPrivateEvents={cityPrivateEvents}
+                      getPrivateEventStatus={getPrivateEventStatus}
+                      user={user}
+                      privateEventInvites={privateEventInvites}
+                      privateInviteRequestsByEvent={privateInviteRequestsByEvent}
+                      pendingPrivateInviteCountByEvent={pendingPrivateInviteCountByEvent}
+                      expandedPrivateHostEventId={expandedPrivateHostEventId}
+                      setExpandedPrivateHostEventId={setExpandedPrivateHostEventId}
+                      formatEndsIn={formatEndsIn}
+                      privateFeedNowTick={privateFeedNowTick}
+                      privateEventTypeLabels={PRIVATE_EVENT_TYPE_LABELS}
+                      formatDateTime={formatDateTime}
+                      deletePrivateEvent={deletePrivateEvent}
+                      deletingPrivateEventId={deletingPrivateEventId}
+                      isSubmittingPrivateInvite={isSubmittingPrivateInvite}
+                      requestPrivateInvite={requestPrivateInvite}
+                      privateInviteRequesterProfiles={privateInviteRequesterProfiles}
+                      formatDate={formatDate}
+                      respondPrivateInviteRequest={respondPrivateInviteRequest}
+                      isUpdatingPrivateInviteStatus={isUpdatingPrivateInviteStatus}
+                      privateEventForm={privateEventForm}
+                      setPrivateEventForm={setPrivateEventForm}
+                      privateEventStartPreview={privateEventStartPreview}
+                      privateEventExpiresPreview={privateEventExpiresPreview}
+                      submitPrivateEvent={submitPrivateEvent}
+                      isSubmittingPrivateEvent={isSubmittingPrivateEvent}
+                      privateEventTypes={PRIVATE_EVENT_TYPES}
+                      todayIso={todayIso}
+                      router={router}
+                    />
+                    <CityEventsRailSection
+                      sectionRef={eventsSectionRef}
+                      guideSectionRef={guideSectionRef}
+                      eventsLoadError={eventsLoadError}
+                      fetchEvents={fetchEvents}
+                      eventsLoading={eventsLoading}
+                      featuredEvent={featuredEvent}
+                      qualityMap={qualityMap}
+                      openEvent={openEvent}
+                      setHoveredEventId={setHoveredEventId}
+                      hoveredEventId={hoveredEventId}
+                      isFocusMode={isFocusMode}
+                      selectedEvent={selectedEvent}
+                      formatEventDateLabel={formatEventDateLabel}
+                      cityName={cityName}
+                      refreshEntityQuality={refreshEntityQuality}
+                      canRefreshQuality={canRefreshQuality}
+                      formatDate={formatDate}
+                      remainingEvents={remainingEvents}
+                      isMember={isMember}
+                      scrollToSection={scrollToSection}
+                      openEventContribution={openEventContribution}
+                      redirectToJoin={redirectToJoin}
+                    />
+                  </>
+                )}
+              </div>
 
-        <CityPlacesCluster
-          placesLoading={placesLoading}
-          hasAnyPlaces={hasAnyPlaces}
-          onReadGuide={() => scrollToSection(guideSectionRef)}
-          canPublish={isMember}
-          onPublishFirstVenue={() => {
-            setAddMode(true);
-            setAddEventMode(false);
-          }}
-          onJoinToPublish={redirectToJoin}
-          visiblePlaceGroups={visiblePlaceGroups}
-          placesSectionRef={placesSectionRef}
-          setVenueGroupRef={setVenueGroupRef}
-          isFocusMode={isFocusMode}
-          selectedPlaceId={selectedPlace?.id}
-          hoveredPlaceId={hoveredPlaceId}
-          openPlace={openPlace}
-          setHoveredPlaceId={setHoveredPlaceId}
-          toggleFavorite={toggleFavorite}
-          favorites={favorites}
-          typeStyles={TYPE_STYLES}
-          typeLabels={TYPE_LABELS}
-          qualityMap={qualityMap}
-          refreshEntityQuality={refreshEntityQuality}
-          canRefreshQuality={canRefreshQuality}
-          formatDate={formatDate}
-          cityName={cityName}
-          safetySignalsByPlaceId={safetySignalsByPlaceId}
-        />
+              <div className={effectiveDesktopContentSection === "services" ? "xl:block" : "xl:hidden"}>
+                {selectedService && (
+                  <div className="mb-6 hidden xl:block">
+                    <SelectedServicePanel
+                      selectedService={selectedService}
+                      inlineMode
+                      onWheel={handleDesktopPanelWheel}
+                      onClose={closeService}
+                      selectedServiceImages={selectedServiceImages}
+                      cityLabel={config.title?.replace("Queer ", "")}
+                      serviceTypeLabels={SERVICE_TYPE_LABELS}
+                      selectedServiceQuality={selectedServiceQuality}
+                      selectedServiceQualityStatus={selectedServiceQualityStatus}
+                      refreshEntityQuality={refreshEntityQuality}
+                      canRefreshQuality={canRefreshQuality}
+                      formatDate={formatDate}
+                      canEditSelectedService={canEditSelectedService}
+                      canDeleteSelectedService={canDeleteSelectedService}
+                      serviceAdminOpen={serviceAdminOpen}
+                      onToggleServiceAdmin={toggleServiceAdminEditor}
+                      serviceAdminDraft={serviceAdminDraft}
+                      setServiceAdminDraft={setServiceAdminDraft}
+                      onSaveServiceAddressOnly={handleAdminSaveServiceAddressOnly}
+                      isSavingServiceAddressOnly={isSavingServiceAddressOnly}
+                      onSaveService={handleAdminSaveService}
+                      isSavingServiceAdmin={isSavingServiceAdmin}
+                      onDeleteService={handleAdminDeleteService}
+                      isDeletingServiceAdmin={isDeletingServiceAdmin}
+                      serviceTypes={SERVICE_TYPES}
+                      priceTierOptions={SERVICE_PRICE_TIER_OPTIONS}
+                      bookingUrl={selectedServiceBookingUrl}
+                      linkUrl={selectedServiceLinkUrl}
+                      canShowOnMap={canShowSelectedServiceOnMap}
+                      onShowOnMap={showServiceOnMap}
+                      onReportService={handleReportSelectedService}
+                    />
+                  </div>
+                )}
+                <div className={selectedService ? "xl:hidden" : ""}>
+                  <CityServicesCluster
+                    servicesSectionRef={servicesSectionRef}
+                    servicesLoading={servicesLoading}
+                    cityServiceCount={cityServiceCount}
+                    visibleServiceGroups={visibleServiceGroups}
+                    servicesLoadError={servicesLoadError}
+                    fetchServices={fetchServices}
+                    hasAnyServices={hasAnyServices}
+                    openService={openService}
+                    setHoveredServiceId={setHoveredServiceId}
+                    serviceId={serviceId}
+                    serviceTypeLabels={SERVICE_TYPE_LABELS}
+                    serviceTypeStyles={SERVICE_TYPE_STYLES}
+                  />
+                </div>
+              </div>
+
+              <div className={effectiveDesktopContentSection === "venues" ? "xl:block" : "xl:hidden"}>
+                {selectedPlace && (
+                  <div className="mb-6 hidden xl:block">
+                    <SelectedPlacePanel
+                      selectedPlace={selectedPlace}
+                      inlineMode
+                      onWheel={handleDesktopPanelWheel}
+                      onClose={closePlace}
+                      cityName={cityName}
+                      typeLabels={TYPE_LABELS}
+                      selectedPlaceSafetySignal={selectedPlaceSafetySignal}
+                      liveVibeSummary={liveVibeSummary}
+                      liveVibeHeadline={liveVibeHeadline}
+                      liveVibePulse={liveVibePulse}
+                      liveVibeConsensus={liveVibeConsensus}
+                      liveVibeUpdatedLabel={liveVibeUpdatedLabel}
+                      liveVibeTableMissing={liveVibeTableMissing}
+                      handleSubmitLiveVibe={handleSubmitLiveVibe}
+                      isSubmittingLiveVibe={isSubmittingLiveVibe}
+                      liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
+                      liveVibeSubmittingKey={liveVibeSubmittingKey}
+                      liveVibeJustSentKey={liveVibeJustSentKey}
+                      liveVibeOptions={LIVE_VIBE_OPTIONS}
+                      isMember={isMember}
+                      liveVibeSelectedOption={liveVibeSelectedOption}
+                      isLoadingLiveVibe={isLoadingLiveVibe}
+                      liveVibeError={liveVibeError}
+                      liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
+                      showLiveVibeMomentum={showLiveVibeMomentum}
+                      setShowLiveVibeMomentum={setShowLiveVibeMomentum}
+                      liveVibeMemberMomentum={liveVibeMemberMomentum}
+                      liveVibeStreakNudge={liveVibeStreakNudge}
+                      selectedPlaceQuality={selectedPlaceQuality}
+                      selectedPlaceQualityStatus={selectedPlaceQualityStatus}
+                      refreshEntityQuality={refreshEntityQuality}
+                      canRefreshQuality={canRefreshQuality}
+                      formatDate={formatDate}
+                      trustedPlaceSavesCount={trustedPlaceSavesCount}
+                      isAdmin={isAdmin}
+                      placeAdminOpen={placeAdminOpen}
+                      onTogglePlaceAdmin={togglePlaceAdminEditor}
+                      placeAdminDraft={placeAdminDraft}
+                      setPlaceAdminDraft={setPlaceAdminDraft}
+                      handleAdminSavePlaceAddressOnly={handleAdminSavePlaceAddressOnly}
+                      isSavingPlaceAddressOnly={isSavingPlaceAddressOnly}
+                      handleAdminSavePlace={handleAdminSavePlace}
+                      isSavingPlaceAdmin={isSavingPlaceAdmin}
+                      handleAdminDeletePlace={handleAdminDeletePlace}
+                      isDeletingPlaceAdmin={isDeletingPlaceAdmin}
+                      placeTypes={TYPES}
+                      handleReport={handleReport}
+                      toggleFavorite={toggleFavorite}
+                      favorites={favorites}
+                      reviews={reviews}
+                      canReviewSelectedPlace={canReviewSelectedPlace}
+                      isSubmittingReview={isSubmittingReview}
+                      onJoinToReview={handleJoinToPlaceReview}
+                      rating={rating}
+                      hoverRating={hoverRating}
+                      setHoverRating={setHoverRating}
+                      setRating={setRating}
+                      safetyRating={safetyRating}
+                      hoverSafetyRating={hoverSafetyRating}
+                      setHoverSafetyRating={setHoverSafetyRating}
+                      setSafetyRating={setSafetyRating}
+                      comment={comment}
+                      setComment={setComment}
+                      onSubmitReview={handleSubmitPlaceReview}
+                    />
+                  </div>
+                )}
+                <div className={selectedPlace ? "xl:hidden" : ""}>
+                  <CityPlacesCluster
+                    placesLoading={placesLoading}
+                    hasAnyPlaces={hasAnyPlaces}
+                    onReadGuide={() => scrollToSection(guideSectionRef)}
+                    canPublish={isMember}
+                    onPublishFirstVenue={() => {
+                      setAddMode(true);
+                      setAddEventMode(false);
+                    }}
+                    onJoinToPublish={redirectToJoin}
+                    visiblePlaceGroups={visiblePlaceGroups}
+                    placesSectionRef={placesSectionRef}
+                    setVenueGroupRef={setVenueGroupRef}
+                    isFocusMode={isFocusMode}
+                    selectedPlaceId={selectedPlace?.id}
+                    hoveredPlaceId={hoveredPlaceId}
+                    openPlace={openPlace}
+                    setHoveredPlaceId={setHoveredPlaceId}
+                    toggleFavorite={toggleFavorite}
+                    favorites={favorites}
+                    typeStyles={TYPE_STYLES}
+                    typeLabels={TYPE_LABELS}
+                    qualityMap={qualityMap}
+                    refreshEntityQuality={refreshEntityQuality}
+                    canRefreshQuality={canRefreshQuality}
+                    formatDate={formatDate}
+                    cityName={cityName}
+                    safetySignalsByPlaceId={safetySignalsByPlaceId}
+                  />
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
 
       <CityDetailsLayer

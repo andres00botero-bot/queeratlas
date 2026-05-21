@@ -5,8 +5,6 @@ import SectionSkeleton from "@/components/city/SectionSkeleton";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
 
-const DEFAULT_VISIBLE_EVENTS = 5;
-
 export default function TonightPublicFeedPanel({
   eventsLoadError,
   fetchEvents,
@@ -24,10 +22,8 @@ export default function TonightPublicFeedPanel({
   openEventContribution,
   redirectToJoin,
 }) {
-  const isEventsScrollable = remainingEvents.length > DEFAULT_VISIBLE_EVENTS;
-
   return (
-    <div className="space-y-3 rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5">
+    <div className="space-y-3 rounded-[24px] border border-violet-300/12 bg-[linear-gradient(180deg,rgba(38,30,60,0.58),rgba(15,15,15,0.96))] p-5 text-justify">
       {eventsLoadError ? (
         <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
           <p>{eventsLoadError}</p>
@@ -87,7 +83,7 @@ export default function TonightPublicFeedPanel({
       ) : null}
 
       {!eventsLoading ? (
-        <div className={`${isEventsScrollable ? "max-h-[560px] space-y-3 overflow-y-auto pr-1 md:max-h-[680px]" : "space-y-3"}`}>
+        <div className="space-y-3">
           {remainingEvents.map((event) => (
             <div
               key={event.id}

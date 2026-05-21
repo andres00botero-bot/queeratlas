@@ -134,6 +134,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDeferredSections, setShowDeferredSections] = useState(false);
   const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
+  const [nowTick, setNowTick] = useState(0);
   const deferredQuery = useDeferredValue(query);
   const {
     isMember,
@@ -318,7 +319,9 @@ export default function HomePageClient({ initialHomeData = null }) {
         places: initialPlaces,
         worldNews: initialWorldNews,
       });
-      setIsDataLoading(false);
+      queueMicrotask(() => {
+        setIsDataLoading(false);
+      });
       return () => {};
     }
 
@@ -390,9 +393,11 @@ export default function HomePageClient({ initialHomeData = null }) {
     const hash = window.location.hash || "";
     if (!hash.includes("type=recovery")) return;
 
-    setShowSignup(true);
-    setAuthMode("reset");
-    setAuthMessage("Recovery verified. Set a new password.");
+    queueMicrotask(() => {
+      setShowSignup(true);
+      setAuthMode("reset");
+      setAuthMessage("Recovery verified. Set a new password.");
+    });
   }, [isMember]);
 
   useEffect(() => {
@@ -427,8 +432,10 @@ export default function HomePageClient({ initialHomeData = null }) {
 
     const normalizedQuery = String(deferredQuery || "").trim();
     if (normalizedQuery.length < 2) {
-      setResults([]);
-      setShowResults(true);
+      queueMicrotask(() => {
+        setResults([]);
+        setShowResults(true);
+      });
       return;
     }
 
@@ -520,7 +527,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   );
   const strongestCitySignal = topCities[0] || null;
   const nextUpcomingEvent = useMemo(() => {
-    const nowTimestamp = Date.now();
+    const nowTimestamp = Number(nowTick || 0);
     const upcoming = [...events]
       .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
       .filter((event) => event.__ts > 0 && event.__ts >= nowTimestamp)
@@ -532,7 +539,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
       .filter((event) => event.__ts > 0)
       .sort((a, b) => b.__ts - a.__ts)[0] || null;
-  }, [events]);
+  }, [events, nowTick]);
   const nextEventFreshness = useMemo(
     () => getFreshnessSignal(nextUpcomingEvent?.date),
     [nextUpcomingEvent]
@@ -574,11 +581,13 @@ export default function HomePageClient({ initialHomeData = null }) {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
-      setDailyMetricsSnapshot({
-        dateKey: String(parsed.dateKey),
-        cities: Number(parsed.cities) || 0,
-        places: Number(parsed.places) || 0,
-        events: Number(parsed.events) || 0,
+      queueMicrotask(() => {
+        setDailyMetricsSnapshot({
+          dateKey: String(parsed.dateKey),
+          cities: Number(parsed.cities) || 0,
+          places: Number(parsed.places) || 0,
+          events: Number(parsed.events) || 0,
+        });
       });
     } catch {
       // Ignore local cache parse issues.
@@ -589,27 +598,41 @@ export default function HomePageClient({ initialHomeData = null }) {
     if (isDataLoading) return;
 
     const dateKey = getLocalDateKey();
-    setDailyMetricsSnapshot((current) => {
-      if (String(current?.dateKey || "") === dateKey) {
-        return current;
-      }
+    queueMicrotask(() => {
+      setDailyMetricsSnapshot((current) => {
+        if (String(current?.dateKey || "") === dateKey) {
+          return current;
+        }
 
-      const nextSnapshot = {
-        dateKey,
-        cities: Number(cityCount) || 0,
-        places: Number(placeCount) || 0,
-        events: Number(eventCount) || 0,
-      };
+        const nextSnapshot = {
+          dateKey,
+          cities: Number(cityCount) || 0,
+          places: Number(placeCount) || 0,
+          events: Number(eventCount) || 0,
+        };
 
-      try {
-        localStorage.setItem(HOME_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
-      } catch {
-        // Ignore local cache write issues.
-      }
+        try {
+          localStorage.setItem(HOME_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
+        } catch {
+          // Ignore local cache write issues.
+        }
 
-      return nextSnapshot;
+        return nextSnapshot;
+      });
     });
   }, [cityCount, eventCount, isDataLoading, placeCount]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setNowTick(Date.now());
+    });
+    const id = window.setInterval(() => {
+      setNowTick(Date.now());
+    }, 60 * 1000);
+    return () => {
+      window.clearInterval(id);
+    };
+  }, []);
 
   const topLaneCards = [
     {

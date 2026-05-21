@@ -213,16 +213,22 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!userId) {
-      setHiddenThreadIds([]);
+      queueMicrotask(() => {
+        setHiddenThreadIds([]);
+      });
       return;
     }
     const stored = readLocalJson(hiddenThreadStorageKey, []);
     if (!Array.isArray(stored)) {
-      setHiddenThreadIds([]);
+      queueMicrotask(() => {
+        setHiddenThreadIds([]);
+      });
       return;
     }
     const normalized = [...new Set(stored.map((value) => String(value || "").trim()).filter(Boolean))];
-    setHiddenThreadIds(normalized);
+    queueMicrotask(() => {
+      setHiddenThreadIds(normalized);
+    });
   }, [hiddenThreadStorageKey, userId]);
 
   useEffect(() => {
@@ -232,12 +238,16 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!userId) {
-      setThreadResetAtById({});
+      queueMicrotask(() => {
+        setThreadResetAtById({});
+      });
       return;
     }
     const stored = readLocalJson(threadResetStorageKey, {});
     if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
-      setThreadResetAtById({});
+      queueMicrotask(() => {
+        setThreadResetAtById({});
+      });
       return;
     }
     const normalized = {};
@@ -247,7 +257,9 @@ export default function MessagesPage() {
       if (!threadId || !Number.isFinite(resetAt) || resetAt <= 0) return;
       normalized[threadId] = resetAt;
     });
-    setThreadResetAtById(normalized);
+    queueMicrotask(() => {
+      setThreadResetAtById(normalized);
+    });
   }, [threadResetStorageKey, userId]);
 
   useEffect(() => {
@@ -271,9 +283,11 @@ export default function MessagesPage() {
     const nextUserName = String(params.get("name") || "").trim();
     const nextCompose = String(params.get("compose") || "").trim() === "1";
 
-    if (nextUserId) setStartUserId(nextUserId);
-    if (nextUserName) setStartUserName(nextUserName);
-    setStartCompose(nextCompose);
+    queueMicrotask(() => {
+      if (nextUserId) setStartUserId(nextUserId);
+      if (nextUserName) setStartUserName(nextUserName);
+      setStartCompose(nextCompose);
+    });
   }, []);
 
   const vipInviteCounts = useMemo(() => {
@@ -1296,7 +1310,9 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!isReady || !isMember || !userId) return undefined;
 
-    loadPendingSubmissionAlerts();
+    queueMicrotask(() => {
+      loadPendingSubmissionAlerts();
+    });
     const onVisible = () => {
       if (document.visibilityState === "visible") {
         loadPendingSubmissionAlerts({ silent: true });
@@ -1327,12 +1343,14 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!vipInvitesLoadedOnce) return;
-    if (pendingHostActions > 0 && vipFilter === "all") {
-      setVipFilter("host");
-    }
-    if (pendingHostActions > 0) {
-      setVipPanelCollapsed(false);
-    }
+    queueMicrotask(() => {
+      if (pendingHostActions > 0 && vipFilter === "all") {
+        setVipFilter("host");
+      }
+      if (pendingHostActions > 0) {
+        setVipPanelCollapsed(false);
+      }
+    });
   }, [pendingHostActions, vipFilter, vipInvitesLoadedOnce]);
 
   useEffect(() => {
