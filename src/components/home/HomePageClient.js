@@ -781,6 +781,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 quality={100}
                 sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
                 className="object-cover object-center opacity-96"
+                style={{ objectPosition: "center calc(50% - 1.5cm)" }}
               />
             </div>
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(104deg,rgba(3,6,18,0.9)_0%,rgba(5,7,16,0.74)_38%,rgba(7,7,12,0.22)_68%,rgba(7,7,12,0.5)_100%)]" />
