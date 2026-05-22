@@ -240,6 +240,11 @@ export default function AdminPage() {
       const servicesRows = Array.isArray(servicesRes.data) ? servicesRes.data : [];
       const globalRows = Array.isArray(globalListRes.data) ? globalListRes.data : [];
       const contactRows = Array.isArray(contactThreadsRes?.data) ? contactThreadsRes.data : [];
+      const contactWarning =
+        contactThreadsRes?.error &&
+        !isMissingRelationError(contactThreadsRes.error)
+          ? `Contact inbox unavailable: ${formatDbError(contactThreadsRes.error)}`
+          : "";
       let migrationRunWarning = "";
       let nextLatestRun = null;
       const trafficRes = await fetchTrafficSummary(30);
@@ -298,9 +303,9 @@ export default function AdminPage() {
       });
       setTrafficSummary(trafficRes);
 
-      if (moderationRes?.warning || migrationRunWarning || (!trafficRes.ok && trafficRes.message)) {
+      if (moderationRes?.warning || migrationRunWarning || (!trafficRes.ok && trafficRes.message) || contactWarning) {
         setWarning(
-          [moderationRes?.warning, migrationRunWarning, !trafficRes.ok ? trafficRes.message : ""]
+          [moderationRes?.warning, migrationRunWarning, !trafficRes.ok ? trafficRes.message : "", contactWarning]
             .filter(Boolean)
             .join(" ")
         );

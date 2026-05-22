@@ -35,7 +35,7 @@ function clampSeoText(value, max = 260) {
     .replace(/\s+/g, " ")
     .trim();
   if (normalized.length <= max) return normalized;
-  return `${normalized.slice(0, max - 1)}â€¦`;
+  return `${normalized.slice(0, max - 1)}…`;
 }
 
 function formatRatingValue(value) {
@@ -197,7 +197,7 @@ const ATLAS_DESTINATION_RANKINGS = {
     { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
     { city: "new_york", country: "USA", signal: "Historic queer legacy + constant reinvention across boroughs." },
     { city: "sao_paulo", country: "Brazil", signal: "Massive scene scale, iconic nightlife, bold community pulse." },
-    { city: "madrid", country: "Spain", signal: "Late-night social flow with one of EuropeÃ¢â‚¬â„¢s strongest queer cores." },
+    { city: "madrid", country: "Spain", signal: "Late-night social flow with one of Europe’s strongest queer cores." },
     { city: "toronto", country: "Canada", signal: "Safe, inclusive, and packed with year-round queer programming." },
     { city: "san_francisco", country: "USA", signal: "Foundational queer history with deeply rooted local community." },
     { city: "paris", country: "France", signal: "Creative queer nightlife and culture-rich neighborhood discovery." },
@@ -2791,7 +2791,7 @@ export default function NowPage() {
               >
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md sm:px-6">
                   <p className="text-[11px] uppercase tracking-[0.15em] text-white/70">
-                    {readingNewsItem.city || "Global"} Â· {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                    {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
                   </p>
                   <button
                     type="button"
@@ -2815,7 +2815,7 @@ export default function NowPage() {
                   ) : null}
                   <div className="p-4 sm:p-6">
                     <p className="text-[11px] uppercase tracking-[0.15em] text-white/58">
-                      {readingNewsItem.city || "Global"} Â· {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                      {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
                     </p>
                     <h3 id="now-news-reader-title" className="mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
                       {readingNewsItem.title}

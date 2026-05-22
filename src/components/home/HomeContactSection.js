@@ -58,7 +58,15 @@ export default function HomeContactSection({
 
   const submitContact = async (event) => {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (submitting) return;
+    if (subject.trim().length < 3) {
+      setErrorMessage("Subject must be at least 3 characters.");
+      return;
+    }
+    if (message.trim().length < 20) {
+      setErrorMessage("Message must be at least 20 characters.");
+      return;
+    }
     setSubmitting(true);
     setErrorMessage("");
     setSuccessRef("");
@@ -251,7 +259,7 @@ export default function HomeContactSection({
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <button
               type="submit"
-              disabled={!canSubmit}
+              disabled={submitting}
               className="qa-action qa-action-strong rounded-full border border-cyan-100/70 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-5 py-2.5 text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Sending..." : "Send message"}
