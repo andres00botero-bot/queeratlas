@@ -10,6 +10,7 @@ export default function HomeDeferredSections({
   livePulseCards = [],
   topCities = [],
   onOpenCities,
+  contactSlot = null,
 }) {
   return (
     <>
@@ -167,6 +168,8 @@ export default function HomeDeferredSections({
           </div>
         </div>
       </section>
+
+      {contactSlot}
 
       <section className="mt-10 pb-4 opacity-70 qa-defer-render">
         <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">

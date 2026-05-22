@@ -120,6 +120,17 @@ function resolveAvatarUrlFromProfile(profileLike) {
   return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
 }
 
+function formatContactCategory(value = "") {
+  const map = {
+    bug_report: "Bug report",
+    safety_concern: "Safety concern",
+    venue_event_correction: "Venue/Event correction",
+    general_feedback: "General feedback",
+    business_inquiry: "Business inquiry",
+  };
+  return map[String(value || "").trim()] || formatTitle(value);
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
@@ -198,12 +209,13 @@ export default function AdminPage() {
   const [isLoadingPendingSubmissions, setIsLoadingPendingSubmissions] = useState(false);
   const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
   const [isProcessingSubmissionId, setIsProcessingSubmissionId] = useState("");
+  const [contactThreads, setContactThreads] = useState([]);
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
     setWarning("");
     try {
-      const [placesCountRes, eventsCountRes, servicesCountRes, globalEventsRes, moderationRes, placesRes, eventsRes, servicesRes, globalListRes] =
+      const [placesCountRes, eventsCountRes, servicesCountRes, globalEventsRes, moderationRes, placesRes, eventsRes, servicesRes, globalListRes, contactThreadsRes] =
         await Promise.all([
         fetchPlacesQueryWithFallback({ select: "*", options: { count: "exact", head: true } }),
         supabase.from("events").select("*", { count: "exact", head: true }),
@@ -214,6 +226,11 @@ export default function AdminPage() {
         supabase.from("events").select("id,name,city,date,vibe,vibe_tags"),
         fetchServicesQuery({ select: "id,name,city,type,vibe,vibe_tags" }),
         supabase.from("global_events").select("id,name,city,date,vibe,vibe_tags"),
+        supabase
+          .from("contact_threads")
+          .select("id,created_at,updated_at,status,priority,category,subject,message,is_anonymous,sender_name,sender_email,user_id,city_context,page_context")
+          .order("created_at", { ascending: false })
+          .limit(120),
       ]);
 
       const reportsRows = moderationRes?.reports || getReports();
@@ -222,6 +239,7 @@ export default function AdminPage() {
       const eventsRows = Array.isArray(eventsRes.data) ? eventsRes.data : [];
       const servicesRows = Array.isArray(servicesRes.data) ? servicesRes.data : [];
       const globalRows = Array.isArray(globalListRes.data) ? globalListRes.data : [];
+      const contactRows = Array.isArray(contactThreadsRes?.data) ? contactThreadsRes.data : [];
       let migrationRunWarning = "";
       let nextLatestRun = null;
       const trafficRes = await fetchTrafficSummary(30);
@@ -247,6 +265,24 @@ export default function AdminPage() {
       setEvents(eventsRows);
       setServices(servicesRows);
       setGlobalEvents(globalRows);
+      setContactThreads(
+        contactRows.map((row) => ({
+          id: String(row.id || ""),
+          createdAt: row.created_at || "",
+          updatedAt: row.updated_at || "",
+          status: String(row.status || "new"),
+          priority: String(row.priority || "normal"),
+          category: String(row.category || ""),
+          subject: String(row.subject || ""),
+          message: String(row.message || ""),
+          isAnonymous: Boolean(row.is_anonymous),
+          senderName: String(row.sender_name || ""),
+          senderEmail: String(row.sender_email || ""),
+          userId: String(row.user_id || ""),
+          cityContext: String(row.city_context || ""),
+          pageContext: String(row.page_context || ""),
+        }))
+      );
       setLatestVibeMigrationRun(nextLatestRun);
       setQualityMap(getQualityMap());
       setSelectedReportIds((current) =>
@@ -275,6 +311,42 @@ export default function AdminPage() {
       setIsRefreshing(false);
     }
   }, []);
+
+  const updateContactThread = useCallback(
+    async (threadId, patch, okMessage = "Contact thread updated.") => {
+      const id = String(threadId || "").trim();
+      if (!id) return;
+      setBusyMap((current) => ({ ...current, [`contact:${id}`]: true }));
+      try {
+        const { data, error } = await supabase
+          .from("contact_threads")
+          .update(patch)
+          .eq("id", id)
+          .select("id,updated_at,status,priority")
+          .single();
+        if (error) {
+          showToast(error.message || "Could not update contact thread.", { tone: "warn", duration: 2400 });
+          return;
+        }
+        setContactThreads((current) =>
+          current.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  status: String(data?.status || item.status),
+                  priority: String(data?.priority || item.priority),
+                  updatedAt: String(data?.updated_at || item.updatedAt),
+                }
+              : item
+          )
+        );
+        showToast(okMessage, { tone: "ok", duration: 1800 });
+      } finally {
+        setBusyMap((current) => ({ ...current, [`contact:${id}`]: false }));
+      }
+    },
+    [showToast]
+  );
 
   const loadMemberDirectory = useCallback(async () => {
     setMemberDirectoryLoading(true);
@@ -354,6 +426,10 @@ export default function AdminPage() {
   const openReports = useMemo(
     () => reports.filter((item) => String(item.status || "open") === "open"),
     [reports]
+  );
+  const openContactThreads = useMemo(
+    () => contactThreads.filter((item) => item.status !== "resolved" && item.status !== "closed"),
+    [contactThreads]
   );
 
   useEffect(() => {
@@ -2757,6 +2833,111 @@ export default function AdminPage() {
             ) : (
               <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
                 No actions logged yet.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-cyan-300/16 bg-[linear-gradient(180deg,rgba(7,32,52,0.84),rgba(10,10,10,0.98))] p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/80">Contact inbox</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Home contact threads</h2>
+            </div>
+            <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">
+              {openContactThreads.length} open
+            </span>
+          </div>
+          <div className="space-y-3">
+            {contactThreads.length > 0 ? (
+              contactThreads.map((thread) => (
+                <article key={thread.id} className="rounded-2xl border border-white/12 bg-black/25 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-white/14 bg-white/6 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/75">
+                          {formatContactCategory(thread.category)}
+                        </span>
+                        <span className="rounded-full border border-white/14 bg-white/6 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/70">
+                          {thread.status}
+                        </span>
+                        <span
+                          className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] ${
+                            thread.priority === "urgent"
+                              ? "border-rose-200/30 bg-rose-200/12 text-rose-100"
+                              : thread.priority === "high"
+                                ? "border-amber-200/30 bg-amber-200/12 text-amber-100"
+                                : "border-white/14 bg-white/6 text-white/70"
+                          }`}
+                        >
+                          {thread.priority}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-white">{thread.subject || "Contact message"}</p>
+                      <p className="mt-2 text-sm leading-6 text-white/80">{thread.message}</p>
+                      <p className="mt-2 text-xs text-white/55">
+                        From{" "}
+                        {thread.isAnonymous
+                          ? "Anonymous"
+                          : thread.senderName || thread.senderEmail || thread.userId || "Unknown"}
+                        {thread.senderEmail ? ` | ${thread.senderEmail}` : ""}
+                        {thread.cityContext ? ` | ${formatCityLabel(thread.cityContext)}` : ""}
+                        {thread.pageContext ? ` | ${thread.pageContext}` : ""}
+                      </p>
+                      <p className="mt-1 text-[11px] text-white/45">
+                        Created {timeAgo(thread.createdAt)} | Updated {timeAgo(thread.updatedAt)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={Boolean(busyMap[`contact:${thread.id}`])}
+                        onClick={() =>
+                          updateContactThread(
+                            thread.id,
+                            { status: "in_review" },
+                            "Contact thread moved to in review."
+                          )
+                        }
+                        className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
+                      >
+                        In review
+                      </button>
+                      <button
+                        type="button"
+                        disabled={Boolean(busyMap[`contact:${thread.id}`])}
+                        onClick={() =>
+                          updateContactThread(
+                            thread.id,
+                            { priority: "high" },
+                            "Priority set to high."
+                          )
+                        }
+                        className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-amber-100 transition hover:border-amber-200/40 disabled:opacity-60"
+                      >
+                        High priority
+                      </button>
+                      <button
+                        type="button"
+                        disabled={Boolean(busyMap[`contact:${thread.id}`])}
+                        onClick={() =>
+                          updateContactThread(
+                            thread.id,
+                            { status: "resolved" },
+                            "Contact thread resolved."
+                          )
+                        }
+                        className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40 disabled:opacity-60"
+                      >
+                        Resolve
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
+                No contact threads yet. Messages from Home Contact Us will appear here.
               </div>
             )}
           </div>

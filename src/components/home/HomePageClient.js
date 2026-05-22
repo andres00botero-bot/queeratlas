@@ -13,6 +13,7 @@ import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
 import { ArrowUpRight, Search } from "lucide-react";
+import HomeContactSection from "@/components/home/HomeContactSection";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
@@ -988,6 +989,14 @@ export default function HomePageClient({ initialHomeData = null }) {
               livePulseCards={livePulseCards}
               topCities={topCities}
               onOpenCities={() => router.push("/cities")}
+              contactSlot={
+                <HomeContactSection
+                  className="mt-8"
+                  isMember={isMember}
+                  userId={String(user?.id || "")}
+                  defaultName={String(memberProfile?.displayName || memberName || "")}
+                />
+              }
             />
           ) : (
             <div className="mt-12 h-[460px] rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
