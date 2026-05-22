@@ -1044,6 +1044,7 @@ export default function CityPage() {
     return sortedEvents.filter((event) => String(event.id) !== String(featuredEvent.id));
   }, [featuredEvent, sortedEvents]);
   const isFocusMode = Boolean(selectedPlace || selectedEvent || selectedService);
+  const isAddComposerActive = Boolean(addMode || addEventMode || addServiceMode);
   const cityPlaceCount = cityPlaces.length;
   const cityEventCount = cityEvents.length;
   const cityServiceCount = cityServices.length;
@@ -4327,7 +4328,7 @@ export default function CityPage() {
         <div className="mx-auto w-full max-w-[1900px]">
           <div className="xl:grid xl:grid-cols-[224px_minmax(0,1fr)_minmax(360px,440px)] xl:items-start xl:gap-[0.9rem]">
             <aside className="hidden xl:self-start xl:block">
-              <div className="sticky top-6">
+              <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
                 <CityNavigationCluster
                   cityPlacesCount={cityPlaces.length}
                   cityEventCount={cityEventCount}
@@ -4498,7 +4499,7 @@ export default function CityPage() {
                 />
               </div>
 
-              <div className={effectiveDesktopContentSection === "guide" ? "xl:block" : "xl:hidden"}>
+              <div className={effectiveDesktopContentSection === "guide" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
                 <CityGuideCluster
                   guideSectionRef={guideSectionRef}
                   cityName={cityName}
@@ -4509,7 +4510,7 @@ export default function CityPage() {
                 />
               </div>
 
-              <div className={effectiveDesktopContentSection === "events" ? "xl:block" : "xl:hidden"}>
+              <div className={effectiveDesktopContentSection === "events" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
                 {selectedEvent && (
                   <div className="mb-6 hidden xl:block">
                     <SelectedEventPanel
@@ -4635,7 +4636,7 @@ export default function CityPage() {
                 )}
               </div>
 
-              <div className={effectiveDesktopContentSection === "services" ? "xl:block" : "xl:hidden"}>
+              <div className={effectiveDesktopContentSection === "services" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
                 {selectedService && (
                   <div className="mb-6 hidden xl:block">
                     <SelectedServicePanel
@@ -4691,7 +4692,7 @@ export default function CityPage() {
                 </div>
               </div>
 
-              <div className={effectiveDesktopContentSection === "venues" ? "xl:block" : "xl:hidden"}>
+              <div className={effectiveDesktopContentSection === "venues" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
                 {selectedPlace && (
                   <div className="mb-6 hidden xl:block">
                     <SelectedPlacePanel
