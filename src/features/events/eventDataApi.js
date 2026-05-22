@@ -6,6 +6,31 @@ import { mapGlobalEventRow } from "@/features/events/eventViewUtils";
 
 const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
 
+export function splitGlobalEventsByExpiry(rows = [], todayIso = "") {
+  const today = String(todayIso || "").trim();
+  if (!today) {
+    return {
+      active: Array.isArray(rows) ? rows : [],
+      expiredIds: [],
+    };
+  }
+
+  const active = [];
+  const expiredIds = [];
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const normalized = normalizeEventRange(mapGlobalEventRow(row));
+    const endDate = String(normalized.endDate || normalized.startDate || "").trim();
+    const id = String(normalized.id || row?.id || "").trim();
+    if (endDate && endDate < today && id) {
+      expiredIds.push(id);
+      continue;
+    }
+    active.push(row);
+  }
+
+  return { active, expiredIds };
+}
+
 export async function fetchEventsData() {
   const { data, error } = await supabase
     .from("events")

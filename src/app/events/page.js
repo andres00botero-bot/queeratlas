@@ -17,6 +17,7 @@ import {
   fetchEventsData,
   fetchGlobalEventsData,
   migrateLegacyGlobalEventsToSupabase,
+  splitGlobalEventsByExpiry,
 } from "@/features/events/eventDataApi";
 import {
   buildGlobalEventPayloadFromForm,
@@ -92,6 +93,7 @@ export default function EventsPage() {
   const [loadError, setLoadError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSavingGlobal, setIsSavingGlobal] = useState(false);
+  const [deletingGlobalEventId, setDeletingGlobalEventId] = useState("");
   const [cityEditOpen, setCityEditOpen] = useState(false);
   const [isSavingCityEdit, setIsSavingCityEdit] = useState(false);
   const [cityEditError, setCityEditError] = useState("");
@@ -369,21 +371,43 @@ export default function EventsPage() {
       setGlobalEvents([]);
       setGlobalError("Off-grid sync is unavailable right now.");
     } else {
-      setGlobalEvents(globalRes.data || []);
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const activeRows = Array.isArray(globalRes.data) ? globalRes.data : [];
+      const { active, expiredIds } = splitGlobalEventsByExpiry(activeRows, todayIso);
+
+      if (isAdmin && expiredIds.length > 0) {
+        const { error: pruneError } = await supabase
+          .from("global_events")
+          .delete()
+          .in("id", expiredIds);
+        if (pruneError) {
+          setGlobalError(`Off-grid cleanup warning: ${String(pruneError.message || "could not remove expired events")}`);
+        }
+      }
+
+      setGlobalEvents(active);
       const migration = await migrateLegacyGlobalEventsToSupabase();
       if (migration.migrated && !migration.error && Array.isArray(migration.data)) {
-        setGlobalEvents(migration.data);
+        const migratedSplit = splitGlobalEventsByExpiry(migration.data, todayIso);
+        setGlobalEvents(migratedSplit.active);
       }
     }
 
     setIsLoading(false);
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     queueMicrotask(() => {
       loadAllEvents();
     });
   }, [loadAllEvents]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    queueMicrotask(() => {
+      loadAllEvents();
+    });
+  }, [isAdmin, loadAllEvents]);
 
   useEffect(() => {
     if (!normalizedFocusedOffgridId || globalEvents.length === 0) return;
@@ -694,8 +718,12 @@ export default function EventsPage() {
 
   const saveGlobalEvent = async (submitEvent) => {
     submitEvent.preventDefault();
-    if (!isAdmin) {
-      setGlobalError("Admin access required to add or edit off-grid events.");
+    if (!isMember) {
+      setGlobalError("Join as member to add off-grid events.");
+      return;
+    }
+    if (editingGlobalEventId && !isAdmin) {
+      setGlobalError("Admin access required to edit off-grid events.");
       return;
     }
     const { startDate, endDateCandidate, payload } = buildGlobalEventPayloadFromForm(globalForm);
@@ -752,6 +780,32 @@ export default function EventsPage() {
     setShowGlobalForm(false);
     setIsSavingGlobal(false);
   };
+
+  const deleteGlobalEvent = useCallback(
+    async (eventId, clickEvent) => {
+      clickEvent?.stopPropagation();
+      if (!isAdmin) {
+        setGlobalError("Admin access required to delete off-grid events.");
+        return;
+      }
+      const id = String(eventId || "").trim();
+      if (!id) return;
+      setDeletingGlobalEventId(id);
+      setGlobalError("");
+      try {
+        const { error } = await supabase.from("global_events").delete().eq("id", id);
+        if (error) {
+          setGlobalError(`Could not delete off-grid event: ${String(error.message || "unknown error")}`);
+          return;
+        }
+        setGlobalEvents((current) => current.filter((item) => String(item.id || "") !== id));
+        showToast("Off-grid event deleted.", { tone: "success", duration: 1800 });
+      } finally {
+        setDeletingGlobalEventId("");
+      }
+    },
+    [isAdmin, showToast]
+  );
 
   const openCityEdit = (event, clickEvent) => {
     clickEvent?.stopPropagation();
@@ -910,7 +964,7 @@ export default function EventsPage() {
   }, []);
 
   return (
-    <main className="qa-page min-h-screen overflow-x-hidden bg-[#050608] text-white">
+    <main className="qa-page qa-events min-h-screen overflow-x-hidden bg-[#050608] text-white">
       <div className="relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_10%,rgba(56,189,248,0.12),transparent_25%),radial-gradient(circle_at_92%_14%,rgba(236,72,153,0.11),transparent_24%),radial-gradient(circle_at_45%_80%,rgba(249,115,22,0.10),transparent_30%),linear-gradient(180deg,#050608_0%,#090b10_48%,#050608_100%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
@@ -1343,13 +1397,13 @@ export default function EventsPage() {
                       </button>
                       <button
                         onClick={() => {
-                          if (!isAdmin) return;
+                          if (!isMember) return;
                           setShowGlobalForm(true);
                         }}
-                        disabled={!isAdmin}
+                        disabled={!isMember}
                         className="qa-action rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/32 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        {isAdmin ? "Add off-grid event" : "Admin only"}
+                        {isMember ? "Add off-grid event" : "Members only"}
                       </button>
                     </div>
                   </EmptyState>
@@ -1375,26 +1429,21 @@ export default function EventsPage() {
 
               <button
                 onClick={() => {
-                  if (!isAdmin) return;
+                  if (!isMember) return;
                   setShowGlobalForm((current) => !current);
                   if (showGlobalForm) {
                     resetGlobalForm();
                   }
                 }}
-                disabled={!isAdmin}
+                disabled={!isMember}
                 className="qa-action rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                {isAdmin ? (showGlobalForm ? "Close form" : "Add off-grid event") : "Admin only"}
+                {showGlobalForm ? "Close form" : "Add off-grid event"}
               </button>
             </div>
-            {!isAdmin && !isAuthLoading && (
-              <p className="mt-4 text-xs uppercase tracking-[0.18em] text-white/45">
-                Off-grid event editing is restricted to admins.
-              </p>
-            )}
 
             <GlobalEventForm
-              open={isAdmin && showGlobalForm}
+              open={isMember && showGlobalForm}
               editingGlobalEventId={editingGlobalEventId}
               globalForm={globalForm}
               setGlobalForm={setGlobalForm}
@@ -1420,9 +1469,9 @@ export default function EventsPage() {
                   title="No off-grid events yet."
                   description="Add cruises, ski weekends, and destination events here."
                   className="px-5 py-7"
-                  primaryActionLabel={isAdmin ? "Add off-grid event" : "Open all events"}
+                  primaryActionLabel={isMember ? "Add off-grid event" : "Open all events"}
                   onPrimaryAction={() => {
-                    if (isAdmin) {
+                    if (isMember) {
                       setShowGlobalForm(true);
                       return;
                     }
@@ -1494,6 +1543,15 @@ export default function EventsPage() {
                           className="inline-flex rounded-xl border border-emerald-200/24 bg-emerald-200/10 px-3 py-2 text-xs text-emerald-100 transition hover:border-emerald-200/36 hover:bg-emerald-200/16"
                         >
                           Edit event
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          onClick={(clickEvent) => deleteGlobalEvent(event.id, clickEvent)}
+                          disabled={deletingGlobalEventId === String(event.id || "")}
+                          className="inline-flex rounded-xl border border-rose-300/24 bg-rose-300/10 px-3 py-2 text-xs text-rose-100 transition hover:border-rose-300/40 hover:bg-rose-300/16 disabled:cursor-not-allowed disabled:opacity-55"
+                        >
+                          {deletingGlobalEventId === String(event.id || "") ? "Deleting..." : "Delete event"}
                         </button>
                       )}
                       <button

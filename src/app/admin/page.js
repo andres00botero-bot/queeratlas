@@ -1188,6 +1188,22 @@ export default function AdminPage() {
         return { deleted: 1, skipped: 0, failed: 0 };
       }
 
+      if (item.targetType === "global_event") {
+        const { error } = await supabase.from("global_events").delete().eq("id", String(item.targetId));
+        if (error) {
+          if (!silent) {
+            showToast(`Could not delete off-grid event: ${formatDbError(error)}`, { tone: "warn", duration: 2600 });
+          }
+          return { deleted: 0, skipped: 0, failed: 1 };
+        }
+        appendAuditLog("queue_delete", `global_event:${item.targetId}`);
+        if (!silent) {
+          showToast("Off-grid event deleted.", { tone: "ok", duration: 1800 });
+          await loadAdminState();
+        }
+        return { deleted: 1, skipped: 0, failed: 0 };
+      }
+
       if (item.targetType === "service") {
         const numericServiceId = Number(item.targetId);
         if (!Number.isFinite(numericServiceId)) {

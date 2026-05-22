@@ -25,7 +25,34 @@ export function normalizeIsoDate(value = "") {
   const raw = String(value || "").trim();
   if (!raw) return "";
   const iso = raw.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+
+  const yearFirst = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (yearFirst) {
+    const y = Number(yearFirst[1]);
+    const m = Number(yearFirst[2]);
+    const d = Number(yearFirst[3]);
+    if (y >= 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    }
+  }
+
+  const slashYearFirst = raw.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (slashYearFirst) {
+    const y = Number(slashYearFirst[1]);
+    const m = Number(slashYearFirst[2]);
+    const d = Number(slashYearFirst[3]);
+    if (y >= 1900 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      return `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    }
+  }
+
+  const parsed = new Date(raw);
+  if (!Number.isNaN(parsed.getTime())) {
+    return `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+  }
+
+  return "";
 }
 
 export function normalizeEventRange(event = {}) {

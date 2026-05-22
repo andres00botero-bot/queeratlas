@@ -391,6 +391,12 @@ body > div:first-child {
   hyphens: auto;
 }
 
+.qa-events :is(p, li, h1, h2, h3, h4, h5, h6) {
+  text-align: justify !important;
+  text-justify: inter-word !important;
+  hyphens: auto;
+}
+
 @media (min-width: 640px) {
   .qa-now p {
     text-align: justify;

@@ -1,0 +1,9 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/prune-offgrid-events",
+      "schedule": "0 3 * * *"
+    }
+  ]
+}
+
