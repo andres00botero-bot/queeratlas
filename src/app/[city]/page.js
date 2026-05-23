@@ -380,13 +380,42 @@ export default function CityPage() {
     });
   }, []);
 
+  const clearSelectedDetailFromUrl = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const hadSelection =
+      url.searchParams.has("placeId") ||
+      url.searchParams.has("eventId") ||
+      url.searchParams.has("serviceId");
+    if (!hadSelection) return;
+    url.searchParams.delete("placeId");
+    url.searchParams.delete("eventId");
+    url.searchParams.delete("serviceId");
+    url.searchParams.delete("lat");
+    url.searchParams.delete("lng");
+    const nextQuery = url.searchParams.toString();
+    const nextHref = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+    router.replace(nextHref);
+  }, [pathname, router]);
+
   const handleDesktopSectionNav = useCallback((sectionKey, ref) => {
     if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+      const currentDetailSection = eventId
+        ? "events"
+        : placeId
+          ? "venues"
+          : serviceId
+            ? "services"
+            : "";
+      if (currentDetailSection && currentDetailSection !== sectionKey) {
+        selectionOriginRef.current = "left-nav";
+        clearSelectedDetailFromUrl();
+      }
       showDesktopSection(sectionKey);
       return;
     }
     scrollToSection(ref);
-  }, [scrollToSection, showDesktopSection]);
+  }, [clearSelectedDetailFromUrl, eventId, placeId, scrollToSection, serviceId, showDesktopSection]);
 
   const resetMapToCityOverview = useCallback(() => {
     const map = mapRef.current;
