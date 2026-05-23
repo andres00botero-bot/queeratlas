@@ -56,6 +56,7 @@ import EventQualityModal from "@/components/events/EventQualityModal";
 import GlobalEventForm from "@/components/events/GlobalEventForm";
 import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
+import PageControls from "@/components/ui/PageControls";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 
 const EVENTS_METRICS_DAILY_CACHE_KEY = "qa_events_metrics_daily_v1";
@@ -73,12 +74,39 @@ function isDuplicateKeyError(error) {
   return code === "23505";
 }
 
+function titleCaseWords(value = "") {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function normalizeEventVibeKeys(event) {
+  const tagKeys = normalizeVibeTags(event?.vibe_tags, event?.vibe)
+    .map((tag) => String(tag || "").trim().toLowerCase())
+    .filter(Boolean);
+  if (tagKeys.length > 0) return Array.from(new Set(tagKeys));
+
+  const legacy = String(event?.vibe || "")
+    .split(/[,/|]/)
+    .map((part) => String(part || "").trim().toLowerCase())
+    .filter(Boolean);
+  return Array.from(new Set(legacy));
+}
+
 export default function EventsPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
   const { toast, showToast } = useActionToast();
+  const overviewSectionRef = useRef(null);
+  const searchSectionRef = useRef(null);
   const offgridSectionRef = useRef(null);
   const eventListSectionRef = useRef(null);
+  const calendarSectionRef = useRef(null);
+  const eventsControlsRef = useRef(null);
+  const eventsControlButtonsRef = useRef({});
 
   const [events, setEvents] = useState([]);
   const [qualityTick, setQualityTick] = useState(0);
@@ -88,6 +116,9 @@ export default function EventsPage() {
   const [editingGlobalEventId, setEditingGlobalEventId] = useState("");
   const [globalForm, setGlobalForm] = useState(EMPTY_GLOBAL_FORM);
   const [selectedDate, setSelectedDate] = useState("");
+  const [searchDate, setSearchDate] = useState("");
+  const [searchCity, setSearchCity] = useState("");
+  const [searchVibe, setSearchVibe] = useState("");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -120,6 +151,7 @@ export default function EventsPage() {
   });
   const [favoriteIds, setFavoriteIds] = useState(() => readLocalJson(FAVORITES_STORAGE_KEY, []));
   const [addedEntries, setAddedEntries] = useState(() => readLocalJson(ADDED_STORAGE_KEY, []));
+  const [activeEventsSection, setActiveEventsSection] = useState("search");
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -583,6 +615,47 @@ export default function EventsPage() {
 
     return [...futureFirst, ...fallbackPast].slice(0, 3);
   }, [calendarEvents]);
+  const searchCityOptions = useMemo(() => {
+    const counts = new Map();
+    calendarEvents.forEach((event) => {
+      const label = formatCityLabel(event.city || "Global");
+      if (!label) return;
+      counts.set(label, (counts.get(label) || 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [calendarEvents]);
+  const searchVibeOptions = useMemo(() => {
+    const counts = new Map();
+    calendarEvents.forEach((event) => {
+      normalizeEventVibeKeys(event).forEach((key) => {
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+    });
+    return Array.from(counts.entries())
+      .map(([key, count]) => ({
+        key,
+        label: titleCaseWords(key.replaceAll("_", " ")),
+        count,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [calendarEvents]);
+  const searchResults = useMemo(() => {
+    return calendarEvents.filter((event) => {
+      if (searchDate && !eventOverlapsDate(event, searchDate)) return false;
+      if (searchCity) {
+        const cityLabel = formatCityLabel(event.city || "Global");
+        if (cityLabel !== searchCity) return false;
+      }
+      if (searchVibe) {
+        const tags = normalizeEventVibeKeys(event);
+        if (!tags.includes(searchVibe)) return false;
+      }
+      return true;
+    });
+  }, [calendarEvents, searchCity, searchDate, searchVibe]);
+  const hasActiveSearchFilter = Boolean(searchDate || searchCity || searchVibe);
   const activeCities = useMemo(
     () => new Set(events.map((event) => event.city).filter(Boolean)).size,
     [events]
@@ -913,12 +986,6 @@ export default function EventsPage() {
       const url = query ? `${window.location.pathname}?${query}` : window.location.pathname;
       window.history.replaceState({}, "", url);
     }
-
-    requestAnimationFrame(() => {
-      offgridSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      const card = document.getElementById(`offgrid-event-${id}`);
-      card?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
   }, []);
 
   const openEvent = (event) => {
@@ -963,6 +1030,23 @@ export default function EventsPage() {
     });
   }, []);
 
+  const eventSectionButtons = useMemo(
+    () => ([
+      { id: "search", label: "Search" },
+      { id: "calendar", label: "Calender" },
+      { id: "offgrid", label: "Off-grid events" },
+    ]),
+    []
+  );
+
+  const scrollToEventsSection = useCallback((sectionId) => {
+    const normalizedId = String(sectionId || "").trim();
+    setActiveEventsSection(normalizedId);
+  }, []);
+  const showSearchSection = activeEventsSection === "search";
+  const showCalendarSection = activeEventsSection === "calendar";
+  const showOffgridSection = activeEventsSection === "offgrid";
+
   return (
     <main className="qa-page qa-events min-h-screen overflow-x-hidden bg-[#050608] text-white">
       <div className="relative">
@@ -974,7 +1058,11 @@ export default function EventsPage() {
         <div className="pointer-events-none absolute inset-x-0 top-[23rem] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
         <div className="qa-shell relative">
-          <section className="qa-panel qa-premium-card overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8">
+          <section
+            ref={overviewSectionRef}
+            data-events-section-id="hero"
+            className="qa-panel qa-premium-card overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8"
+          >
             <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="flex min-h-[380px] flex-col">
                 <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-white/72 backdrop-blur">
@@ -1106,7 +1194,132 @@ export default function EventsPage() {
             </div>
           </section>
 
-          <section className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <section className="mb-6 mt-8">
+            <PageControls
+              controlsRef={eventsControlsRef}
+              controlButtonsRef={eventsControlButtonsRef}
+              buttons={eventSectionButtons}
+              activeId={activeEventsSection}
+              onSelect={scrollToEventsSection}
+              className="qa-panel"
+            />
+          </section>
+
+          {showSearchSection ? (
+          <section
+            ref={searchSectionRef}
+            data-events-section-id="search"
+            className="qa-premium-card mt-8 overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_18%_12%,rgba(34,211,238,0.14),transparent_34%),radial-gradient(circle_at_82%_12%,rgba(236,72,153,0.10),transparent_34%),linear-gradient(180deg,rgba(14,18,24,0.96),rgba(8,8,8,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7"
+          >
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/58">Search</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
+                  Find events by date, city, or vibe
+                </h2>
+              </div>
+            </div>
+
+            <div className="sticky top-2 z-30 -mx-2 mt-6 rounded-2xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(6,10,14,0.95),rgba(6,10,14,0.90))] px-3 py-3 shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl md:mx-0 md:px-4 md:py-4">
+              <div className="grid gap-3 md:grid-cols-4">
+                <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-white/62">
+                  Date
+                  <input
+                    type="date"
+                    value={searchDate}
+                    onChange={(event) => setSearchDate(String(event.target.value || ""))}
+                    className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55"
+                  />
+                </label>
+                <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-white/62">
+                  City
+                  <select
+                    value={searchCity}
+                    onChange={(event) => setSearchCity(String(event.target.value || ""))}
+                    className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55 [&>option]:bg-[#0b0f14] [&>option]:text-white"
+                  >
+                    <option value="">All cities</option>
+                    {searchCityOptions.map((cityOption) => (
+                      <option key={`city-option-${cityOption.label}`} value={cityOption.label}>
+                        {cityOption.label} ({cityOption.count})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-white/62">
+                  Vibe
+                  <select
+                    value={searchVibe}
+                    onChange={(event) => setSearchVibe(String(event.target.value || ""))}
+                    className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55 [&>option]:bg-[#0b0f14] [&>option]:text-white"
+                  >
+                    <option value="">All vibes</option>
+                    {searchVibeOptions.map((vibeOption) => (
+                      <option key={`vibe-option-${vibeOption.key}`} value={vibeOption.key}>
+                        {vibeOption.label} ({vibeOption.count})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchDate("");
+                      setSearchCity("");
+                      setSearchVibe("");
+                    }}
+                    disabled={!hasActiveSearchFilter}
+                    className="w-full rounded-xl border border-white/16 bg-white/8 px-4 py-2 text-sm text-white/80 transition hover:border-white/28 hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+                <p className="text-sm text-white/70">
+                  {searchResults.length} {searchResults.length === 1 ? "event match" : "event matches"}
+                </p>
+                <p className="text-xs text-white/50">
+                  {searchCityOptions.length} cities | {searchVibeOptions.length} vibes
+                </p>
+              </div>
+            </div>
+
+            <div className="qa-defer-render mt-4 max-h-[560px] space-y-3 overflow-y-auto pr-1">
+              {searchResults.length === 0 ? (
+                <EmptyState
+                  title="No events found."
+                  description="Try another date, city, or vibe."
+                  className="px-5 py-7"
+                />
+              ) : (
+                searchResults.slice(0, 50).map((event) => (
+                  <button
+                    key={`search-event-${event.isGlobal ? "global" : "city"}-${event.id}`}
+                    type="button"
+                    onClick={() => openEvent(event)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-cyan-200/30 hover:bg-white/[0.07]"
+                  >
+                    <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/74">
+                      {formatCityLabel(event.city || "Global")} | {formatEventDateLabel(event)}
+                    </p>
+                    <p className="mt-2 text-base font-semibold text-white">{event.name}</p>
+                    <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
+                  </button>
+                ))
+              )}
+            </div>
+          </section>
+          ) : null}
+
+          {showCalendarSection ? (
+          <section
+            ref={calendarSectionRef}
+            data-events-section-id="calendar"
+            className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]"
+          >
             <div className="qa-premium-card relative overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_14%_10%,rgba(34,211,238,0.16),transparent_36%),radial-gradient(circle_at_85%_12%,rgba(168,85,247,0.14),transparent_34%),radial-gradient(circle_at_50%_85%,rgba(249,115,22,0.10),transparent_40%),linear-gradient(180deg,rgba(17,20,24,0.96),rgba(9,10,12,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
               <div className="pointer-events-none absolute -left-14 -top-14 h-56 w-56 rounded-full bg-fuchsia-500/14 blur-3xl" />
               <div className="pointer-events-none absolute -right-12 top-16 h-52 w-52 rounded-full bg-blue-500/14 blur-3xl" />
@@ -1183,29 +1396,25 @@ export default function EventsPage() {
                       onClick={() => selectCalendarDate(dateStr)}
                       className={`h-20 rounded-2xl border p-2 text-left transition sm:h-24 sm:p-3 ${
                         isSelected
-                          ? "border-fuchsia-300/34 bg-[linear-gradient(180deg,rgba(236,72,153,0.22),rgba(91,33,182,0.30))] shadow-[0_20px_48px_rgba(217,70,239,0.20)]"
-                          : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] hover:border-white/18 hover:bg-white/8"
+                          ? "border-fuchsia-200/72 bg-[linear-gradient(180deg,rgba(232,121,249,0.20),rgba(76,29,149,0.34))] shadow-[0_0_0_1px_rgba(244,114,182,0.45),0_18px_44px_rgba(168,85,247,0.30)]"
+                          : eventsCount > 0
+                            ? "border-cyan-300/38 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.02))] shadow-[0_0_0_1px_rgba(56,189,248,0.14)] hover:border-cyan-200/52 hover:bg-[linear-gradient(180deg,rgba(34,211,238,0.18),rgba(255,255,255,0.03))] hover:shadow-[0_0_0_1px_rgba(103,232,249,0.30),0_14px_32px_rgba(6,182,212,0.20)]"
+                            : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] hover:border-white/18 hover:bg-white/8"
                       }`}
                     >
-                      <p className="inline-block whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal] text-[13px] font-semibold leading-none tracking-normal text-white sm:text-sm sm:font-medium">
+                      <p className={`inline-block whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal] text-[13px] font-semibold leading-none tracking-normal sm:text-sm sm:font-medium ${
+                        isSelected ? "text-white" : eventsCount > 0 ? "text-cyan-100" : "text-white"
+                      }`}>
                         {day}
                       </p>
 
                       {eventsCount > 0 && (
                         <div className="mt-2 sm:mt-3">
-                          <p className="hidden text-[11px] text-white/48 sm:block">
+                          <p className={`text-[10px] uppercase tracking-[0.16em] sm:text-[11px] ${
+                            isSelected ? "text-fuchsia-100/90" : "text-cyan-100/80"
+                          }`}>
                             {eventsCount} {eventsCount === 1 ? "event" : "events"}
                           </p>
-                          <div className="mt-2 flex gap-1 sm:gap-1.5">
-                            {[...Array(Math.min(eventsCount, 3))].map((_, dotIndex) => (
-                              <span
-                                key={`${day}-${dotIndex}`}
-                                className={`h-2 w-2 rounded-full bg-gradient-to-r from-fuchsia-400 via-rose-400 to-orange-300 shadow-[0_0_16px_rgba(244,114,182,0.65)] sm:h-2.5 sm:w-2.5 ${
-                                  dotIndex > 0 ? "hidden sm:inline-flex" : "inline-flex"
-                                }`}
-                              />
-                            ))}
-                          </div>
                         </div>
                       )}
                     </button>
@@ -1411,8 +1620,14 @@ export default function EventsPage() {
               </div>
             </div>
           </section>
+          ) : null}
 
-          <section ref={offgridSectionRef} className="qa-premium-card mt-8 overflow-hidden rounded-[34px] border border-emerald-300/14 bg-[linear-gradient(165deg,rgba(16,20,18,0.96),rgba(8,8,8,0.98))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7">
+          {showOffgridSection ? (
+          <section
+            ref={offgridSectionRef}
+            data-events-section-id="offgrid"
+            className="qa-premium-card mt-8 overflow-hidden rounded-[34px] border border-emerald-300/14 bg-[linear-gradient(165deg,rgba(16,20,18,0.96),rgba(8,8,8,0.98))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7"
+          >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-emerald-100/58">
@@ -1568,6 +1783,7 @@ export default function EventsPage() {
               )}
             </div>
           </section>
+          ) : null}
         </div>
       </div>
       <CityEventEditModal
