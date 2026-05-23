@@ -85,7 +85,7 @@ export function getQualityStatus(quality) {
 
   if (stale) {
     return {
-      label: "Needs refresh",
+      label: "Community",
       tone: "stale",
       stale: true,
     };

@@ -2,9 +2,7 @@ export function resolveQualityUpdate(action, fallbackSource = "", sourceInput = 
   const sourceDefaultByAction =
     action === "1"
       ? fallbackSource || "Community verified"
-      : action === "2"
-        ? fallbackSource || "Community flagged: needs review"
-        : fallbackSource || "Community flagged: closed or moved";
+      : fallbackSource || "Community flagged: closed or moved";
 
   const sourceByAction = String(sourceInput || "").trim() || sourceDefaultByAction;
   const verified = action === "1";
@@ -20,10 +18,6 @@ export function resolveQualityUpdate(action, fallbackSource = "", sourceInput = 
 export function getQualityToastConfig(action) {
   if (action === "1") {
     return { message: "Trust status updated: verified.", tone: "ok", duration: 2000 };
-  }
-
-  if (action === "2") {
-    return { message: "Trust status updated: needs refresh.", tone: "info", duration: 2200 };
   }
 
   return { message: "Trust status updated: closed or moved.", tone: "warn", duration: 2300 };

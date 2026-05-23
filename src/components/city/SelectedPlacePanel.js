@@ -6,7 +6,6 @@ import SelectedPlaceLiveVibePanel from "@/components/city/SelectedPlaceLiveVibeP
 import SelectedPlaceReviewComposer from "@/components/city/SelectedPlaceReviewComposer";
 import SelectedPlaceReviewsList from "@/components/city/SelectedPlaceReviewsList";
 import SelectedPlaceSummary from "@/components/city/SelectedPlaceSummary";
-import SelectedPlaceTrustSignals from "@/components/city/SelectedPlaceTrustSignals";
 
 export default function SelectedPlacePanel({
   selectedPlace,
@@ -37,12 +36,6 @@ export default function SelectedPlacePanel({
   setShowLiveVibeMomentum,
   liveVibeMemberMomentum,
   liveVibeStreakNudge,
-  selectedPlaceQuality,
-  selectedPlaceQualityStatus,
-  refreshEntityQuality,
-  canRefreshQuality,
-  formatDate,
-  trustedPlaceSavesCount,
   isAdmin,
   placeAdminOpen,
   onTogglePlaceAdmin,
@@ -154,43 +147,36 @@ export default function SelectedPlacePanel({
         />
       </div>
 
-      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <p className="mb-3 text-[10px] uppercase tracking-[0.18em] text-white/55">Trust</p>
-        <SelectedPlaceTrustSignals
-          selectedPlace={selectedPlace}
-          selectedPlaceQuality={selectedPlaceQuality}
-          selectedPlaceQualityStatus={selectedPlaceQualityStatus}
-          refreshEntityQuality={refreshEntityQuality}
-          canRefreshQuality={canRefreshQuality}
-          formatDate={formatDate}
-          trustedPlaceSavesCount={trustedPlaceSavesCount}
-        />
-      </div>
-
-      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-        <SelectedPlaceAdminControls
-          isAdmin={isAdmin}
-          isOpen={placeAdminOpen}
-          onToggleOpen={onTogglePlaceAdmin}
-          draft={placeAdminDraft}
-          setDraft={setPlaceAdminDraft}
-          onSaveAddressOnly={handleAdminSavePlaceAddressOnly}
-          isSavingAddressOnly={isSavingPlaceAddressOnly}
-          onSave={handleAdminSavePlace}
-          isSaving={isSavingPlaceAdmin}
-          onDelete={handleAdminDeletePlace}
-          isDeleting={isDeletingPlaceAdmin}
-          placeTypes={placeTypes}
-        />
-      </div>
+      {isAdmin ? (
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <SelectedPlaceAdminControls
+            isAdmin={isAdmin}
+            isOpen={placeAdminOpen}
+            onToggleOpen={onTogglePlaceAdmin}
+            draft={placeAdminDraft}
+            setDraft={setPlaceAdminDraft}
+            onSaveAddressOnly={handleAdminSavePlaceAddressOnly}
+            isSavingAddressOnly={isSavingPlaceAddressOnly}
+            onSave={handleAdminSavePlace}
+            isSaving={isSavingPlaceAdmin}
+            onDelete={handleAdminDeletePlace}
+            isDeleting={isDeletingPlaceAdmin}
+            placeTypes={placeTypes}
+          />
+        </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-cyan-200/22 bg-[linear-gradient(140deg,rgba(34,211,238,0.12),rgba(9,12,24,0.92))] p-4">
+          <p className="text-base font-semibold tracking-[0.04em] text-cyan-100">Reviews</p>
+          <p className="mt-1 text-xs text-cyan-50/78">Community ratings and notes for this venue.</p>
+        </div>
+      )}
 
       <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="mb-3 text-[10px] uppercase tracking-[0.18em] text-white/55">Community Reviews</p>
         <SelectedPlaceReviewsList reviews={reviews} />
       </div>
 
       <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-        <p className="mb-3 text-[10px] uppercase tracking-[0.18em] text-white/55">Write a Review</p>
+        <p className="mb-3 text-xs font-semibold tracking-[0.06em] text-white/88">Write a review</p>
         <SelectedPlaceReviewComposer
           isMember={isMember}
           canReviewSelectedPlace={canReviewSelectedPlace}

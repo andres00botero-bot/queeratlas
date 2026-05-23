@@ -25,7 +25,9 @@ export default function SelectedPlaceLiveVibePanel({
           {liveVibeSummary.total} signal{liveVibeSummary.total === 1 ? "" : "s"} - 6h
         </span>
       </div>
-      <p className="mt-1 text-sm text-fuchsia-50/95">Tap to update the room signal.</p>
+      <p className="mt-1 text-base font-semibold tracking-[0.03em] text-yellow-200">
+        Tap to update the room signal.
+      </p>
       <div className="mt-3 flex items-start justify-center gap-5">
         {LIVE_VIBE_OPTIONS.map((option) => {
           const displayLabel =

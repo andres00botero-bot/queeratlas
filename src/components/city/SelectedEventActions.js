@@ -1,5 +1,7 @@
 "use client";
 
+import { normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
+
 export default function SelectedEventActions({
   selectedEvent,
   favorites,
@@ -12,6 +14,7 @@ export default function SelectedEventActions({
 }) {
   const favoriteKey = `event-${selectedEvent.id}`;
   const isSaved = favorites.includes(favoriteKey);
+  const eventLinkUrl = normalizeExternalUrl(selectedEvent?.link || "");
 
   return (
     <div className="mt-3 space-y-2">
@@ -27,9 +30,9 @@ export default function SelectedEventActions({
       >
         {isSaved ? "Saved in atlas" : "Save to atlas"}
       </button>
-      {selectedEvent.link && (
+      {eventLinkUrl && (
         <a
-          href={selectedEvent.link}
+          href={eventLinkUrl}
           target="_blank"
           rel="noreferrer"
           className="qa-action qa-action-strong qa-city-cta-primary block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"

@@ -153,6 +153,5 @@ export const REPORT_REASONS = [
 
 export const TRUST_ACTIONS = [
   { value: "1", label: "Verified now" },
-  { value: "2", label: "Needs refresh" },
   { value: "3", label: "Closed or moved" },
 ];
