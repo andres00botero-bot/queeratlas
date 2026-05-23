@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 export default function SelectedEventLiveVibePanel({
   LIVE_VIBE_OPTIONS,
   eventLiveVibeSignalKey,
@@ -19,10 +21,18 @@ export default function SelectedEventLiveVibePanel({
         </span>
       </div>
       <p className="mt-1 text-sm text-fuchsia-50/95">
-        Tap a live vibe and save a check-in automatically for this event.
+        Tap to update the room signal.
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 flex items-start justify-center gap-5">
         {LIVE_VIBE_OPTIONS.map((option) => {
+          const displayLabel =
+            option.key === "packed"
+              ? "I love it"
+              : option.key === "dancing"
+                ? "Crowded"
+                : option.key === "dead"
+                  ? "Quiet"
+                  : "Off vibe";
           const isSelectedSignal = eventLiveVibeSignalKey === option.key;
           const isSubmittingSignal = isSubmittingEventLiveVibe && eventLiveVibeSubmittingKey === option.key;
           const isJustSentSignal = eventLiveVibeJustSentKey === option.key;
@@ -35,15 +45,26 @@ export default function SelectedEventLiveVibePanel({
               onClick={() => {
                 handleSubmitEventLiveVibe(option.key);
               }}
-              className={`qa-cinematic-hover rounded-xl border px-3 py-2 text-left text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${option.buttonClass} ${
-                isSelectedSignal ? "ring-2 ring-white/35 shadow-[0_0_0_1px_rgba(255,255,255,0.22)_inset]" : ""
-              } ${isJustSentSignal ? "scale-[1.02] shadow-[0_10px_28px_rgba(244,114,182,0.25)]" : ""}`}
+              className={`qa-cinematic-hover group relative w-[5.35rem] rounded-2xl border border-white/18 bg-[linear-gradient(160deg,rgba(11,11,20,0.95),rgba(26,11,35,0.9))] p-1.5 text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                isSelectedSignal
+                  ? "ring-2 ring-fuchsia-300/55 shadow-[0_0_0_1px_rgba(255,255,255,0.24)_inset,0_14px_30px_rgba(217,70,239,0.28)]"
+                  : "hover:border-fuchsia-200/38 hover:shadow-[0_10px_24px_rgba(99,102,241,0.2)]"
+              } ${isJustSentSignal ? "scale-[1.03] shadow-[0_16px_34px_rgba(244,114,182,0.3)]" : ""}`}
             >
-              <span className="block text-sm font-semibold">
-                {option.emoji} {option.label}
+              <span className="relative block aspect-square overflow-hidden rounded-xl border border-white/14 bg-black/35">
+                <Image
+                  src={option.iconSrc}
+                  alt={option.label}
+                  fill
+                  sizes="72px"
+                  className="object-contain p-1 saturate-125 contrast-110"
+                />
               </span>
-              <span className="mt-0.5 block text-[10px] uppercase tracking-[0.12em] opacity-85">
-                {isSubmittingSignal ? "Saving..." : isSelectedSignal ? "Your signal" : "Tap now"}
+              <span className="mt-1.5 block text-center text-[9px] font-medium tracking-[0.01em] text-white/88">
+                {displayLabel}
+              </span>
+              <span className="sr-only">
+                {isSubmittingSignal ? "Saving..." : isSelectedSignal ? "Your signal" : option.label}
               </span>
             </button>
           );
@@ -51,7 +72,7 @@ export default function SelectedEventLiveVibePanel({
       </div>
       {isMember && eventLiveVibeSelectedOption && (
         <p className="mt-2 text-[11px] text-fuchsia-100/82">
-          Your event signal: {eventLiveVibeSelectedOption.emoji} {eventLiveVibeSelectedOption.label}
+          Your event signal: {eventLiveVibeSelectedOption.label}
         </p>
       )}
     </div>

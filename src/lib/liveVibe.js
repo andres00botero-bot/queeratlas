@@ -4,33 +4,33 @@ const SIGNAL_WINDOW_MS = SIGNAL_WINDOW_HOURS * 60 * 60 * 1000;
 export const LIVE_VIBE_OPTIONS = [
   {
     key: "packed",
-    emoji: "🔥",
-    label: "Packed",
-    shortLabel: "Busy right now",
+    label: "I love it",
+    shortLabel: "High energy, busy, crowded",
+    iconSrc: "/live-vibe-icons/i-love-it.png",
     buttonClass:
       "border-rose-200/28 bg-rose-200/12 text-rose-100 hover:border-rose-200/48",
   },
   {
     key: "dancing",
-    emoji: "💃",
-    label: "Dancing",
-    shortLabel: "Dance energy",
+    label: "Crowded",
+    shortLabel: "People dancing, high energy",
+    iconSrc: "/live-vibe-icons/crowded.png",
     buttonClass:
       "border-fuchsia-200/28 bg-fuchsia-200/12 text-fuchsia-100 hover:border-fuchsia-200/48",
   },
   {
     key: "dead",
-    emoji: "🧊",
     label: "Quiet",
-    shortLabel: "Quiet right now",
+    shortLabel: "Calm vibe, low energy",
+    iconSrc: "/live-vibe-icons/quiet.png",
     buttonClass:
       "border-cyan-200/28 bg-cyan-200/12 text-cyan-100 hover:border-cyan-200/48",
   },
   {
     key: "off_vibe",
-    emoji: "⚠️",
     label: "Off vibe",
-    shortLabel: "Feels off",
+    shortLabel: "Not feeling it, awkward vibe",
+    iconSrc: "/live-vibe-icons/off-vibe.png",
     buttonClass:
       "border-amber-200/28 bg-amber-200/12 text-amber-100 hover:border-amber-200/48",
   },
@@ -98,14 +98,14 @@ export function formatLiveVibeUpdatedAt(timestamp) {
 
 export function buildLiveVibeHeadline(summary) {
   if (!summary || !summary.total || !summary.top?.length) {
-    return "Be the first to signal this venue now.";
+    return "Tap to update the room signal.";
   }
   const topA = summary.top[0];
   const topB = summary.top[1];
   if (!topB) {
-    return `${topA.emoji} ${topA.shortLabel}`;
+    return `${topA.shortLabel}`;
   }
-  return `${topA.emoji} ${topA.shortLabel} · ${topB.emoji} ${topB.shortLabel}`;
+  return `${topA.shortLabel} · ${topB.shortLabel}`;
 }
 
 export function getLiveVibePulse(summary) {
