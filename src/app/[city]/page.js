@@ -983,6 +983,10 @@ export default function CityPage() {
     const rawKey = String(groupValue || "").trim();
     const venueKeys = rawKey === "cafe_restaurant" ? ["cafe", "restaurant"] : [rawKey];
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
+    if (isDesktop) {
+      selectionOriginRef.current = "left-nav";
+      clearSelectedDetailFromUrl();
+    }
     setActiveVenueFilter(rawKey);
 
     if (isDesktop) {
@@ -1020,7 +1024,7 @@ export default function CityPage() {
       setHoveredPlaceId(String(firstPlace.id));
       window.setTimeout(() => setHoveredPlaceId(null), 1200);
     }
-  }, [scrollToSection, showDesktopSection, visiblePlaceGroups]);
+  }, [clearSelectedDetailFromUrl, scrollToSection, showDesktopSection, visiblePlaceGroups]);
 
   const servicesByType = useMemo(
     () =>
@@ -1321,7 +1325,7 @@ export default function CityPage() {
 
     mapRef.current.flyTo({
       center: [lng, lat],
-      zoom: 14,
+      zoom: 16.4,
     });
 
     const isMobileViewport =
@@ -1360,7 +1364,7 @@ export default function CityPage() {
 
     mapRef.current.flyTo({
       center: [selectedEvent.lng, selectedEvent.lat],
-      zoom: 14,
+      zoom: 16.4,
     });
 
     const isMobileViewport =
@@ -2674,7 +2678,7 @@ export default function CityPage() {
 
     mapRef.current.flyTo({
       center: [targetLng, targetLat],
-      zoom: 14.8,
+      zoom: 16.4,
       duration: shouldScrollToMap ? 760 : 520,
     });
 
