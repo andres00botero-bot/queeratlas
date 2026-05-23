@@ -102,28 +102,28 @@ export default function CityQuickNavigation({
     return (
       <div
         aria-label="Contribute actions"
-        className="qa-city-panel-cq rounded-[24px] border border-fuchsia-300/20 bg-[linear-gradient(160deg,rgba(217,70,239,0.10),rgba(10,10,16,0.9))] p-3 shadow-[0_16px_50px_rgba(0,0,0,0.26)] backdrop-blur"
+        className="qa-city-panel-cq rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(155deg,rgba(14,116,244,0.18),rgba(168,85,247,0.14),rgba(9,10,18,0.94))] p-3.5 shadow-[0_18px_58px_rgba(8,47,73,0.34)] backdrop-blur"
       >
-        <div className="mb-2 px-1 text-[10px] uppercase tracking-[0.16em] text-fuchsia-100/85">Contribute</div>
-        <div className="space-y-1.5">
+        <div className="mb-[0.35cm] px-1 text-[13px] font-semibold uppercase tracking-[0.18em] text-cyan-100/95">Contribute</div>
+        <div className="space-y-2">
           <button
             type="button"
             onClick={onAddPlace}
-            className="qa-action w-full rounded-lg border border-white/14 bg-white/[0.03] px-3 py-2 text-left text-[13px] text-white/84 transition hover:border-white/28 hover:bg-white/[0.07] hover:text-white"
+            className="qa-action w-full rounded-xl border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] px-3 py-2.5 text-left text-[13px] text-cyan-50/92 transition hover:border-cyan-100/40 hover:bg-white/[0.10] hover:text-white"
           >
             + Add place
           </button>
           <button
             type="button"
             onClick={onAddEvent}
-            className="qa-action w-full rounded-lg border border-white/14 bg-white/[0.03] px-3 py-2 text-left text-[13px] text-white/84 transition hover:border-white/28 hover:bg-white/[0.07] hover:text-white"
+            className="qa-action w-full rounded-xl border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] px-3 py-2.5 text-left text-[13px] text-cyan-50/92 transition hover:border-cyan-100/40 hover:bg-white/[0.10] hover:text-white"
           >
             + Add event
           </button>
           <button
             type="button"
             onClick={onAddService}
-            className="qa-action w-full rounded-lg border border-white/14 bg-white/[0.03] px-3 py-2 text-left text-[13px] text-white/84 transition hover:border-white/28 hover:bg-white/[0.07] hover:text-white"
+            className="qa-action w-full rounded-xl border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] px-3 py-2.5 text-left text-[13px] text-cyan-50/92 transition hover:border-cyan-100/40 hover:bg-white/[0.10] hover:text-white"
           >
             + Add service
           </button>
@@ -150,9 +150,17 @@ export default function CityQuickNavigation({
     return (
       <nav
         aria-label="City sections"
-        className="qa-city-panel-cq rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-3 shadow-[0_16px_50px_rgba(0,0,0,0.26)] backdrop-blur"
+        className="qa-city-panel-cq relative overflow-hidden rounded-[26px] border border-slate-200/20 bg-[linear-gradient(170deg,rgba(13,17,28,0.97),rgba(7,10,16,0.99))] p-3.5 shadow-[0_24px_68px_rgba(0,0,0,0.4)] backdrop-blur"
       >
-        <div className="mb-2 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/55">City Menu</div>
+        <div className="pointer-events-none absolute -left-10 top-3 h-20 w-20 rounded-full bg-cyan-300/12 blur-2xl" />
+        <div className="pointer-events-none absolute -right-10 top-12 h-24 w-24 rounded-full bg-indigo-300/10 blur-2xl" />
+        <div className="relative mb-2.5 flex items-center justify-between px-2 py-1">
+          <span className="text-[13px] font-semibold uppercase tracking-[0.24em] text-cyan-100/95">City Menu</span>
+          <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-cyan-100/88">
+            Navigate
+          </span>
+        </div>
+        <div className="mb-2 h-px w-full bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent" />
         <div className="space-y-2">
           {railItems.map((item) => {
             const isActive =
@@ -167,12 +175,15 @@ export default function CityQuickNavigation({
                   }
                   item.onClick?.();
                 }}
-                className={`qa-action w-full rounded-xl border px-3 py-3 text-left text-sm font-semibold transition ${
+                className={`qa-action relative w-full rounded-xl border px-3 py-3 text-left text-sm font-semibold transition ${
                   isActive
-                    ? "border-fuchsia-300/55 bg-[linear-gradient(135deg,rgba(217,70,239,0.24),rgba(99,102,241,0.24),rgba(12,10,18,0.95))] text-white shadow-[0_12px_28px_rgba(168,85,247,0.24)]"
-                    : "border-white/14 bg-white/[0.03] text-white/82 hover:border-white/28 hover:bg-white/[0.06]"
+                    ? "border-cyan-200/58 bg-[linear-gradient(135deg,rgba(56,189,248,0.24),rgba(34,211,238,0.16),rgba(10,14,24,0.96))] text-white shadow-[0_12px_30px_rgba(34,211,238,0.28)]"
+                    : "border-slate-200/16 bg-[linear-gradient(140deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01))] text-white/84 hover:border-cyan-100/34 hover:bg-white/[0.08]"
                 }`}
               >
+                {isActive ? (
+                  <span className="absolute inset-y-2 left-1 w-1 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.9)]" />
+                ) : null}
                 <span className="flex items-center justify-between gap-2">
                   <span>{item.label}</span>
                   {item.key === "venues" ? (
@@ -188,8 +199,8 @@ export default function CityQuickNavigation({
         </div>
 
         {showVenuePicker ? (
-          <div className="mt-3 rounded-xl border border-amber-200/22 bg-[linear-gradient(160deg,rgba(251,191,36,0.11),rgba(10,10,16,0.9))] p-2.5">
-            <div className="mb-2 px-1 text-[10px] uppercase tracking-[0.16em] text-amber-100/80">Venue Types</div>
+          <div className="mt-3 rounded-xl border border-cyan-200/20 bg-[linear-gradient(150deg,rgba(56,189,248,0.12),rgba(10,12,18,0.92))] p-2.5">
+            <div className="mb-2 px-1 text-[10px] uppercase tracking-[0.16em] text-cyan-100/86">Venue Types</div>
             <div className="space-y-1.5">
               {venueMenuItems.map((item) => {
                 const isActive = isVenueTypeActive(item.value);
@@ -203,8 +214,8 @@ export default function CityQuickNavigation({
                   aria-pressed={isActive}
                   className={`qa-action w-full rounded-lg border px-3 py-2 text-left text-[13px] transition ${
                     isActive
-                      ? "border-amber-200/55 bg-amber-200/18 text-amber-50 shadow-[0_8px_22px_rgba(251,191,36,0.2)]"
-                      : "border-white/14 bg-white/[0.03] text-white/82 hover:border-white/28 hover:bg-white/[0.07] hover:text-white"
+                      ? "border-cyan-200/56 bg-cyan-200/18 text-cyan-50 shadow-[0_8px_22px_rgba(34,211,238,0.24)]"
+                      : "border-slate-200/16 bg-white/[0.03] text-white/84 hover:border-cyan-100/34 hover:bg-white/[0.08] hover:text-white"
                   }`}
                 >
                   {item.label}

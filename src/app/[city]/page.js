@@ -4350,9 +4350,9 @@ export default function CityPage() {
       <ActionToast toast={toast} />
       <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
         <div className="mx-auto w-full max-w-[1900px]">
-          <div className="xl:grid xl:grid-cols-[224px_minmax(0,1fr)_minmax(360px,440px)] xl:items-start xl:gap-[0.9rem]">
+          <div className="xl:grid xl:min-h-[calc(100vh-3rem)] xl:grid-cols-[224px_minmax(0,1fr)_minmax(360px,440px)] xl:items-start xl:gap-[0.9rem]">
             <aside className="hidden xl:self-start xl:block">
-              <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
+              <div className="sticky top-6 h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
                 <CityNavigationCluster
                   cityPlacesCount={cityPlaces.length}
                   cityEventCount={cityEventCount}
@@ -4381,7 +4381,7 @@ export default function CityPage() {
                   activeVenueFilter={activeVenueFilter}
                   variant="rail"
                 />
-                <div className="mt-3">
+                <div className="mt-5">
                   <CityNavigationCluster
                     onAddPlace={() => {
                       handleDesktopSectionNav("guide", guideSectionRef);
@@ -4401,8 +4401,8 @@ export default function CityPage() {
               </div>
             </aside>
 
-            <aside className="min-w-0 xl:col-start-3 xl:row-start-1 xl:self-start">
-              <div className="xl:sticky xl:top-6">
+            <aside className="min-w-0 xl:col-start-3 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start">
+              <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
                 <CityMapSection
                   mapWrapperRef={mapWrapperRef}
                   mapContainerRef={mapContainerRef}
@@ -4416,7 +4416,7 @@ export default function CityPage() {
 
             <section
               ref={centerColumnScrollRef}
-              className="min-w-0 xl:col-start-2 xl:row-start-1 xl:max-h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto"
+              className="min-w-0 xl:col-start-2 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto"
             >
               <CityTopCluster
                 cityName={cityName}
