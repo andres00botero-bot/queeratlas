@@ -2691,6 +2691,16 @@ export default function CityPage() {
     selectionOriginRef.current = "synced";
   }, [selectedEvent, selectedPlace, selectedService]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1280) return;
+    if (!selectedEvent && !selectedPlace) return;
+    const scrollContainer = centerColumnScrollRef.current || mainScrollRef.current;
+    if (!scrollContainer) return;
+    requestAnimationFrame(() => {
+      scrollContainer.scrollTo({ top: 0, behavior: "auto" });
+    });
+  }, [selectedEvent, selectedPlace]);
+
   const handleAddPlace = async () => {
     if (!name.trim() || !address.trim() || !description.trim() || !placeHours.trim()) {
       showToast("Fill in name, address, description, and opening hours before saving place.", { tone: "warn", duration: 2400 });
