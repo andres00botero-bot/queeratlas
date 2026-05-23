@@ -2236,23 +2236,14 @@ export default function CityPage() {
       wrapper.appendChild(pin);
       return wrapper;
     };
-    const BERLIN_NEON_PALETTE = ["#00d9ff", "#ff2ec4", "#ff8a00", "#8d4dff", "#00f5b0", "#2f8bff"];
-    const resolveBerlinNeonColor = (token, fallback = "#36e5ff") => {
-      const key = String(token || "").trim().toLowerCase();
-      if (!key) return fallback;
-      let hash = 0;
-      for (let index = 0; index < key.length; index += 1) {
-        hash = (hash * 31 + key.charCodeAt(index)) % 100000;
-      }
-      return BERLIN_NEON_PALETTE[Math.abs(hash) % BERLIN_NEON_PALETTE.length] || fallback;
-    };
+    const EVENT_MARKER_COLOR = "#ff4ec4";
 
     cityPlaces.forEach((place) => {
       if (place.lat == null || place.lng == null) return;
 
       const typeConfig = TYPES.find((item) => item.value === place.type);
       const neonColor = useNeonMarkers
-        ? resolveBerlinNeonColor(`${place.type}|${place.name}|${place.id}`, typeConfig?.color || "#36e5ff")
+        ? typeConfig?.color || "#36e5ff"
         : typeConfig?.color || "#9ca3af";
       const marker = useNeonMarkers
         ? new mapboxgl.Marker(createNeonPinElement(neonColor))
@@ -2281,7 +2272,7 @@ export default function CityPage() {
     cityEvents.forEach((event) => {
       if (event.lat == null || event.lng == null) return;
       const eventNeonColor = useNeonMarkers
-        ? resolveBerlinNeonColor(`event|${event.name}|${event.id}`, "#ff4ec4")
+        ? EVENT_MARKER_COLOR
         : "#8b5cf6";
 
       const element = useNeonMarkers
@@ -2322,7 +2313,7 @@ export default function CityPage() {
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       const typeConfig = SERVICE_TYPES.find((item) => item.value === service.type);
       const serviceNeonColor = useNeonMarkers
-        ? resolveBerlinNeonColor(`service|${service.type}|${service.name}|${service.id}`, typeConfig?.color || "#2ef2c8")
+        ? typeConfig?.color || "#2ef2c8"
         : typeConfig?.color || "#10b981";
 
       const element = useNeonMarkers
