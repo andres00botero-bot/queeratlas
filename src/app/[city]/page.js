@@ -372,6 +372,15 @@ export default function CityPage() {
     });
   }, []);
 
+  const goToMobileSection = useCallback((sectionKey, ref) => {
+    setActiveCitySection(String(sectionKey || "guide"));
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollToSection(ref);
+      });
+    });
+  }, [scrollToSection]);
+
   const showDesktopSection = useCallback((sectionKey) => {
     setDesktopContentSection(String(sectionKey || "home"));
     requestAnimationFrame(() => {
@@ -4521,32 +4530,14 @@ export default function CityPage() {
                   cityEventCount={cityEventCount}
                   cityServiceCount={cityServiceCount}
                   activeCitySection={activeCitySection}
-                  onGoHome={() => {
-                    setActiveCitySection("guide");
-                    scrollToSection(guideSectionRef);
-                  }}
-                  onGoMap={() => {
-                    setActiveCitySection("map");
-                    scrollToSection(mapWrapperRef);
-                  }}
-                  onGoEvents={() => {
-                    setActiveCitySection("events");
-                    scrollToSection(tonightSectionRef);
-                  }}
-                  onGoGuide={() => {
-                    setActiveCitySection("guide");
-                    scrollToSection(guideSectionRef);
-                  }}
-                  onGoServices={() => {
-                    setActiveCitySection("services");
-                    scrollToSection(servicesSectionRef);
-                  }}
-                  onGoVenues={() => {
-                    setActiveCitySection("venues");
-                    scrollToSection(placesSectionRef);
-                  }}
+                  onGoHome={() => goToMobileSection("guide", guideSectionRef)}
+                  onGoMap={() => goToMobileSection("map", mapWrapperRef)}
+                  onGoEvents={() => goToMobileSection("events", tonightSectionRef)}
+                  onGoGuide={() => goToMobileSection("guide", guideSectionRef)}
+                  onGoServices={() => goToMobileSection("services", servicesSectionRef)}
+                  onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
                   onGoVenueType={(value) => {
-                    setActiveCitySection("venues");
+                    goToMobileSection("venues", placesSectionRef);
                     handleGoVenueType(value);
                   }}
                   venueJumpGroups={venueJumpGroups}
