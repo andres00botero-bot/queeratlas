@@ -590,12 +590,6 @@ export default function FavoritesPage() {
     };
   }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId]);
 
-  useEffect(() => {
-    const button = favoritesControlButtonsRef.current[activeProfileTab];
-    if (!button || typeof button.scrollIntoView !== "function") return;
-    button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [activeProfileTab]);
-
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
       supabase
@@ -2801,7 +2795,7 @@ export default function FavoritesPage() {
   }
 
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_9%,rgba(56,189,248,0.11),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_48%,#040406_100%)] px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-white sm:px-6 sm:py-8 sm:pb-12">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_9%,rgba(56,189,248,0.11),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_48%,#040406_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
       <ActionToast toast={toast} />
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.14),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />

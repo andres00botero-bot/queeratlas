@@ -1410,7 +1410,7 @@ export default function EventsPage() {
 
                       {eventsCount > 0 && (
                         <div className="mt-2 sm:mt-3">
-                          <p className={`text-[10px] uppercase tracking-[0.16em] sm:text-[11px] ${
+                          <p className={`text-[9px] tracking-[0.08em] sm:text-[11px] sm:uppercase sm:tracking-[0.16em] ${
                             isSelected ? "text-fuchsia-100/90" : "text-cyan-100/80"
                           }`}>
                             {eventsCount} {eventsCount === 1 ? "event" : "events"}
