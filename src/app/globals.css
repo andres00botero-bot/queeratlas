@@ -391,7 +391,7 @@ body > div:first-child {
   hyphens: auto;
 }
 
-.qa-events :is(p, li, h1, h2, h3, h4, h5, h6) {
+.qa-page :is(p, li, h1, h2, h3, h4, h5, h6) {
   text-align: justify !important;
   text-justify: inter-word !important;
   hyphens: auto;

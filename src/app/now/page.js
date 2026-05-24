@@ -436,7 +436,10 @@ export default function NowPage() {
       }
 
       const [{ data: eventsData, error: eventsError }, placesRes] = await Promise.all([
-        supabase.from("events").select("*").order("date", { ascending: true }),
+        supabase
+          .from("events")
+          .select("id, city, name, description, date, start_date, end_date, link, vibe, vibe_tags, location, lat, lng")
+          .order("date", { ascending: true }),
         fetchPlacesForAtlas(),
       ]);
       const placesData = placesRes?.data || [];
@@ -1417,7 +1420,7 @@ export default function NowPage() {
   }
 
   return (
-    <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] px-4 py-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-white sm:px-6 sm:py-8 sm:pb-12">
+    <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
       <div className="qa-shell">
         <script
           type="application/ld+json"

@@ -98,10 +98,10 @@ export default function CityEventsRailSection({
                 }`}
               >
                 <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-violet-300/18 blur-3xl" />
-                <div className="mb-2 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">{featuredEvent.name}</h3>
+                <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-lg font-semibold leading-tight">{featuredEvent.name}</h3>
                   {normalizeEventRange(featuredEvent).startDate && (
-                    <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
+                    <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
                       {formatEventDateLabel(featuredEvent)}
                     </span>
                   )}
@@ -180,10 +180,10 @@ export default function CityEventsRailSection({
                   : ""
               }`}
             >
-              <div className="mb-1 flex items-center justify-between">
-                <h3 className="font-semibold">{event.name}</h3>
+              <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="font-semibold leading-tight">{event.name}</h3>
                 {normalizeEventRange(event).startDate && (
-                  <span className="rounded bg-purple-500 px-2 py-1 text-xs text-black">
+                  <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
                     {formatEventDateLabel(event)}
                   </span>
                 )}

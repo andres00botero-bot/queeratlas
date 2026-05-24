@@ -13,7 +13,7 @@
     "test:favorites-helpers": "node scripts/test-favorites-helpers.mjs",
     "test:regressions": "node scripts/test-regressions.mjs",
     "test:map-guard-smoke": "node scripts/test-map-guard-smoke.mjs",
-    "verify:release": "npm run lint && npm run test:smoke && npm run test:e2e-smoke && npm run test:regressions",
+    "verify:release": "npm run lint && npm run build && npm run test:smoke && npm run test:e2e-smoke && npm run test:regressions && npm run test:map-guard-smoke && npm run analyze:bundle && node scripts/verify-bundle-budget.mjs && node scripts/verify-seo-gate.mjs",
     "analyze:bundle": "node scripts/analyze-bundle.mjs",
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "push:safe": "npm run verify:release && git push",

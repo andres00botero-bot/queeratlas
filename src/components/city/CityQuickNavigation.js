@@ -45,7 +45,7 @@ export default function CityQuickNavigation({
     {
       key: "events",
       onClick: onGoEvents,
-      label: "Tonight",
+      label: "Events",
       eyebrow: "Primary jump",
       className:
         "border-fuchsia-200/34 bg-[linear-gradient(135deg,rgba(232,121,249,0.24),rgba(99,102,241,0.20),rgba(12,10,18,0.94))] text-fuchsia-50 shadow-[0_14px_34px_rgba(217,70,239,0.2)] hover:border-fuchsia-200/55",

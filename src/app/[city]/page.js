@@ -4521,19 +4521,40 @@ export default function CityPage() {
                   cityEventCount={cityEventCount}
                   cityServiceCount={cityServiceCount}
                   activeCitySection={activeCitySection}
-                  onGoHome={() => scrollToSection(guideSectionRef)}
-                  onGoMap={() => scrollToSection(mapWrapperRef)}
-                  onGoEvents={() => scrollToSection(tonightSectionRef)}
-                  onGoGuide={() => scrollToSection(guideSectionRef)}
-                  onGoServices={() => scrollToSection(servicesSectionRef)}
-                  onGoVenues={() => scrollToSection(placesSectionRef)}
-                  onGoVenueType={handleGoVenueType}
+                  onGoHome={() => {
+                    setActiveCitySection("guide");
+                    scrollToSection(guideSectionRef);
+                  }}
+                  onGoMap={() => {
+                    setActiveCitySection("map");
+                    scrollToSection(mapWrapperRef);
+                  }}
+                  onGoEvents={() => {
+                    setActiveCitySection("events");
+                    scrollToSection(tonightSectionRef);
+                  }}
+                  onGoGuide={() => {
+                    setActiveCitySection("guide");
+                    scrollToSection(guideSectionRef);
+                  }}
+                  onGoServices={() => {
+                    setActiveCitySection("services");
+                    scrollToSection(servicesSectionRef);
+                  }}
+                  onGoVenues={() => {
+                    setActiveCitySection("venues");
+                    scrollToSection(placesSectionRef);
+                  }}
+                  onGoVenueType={(value) => {
+                    setActiveCitySection("venues");
+                    handleGoVenueType(value);
+                  }}
                   venueJumpGroups={venueJumpGroups}
                   activeVenueFilter={activeVenueFilter}
                 />
               </div>
 
-              <div className={effectiveDesktopContentSection === "guide" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
+              <div className={`${activeCitySection === "guide" ? "block" : "hidden"} ${effectiveDesktopContentSection === "guide" && !isAddComposerActive ? "xl:block" : "xl:hidden"}`}>
                 <CityGuideCluster
                   guideSectionRef={guideSectionRef}
                   cityName={cityName}
@@ -4544,7 +4565,7 @@ export default function CityPage() {
                 />
               </div>
 
-              <div className={effectiveDesktopContentSection === "events" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
+              <div className={`${activeCitySection === "events" ? "block" : "hidden"} ${effectiveDesktopContentSection === "events" && !isAddComposerActive ? "xl:block" : "xl:hidden"}`}>
                 {selectedEvent && (
                   <div className="mb-6 hidden xl:block">
                     <SelectedEventPanel
@@ -4670,7 +4691,7 @@ export default function CityPage() {
                 )}
               </div>
 
-              <div className={effectiveDesktopContentSection === "services" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
+              <div className={`${activeCitySection === "services" ? "block" : "hidden"} ${effectiveDesktopContentSection === "services" && !isAddComposerActive ? "xl:block" : "xl:hidden"}`}>
                 {selectedService && (
                   <div className="mb-6 hidden xl:block">
                     <SelectedServicePanel
@@ -4726,7 +4747,7 @@ export default function CityPage() {
                 </div>
               </div>
 
-              <div className={effectiveDesktopContentSection === "venues" && !isAddComposerActive ? "xl:block" : "xl:hidden"}>
+              <div className={`${activeCitySection === "venues" ? "block" : "hidden"} ${effectiveDesktopContentSection === "venues" && !isAddComposerActive ? "xl:block" : "xl:hidden"}`}>
                 {selectedPlace && (
                   <div className="mb-6 hidden xl:block">
                     <SelectedPlacePanel
