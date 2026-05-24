@@ -1,8 +1,10 @@
 import { existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import path from "node:path";
 
-const command = process.platform === "win32" ? "npm.cmd" : "npm";
-const args = ["run", "build", "--", "--webpack"];
+const nextBin = path.join(process.cwd(), "node_modules", "next", "dist", "bin", "next");
+const command = process.execPath;
+const args = [nextBin, "build", "--webpack"];
 
 const child = spawnSync(command, args, {
   cwd: process.cwd(),
