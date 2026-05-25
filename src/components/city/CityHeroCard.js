@@ -31,7 +31,7 @@ export default function CityHeroCard({
         <p className="mb-5 max-w-3xl text-[15px] leading-8 text-white/84 sm:text-base">
           {cityName}&rsquo;s queer nightlife, trusted spots, and live city signal in one view.
         </p>
-        <div className="mb-[calc(1.5rem+0.5cm)] flex flex-wrap gap-2.5">
+        <div className="mb-6 flex flex-wrap gap-2.5">
           <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/90">
             {placesChipLabel}
           </span>
@@ -47,19 +47,19 @@ export default function CityHeroCard({
             {cityHero.hook ? (
               <div className="rounded-xl border border-fuchsia-200/20 bg-fuchsia-300/[0.06] px-3 py-2.5">
                 <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.12em] text-fuchsia-100">Hook</p>
-                <p className="text-[15px] leading-8 text-white/90 sm:text-base">{cityHero.hook}</p>
+                <p className="text-[13px] leading-6 text-white/90 sm:text-sm">{cityHero.hook}</p>
               </div>
             ) : null}
             {cityHero.status ? (
               <div className="rounded-xl border border-cyan-200/20 bg-cyan-300/[0.06] px-3 py-2.5">
                 <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.12em] text-cyan-100">Queer Status</p>
-                <p className="text-[15px] leading-8 text-white/90 sm:text-base">{cityHero.status}</p>
+                <p className="text-[13px] leading-6 text-white/90 sm:text-sm">{cityHero.status}</p>
               </div>
             ) : null}
             {cityHero.crowd ? (
               <div className="rounded-xl border border-amber-200/20 bg-amber-300/[0.06] px-3 py-2.5">
                 <p className="mb-1 text-[12px] font-bold uppercase tracking-[0.12em] text-amber-100">Crowd</p>
-                <p className="text-[15px] leading-8 text-white/90 sm:text-base">{cityHero.crowd}</p>
+                <p className="text-[13px] leading-6 text-white/90 sm:text-sm">{cityHero.crowd}</p>
               </div>
             ) : null}
           </div>

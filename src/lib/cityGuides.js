@@ -2270,7 +2270,7 @@ export const cityGuideConfig = {
   "san_jose": [
     {
       "title": "About",
-      "text": "San Jose has one of Central Americas most established queer nightlife cores, with long-running venues and a social mix that combines local regulars, weekend crowds, and regional travelers. It is less polished than resort destinations and more rooted in real community rhythm.",
+      "text": "San Jose has a long-running queer nightlife core with strong local momentum and easy social flow.",
       "extra": ""
     },
     {
@@ -2280,12 +2280,12 @@ export const cityGuideConfig = {
     },
     {
       "title": "Safety",
-      "text": "Stick to known venue zones at night and use rides when moving between stops late. Keep valuables close in crowded exits, and avoid overextending route plans after midnight. The city is easiest when you keep decisions simple.",
+      "text": "Stay on known night routes, use rides for late transfers, and keep your plan simple after midnight.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Expect high-energy dance rooms, drag programming, mixed queer crowds, and social bars that run deep into morning hours on peak nights. San Jose rewards travelers who like loud, warm, and highly social nightlife formats.",
+      "text": "Expect drag-led dance floors, mixed queer crowds, and social bars that stay active into the late hours.",
       "extra": ""
     },
     {
