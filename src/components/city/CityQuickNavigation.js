@@ -69,7 +69,8 @@ export default function CityQuickNavigation({
     {
       key: "venues",
       onClick: () => {
-        setShowVenuePicker((current) => !current);
+        onGoVenues?.();
+        setShowVenuePicker(true);
       },
       label: "Venues",
       eyebrow: "Jump to",
