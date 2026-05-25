@@ -868,7 +868,7 @@ export default function CitiesPage() {
         <section className="qa-panel qa-premium-card relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[#0f0618] p-8 shadow-[0_36px_126px_rgba(0,0,0,0.42)]">
           <div className="pointer-events-none absolute inset-0">
             <Image
-              src="/cities/cities-hero-network-v2.png"
+              src="/city-assets/cities-hero-network-v2.png"
               alt=""
               fill
               priority
