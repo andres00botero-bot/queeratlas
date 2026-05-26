@@ -2,6 +2,13 @@ import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 
 const BASE_URL = "https://www.queeratlas.app";
+const CLUSTER_INTENT_PRIORITY = {
+  events: 0.88,
+  safety: 0.87,
+  nightlife: 0.84,
+  community: 0.82,
+  daylife: 0.8,
+};
 
 function resolveLastContentUpdate() {
   const candidates = [
@@ -55,13 +62,16 @@ export default function sitemap() {
     priority: 0.9,
   }));
 
-  const clusterTopics = listCityClusterTopics().map((topic) => topic.key);
+  const clusterTopics = listCityClusterTopics().map((topic) => ({
+    key: topic.key,
+    intent: String(topic.intent || "").trim().toLowerCase(),
+  }));
   const cityClusterEntries = Object.keys(cityConfig).flatMap((city) =>
     clusterTopics.map((topic) => ({
-      url: `${BASE_URL}/${city}/discover/${topic}`,
+      url: `${BASE_URL}/${city}/discover/${topic.key}`,
       lastModified: lastContentUpdate,
       changeFrequency: "weekly",
-      priority: 0.8,
+      priority: CLUSTER_INTENT_PRIORITY[topic.intent] || 0.8,
     })),
   );
 
