@@ -2,9 +2,25 @@ import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 
 const BASE_URL = "https://www.queeratlas.app";
-const LAST_CONTENT_UPDATE = new Date("2026-05-19T00:00:00.000Z");
+
+function resolveLastContentUpdate() {
+  const candidates = [
+    process.env.SITEMAP_LASTMOD_ISO,
+    process.env.VERCEL_GIT_COMMIT_DATE,
+  ];
+
+  for (const value of candidates) {
+    if (!value) continue;
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) return date;
+  }
+
+  return new Date();
+}
 
 export default function sitemap() {
+  const lastContentUpdate = resolveLastContentUpdate();
+
   const staticRoutes = [
     "",
     "/cities",
@@ -20,7 +36,7 @@ export default function sitemap() {
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${BASE_URL}${route}`,
-    lastModified: LAST_CONTENT_UPDATE,
+    lastModified: lastContentUpdate,
     changeFrequency: route === "" || route === "/now" ? "daily" : "weekly",
     priority:
       route === ""
@@ -34,7 +50,7 @@ export default function sitemap() {
 
   const cityEntries = Object.keys(cityConfig).map((city) => ({
     url: `${BASE_URL}/${city}`,
-    lastModified: LAST_CONTENT_UPDATE,
+    lastModified: lastContentUpdate,
     changeFrequency: "weekly",
     priority: 0.9,
   }));
@@ -43,7 +59,7 @@ export default function sitemap() {
   const cityClusterEntries = Object.keys(cityConfig).flatMap((city) =>
     clusterTopics.map((topic) => ({
       url: `${BASE_URL}/${city}/discover/${topic}`,
-      lastModified: LAST_CONTENT_UPDATE,
+      lastModified: lastContentUpdate,
       changeFrequency: "weekly",
       priority: 0.8,
     })),
