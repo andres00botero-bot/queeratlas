@@ -1,10 +1,11 @@
 import "./globals.css"; // 
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
+import { buildPrimaryEntityGraph, QA_SITE_URL } from "@/lib/seo/entityAuthority";
 import DeferredGlobalChrome from "@/components/ui/DeferredGlobalChrome";
 import DevErrorProbe from "@/components/ui/DevErrorProbe";
 
-const baseUrl = "https://www.queeratlas.app";
+const baseUrl = QA_SITE_URL;
 
 export const metadata = {
   metadataBase: new URL(baseUrl),
@@ -93,31 +94,7 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "@id": `${baseUrl}/#website`,
-    name: "Queer Atlas",
-    url: baseUrl,
-    description:
-      "Global queer discovery atlas for venues, events, guides, and member community signal.",
-    inLanguage: "en",
-    publisher: {
-      "@type": "Organization",
-      "@id": `${baseUrl}/#organization`,
-      name: "Queer Atlas",
-      url: baseUrl,
-      logo: {
-        "@type": "ImageObject",
-        url: `${baseUrl}/icons/icon-512.png`,
-      },
-    },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${baseUrl}/search?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
-  };
+  const jsonLd = buildPrimaryEntityGraph();
 
   return (
     <html lang="en">

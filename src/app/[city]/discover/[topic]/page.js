@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
+import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { getCityClusterTopic, listCityClusterTopics } from "@/lib/seo/cityClusters";
 
@@ -37,9 +38,10 @@ function buildClusterJsonLd({ city, cityName, topic, topicConfig }) {
     url: canonicalUrl,
     about: topicConfig.keyphrases.map((phrase) => `${phrase} ${cityName}`),
     isPartOf: {
-      "@type": "WebSite",
-      name: "Queer Atlas",
-      url: "https://www.queeratlas.app",
+      "@id": QA_WEBSITE_ID,
+    },
+    publisher: {
+      "@id": QA_ORGANIZATION_ID,
     },
     relatedLink: related,
   };

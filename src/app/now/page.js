@@ -10,6 +10,13 @@ import { useAuth } from "@/lib/auth";
 import { citySelectionPath } from "@/lib/cityRouting";
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
+import {
+  QA_LOGO_URL,
+  QA_ORGANIZATION_ID,
+  QA_ORGANIZATION_NAME,
+  QA_SITE_URL,
+  QA_WEBSITE_ID,
+} from "@/lib/seo/entityAuthority";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
@@ -762,7 +769,7 @@ export default function NowPage() {
   const leadNewsItem = displayedNewsItems[0] || null;
   const secondaryNewsItems = displayedNewsItems.slice(1);
   const nowNewsJsonLd = useMemo(() => {
-    const baseUrl = "https://www.queeratlas.app";
+    const baseUrl = QA_SITE_URL;
     const topItems = displayedNewsItems.slice(0, 10);
 
     return {
@@ -775,9 +782,10 @@ export default function NowPage() {
         "Daily LGBTQ world news, queer travel safety updates, nightlife changes, and policy watch across major cities.",
       inLanguage: "en",
       isPartOf: {
-        "@type": "WebSite",
-        "@id": `${baseUrl}/#website`,
-        name: "Queer Atlas",
+        "@id": QA_WEBSITE_ID,
+      },
+      publisher: {
+        "@id": QA_ORGANIZATION_ID,
       },
       mainEntity: {
         "@type": "ItemList",
@@ -807,10 +815,11 @@ export default function NowPage() {
             },
             publisher: {
               "@type": "Organization",
-              name: "Queer Atlas",
+              "@id": QA_ORGANIZATION_ID,
+              name: QA_ORGANIZATION_NAME,
               logo: {
                 "@type": "ImageObject",
-                url: `${baseUrl}/icons/icon-512.png`,
+                url: QA_LOGO_URL,
               },
             },
             image: item.imageUrl ? [item.imageUrl] : undefined,
