@@ -98,9 +98,93 @@ function buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics = [] }
   };
 }
 
+function buildIntentBlueprint({ cityName, topicConfig }) {
+  const intent = String(topicConfig?.intent || "").trim().toLowerCase();
+  const defaults = {
+    headerLine: `This page is tuned for high-intent local search in ${cityName}, with practical decision points that reduce guesswork and improve safer queer city navigation.`,
+    solvingPoints: [
+      `Faster route planning for ${topicConfig.intent} intent in ${cityName}.`,
+      "Safer decision support with alternatives when the first stop is not a fit.",
+      "Clear bridge from discovery to real-world movement with less friction.",
+    ],
+    frameworkTitle: "Decision framework",
+    frameworkSteps: [
+      "Set your first stop by social comfort, not hype.",
+      "Add one backup option in a nearby area before leaving.",
+      "Use events and venue timing to avoid dead transitions.",
+    ],
+    faqDecisionText: `${topicConfig.summary} This guide is structured for decision-making, not just listing venues.`,
+    faqSameNightText: `Yes. The guide is built for high-intent planning with clear links to city, events, and related topic paths in ${cityName}.`,
+  };
+
+  const byIntent = {
+    nightlife: {
+      headerLine: `Use this nightlife cluster to sequence warm-up bars, peak-hour clubs, and late exits in ${cityName} without losing momentum.`,
+      frameworkTitle: "Nightlife sequencing framework",
+      frameworkSteps: [
+        "Start low-friction (social bar or lounge) before peak venues.",
+        "Schedule your main stop around crowd surge windows.",
+        "Set one after-hours fallback to keep route continuity.",
+      ],
+      faqDecisionText: `Unlike generic nightlife lists, this cluster helps you choose order, timing, and fallback options for ${cityName} nightlife flow.`,
+    },
+    safety: {
+      headerLine: `Use this safety cluster to compare neighborhood confidence, venue risk profile, and lower-friction movement in ${cityName}.`,
+      solvingPoints: [
+        `Faster safety-first route planning for ${cityName}.`,
+        "Backup choices when a venue or area feels wrong in real time.",
+        "Clearer movement logic across safer queer-friendly zones.",
+      ],
+      frameworkTitle: "Safety-first framework",
+      frameworkSteps: [
+        "Start in high-confidence zones with reliable late transport.",
+        "Prefer venues with clearer social moderation and exit options.",
+        "Keep one same-neighborhood backup to reduce exposure.",
+      ],
+      faqDecisionText: `This is not only a venue list: it is a safety-routing layer for ${cityName} with practical alternatives and lower-risk sequencing.`,
+    },
+    events: {
+      headerLine: `Use this events cluster to turn date-based search intent into same-night route decisions in ${cityName}.`,
+      frameworkTitle: "Event-night framework",
+      frameworkSteps: [
+        "Anchor your plan to one high-signal event window.",
+        "Add a pre-event and post-event venue within short transit range.",
+        "Keep one backup event path in case of sell-out or queue pressure.",
+      ],
+      faqDecisionText: `Instead of static listings, this cluster maps event timing, route continuity, and alternatives for ${cityName}.`,
+      faqSameNightText: `Yes. It is built for same-night use: choose your event anchor, then move through linked city routes in ${cityName}.`,
+    },
+    community: {
+      headerLine: `Use this community cluster to find stronger social-fit entries in ${cityName}, especially for lesbian and sapphic nightlife discovery.`,
+      frameworkTitle: "Community-fit framework",
+      frameworkSteps: [
+        "Choose spaces with clearer identity fit for your group.",
+        "Sequence from soft social entry to higher-energy rooms.",
+        "Keep one quieter backup for regrouping and reset.",
+      ],
+      faqDecisionText: `This guide prioritizes community-fit and social comfort, not only popularity signals, for better decisions in ${cityName}.`,
+    },
+    daylife: {
+      headerLine: `Use this daylife cluster for cafes, hotels, and low-pressure social starts that strengthen your night plan in ${cityName}.`,
+      frameworkTitle: "Day-to-night framework",
+      frameworkSteps: [
+        "Start with a daytime anchor close to your evening zone.",
+        "Use that base to shortlist two nightlife options by vibe.",
+        "Confirm transit and opening windows before the shift to night.",
+      ],
+      faqDecisionText: `This guide links daytime anchors with nightlife outcomes, helping you plan better transitions in ${cityName}.`,
+    },
+  };
+
+  return {
+    ...defaults,
+    ...(byIntent[intent] || {}),
+  };
+}
+
 function buildFaqJsonLd({ cityName, topicConfig }) {
   const questionBase = topicConfig?.title || "Queer city guide";
-  const summary = String(topicConfig?.summary || "").trim();
+  const blueprint = buildIntentBlueprint({ cityName, topicConfig });
 
   return {
     "@context": "https://schema.org",
@@ -119,7 +203,7 @@ function buildFaqJsonLd({ cityName, topicConfig }) {
         name: `How is this ${cityName} guide different from a generic nightlife list?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `${summary} This guide is structured for decision-making, not just listing venues.`,
+          text: blueprint.faqDecisionText,
         },
       },
       {
@@ -127,7 +211,7 @@ function buildFaqJsonLd({ cityName, topicConfig }) {
         name: `Can I use this guide for same-night planning in ${cityName}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `Yes. The guide is built for high-intent planning with clear links to city, events, and related topic paths in ${cityName}.`,
+          text: blueprint.faqSameNightText,
         },
       },
     ],
@@ -227,6 +311,7 @@ export default async function CityClusterTopicPage({ params }) {
   const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig });
   const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics });
   const faqJsonLd = buildFaqJsonLd({ cityName, topicConfig });
+  const intentBlueprint = buildIntentBlueprint({ cityName, topicConfig });
   const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, faqJsonLd];
 
   return (
@@ -240,18 +325,26 @@ export default async function CityClusterTopicPage({ params }) {
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">City Cluster Guide</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{topicConfig.title} in {cityName}</h1>
           <p className="mt-3 text-sm leading-7 text-white/82">
-            {topicConfig.summary} This page is tuned for high-intent local search in {cityName}, with
-            practical decision points that reduce guesswork and improve safer queer city navigation.
+            {topicConfig.summary} {intentBlueprint.headerLine}
           </p>
         </header>
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
           <h2 className="text-lg font-semibold">What this cluster solves</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-white/82">
-            <li>Faster route planning for {topicConfig.intent} intent in {cityName}.</li>
-            <li>Safer decision support with alternatives when the first stop is not a fit.</li>
-            <li>Clear bridge from discovery to real-world movement with less friction.</li>
+            {intentBlueprint.solvingPoints.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
+        </section>
+
+        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+          <h2 className="text-lg font-semibold">{intentBlueprint.frameworkTitle}</h2>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-7 text-white/82">
+            {intentBlueprint.frameworkSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
         </section>
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
