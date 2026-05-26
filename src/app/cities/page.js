@@ -14,6 +14,7 @@ import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
+import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
 import CitiesSeoClusterPanel from "@/components/cities/CitiesSeoClusterPanel";
@@ -657,6 +658,11 @@ export default function CitiesPage() {
     () => filteredCities.slice(0, 24).map((city) => city?.key).filter(Boolean),
     [filteredCities]
   );
+  const crawlClusterTopics = useMemo(
+    () => listCityClusterTopics().map((topic) => topic.key).filter(Boolean),
+    []
+  );
+  const crawlClusterCities = useMemo(() => crawlPathCities.slice(0, 12), [crawlPathCities]);
   const totalCities = Object.keys(cityConfig).length;
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
@@ -859,6 +865,13 @@ export default function CitiesPage() {
             {cityKey}
           </Link>
         ))}
+        {crawlClusterCities.flatMap((cityKey) =>
+          crawlClusterTopics.map((topicKey) => (
+            <Link key={`crawl-city-cluster-${cityKey}-${topicKey}`} href={`/${cityKey}/discover/${topicKey}`}>
+              {cityKey} {topicKey}
+            </Link>
+          ))
+        )}
       </nav>
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_76%_14%,rgba(96,165,250,0.08),transparent_20%),radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.06),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />

@@ -1,13 +1,16 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { citySelectionPath } from "@/lib/cityRouting";
+import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
+import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
@@ -841,6 +844,14 @@ export default function NowPage() {
     ],
     [communityStories.length, displayedNewsItems.length, happeningSoonEvents.length, rankingItems.length]
   );
+  const crawlClusterTopics = useMemo(
+    () => listCityClusterTopics().map((topic) => topic.key).filter(Boolean),
+    []
+  );
+  const crawlClusterCities = useMemo(
+    () => Object.keys(cityConfig).slice(0, 12),
+    []
+  );
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
     [adminNews]
@@ -1421,6 +1432,18 @@ export default function NowPage() {
 
   return (
     <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
+      <nav aria-label="Internal now crawl links" className="sr-only">
+        <Link href="/now">Now</Link>
+        <Link href="/cities">Cities</Link>
+        <Link href="/events">Events</Link>
+        {crawlClusterCities.flatMap((cityKey) =>
+          crawlClusterTopics.map((topicKey) => (
+            <Link key={`now-crawl-cluster-${cityKey}-${topicKey}`} href={`/${cityKey}/discover/${topicKey}`}>
+              {cityKey} {topicKey}
+            </Link>
+          ))
+        )}
+      </nav>
       <div className="qa-shell">
         <script
           type="application/ld+json"
