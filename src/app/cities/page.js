@@ -16,6 +16,7 @@ import { usePlaces } from "@/lib/usePlaces";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
+import CitiesSeoClusterPanel from "@/components/cities/CitiesSeoClusterPanel";
 import EmptyState from "@/components/ui/EmptyState";
 
 const COUNTRY_TONES = [
@@ -926,6 +927,7 @@ export default function CitiesPage() {
               <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.places}</p>
             </div>
           </div>
+
         </section>
 
         <section className="qa-panel qa-premium-card relative mb-8 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_104px_rgba(0,0,0,0.34)]">
@@ -1266,6 +1268,8 @@ export default function CitiesPage() {
             })()
           ))}
         </div>
+
+        <CitiesSeoClusterPanel cityKeys={crawlPathCities} />
       </div>
     </main>
   );
