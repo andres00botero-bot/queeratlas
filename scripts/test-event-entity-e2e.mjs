@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 
 const BASE_URL = String(process.env.BASE_URL || "http://localhost:3001").replace(/\/+$/, "");
 const CITY_CANDIDATES = String(
-  process.env.EVENT_ENTITY_TEST_CITIES || "vancouver,toronto,new_york,cape_town,miami,san_jose"
+  process.env.EVENT_ENTITY_TEST_CITIES || "bilbao,tallinn,naples,cancun,phnom_penh"
 )
   .split(",")
   .map((entry) => entry.trim())

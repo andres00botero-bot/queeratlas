@@ -51,7 +51,7 @@ jobs:
       - name: Run event entity browser verification
         env:
           BASE_URL: http://127.0.0.1:3001
-          EVENT_ENTITY_TEST_CITIES: vancouver,toronto,new_york,cape_town,miami
+          EVENT_ENTITY_TEST_CITIES: bilbao,tallinn,naples,cancun,phnom_penh
           EVENT_ENTITY_TEST_MIN_PASSING: 5
         run: npm run test:event-entity-e2e
 
