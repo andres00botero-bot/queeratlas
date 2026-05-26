@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
+import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
 
 export const metadata = {
   title: "Queer Topic Hubs 2026 | Queer Atlas",
@@ -12,9 +13,50 @@ export const metadata = {
 
 export default function TopicsIndexPage() {
   const hubs = listTopicHubs();
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Topics", item: `${QA_SITE_URL}/topics` },
+    ],
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What are Queer Topic Hubs on Queer Atlas?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Topic hubs group high-intent queer discovery paths across multiple cities so you can compare routes faster.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How do topic hubs connect to city guides?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Each topic hub links directly to city-level discover pages so you can move from global topic intent to local route decisions.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Can I use topic hubs for trip planning this week?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. Start in a topic hub, open city cluster routes, then combine with events and saved places for same-week planning.",
+        },
+      },
+    ],
+  };
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="mx-auto max-w-5xl space-y-6">
         <section className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Topical Dominance Layer</p>

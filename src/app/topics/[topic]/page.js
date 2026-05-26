@@ -95,9 +95,52 @@ export default async function TopicHubPage({ params }) {
     },
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}/` },
+      { "@type": "ListItem", position: 2, name: "Topics", item: `${QA_SITE_URL}/topics` },
+      { "@type": "ListItem", position: 3, name: hub.title, item: toAbsoluteUrl(canonical) },
+    ],
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `What does ${hub.title} help me decide?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `${hub.title} helps you compare city-level routes for the same intent so you can decide where to go with less friction.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `How should I use ${hub.title} with events and city pages?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Open a city cluster from this hub, validate current events in that city, then finalize your route with saved places.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Are these routes static lists or live planning paths?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "These hubs are planning paths designed to bridge topical intent with city-level discover routes and practical next actions.",
+        },
+      },
+    ],
+  };
+
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="mx-auto max-w-5xl space-y-6">
         <section className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Topical Dominance Hub</p>
