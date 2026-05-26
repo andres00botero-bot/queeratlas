@@ -115,6 +115,10 @@ export default function GayGuidePage() {
             Queer Atlas is a city-first gay guide for nightlife travelers who want signal, not noise. Compare cities,
             locate trusted venues, map event weekends, and move through each destination with culture-aware confidence.
           </p>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-white/68">
+            Start with the <Link href="/topics/nightlife" className="text-fuchsia-200 underline decoration-fuchsia-200/50 underline-offset-4 hover:text-fuchsia-100">nightlife topic hub</Link>, then layer{" "}
+            <Link href="/topics/events" className="text-cyan-200 underline decoration-cyan-200/50 underline-offset-4 hover:text-cyan-100">events-first routing</Link> to turn broad city intent into concrete route decisions.
+          </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link href="/cities" className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-4 py-2 text-sm text-fuchsia-100 transition hover:border-fuchsia-200/40">
               Explore all cities
@@ -132,6 +136,10 @@ export default function GayGuidePage() {
           <h2 className="text-xl font-semibold tracking-[-0.01em]">Top Gay Travel Cities Right Now</h2>
           <p className="mt-2 text-sm leading-7 text-white/70">
             Start with high-signal cities where queer life is visible, social, and easy to enter.
+          </p>
+          <p className="mt-2 text-sm leading-7 text-white/66">
+            Try direct long-tail paths like <Link href="/berlin/discover/queer-techno-clubs" className="text-fuchsia-200 underline decoration-fuchsia-200/50 underline-offset-4 hover:text-fuchsia-100">best queer techno clubs in Berlin</Link> or{" "}
+            <Link href="/new_york/discover/events-tonight" className="text-cyan-200 underline decoration-cyan-200/50 underline-offset-4 hover:text-cyan-100">LGBTQ events tonight in New York</Link>.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {CITY_HIGHLIGHTS.map((city) => (
@@ -167,6 +175,10 @@ export default function GayGuidePage() {
               Live world news signal
             </Link>
           </div>
+          <p className="mt-3 text-sm leading-7 text-white/66">
+            For deeper comparison, open <Link href="/topics/community" className="text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white">community-focused nightlife hubs</Link> and{" "}
+            <Link href="/topics/cafes" className="text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white">queer cafe + hotel hubs</Link> before finalizing your city stack.
+          </p>
         </section>
 
         <section className="mt-8 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.94),rgba(10,10,10,0.98))] p-6">

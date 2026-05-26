@@ -113,6 +113,10 @@ export default function HbtqGuidePage() {
             Queer Atlas is a modern HBTQ guide for people who care about fit, tone, and trust. Discover clubs, bars,
             hotels, and events with a structure built for real movement and better social outcomes.
           </p>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-white/68">
+            Use <Link href="/topics/cafes" className="text-amber-200 underline decoration-amber-200/50 underline-offset-4 hover:text-amber-100">daytime cafe hubs</Link> with{" "}
+            <Link href="/topics/events" className="text-rose-200 underline decoration-rose-200/50 underline-offset-4 hover:text-rose-100">event-driven hubs</Link> to balance social energy, safety, and timing in one route.
+          </p>
           <div className="mt-6 flex flex-wrap gap-2">
             {QUICK_LINKS.map((item) => (
               <Link
@@ -143,6 +147,11 @@ export default function HbtqGuidePage() {
               </li>
             ))}
           </ul>
+          <p className="mt-3 text-sm leading-7 text-white/66">
+            You can jump directly to intent pages like <Link href="/berlin/discover/queer-cafes" className="text-amber-200 underline decoration-amber-200/50 underline-offset-4 hover:text-amber-100">queer cafes in Berlin</Link>,{" "}
+            <Link href="/tokyo/discover/queer-events-this-week" className="text-rose-200 underline decoration-rose-200/50 underline-offset-4 hover:text-rose-100">LGBTQ events this week in Tokyo</Link>, and{" "}
+            <Link href="/bangkok/discover/queer-hotels" className="text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white">queer-friendly hotels in Bangkok</Link>.
+          </p>
         </section>
 
         <section className="mt-8 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.94),rgba(10,10,10,0.98))] p-6">

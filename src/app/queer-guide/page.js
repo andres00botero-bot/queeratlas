@@ -121,6 +121,10 @@ export default function QueerGuidePage() {
             This queer guide is built for travelers and locals who want clear scene intelligence. Understand city energy,
             discover trusted places, track event momentum, and move with community context instead of algorithm noise.
           </p>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-white/68">
+            If safety-fit is your priority, begin with the <Link href="/topics/safety" className="text-emerald-200 underline decoration-emerald-200/50 underline-offset-4 hover:text-emerald-100">safety topic hub</Link> and compare with{" "}
+            <Link href="/topics/community" className="text-violet-200 underline decoration-violet-200/50 underline-offset-4 hover:text-violet-100">community-led nightlife hubs</Link> before picking a city route.
+          </p>
           <div className="mt-6 flex flex-wrap gap-2">
             <Link href="/cities" className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-4 py-2 text-sm text-emerald-100 transition hover:border-emerald-200/40">
               Browse queer cities
@@ -163,6 +167,11 @@ export default function QueerGuidePage() {
               Read world news
             </Link>
           </div>
+          <p className="mt-3 text-sm leading-7 text-white/66">
+            Fast examples: <Link href="/new_york/discover/queer-safe-areas" className="text-emerald-200 underline decoration-emerald-200/50 underline-offset-4 hover:text-emerald-100">queer safe areas in New York</Link>,{" "}
+            <Link href="/madrid/discover/lesbian-nightlife" className="text-violet-200 underline decoration-violet-200/50 underline-offset-4 hover:text-violet-100">lesbian nightlife in Madrid</Link>, and{" "}
+            <Link href="/berlin/discover/safest-queer-bars" className="text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white">safest queer bars in Berlin</Link>.
+          </p>
         </section>
 
         <section className="mt-8 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.94),rgba(10,10,10,0.98))] p-6">
