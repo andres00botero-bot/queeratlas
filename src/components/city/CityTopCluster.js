@@ -2,8 +2,10 @@
 
 import CityContributionStack from "@/components/city/CityContributionStack";
 import CityHeroCard from "@/components/city/CityHeroCard";
+import CitySeoTopicLinks from "@/components/city/CitySeoTopicLinks";
 
 export default function CityTopCluster({
+  city,
   cityName,
   placesChipLabel,
   eventsChipLabel,
@@ -24,12 +26,15 @@ export default function CityTopCluster({
   return (
     <>
       {showHero ? (
-        <CityHeroCard
-          cityName={cityName}
-          placesChipLabel={placesChipLabel}
-          eventsChipLabel={eventsChipLabel}
-          cityHero={cityHero}
-        />
+        <>
+          <CityHeroCard
+            cityName={cityName}
+            placesChipLabel={placesChipLabel}
+            eventsChipLabel={eventsChipLabel}
+            cityHero={cityHero}
+          />
+          <CitySeoTopicLinks city={city} cityName={cityName} />
+        </>
       ) : null}
 
       {showContribution ? (

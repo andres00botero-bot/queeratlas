@@ -4438,6 +4438,7 @@ export default function CityPage() {
               className="min-w-0 xl:col-start-2 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto"
             >
               <CityTopCluster
+                city={city}
                 cityName={cityName}
                 placesChipLabel={placesChipLabel}
                 eventsChipLabel={eventsChipLabel}
