@@ -1,5 +1,6 @@
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { listTopicHubs } from "@/lib/seo/topicHubs";
 
 const BASE_URL = "https://www.queeratlas.app";
 const CLUSTER_INTENT_PRIORITY = {
@@ -36,6 +37,7 @@ export default function sitemap() {
     "/gay-guide",
     "/queer-guide",
     "/hbtq-guide",
+    "/topics",
     "/terms",
     "/privacy",
     "/community-policy",
@@ -75,6 +77,13 @@ export default function sitemap() {
     })),
   );
 
-  return [...staticEntries, ...cityEntries, ...cityClusterEntries];
+  const topicHubEntries = listTopicHubs().map((hub) => ({
+    url: `${BASE_URL}/topics/${hub.key}`,
+    lastModified: lastContentUpdate,
+    changeFrequency: "weekly",
+    priority: 0.86,
+  }));
+
+  return [...staticEntries, ...cityEntries, ...cityClusterEntries, ...topicHubEntries];
 }
 

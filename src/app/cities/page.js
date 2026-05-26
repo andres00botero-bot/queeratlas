@@ -15,6 +15,7 @@ import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { listTopicHubs } from "@/lib/seo/topicHubs";
 import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
 import CitiesSeoClusterPanel from "@/components/cities/CitiesSeoClusterPanel";
@@ -663,6 +664,7 @@ export default function CitiesPage() {
     []
   );
   const crawlClusterCities = useMemo(() => crawlPathCities.slice(0, 12), [crawlPathCities]);
+  const topicHubKeys = useMemo(() => listTopicHubs().map((hub) => hub.key), []);
   const totalCities = Object.keys(cityConfig).length;
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
@@ -858,8 +860,14 @@ export default function CitiesPage() {
         <Link href="/cities">Cities</Link>
         <Link href="/events">Events</Link>
         <Link href="/now">Now</Link>
+        <Link href="/topics">Topics</Link>
         <Link href="/gay-guide">Gay Travel Guide</Link>
         <Link href="/queer-guide">Queer Travel Guide</Link>
+        {topicHubKeys.map((topicKey) => (
+          <Link key={`crawl-topic-hub-${topicKey}`} href={`/topics/${topicKey}`}>
+            {topicKey}
+          </Link>
+        ))}
         {crawlPathCities.map((cityKey) => (
           <Link key={`crawl-city-${cityKey}`} href={`/${cityKey}`}>
             {cityKey}

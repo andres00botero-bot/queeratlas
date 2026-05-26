@@ -18,6 +18,7 @@ import {
   QA_WEBSITE_ID,
 } from "@/lib/seo/entityAuthority";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
@@ -861,6 +862,7 @@ export default function NowPage() {
     () => Object.keys(cityConfig).slice(0, 12),
     []
   );
+  const topicHubKeys = useMemo(() => listTopicHubs().map((hub) => hub.key), []);
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
     [adminNews]
@@ -1445,6 +1447,12 @@ export default function NowPage() {
         <Link href="/now">Now</Link>
         <Link href="/cities">Cities</Link>
         <Link href="/events">Events</Link>
+        <Link href="/topics">Topics</Link>
+        {topicHubKeys.map((topicKey) => (
+          <Link key={`now-topic-hub-${topicKey}`} href={`/topics/${topicKey}`}>
+            {topicKey}
+          </Link>
+        ))}
         {crawlClusterCities.flatMap((cityKey) =>
           crawlClusterTopics.map((topicKey) => (
             <Link key={`now-crawl-cluster-${cityKey}-${topicKey}`} href={`/${cityKey}/discover/${topicKey}`}>
