@@ -45,6 +45,93 @@ function buildClusterJsonLd({ city, cityName, topic, topicConfig }) {
   };
 }
 
+function buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig }) {
+  const canonicalPath = buildCanonicalPath(city, topic);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: toAbsoluteUrl("/"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Cities",
+        item: toAbsoluteUrl("/cities"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: cityName,
+        item: toAbsoluteUrl(`/${city}`),
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: `${topicConfig.title} in ${cityName}`,
+        item: toAbsoluteUrl(canonicalPath),
+      },
+    ],
+  };
+}
+
+function buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics = [] }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `Related ${cityName} queer topic guides`,
+    itemListOrder: "https://schema.org/ItemListOrderAscending",
+    numberOfItems: relatedTopics.length,
+    itemListElement: relatedTopics.map((entry, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: toAbsoluteUrl(buildCanonicalPath(city, entry.key)),
+      name: `${entry.title} in ${cityName}`,
+    })),
+  };
+}
+
+function buildFaqJsonLd({ cityName, topicConfig }) {
+  const questionBase = topicConfig?.title || "Queer city guide";
+  const summary = String(topicConfig?.summary || "").trim();
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `What does ${questionBase} in ${cityName} help with?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `${questionBase} in ${cityName} helps you plan faster with practical route context, safer fallbacks, and local signal clarity.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `How is this ${cityName} guide different from a generic nightlife list?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `${summary} This guide is structured for decision-making, not just listing venues.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Can I use this guide for same-night planning in ${cityName}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Yes. The guide is built for high-intent planning with clear links to city, events, and related topic paths in ${cityName}.`,
+        },
+      },
+    ],
+  };
+}
+
 export async function generateMetadata({ params }) {
   const resolved = await params;
   const city = normalizeCityKey(resolved?.city || "");
@@ -99,14 +186,18 @@ export default async function CityClusterTopicPage({ params }) {
   const cityName = cityNameFromConfig(config, city);
   const canonicalPath = buildCanonicalPath(city, topic);
   const canonicalUrl = toAbsoluteUrl(canonicalPath);
-  const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig });
   const relatedTopics = listCityClusterTopics().filter((entry) => entry.key !== topic).slice(0, 4);
+  const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig });
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig });
+  const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics });
+  const faqJsonLd = buildFaqJsonLd({ cityName, topicConfig });
+  const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, faqJsonLd];
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(clusterJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(graphJsonLd) }}
       />
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">
@@ -163,4 +254,3 @@ export default async function CityClusterTopicPage({ params }) {
     </main>
   );
 }
-
