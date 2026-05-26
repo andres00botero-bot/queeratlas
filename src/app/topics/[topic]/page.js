@@ -68,6 +68,19 @@ export default async function TopicHubPage({ params }) {
 
   const canonical = buildTopicPath(hub.key);
   const selectedCities = hub.cities.filter((city) => cityCoreConfig[city]);
+  const clusterKeys = Array.isArray(hub.clusterKeys) && hub.clusterKeys.length > 0
+    ? hub.clusterKeys
+    : hub.clusterKey
+      ? [hub.clusterKey]
+      : [];
+  const cityClusterRoutes = selectedCities.flatMap((city) =>
+    clusterKeys.map((clusterKey) => ({
+      city,
+      clusterKey,
+      href: `/${city}/discover/${clusterKey}`,
+      label: `${humanizeCity(city)} - ${clusterKey.replaceAll("-", " ")}`,
+    })),
+  );
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -85,12 +98,12 @@ export default async function TopicHubPage({ params }) {
     mainEntity: {
       "@type": "ItemList",
       itemListOrder: "https://schema.org/ItemListOrderAscending",
-      numberOfItems: selectedCities.length,
-      itemListElement: selectedCities.map((city, index) => ({
+      numberOfItems: cityClusterRoutes.length,
+      itemListElement: cityClusterRoutes.map((route, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        url: toAbsoluteUrl(`/${city}/discover/${hub.clusterKey}`),
-        name: `${hub.title} in ${humanizeCity(city)}`,
+        url: toAbsoluteUrl(route.href),
+        name: `${hub.title} in ${humanizeCity(route.city)} - ${route.clusterKey.replaceAll("-", " ")}`,
       })),
     },
   };
@@ -151,13 +164,13 @@ export default async function TopicHubPage({ params }) {
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
           <h2 className="text-lg font-semibold">City Cluster Routes</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {selectedCities.map((city) => (
+            {cityClusterRoutes.map((route) => (
               <Link
-                key={city}
-                href={`/${city}/discover/${hub.clusterKey}`}
+                key={`${route.city}-${route.clusterKey}`}
+                href={route.href}
                 className="rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/84 transition hover:border-cyan-200/34 hover:text-white"
               >
-                {hub.title} in {humanizeCity(city)}
+                {hub.title} in {humanizeCity(route.city)} - {route.clusterKey.replaceAll("-", " ")}
               </Link>
             ))}
           </div>

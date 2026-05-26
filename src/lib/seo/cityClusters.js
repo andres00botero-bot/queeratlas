@@ -54,6 +54,61 @@ export const CITY_CLUSTER_TOPICS = {
       "queer nightlife events",
     ],
   },
+  "queer-bars": {
+    title: "Best Queer Bars Guide",
+    intent: "nightlife",
+    summary:
+      "Bar-first queer planning with social entry points, crowd-fit guidance, and smoother route sequencing.",
+    keyphrases: [
+      "best queer bars",
+      "gay bars guide",
+      "LGBTQ bar scene",
+    ],
+  },
+  "queer-clubs": {
+    title: "Queer Clubs Guide",
+    intent: "nightlife",
+    summary:
+      "Late-night queer club mapping with peak-time flow, scene density context, and practical fallback choices.",
+    keyphrases: [
+      "queer clubs",
+      "gay clubs nightlife",
+      "LGBTQ club scene",
+    ],
+  },
+  "queer-hotels": {
+    title: "Queer-Friendly Hotels Guide",
+    intent: "daylife",
+    summary:
+      "Stay-first planning for queer-friendly hotels with location fit, social access, and nightlife adjacency in mind.",
+    keyphrases: [
+      "queer friendly hotels",
+      "gay friendly hotels",
+      "LGBTQ travel stay guide",
+    ],
+  },
+  "queer-events-this-week": {
+    title: "LGBTQ Events This Week",
+    intent: "events",
+    summary:
+      "Week-ahead event planning to align dates, city momentum, and route choices across active queer scenes.",
+    keyphrases: [
+      "LGBTQ events this week",
+      "gay events this week",
+      "queer weekly events",
+    ],
+  },
+  "queer-safe-areas": {
+    title: "Queer Safe Areas Guide",
+    intent: "safety",
+    summary:
+      "Area-first safety routing with neighborhood confidence cues, lower-friction movement, and fallback zone logic.",
+    keyphrases: [
+      "queer safe areas",
+      "LGBTQ safe neighborhoods",
+      "gay safe area guide",
+    ],
+  },
 };
 
 export function getCityClusterTopic(topic = "") {
@@ -67,4 +122,3 @@ export function listCityClusterTopics() {
     ...CITY_CLUSTER_TOPICS[key],
   }));
 }
-
