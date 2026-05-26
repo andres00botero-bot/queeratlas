@@ -6,6 +6,7 @@ import TonightVipFeedPanel from "@/components/city/TonightVipFeedPanel";
 
 export default function CityTonightSection({
   sectionRef,
+  city,
   cityName,
   tonightFeedTab,
   setTonightFeedTab,
@@ -92,6 +93,7 @@ export default function CityTonightSection({
           isFocusMode={isFocusMode}
           selectedEvent={selectedEvent}
           formatEventDateLabel={formatEventDateLabel}
+          city={city}
           cityName={cityName}
           remainingEvents={remainingEvents}
           isMember={isMember}

@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
+import { buildEventPath } from "@/lib/seo/entitySlug";
 
 export default function TonightPublicFeedPanel({
   eventsLoadError,
@@ -16,6 +18,7 @@ export default function TonightPublicFeedPanel({
   isFocusMode,
   selectedEvent,
   formatEventDateLabel,
+  city,
   cityName,
   remainingEvents,
   isMember,
@@ -79,6 +82,17 @@ export default function TonightPublicFeedPanel({
           <p className="line-clamp-2 text-sm leading-6 text-white/72">
             {polishEventDescription(featuredEvent, cityName)}
           </p>
+          <div className="mt-2">
+            <Link
+              href={buildEventPath(city || cityName, featuredEvent)}
+              onClick={(clickEvent) => {
+                clickEvent.stopPropagation();
+              }}
+              className="inline-flex rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 hover:border-fuchsia-200/40"
+            >
+              Event page
+            </Link>
+          </div>
         </div>
       ) : null}
 
@@ -122,6 +136,17 @@ export default function TonightPublicFeedPanel({
               <p className="line-clamp-2 text-sm leading-6 text-white/70">
                 {polishEventDescription(event, cityName)}
               </p>
+              <div className="mt-2">
+                <Link
+                  href={buildEventPath(city || cityName, event)}
+                  onClick={(clickEvent) => {
+                    clickEvent.stopPropagation();
+                  }}
+                  className="inline-flex rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 hover:border-fuchsia-200/40"
+                >
+                  Event page
+                </Link>
+              </div>
             </div>
           ))}
         </div>

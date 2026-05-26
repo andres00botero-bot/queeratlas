@@ -4602,6 +4602,7 @@ export default function CityPage() {
                   <>
                     <CityTonightCluster
                       sectionRef={tonightSectionRef}
+                      city={city}
                       cityName={cityName}
                       tonightFeedTab={tonightFeedTab}
                       setTonightFeedTab={setTonightFeedTab}
@@ -4668,6 +4669,7 @@ export default function CityPage() {
                       isFocusMode={isFocusMode}
                       selectedEvent={selectedEvent}
                       formatEventDateLabel={formatEventDateLabel}
+                      city={city}
                       cityName={cityName}
                       refreshEntityQuality={refreshEntityQuality}
                       canRefreshQuality={canRefreshQuality}

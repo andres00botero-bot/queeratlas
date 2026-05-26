@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { getEntityQuality, getQualityStatus } from "@/lib/quality";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
@@ -7,6 +8,7 @@ import VibeTagChips from "@/components/ui/VibeTagChips";
 import { qualityPillClass } from "@/features/city/adminDrawerFeature";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
+import { buildEventPath } from "@/lib/seo/entitySlug";
 
 export default function CityEventsRailSection({
   sectionRef,
@@ -22,6 +24,7 @@ export default function CityEventsRailSection({
   isFocusMode,
   selectedEvent,
   formatEventDateLabel,
+  city,
   cityName,
   refreshEntityQuality,
   canRefreshQuality,
@@ -109,6 +112,17 @@ export default function CityEventsRailSection({
                 <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/72">
                   {polishEventDescription(featuredEvent, cityName)}
                 </p>
+                <div className="mb-2">
+                  <Link
+                    href={buildEventPath(city || cityName, featuredEvent)}
+                    onClick={(clickEvent) => {
+                      clickEvent.stopPropagation();
+                    }}
+                    className="inline-flex rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 hover:border-fuchsia-200/40"
+                  >
+                    Event page
+                  </Link>
+                </div>
                 <VibeTagChips entity={featuredEvent} tone="amber" className="mb-2" includeMixedFallback />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-purple-200/90">Next notable event in this city</p>
@@ -191,6 +205,17 @@ export default function CityEventsRailSection({
               <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/70">
                 {polishEventDescription(event, cityName)}
               </p>
+              <div className="mb-2">
+                <Link
+                  href={buildEventPath(city || cityName, event)}
+                  onClick={(clickEvent) => {
+                    clickEvent.stopPropagation();
+                  }}
+                  className="inline-flex rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 hover:border-fuchsia-200/40"
+                >
+                  Event page
+                </Link>
+              </div>
               <VibeTagChips entity={event} tone="amber" className="mb-2" includeMixedFallback />
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs text-purple-400">Community event</p>
