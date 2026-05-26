@@ -29,3 +29,35 @@ jobs:
 
       - name: Run release verification
         run: npm run verify:release
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start app for entity E2E
+        run: |
+          npm run start -- -p 3001 > /tmp/queeratlas-start.log 2>&1 &
+          echo "APP_PID=$!" >> "$GITHUB_ENV"
+          for i in {1..60}; do
+            if curl -fsS "http://127.0.0.1:3001" > /dev/null; then
+              echo "App is up on :3001"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "App failed to start"
+          cat /tmp/queeratlas-start.log || true
+          exit 1
+
+      - name: Run event entity browser verification
+        env:
+          BASE_URL: http://127.0.0.1:3001
+          EVENT_ENTITY_TEST_CITIES: vancouver,toronto,new_york,cape_town,miami
+          EVENT_ENTITY_TEST_MIN_PASSING: 5
+        run: npm run test:event-entity-e2e
+
+      - name: Stop app
+        if: always()
+        run: |
+          if [ -n "${APP_PID:-}" ]; then
+            kill "$APP_PID" || true
+          fi

@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test:smoke": "node scripts/test-smoke.mjs",
     "test:e2e-smoke": "node scripts/test-e2e-smoke.mjs",
+    "test:event-entity-e2e": "node scripts/test-event-entity-e2e.mjs",
     "test:favorites-helpers": "node scripts/test-favorites-helpers.mjs",
     "test:regressions": "node scripts/test-regressions.mjs",
     "test:map-guard-smoke": "node scripts/test-map-guard-smoke.mjs",
@@ -36,6 +37,7 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "playwright": "^1.60.0",
     "tailwindcss": "^4"
   },
   "engines": {
