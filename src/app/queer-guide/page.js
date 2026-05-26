@@ -11,6 +11,12 @@ export const metadata = {
   ],
   alternates: {
     canonical: "/queer-guide",
+    languages: {
+      "en-US": "/gay-guide",
+      en: "/queer-guide",
+      "sv-SE": "/hbtq-guide",
+      "x-default": "/queer-guide",
+    },
   },
   openGraph: {
     title: "Queer Travel Guide 2026 | Queer Atlas",
