@@ -1,6 +1,13 @@
 import { chromium } from "playwright";
 
 const BASE_URL = String(process.env.BASE_URL || "http://localhost:3001").replace(/\/+$/, "");
+const ROUTE_CANDIDATES = String(
+  process.env.EVENT_ENTITY_TEST_PATHS ||
+    "/bilbao/events/zinegoak-2026--seed-event-bilbao-zinegoak-2026,/tallinn/events/baltic-pride-tallinn-2026--seed-event-tallinn-baltic-pride-week-2026,/naples/events/napoli-pride-2026--seed-event-naples-pride-2026,/cancun/events/cancun-pride-march-2026--seed-event-cancun-pride-march-2026,/phnom_penh/events/pride-fest-cambodia-2026--seed-event-phnompenh-pride-fest-2026"
+)
+  .split(",")
+  .map((entry) => entry.trim())
+  .filter(Boolean);
 const CITY_CANDIDATES = String(
   process.env.EVENT_ENTITY_TEST_CITIES || "bilbao,tallinn,naples,cancun,phnom_penh"
 )
@@ -13,6 +20,36 @@ function asErrorMessage(error) {
   return String(error?.message || error || "Unknown error");
 }
 
+function parseEventPath(pathname = "") {
+  const raw = String(pathname || "");
+  const marker = "/events/";
+  const idx = raw.indexOf(marker);
+  if (idx === -1) return { citySlug: "", nameSlug: "" };
+  const citySlug = raw.slice(1, idx).replace(/^\/+|\/+$/g, "");
+  const eventSlug = raw.slice(idx + marker.length).replace(/^\/+|\/+$/g, "");
+  const dividerIndex = eventSlug.lastIndexOf("--");
+  const nameSlug = dividerIndex === -1 ? eventSlug : eventSlug.slice(0, dividerIndex);
+  return { citySlug, nameSlug };
+}
+
+function canonicalMatchesEventPath({ currentPath = "", canonicalHref = "" }) {
+  const { citySlug, nameSlug } = parseEventPath(currentPath);
+  if (!citySlug || !nameSlug) return false;
+
+  let canonicalPath = "";
+  try {
+    canonicalPath = new URL(String(canonicalHref || ""), BASE_URL).pathname;
+  } catch {
+    canonicalPath = String(canonicalHref || "");
+  }
+  const normalizedCanonical = String(canonicalPath || "").replace(/\/+$/, "");
+  const normalizedCurrent = String(currentPath || "").replace(/\/+$/, "");
+  if (normalizedCanonical === normalizedCurrent) return true;
+
+  const canonicalPrefix = `/${citySlug}/events/${nameSlug}--`;
+  return normalizedCanonical.startsWith(canonicalPrefix);
+}
+
 async function waitForEventLinks(page, timeoutMs = 12000) {
   const start = Date.now();
   const links = page.getByRole("link", { name: "Event page" });
@@ -22,6 +59,42 @@ async function waitForEventLinks(page, timeoutMs = 12000) {
     await page.waitForTimeout(600);
   }
   return links.count();
+}
+
+async function verifyEventEntityByPath(page, path) {
+  const eventUrl = `${BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  await page.goto(eventUrl, { waitUntil: "domcontentloaded", timeout: 45000 });
+  await page.waitForTimeout(800);
+
+  const currentUrl = new URL(page.url());
+  const canonicalHref = await page.locator('link[rel="canonical"]').first().getAttribute("href");
+  const hasEventJsonLd = await page.locator('script[type="application/ld+json"]').evaluateAll((nodes) =>
+    nodes.some((node) => {
+      const raw = node.textContent || "";
+      return raw.includes('"@type":"Event"') || raw.includes('"@type": "Event"');
+    })
+  );
+  const hasH1 = (await page.locator("h1").count()) > 0;
+  const canonicalOk = canonicalMatchesEventPath({
+    currentPath: currentUrl.pathname,
+    canonicalHref,
+  });
+
+  if (!canonicalOk || !hasEventJsonLd || !hasH1) {
+    return {
+      path,
+      ok: false,
+      reason: `Entity page validation failed (canonicalOk=${canonicalOk}, eventJsonLd=${hasEventJsonLd}, hasH1=${hasH1})`,
+      currentPath: currentUrl.pathname,
+      canonicalHref,
+    };
+  }
+
+  return {
+    path,
+    ok: true,
+    currentPath: currentUrl.pathname,
+  };
 }
 
 async function verifyCityEventEntity(page, city) {
@@ -104,16 +177,31 @@ async function run() {
   const page = await context.newPage();
 
   const results = [];
-  for (const city of CITY_CANDIDATES) {
-    try {
-      const result = await verifyCityEventEntity(page, city);
-      results.push(result);
-    } catch (error) {
-      results.push({
-        city,
-        ok: false,
-        reason: asErrorMessage(error),
-      });
+  if (ROUTE_CANDIDATES.length > 0) {
+    for (const path of ROUTE_CANDIDATES) {
+      try {
+        const result = await verifyEventEntityByPath(page, path);
+        results.push(result);
+      } catch (error) {
+        results.push({
+          path,
+          ok: false,
+          reason: asErrorMessage(error),
+        });
+      }
+    }
+  } else {
+    for (const city of CITY_CANDIDATES) {
+      try {
+        const result = await verifyCityEventEntity(page, city);
+        results.push(result);
+      } catch (error) {
+        results.push({
+          city,
+          ok: false,
+          reason: asErrorMessage(error),
+        });
+      }
     }
   }
 
