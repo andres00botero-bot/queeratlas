@@ -36,6 +36,32 @@ function normalizeTags(value) {
   return [];
 }
 
+function buildEventDiscoverLinks({ city, cityName, vibeTags = [] }) {
+  const hasElectronicSignal = vibeTags.some((tag) =>
+    ["techno", "electronic", "underground", "industrial"].includes(String(tag || "").toLowerCase())
+  );
+  const nightlifeKey = hasElectronicSignal ? "queer-techno-clubs" : "queer-clubs";
+
+  return [
+    {
+      href: `/${city}/discover/events-tonight`,
+      label: `LGBTQ Events Tonight in ${cityName}`,
+    },
+    {
+      href: `/${city}/discover/queer-events-this-week`,
+      label: `Queer Events This Week in ${cityName}`,
+    },
+    {
+      href: `/${city}/discover/${nightlifeKey}`,
+      label: `Best Follow-up Nightlife Route in ${cityName}`,
+    },
+    {
+      href: "/topics/events",
+      label: "Compare Events Across Cities",
+    },
+  ];
+}
+
 async function findEventByParams(cityParam = "", slugParam = "") {
   const city = normalizeCitySlug(cityParam);
   const slug = String(slugParam || "").trim();
@@ -174,6 +200,7 @@ export default async function CityEventDetailPage({ params }) {
   const eventJsonLd = buildEventJsonLd({ event, city, cityName });
   const vibeTags = normalizeTags(event?.vibe_tags).slice(0, 6);
   const fallbackSlug = buildEntitySlug(event.name, event.id);
+  const discoverLinks = buildEventDiscoverLinks({ city, cityName, vibeTags });
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
@@ -254,6 +281,24 @@ export default async function CityEventDetailPage({ params }) {
                 {canonicalUrl}
               </a>
             </p>
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
+          <h2 className="text-lg font-semibold text-cyan-50">Plan your next move</h2>
+          <p className="mt-2 text-sm leading-7 text-cyan-50/84">
+            Use related city routes to keep momentum if plans shift, queues grow, or you want a stronger post-event sequence.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {discoverLinks.map((entry) => (
+              <Link
+                key={entry.href}
+                href={entry.href}
+                className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-xs text-cyan-50 transition hover:border-cyan-100/45"
+              >
+                {entry.label}
+              </Link>
+            ))}
           </div>
         </section>
 
