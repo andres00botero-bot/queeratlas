@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { validateBa4Csv } from "./seo-ba4-validate.mjs";
 
 function parseArgs(argv) {
   const args = {
@@ -363,8 +364,10 @@ function buildWeeklyReport(rows, rankedItems, meta) {
 function main() {
   const args = parseArgs(process.argv);
   const csvPath = path.resolve(args.csv);
-  if (!fs.existsSync(csvPath)) {
-    console.error(`[ba4-priority] CSV not found: ${csvPath}`);
+  const validation = validateBa4Csv(csvPath);
+  if (!validation.ok) {
+    console.error(`[ba4-priority] validation failed for ${csvPath}`);
+    validation.errors.forEach((err) => console.error(`- ${err}`));
     process.exit(1);
   }
 
