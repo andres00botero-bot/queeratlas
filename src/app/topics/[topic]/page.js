@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { getTopicHub, listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
-import { humanizeCityKey, humanizeTopicKey, listCitationRules, listSourceTaxonomy } from "@/lib/seo/entityConsistency";
+import { humanizeCityKey, humanizeTopicKey } from "@/lib/seo/entityConsistency";
 
 function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
@@ -105,8 +105,6 @@ export default async function TopicHubPage({ params }) {
 
   const canonical = buildTopicPath(hub.key);
   const selectedCities = hub.cities.filter((city) => cityCoreConfig[city]);
-  const sourceTaxonomy = listSourceTaxonomy();
-  const citationRules = listCitationRules();
   const clusterKeys = Array.isArray(hub.clusterKeys) && hub.clusterKeys.length > 0
     ? hub.clusterKeys
     : hub.clusterKey
@@ -177,27 +175,20 @@ export default async function TopicHubPage({ params }) {
         </section>
 
         <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
-          <h2 className="text-lg font-semibold text-cyan-50">Evidence and freshness for this hub</h2>
+          <h2 className="text-lg font-semibold text-cyan-50">Evidence and freshness</h2>
           <p className="mt-2 text-sm leading-7 text-cyan-50/84">
             This hub currently maps {cityClusterRoutes.length} city-topic routes across {selectedCities.length} cities.
-            Use route-level pages as the canonical decision layer, then validate timing and momentum in <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link> before publishing or sharing.
+            For full citation and source standards, open reports; for live momentum checks, use <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link>.
           </p>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/82">
-            {sourceTaxonomy.map((item) => (
-              <li key={item.key}>
-                <span className="font-semibold text-cyan-50">{item.label}</span>: {item.description}
-              </li>
-            ))}
-            {citationRules.map((rule) => (
-              <li key={rule}>{rule}</li>
-            ))}
-          </ul>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/community-policy" className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-white/84 transition hover:border-white/34 hover:text-white">
               Moderation policy
             </Link>
             <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
               All topic hubs
+            </Link>
+            <Link href="/reports" className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1 text-fuchsia-100 transition hover:border-fuchsia-100/45">
+              Open reports
             </Link>
           </div>
         </section>

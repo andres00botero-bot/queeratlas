@@ -17,7 +17,7 @@ import {
   QA_SITE_URL,
   QA_WEBSITE_ID,
 } from "@/lib/seo/entityAuthority";
-import { QA_SOURCE_CONFIDENCE, listCitationRules, listSourceTaxonomy } from "@/lib/seo/entityConsistency";
+import { QA_SOURCE_CONFIDENCE } from "@/lib/seo/entityConsistency";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
@@ -864,8 +864,6 @@ export default function NowPage() {
     []
   );
   const topicHubKeys = useMemo(() => listTopicHubs().map((hub) => hub.key), []);
-  const sourceTaxonomyEntries = useMemo(() => listSourceTaxonomy(), []);
-  const citationRules = useMemo(() => listCitationRules(), []);
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
     [adminNews]
@@ -2849,21 +2847,14 @@ export default function NowPage() {
 
         <section className="mt-8 rounded-[22px] border border-cyan-200/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(12,12,12,0.95))] p-4">
           <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">AI Citation Layer</p>
-          <h2 className="mt-1 text-sm font-semibold text-cyan-50">Source quality and freshness standard</h2>
+          <h2 className="mt-1 text-sm font-semibold text-cyan-50">Methodology and source notes</h2>
           <p className="mt-2 text-xs leading-6 text-cyan-50/82">
-            Queer Atlas labels each signal by confidence level and keeps editorial + community updates traceable for safer route decisions.
+            Full citation standards and source taxonomy live in our report pages for cleaner reading here.
           </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-6 text-cyan-50/80">
-            {sourceTaxonomyEntries.map((item) => (
-              <li key={`now-source-taxonomy-${item.key}`}>
-                <span className="font-semibold text-cyan-50">{item.label}</span>: {item.description}
-              </li>
-            ))}
-            {citationRules.map((rule) => (
-              <li key={`now-citation-rule-${rule}`}>{rule}</li>
-            ))}
-          </ul>
           <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <Link href="/reports" className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1 text-fuchsia-100 transition hover:border-fuchsia-100/45">
+              Open reports
+            </Link>
             <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
               Open topic hubs
             </Link>
