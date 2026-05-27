@@ -16,9 +16,13 @@ npm run verify:release
 4. `npm run test:e2e-smoke`
 5. `npm run test:regressions`
 6. `npm run test:map-guard-smoke`
-7. `npm run analyze:bundle`
-8. `node scripts/verify-bundle-budget.mjs`
-9. `node scripts/verify-seo-gate.mjs`
+7. `npm run test:internal-link-depth`
+8. `npm run test:entity-consistency`
+9. `npm run analyze:bundle`
+10. `node scripts/verify-bundle-budget.mjs`
+11. `node scripts/verify-seo-gate.mjs`
+12. `npm run seo:health-report`
+13. `npm run seo:health-weekly-report`
 
 ## Performance Budgets (client analyzer)
 Defined in `scripts/verify-bundle-budget.mjs`.
@@ -38,6 +42,13 @@ Defined in `scripts/verify-seo-gate.mjs`.
 - Sitemap route coverage checks
 - Robots baseline checks
 - Structured data presence checks for city/news/guide surfaces
+
+## SEO Observability Output
+- `seo:health-report` provides current snapshot/crawler/CWV health summary.
+- `seo:health-weekly-report` generates `reports/seo-health-weekly-latest.md` for trend tracking.
+- If Supabase env vars are missing, both commands skip safely and do not fail release gate.
+- Release Verify workflow uploads `reports/seo-health-weekly-latest.md` as artifact `seo-health-weekly-report` when available.
+- Release Verify workflow also exports `reports/seo-health-latest.json` and uploads artifact `seo-health-json-snapshot`.
 
 ## Failure Handling
 1. Fix root cause (no temporary patching).

@@ -29,3 +29,26 @@ jobs:
 
       - name: Run release verification
         run: npm run verify:release
+
+      - name: Upload SEO weekly report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-health-weekly-report
+          path: reports/seo-health-weekly-latest.md
+          if-no-files-found: warn
+
+      - name: Export SEO health JSON snapshot
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p reports
+          node scripts/seo-health-report.mjs --json > reports/seo-health-latest.json
+
+      - name: Upload SEO health JSON artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-health-json-snapshot
+          path: reports/seo-health-latest.json
+          if-no-files-found: warn
