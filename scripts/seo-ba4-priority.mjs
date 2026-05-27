@@ -2,7 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 
 function parseArgs(argv) {
-  const args = { csv: "docs/templates/seo-ba4-kpi-tracker.csv", top: 10, out: "" };
+  const args = {
+    csv: "docs/templates/seo-ba4-kpi-tracker.csv",
+    top: 10,
+    out: "",
+    weeklyReportOut: "",
+    weekId: "",
+    owner: "unassigned",
+  };
   for (let i = 2; i < argv.length; i += 1) {
     const part = argv[i];
     if (part === "--csv" && argv[i + 1]) {
@@ -13,6 +20,15 @@ function parseArgs(argv) {
       i += 1;
     } else if (part === "--out" && argv[i + 1]) {
       args.out = argv[i + 1];
+      i += 1;
+    } else if (part === "--weekly-report-out" && argv[i + 1]) {
+      args.weeklyReportOut = argv[i + 1];
+      i += 1;
+    } else if (part === "--week-id" && argv[i + 1]) {
+      args.weekId = argv[i + 1];
+      i += 1;
+    } else if (part === "--owner" && argv[i + 1]) {
+      args.owner = argv[i + 1];
       i += 1;
     }
   }
@@ -95,6 +111,10 @@ function normalizeStage(stage) {
   return String(stage || "").toLowerCase().trim();
 }
 
+function hasSent(row) {
+  return Boolean(row.sent_at) || ["sent", "followup_1", "followup_2", "replied", "published", "closed_lost"].includes(normalizeStage(row.stage));
+}
+
 function tierWeight(tier) {
   if (tier === "P1") return 30;
   if (tier === "P2") return 20;
@@ -164,8 +184,7 @@ function summarize(rows) {
     }
 
     const item = byTarget.get(key);
-    const hasSent = Boolean(row.sent_at) || ["sent", "followup_1", "followup_2", "replied", "published", "closed_lost"].includes(normalizeStage(row.stage));
-    if (hasSent) item.sent += 1;
+    if (hasSent(row)) item.sent += 1;
     if (row.replied_at || ["replied", "published"].includes(normalizeStage(row.stage))) item.replied += 1;
     if (row.published_at || normalizeStage(row.stage) === "published") item.published += 1;
 
@@ -253,6 +272,94 @@ function buildMarkdown(items, sourceCsv) {
   return lines.join("\n");
 }
 
+function detectWeekId(rows, requestedWeekId) {
+  if (requestedWeekId) return requestedWeekId;
+  const weekIds = [...new Set(rows.map((row) => row.week_id).filter(Boolean))].sort();
+  return weekIds.length ? weekIds[weekIds.length - 1] : "unknown-week";
+}
+
+function roundPercent(value) {
+  return `${Math.round(value * 100)}%`;
+}
+
+function buildWeeklyReport(rows, rankedItems, meta) {
+  const today = new Date().toISOString().slice(0, 10);
+  const weekRows = rows.filter((row) => row.week_id === meta.weekId);
+  const sourceRows = weekRows.length ? weekRows : rows;
+
+  const sent = sourceRows.filter((row) => hasSent(row)).length;
+  const replied = sourceRows.filter((row) => row.replied_at || ["replied", "published"].includes(normalizeStage(row.stage))).length;
+  const published = sourceRows.filter((row) => row.published_at || normalizeStage(row.stage) === "published").length;
+  const p1Sent = sourceRows.filter((row) => row.target_tier === "P1" && hasSent(row)).length;
+  const p1Published = sourceRows.filter(
+    (row) => row.target_tier === "P1" && (row.published_at || normalizeStage(row.stage) === "published")
+  ).length;
+  const cqsValues = sourceRows.map((row) => Number(row.cqs || 0)).filter((num) => !Number.isNaN(num) && num > 0);
+  const avgCqs = cqsValues.length ? Math.round(cqsValues.reduce((acc, value) => acc + value, 0) / cqsValues.length) : 0;
+
+  const responseRate = sent ? replied / sent : 0;
+  const publishRate = sent ? published / sent : 0;
+  const p1PublishRate = p1Sent ? p1Published / p1Sent : 0;
+
+  const wins = sourceRows
+    .filter((row) => row.published_url && (row.published_at || normalizeStage(row.stage) === "published"))
+    .slice(0, 3);
+  const blockers = sourceRows.filter((row) => ["followup_2", "closed_lost"].includes(normalizeStage(row.stage))).slice(0, 2);
+
+  const lines = [];
+  lines.push("# BA4 Weekly Brand Authority Report");
+  lines.push("");
+  lines.push("## Week");
+  lines.push(`- Week ID: \`${meta.weekId}\``);
+  lines.push(`- Reporting Date: \`${today}\``);
+  lines.push(`- Owner: \`${meta.owner}\``);
+  lines.push("");
+  lines.push("## KPI Snapshot");
+  lines.push(`- Outreach Volume (sent): \`${sent}\``);
+  lines.push(`- Response Rate: \`${roundPercent(responseRate)}\``);
+  lines.push(`- Publish Rate: \`${roundPercent(publishRate)}\``);
+  lines.push(`- P1 Publish Rate: \`${roundPercent(p1PublishRate)}\``);
+  lines.push(`- Average CQS: \`${avgCqs}\``);
+  lines.push("");
+  lines.push("## Top 10 Priority Targets");
+  lines.push("| Rank | Target | Tier | Stage | Score | Resp Rate | Publish Rate | Avg CQS |");
+  lines.push("|---|---|---|---|---:|---:|---:|---:|");
+  rankedItems.forEach((item, idx) => {
+    lines.push(
+      `| ${idx + 1} | ${item.target} | ${item.tier} | ${item.stage} | ${item.score} | ${roundPercent(item.responseRate)} | ${roundPercent(
+        item.publishRate
+      )} | ${Math.round(item.avgCqs)} |`
+    );
+  });
+  lines.push("");
+  lines.push("## Wins");
+  if (wins.length) {
+    wins.forEach((row, idx) => {
+      lines.push(`${idx + 1}. ${row.target_name}: ${row.published_url}`);
+    });
+  } else {
+    lines.push("1. No published links this cycle.");
+  }
+  lines.push("");
+  lines.push("## Losses / Blockers");
+  if (blockers.length) {
+    blockers.forEach((row, idx) => {
+      lines.push(`${idx + 1}. ${row.target_name}: stage=${normalizeStage(row.stage) || "unknown"} (${row.notes || "no notes"})`);
+    });
+  } else {
+    lines.push("1. No blocker rows flagged in this cycle.");
+  }
+  lines.push("");
+  lines.push("## Next Week Action Plan");
+  lines.push("1. Prioritize top 3 ranked targets for same-day outreach.");
+  lines.push("2. Execute follow-up SLA for all rows in sent/followup_1.");
+  lines.push("3. Tighten template based on blocker reasons.");
+  lines.push("");
+  lines.push(`Source CSV: \`${meta.sourceCsv}\``);
+  lines.push("");
+  return lines.join("\n");
+}
+
 function main() {
   const args = parseArgs(process.argv);
   const csvPath = path.resolve(args.csv);
@@ -280,6 +387,15 @@ function main() {
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, buildMarkdown(ranked, args.csv), "utf8");
     console.log(`[ba4-priority] wrote ${outPath}`);
+  }
+
+  if (args.weeklyReportOut) {
+    const reportPath = path.resolve(args.weeklyReportOut);
+    const weekId = detectWeekId(rows, args.weekId);
+    const report = buildWeeklyReport(rows, ranked, { weekId, owner: args.owner, sourceCsv: args.csv });
+    fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+    fs.writeFileSync(reportPath, report, "utf8");
+    console.log(`[ba4-priority] wrote ${reportPath}`);
   }
 }
 
