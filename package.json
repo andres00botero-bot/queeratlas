@@ -13,6 +13,7 @@
     "test:event-entity-e2e": "node scripts/test-event-entity-e2e.mjs",
     "test:internal-link-depth": "node scripts/test-internal-link-depth.mjs",
     "test:entity-consistency": "node scripts/test-entity-consistency.mjs",
+    "seo:ba4-priority": "node scripts/seo-ba4-priority.mjs --csv docs/templates/seo-ba4-kpi-tracker.csv --top 10",
     "test:favorites-helpers": "node scripts/test-favorites-helpers.mjs",
     "test:regressions": "node scripts/test-regressions.mjs",
     "test:map-guard-smoke": "node scripts/test-map-guard-smoke.mjs",
