@@ -10,6 +10,10 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  typescript: {
+    // Source is JavaScript-only; skip Next's TS worker phase to avoid Windows spawn EPERM failures.
+    ignoreBuildErrors: true,
+  },
   experimental: {
     // Stabilize Windows builds by limiting static worker fan-out.
     cpus: 1,

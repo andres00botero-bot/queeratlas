@@ -5,6 +5,7 @@ import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFea
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { getCityClusterTopic, listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { isTier1CityTopic } from "@/lib/seo/indexingTier";
 
 export const revalidate = 600;
 
@@ -301,6 +302,13 @@ function buildClusterMetaCopy({ topicConfig, cityName }) {
   return { title, description };
 }
 
+function shouldIndexCityTopicPage({ topicConfig, cityName, relatedTopicCount }) {
+  const summaryLength = String(topicConfig?.summary || "").trim().length;
+  const keyphraseCount = Array.isArray(topicConfig?.keyphrases) ? topicConfig.keyphrases.length : 0;
+  const cityNameLength = String(cityName || "").trim().length;
+  return summaryLength >= 80 && keyphraseCount >= 3 && relatedTopicCount >= 2 && cityNameLength >= 2;
+}
+
 export async function generateMetadata({ params }) {
   const resolved = await params;
   const city = normalizeCityKey(resolved?.city || "");
@@ -320,6 +328,10 @@ export async function generateMetadata({ params }) {
   const canonicalUrl = toAbsoluteUrl(canonical);
   const ownership = getCityKeywordOwnership(cityName);
   const { title, description } = buildClusterMetaCopy({ topicConfig, cityName });
+  const relatedTopicCount = listCityClusterTopics().filter((entry) => entry.key !== topic).length;
+  const qualityReady = shouldIndexCityTopicPage({ topicConfig, cityName, relatedTopicCount });
+  const tierReady = isTier1CityTopic(city, topic);
+  const shouldIndex = qualityReady && tierReady;
 
   return {
     title,
@@ -347,6 +359,9 @@ export async function generateMetadata({ params }) {
       title,
       description,
     },
+    robots: shouldIndex
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   };
 }
 

@@ -4,6 +4,7 @@ import { cityCoreConfig } from "@/lib/cityCore";
 import { getTopicHub, listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { humanizeCityKey, humanizeTopicKey } from "@/lib/seo/entityConsistency";
+import { isIndexableTopicHub } from "@/lib/seo/indexingTier";
 
 function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
@@ -15,6 +16,11 @@ function buildTopicPath(topic = "") {
 
 export function generateStaticParams() {
   return listTopicHubs().map((hub) => ({ topic: hub.key }));
+}
+
+function shouldIndexTopicHub({ hub, selectedCitiesCount, routeCount }) {
+  const descriptionLength = String(hub?.description || "").trim().length;
+  return descriptionLength >= 90 && selectedCitiesCount >= 3 && routeCount >= 6;
 }
 
 export async function generateMetadata({ params }) {
@@ -30,6 +36,20 @@ export async function generateMetadata({ params }) {
   }
 
   const canonical = buildTopicPath(hub.key);
+  const selectedCities = (hub.cities || []).filter((city) => cityCoreConfig[city]);
+  const clusterKeys = Array.isArray(hub.clusterKeys) && hub.clusterKeys.length > 0
+    ? hub.clusterKeys
+    : hub.clusterKey
+      ? [hub.clusterKey]
+      : [];
+  const routeCount = selectedCities.length * clusterKeys.length;
+  const qualityReady = shouldIndexTopicHub({
+    hub,
+    selectedCitiesCount: selectedCities.length,
+    routeCount,
+  });
+  const tierReady = isIndexableTopicHub(hub.key);
+  const shouldIndex = qualityReady && tierReady;
   const title = `${hub.title} 2026 | Queer Atlas`;
   const description = `${hub.description} Compare city-by-city discover routes, safety context, and social signal in one topical hub.`;
 
@@ -49,6 +69,9 @@ export async function generateMetadata({ params }) {
       title,
       description,
     },
+    robots: shouldIndex
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   };
 }
 

@@ -56,7 +56,7 @@ export const SEO_REPORTS = [
     ],
     creatorSnippets: {
       reddit:
-        "Safest Queer Cities 2026 is live. We focused on movement confidence and fallback depth, not generic safety clichés. Good starting point for safety-first trip planning.",
+        "Safest Queer Cities 2026 is live. We focused on movement confidence and fallback depth, not generic safety cliches. Good starting point for safety-first trip planning.",
       tiktok:
         "Safest Queer Cities 2026 is out. We score city safety by route confidence and practical fallback options. Keep this for planning smarter nights.",
       instagram:
