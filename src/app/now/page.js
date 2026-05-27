@@ -1505,6 +1505,27 @@ export default function NowPage() {
           )}
         </div>
 
+        <section className="mb-6 rounded-[22px] border border-cyan-200/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(12,12,12,0.95))] p-4">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">AI Citation Layer</p>
+          <h2 className="mt-1 text-sm font-semibold text-cyan-50">Source quality and freshness standard</h2>
+          <p className="mt-2 text-xs leading-6 text-cyan-50/82">
+            Queer Atlas labels each signal by confidence level and keeps editorial + community updates traceable for safer route decisions.
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-6 text-cyan-50/80">
+            <li><span className="font-semibold text-cyan-50">Official source</span>: direct organizer, venue, or authority reference.</li>
+            <li><span className="font-semibold text-cyan-50">Community source</span>: verified member signal with moderation review.</li>
+            <li><span className="font-semibold text-cyan-50">Developing signal</span>: early indicator pending stronger confirmation.</li>
+          </ul>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
+              Open topic hubs
+            </Link>
+            <Link href="/community-policy" className="rounded-full border border-white/18 bg-white/8 px-3 py-1 text-white/82 transition hover:border-white/30 hover:text-white">
+              Read moderation policy
+            </Link>
+          </div>
+        </section>
+
         <PageControls
           className="mb-6 transition-all duration-300"
           controlsRef={nowControlsRef}

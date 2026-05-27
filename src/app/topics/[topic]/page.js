@@ -161,6 +161,27 @@ export default async function TopicHubPage({ params }) {
           <p className="mt-3 text-sm leading-7 text-white/82">{hub.description}</p>
         </section>
 
+        <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
+          <h2 className="text-lg font-semibold text-cyan-50">Evidence and freshness for this hub</h2>
+          <p className="mt-2 text-sm leading-7 text-cyan-50/84">
+            This hub currently maps {cityClusterRoutes.length} city-topic routes across {selectedCities.length} cities.
+            Use route-level pages as the canonical decision layer, then validate timing and momentum in <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link> before publishing or sharing.
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/82">
+            <li>Official sources: organizer or venue links from route-level pages.</li>
+            <li>Community sources: moderated member signal with quality controls.</li>
+            <li>Operational rule: cite page URL + city + route intent for reproducible context.</li>
+          </ul>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <Link href="/community-policy" className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-white/84 transition hover:border-white/34 hover:text-white">
+              Moderation policy
+            </Link>
+            <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
+              All topic hubs
+            </Link>
+          </div>
+        </section>
+
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
           <h2 className="text-lg font-semibold">City Cluster Routes</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">

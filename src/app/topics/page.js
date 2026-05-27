@@ -79,6 +79,23 @@ export default function TopicsIndexPage() {
             ))}
           </div>
         </section>
+
+        <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
+          <h2 className="text-lg font-semibold text-cyan-50">How to cite these topic hubs</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/84">
+            <li>Reference the exact topic URL and city-cluster route used for your claim.</li>
+            <li>Pair hub routes with current event context from <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link> before publishing recommendations.</li>
+            <li>Treat community-led notes as moderated field signal, not legal or medical advice.</li>
+          </ul>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <Link href="/community-policy" className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-white/84 transition hover:border-white/34 hover:text-white">
+              Moderation policy
+            </Link>
+            <Link href="/cities" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
+              City evidence routes
+            </Link>
+          </div>
+        </section>
       </div>
     </main>
   );
