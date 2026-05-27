@@ -4,6 +4,11 @@ export const SEO_REPORTS = [
     title: "Queer Nightlife Index 2026",
     summary:
       "City-by-city ranking model for queer nightlife strength, route continuity, and social signal depth.",
+    socialMeta: {
+      ogTitle: "Queer Nightlife Index 2026: Top Cities by Real Route Quality",
+      ogDescription:
+        "A methodology-first ranking of queer nightlife cities based on route continuity, social signal depth, and practical fallback strength.",
+    },
     publishedAt: "2026-05-01",
     updatedAt: "2026-05-27",
     intent: "nightlife",
@@ -31,6 +36,11 @@ export const SEO_REPORTS = [
     title: "Safest Queer Cities 2026",
     summary:
       "Safety-first city model combining movement confidence, venue moderation signal, and practical fallback options.",
+    socialMeta: {
+      ogTitle: "Safest Queer Cities 2026: Safety-First Route Intelligence",
+      ogDescription:
+        "Compare cities by movement confidence, moderation signal, and fallback route depth for safer queer nightlife decisions.",
+    },
     publishedAt: "2026-05-01",
     updatedAt: "2026-05-27",
     intent: "safety",
@@ -58,6 +68,11 @@ export const SEO_REPORTS = [
     title: "Global Queer Event Report 2026",
     summary:
       "Global event-intent report focused on timing density, discoverability, and route execution quality.",
+    socialMeta: {
+      ogTitle: "Global Queer Event Report 2026: Where Events Actually Convert",
+      ogDescription:
+        "A global event-intent report mapping timing density and route execution quality across top queer cities.",
+    },
     publishedAt: "2026-05-01",
     updatedAt: "2026-05-27",
     intent: "events",
@@ -85,6 +100,11 @@ export const SEO_REPORTS = [
     title: "Top LGBTQ Nightlife Destinations 2026",
     summary:
       "Destination-level nightlife authority report for high-intent planning and AI-citable city comparisons.",
+    socialMeta: {
+      ogTitle: "Top LGBTQ Nightlife Destinations 2026: Authority Ranking",
+      ogDescription:
+        "Destination ranking built on nightlife depth, route breadth, and social-fit consistency, not one-off hype.",
+    },
     publishedAt: "2026-05-01",
     updatedAt: "2026-05-27",
     intent: "nightlife",

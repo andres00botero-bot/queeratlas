@@ -30,6 +30,8 @@ export async function generateMetadata({ params }) {
   const canonical = buildCanonical(report.slug);
   const title = `${report.title} | Queer Atlas`;
   const description = report.summary;
+  const ogTitle = String(report.socialMeta?.ogTitle || title).trim();
+  const ogDescription = String(report.socialMeta?.ogDescription || description).trim();
 
   return {
     title,
@@ -37,16 +39,16 @@ export async function generateMetadata({ params }) {
     keywords: [...report.keyphrases, "queer atlas report", "LGBTQ report 2026"],
     alternates: { canonical },
     openGraph: {
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
       url: toAbsoluteUrl(canonical),
       type: "article",
       siteName: "Queer Atlas",
     },
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: ogTitle,
+      description: ogDescription,
     },
   };
 }
