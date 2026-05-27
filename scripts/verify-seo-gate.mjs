@@ -22,7 +22,28 @@ ensureContains(rootLayout, /title:\s*{/, `${rootLayoutPath}: missing title metad
 ensureContains(rootLayout, /description:/, `${rootLayoutPath}: missing description metadata`, failures);
 ensureContains(rootLayout, /alternates:\s*{[\s\S]*canonical:/, `${rootLayoutPath}: missing canonical metadata`, failures);
 ensureContains(rootLayout, /robots:\s*{/, `${rootLayoutPath}: missing robots metadata`, failures);
-ensureContains(rootLayout, /"@type":\s*"WebSite"/, `${rootLayoutPath}: missing WebSite JSON-LD`, failures);
+const hasInlineWebSiteJsonLd = /"@type":\s*"WebSite"/.test(rootLayout);
+const usesPrimaryEntityGraph = /buildPrimaryEntityGraph\s*\(/.test(rootLayout);
+if (!hasInlineWebSiteJsonLd) {
+  if (!usesPrimaryEntityGraph) {
+    failures.push(`${rootLayoutPath}: missing WebSite JSON-LD`);
+  } else {
+    const entityAuthorityPath = "src/lib/seo/entityAuthority.js";
+    const entityAuthoritySource = read(entityAuthorityPath);
+    ensureContains(
+      entityAuthoritySource,
+      /"@type":\s*"WebSite"/,
+      `${entityAuthorityPath}: missing WebSite entity`,
+      failures
+    );
+    ensureContains(
+      entityAuthoritySource,
+      /"@type":\s*"SearchAction"/,
+      `${entityAuthorityPath}: missing SearchAction for WebSite`,
+      failures
+    );
+  }
+}
 
 const indexedRouteFiles = [
   "src/app/cities/layout.js",
