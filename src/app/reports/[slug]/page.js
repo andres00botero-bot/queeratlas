@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSeoReport, listSeoReports } from "@/lib/seo/reportsIndex";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { listCitationRules, listSourceTaxonomy } from "@/lib/seo/entityConsistency";
 
 function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
@@ -78,6 +79,8 @@ export default async function ReportDetailPage({ params }) {
   const canonical = buildCanonical(report.slug);
   const canonicalUrl = toAbsoluteUrl(canonical);
   const faqEntries = buildFaqEntries(report);
+  const citationRules = listCitationRules();
+  const sourceTaxonomy = listSourceTaxonomy();
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -131,7 +134,7 @@ export default async function ReportDetailPage({ params }) {
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{report.title}</h1>
           <p className="mt-3 text-sm leading-7 text-white/82">{report.summary}</p>
           <p className="mt-2 text-xs text-white/60">
-            Published {report.publishedAt} · Updated {report.updatedAt}
+            Published {report.publishedAt} | Updated {report.updatedAt}
           </p>
         </header>
 
@@ -156,6 +159,23 @@ export default async function ReportDetailPage({ params }) {
           </div>
         </section>
 
+        <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
+          <h2 className="text-lg font-semibold text-cyan-50">Citation and source consistency</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/84">
+            {citationRules.map((rule) => (
+              <li key={rule}>{rule}</li>
+            ))}
+          </ul>
+          <h3 className="mt-4 text-sm font-semibold text-cyan-50">Source taxonomy</h3>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/82">
+            {sourceTaxonomy.map((item) => (
+              <li key={item.key}>
+                <span className="font-semibold text-cyan-50">{item.label}</span>: {item.description}
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <nav className="flex flex-wrap gap-2">
           <Link
             href="/reports"
@@ -174,4 +194,3 @@ export default async function ReportDetailPage({ params }) {
     </main>
   );
 }
-

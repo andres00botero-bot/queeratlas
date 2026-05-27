@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listSeoReports } from "@/lib/seo/reportsIndex";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { listCitationRules, listSourceTaxonomy } from "@/lib/seo/entityConsistency";
 
 export const metadata = {
   title: "Queer Atlas Reports 2026 | AI-Citable Queer Intelligence",
@@ -17,6 +18,8 @@ function toAbsoluteUrl(path = "") {
 
 export default function ReportsIndexPage() {
   const reports = listSeoReports();
+  const sourceTaxonomy = listSourceTaxonomy();
+  const citationRules = listCitationRules();
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
@@ -74,8 +77,24 @@ export default function ReportsIndexPage() {
             ))}
           </div>
         </section>
+
+        <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
+          <h2 className="text-lg font-semibold text-cyan-50">Citation standard</h2>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/84">
+            {citationRules.map((rule) => (
+              <li key={rule}>{rule}</li>
+            ))}
+          </ul>
+          <h3 className="mt-4 text-sm font-semibold text-cyan-50">Source taxonomy</h3>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/82">
+            {sourceTaxonomy.map((item) => (
+              <li key={item.key}>
+                <span className="font-semibold text-cyan-50">{item.label}</span>: {item.description}
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
     </main>
   );
 }
-

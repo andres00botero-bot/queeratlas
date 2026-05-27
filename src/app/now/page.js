@@ -17,7 +17,7 @@ import {
   QA_SITE_URL,
   QA_WEBSITE_ID,
 } from "@/lib/seo/entityAuthority";
-import { QA_SOURCE_CONFIDENCE, QA_SOURCE_TAXONOMY } from "@/lib/seo/entityConsistency";
+import { QA_SOURCE_CONFIDENCE, listCitationRules, listSourceTaxonomy } from "@/lib/seo/entityConsistency";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
@@ -864,6 +864,8 @@ export default function NowPage() {
     []
   );
   const topicHubKeys = useMemo(() => listTopicHubs().map((hub) => hub.key), []);
+  const sourceTaxonomyEntries = useMemo(() => listSourceTaxonomy(), []);
+  const citationRules = useMemo(() => listCitationRules(), []);
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
     [adminNews]
@@ -2852,9 +2854,14 @@ export default function NowPage() {
             Queer Atlas labels each signal by confidence level and keeps editorial + community updates traceable for safer route decisions.
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-6 text-cyan-50/80">
-            <li><span className="font-semibold text-cyan-50">{QA_SOURCE_TAXONOMY.official.label}</span>: {QA_SOURCE_TAXONOMY.official.description}</li>
-            <li><span className="font-semibold text-cyan-50">{QA_SOURCE_TAXONOMY.community.label}</span>: {QA_SOURCE_TAXONOMY.community.description}</li>
-            <li><span className="font-semibold text-cyan-50">{QA_SOURCE_TAXONOMY.developing.label}</span>: {QA_SOURCE_TAXONOMY.developing.description}</li>
+            {sourceTaxonomyEntries.map((item) => (
+              <li key={`now-source-taxonomy-${item.key}`}>
+                <span className="font-semibold text-cyan-50">{item.label}</span>: {item.description}
+              </li>
+            ))}
+            {citationRules.map((rule) => (
+              <li key={`now-citation-rule-${rule}`}>{rule}</li>
+            ))}
           </ul>
           <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
             <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">

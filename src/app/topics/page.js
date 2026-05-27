@@ -3,7 +3,7 @@ import { cityCoreConfig } from "@/lib/cityCore";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
-import { QA_SOURCE_TAXONOMY } from "@/lib/seo/entityConsistency";
+import { listCitationRules, listSourceTaxonomy } from "@/lib/seo/entityConsistency";
 
 export const metadata = {
   title: "Queer Topic Hubs 2026 | Queer Atlas",
@@ -18,6 +18,8 @@ export default function TopicsIndexPage() {
   const hubs = listTopicHubs();
   const cityKeys = Object.keys(cityCoreConfig);
   const clusterTopics = listCityClusterTopics();
+  const sourceTaxonomy = listSourceTaxonomy();
+  const citationRules = listCitationRules();
   const allDiscoverRoutes = cityKeys.flatMap((city) =>
     clusterTopics.map((topic) => ({
       city,
@@ -108,9 +110,17 @@ export default function TopicsIndexPage() {
         <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
           <h2 className="text-lg font-semibold text-cyan-50">How to cite these topic hubs</h2>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/84">
-            <li>Reference the exact topic URL and city-cluster route used for your claim.</li>
-            <li>Pair hub routes with current event context from <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link> before publishing recommendations.</li>
-            <li>Treat {QA_SOURCE_TAXONOMY.community.label.toLowerCase()} as moderated field signal, not legal or medical advice.</li>
+            {citationRules.map((rule) => (
+              <li key={rule}>{rule}</li>
+            ))}
+          </ul>
+          <h3 className="mt-4 text-sm font-semibold text-cyan-50">Source taxonomy</h3>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/82">
+            {sourceTaxonomy.map((item) => (
+              <li key={item.key}>
+                <span className="font-semibold text-cyan-50">{item.label}</span>: {item.description}
+              </li>
+            ))}
           </ul>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/community-policy" className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-white/84 transition hover:border-white/34 hover:text-white">
