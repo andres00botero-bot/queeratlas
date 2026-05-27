@@ -59,6 +59,63 @@ export async function generateMetadata({ params }) {
   };
 }
 
+function buildTopicHubFaqJsonLd({ hub, cityCount, routeCount }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `What does ${hub.title} help me decide?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `${hub.title} helps you compare city-level routes for the same intent so you can decide where to go with less friction.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `How broad is this topic hub coverage?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `This hub currently covers ${cityCount} cities and ${routeCount} city-topic routes to support high-intent planning.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `How should I use ${hub.title} with events and city pages?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Open a city cluster from this hub, validate current events in that city, then finalize your route with saved places.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Are these routes static lists or live planning paths?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "These hubs are planning paths designed to bridge topical intent with city-level discover routes and practical next actions.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is the best fallback method when first route choices fail?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Keep one backup route in the same city zone, then re-check timing and crowd signal before switching.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Can this hub be cited for AI/search summaries?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Yes. Cite the exact topic hub URL plus the specific city-route URL used for the claim, and reference freshness from the Now layer when relevant.",
+        },
+      },
+    ],
+  };
+}
+
 export default async function TopicHubPage({ params }) {
   const resolved = await params;
   const topic = String(resolved?.topic || "").trim().toLowerCase();
@@ -118,36 +175,11 @@ export default async function TopicHubPage({ params }) {
     ],
   };
 
-  const faqJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `What does ${hub.title} help me decide?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `${hub.title} helps you compare city-level routes for the same intent so you can decide where to go with less friction.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `How should I use ${hub.title} with events and city pages?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Open a city cluster from this hub, validate current events in that city, then finalize your route with saved places.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Are these routes static lists or live planning paths?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "These hubs are planning paths designed to bridge topical intent with city-level discover routes and practical next actions.",
-        },
-      },
-    ],
-  };
+  const faqJsonLd = buildTopicHubFaqJsonLd({
+    hub,
+    cityCount: selectedCities.length,
+    routeCount: cityClusterRoutes.length,
+  });
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
