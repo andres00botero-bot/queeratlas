@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { cityCoreConfig } from "@/lib/cityCore";
+import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
+import { QA_SOURCE_TAXONOMY } from "@/lib/seo/entityConsistency";
 
 export const metadata = {
   title: "Queer Topic Hubs 2026 | Queer Atlas",
@@ -13,6 +16,15 @@ export const metadata = {
 
 export default function TopicsIndexPage() {
   const hubs = listTopicHubs();
+  const cityKeys = Object.keys(cityCoreConfig);
+  const clusterTopics = listCityClusterTopics();
+  const allDiscoverRoutes = cityKeys.flatMap((city) =>
+    clusterTopics.map((topic) => ({
+      city,
+      topic: topic.key,
+      href: `/${city}/discover/${topic.key}`,
+    })),
+  );
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -55,6 +67,19 @@ export default function TopicsIndexPage() {
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
+      <nav aria-label="Internal discover crawl links" className="sr-only">
+        <Link href="/topics">topics</Link>
+        {hubs.map((hub) => (
+          <Link key={`topics-crawl-hub-${hub.key}`} href={`/topics/${hub.key}`}>
+            {hub.key}
+          </Link>
+        ))}
+        {allDiscoverRoutes.map((route) => (
+          <Link key={`topics-crawl-discover-${route.city}-${route.topic}`} href={route.href}>
+            {route.city} {route.topic}
+          </Link>
+        ))}
+      </nav>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="mx-auto max-w-5xl space-y-6">
@@ -85,7 +110,7 @@ export default function TopicsIndexPage() {
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/84">
             <li>Reference the exact topic URL and city-cluster route used for your claim.</li>
             <li>Pair hub routes with current event context from <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link> before publishing recommendations.</li>
-            <li>Treat community-led notes as moderated field signal, not legal or medical advice.</li>
+            <li>Treat {QA_SOURCE_TAXONOMY.community.label.toLowerCase()} as moderated field signal, not legal or medical advice.</li>
           </ul>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/community-policy" className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-white/84 transition hover:border-white/34 hover:text-white">
@@ -93,6 +118,9 @@ export default function TopicsIndexPage() {
             </Link>
             <Link href="/cities" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
               City evidence routes
+            </Link>
+            <Link href="/reports" className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1 text-fuchsia-100 transition hover:border-fuchsia-100/45">
+              Citable reports
             </Link>
           </div>
         </section>

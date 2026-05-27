@@ -1,6 +1,7 @@
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
+import { listSeoReports } from "@/lib/seo/reportsIndex";
 
 const BASE_URL = "https://www.queeratlas.app";
 const CLUSTER_INTENT_PRIORITY = {
@@ -38,6 +39,7 @@ export default function sitemap() {
     "/queer-guide",
     "/hbtq-guide",
     "/topics",
+    "/reports",
     "/terms",
     "/privacy",
     "/community-policy",
@@ -84,6 +86,13 @@ export default function sitemap() {
     priority: 0.86,
   }));
 
-  return [...staticEntries, ...cityEntries, ...cityClusterEntries, ...topicHubEntries];
+  const reportEntries = listSeoReports().map((report) => ({
+    url: `${BASE_URL}/reports/${report.slug}`,
+    lastModified: new Date(report.updatedAt || lastContentUpdate),
+    changeFrequency: "weekly",
+    priority: 0.83,
+  }));
+
+  return [...staticEntries, ...cityEntries, ...cityClusterEntries, ...topicHubEntries, ...reportEntries];
 }
 

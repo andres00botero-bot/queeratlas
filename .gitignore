@@ -32,6 +32,8 @@ yarn-error.log*
 .pnpm-debug.log*
 dev*.log
 reports/
+!src/app/reports/
+!src/app/reports/**
 
 # env files (can opt-in for committing if needed)
 .env*
