@@ -1,16 +1,40 @@
 let seedPlacesContentPromise = null;
 let seedEventsContentPromise = null;
 
+function importSeedPlacesWithReset() {
+  return import("./seedPlacesContent").catch((error) => {
+    seedPlacesContentPromise = null;
+    throw error;
+  });
+}
+
+function importSeedEventsWithReset() {
+  return import("./seedEventsContent").catch((error) => {
+    seedEventsContentPromise = null;
+    throw error;
+  });
+}
+
+function retryOnce(importer) {
+  return importer().catch((error) => {
+    // Retry once to recover from transient dev chunk-load failures.
+    return importer().catch((retryError) => {
+      // Keep original error context when second attempt also fails.
+      throw retryError || error;
+    });
+  });
+}
+
 async function loadSeedPlacesContent() {
   if (!seedPlacesContentPromise) {
-    seedPlacesContentPromise = import("./seedPlacesContent");
+    seedPlacesContentPromise = retryOnce(importSeedPlacesWithReset);
   }
   return seedPlacesContentPromise;
 }
 
 async function loadSeedEventsContent() {
   if (!seedEventsContentPromise) {
-    seedEventsContentPromise = import("./seedEventsContent");
+    seedEventsContentPromise = retryOnce(importSeedEventsWithReset);
   }
   return seedEventsContentPromise;
 }
