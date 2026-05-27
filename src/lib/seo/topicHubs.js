@@ -4,7 +4,14 @@ export const TOPIC_HUBS = {
     title: "Queer Nightlife Hubs",
     description:
       "Global nightlife-focused queer route intelligence across major cities with high-signal cluster links.",
-    clusterKeys: ["queer-techno-clubs", "queer-bars", "queer-clubs"],
+    clusterKeys: [
+      "queer-techno-clubs",
+      "queer-bars",
+      "queer-clubs",
+      "queer-rooftop-bars",
+      "underground-queer-nightlife",
+      "gay-sauna-guide",
+    ],
     cities: ["berlin", "madrid", "new_york", "sao_paulo", "bangkok", "barcelona", "tokyo", "london"],
   },
   safety: {
@@ -12,7 +19,7 @@ export const TOPIC_HUBS = {
     title: "Safest Queer Bars Hubs",
     description:
       "Safety-first city routing hubs with practical fallback choices and lower-friction venue paths.",
-    clusterKeys: ["safest-queer-bars", "queer-safe-areas"],
+    clusterKeys: ["safest-queer-bars", "queer-safe-areas", "queer-travel-safety"],
     cities: ["copenhagen", "amsterdam", "toronto", "lisbon", "sydney", "san_francisco", "paris", "new_york"],
   },
   events: {
@@ -20,7 +27,7 @@ export const TOPIC_HUBS = {
     title: "LGBTQ Events Tonight Hubs",
     description:
       "Tonight-first planning hubs that connect event intent across major cities with cluster-level discover paths.",
-    clusterKeys: ["events-tonight", "queer-events-this-week"],
+    clusterKeys: ["events-tonight", "queer-events-this-week", "drag-shows-tonight"],
     cities: ["new_york", "madrid", "berlin", "mexico_city", "sao_paulo", "sydney", "bangkok", "tokyo"],
   },
   cafes: {
@@ -28,7 +35,7 @@ export const TOPIC_HUBS = {
     title: "Queer Cafes Hubs",
     description:
       "Daytime social discovery hubs for queer cafes and low-friction community starts across key cities.",
-    clusterKeys: ["queer-cafes", "queer-hotels"],
+    clusterKeys: ["queer-cafes", "queer-hotels", "queer-friendly-coworking"],
     cities: ["lisbon", "barcelona", "amsterdam", "paris", "london", "copenhagen", "berlin", "toronto"],
   },
   community: {

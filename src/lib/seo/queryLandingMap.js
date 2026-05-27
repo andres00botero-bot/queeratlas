@@ -63,7 +63,11 @@ export function getCityQuerySuggestions(city = "") {
     `techno clubs ${cityName} queer`,
     `lesbian bars ${cityName}`,
     `queer friendly cafes ${cityName}`,
+    `queer rooftop bars ${cityName}`,
+    `gay sauna guide ${cityName}`,
+    `queer friendly coworking ${cityName}`,
+    `underground queer nightlife ${cityName}`,
+    `drag shows tonight ${cityName}`,
     `is ${cityName} safe for lgbtq`,
   ];
 }
-

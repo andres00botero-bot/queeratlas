@@ -109,6 +109,72 @@ export const CITY_CLUSTER_TOPICS = {
       "gay safe area guide",
     ],
   },
+  "queer-rooftop-bars": {
+    title: "Queer Rooftop Bars Guide",
+    intent: "nightlife",
+    summary:
+      "Rooftop-first queer nightlife planning with skyline social flow, peak-hour timing, and easy fallback sequencing.",
+    keyphrases: [
+      "queer rooftop bars",
+      "gay rooftop bars",
+      "LGBTQ rooftop nightlife",
+    ],
+  },
+  "gay-sauna-guide": {
+    title: "Gay Sauna Guide",
+    intent: "nightlife",
+    summary:
+      "Clearer sauna planning with entry expectations, timing windows, and route context for safer same-night choices.",
+    keyphrases: [
+      "gay sauna guide",
+      "gay sauna",
+      "LGBTQ sauna guide",
+    ],
+  },
+  "queer-friendly-coworking": {
+    title: "Queer-Friendly Coworking Guide",
+    intent: "daylife",
+    summary:
+      "Daytime productivity and community-fit coworking picks with low-friction location logic and social spillover context.",
+    keyphrases: [
+      "queer friendly coworking",
+      "LGBTQ coworking",
+      "gay friendly coworking spaces",
+    ],
+  },
+  "underground-queer-nightlife": {
+    title: "Underground Queer Nightlife Guide",
+    intent: "nightlife",
+    summary:
+      "Underground-first nightlife mapping with late-hour flow, stronger scene fit, and practical backup paths.",
+    keyphrases: [
+      "underground queer nightlife",
+      "underground gay clubs",
+      "queer underground scene",
+    ],
+  },
+  "queer-travel-safety": {
+    title: "Queer Travel Safety Guide",
+    intent: "safety",
+    summary:
+      "Travel-safety routing with area confidence signals, lower-friction movement, and fallback planning by city.",
+    keyphrases: [
+      "queer travel safety",
+      "LGBTQ travel safety",
+      "is it safe for LGBTQ travelers",
+    ],
+  },
+  "drag-shows-tonight": {
+    title: "Drag Shows Tonight Guide",
+    intent: "events",
+    summary:
+      "Tonight-first drag discovery with timing-led choices, venue sequencing, and event-night backup options.",
+    keyphrases: [
+      "drag shows tonight",
+      "LGBTQ drag events",
+      "gay drag show guide",
+    ],
+  },
 };
 
 export function getCityClusterTopic(topic = "") {
