@@ -78,6 +78,11 @@ export default async function ReportDetailPage({ params }) {
   const canonical = buildCanonical(report.slug);
   const canonicalUrl = toAbsoluteUrl(canonical);
   const faqEntries = buildFaqEntries(report);
+  const snippetCards = [
+    { key: "reddit", label: "Reddit", body: report.creatorSnippets?.reddit || "" },
+    { key: "tiktok", label: "TikTok", body: report.creatorSnippets?.tiktok || "" },
+    { key: "instagram", label: "Instagram", body: report.creatorSnippets?.instagram || "" },
+  ].filter((item) => item.body);
 
   const articleJsonLd = {
     "@context": "https://schema.org",
@@ -155,6 +160,28 @@ export default async function ReportDetailPage({ params }) {
             ))}
           </div>
         </section>
+
+        {snippetCards.length > 0 ? (
+          <section className="rounded-[24px] border border-fuchsia-200/16 bg-[linear-gradient(145deg,rgba(217,70,239,0.08),rgba(10,10,10,0.94))] p-6">
+            <h2 className="text-lg font-semibold text-fuchsia-50">Press Kit Snippets</h2>
+            <p className="mt-2 text-sm leading-7 text-fuchsia-50/82">
+              Copy-ready excerpts for social publishing. Keep the report URL in your post when possible.
+            </p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {snippetCards.map((item) => (
+                <article
+                  key={item.key}
+                  className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3"
+                >
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-fuchsia-200/85">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-white/82">{item.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <nav className="flex flex-wrap gap-2">
           <Link
