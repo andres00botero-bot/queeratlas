@@ -3,17 +3,10 @@ import { notFound } from "next/navigation";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { getTopicHub, listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { humanizeCityKey, humanizeTopicKey, QA_SOURCE_TAXONOMY } from "@/lib/seo/entityConsistency";
 
 function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
-}
-
-function humanizeCity(value = "") {
-  return String(value || "")
-    .split("_")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
 }
 
 function buildTopicPath(topic = "") {
@@ -59,60 +52,47 @@ export async function generateMetadata({ params }) {
   };
 }
 
-function buildTopicHubFaqJsonLd({ hub, cityCount, routeCount }) {
+function buildTopicHubFaqEntries({ hub, cityCount, routeCount }) {
+  return [
+    {
+      question: `What does ${hub.title} help me decide?`,
+      answer: `${hub.title} helps you compare city-level routes for the same intent so you can decide where to go with less friction and stronger context.`,
+    },
+    {
+      question: "How broad is this topic hub coverage?",
+      answer: `This hub currently covers ${cityCount} cities and ${routeCount} city-topic routes to support high-intent planning with reproducible route paths.`,
+    },
+    {
+      question: `How should I use ${hub.title} with events and city pages?`,
+      answer: "Open a city cluster from this hub, validate current events in that city, then finalize your route with saved places and one backup option.",
+    },
+    {
+      question: "Are these routes static lists or live planning paths?",
+      answer: "These hubs are planning paths designed to bridge topical intent with city-level discover routes and practical next actions.",
+    },
+    {
+      question: "What is the best fallback method when first route choices fail?",
+      answer: "Keep one backup route in the same city zone, then re-check timing and crowd signal before switching to avoid route breakdown.",
+    },
+    {
+      question: "Can this hub be cited for AI/search summaries?",
+      answer: "Yes. Cite the exact topic hub URL plus the specific city-route URL used for the claim, and reference freshness from the Now layer when relevant.",
+    },
+  ];
+}
+
+function buildTopicHubFaqJsonLd({ faqEntries = [] }) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `What does ${hub.title} help me decide?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `${hub.title} helps you compare city-level routes for the same intent so you can decide where to go with less friction.`,
-        },
+    mainEntity: faqEntries.map((entry) => ({
+      "@type": "Question",
+      name: entry.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: entry.answer,
       },
-      {
-        "@type": "Question",
-        name: `How broad is this topic hub coverage?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `This hub currently covers ${cityCount} cities and ${routeCount} city-topic routes to support high-intent planning.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `How should I use ${hub.title} with events and city pages?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Open a city cluster from this hub, validate current events in that city, then finalize your route with saved places.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Are these routes static lists or live planning paths?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "These hubs are planning paths designed to bridge topical intent with city-level discover routes and practical next actions.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "What is the best fallback method when first route choices fail?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Keep one backup route in the same city zone, then re-check timing and crowd signal before switching.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Can this hub be cited for AI/search summaries?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Yes. Cite the exact topic hub URL plus the specific city-route URL used for the claim, and reference freshness from the Now layer when relevant.",
-        },
-      },
-    ],
+    })),
   };
 }
 
@@ -135,7 +115,7 @@ export default async function TopicHubPage({ params }) {
       city,
       clusterKey,
       href: `/${city}/discover/${clusterKey}`,
-      label: `${humanizeCity(city)} - ${clusterKey.replaceAll("-", " ")}`,
+      label: `${humanizeCityKey(city)} - ${humanizeTopicKey(clusterKey)}`,
     })),
   );
 
@@ -160,7 +140,7 @@ export default async function TopicHubPage({ params }) {
         "@type": "ListItem",
         position: index + 1,
         url: toAbsoluteUrl(route.href),
-        name: `${hub.title} in ${humanizeCity(route.city)} - ${route.clusterKey.replaceAll("-", " ")}`,
+        name: `${hub.title} in ${humanizeCityKey(route.city)} - ${humanizeTopicKey(route.clusterKey)}`,
       })),
     },
   };
@@ -175,11 +155,12 @@ export default async function TopicHubPage({ params }) {
     ],
   };
 
-  const faqJsonLd = buildTopicHubFaqJsonLd({
+  const faqEntries = buildTopicHubFaqEntries({
     hub,
     cityCount: selectedCities.length,
     routeCount: cityClusterRoutes.length,
   });
+  const faqJsonLd = buildTopicHubFaqJsonLd({ faqEntries });
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
@@ -200,8 +181,8 @@ export default async function TopicHubPage({ params }) {
             Use route-level pages as the canonical decision layer, then validate timing and momentum in <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link> before publishing or sharing.
           </p>
           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-cyan-50/82">
-            <li>Official sources: organizer or venue links from route-level pages.</li>
-            <li>Community sources: moderated member signal with quality controls.</li>
+            <li>{QA_SOURCE_TAXONOMY.official.label}: {QA_SOURCE_TAXONOMY.official.description}</li>
+            <li>{QA_SOURCE_TAXONOMY.community.label}: moderated member signal with quality controls.</li>
             <li>Operational rule: cite page URL + city + route intent for reproducible context.</li>
           </ul>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -223,8 +204,20 @@ export default async function TopicHubPage({ params }) {
                 href={route.href}
                 className="rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/84 transition hover:border-cyan-200/34 hover:text-white"
               >
-                {hub.title} in {humanizeCity(route.city)} - {route.clusterKey.replaceAll("-", " ")}
+                {hub.title} in {humanizeCityKey(route.city)} - {humanizeTopicKey(route.clusterKey)}
               </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+          <h2 className="text-lg font-semibold">FAQ</h2>
+          <div className="mt-3 space-y-4">
+            {faqEntries.map((entry) => (
+              <article key={entry.question} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+                <h3 className="text-sm font-semibold text-white">{entry.question}</h3>
+                <p className="mt-1 text-sm leading-7 text-white/80">{entry.answer}</p>
+              </article>
             ))}
           </div>
         </section>

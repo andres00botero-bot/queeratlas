@@ -182,142 +182,97 @@ function buildIntentBlueprint({ cityName, topicConfig }) {
   };
 }
 
-function buildFaqJsonLd({ cityName, topicConfig }) {
+function buildFaqEntries({ cityName, topicConfig }) {
   const questionBase = topicConfig?.title || "Queer city guide";
   const blueprint = buildIntentBlueprint({ cityName, topicConfig });
   const intent = String(topicConfig?.intent || "").trim().toLowerCase();
   const intentFaqs = {
     nightlife: [
       {
-        "@type": "Question",
-        name: `What is the best order for a queer nightlife route in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Start with a social warm-up venue, move to one peak-energy stop, then keep one late fallback in the same area to reduce friction in ${cityName}.`,
-        },
+        question: `What is the best order for a queer nightlife route in ${cityName}?`,
+        answer: `Start with a low-friction social warm-up, move to one peak-energy stop, then keep one late fallback in the same zone so your movement stays smooth in ${cityName}.`,
       },
       {
-        "@type": "Question",
-        name: `How many venues should I plan for one nightlife session in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "For most nights, 2 to 3 core stops plus one backup performs better than long venue lists.",
-        },
+        question: `How many venues should I plan for one nightlife session in ${cityName}?`,
+        answer: `For most nights in ${cityName}, 2 to 3 core stops plus one backup option gives better outcomes than long venue lists with weak sequencing.`,
       },
     ],
     safety: [
       {
-        "@type": "Question",
-        name: `How does this guide improve queer safety decisions in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "It prioritizes lower-friction movement, neighborhood confidence, and practical backup options when first choices feel wrong.",
-        },
+        question: `How does this guide improve queer safety decisions in ${cityName}?`,
+        answer: `It prioritizes lower-friction movement, area confidence, and practical backup options when first choices feel wrong in real time.`,
       },
       {
-        "@type": "Question",
-        name: `What should I check first for safer routing in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Check area confidence, late transport reliability, and one same-neighborhood alternative before moving.",
-        },
+        question: `What should I check first for safer routing in ${cityName}?`,
+        answer: `Check area confidence, late transport reliability, and one same-neighborhood alternative before moving to your next stop in ${cityName}.`,
       },
     ],
     events: [
       {
-        "@type": "Question",
-        name: `How do I use event intent with city routes in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Choose one anchor event window, then attach a pre-event and post-event stop to avoid timing gaps.",
-        },
+        question: `How do I use event intent with city routes in ${cityName}?`,
+        answer: `Choose one anchor event window, then attach a pre-event and post-event stop so your route avoids timing gaps and dead transitions.`,
       },
       {
-        "@type": "Question",
-        name: `What is the fallback method if an event sells out in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Keep one same-night alternative route open in advance, ideally in the same zone to preserve momentum.",
-        },
+        question: `What is the fallback method if an event sells out in ${cityName}?`,
+        answer: `Keep one same-night alternative route ready in advance, ideally in the same zone, so you can preserve momentum without long detours.`,
       },
     ],
     community: [
       {
-        "@type": "Question",
-        name: `Who is this community route useful for in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "It is built for people prioritizing social fit, including lesbian and sapphic nightlife discovery with lower guesswork.",
-        },
+        question: `Who is this community route useful for in ${cityName}?`,
+        answer: `It is built for people prioritizing social fit, including lesbian and sapphic nightlife discovery with lower guesswork and stronger comfort signals.`,
       },
       {
-        "@type": "Question",
-        name: `How should I choose between community-led options in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Pick spaces by identity fit first, then sequence by energy and distance instead of popularity alone.",
-        },
+        question: `How should I choose between community-led options in ${cityName}?`,
+        answer: `Pick spaces by identity fit first, then sequence by energy and distance instead of popularity alone when planning your night in ${cityName}.`,
       },
     ],
     daylife: [
       {
-        "@type": "Question",
-        name: `Why does daytime planning matter for queer nightlife outcomes in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Daytime anchors like cafes and hotels improve transition quality, reduce stress, and strengthen night route decisions.",
-        },
+        question: `Why does daytime planning matter for queer nightlife outcomes in ${cityName}?`,
+        answer: `Daytime anchors such as cafes and hotels improve transition quality, reduce stress, and strengthen evening route decisions in ${cityName}.`,
       },
       {
-        "@type": "Question",
-        name: `How do I convert a daylife plan into a night route in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Use your daytime zone to shortlist two evening options by vibe, then confirm opening times before moving.",
-        },
+        question: `How do I convert a daylife plan into a night route in ${cityName}?`,
+        answer: `Use your daytime zone to shortlist two evening options by vibe, then confirm opening times before moving into the night sequence.`,
       },
     ],
   };
   const extraFaqs = intentFaqs[intent] || [];
 
+  return [
+    {
+      question: `What does ${questionBase} in ${cityName} help with?`,
+      answer: `${questionBase} in ${cityName} helps you plan faster with practical route context, safer fallbacks, and clearer local signal.`,
+    },
+    {
+      question: `How is this ${cityName} guide different from a generic nightlife list?`,
+      answer: blueprint.faqDecisionText,
+    },
+    {
+      question: `Can I use this guide for same-night planning in ${cityName}?`,
+      answer: blueprint.faqSameNightText,
+    },
+    {
+      question: `What should I do after opening this ${cityName} cluster page?`,
+      answer: `Open one related route, confirm same-night timing, and keep one fallback option before committing your movement plan in ${cityName}.`,
+    },
+    ...extraFaqs,
+  ];
+}
+
+function buildFaqJsonLd({ faqEntries = [] }) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `What does ${questionBase} in ${cityName} help with?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `${questionBase} in ${cityName} helps you plan faster with practical route context, safer fallbacks, and local signal clarity.`,
-        },
+    mainEntity: faqEntries.map((entry) => ({
+      "@type": "Question",
+      name: entry.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: entry.answer,
       },
-      {
-        "@type": "Question",
-        name: `How is this ${cityName} guide different from a generic nightlife list?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: blueprint.faqDecisionText,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Can I use this guide for same-night planning in ${cityName}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: blueprint.faqSameNightText,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `What should I do after opening this ${cityName} cluster page?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Open one related route, confirm same-night timing, and keep one fallback option before committing your movement plan in ${cityName}.`,
-        },
-      },
-      ...extraFaqs,
-    ],
+    })),
   };
 }
 
@@ -413,7 +368,8 @@ export default async function CityClusterTopicPage({ params }) {
   const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig });
   const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics });
-  const faqJsonLd = buildFaqJsonLd({ cityName, topicConfig });
+  const faqEntries = buildFaqEntries({ cityName, topicConfig });
+  const faqJsonLd = buildFaqJsonLd({ faqEntries });
   const intentBlueprint = buildIntentBlueprint({ cityName, topicConfig });
   const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, faqJsonLd];
 
@@ -461,6 +417,18 @@ export default async function CityClusterTopicPage({ params }) {
               >
                 {entry.title} in {cityName}
               </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+          <h2 className="text-lg font-semibold">FAQ</h2>
+          <div className="mt-3 space-y-4">
+            {faqEntries.map((entry) => (
+              <article key={entry.question} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+                <h3 className="text-sm font-semibold text-white">{entry.question}</h3>
+                <p className="mt-1 text-sm leading-7 text-white/80">{entry.answer}</p>
+              </article>
             ))}
           </div>
         </section>
