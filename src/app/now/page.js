@@ -17,6 +17,7 @@ import {
   QA_SITE_URL,
   QA_WEBSITE_ID,
 } from "@/lib/seo/entityAuthority";
+import { QA_SOURCE_CONFIDENCE, QA_SOURCE_TAXONOMY } from "@/lib/seo/entityConsistency";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
@@ -116,11 +117,11 @@ function getNewsToneByCategory(category) {
 }
 
 function resolveNewsConfidence(item, canEditAdminNews) {
-  if (canEditAdminNews) return "Verified admin";
+  if (canEditAdminNews) return QA_SOURCE_CONFIDENCE.verifiedAdmin;
   const source = String(item?.sourceName || "").toLowerCase();
-  if (source.includes("editorial") || source.includes("atlas")) return "Editorial signal";
-  if (source.includes("member")) return "Community signal";
-  return "Developing";
+  if (source.includes("editorial") || source.includes("atlas")) return QA_SOURCE_CONFIDENCE.editorialSignal;
+  if (source.includes("member")) return QA_SOURCE_CONFIDENCE.communitySignal;
+  return QA_SOURCE_CONFIDENCE.developingSignal;
 }
 
 function isRightsUpdateItem(item) {
@@ -1505,27 +1506,6 @@ export default function NowPage() {
           )}
         </div>
 
-        <section className="mb-6 rounded-[22px] border border-cyan-200/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(12,12,12,0.95))] p-4">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">AI Citation Layer</p>
-          <h2 className="mt-1 text-sm font-semibold text-cyan-50">Source quality and freshness standard</h2>
-          <p className="mt-2 text-xs leading-6 text-cyan-50/82">
-            Queer Atlas labels each signal by confidence level and keeps editorial + community updates traceable for safer route decisions.
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-6 text-cyan-50/80">
-            <li><span className="font-semibold text-cyan-50">Official source</span>: direct organizer, venue, or authority reference.</li>
-            <li><span className="font-semibold text-cyan-50">Community source</span>: verified member signal with moderation review.</li>
-            <li><span className="font-semibold text-cyan-50">Developing signal</span>: early indicator pending stronger confirmation.</li>
-          </ul>
-          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-            <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
-              Open topic hubs
-            </Link>
-            <Link href="/community-policy" className="rounded-full border border-white/18 bg-white/8 px-3 py-1 text-white/82 transition hover:border-white/30 hover:text-white">
-              Read moderation policy
-            </Link>
-          </div>
-        </section>
-
         <PageControls
           className="mb-6 transition-all duration-300"
           controlsRef={nowControlsRef}
@@ -1812,7 +1792,7 @@ export default function NowPage() {
                     </span>
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/58">
                       {leadNewsItem.imageCredit ? <span>{leadNewsItem.imageCredit}</span> : null}
-                      <span>{leadNewsItem.sourceName || "Atlas signal"}</span>
+                      <span>{leadNewsItem.sourceName || QA_SOURCE_CONFIDENCE.atlasSignal}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -1962,7 +1942,7 @@ export default function NowPage() {
                                 </button>
                                 <span className="text-[11px] text-white/36">
                                   {isExpanded
-                                    ? item.sourceName || "Atlas signal"
+                                    ? item.sourceName || QA_SOURCE_CONFIDENCE.atlasSignal
                                     : "Tap to expand"}
                                 </span>
                                 {isAdmin && (
@@ -2456,7 +2436,7 @@ export default function NowPage() {
                 ) : null}
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="text-[11px] uppercase tracking-[0.12em] text-white/48">
-                    {item.sourceName || "Atlas signal"}
+                    {item.sourceName || QA_SOURCE_CONFIDENCE.atlasSignal}
                   </span>
                   <span className="text-[11px] text-rose-100/80">
                     {String(expandedNewsId) === String(item.id) ? "Tap to collapse" : "Tap to expand"}
@@ -2782,7 +2762,7 @@ export default function NowPage() {
                   ) : null}
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <span className="text-[11px] uppercase tracking-[0.12em] text-white/55">
-                      {resolveNewsConfidence(story, canEditAdminNews)} | {story.sourceName || "Community signal"}
+                      {resolveNewsConfidence(story, canEditAdminNews)} | {story.sourceName || QA_SOURCE_CONFIDENCE.communitySignal}
                     </span>
                     {isAdmin && (
                       <div className="flex items-center gap-2">
@@ -2836,6 +2816,27 @@ export default function NowPage() {
           </section>
         </div>
         )}
+
+        <section className="mt-8 rounded-[22px] border border-cyan-200/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(12,12,12,0.95))] p-4">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">AI Citation Layer</p>
+          <h2 className="mt-1 text-sm font-semibold text-cyan-50">Source quality and freshness standard</h2>
+          <p className="mt-2 text-xs leading-6 text-cyan-50/82">
+            Queer Atlas labels each signal by confidence level and keeps editorial + community updates traceable for safer route decisions.
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-6 text-cyan-50/80">
+            <li><span className="font-semibold text-cyan-50">{QA_SOURCE_TAXONOMY.official.label}</span>: {QA_SOURCE_TAXONOMY.official.description}</li>
+            <li><span className="font-semibold text-cyan-50">{QA_SOURCE_TAXONOMY.community.label}</span>: {QA_SOURCE_TAXONOMY.community.description}</li>
+            <li><span className="font-semibold text-cyan-50">{QA_SOURCE_TAXONOMY.developing.label}</span>: {QA_SOURCE_TAXONOMY.developing.description}</li>
+          </ul>
+          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+            <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
+              Open topic hubs
+            </Link>
+            <Link href="/community-policy" className="rounded-full border border-white/18 bg-white/8 px-3 py-1 text-white/82 transition hover:border-white/30 hover:text-white">
+              Read moderation policy
+            </Link>
+          </div>
+        </section>
 
         {readingNewsItem ? (
           <div
@@ -2892,7 +2893,7 @@ export default function NowPage() {
                       </div>
                     ) : null}
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4 text-xs text-white/62">
-                      <span>{readingNewsItem.sourceName || "Atlas signal"}</span>
+                      <span>{readingNewsItem.sourceName || QA_SOURCE_CONFIDENCE.atlasSignal}</span>
                       {readingNewsItem.imageCredit ? <span>Photo: {readingNewsItem.imageCredit}</span> : null}
                     </div>
                   </div>
