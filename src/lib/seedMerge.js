@@ -40,11 +40,25 @@ async function loadSeedEventsContent() {
 }
 
 export async function mergeSeedPlacesAsync(databasePlaces = []) {
-  const { mergeSeedPlaces } = await loadSeedPlacesContent();
-  return mergeSeedPlaces(databasePlaces);
+  try {
+    const { mergeSeedPlaces } = await loadSeedPlacesContent();
+    return mergeSeedPlaces(databasePlaces);
+  } catch (error) {
+    if (typeof console !== "undefined" && typeof console.warn === "function") {
+      console.warn("[seed-merge] Failed to load seed places content, using database places only.", error);
+    }
+    return databasePlaces;
+  }
 }
 
 export async function mergeSeedEventsAsync(databaseEvents = []) {
-  const { mergeSeedEvents } = await loadSeedEventsContent();
-  return mergeSeedEvents(databaseEvents);
+  try {
+    const { mergeSeedEvents } = await loadSeedEventsContent();
+    return mergeSeedEvents(databaseEvents);
+  } catch (error) {
+    if (typeof console !== "undefined" && typeof console.warn === "function") {
+      console.warn("[seed-merge] Failed to load seed events content, using database events only.", error);
+    }
+    return databaseEvents;
+  }
 }

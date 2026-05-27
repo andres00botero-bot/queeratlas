@@ -1739,6 +1739,8 @@ export default function NowPage() {
                           src={leadNewsItem.imageUrl}
                           alt={leadNewsItem.imageAlt || leadNewsItem.title || "News image"}
                           fill
+                          loading="eager"
+                          fetchPriority="high"
                           sizes="(max-width: 640px) 100vw, 70vw"
                           className="object-cover"
                         />
