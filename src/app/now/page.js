@@ -2817,6 +2817,32 @@ export default function NowPage() {
         </div>
         )}
 
+        <section className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-[11px] text-white/74">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">Depth Shortcuts</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {topicHubKeys.slice(0, 5).map((topicKey) => (
+              <Link
+                key={`now-depth-topic-${topicKey}`}
+                href={`/topics/${topicKey}`}
+                className="rounded-full border border-white/14 bg-white/[0.03] px-3 py-1 transition hover:border-cyan-200/40 hover:text-cyan-100"
+              >
+                {topicKey.replace(/-/g, " ")}
+              </Link>
+            ))}
+            {crawlClusterCities.slice(0, 4).flatMap((cityKey) =>
+              crawlClusterTopics.slice(0, 2).map((topicKey) => (
+                <Link
+                  key={`now-depth-cluster-${cityKey}-${topicKey}`}
+                  href={`/${cityKey}/discover/${topicKey}`}
+                  className="rounded-full border border-white/12 bg-white/[0.02] px-3 py-1 transition hover:border-fuchsia-200/38 hover:text-fuchsia-100"
+                >
+                  {cityKey.replace(/_/g, " ")} {topicKey.replace(/-/g, " ")}
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+
         <section className="mt-8 rounded-[22px] border border-cyan-200/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(12,12,12,0.95))] p-4">
           <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">AI Citation Layer</p>
           <h2 className="mt-1 text-sm font-semibold text-cyan-50">Source quality and freshness standard</h2>
