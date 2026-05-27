@@ -72,7 +72,15 @@ export default function TonightPublicFeedPanel({
         >
           <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-violet-300/18 blur-3xl" />
           <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-lg font-semibold leading-tight">{featuredEvent.name}</h3>
+            <Link
+              href={buildEventPath(city || cityName, featuredEvent)}
+              onClick={(clickEvent) => {
+                clickEvent.stopPropagation();
+              }}
+              className="text-lg font-semibold leading-tight text-white hover:text-fuchsia-100 hover:underline"
+            >
+              {featuredEvent.name}
+            </Link>
             {normalizeEventRange(featuredEvent).startDate ? (
               <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
                 {formatEventDateLabel(featuredEvent)}
@@ -82,17 +90,6 @@ export default function TonightPublicFeedPanel({
           <p className="line-clamp-2 text-sm leading-6 text-white/72">
             {polishEventDescription(featuredEvent, cityName)}
           </p>
-          <div className="mt-2">
-            <Link
-              href={buildEventPath(city || cityName, featuredEvent)}
-              onClick={(clickEvent) => {
-                clickEvent.stopPropagation();
-              }}
-              className="inline-flex rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 hover:border-fuchsia-200/40"
-            >
-              Event page
-            </Link>
-          </div>
         </div>
       ) : null}
 
@@ -126,7 +123,15 @@ export default function TonightPublicFeedPanel({
               }`}
             >
               <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="font-semibold leading-tight">{event.name}</h3>
+                <Link
+                  href={buildEventPath(city || cityName, event)}
+                  onClick={(clickEvent) => {
+                    clickEvent.stopPropagation();
+                  }}
+                  className="font-semibold leading-tight text-white hover:text-fuchsia-100 hover:underline"
+                >
+                  {event.name}
+                </Link>
                 {normalizeEventRange(event).startDate ? (
                   <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
                     {formatEventDateLabel(event)}
@@ -136,17 +141,6 @@ export default function TonightPublicFeedPanel({
               <p className="line-clamp-2 text-sm leading-6 text-white/70">
                 {polishEventDescription(event, cityName)}
               </p>
-              <div className="mt-2">
-                <Link
-                  href={buildEventPath(city || cityName, event)}
-                  onClick={(clickEvent) => {
-                    clickEvent.stopPropagation();
-                  }}
-                  className="inline-flex rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 hover:border-fuchsia-200/40"
-                >
-                  Event page
-                </Link>
-              </div>
             </div>
           ))}
         </div>
