@@ -1476,7 +1476,7 @@ export default function MessagesPage() {
 
   if (!isReady || isAuthLoading) {
     return (
-      <main className="qa-page min-h-screen bg-[#050505] text-white">
+      <main className="qa-page min-h-screen bg-[#050505] pb-10 text-white md:pb-20">
         <div className="qa-shell">
           <PageOpeningState
             title="Loading Signal Inbox"
@@ -1488,7 +1488,7 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="qa-page min-h-screen bg-[#050505] text-white">
+    <main className="qa-page min-h-screen bg-[#050505] pb-10 text-white md:pb-20">
       <div className="qa-shell">
         <section className="qa-panel mb-6 rounded-[34px] border border-cyan-300/18 bg-[radial-gradient(circle_at_12%_8%,rgba(34,211,238,0.24),transparent_34%),radial-gradient(circle_at_88%_20%,rgba(244,114,182,0.2),transparent_34%),linear-gradient(150deg,rgba(10,38,52,0.98),rgba(10,10,10,1))] p-6 shadow-[0_44px_140px_rgba(0,0,0,0.56)] backdrop-blur-sm">
           <p className="qa-eyebrow text-cyan-100/75">Signal Inbox</p>
