@@ -154,9 +154,12 @@ const ADMIN_NEWS_KEY = "qa_world_news_admin";
 const HIDDEN_NEWS_KEY = "qa_world_news_hidden";
 const RANKING_OVERRIDES_KEY = "qa_atlas_ranking_overrides";
 const RANKING_PENDING_SYNC_YEARS_KEY = "qa_atlas_ranking_pending_sync_years_v1";
+const SAFETY_RANKING_OVERRIDES_KEY = "qa_atlas_safety_ranking_overrides";
+const SAFETY_RANKING_PENDING_SYNC_YEARS_KEY = "qa_atlas_safety_ranking_pending_sync_years_v1";
 const NEWS_TABLE = "qa_world_news";
 const NEWS_HIDDEN_TABLE = "qa_world_news_hidden";
 const RANKING_TABLE = "qa_atlas_rankings";
+const SAFETY_RANKING_TABLE = "qa_atlas_safety_rankings";
 const NOW_NEWS_IMAGE_BUCKET = "qa-now-news";
 const NOW_NEWS_IMAGE_MAX_BYTES = 6 * 1024 * 1024;
 const NOW_NEWS_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -165,6 +168,7 @@ const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
 const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
 const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
 const NOW_EDITORIAL_CACHE_TTL_MS = 5 * 60 * 1000;
+const NOW_FOCUS_REFRESH_COOLDOWN_MS = 60 * 1000;
 const MIXED_FEED_ADMIN_CATEGORIES = PULSE_CATEGORIES.filter(
   (item) => item.key !== "all"
 );
@@ -241,6 +245,33 @@ const ATLAS_DESTINATION_RANKINGS = {
   ],
 };
 
+const ATLAS_SAFETY_RANKINGS = {
+  2026: [
+    { city: "copenhagen", country: "Denmark", signal: "Consistent late-night safety and high confidence local support." },
+    { city: "amsterdam", country: "Netherlands", signal: "Strong civic protections and stable queer nightlife navigation." },
+    { city: "sydney", country: "Australia", signal: "High trans visibility confidence and strong verified community signals." },
+    { city: "melbourne", country: "Australia", signal: "Reliable venue safety standards and low-friction night movement." },
+    { city: "berlin", country: "Germany", signal: "Dense queer ecosystem with resilient late-night safety infrastructure." },
+    { city: "barcelona", country: "Spain", signal: "High local sentiment and broad trusted venue coverage." },
+    { city: "madrid", country: "Spain", signal: "Strong community signal density and consistent night mobility comfort." },
+    { city: "lisbon", country: "Portugal", signal: "Growing safety confidence with stable social trust signals." },
+    { city: "stockholm", country: "Sweden", signal: "High late-night navigation confidence with strong queer community trust signals." },
+    { city: "bangkok", country: "Thailand", signal: "High nightlife activity with rising confidence in trusted routes." },
+  ],
+  2025: [
+    { city: "amsterdam", country: "Netherlands", signal: "Strong legal context and high community trust continuity." },
+    { city: "copenhagen", country: "Denmark", signal: "Low-friction night navigation with strong structural safety signals." },
+    { city: "sydney", country: "Australia", signal: "Stable safety baseline and consistent verified local sentiment." },
+    { city: "berlin", country: "Germany", signal: "High signal density with established community safety patterns." },
+    { city: "melbourne", country: "Australia", signal: "Reliable safety indicators across core queer districts." },
+    { city: "barcelona", country: "Spain", signal: "Trusted venue network and strong crowd confidence." },
+    { city: "madrid", country: "Spain", signal: "Balanced nightlife vitality and safety signal reliability." },
+    { city: "lisbon", country: "Portugal", signal: "Consistent social warmth and improving verified safety coverage." },
+    { city: "tokyo", country: "Japan", signal: "District-level navigation reliability with high late-night predictability." },
+    { city: "toronto", country: "Canada", signal: "Strong civic protections and broad queer-inclusive operating norms." },
+  ],
+};
+
 function mapNewsRowToItem(row) {
   const rawSource = String(row.source_name || "").trim();
   const normalizedSource =
@@ -306,6 +337,15 @@ function mergeEditorialCacheRanking(nextRankingOverrides) {
   });
 }
 
+function mergeEditorialCacheSafetyRanking(nextRankingOverrides) {
+  const cached = readRuntimeCache(NOW_EDITORIAL_CACHE_KEY, 24 * 60 * 60 * 1000);
+  const cachedData = cached?.data && typeof cached.data === "object" ? cached.data : {};
+  writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
+    ...cachedData,
+    safetyRankingOverrides: nextRankingOverrides || {},
+  });
+}
+
 function readRankingPendingSyncYears() {
   const raw = readLocalJson(RANKING_PENDING_SYNC_YEARS_KEY, []);
   if (!Array.isArray(raw)) return [];
@@ -328,6 +368,30 @@ function markRankingYearPendingSync(year, isPending) {
     nextSet.delete(key);
   }
   return writeRankingPendingSyncYears([...nextSet]);
+}
+
+function readSafetyRankingPendingSyncYears() {
+  const raw = readLocalJson(SAFETY_RANKING_PENDING_SYNC_YEARS_KEY, []);
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.map((value) => String(value || "").trim()).filter(Boolean))];
+}
+
+function writeSafetyRankingPendingSyncYears(years = []) {
+  const normalized = [...new Set((years || []).map((value) => String(value || "").trim()).filter(Boolean))];
+  writeLocalJson(SAFETY_RANKING_PENDING_SYNC_YEARS_KEY, normalized);
+  return normalized;
+}
+
+function markSafetyRankingYearPendingSync(year, isPending) {
+  const key = String(year || "").trim();
+  if (!key) return readSafetyRankingPendingSyncYears();
+  const nextSet = new Set(readSafetyRankingPendingSyncYears());
+  if (isPending) {
+    nextSet.add(key);
+  } else {
+    nextSet.delete(key);
+  }
+  return writeSafetyRankingPendingSyncYears([...nextSet]);
 }
 
 function mergeRankingOverridesWithPending({
@@ -389,12 +453,18 @@ export default function NowPage() {
   const [expandedNewsId, setExpandedNewsId] = useState(null);
   const [selectedNewsCategory, setSelectedNewsCategory] = useState("all");
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
+  const [selectedSafetyRankingYear, setSelectedSafetyRankingYear] = useState("2026");
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [activeNowSection, setActiveNowSection] = useState("mixed");
   const [rankingOverrides, setRankingOverrides] = useState(() => readLocalJson(RANKING_OVERRIDES_KEY, {}));
+  const [safetyRankingOverrides, setSafetyRankingOverrides] = useState(() =>
+    readLocalJson(SAFETY_RANKING_OVERRIDES_KEY, {})
+  );
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
+  const [isSafetyRankingEditorOpen, setIsSafetyRankingEditorOpen] = useState(false);
+  const [safetyRankingDraft, setSafetyRankingDraft] = useState([]);
   const [adminNews, setAdminNews] = useState([]);
   const [hiddenNewsIds, setHiddenNewsIds] = useState([]);
   const [isAdminByTable, setIsAdminByTable] = useState(false);
@@ -416,6 +486,7 @@ export default function NowPage() {
   const nowControlsRef = useRef(null);
   const nowControlButtonsRef = useRef({});
   const adminComposerRef = useRef(null);
+  const lastBackgroundRefreshAtRef = useRef(0);
 
   useEffect(() => {
     const button = nowControlButtonsRef.current[activeNowSection];
@@ -491,14 +562,20 @@ export default function NowPage() {
       setHiddenNewsIds(Array.isArray(cached.data.hiddenNewsIds) ? cached.data.hiddenNewsIds : []);
       const localRankings = readLocalJson(RANKING_OVERRIDES_KEY, cached.data.rankingOverrides || {});
       setRankingOverrides(localRankings || {});
+      const localSafetyRankings = readLocalJson(
+        SAFETY_RANKING_OVERRIDES_KEY,
+        cached.data.safetyRankingOverrides || {}
+      );
+      setSafetyRankingOverrides(localSafetyRankings || {});
       setSyncWarning(String(cached.data.syncWarning || ""));
       if (!cached.stale) return;
     }
 
-    const [newsResponse, hiddenResponse, rankingResponse] = await Promise.all([
+    const [newsResponse, hiddenResponse, rankingResponse, safetyRankingResponse] = await Promise.all([
       supabase.from(NEWS_TABLE).select("*").order("date", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from(NEWS_HIDDEN_TABLE).select("feed_id"),
       supabase.from(RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
+      supabase.from(SAFETY_RANKING_TABLE).select("*").order("year", { ascending: false }).order("rank", { ascending: true }),
     ]);
 
     const warnings = [];
@@ -551,31 +628,65 @@ export default function NowPage() {
       }
     }
 
+    if (safetyRankingResponse.error) {
+      if (!isMissingTableError(safetyRankingResponse.error)) {
+        warnings.push("Safety ranking sync failed.");
+      }
+      const localSafetyRankings = readLocalJson(SAFETY_RANKING_OVERRIDES_KEY, {});
+      setSafetyRankingOverrides(localSafetyRankings || {});
+    } else {
+      const localSafetyRankings = readLocalJson(SAFETY_RANKING_OVERRIDES_KEY, {});
+      const pendingYears = readSafetyRankingPendingSyncYears();
+      const remoteSafetyRankings = groupRankingRows(safetyRankingResponse.data || []);
+      const hasRemoteSafetyRankings = Object.keys(remoteSafetyRankings).length > 0;
+      if (hasRemoteSafetyRankings) {
+        const mergedSafetyRankings = mergeRankingOverridesWithPending({
+          remoteRankings: remoteSafetyRankings,
+          localRankings: localSafetyRankings,
+          pendingYears,
+        });
+        setSafetyRankingOverrides(mergedSafetyRankings);
+        writeLocalJson(SAFETY_RANKING_OVERRIDES_KEY, mergedSafetyRankings);
+      } else {
+        setSafetyRankingOverrides(localSafetyRankings || {});
+      }
+    }
+
     const nextSyncWarning = warnings.join(" ") || "";
     setSyncWarning(nextSyncWarning);
     writeRuntimeCache(NOW_EDITORIAL_CACHE_KEY, {
       adminNews: newsResponse.error ? [] : (newsResponse.data || []).map(mapNewsRowToItem),
       hiddenNewsIds: hiddenResponse.error ? [] : (hiddenResponse.data || []).map((row) => String(row.feed_id)),
       rankingOverrides: readLocalJson(RANKING_OVERRIDES_KEY, {}),
+      safetyRankingOverrides: readLocalJson(SAFETY_RANKING_OVERRIDES_KEY, {}),
       syncWarning: nextSyncWarning,
     });
   }, []);
 
   useEffect(() => {
-    queueMicrotask(loadEditorialData);
+    const timeoutId = window.setTimeout(() => {
+      queueMicrotask(loadEditorialData);
+    }, 140);
+    return () => window.clearTimeout(timeoutId);
   }, [loadEditorialData]);
 
   useEffect(() => {
     const refreshOnFocus = () => {
+      const nowTs = Date.now();
+      if (nowTs - lastBackgroundRefreshAtRef.current < NOW_FOCUS_REFRESH_COOLDOWN_MS) return;
+      lastBackgroundRefreshAtRef.current = nowTs;
       queueMicrotask(async () => {
         await Promise.all([loadPulseData(), loadEditorialData()]);
       });
     };
 
     const refreshOnVisibility = () => {
-      if (document.visibilityState === "visible") {
-        refreshOnFocus();
+      if (document.visibilityState !== "visible") return;
+      if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+        window.requestIdleCallback(() => refreshOnFocus(), { timeout: 700 });
+        return;
       }
+      window.setTimeout(() => refreshOnFocus(), 120);
     };
 
     window.addEventListener("focus", refreshOnFocus);
@@ -626,6 +737,7 @@ export default function NowPage() {
   }, [currentEmail, isMember]);
 
   const rankingYears = Object.keys(ATLAS_DESTINATION_RANKINGS).sort((a, b) => Number(b) - Number(a));
+  const safetyRankingYears = Object.keys(ATLAS_SAFETY_RANKINGS).sort((a, b) => Number(b) - Number(a));
   const buildRankingDraftForYear = useCallback(
     (year) => {
       const source = (rankingOverrides[year] || ATLAS_DESTINATION_RANKINGS[year] || [])
@@ -635,11 +747,26 @@ export default function NowPage() {
     },
     [rankingOverrides]
   );
+  const buildSafetyRankingDraftForYear = useCallback(
+    (year) => {
+      const source = (safetyRankingOverrides[year] || ATLAS_SAFETY_RANKINGS[year] || [])
+        .slice(0, NOW_RANKING_LIMIT)
+        .map((item) => ({ ...item }));
+      return Array.from({ length: NOW_RANKING_LIMIT }, (_, index) => source[index] || { city: "", country: "", signal: "" });
+    },
+    [safetyRankingOverrides]
+  );
   const baseRankingItems = useMemo(
     () => ATLAS_DESTINATION_RANKINGS[selectedRankingYear] || [],
     [selectedRankingYear]
   );
+  const baseSafetyRankingItems = useMemo(
+    () => ATLAS_SAFETY_RANKINGS[selectedSafetyRankingYear] || [],
+    [selectedSafetyRankingYear]
+  );
   const rankingItems = (rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, NOW_RANKING_LIMIT);
+  const safetyRankingItems =
+    (safetyRankingOverrides[selectedSafetyRankingYear] || baseSafetyRankingItems).slice(0, NOW_RANKING_LIMIT);
   const filteredEvents = useMemo(
     () =>
       selectedCity === "all"
@@ -1035,6 +1162,34 @@ export default function NowPage() {
     );
   };
 
+  const updateSafetyRankingDraftField = (index, field, value) => {
+    setSafetyRankingDraft((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const moveSafetyRankingDraftItem = (index, direction) => {
+    setSafetyRankingDraft((current) => {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= current.length) return current;
+      const next = [...current];
+      const temp = next[index];
+      next[index] = next[nextIndex];
+      next[nextIndex] = temp;
+      return next;
+    });
+  };
+
+  const clearSafetyRankingDraftItem = (index) => {
+    setSafetyRankingDraft((current) =>
+      current.map((item, itemIndex) =>
+        itemIndex === index ? { city: "", country: "", signal: "" } : item
+      )
+    );
+  };
+
   const saveRankingDraft = async () => {
     if (!isAdmin) return;
     const normalizedDraft = rankingDraft.map(normalizeRankingDraftItem);
@@ -1112,6 +1267,81 @@ export default function NowPage() {
     }
   };
 
+  const saveSafetyRankingDraft = async () => {
+    if (!isAdmin) return;
+    const normalizedDraft = safetyRankingDraft.map(normalizeRankingDraftItem);
+    const emptyRows = normalizedDraft
+      .map((item, index) => ({ index, city: item.city }))
+      .filter((item) => !item.city);
+    if (emptyRows.length > 0) {
+      setSyncWarning("Safety ranking save blocked. Every position from #1 to #10 must have a city.");
+      return;
+    }
+
+    const duplicateCitySet = new Set();
+    const duplicateCities = [];
+    normalizedDraft.forEach((item) => {
+      if (duplicateCitySet.has(item.city) && !duplicateCities.includes(item.city)) {
+        duplicateCities.push(item.city);
+      }
+      duplicateCitySet.add(item.city);
+    });
+    if (duplicateCities.length > 0) {
+      setSyncWarning(
+        `Safety ranking save blocked. Duplicate cities found: ${duplicateCities.join(", ")}.`
+      );
+      return;
+    }
+
+    const next = {
+      ...safetyRankingOverrides,
+      [selectedSafetyRankingYear]: normalizedDraft,
+    };
+    const year = Number(selectedSafetyRankingYear);
+    const rows = next[selectedSafetyRankingYear].map((item, index) => ({
+      year,
+      rank: index + 1,
+      city: item.city,
+      country: item.country,
+      signal: item.signal,
+      updated_by_email: currentEmail || null,
+    }));
+
+    const { error: upsertError } = rows.length
+      ? await supabase.from(SAFETY_RANKING_TABLE).upsert(rows, { onConflict: "year,rank" })
+      : { error: null };
+
+    if (upsertError && !isMissingTableError(upsertError)) {
+      markSafetyRankingYearPendingSync(selectedSafetyRankingYear, true);
+      setSyncWarning(`Cloud sync failed. Using local backup. ${formatSupabaseError(upsertError)}`);
+    } else if (upsertError && isMissingTableError(upsertError)) {
+      markSafetyRankingYearPendingSync(selectedSafetyRankingYear, true);
+      setSyncWarning("Safety ranking saved locally. Run SQL setup to enable cloud sync.");
+    } else {
+      const { error: trimError } = await supabase
+        .from(SAFETY_RANKING_TABLE)
+        .delete()
+        .eq("year", year)
+        .gt("rank", rows.length);
+      if (trimError && !isMissingTableError(trimError)) {
+        markSafetyRankingYearPendingSync(selectedSafetyRankingYear, true);
+        setSyncWarning(`Safety ranking saved. Cloud cleanup partial: ${formatSupabaseError(trimError)}`);
+      } else {
+        markSafetyRankingYearPendingSync(selectedSafetyRankingYear, false);
+        setSyncWarning("");
+      }
+    }
+
+    setSafetyRankingOverrides(next);
+    writeLocalJson(SAFETY_RANKING_OVERRIDES_KEY, next);
+    mergeEditorialCacheSafetyRanking(next);
+    setIsSafetyRankingEditorOpen(false);
+
+    if (!upsertError) {
+      await loadEditorialData({ forceRefresh: true });
+    }
+  };
+
   const resetRankingYear = async () => {
     if (!isAdmin) return;
 
@@ -1132,7 +1362,31 @@ export default function NowPage() {
     mergeEditorialCacheRanking(next);
     setIsRankingEditorOpen(false);
   };
+  const resetSafetyRankingYear = async () => {
+    if (!isAdmin) return;
+
+    const next = { ...safetyRankingOverrides };
+    delete next[selectedSafetyRankingYear];
+
+    const { error } = await supabase
+      .from(SAFETY_RANKING_TABLE)
+      .delete()
+      .eq("year", Number(selectedSafetyRankingYear));
+    if (error && !isMissingTableError(error)) {
+      setSyncWarning("Cloud sync failed. Using local backup.");
+    } else if (error && isMissingTableError(error)) {
+      setSyncWarning("Safety ranking reset saved locally. Run SQL setup to enable cloud sync.");
+    } else {
+      setSyncWarning("");
+    }
+
+    setSafetyRankingOverrides(next);
+    writeLocalJson(SAFETY_RANKING_OVERRIDES_KEY, next);
+    mergeEditorialCacheSafetyRanking(next);
+    setIsSafetyRankingEditorOpen(false);
+  };
   const rankingRenderItems = isRankingEditorOpen ? rankingDraft : rankingItems;
+  const safetyRankingRenderItems = isSafetyRankingEditorOpen ? safetyRankingDraft : safetyRankingItems;
 
   const publishAdminNews = async (event) => {
     event.preventDefault();
@@ -1838,7 +2092,7 @@ export default function NowPage() {
 
               <div className="qa-defer-render relative z-10 grid min-h-0 flex-1 content-start gap-3 overflow-visible pr-0 md:gap-4 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
                 {secondaryNewsItems.length > 0 ? (
-                  secondaryNewsItems.map((item) => {
+                  secondaryNewsItems.map((item, itemIndex) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
                     const itemDateForDisplay = canEditAdminNews
                       ? item.createdAt || item.date
@@ -1847,7 +2101,7 @@ export default function NowPage() {
                     const confidenceLabel = resolveNewsConfidence(item, canEditAdminNews);
                     const isExpanded = String(expandedNewsId) === String(item.id);
                     return (
-                      <div key={item.id} className="group relative h-full pb-3">
+                      <div key={item.id} className="group relative h-full pb-3 [content-visibility:auto] [contain-intrinsic-size:420px]">
                         <article
                           role="button"
                           tabIndex={0}
@@ -1876,6 +2130,8 @@ export default function NowPage() {
                                     src={item.imageUrl}
                                     alt={item.imageAlt || item.title || "News image"}
                                     fill
+                                    loading={!leadNewsItem && itemIndex === 0 ? "eager" : "lazy"}
+                                    fetchPriority={!leadNewsItem && itemIndex === 0 ? "high" : "auto"}
                                     sizes="(max-width: 768px) 100vw, 50vw"
                                     className="object-cover"
                                   />
@@ -2005,8 +2261,12 @@ export default function NowPage() {
 
             {isRankingSection && (
             <section className="qa-panel relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/14 bg-[linear-gradient(180deg,rgba(18,22,34,0.92),rgba(9,11,18,0.97),rgba(7,8,12,1))] p-6 shadow-[0_24px_64px_rgba(2,6,23,0.35)]">
-              <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-cyan-300/8 blur-3xl" />
-              <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-fuchsia-300/6 blur-3xl" />
+              <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-white/5 blur-3xl" />
+              <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-white/4 blur-3xl" />
+              <div className="grid h-full gap-4 xl:grid-cols-2">
+              <div className="relative min-h-0 rounded-2xl border border-cyan-200/26 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(56,189,248,0.08),rgba(2,6,23,0.55))] p-4">
+              <div className="pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full bg-cyan-300/16 blur-2xl" />
+              <div className="pointer-events-none absolute -right-10 bottom-8 h-24 w-24 rounded-full bg-sky-300/12 blur-2xl" />
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/75">Ranking</p>
@@ -2226,6 +2486,232 @@ export default function NowPage() {
                     </div>
                   );
                 })}
+              </div>
+              </div>
+              <div className="relative min-h-0 rounded-2xl border border-emerald-200/28 bg-[linear-gradient(180deg,rgba(16,185,129,0.14),rgba(45,212,191,0.08),rgba(2,20,16,0.58))] p-4">
+              <div className="pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full bg-emerald-300/16 blur-2xl" />
+              <div className="pointer-events-none absolute -right-10 bottom-8 h-24 w-24 rounded-full bg-teal-300/14 blur-2xl" />
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-emerald-100/80">Safety ranking</p>
+                  <h3 className="mt-1 text-lg font-semibold text-white">Top 10 Queer Safety Destinations</h3>
+                  <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200/26 bg-emerald-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/90">
+                    Atlas safety editorial
+                  </div>
+                </div>
+                <select
+                  value={selectedSafetyRankingYear}
+                  onChange={(event) => {
+                    const year = event.target.value;
+                    setSelectedSafetyRankingYear(year);
+                    if (isSafetyRankingEditorOpen) {
+                      setSafetyRankingDraft(buildSafetyRankingDraftForYear(year));
+                    }
+                  }}
+                  className="rounded-xl border border-emerald-200/20 bg-black/35 px-3 py-2 text-xs text-emerald-100 outline-none focus:border-emerald-200/45"
+                >
+                  {safetyRankingYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-xs text-emerald-100/70">
+                Editorial safety ranking by Queer Atlas. Updated yearly to guide low-friction city movement.
+              </p>
+
+              {isAdmin && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isSafetyRankingEditorOpen) {
+                        setIsSafetyRankingEditorOpen(false);
+                        setSafetyRankingDraft([]);
+                        return;
+                      }
+
+                      setSafetyRankingDraft(buildSafetyRankingDraftForYear(selectedSafetyRankingYear));
+                      setIsSafetyRankingEditorOpen(true);
+                    }}
+                    className="rounded-full border border-emerald-200/28 bg-emerald-200/12 px-3 py-1.5 text-xs text-emerald-100 transition hover:border-emerald-200/45"
+                  >
+                    {isSafetyRankingEditorOpen ? "Close safety edit" : "Edit safety ranking"}
+                  </button>
+                  {isSafetyRankingEditorOpen && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={saveSafetyRankingDraft}
+                        className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-3 py-1.5 text-xs text-emerald-100 transition hover:border-emerald-200/45"
+                      >
+                        Save ranking
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetSafetyRankingYear}
+                        className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1.5 text-xs text-rose-100 transition hover:border-rose-200/40"
+                      >
+                        Reset year
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              {!isSafetyRankingEditorOpen && (
+                <div className="mt-5 grid gap-3">
+                  {[0, 1, 2].map((index) => {
+                    const item = safetyRankingRenderItems[index] || { city: "", country: "", signal: "" };
+                    const cityKey = String(item.city || "").toLowerCase();
+                    const citySlug = cityKey.replaceAll(" ", "_").trim();
+                    const cityExists = cityOptionSet.has(citySlug);
+                    const medalTone =
+                      index === 0
+                        ? "from-emerald-200/90 via-teal-200/70 to-emerald-200/30 border-emerald-200/35"
+                        : index === 1
+                          ? "from-teal-200/80 via-cyan-300/55 to-teal-200/25 border-teal-200/30"
+                          : "from-lime-300/80 via-emerald-300/55 to-lime-300/25 border-lime-200/30";
+                    return (
+                      <button
+                        key={`safety-podium-${selectedSafetyRankingYear}-${index + 1}`}
+                        type="button"
+                        disabled={!cityExists}
+                        onClick={() => {
+                          if (!cityExists) return;
+                          router.push(`/${citySlug}`);
+                        }}
+                        className={`group relative overflow-hidden rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 text-left transition ${
+                          cityExists
+                            ? "hover:-translate-y-[1px] hover:border-emerald-200/45 hover:shadow-[0_20px_52px_rgba(16,185,129,0.18)]"
+                            : "opacity-70"
+                        } ${medalTone}`}
+                      >
+                        <div className="mb-3 flex items-center justify-between">
+                          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/18 bg-white/10 text-sm font-semibold text-white">
+                            #{index + 1}
+                          </span>
+                          <span className="text-[11px] uppercase tracking-[0.14em] text-white/75">
+                            {index === 0 ? "Safety icon" : index === 1 ? "High confidence" : "Trusted route"}
+                          </span>
+                        </div>
+                        <p className="truncate text-base font-semibold text-white">
+                          {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-white/65">{item.country || "Country TBA"}</p>
+                        <p className="mt-3 text-xs leading-5 text-white/70">
+                          {item.signal || "Signal pending editorial update."}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className={`mt-4 ${isSafetyRankingEditorOpen ? "grid flex-1 grid-rows-[repeat(10,minmax(0,1fr))] gap-2" : "space-y-2.5"}`}>
+                {Array.from({ length: NOW_RANKING_LIMIT }).map((_, index) => {
+                  if (!isSafetyRankingEditorOpen && index < 3) return null;
+                  const item = safetyRankingRenderItems[index] || { city: "", country: "", signal: "" };
+                  const cityKey = String(item.city || "").toLowerCase();
+                  const citySlug = cityKey.replaceAll(" ", "_").trim();
+                  const cityExists = cityOptionSet.has(citySlug);
+                  const signalStrength = Math.max(22, 100 - index * 4);
+                  return (
+                    <div
+                      key={`safety-${selectedSafetyRankingYear}-${index + 1}`}
+                      className={`grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border px-3 py-2 transition ${
+                        isSafetyRankingEditorOpen
+                          ? "border-white/10 bg-black/25"
+                          : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] hover:border-emerald-200/32"
+                      }`}
+                    >
+                      <p className={`text-xs font-semibold ${index < 5 ? "text-emerald-100" : "text-emerald-200/90"}`}>#{index + 1}</p>
+                      {isAdmin && isSafetyRankingEditorOpen ? (
+                        <div className="grid gap-1">
+                          <input
+                            value={item.city || ""}
+                            onChange={(event) => updateSafetyRankingDraftField(index, "city", event.target.value)}
+                            placeholder="city_name"
+                            className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
+                          />
+                          <div className="grid grid-cols-2 gap-1">
+                            <input
+                              value={item.country || ""}
+                              onChange={(event) => updateSafetyRankingDraftField(index, "country", event.target.value)}
+                              placeholder="country"
+                              className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
+                            />
+                            <input
+                              value={item.signal || ""}
+                              onChange={(event) => updateSafetyRankingDraftField(index, "signal", event.target.value)}
+                              placeholder="signal line"
+                              className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-white">
+                            {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
+                          </p>
+                          <p className="truncate text-[11px] text-white/55">{item.country || "Country TBA"}</p>
+                          <p className="truncate text-[11px] text-white/62">{item.signal || "Signal pending editorial update."}</p>
+                          <div className="mt-2 h-1.5 w-full rounded-full bg-white/10">
+                            <span
+                              className="block h-1.5 rounded-full bg-gradient-to-r from-emerald-200/85 via-teal-200/75 to-emerald-200/45"
+                              style={{ width: `${signalStrength}%` }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {isAdmin && isSafetyRankingEditorOpen ? (
+                        <div className="flex flex-col gap-1">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => moveSafetyRankingDraftItem(index, -1)}
+                            className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
+                          >
+                            Up
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === NOW_RANKING_LIMIT - 1}
+                            onClick={() => moveSafetyRankingDraftItem(index, 1)}
+                            className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
+                          >
+                            Down
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => clearSafetyRankingDraftItem(index)}
+                            className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={!cityExists}
+                          onClick={() => {
+                            if (!cityExists) return;
+                            router.push(`/${citySlug}`);
+                          }}
+                          className={`rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
+                            cityExists
+                              ? "border border-emerald-200/35 bg-emerald-200/12 text-emerald-100 hover:bg-emerald-200/22"
+                              : "border border-white/10 bg-white/5 text-white/35"
+                          }`}
+                        >
+                          {cityExists ? "Focus" : "Soon"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              </div>
               </div>
             </section>
             )}
