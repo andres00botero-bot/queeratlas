@@ -64,6 +64,12 @@ function normalizeRankingDraftItem(item) {
   };
 }
 
+function formatCityLabel(value) {
+  return String(value || "TBA")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function getNewsToneByCategory(category) {
   const key = String(category || "");
   if (key === "rights_safety") {
@@ -958,6 +964,65 @@ export default function NowPage() {
     };
   }, [categoryLabels, displayedNewsItems]);
 
+  const nowTravelRankingJsonLd = useMemo(() => {
+    const baseUrl = QA_SITE_URL;
+    const topItems = rankingItems.slice(0, NOW_RANKING_LIMIT);
+    return {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "@id": `${baseUrl}/now#travel-ranking-${selectedRankingYear}`,
+      name: `Top 10 Queer Travel Destinations ${selectedRankingYear}`,
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      numberOfItems: topItems.length,
+      itemListElement: topItems.map((item, index) => {
+        const citySlug = String(item?.city || "").trim().toLowerCase().replaceAll(" ", "_");
+        return {
+          "@type": "ListItem",
+          position: index + 1,
+          url: citySlug ? `${baseUrl}/${citySlug}` : `${baseUrl}/cities`,
+          name: formatCityLabel(item?.city),
+          description: clampSeoText(item?.signal || "Signal pending editorial update.", 180),
+        };
+      }),
+    };
+  }, [rankingItems, selectedRankingYear]);
+
+  const nowSafetyRankingJsonLd = useMemo(() => {
+    const baseUrl = QA_SITE_URL;
+    const topItems = safetyRankingItems.slice(0, NOW_RANKING_LIMIT);
+    return {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "@id": `${baseUrl}/now#safety-ranking-${selectedSafetyRankingYear}`,
+      name: `Top 10 Queer Safety Destinations ${selectedSafetyRankingYear}`,
+      itemListOrder: "https://schema.org/ItemListOrderAscending",
+      numberOfItems: topItems.length,
+      itemListElement: topItems.map((item, index) => {
+        const citySlug = String(item?.city || "").trim().toLowerCase().replaceAll(" ", "_");
+        return {
+          "@type": "ListItem",
+          position: index + 1,
+          url: citySlug ? `${baseUrl}/${citySlug}` : `${baseUrl}/cities`,
+          name: formatCityLabel(item?.city),
+          description: clampSeoText(item?.signal || "Signal pending editorial update.", 180),
+        };
+      }),
+    };
+  }, [safetyRankingItems, selectedSafetyRankingYear]);
+
+  const rankingSeoSummaryText = useMemo(() => {
+    const travelTop3 = rankingItems.slice(0, 3).map((item) => formatCityLabel(item?.city)).filter(Boolean);
+    const safetyTop3 = safetyRankingItems.slice(0, 3).map((item) => formatCityLabel(item?.city)).filter(Boolean);
+    return {
+      travel: travelTop3.length
+        ? `Travel leaders ${selectedRankingYear}: ${travelTop3.join(", ")}.`
+        : `Travel ranking ${selectedRankingYear} is being updated.`,
+      safety: safetyTop3.length
+        ? `Safety leaders ${selectedSafetyRankingYear}: ${safetyTop3.join(", ")}.`
+        : `Safety ranking ${selectedSafetyRankingYear} is being updated.`,
+    };
+  }, [rankingItems, safetyRankingItems, selectedRankingYear, selectedSafetyRankingYear]);
+
   const rightsUpdates = useMemo(
     () =>
       worldNewsItems
@@ -1721,6 +1786,14 @@ export default function NowPage() {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(nowNewsJsonLd) }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowTravelRankingJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowSafetyRankingJsonLd) }}
+        />
         <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
             <Image
@@ -2263,6 +2336,12 @@ export default function NowPage() {
             <section className="qa-panel relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/14 bg-[linear-gradient(180deg,rgba(18,22,34,0.92),rgba(9,11,18,0.97),rgba(7,8,12,1))] p-6 shadow-[0_24px_64px_rgba(2,6,23,0.35)]">
               <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-white/5 blur-3xl" />
               <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-white/4 blur-3xl" />
+              <div className="mb-4 rounded-2xl border border-white/12 bg-white/[0.03] px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-white/60">Ranking brief</p>
+                <p className="qa-copy-justify mt-1 text-sm leading-6 text-white/74">
+                  {rankingSeoSummaryText.travel} {rankingSeoSummaryText.safety}
+                </p>
+              </div>
               <div className="grid h-full gap-4 xl:grid-cols-2">
               <div className="relative min-h-0 rounded-2xl border border-cyan-200/26 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(56,189,248,0.08),rgba(2,6,23,0.55))] p-4">
               <div className="pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full bg-cyan-300/16 blur-2xl" />
