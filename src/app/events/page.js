@@ -46,7 +46,7 @@ import {
 import { REPORT_REASONS, TRUST_ACTIONS } from "@/features/events/eventPageConstants";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
 import { resolveEventOpenIntent } from "@/features/events/eventOpenGuards";
-import { qualityPillClass } from "@/features/events/eventViewUtils";
+import { mapGlobalEventRow, qualityPillClass } from "@/features/events/eventViewUtils";
 import { ADDED_STORAGE_KEY, FAVORITES_STORAGE_KEY } from "@/features/favorites/favoritesStateDefaults";
 import { addFavoriteLocalState, mergeFavoriteIds } from "@/features/favorites/logic/favoritesMutations";
 import CityEventEditModal from "@/components/events/CityEventEditModal";
@@ -1470,7 +1470,7 @@ export default function EventsPage() {
                                 openEvent(event);
                               }
                             }}
-                            className="qa-premium-card cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.28)] transition hover:-translate-y-[1px] hover:border-cyan-200/28 hover:shadow-[0_24px_54px_rgba(6,182,212,0.14),0_12px_30px_rgba(0,0,0,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
+                            className="qa-premium-card cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.28)] transition hover:-translate-y-[1px] hover:border-cyan-200/28 hover:shadow-[0_24px_54px_rgba(6,182,212,0.14),0_12px_30px_rgba(0,0,0,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 [content-visibility:auto] [contain-intrinsic-size:540px]"
                           >
                             <div className="flex items-start justify-between gap-4">
                               <div>
@@ -1700,7 +1700,7 @@ export default function EventsPage() {
                   <div
                     id={`offgrid-event-${event.id}`}
                     key={event.id}
-                    className={`rounded-2xl border p-4 transition ${
+                    className={`rounded-2xl border p-4 transition [content-visibility:auto] [contain-intrinsic-size:360px] ${
                       isFocused
                         ? "border-cyan-200/55 bg-[linear-gradient(180deg,rgba(34,211,238,0.20),rgba(10,10,10,0.94))] shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_24px_80px_rgba(34,211,238,0.18)]"
                         : "border-white/10 bg-[linear-gradient(180deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))]"
