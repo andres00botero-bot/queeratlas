@@ -1,13 +1,16 @@
 export const metadata = {
-  title: "Queer News Feed: LGBTQ World News, Travel & Safety",
+  title: "Queer News Feed, Safety Index & Top Queer Destinations",
   description:
-    "Daily queer news feed with LGBTQ world updates, travel safety signals, inclusive nightlife shifts, and community policy watch across major cities.",
+    "Daily queer news plus Queer Safety Index and Top Queer Destinations rankings with LGBTQ travel safety signals, nightlife shifts, and policy watch across major cities.",
   keywords: [
     "queer news",
     "LGBTQ news",
     "gay news today",
     "queer community news",
     "LGBTQ travel news",
+    "queer safety index",
+    "top queer destinations",
+    "LGBTQ city rankings",
     "queer travel safety",
     "safe queer nightlife",
     "inclusive nightlife",
@@ -31,9 +34,9 @@ export const metadata = {
     },
   },
   openGraph: {
-    title: "Queer News Feed | Queer Atlas",
+    title: "Queer Safety Index & Top Queer Destinations | Queer Atlas",
     description:
-      "Track LGBTQ world news, queer travel safety, nightlife changes, and policy shifts in one live editorial feed.",
+      "Track queer world news plus live Top Queer Destinations and Queer Safety Index rankings in one premium editorial feed.",
     url: "/now",
     type: "website",
     images: [
@@ -47,9 +50,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Queer News Feed | Queer Atlas",
+    title: "Queer Safety Index & Top Queer Destinations | Queer Atlas",
     description:
-      "Daily LGBTQ world news, queer travel safety updates, nightlife shifts, and policy watch.",
+      "Daily queer news with Top Queer Destinations and Queer Safety Index rankings, plus travel safety and nightlife shifts.",
     images: ["/queer-atlas-heart-logo-progress.png"],
   },
 };
