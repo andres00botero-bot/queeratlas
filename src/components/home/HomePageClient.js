@@ -1001,6 +1001,7 @@ export default function HomePageClient({ initialHomeData = null }) {
           ) : (
             <div className="mt-12 h-[460px] rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
           )}
+
         </div>
       </div>
 

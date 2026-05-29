@@ -171,27 +171,65 @@ export default function HomeDeferredSections({
 
       {contactSlot}
 
-      <section className="mt-10 pb-4 opacity-70 qa-defer-render">
-        <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
-          <span className="mr-1 uppercase tracking-[0.18em] text-white/32">Search guides</span>
-          <Link
-            href="/gay-guide"
-            className="rounded-full border border-fuchsia-200/14 bg-fuchsia-200/[0.05] px-2.5 py-1 text-[11px] text-fuchsia-100/70 transition hover:border-fuchsia-200/30 hover:text-fuchsia-100"
-          >
-            Gay Guide
-          </Link>
-          <Link
-            href="/queer-guide"
-            className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-[11px] text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100"
-          >
-            Queer Guide
-          </Link>
-          <Link
-            href="/hbtq-guide"
-            className="rounded-full border border-amber-200/14 bg-amber-200/[0.05] px-2.5 py-1 text-[11px] text-amber-100/70 transition hover:border-amber-200/30 hover:text-amber-100"
-          >
-            HBTQ Guide
-          </Link>
+      <section className="mt-10 pb-4 qa-defer-render">
+        <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3.5 opacity-75">
+          <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
+            <span className="mr-1 uppercase tracking-[0.18em] text-white/32">Discover paths</span>
+            <Link
+              href="/gay-guide"
+              className="rounded-full border border-fuchsia-200/14 bg-fuchsia-200/[0.05] px-2.5 py-1 text-[11px] text-fuchsia-100/70 transition hover:border-fuchsia-200/30 hover:text-fuchsia-100"
+            >
+              Gay Guide
+            </Link>
+            <Link
+              href="/queer-guide"
+              className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-[11px] text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100"
+            >
+              Queer Guide
+            </Link>
+            <Link
+              href="/hbtq-guide"
+              className="rounded-full border border-amber-200/14 bg-amber-200/[0.05] px-2.5 py-1 text-[11px] text-amber-100/70 transition hover:border-amber-200/30 hover:text-amber-100"
+            >
+              HBTQ Guide
+            </Link>
+            <Link
+              href="/topics/nightlife"
+              className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-[11px] text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100"
+            >
+              Nightlife hub
+            </Link>
+            <Link
+              href="/topics/safety"
+              className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-[11px] text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100"
+            >
+              Safety hub
+            </Link>
+            <Link
+              href="/berlin/discover/queer-techno-clubs"
+              className="rounded-full border border-white/14 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/70 transition hover:border-white/24 hover:text-white/90"
+            >
+              Berlin techno
+            </Link>
+            <Link
+              href="/new_york/discover/events-tonight"
+              className="rounded-full border border-white/14 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/70 transition hover:border-white/24 hover:text-white/90"
+            >
+              New York tonight
+            </Link>
+            <Link
+              href="/bangkok/discover/queer-cafes"
+              className="rounded-full border border-white/14 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/70 transition hover:border-white/24 hover:text-white/90"
+            >
+              Bangkok cafes
+            </Link>
+            <Link
+              href="/madrid/discover/lesbian-nightlife"
+              className="rounded-full border border-white/14 bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/70 transition hover:border-white/24 hover:text-white/90"
+            >
+              Madrid community
+            </Link>
+          </div>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[11px] text-white/45">
           <Link
