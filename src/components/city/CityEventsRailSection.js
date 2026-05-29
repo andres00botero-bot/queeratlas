@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { getEntityQuality, getQualityStatus } from "@/lib/quality";
 import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
@@ -8,7 +7,6 @@ import VibeTagChips from "@/components/ui/VibeTagChips";
 import { qualityPillClass } from "@/features/city/adminDrawerFeature";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
-import { buildEventPath } from "@/lib/seo/entitySlug";
 
 export default function CityEventsRailSection({
   sectionRef,
@@ -102,15 +100,9 @@ export default function CityEventsRailSection({
               >
                 <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-violet-300/18 blur-3xl" />
                 <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <Link
-                    href={buildEventPath(city || cityName, featuredEvent)}
-                    onClick={(clickEvent) => {
-                      clickEvent.stopPropagation();
-                    }}
-                    className="text-lg font-semibold leading-tight text-white hover:text-fuchsia-100 hover:underline"
-                  >
+                  <h3 className="text-lg font-semibold leading-tight text-white">
                     {featuredEvent.name}
-                  </Link>
+                  </h3>
                   {normalizeEventRange(featuredEvent).startDate && (
                     <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
                       {formatEventDateLabel(featuredEvent)}
@@ -192,15 +184,9 @@ export default function CityEventsRailSection({
               }`}
             >
               <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <Link
-                  href={buildEventPath(city || cityName, event)}
-                  onClick={(clickEvent) => {
-                    clickEvent.stopPropagation();
-                  }}
-                  className="font-semibold leading-tight text-white hover:text-fuchsia-100 hover:underline"
-                >
+                <p className="font-semibold leading-tight text-white">
                   {event.name}
-                </Link>
+                </p>
                 {normalizeEventRange(event).startDate && (
                   <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
                     {formatEventDateLabel(event)}
