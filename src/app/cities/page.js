@@ -16,6 +16,11 @@ import { usePlaces } from "@/lib/usePlaces";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
+import {
+  isIndexableTopicHub,
+  TIER1_CITY_SLUGS,
+  TIER1_TOPIC_KEYS,
+} from "@/lib/seo/indexingTier";
 import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
 import CitiesSeoClusterPanel from "@/components/cities/CitiesSeoClusterPanel";
@@ -656,15 +661,18 @@ export default function CitiesPage() {
 
   const visibleCountries = Object.keys(groupedCities).sort();
   const crawlPathCities = useMemo(
-    () => filteredCities.slice(0, 24).map((city) => city?.key).filter(Boolean),
-    [filteredCities]
+    () => TIER1_CITY_SLUGS.filter((cityKey) => Boolean(cityConfig[cityKey])),
+    []
   );
   const crawlClusterTopics = useMemo(
-    () => listCityClusterTopics().map((topic) => topic.key).filter(Boolean),
+    () => TIER1_TOPIC_KEYS.filter((topicKey) => Boolean(listCityClusterTopics().find((topic) => topic.key === topicKey))),
     []
   );
   const crawlClusterCities = useMemo(() => crawlPathCities.slice(0, 12), [crawlPathCities]);
-  const topicHubKeys = useMemo(() => listTopicHubs().map((hub) => hub.key), []);
+  const topicHubKeys = useMemo(
+    () => listTopicHubs().map((hub) => hub.key).filter((key) => isIndexableTopicHub(key)),
+    []
+  );
   const totalCities = Object.keys(cityConfig).length;
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
@@ -1290,7 +1298,12 @@ export default function CitiesPage() {
           ))}
         </div>
 
-        <CitiesSeoClusterPanel cityKeys={crawlPathCities} />
+        <CitiesSeoClusterPanel
+          cityKeys={crawlPathCities}
+          topicHubKeys={topicHubKeys}
+          crawlClusterCities={crawlClusterCities}
+          crawlClusterTopics={crawlClusterTopics}
+        />
       </div>
     </main>
   );

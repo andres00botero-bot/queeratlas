@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { isTier1CityTopic } from "@/lib/seo/indexingTier";
 
 export default function CitySeoTopicLinks({ city = "", cityName = "" }) {
-  const topics = listCityClusterTopics().slice(0, 5);
+  const topics = listCityClusterTopics()
+    .filter((entry) => isTier1CityTopic(city, entry.key))
+    .slice(0, 5);
   const topicHubMap = {
     nightlife: "nightlife",
     safety: "safety",

@@ -3,6 +3,7 @@ import { cityCoreConfig } from "@/lib/cityCore";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
+import { isIndexableTopicHub, isTier1CityTopic } from "@/lib/seo/indexingTier";
 
 export const metadata = {
   title: "Queer Topic Hubs 2026 | Queer Atlas",
@@ -14,7 +15,7 @@ export const metadata = {
 };
 
 export default function TopicsIndexPage() {
-  const hubs = listTopicHubs();
+  const hubs = listTopicHubs().filter((hub) => isIndexableTopicHub(hub.key));
   const cityKeys = Object.keys(cityCoreConfig);
   const clusterTopics = listCityClusterTopics();
   const allDiscoverRoutes = cityKeys.flatMap((city) =>
@@ -22,7 +23,7 @@ export default function TopicsIndexPage() {
       city,
       topic: topic.key,
       href: `/${city}/discover/${topic.key}`,
-    })),
+    })).filter((route) => isTier1CityTopic(route.city, route.topic)),
   );
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",

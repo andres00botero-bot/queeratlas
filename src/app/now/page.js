@@ -20,6 +20,11 @@ import {
 import { QA_SOURCE_CONFIDENCE } from "@/lib/seo/entityConsistency";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
+import {
+  isIndexableTopicHub,
+  TIER1_CITY_SLUGS,
+  TIER1_TOPIC_KEYS,
+} from "@/lib/seo/indexingTier";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
@@ -1048,14 +1053,17 @@ export default function NowPage() {
     [communityStories.length, displayedNewsItems.length, happeningSoonEvents.length, rankingItems.length]
   );
   const crawlClusterTopics = useMemo(
-    () => listCityClusterTopics().map((topic) => topic.key).filter(Boolean),
+    () => TIER1_TOPIC_KEYS.filter((topicKey) => Boolean(listCityClusterTopics().find((topic) => topic.key === topicKey))),
     []
   );
   const crawlClusterCities = useMemo(
-    () => Object.keys(cityConfig).slice(0, 12),
+    () => TIER1_CITY_SLUGS.filter((cityKey) => Boolean(cityConfig[cityKey])).slice(0, 12),
     []
   );
-  const topicHubKeys = useMemo(() => listTopicHubs().map((hub) => hub.key), []);
+  const topicHubKeys = useMemo(
+    () => listTopicHubs().map((hub) => hub.key).filter((key) => isIndexableTopicHub(key)),
+    []
+  );
   const adminNewsIdSet = useMemo(
     () => new Set((adminNews || []).map((item) => String(item.id))),
     [adminNews]

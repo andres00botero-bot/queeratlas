@@ -9,7 +9,11 @@ export default function CitiesSeoClusterPanel({
   crawlClusterCities = [],
   crawlClusterTopics = [],
 }) {
-  const topics = listCityClusterTopics().slice(0, 5);
+  const topicMap = new Map(listCityClusterTopics().map((topic) => [topic.key, topic]));
+  const topics = (Array.isArray(crawlClusterTopics) ? crawlClusterTopics : [])
+    .map((key) => topicMap.get(key))
+    .filter(Boolean)
+    .slice(0, 5);
   const sampleCities = Array.isArray(cityKeys) ? cityKeys.slice(0, 8) : [];
   const depthTopicHubs = Array.isArray(topicHubKeys) ? topicHubKeys.slice(0, 5) : [];
   const depthRouteCities = Array.isArray(crawlClusterCities) ? crawlClusterCities.slice(0, 4) : [];

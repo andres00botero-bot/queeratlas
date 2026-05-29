@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { isTier1CityTopic } from "@/lib/seo/indexingTier";
 
 export default function CityCrawlLinks({ city, cityName }) {
-  const clusterTopics = listCityClusterTopics().slice(0, 5);
+  const clusterTopics = listCityClusterTopics()
+    .filter((entry) => isTier1CityTopic(city, entry.key))
+    .slice(0, 5);
 
   return (
     <nav aria-label="Internal city crawl path links" className="sr-only">
