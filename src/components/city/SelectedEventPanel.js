@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import SelectedEventActions from "@/components/city/SelectedEventActions";
 import SelectedEventAdminControls from "@/components/city/SelectedEventAdminControls";
 import SelectedEventLiveVibePanel from "@/components/city/SelectedEventLiveVibePanel";
 import SelectedEventMetaCards from "@/components/city/SelectedEventMetaCards";
 import SelectedEventSummary from "@/components/city/SelectedEventSummary";
 import SelectedEventTrustSignals from "@/components/city/SelectedEventTrustSignals";
+import { buildEventPath } from "@/lib/seo/entitySlug";
 
 export default function SelectedEventPanel({
   selectedEvent,
@@ -45,6 +47,7 @@ export default function SelectedEventPanel({
   handleReport,
 }) {
   if (!selectedEvent) return null;
+  const canonicalEventHref = buildEventPath(selectedEvent.city || cityName || cityLabel, selectedEvent);
 
   return (
     <div
@@ -71,6 +74,14 @@ export default function SelectedEventPanel({
           cityLabel={cityLabel}
           cityName={cityName}
         />
+        <div className="mt-2 text-xs leading-5 text-white/56">
+          <Link
+            href={canonicalEventHref}
+            className="underline decoration-white/35 underline-offset-2 transition hover:text-white/86 hover:decoration-white/60"
+          >
+            Open canonical event page
+          </Link>
+        </div>
         <SelectedEventLiveVibePanel
           LIVE_VIBE_OPTIONS={liveVibeOptions}
           eventLiveVibeSignalKey={eventLiveVibeSignalKey}
