@@ -84,11 +84,25 @@ function SignalPill({ signal }) {
       title={`${SIGNAL_LABELS[signal.id]}: ${signal.label}`}
     >
       <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${accent.dot}`} />
-      <span className="font-semibold">{SIGNAL_LABELS[signal.id]}</span>
-      <span className="mx-1 text-white/32">/</span>
-      <span>{signal.label}</span>
+      <span className="font-semibold">{SIGNAL_LABELS[signal.id]}:</span>
+      <span className="ml-1">{signal.label}</span>
     </span>
   );
+}
+
+function resolveOverallLevel(signals = []) {
+  const severity = {
+    unknown: 0,
+    good: 1,
+    mixed: 2,
+    risk: 3,
+  };
+
+  return signals.reduce((current, signal) => {
+    const level = String(signal?.level || "unknown");
+    if ((severity[level] || 0) > (severity[current] || 0)) return level;
+    return current;
+  }, "unknown");
 }
 
 export default function CityRightsSignals({ snapshot }) {
@@ -99,8 +113,9 @@ export default function CityRightsSignals({ snapshot }) {
   const legalSignal = resolveLegalSignalFromDetails(snapshot.legal, snapshot.details);
   const signals = [legalSignal, snapshot.rights, snapshot.safety].filter(Boolean);
   if (signals.length === 0) return null;
-
-  const activeLevels = Array.from(new Set(signals.map((signal) => String(signal.level || "unknown"))));
+  const overallLevel = resolveOverallLevel(signals);
+  const overallAccent = LEVEL_ACCENTS[overallLevel] || LEVEL_ACCENTS.unknown;
+  const overallLabel = LEVEL_CONTEXT_LABEL[overallLevel] || "Unknown";
 
   return (
     <div className="mt-2 space-y-3">
@@ -111,34 +126,26 @@ export default function CityRightsSignals({ snapshot }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-white/64">
-        <span className="text-white/46">Current profile:</span>
-        {activeLevels.map((level) => {
-          const accent = LEVEL_ACCENTS[level] || LEVEL_ACCENTS.unknown;
-          return (
-            <span
-              key={`context-${level}`}
-              className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/6 px-2 py-0.5"
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
-              {LEVEL_CONTEXT_LABEL[level] || "Unknown"}
-            </span>
-          );
-        })}
+        <span className="text-white/46">Overall profile:</span>
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/14 bg-white/6 px-2 py-0.5">
+          <span className={`h-1.5 w-1.5 rounded-full ${overallAccent.dot}`} />
+          {overallLabel}
+        </span>
       </div>
 
-      <p className="break-words text-sm leading-7 text-white/72">
-        {snapshot.whatThisMeans}
-      </p>
+      <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3">
+        <p className="break-words text-sm leading-7 text-white/76">{snapshot.whatThisMeans}</p>
+      </div>
 
       <button
         type="button"
         onClick={() => setIsExpanded((value) => !value)}
         aria-expanded={isExpanded}
-        className="inline-flex w-full items-center justify-between rounded-xl border border-cyan-200/46 bg-cyan-300/18 px-4 py-3 text-left text-[14px] font-semibold tracking-[0.02em] text-cyan-50 transition hover:border-cyan-200/62 hover:bg-cyan-300/24"
+        className="inline-flex w-full items-center justify-between rounded-xl border border-cyan-200/36 bg-cyan-300/12 px-4 py-3 text-left text-[14px] font-semibold tracking-[0.02em] text-cyan-50 transition hover:border-cyan-200/52 hover:bg-cyan-300/18"
       >
         <span className="inline-flex items-center gap-1.5">
           <span className="text-sm leading-none">{isExpanded ? "v" : ">"}</span>
-          {isExpanded ? "Hide legal breakdown" : "Open legal breakdown"}
+          {isExpanded ? "Hide legal breakdown" : "View full legal breakdown"}
         </span>
         <span className="text-[12px] text-cyan-100/95">{isExpanded ? "Collapse" : "Expand"}</span>
       </button>
