@@ -81,6 +81,7 @@ const MAP_RISK_PALETTE = {
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";
 const CITIES_METRICS_DAILY_CACHE_KEY = "qa_cities_metrics_daily_v1";
+const CITIES_CANONICAL_URL = "https://www.queeratlas.app/cities";
 
 function getLocalDateKey() {
   const now = new Date();
@@ -862,8 +863,53 @@ export default function CitiesPage() {
     });
   }, [backRestoreCity, filteredCities, isLoading]);
 
+  const citiesSeoJsonLd = useMemo(() => {
+    const cityItems = crawlPathCities.slice(0, 24).map((cityKey, index) => {
+      const cityTitle = String(
+        cityConfig?.[cityKey]?.title ||
+          cityKey.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+      );
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        url: `https://www.queeratlas.app/${cityKey}`,
+        name: cityTitle,
+      };
+    });
+
+    return [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://www.queeratlas.app/" },
+          { "@type": "ListItem", position: 2, name: "Cities", item: CITIES_CANONICAL_URL },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "@id": `${CITIES_CANONICAL_URL}#collection`,
+        url: CITIES_CANONICAL_URL,
+        name: "Gay Friendly Cities & LGBTQ Safety Map 2026",
+        description:
+          "Compare queer city safety context, nightlife signal, and trusted local routes in one city-by-city atlas.",
+        mainEntity: {
+          "@type": "ItemList",
+          itemListOrder: "https://schema.org/ItemListOrderAscending",
+          numberOfItems: cityItems.length,
+          itemListElement: cityItems,
+        },
+      },
+    ];
+  }, [crawlPathCities]);
+
   return (
     <main className="qa-page min-h-screen bg-[#050505] text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(citiesSeoJsonLd) }}
+      />
       <nav aria-label="Internal city links" className="sr-only">
         <Link href="/cities">Cities</Link>
         <Link href="/events">Events</Link>
