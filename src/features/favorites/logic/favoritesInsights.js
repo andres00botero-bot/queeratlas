@@ -366,6 +366,17 @@ export function computeContributionCountsFromCollections({
 }
 
 export function computePlannerCities({ configCities = [], places = [], events = [] }) {
-  const dataCities = [...new Set((places || []).concat(events || []).map((item) => item?.city).filter(Boolean))];
-  return [...new Set([...(configCities || []), ...dataCities])].sort((a, b) => a.localeCompare(b));
+  const allCities = [...(configCities || []), ...(places || []).map((item) => item?.city), ...(events || []).map((item) => item?.city)];
+  const byNormalizedKey = new Map();
+
+  allCities.forEach((rawCity) => {
+    const city = String(rawCity || "").trim();
+    if (!city) return;
+    const key = city.toLowerCase();
+    if (!byNormalizedKey.has(key)) {
+      byNormalizedKey.set(key, city);
+    }
+  });
+
+  return [...byNormalizedKey.values()].sort((a, b) => a.localeCompare(b));
 }
