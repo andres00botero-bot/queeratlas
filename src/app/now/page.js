@@ -3385,8 +3385,11 @@ export default function NowPage() {
         )}
 
         <section className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-[11px] text-white/74">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">Depth Shortcuts</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">Discover paths</p>
+          <p className="mt-1 text-xs leading-6 text-white/66">
+            Shortcut routes plus citation sources in one low-noise layer.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
             {topicHubKeys.slice(0, 5).map((topicKey) => (
               <Link
                 key={`now-depth-topic-${topicKey}`}
@@ -3407,24 +3410,14 @@ export default function NowPage() {
                 </Link>
               ))
             )}
-          </div>
-        </section>
-
-        <section className="mt-8 rounded-[22px] border border-cyan-200/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(12,12,12,0.95))] p-4">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">AI Citation Layer</p>
-          <h2 className="mt-1 text-sm font-semibold text-cyan-50">Methodology and source notes</h2>
-          <p className="mt-2 text-xs leading-6 text-cyan-50/82">
-            Full citation standards and source taxonomy live in our report pages for cleaner reading here.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-            <Link href="/reports" className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1 text-fuchsia-100 transition hover:border-fuchsia-100/45">
+            <Link href="/reports" className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/[0.08] px-3 py-1 text-fuchsia-100/88 transition hover:border-fuchsia-100/45 hover:text-fuchsia-100">
               Open reports
             </Link>
-            <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
+            <Link href="/topics" className="rounded-full border border-cyan-200/24 bg-cyan-200/[0.08] px-3 py-1 text-cyan-100/88 transition hover:border-cyan-100/45 hover:text-cyan-100">
               Open topic hubs
             </Link>
-            <Link href="/community-policy" className="rounded-full border border-white/18 bg-white/8 px-3 py-1 text-white/82 transition hover:border-white/30 hover:text-white">
-              Read moderation policy
+            <Link href="/community-policy" className="rounded-full border border-white/16 bg-white/[0.04] px-3 py-1 text-white/82 transition hover:border-white/30 hover:text-white">
+              Moderation policy
             </Link>
           </div>
         </section>
