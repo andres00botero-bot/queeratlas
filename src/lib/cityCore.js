@@ -170,6 +170,15 @@ export const cityCoreConfig = {
     "country": "United Kingdom",
     "vibe": "industrial"
   },
+  "glasgow": {
+    "center": [
+      -4.2518,
+      55.8642
+    ],
+    "title": "Queer Glasgow",
+    "country": "United Kingdom",
+    "vibe": "raw social"
+  },
   "brussels": {
     "center": [
       4.3517,

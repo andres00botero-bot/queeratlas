@@ -512,6 +512,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "glasgow": [
+    {
+      "title": "About",
+      "text": "Glasgow pairs strong local queer character with a social nightlife rhythm that feels direct, warm, and easy to enter for first-time visitors.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Merchant City and nearby central corridors are the practical anchors. Keep your route compact around Virginia Street, John Street, and adjacent nightlife lanes.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Glasgow is generally workable for queer travelers in core nightlife zones, but late-night transitions still reward planning your return before peak hours.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Expect karaoke-forward bars, drag-programmed nights, and a club finish that can build quickly on weekends.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Usually easier than London on total night spend while still delivering a full city-night experience when routed well.",
+      "extra": ""
+    }
+  ],
   "brussels": [
     {
       "title": "About",

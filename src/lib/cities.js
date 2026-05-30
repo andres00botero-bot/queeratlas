@@ -256,6 +256,19 @@ export const cityConfig = {
       cost: "Manchester is usually easier financially than London while still giving access to a serious nightlife city. That balance is part of why people love it.",
     }),
   },
+  glasgow: {
+    center: [-4.2518, 55.8642],
+    title: "Queer Glasgow",
+    country: "United Kingdom",
+    vibe: "raw social",
+    guide: buildGuide({
+      about: "Glasgow pairs strong local queer character with a social nightlife rhythm that feels direct, warm, and easy to enter for first-time visitors.",
+      district: "Merchant City and nearby central corridors are the practical anchors. Keep your route compact around Virginia Street, John Street, and adjacent nightlife lanes.",
+      safety: "Glasgow is generally workable for queer travelers in core nightlife zones, but late-night transitions still reward planning your return before peak hours.",
+      nightlife: "Expect karaoke-forward bars, drag-programmed nights, and a club finish that can build quickly on weekends.",
+      cost: "Usually easier than London on total night spend while still delivering a full city-night experience when routed well.",
+    }),
+  },
   brussels: {
     center: [4.3517, 50.8503],
     title: "Queer Brussels",
