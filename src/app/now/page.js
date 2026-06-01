@@ -890,8 +890,7 @@ export default function NowPage() {
 
     return combined
       .filter((item) => !hiddenNewsIdSet.has(String(item.id)))
-      .sort(compareNewsRecency)
-      .slice(0, 12);
+      .sort(compareNewsRecency);
   }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
 
   const mixedFeedItems = useMemo(
@@ -904,7 +903,7 @@ export default function NowPage() {
       selectedNewsCategory === "all"
         ? mixedFeedItems
         : mixedFeedItems.filter((item) => String(item.category || "") === selectedNewsCategory);
-    return scopedItems.slice(0, 8);
+    return scopedItems;
   }, [mixedFeedItems, selectedNewsCategory]);
   const leadNewsItem = displayedNewsItems[0] || null;
   const secondaryNewsItems = displayedNewsItems.slice(1);
