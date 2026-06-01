@@ -4,7 +4,7 @@ import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { listSeoReports } from "@/lib/seo/reportsIndex";
 import { seedEvents, seedPlaces } from "@/lib/seedContent";
 import { buildEventPath, buildVenuePath } from "@/lib/seo/entitySlug";
-import { isIndexableTopicHub, isTier1CityTopic, TIER1_CITY_SLUGS } from "@/lib/seo/indexingTier";
+import { isIndexableTopicHub } from "@/lib/seo/indexingTier";
 
 const BASE_URL = "https://www.queeratlas.app";
 const MAX_EVENT_ENTITY_ENTRIES = 250;
@@ -16,7 +16,7 @@ const CLUSTER_INTENT_PRIORITY = {
   community: 0.82,
   daylife: 0.8,
 };
-const tier1CitySet = new Set(TIER1_CITY_SLUGS);
+const indexableCitySet = new Set(Object.keys(cityConfig));
 
 function resolveLastContentUpdate() {
   const candidates = [
@@ -82,10 +82,7 @@ export default function sitemap() {
       lastModified: lastContentUpdate,
       changeFrequency: "weekly",
       priority: CLUSTER_INTENT_PRIORITY[topic.intent] || 0.8,
-    })).filter((entry) => {
-      const [, citySlug, , topicKey] = entry.url.replace(BASE_URL, "").split("/");
-      return isTier1CityTopic(citySlug, topicKey);
-    }),
+    })),
   );
 
   const topicHubEntries = listTopicHubs().filter((hub) => isIndexableTopicHub(hub.key)).map((hub) => ({
@@ -104,7 +101,7 @@ export default function sitemap() {
 
   const todayIso = new Date().toISOString().slice(0, 10);
   const eventEntityEntries = seedEvents
-    .filter((event) => tier1CitySet.has(String(event?.city || "").trim().toLowerCase()))
+    .filter((event) => indexableCitySet.has(String(event?.city || "").trim().toLowerCase()))
     .filter((event) => String(event?.date || "").trim() >= todayIso)
     .slice(0, MAX_EVENT_ENTITY_ENTRIES)
     .map((event) => ({
@@ -115,7 +112,7 @@ export default function sitemap() {
     }));
 
   const venueEntityEntries = seedPlaces
-    .filter((place) => tier1CitySet.has(String(place?.city || "").trim().toLowerCase()))
+    .filter((place) => indexableCitySet.has(String(place?.city || "").trim().toLowerCase()))
     .filter((place) => String(place?.link || "").trim().length > 0)
     .slice(0, MAX_VENUE_ENTITY_ENTRIES)
     .map((place) => ({
