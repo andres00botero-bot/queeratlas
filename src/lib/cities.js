@@ -1504,6 +1504,19 @@ export const cityConfig = {
       cost: "Mid-range overall, with very strong nightlife value compared with many global hubs. Route planning in District 1 keeps both cost and energy under control.",
     }),
   },
+  hanoi: {
+    center: [105.8342, 21.0278],
+    title: "Queer Hanoi",
+    country: "Vietnam",
+    vibe: "old-quarter night pulse",
+    guide: buildGuide({
+      about: "Hanoi combines old-quarter street texture with a compact but real queer scene built around long-running bars, club nights, and Pride-linked community momentum. It is not the biggest scene in Asia, but it is highly usable when routed well.",
+      district: "Hoan Kiem and nearby Old Quarter lanes are the practical anchor for bars and club flow, while Tay Ho is a common pivot for electronic and expat-mixed night movement.",
+      safety: "Core nightlife routes are generally manageable with normal city caution. Keep your route tight after midnight, use direct rides between zones, and verify event updates same-day.",
+      nightlife: "Hanoi works best in layers: one social opener, one dance-floor shift, then one late stop. Weekend output is strongest, and Pride-season programming adds extra visibility and crowd quality.",
+      cost: "Usually moderate versus larger regional capitals. A central stay around Hoan Kiem gives strong value by cutting transfer time and keeping nightlife sequencing efficient.",
+    }),
+  },
   shanghai: {
     center: [121.4737, 31.2304],
     title: "Queer Shanghai",

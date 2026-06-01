@@ -1034,6 +1034,15 @@ export const cityCoreConfig = {
     "country": "Vietnam",
     "vibe": "saigon afterhours"
   },
+  "hanoi": {
+    "center": [
+      105.8342,
+      21.0278
+    ],
+    "title": "Queer Hanoi",
+    "country": "Vietnam",
+    "vibe": "old-quarter night pulse"
+  },
   "shanghai": {
     "center": [
       121.4737,

@@ -3104,6 +3104,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "hanoi": [
+    {
+      "title": "About",
+      "text": "Hanoi combines old-quarter street texture with a compact but real queer scene built around long-running bars, club nights, and Pride-linked community momentum. It is not the biggest scene in Asia, but it is highly usable when routed well.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Hoan Kiem and nearby Old Quarter lanes are the practical anchor for bars and club flow, while Tay Ho is a common pivot for electronic and expat-mixed night movement.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Core nightlife routes are generally manageable with normal city caution. Keep your route tight after midnight, use direct rides between zones, and verify event updates same-day.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Hanoi works best in layers: one social opener, one dance-floor shift, then one late stop. Weekend output is strongest, and Pride-season programming adds extra visibility and crowd quality.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Usually moderate versus larger regional capitals. A central stay around Hoan Kiem gives strong value by cutting transfer time and keeping nightlife sequencing efficient.",
+      "extra": ""
+    }
+  ],
   "shanghai": [
     {
       "title": "About",
