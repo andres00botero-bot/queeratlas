@@ -539,6 +539,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "liverpool": [
+    {
+      "title": "About",
+      "text": "Liverpool's queer scene is compact, social, and highly walkable around the Pride Quarter. You get classic gay bars, drag-heavy cabaret rooms, and late-night club energy in a tight city-center loop that is easy to run in one night.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Stanley Street, Victoria Street, Cumberland Street, and nearby lanes form the practical LGBTQ+ core. Most strong routes start in one social bar, build into cabaret or dance-floor energy, and finish in a late club room.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Central Liverpool routes are usually straightforward, but late movement is best kept compact. Use direct rides if crossing out of the quarter after peak hours and verify event details same-day on official channels.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Liverpool nightlife is layered and fun: social pregame bars, strong drag culture, and after-hours club momentum. Weekend nights carry the highest density, especially around major Pride and holiday event windows.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Mid-range for UK city breaks. Staying in or near the quarter lowers transfer costs and keeps night sequencing smooth.",
+      "extra": ""
+    }
+  ],
   "brussels": [
     {
       "title": "About",

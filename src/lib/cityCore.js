@@ -179,6 +179,15 @@ export const cityCoreConfig = {
     "country": "United Kingdom",
     "vibe": "raw social"
   },
+  "liverpool": {
+    "center": [
+      -2.9916,
+      53.4084
+    ],
+    "title": "Queer Liverpool",
+    "country": "United Kingdom",
+    "vibe": "pride-quarter pulse"
+  },
   "brussels": {
     "center": [
       4.3517,

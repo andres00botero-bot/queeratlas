@@ -269,6 +269,19 @@ export const cityConfig = {
       cost: "Usually easier than London on total night spend while still delivering a full city-night experience when routed well.",
     }),
   },
+  liverpool: {
+    center: [-2.9916, 53.4084],
+    title: "Queer Liverpool",
+    country: "United Kingdom",
+    vibe: "pride-quarter pulse",
+    guide: buildGuide({
+      about: "Liverpool's queer scene is compact, social, and highly walkable around the Pride Quarter. You get classic gay bars, drag-heavy cabaret rooms, and late-night club energy in a tight city-center loop that is easy to run in one night.",
+      district: "Stanley Street, Victoria Street, Cumberland Street, and nearby lanes form the practical LGBTQ+ core. Most strong routes start in one social bar, build into cabaret or dance-floor energy, and finish in a late club room.",
+      safety: "Central Liverpool routes are usually straightforward, but late movement is best kept compact. Use direct rides if crossing out of the quarter after peak hours and verify event details same-day on official channels.",
+      nightlife: "Liverpool nightlife is layered and fun: social pregame bars, strong drag culture, and after-hours club momentum. Weekend nights carry the highest density, especially around major Pride and holiday event windows.",
+      cost: "Mid-range for UK city breaks. Staying in or near the quarter lowers transfer costs and keeps night sequencing smooth.",
+    }),
+  },
   brussels: {
     center: [4.3517, 50.8503],
     title: "Queer Brussels",
