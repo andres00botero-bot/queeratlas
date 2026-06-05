@@ -4,8 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import "../signal-motion.css";
-import { cityCoreConfig } from "@/lib/cityCore";
-import { cityGuideConfig } from "@/lib/cityGuides";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import {
@@ -19,6 +17,7 @@ import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
+import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { trackKpiEvent } from "@/lib/analytics";
 import { showActionFeedback } from "@/lib/actionFeedback";
 import { resolveAdminAccess } from "@/lib/adminAccess";
@@ -46,6 +45,7 @@ import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
 import ActionToast from "@/components/ui/ActionToast";
+import { useCityRouteConfig } from "@/components/city/CityRouteConfigProvider";
 import CityDetailsLayer from "@/components/city/CityDetailsLayer";
 import CityEventsRailSection from "@/components/city/CityEventsRailSection";
 import CityGuideCluster from "@/components/city/CityGuideCluster";
@@ -120,6 +120,7 @@ const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 
 export default function CityPage() {
   const isMapboxStylesReady = useMapboxStylesheet();
+  const config = useCityRouteConfig();
   const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -133,19 +134,19 @@ export default function CityPage() {
     return fromPath || "berlin";
   }, [cityParam, pathname]);
 
-  const coreConfig = cityCoreConfig[city] || cityCoreConfig.berlin;
-  const fallbackGuide = Array.isArray(cityGuideConfig.berlin) ? cityGuideConfig.berlin : [];
-  const cityGuide = Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : fallbackGuide;
-  const config = useMemo(
-    () => ({
-      ...coreConfig,
-      guide: cityGuide,
-    }),
-    [coreConfig, cityGuide]
-  );
   const cityName = cityNameFromConfig(config, city);
   const cityHeroText = buildCityHeroText({ config, citySlug: city });
   const cityHero = parseCityHeroText(cityHeroText);
+  const cityHeroIntro = useMemo(() => {
+    const country = String(config?.country || "").trim();
+    const vibe = String(config?.vibe || "").trim();
+    const vibeTail = vibe ? ` with a ${vibe} vibe` : "";
+    const tagline = String(cityHero?.tagline || "").trim();
+    if (tagline) {
+      return `${cityName} in ${country}${vibeTail}: ${tagline}`;
+    }
+    return `${cityName} in ${country}${vibeTail}: queer nightlife, trusted venues, and live community signal in one route-first guide.`;
+  }, [cityHero?.tagline, cityName, config?.country, config?.vibe]);
   const placeId = searchParams?.get("placeId") || "";
   const eventId = searchParams?.get("eventId") || "";
   const serviceId = searchParams?.get("serviceId") || "";
@@ -1099,12 +1100,18 @@ export default function CityPage() {
         {
           "@type": "ListItem",
           position: 1,
+          name: "Home",
+          item: "https://www.queeratlas.app/",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
           name: "Cities",
           item: "https://www.queeratlas.app/cities",
         },
         {
           "@type": "ListItem",
-          position: 2,
+          position: 3,
           name: cityName,
           item: cityCanonicalUrl,
         },
@@ -1116,9 +1123,17 @@ export default function CityPage() {
     () => ({
       "@context": "https://schema.org",
       "@type": "ItemList",
+      "@id": `${cityCanonicalUrl}#places-list`,
+      url: cityCanonicalUrl,
       name: `Queer venues in ${cityName}`,
       itemListOrder: "https://schema.org/ItemListOrderAscending",
       numberOfItems: cityPlaceCount,
+      isPartOf: {
+        "@id": QA_WEBSITE_ID,
+      },
+      publisher: {
+        "@id": QA_ORGANIZATION_ID,
+      },
       itemListElement: cityPlaces.slice(0, 12).map((place, index) => ({
         "@type": "ListItem",
         position: index + 1,
@@ -1136,9 +1151,17 @@ export default function CityPage() {
     () => ({
       "@context": "https://schema.org",
       "@type": "ItemList",
+      "@id": `${cityCanonicalUrl}#events-list`,
+      url: cityCanonicalUrl,
       name: `LGBTQ events in ${cityName}`,
       itemListOrder: "https://schema.org/ItemListOrderAscending",
       numberOfItems: cityEventCount,
+      isPartOf: {
+        "@id": QA_WEBSITE_ID,
+      },
+      publisher: {
+        "@id": QA_ORGANIZATION_ID,
+      },
       itemListElement: sortedEvents.slice(0, 12).map((event, index) => ({
         "@type": "ListItem",
         position: index + 1,
@@ -1157,6 +1180,43 @@ export default function CityPage() {
       })),
     }),
     [cityCanonicalUrl, cityEventCount, cityName, sortedEvents]
+  );
+  const cityFaqJsonLd = useMemo(
+    () => ({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: `What makes queer nightlife in ${cityName} different?`,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              cityHeroIntro ||
+              `${cityName} combines local community signal with route-friendly nightlife planning so members can choose better stops with less guesswork.`,
+          },
+        },
+        {
+          "@type": "Question",
+          name: `How should I plan a first queer night in ${cityName}?`,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              `Start with one social warm-up venue, then move to your peak stop based on timing and crowd fit. Keep one fallback option in the same zone to protect momentum.`,
+          },
+        },
+        {
+          "@type": "Question",
+          name: `Can I use this ${cityName} guide for same-night decisions?`,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text:
+              `Yes. This page is built for same-night use with live venue signal, current events, and practical fallback choices.`,
+          },
+        },
+      ],
+    }),
+    [cityHeroIntro, cityName]
   );
   const hasAnyPlaces = cityPlaceCount > 0;
   const hasAnyServices = cityServiceCount > 0;
@@ -4365,6 +4425,7 @@ export default function CityPage() {
         cityBreadcrumbJsonLd={cityBreadcrumbJsonLd}
         cityPlacesItemListJsonLd={cityPlacesItemListJsonLd}
         cityEventsItemListJsonLd={cityEventsItemListJsonLd}
+        cityFaqJsonLd={cityFaqJsonLd}
       />
       <ActionToast toast={toast} />
       <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
@@ -4443,6 +4504,7 @@ export default function CityPage() {
                 placesChipLabel={placesChipLabel}
                 eventsChipLabel={eventsChipLabel}
                 cityHero={cityHero}
+                cityHeroIntro={cityHeroIntro}
                 addMode={addMode}
                 addEventMode={addEventMode}
                 addServiceMode={addServiceMode}
