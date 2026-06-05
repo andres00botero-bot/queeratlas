@@ -796,11 +796,11 @@ export default function HomePageClient({ initialHomeData = null }) {
           <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-5 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 xl:px-8 xl:py-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
-                src="/home/home-hero-background-v4.png"
+                src="/home/home-hero-background-v4.webp"
                 alt=""
                 fill
                 priority
-                quality={100}
+                quality={90}
                 sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
                 className="object-cover object-center opacity-96"
                 style={{ objectPosition: "center calc(50% - 1.5cm)" }}
