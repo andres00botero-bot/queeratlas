@@ -405,6 +405,10 @@ body > div:first-child {
 }
 
 @media (max-width: 640px) {
+  .qa-now > .qa-shell {
+    padding-inline: 0;
+  }
+
   .qa-now .qa-h2 {
     font-size: clamp(1.28rem, 1.14rem + 0.8vw, 1.58rem);
   }
