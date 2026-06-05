@@ -97,6 +97,8 @@ export default function HomePageClient({ initialHomeData = null }) {
     () => (Array.isArray(initialHomeData?.worldNews) ? initialHomeData.worldNews : []),
     [initialHomeData]
   );
+  const initialMetrics = initialHomeData?.metrics || null;
+  const hasCompleteInitialHomeData = initialHomeData?.complete !== false;
   const hasInitialHomeData =
     initialEvents.length > 0 || initialPlaces.length > 0 || initialWorldNews.length > 0;
   const [events, setEvents] = useState(initialEvents);
@@ -323,7 +325,13 @@ export default function HomePageClient({ initialHomeData = null }) {
       queueMicrotask(() => {
         setIsDataLoading(false);
       });
-      return () => {};
+      if (hasCompleteInitialHomeData) return () => {};
+
+      return scheduleIdleTask(() => {
+        queueMicrotask(async () => {
+          await loadHomeData({ forceRefresh: true });
+        });
+      }, 900);
     }
 
     return scheduleIdleTask(() => {
@@ -331,7 +339,14 @@ export default function HomePageClient({ initialHomeData = null }) {
         await loadHomeData();
       });
     }, 450);
-  }, [hasInitialHomeData, initialEvents, initialPlaces, initialWorldNews, loadHomeData]);
+  }, [
+    hasCompleteInitialHomeData,
+    hasInitialHomeData,
+    initialEvents,
+    initialPlaces,
+    initialWorldNews,
+    loadHomeData,
+  ]);
 
   useEffect(() => {
     return scheduleIdleTask(() => {
@@ -557,17 +572,23 @@ export default function HomePageClient({ initialHomeData = null }) {
       cities:
         Number.isFinite(Number(dailyMetricsSnapshot?.cities))
           ? Number(dailyMetricsSnapshot.cities)
+          : Number.isFinite(Number(initialMetrics?.cities))
+            ? Number(initialMetrics.cities)
           : cityCount,
       places:
         Number.isFinite(Number(dailyMetricsSnapshot?.places))
           ? Number(dailyMetricsSnapshot.places)
+          : Number.isFinite(Number(initialMetrics?.places))
+            ? Number(initialMetrics.places)
           : placeCount,
       events:
         Number.isFinite(Number(dailyMetricsSnapshot?.events))
           ? Number(dailyMetricsSnapshot.events)
+          : Number.isFinite(Number(initialMetrics?.events))
+            ? Number(initialMetrics.events)
           : eventCount,
     }),
-    [cityCount, dailyMetricsSnapshot, eventCount, placeCount]
+    [cityCount, dailyMetricsSnapshot, eventCount, initialMetrics, placeCount]
   );
   const formatMetric = (value) => (value > 0 ? String(value) : "-");
   const cityCountDisplay = isDataLoading && !dailyMetricsSnapshot ? "..." : formatMetric(metricsForCards.cities);

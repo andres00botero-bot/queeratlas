@@ -2,6 +2,9 @@ import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
+import { unstable_cache } from "next/cache";
+
+const HOME_DATA_REVALIDATE_SECONDS = 60;
 
 function splitLegacyVibe(description = "") {
   const raw = String(description || "");
@@ -122,4 +125,69 @@ export async function fetchHomeDataPayload() {
     worldNews,
     partialData,
   };
+}
+
+function pickFields(row, fields) {
+  return fields.reduce((result, field) => {
+    if (row?.[field] !== undefined) result[field] = row[field];
+    return result;
+  }, {});
+}
+
+function buildInitialHomeData(payload) {
+  const events = Array.isArray(payload?.events) ? payload.events : [];
+  const places = Array.isArray(payload?.places) ? payload.places : [];
+  const worldNews = Array.isArray(payload?.worldNews) ? payload.worldNews : [];
+
+  return {
+    events: events.map((event) =>
+      pickFields(event, [
+        "id",
+        "name",
+        "city",
+        "date",
+        "start_date",
+        "startDate",
+        "end_date",
+        "vibe",
+        "vibe_tags",
+        "isGlobal",
+      ])
+    ),
+    places: places.map((place) =>
+      pickFields(place, [
+        "id",
+        "name",
+        "city",
+        "type",
+        "vibe",
+        "vibe_tags",
+        "reviewCount",
+        "review_count",
+        "avgRating",
+        "avg_rating",
+      ])
+    ),
+    worldNews: [...worldNews].sort(compareNewsRecency).slice(0, 3),
+    metrics: {
+      cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
+      places: places.length,
+      events: events.length,
+    },
+    partialData: Boolean(payload?.partialData),
+    complete: false,
+  };
+}
+
+const fetchCachedInitialHomeData = unstable_cache(
+  async () => buildInitialHomeData(await fetchHomeDataPayload()),
+  ["qa-home-initial-data-v1"],
+  {
+    revalidate: HOME_DATA_REVALIDATE_SECONDS,
+    tags: ["qa-home-data"],
+  }
+);
+
+export async function fetchInitialHomeDataPayload() {
+  return fetchCachedInitialHomeData();
 }
