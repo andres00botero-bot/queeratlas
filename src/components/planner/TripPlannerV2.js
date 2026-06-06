@@ -20,6 +20,33 @@ const HORIZONS = [
   { value: "three_days", label: "3 Days" },
 ];
 
+const PLAN_VARIANTS = [
+  {
+    value: "safe",
+    label: "Safe",
+    summary: "Lower-friction picks with stronger comfort weighting.",
+    preset: { vibeTags: ["social", "cozy", "mixed"], budget: "balanced", energy: 55, soloSafe: true },
+  },
+  {
+    value: "social",
+    label: "Social",
+    summary: "Balanced social momentum across the night.",
+    preset: { vibeTags: ["social", "mixed", "pop"], budget: "balanced", energy: 70, soloSafe: false },
+  },
+  {
+    value: "peak",
+    label: "Peak",
+    summary: "High-energy night with late anchors.",
+    preset: { vibeTags: ["electronic", "techno", "festival"], budget: "treat", energy: 90, soloSafe: false },
+  },
+  {
+    value: "recovery",
+    label: "Recovery",
+    summary: "Softer pacing and calmer close.",
+    preset: { vibeTags: ["chill", "relax", "cozy"], budget: "balanced", energy: 35, soloSafe: true },
+  },
+];
+
 const DAY_INDEX = {
   sun: 0,
   mon: 1,
@@ -29,6 +56,12 @@ const DAY_INDEX = {
   fri: 5,
   sat: 6,
 };
+
+const SOLO_SAFE_BLOCK_TAGS = new Set(["cruise", "fetish", "men_only"]);
+const SOLO_SAFE_PREFERRED_TAGS = new Set(["social", "cozy", "mixed", "service", "cultural", "chill", "relax"]);
+const DEFAULT_STOP_DURATION_MINUTES = 90;
+const MIN_TRANSFER_BUFFER_MINUTES = 15;
+const WALK_SPEED_KMPH = 4.8;
 
 function normalize(value = "") {
   return String(value || "").trim().toLowerCase();
@@ -195,6 +228,51 @@ function dayLabel(index, horizon) {
   return `Day ${index + 1}`;
 }
 
+function formatMinutesToTimeLabel(totalMinutes) {
+  const safeMinutes = Number.isFinite(Number(totalMinutes)) ? Number(totalMinutes) : 0;
+  const normalized = ((Math.round(safeMinutes / 5) * 5) % (24 * 60) + 24 * 60) % (24 * 60);
+  const hour = Math.floor(normalized / 60);
+  const minute = normalized % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function parseCoord(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return numeric;
+}
+
+function resolveEntityCoordinates(entity) {
+  const lat = parseCoord(entity?.lat ?? entity?.latitude);
+  const lng = parseCoord(entity?.lng ?? entity?.longitude ?? entity?.lon);
+  if (lat === null || lng === null) return null;
+  return { lat, lng };
+}
+
+function toRadians(value) {
+  return (value * Math.PI) / 180;
+}
+
+function haversineDistanceKm(from, to) {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(to.lat - from.lat);
+  const dLng = toRadians(to.lng - from.lng);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(from.lat)) * Math.cos(toRadians(to.lat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusKm * c;
+}
+
+function estimateTransferMinutes(fromEntity, toEntity) {
+  const fromCoords = resolveEntityCoordinates(fromEntity);
+  const toCoords = resolveEntityCoordinates(toEntity);
+  if (!fromCoords || !toCoords) return 30;
+  const distanceKm = haversineDistanceKm(fromCoords, toCoords);
+  const travelMinutes = (distanceKm / WALK_SPEED_KMPH) * 60;
+  return Math.max(12, Math.min(70, Math.round(travelMinutes)));
+}
+
 function formatIsoDateLabel(isoDate) {
   const parsed = parseIsoDate(isoDate);
   if (!parsed) return String(isoDate || "");
@@ -208,6 +286,52 @@ function formatEventRangeLabel(event) {
     return formatIsoDateLabel(range.startDate);
   }
   return `${formatIsoDateLabel(range.startDate)} - ${formatIsoDateLabel(range.endDate)}`;
+}
+
+function resolveStartDate(planDate) {
+  return startOfDay(parseIsoDate(planDate) || new Date());
+}
+
+function resolveDaysCount(horizon) {
+  if (horizon === "tonight") return 1;
+  if (horizon === "weekend") return 2;
+  return 3;
+}
+
+function resolveStopDate(dayIndex, planDate) {
+  return addDays(resolveStartDate(planDate), dayIndex);
+}
+
+function formatIcsTimestamp(date) {
+  const value = new Date(date);
+  const year = value.getUTCFullYear();
+  const month = String(value.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(value.getUTCDate()).padStart(2, "0");
+  const hour = String(value.getUTCHours()).padStart(2, "0");
+  const minute = String(value.getUTCMinutes()).padStart(2, "0");
+  const second = String(value.getUTCSeconds()).padStart(2, "0");
+  return `${year}${month}${day}T${hour}${minute}${second}Z`;
+}
+
+function toBase64Url(value) {
+  if (!value) return "";
+  const bytes = new TextEncoder().encode(String(value));
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function fromBase64Url(value) {
+  if (!value) return "";
+  const padded = `${String(value).replace(/-/g, "+").replace(/_/g, "/")}===`.slice(
+    0,
+    Math.ceil(String(value).length / 4) * 4
+  );
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
 }
 
 function chooseFromPool(
@@ -262,6 +386,7 @@ function mapStop(item, stopType, slotLabel, time, reason) {
     description: item.description || "",
     trustScore: null,
     trustReason: "",
+    backupStop: null,
   };
 }
 
@@ -301,9 +426,6 @@ function computeTrustMeta({
   if (qualityStatus.tone === "verified") {
     score += 18;
     reason.push("verified quality");
-  } else if (qualityStatus.tone === "stale") {
-    score -= 8;
-    reason.push("needs refresh");
   }
 
   if (itemType === "place") {
@@ -383,6 +505,43 @@ function getEntityVibeTags(entity) {
   });
 }
 
+function isSoloSafeEntity(entity) {
+  const tags = getEntityVibeTags(entity);
+  return !tags.some((tag) => SOLO_SAFE_BLOCK_TAGS.has(tag));
+}
+
+function filterSoloSafePool(pool = [], soloSafe) {
+  if (!soloSafe) return pool;
+  const safePool = pool.filter((item) => isSoloSafeEntity(item));
+  return safePool.length > 0 ? safePool : pool;
+}
+
+function filterSoloSafeEvents(pool = [], soloSafe) {
+  if (!soloSafe) return pool;
+  const safeEvents = pool.filter((item) => isSoloSafeEntity(item));
+  return safeEvents.length > 0 ? safeEvents : pool;
+}
+
+function computeSoloSafeAdjustment({ item, itemType, soloSafe, slotLabel, timeLabel }) {
+  if (!soloSafe || !item) return 0;
+
+  const tags = getEntityVibeTags(item);
+  if (tags.some((tag) => SOLO_SAFE_BLOCK_TAGS.has(tag))) return -28;
+
+  let adjustment = 0;
+  const preferredHits = tags.filter((tag) => SOLO_SAFE_PREFERRED_TAGS.has(tag)).length;
+  if (preferredHits > 0) adjustment += 3 + preferredHits * 2;
+
+  if (itemType === "place" && normalize(item?.type) === "hotel") adjustment += 2;
+  if (itemType === "place" && normalize(item?.type) === "cafe") adjustment += 2;
+
+  const targetMinutes = parseTimeToMinutes(timeLabel) ?? 0;
+  const isVeryLate = targetMinutes >= 90;
+  if (isVeryLate && normalize(slotLabel).includes("peak")) adjustment -= 3;
+
+  return adjustment;
+}
+
 function isAfterpartyEntity(entity) {
   const tags = getEntityVibeTags(entity);
   if (tags.includes("after")) return true;
@@ -423,6 +582,7 @@ function computePlannerScore({
   budget,
   energy,
   selectedVibeTags,
+  soloSafe,
 }) {
   const trust = computeTrustMeta({
     item,
@@ -449,8 +609,15 @@ function computePlannerScore({
     item,
     selectedVibeTags,
   });
+  const soloSafeAdjustment = computeSoloSafeAdjustment({
+    item,
+    itemType,
+    soloSafe,
+    slotLabel,
+    timeLabel,
+  });
 
-  return trust.score + budgetAdjustment + energyAdjustment + vibeAdjustment;
+  return trust.score + budgetAdjustment + energyAdjustment + vibeAdjustment + soloSafeAdjustment;
 }
 
 function createTrustedStop({
@@ -459,9 +626,11 @@ function createTrustedStop({
   slotLabel,
   time,
   reason,
+  backupStop = null,
   date,
   trustedFavoriteStats,
   qualityMap,
+  soloSafe,
 }) {
   const base = mapStop(item, stopType, slotLabel, time, reason);
   if (!base) return null;
@@ -475,9 +644,154 @@ function createTrustedStop({
   });
   return {
     ...base,
+    reason:
+      trust.reason && String(trust.reason).trim().length > 0
+        ? `${reason} Why: ${trust.reason}${soloSafe ? " | solo-safe weighted." : ""}`
+        : reason,
     trustScore: trust.score,
     trustReason: trust.reason,
+    backupStop,
   };
+}
+
+function resolveRepairPool(slotLabel, slotPools) {
+  const slot = normalize(slotLabel);
+  if (slot.includes("arrival") || slot.includes("day-start") || slot.includes("reset")) {
+    return slotPools.cafes.length > 0 ? slotPools.cafes : slotPools.socialPlaces;
+  }
+  if (slot.includes("warmup")) {
+    return slotPools.bars.length > 0 ? slotPools.bars : slotPools.socialPlaces;
+  }
+  if (slot.includes("night signal")) {
+    return [...slotPools.bars, ...slotPools.afterPlaces];
+  }
+  if (slot.includes("peak")) {
+    return slotPools.clubs.length > 0 ? slotPools.clubs : slotPools.afterPlaces;
+  }
+  if (slot.includes("afterparty")) {
+    return slotPools.afterPlaces.length > 0 ? slotPools.afterPlaces : [...slotPools.bars, ...slotPools.clubs];
+  }
+  if (slot.includes("wind-down")) {
+    return slotPools.saunas.length > 0 ? [...slotPools.saunas, ...slotPools.relaxPlaces] : slotPools.relaxPlaces;
+  }
+  return slotPools.nonHotelPlaces;
+}
+
+function applyFeasibilityPass({
+  draftStops = [],
+  date,
+  usedIds,
+  slotPools,
+  scoreCandidate,
+  soloSafe,
+  preferredFavoriteIds,
+  dayEvents = [],
+}) {
+  let previous = null;
+
+  return draftStops.map((draft) => {
+    if (!draft?.item) return draft;
+
+    let targetTime = parseTimeToMinutes(draft.time);
+    if (targetTime === null) return draft;
+
+    if (previous?.item) {
+      const transferMinutes = estimateTransferMinutes(previous.item, draft.item);
+      const earliest = previous.timeMinutes + DEFAULT_STOP_DURATION_MINUTES + transferMinutes + MIN_TRANSFER_BUFFER_MINUTES;
+      if (earliest > targetTime) {
+        targetTime = earliest;
+      }
+    }
+
+    const adjustedTime = formatMinutesToTimeLabel(targetTime);
+    let nextDraft = { ...draft, time: adjustedTime };
+
+    if (draft.stopType === "place" && !isPlaceOpenAt(draft.item, date, adjustedTime)) {
+      const repairPool = filterPlacesOpenAt(
+        filterSoloSafePool(resolveRepairPool(draft.slotLabel, slotPools), soloSafe),
+        date,
+        adjustedTime
+      ).filter((candidate) => !usedIds.has(`place-${candidate.id}`));
+
+      const repaired = chooseFromPool(
+        repairPool,
+        usedIds,
+        null,
+        preferredFavoriteIds,
+        "place-",
+        (candidate) => scoreCandidate(candidate, "place", adjustedTime, draft.slotLabel, date)
+      );
+
+      if (repaired) {
+        nextDraft = {
+          ...nextDraft,
+          item: repaired,
+          reason: `${draft.reason} Auto-repair: swapped to a venue open at ${adjustedTime}.`,
+        };
+      } else {
+        nextDraft = {
+          ...nextDraft,
+          reason: `${draft.reason} Auto-repair attempted; verify opening hours before you go.`,
+        };
+      }
+    }
+
+    const excludeKeys = new Set([
+      ...(Array.from(usedIds || [])),
+      `${nextDraft.stopType === "event" ? "event-" : "place-"}${nextDraft.item?.id}`,
+    ]);
+
+    let backupStop = null;
+    if (nextDraft.stopType === "event") {
+      const candidateEvents = filterSoloSafeEvents(dayEvents, soloSafe).filter(
+        (candidate) => !excludeKeys.has(`event-${candidate.id}`)
+      );
+      const backupEvent = chooseEventFromPool(
+        candidateEvents,
+        excludeKeys,
+        preferredFavoriteIds,
+        (candidate) => scoreCandidate(candidate, "event", adjustedTime, nextDraft.slotLabel, date)
+      );
+      if (backupEvent) {
+        backupStop = {
+          id: backupEvent.id,
+          name: backupEvent.name,
+          city: backupEvent.city,
+          itemType: "event",
+          slotLabel: nextDraft.slotLabel,
+          time: adjustedTime,
+        };
+      }
+    } else {
+      const backupPool = filterPlacesOpenAt(
+        filterSoloSafePool(resolveRepairPool(nextDraft.slotLabel, slotPools), soloSafe),
+        date,
+        adjustedTime
+      ).filter((candidate) => !excludeKeys.has(`place-${candidate.id}`));
+      const backupPlace = chooseFromPool(
+        backupPool,
+        excludeKeys,
+        null,
+        preferredFavoriteIds,
+        "place-",
+        (candidate) => scoreCandidate(candidate, "place", adjustedTime, nextDraft.slotLabel, date)
+      );
+      if (backupPlace) {
+        backupStop = {
+          id: backupPlace.id,
+          name: backupPlace.name,
+          city: backupPlace.city,
+          itemType: "place",
+          slotLabel: nextDraft.slotLabel,
+          time: adjustedTime,
+        };
+      }
+    }
+
+    nextDraft = { ...nextDraft, backupStop };
+    previous = { item: nextDraft.item, timeMinutes: targetTime };
+    return nextDraft;
+  });
 }
 
 function buildItinerary({
@@ -546,19 +860,31 @@ function buildItinerary({
       budget,
       energy,
       selectedVibeTags: selectedTags,
+      soloSafe,
     });
 
   const used = new Set();
 
   const pickPlace = (pool, date, timeLabel, slotLabel) =>
     chooseFromPool(
-      filterPlacesOpenAt(pool, date, timeLabel),
+      filterPlacesOpenAt(filterSoloSafePool(pool, soloSafe), date, timeLabel),
       used,
       null,
       preferredFavoriteIds,
       "place-",
       (candidate) => scoreCandidate(candidate, "place", timeLabel, slotLabel, date)
     );
+
+  const slotPools = {
+    cafes,
+    bars,
+    clubs,
+    saunas,
+    socialPlaces,
+    afterPlaces,
+    relaxPlaces,
+    nonHotelPlaces,
+  };
 
   return Array.from({ length: daysCount }).map((_, dayIndex) => {
     const currentDate = addDays(startDate, dayIndex);
@@ -573,7 +899,7 @@ function buildItinerary({
 
       const sundayAfterpartyEvents = dayEvents.filter((event) => isAfterpartyEntity(event));
       const sundayAfterEvent = chooseEventFromPool(
-        sundayAfterpartyEvents.length > 0 ? sundayAfterpartyEvents : dayEvents,
+        filterSoloSafeEvents(sundayAfterpartyEvents.length > 0 ? sundayAfterpartyEvents : dayEvents, soloSafe),
         used,
         preferredFavoriteIds,
         (candidate) => scoreCandidate(candidate, "event", "17:30", "Sunday afterparty", currentDate)
@@ -592,18 +918,15 @@ function buildItinerary({
       );
       if (sundayWindDown) used.add(`place-${sundayWindDown.id}`);
 
-      stops.push(
-        createTrustedStop({
+      const sundayDraftStops = [
+        {
           item: sundayCafe,
           stopType: "place",
           slotLabel: "Sunday reset",
           time: "11:00",
           reason: "Start soft with coffee and local orientation.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
+        },
+        {
           item: sundayAfterPlace,
           stopType: sundayAfterEvent ? "event" : "place",
           slotLabel: "Sunday afterparty",
@@ -611,20 +934,47 @@ function buildItinerary({
           reason: sundayAfterEvent
             ? "Afterparty-style Sunday event selected in the active window."
             : "Afterparty-oriented venue before wind-down.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
+        },
+        {
           item: sundayWindDown,
           stopType: "place",
           slotLabel: "Wind-down",
           time: "21:30",
           reason: "Finish with sauna or relax-focused recovery.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        })
+        },
+      ];
+      const sundayStops = applyFeasibilityPass({
+        draftStops: sundayDraftStops.filter((entry) => entry.item),
+        date: currentDate,
+        usedIds: used,
+        slotPools,
+        scoreCandidate,
+        soloSafe,
+        preferredFavoriteIds,
+        dayEvents,
+      });
+      sundayStops.forEach((entry) => {
+        if (entry.stopType === "event") {
+          used.add(`event-${entry.item.id}`);
+        } else {
+          used.add(`place-${entry.item.id}`);
+        }
+      });
+      stops.push(
+        ...sundayStops.map((entry) =>
+          createTrustedStop({
+            item: entry.item,
+            stopType: entry.stopType,
+            slotLabel: entry.slotLabel,
+            time: entry.time,
+            reason: entry.reason,
+            backupStop: entry.backupStop,
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+            soloSafe,
+          })
+        )
       );
     } else {
       const firstTime = dayIndex === 0 ? "17:00" : "12:00";
@@ -636,7 +986,7 @@ function buildItinerary({
       if (barWarmup) used.add(`place-${barWarmup.id}`);
 
       const nightSignalEvent = chooseEventFromPool(
-        dayEvents,
+        filterSoloSafeEvents(dayEvents, soloSafe),
         used,
         preferredFavoriteIds,
         (candidate) => scoreCandidate(candidate, "event", "22:30", "Night signal", currentDate)
@@ -648,7 +998,7 @@ function buildItinerary({
       if (secondBar) used.add(`place-${secondBar.id}`);
 
       const peakEvent = chooseEventFromPool(
-        dayEvents,
+        filterSoloSafeEvents(dayEvents, soloSafe),
         used,
         preferredFavoriteIds,
         (candidate) => scoreCandidate(candidate, "event", "01:00", "Club peak", currentDate)
@@ -659,28 +1009,22 @@ function buildItinerary({
         : pickPlace(clubs.length > 0 ? clubs : afterPlaces, currentDate, "01:00", "Club peak");
       if (clubPeak) used.add(`place-${clubPeak.id}`);
 
-      stops.push(
-        createTrustedStop({
+      const nightDraftStops = [
+        {
           item: cafeStart,
           stopType: "place",
           slotLabel: firstSlot,
           time: firstTime,
           reason: "Start early with a low-friction social anchor.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
+        },
+        {
           item: barWarmup,
           stopType: "place",
           slotLabel: "Bar warmup",
           time: "20:00",
           reason: "Build momentum through local bars.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
+        },
+        {
           item: nightSignalEvent || secondBar,
           stopType: nightSignalEvent ? "event" : "place",
           slotLabel: "Night signal",
@@ -688,11 +1032,8 @@ function buildItinerary({
           reason: nightSignalEvent
             ? "Event anchor in tonight's active window."
             : "Second bar pass before peak club pressure.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        }),
-        createTrustedStop({
+        },
+        {
           item: peakEvent || clubPeak,
           stopType: peakEvent ? "event" : "place",
           slotLabel: "Club peak",
@@ -700,10 +1041,40 @@ function buildItinerary({
           reason: peakEvent
             ? "Peak event timing matched for this night."
             : "Main club stop to close the night arc.",
-          date: currentDate,
-          trustedFavoriteStats,
-          qualityMap,
-        })
+        },
+      ];
+      const nightStops = applyFeasibilityPass({
+        draftStops: nightDraftStops.filter((entry) => entry.item),
+        date: currentDate,
+        usedIds: used,
+        slotPools,
+        scoreCandidate,
+        soloSafe,
+        preferredFavoriteIds,
+        dayEvents,
+      });
+      nightStops.forEach((entry) => {
+        if (entry.stopType === "event") {
+          used.add(`event-${entry.item.id}`);
+        } else {
+          used.add(`place-${entry.item.id}`);
+        }
+      });
+      stops.push(
+        ...nightStops.map((entry) =>
+          createTrustedStop({
+            item: entry.item,
+            stopType: entry.stopType,
+            slotLabel: entry.slotLabel,
+            time: entry.time,
+            reason: entry.reason,
+            backupStop: entry.backupStop,
+            date: currentDate,
+            trustedFavoriteStats,
+            qualityMap,
+            soloSafe,
+          })
+        )
       );
     }
 
@@ -743,6 +1114,7 @@ function buildHotelSuggestions({
         budget: "balanced",
         energy: 60,
         selectedVibeTags,
+        soloSafe: false,
       });
       return { ...hotel, plannerScore: score };
     })
@@ -764,7 +1136,8 @@ export default function TripPlannerV2({
   const [city, setCity] = useState(plannerCities[0] || "");
   const [note, setNote] = useState("");
   const [horizon, setHorizon] = useState("three_days");
-  const [selectedVibeTags, setSelectedVibeTags] = useState(["mixed"]);
+  const [planVariant, setPlanVariant] = useState("social");
+  const [selectedVibeTags, setSelectedVibeTags] = useState(["social", "mixed", "pop"]);
   const [budget, setBudget] = useState("balanced");
   const [energy, setEnergy] = useState(70);
   const [soloSafe, setSoloSafe] = useState(false);
@@ -773,6 +1146,7 @@ export default function TripPlannerV2({
   const [itinerary, setItinerary] = useState([]);
   const [locks, setLocks] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [plannerNotice, setPlannerNotice] = useState("");
   const plannerTopRef = useRef(null);
   const itinerarySectionRef = useRef(null);
   const shouldScrollToItineraryRef = useRef(false);
@@ -798,6 +1172,10 @@ export default function TripPlannerV2({
         .filter((tag) => selectedVibeTagSet.has(tag.key))
         .map((tag) => tag.label),
     [selectedVibeTagSet]
+  );
+  const selectedVariantMeta = useMemo(
+    () => PLAN_VARIANTS.find((variant) => variant.value === planVariant) || PLAN_VARIANTS[1],
+    [planVariant]
   );
   const lockedStopsCount = useMemo(
     () => Object.values(locks).filter(Boolean).length,
@@ -852,6 +1230,42 @@ export default function TripPlannerV2({
     () => events.filter((e) => normalize(e.city) === normalize(city)).length,
     [city, events]
   );
+
+  const applyVariantPreset = (variantValue) => {
+    const variant = PLAN_VARIANTS.find((item) => item.value === variantValue);
+    if (!variant) return;
+    setPlanVariant(variant.value);
+    setSelectedVibeTags(normalizeVibeTags(variant.preset.vibeTags, { max: MAX_PLANNER_VIBE_TAGS }));
+    setBudget(variant.preset.budget);
+    setEnergy(Number(variant.preset.energy));
+    setSoloSafe(Boolean(variant.preset.soloSafe));
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search || "");
+    const seed = String(params.get("trip_seed") || "").trim();
+    if (!seed) return;
+    try {
+      const parsed = JSON.parse(fromBase64Url(seed));
+      if (parsed?.city && plannerCities.includes(parsed.city)) setCity(parsed.city);
+      if (parsed?.horizon && HORIZONS.some((item) => item.value === parsed.horizon)) setHorizon(parsed.horizon);
+      if (parsed?.planDate) setPlanDate(String(parsed.planDate));
+      if (parsed?.variant && PLAN_VARIANTS.some((item) => item.value === parsed.variant)) {
+        applyVariantPreset(parsed.variant);
+      }
+      if (Array.isArray(parsed?.vibeTags) && parsed.vibeTags.length > 0) {
+        setSelectedVibeTags(normalizeVibeTags(parsed.vibeTags, { max: MAX_PLANNER_VIBE_TAGS }));
+      }
+      if (parsed?.budget && BUDGETS.some((item) => item.value === parsed.budget)) setBudget(parsed.budget);
+      if (Number.isFinite(Number(parsed?.energy))) setEnergy(Math.max(10, Math.min(100, Number(parsed.energy))));
+      if (typeof parsed?.soloSafe === "boolean") setSoloSafe(parsed.soloSafe);
+      setPlannerNotice("Trip seed loaded. Build to generate this route.");
+    } catch {
+      setPlannerNotice("Trip seed was invalid. Using default planner state.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const generate = () => {
     if (!canBuild) return;
@@ -941,6 +1355,7 @@ export default function TripPlannerV2({
         planTitle,
         city,
         horizon,
+        variant: planVariant,
         vibe: selectedVibeTags[0] || "mixed",
         vibeTags: selectedVibeTags,
         budget,
@@ -959,6 +1374,103 @@ export default function TripPlannerV2({
     }
   };
 
+  const buildShareLink = () => {
+    if (typeof window === "undefined") return "";
+    const payload = {
+      city,
+      horizon,
+      planDate,
+      variant: planVariant,
+      vibeTags: normalizeVibeTags(selectedVibeTags, { max: MAX_PLANNER_VIBE_TAGS }),
+      budget,
+      energy,
+      soloSafe,
+    };
+    const url = new URL(window.location.href);
+    url.searchParams.set("trip_seed", toBase64Url(JSON.stringify(payload)));
+    return url.toString();
+  };
+
+  const copyShareLink = async () => {
+    const link = buildShareLink();
+    if (!link) return;
+    try {
+      if (navigator.share && typeof navigator.share === "function") {
+        await navigator.share({
+          title: `QueerAtlas ${city} trip plan`,
+          text: `Variant: ${selectedVariantMeta.label} | ${horizon.replaceAll("_", " ")}`,
+          url: link,
+        });
+        setPlannerNotice("Plan link shared.");
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = link;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      setPlannerNotice("Plan link copied.");
+    } catch {
+      setPlannerNotice("Could not share this plan link.");
+    }
+  };
+
+  const exportItineraryIcs = () => {
+    if (itinerary.length === 0) return;
+    const baseDate = resolveStartDate(planDate);
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//QueerAtlas//Trip Planner//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+    ];
+
+    itinerary.forEach((day, dayIdx) => {
+      const dayDate = addDays(baseDate, dayIdx);
+      day.stops.forEach((stop, stopIdx) => {
+        const minutes = parseTimeToMinutes(stop.time) ?? 18 * 60;
+        const start = new Date(dayDate);
+        start.setHours(0, 0, 0, 0);
+        start.setMinutes(minutes);
+        const end = new Date(start.getTime() + DEFAULT_STOP_DURATION_MINUTES * 60 * 1000);
+        const uid = `${city}-${dayIdx}-${stopIdx}-${stop.id}@queeratlas.app`;
+        const summary = `${stop.slotLabel}: ${stop.name}`;
+        lines.push(
+          "BEGIN:VEVENT",
+          `UID:${uid}`,
+          `DTSTAMP:${formatIcsTimestamp(new Date())}`,
+          `DTSTART:${formatIcsTimestamp(start)}`,
+          `DTEND:${formatIcsTimestamp(end)}`,
+          `SUMMARY:${summary.replace(/\r?\n/g, " ")}`,
+          `DESCRIPTION:${String(stop.reason || "").replace(/\r?\n/g, " ")}`,
+          `LOCATION:${String(stop.city || city)}`,
+          "END:VEVENT"
+        );
+      });
+    });
+    lines.push("END:VCALENDAR");
+
+    const blob = new Blob([`${lines.join("\r\n")}\r\n`], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `queeratlas-${normalize(city || "trip")}-${horizon}.ics`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
+    setPlannerNotice("Calendar export ready.");
+  };
+
   return (
     <div
       ref={plannerTopRef}
@@ -966,139 +1478,154 @@ export default function TripPlannerV2({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/72">Planner controls</p>
-          <p className="mt-1 text-xs text-white/60">Pick city, horizon, and vibe tags. Build in one tap.</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/72">Trip planner</p>
+          <p className="mt-1 text-xs text-white/60">Three inputs: City, Mood, and When. Then build.</p>
         </div>
         <div className="rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] text-cyan-100/90">
           {cityPlacesCount} places | {cityEventsCount} events
         </div>
       </div>
 
-      <div className="mt-3 grid gap-3 xl:grid-cols-[1.45fr_1fr]">
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
         <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <p className="text-[11px] text-white/55">City</p>
-              <select
-                value={city}
-                onChange={(event) => setCity(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
-              >
-                {plannerCities.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <p className="text-[11px] text-white/55">Horizon</p>
-              <div className="mt-1 flex flex-wrap gap-2">
-                {HORIZONS.map((item) => (
-                  <button
-                    key={item.value}
-                    type="button"
-                    onClick={() => setHorizon(item.value)}
-                    className={`rounded-full border px-3 py-1 text-xs transition ${
-                      horizon === item.value
-                        ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
-                        : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-xl border border-cyan-200/16 bg-cyan-200/[0.05] p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-[11px] text-cyan-100/80">Vibe tags (up to 3)</p>
-              <p className="text-[10px] text-cyan-100/65">{selectedVibeLabels.length}/3 selected</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {STANDARD_VIBE_TAGS.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={() => toggleVibeTag(item.key)}
-                  className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
-                    selectedVibeTagSet.has(item.key)
-                      ? "border-cyan-200/46 bg-cyan-200/18 text-cyan-50"
-                      : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-[11px] text-white/58">
-              {selectedVibeLabels.length > 0
-                ? `Selected: ${selectedVibeLabels.join(" | ")}`
-                : "No vibe filter selected. Planner keeps a balanced mix."}
-            </p>
-          </div>
+          <p className="text-[11px] text-white/55">1) City</p>
+          <select
+            value={city}
+            onChange={(event) => setCity(event.target.value)}
+            className="mt-1 w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+          >
+            {plannerCities.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
         </section>
 
         <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <p className="text-[11px] text-white/55">Actions</p>
-          <div className="mt-2 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={generate}
-              disabled={!canBuild}
-              className="rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-105 disabled:opacity-60"
-            >
-              Build itinerary
-            </button>
-            <button
-              type="button"
-              onClick={shuffleUnlocked}
-              disabled={itinerary.length === 0}
-              className="rounded-full border border-white/14 bg-white/6 px-4 py-2 text-sm text-white/80 transition hover:border-white/24 disabled:opacity-60"
-            >
-              Shuffle unlocked
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={itinerary.length === 0 || isSaving}
-              className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 py-2 text-sm text-emerald-100 transition hover:border-emerald-200/48 disabled:opacity-60"
-            >
-              {isSaving ? "Saving..." : "Save plan"}
-            </button>
+          <p className="text-[11px] text-white/55">2) Mood</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {PLAN_VARIANTS.map((variant) => (
+              <button
+                key={variant.value}
+                type="button"
+                onClick={() => applyVariantPreset(variant.value)}
+                className={`rounded-full border px-3 py-1 text-xs transition ${
+                  planVariant === variant.value
+                    ? "border-cyan-200/46 bg-cyan-200/18 text-cyan-50"
+                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                }`}
+              >
+                {variant.label}
+              </button>
+            ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setShowAdvanced((current) => !current)}
-            className={`mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold transition ${
-              showAdvanced
-                ? "border-white/18 bg-white/8 text-white/80 hover:border-white/30"
-                : "border-cyan-200/48 bg-gradient-to-r from-cyan-300/28 via-sky-300/22 to-fuchsia-300/26 text-cyan-50 shadow-[0_10px_28px_rgba(56,189,248,0.2)] hover:brightness-110"
-            }`}
-          >
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
-                showAdvanced
-                  ? "bg-white/10 text-white/70"
-                  : "bg-cyan-100/20 text-cyan-50"
-              }`}
-            >
-              Pro
-            </span>
-            {showAdvanced ? "Hide advanced controls" : "Show advanced controls"}
-          </button>
-          {!showAdvanced && (
-            <p className="mt-1 text-center text-[10px] text-cyan-100/78">
-              Budget, energy, solo-safe och plan notes
-            </p>
-          )}
-          {trustedFavoritesSet.size > 0 && (
-            <p className="mt-2 text-[11px] text-cyan-100/72">Trusted network signal active.</p>
-          )}
+          <p className="mt-2 text-[11px] text-white/62">{selectedVariantMeta.summary}</p>
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <p className="text-[11px] text-white/55">3) When</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {HORIZONS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setHorizon(item.value)}
+                className={`rounded-full border px-3 py-1 text-xs transition ${
+                  horizon === item.value
+                    ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
+                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          <div className="mt-2">
+            <DateInput
+              value={planDate}
+              onChange={(event) => setPlanDate(event.target.value)}
+              name="trip-plan-date"
+              id="trip-plan-date"
+              tone="violet"
+            />
+          </div>
         </section>
       </div>
+
+      <section className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-3">
+        <p className="text-[11px] text-white/55">Actions</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <button
+            type="button"
+            onClick={generate}
+            disabled={!canBuild}
+            className="rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-105 disabled:opacity-60"
+          >
+            Build itinerary
+          </button>
+          <button
+            type="button"
+            onClick={shuffleUnlocked}
+            disabled={itinerary.length === 0}
+            className="rounded-full border border-white/14 bg-white/6 px-4 py-2 text-sm text-white/80 transition hover:border-white/24 disabled:opacity-60"
+          >
+            Shuffle unlocked
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={itinerary.length === 0 || isSaving}
+            className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 py-2 text-sm text-emerald-100 transition hover:border-emerald-200/48 disabled:opacity-60"
+          >
+            {isSaving ? "Saving..." : "Save plan"}
+          </button>
+          <button
+            type="button"
+            onClick={exportItineraryIcs}
+            disabled={itinerary.length === 0}
+            className="rounded-full border border-violet-200/30 bg-violet-200/12 px-4 py-2 text-sm text-violet-100 transition hover:border-violet-200/48 disabled:opacity-60"
+          >
+            Export calendar
+          </button>
+          <button
+            type="button"
+            onClick={copyShareLink}
+            className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/48"
+          >
+            Share link
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAdvanced((current) => !current)}
+          className={`mt-3 flex w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-[11px] font-semibold transition ${
+            showAdvanced
+              ? "border-white/18 bg-white/8 text-white/80 hover:border-white/30"
+              : "border-cyan-200/48 bg-gradient-to-r from-cyan-300/28 via-sky-300/22 to-fuchsia-300/26 text-cyan-50 shadow-[0_10px_28px_rgba(56,189,248,0.2)] hover:brightness-110"
+          }`}
+        >
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
+              showAdvanced
+                ? "bg-white/10 text-white/70"
+                : "bg-cyan-100/20 text-cyan-50"
+            }`}
+          >
+            Pro
+          </span>
+          {showAdvanced ? "Hide advanced controls" : "Show advanced controls"}
+        </button>
+        {!showAdvanced && (
+          <p className="mt-1 text-center text-[10px] text-cyan-100/78">
+            Fine-tune vibe tags, budget, energy, solo-safe, and notes.
+          </p>
+        )}
+        {plannerNotice ? <p className="mt-2 text-[11px] text-cyan-100/78">{plannerNotice}</p> : null}
+        {trustedFavoritesSet.size > 0 && (
+          <p className="mt-2 text-[11px] text-cyan-100/72">Trusted network signal active.</p>
+        )}
+      </section>
 
       {planDate && matchedWindowEvents.length > 0 && (
         <div className="mt-3 rounded-2xl border border-fuchsia-200/52 bg-gradient-to-r from-fuchsia-300/22 via-pink-300/14 to-violet-300/22 px-3 py-3 text-fuchsia-50 shadow-[0_14px_32px_rgba(217,70,239,0.2)] animate-pulse">
@@ -1148,17 +1675,32 @@ export default function TripPlannerV2({
             />
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-            <p className="text-[11px] text-white/55">Start date (optional)</p>
-            <div className="mt-1">
-              <DateInput
-                value={planDate}
-                onChange={(event) => setPlanDate(event.target.value)}
-                name="trip-plan-date"
-                id="trip-plan-date"
-                tone="violet"
-              />
+          <div className="rounded-xl border border-cyan-200/16 bg-cyan-200/[0.05] p-3 md:col-span-2 xl:col-span-2">
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[11px] text-cyan-100/80">Vibe tags (up to 3)</p>
+              <p className="text-[10px] text-cyan-100/65">{selectedVibeLabels.length}/3 selected</p>
             </div>
+            <div className="flex flex-wrap gap-2">
+              {STANDARD_VIBE_TAGS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => toggleVibeTag(item.key)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
+                    selectedVibeTagSet.has(item.key)
+                      ? "border-cyan-200/46 bg-cyan-200/18 text-cyan-50"
+                      : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-white/58">
+              {selectedVibeLabels.length > 0
+                ? `Selected: ${selectedVibeLabels.join(" | ")}`
+                : "No vibe filter selected. Planner keeps a balanced mix."}
+            </p>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-black/20 p-3">
@@ -1268,15 +1810,24 @@ export default function TripPlannerV2({
       {itinerary.length > 0 && (
         <div ref={itinerarySectionRef} className="mt-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.05] px-3 py-2">
-            <p className="text-xs font-semibold text-cyan-100">Itinerary ready</p>
+            <p className="text-xs font-semibold text-cyan-100">Route ready</p>
             <p className="text-[11px] text-white/68">
-              {lockedStopsCount} locked stop{lockedStopsCount === 1 ? "" : "s"} | tap Open for details
+              {lockedStopsCount} pinned stop{lockedStopsCount === 1 ? "" : "s"} | tap Open details
+            </p>
+          </div>
+          <div className="mb-3 rounded-xl border border-fuchsia-200/18 bg-fuchsia-200/[0.06] px-3 py-2">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-100/78">Story arc</p>
+            <p className="mt-1 text-xs text-white/74">
+              Warm-up {"->"} Build momentum {"->"} Peak energy {"->"} Recover with lower-friction landings.
             </p>
           </div>
 
           <div className="grid gap-3 lg:grid-cols-3">
             {itinerary.map((day, dayIdx) => (
-              <article key={day.dayKey} className="rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.03] p-3">
+              <article
+                key={day.dayKey}
+                className="rounded-2xl border border-cyan-200/16 bg-[linear-gradient(160deg,rgba(15,21,28,0.5),rgba(9,9,11,0.6))] p-3 shadow-[0_14px_30px_rgba(0,0,0,0.2)]"
+              >
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs font-semibold text-cyan-100">{day.dayLabel}</p>
                   <span className="rounded-full border border-white/14 bg-white/6 px-2 py-0.5 text-[10px] text-white/75">
@@ -1285,31 +1836,55 @@ export default function TripPlannerV2({
                 </div>
                 <div className="space-y-2">
                   {day.stops.length === 0 && (
-                    <p className="text-xs text-white/58">No matched stops. Try other vibe tags or city.</p>
+                    <p className="text-xs text-white/58">No matched stops yet. Try another mood or city.</p>
                   )}
                   {day.stops.map((stop, stopIdx) => {
                     const lockKey = `${dayIdx}-${stopIdx}`;
                     const isLocked = Boolean(locks[lockKey]);
+                    const reasonParts = String(stop.reason || "").split(" Why: ");
+                    const stopNarrative = reasonParts[0] || "";
+                    const stopEvidence = reasonParts[1] || "";
                     return (
-                      <div key={stop.key} className="rounded-xl border border-white/10 bg-black/25 p-3">
+                      <div
+                        key={stop.key}
+                        className="rounded-xl border border-white/12 bg-[linear-gradient(165deg,rgba(20,20,24,0.92),rgba(10,10,12,0.96))] p-3 shadow-[0_10px_24px_rgba(0,0,0,0.24)]"
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-[10px] text-cyan-50">
+                              <span className="rounded-full border border-cyan-200/28 bg-cyan-200/14 px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] text-cyan-50">
                                 {stop.time}
                               </span>
                               <span className="text-[11px] text-white/62">{stop.slotLabel}</span>
                             </div>
-                            <p className="mt-1 truncate text-sm font-medium text-white">{stop.name}</p>
-                            <p className="mt-1 text-xs text-white/58">{stop.reason}</p>
+                            <p className="mt-1 truncate text-[15px] font-semibold leading-tight text-white">{stop.name}</p>
+                            <p className="mt-1 text-[12px] text-white/72">{stopNarrative}</p>
+                            {stopEvidence ? (
+                              <p className="mt-1 text-[11px] text-cyan-100/78">Why this stop: {stopEvidence}</p>
+                            ) : null}
                             {typeof stop.trustScore === "number" && (
                               <p className="mt-1 text-[11px] text-cyan-100/78">
-                                Trust {stop.trustScore} | {stop.trustReason || "network + quality + timing"}
+                                Confidence {stop.trustScore} | {stop.trustReason || "network + quality + timing"}
                               </p>
                             )}
                             {String(stop.trustReason || "").includes("opening unclear") && (
-                              <p className="mt-1 text-[10px] text-amber-100/82">Check opening hours before you go.</p>
+                              <p className="mt-1 text-[10px] text-amber-100/82">Opening hours may be uncertain. Check before going.</p>
                             )}
+                            {stop.backupStop?.name ? (
+                              <div className="mt-2 rounded-lg border border-white/14 bg-white/[0.06] px-2.5 py-2">
+                                <p className="text-[10px] uppercase tracking-[0.1em] text-white/56">Backup option</p>
+                                <div className="mt-1 flex items-center justify-between gap-2">
+                                  <p className="truncate text-[11px] text-white/82">{stop.backupStop.name}</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenStop?.(stop.backupStop)}
+                                    className="rounded-full border border-white/16 bg-white/8 px-2 py-0.5 text-[10px] text-white/82 transition hover:border-white/30"
+                                  >
+                                    Open backup
+                                  </button>
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
                           <button
                             type="button"
@@ -1320,19 +1895,19 @@ export default function TripPlannerV2({
                                 : "border-white/12 bg-white/6 text-white/72 hover:border-white/24"
                             }`}
                           >
-                            {isLocked ? "Locked" : "Lock"}
+                            {isLocked ? "Pinned" : "Pin"}
                           </button>
                         </div>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[11px] text-white/50 capitalize">
-                            {stop.itemType === "event" ? "Event stop" : "Venue stop"}
+                          <span className="text-[11px] text-white/56 capitalize">
+                            {stop.itemType === "event" ? "Event anchor" : "Venue anchor"}
                           </span>
                           <button
                             type="button"
                             onClick={() => onOpenStop?.(stop)}
                             className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] text-cyan-100 transition hover:border-cyan-200/40"
                           >
-                            Open
+                            Open details
                           </button>
                         </div>
                       </div>
@@ -1343,7 +1918,7 @@ export default function TripPlannerV2({
             ))}
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-white/10 bg-black/20 p-2.5">
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-white/12 bg-black/20 p-2.5">
             <button
               type="button"
               onClick={shuffleUnlocked}
@@ -1357,7 +1932,7 @@ export default function TripPlannerV2({
               onClick={() => plannerTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
               className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1.5 text-[11px] text-cyan-100 transition hover:border-cyan-200/40"
             >
-              Back to controls
+              Back to planner
             </button>
             <button
               type="button"

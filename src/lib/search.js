@@ -49,12 +49,8 @@ function qualityBoost(targetType, targetId, qualityMap = {}) {
 
   const verified = Boolean(quality.verified);
   const checkedAt = quality.lastChecked ? new Date(quality.lastChecked).getTime() : NaN;
-  const staleCutoff = Date.now() - 120 * 24 * 60 * 60 * 1000;
-  const isStale = !Number.isFinite(checkedAt) || checkedAt < staleCutoff;
 
-  if (verified && !isStale) return 16;
-  if (isStale) return -8;
-  return 4;
+  return verified && Number.isFinite(checkedAt) ? 16 : 0;
 }
 
 function eventFreshnessBoost(dateValue, nowTs) {

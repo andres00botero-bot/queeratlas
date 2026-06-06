@@ -22,7 +22,7 @@ import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
 
 const TYPE_FILTERS = ["all", "city", "place", "event"];
-const QUALITY_FILTERS = ["all", "verified", "needs_refresh", "unverified"];
+const QUALITY_FILTERS = ["all", "verified", "unverified"];
 const SEARCH_MAP_SOURCE_ID = "qa-search-source";
 const SEARCH_MAP_CLUSTER_LAYER_ID = "qa-search-clusters";
 const SEARCH_MAP_CLUSTER_COUNT_LAYER_ID = "qa-search-cluster-count";
@@ -77,8 +77,7 @@ function getMatchReason(item = {}, query = "") {
 }
 
 function getQualityPillClass(label = "") {
-  if (label === "Verified") return "border-emerald-200/24 bg-emerald-200/12 text-emerald-100";
-  if (label === "Needs refresh") return "border-amber-200/24 bg-amber-200/12 text-amber-100";
+  if (label === "Verified recently") return "border-emerald-200/24 bg-emerald-200/12 text-emerald-100";
   return "border-white/14 bg-white/6 text-white/65";
 }
 
@@ -295,10 +294,7 @@ export default function SearchPage() {
           map: qualityMap,
         });
         const status = getQualityStatus(quality);
-        const key =
-          status.label === "Needs refresh"
-            ? "needs_refresh"
-            : status.label.toLowerCase();
+        const key = status.tone === "verified" ? "verified" : "unverified";
 
         if (key !== effectiveQualityFilter) return false;
       }
@@ -868,11 +864,7 @@ export default function SearchPage() {
               >
                 {QUALITY_FILTERS.map((quality) => (
                   <option key={quality} value={quality}>
-                    {quality === "all"
-                      ? "All quality"
-                      : quality === "needs_refresh"
-                        ? "Needs refresh"
-                        : quality[0].toUpperCase() + quality.slice(1)}
+                    {quality === "all" ? "All quality" : quality[0].toUpperCase() + quality.slice(1)}
                   </option>
                 ))}
               </select>

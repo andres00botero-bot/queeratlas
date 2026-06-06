@@ -1,5 +1,4 @@
 const QUALITY_KEY = "qa_quality_meta";
-const STALE_DAYS = 120;
 
 function safeParse(raw, fallback) {
   if (!raw) return fallback;
@@ -69,25 +68,13 @@ export function getEntityQuality({ targetType, targetId, entity = null, map = nu
 export function getQualityStatus(quality) {
   const lastCheckedDate = quality?.lastChecked ? new Date(quality.lastChecked) : null;
   const hasValidDate = Boolean(lastCheckedDate && !Number.isNaN(lastCheckedDate.getTime()));
-  const staleCutoff = new Date();
-  staleCutoff.setDate(staleCutoff.getDate() - STALE_DAYS);
+  const verified = Boolean(quality?.verified && hasValidDate);
 
-  const stale = !hasValidDate || lastCheckedDate < staleCutoff;
-  const verified = Boolean(quality?.verified);
-
-  if (verified && !stale) {
+  if (verified) {
     return {
       label: "Verified recently",
       tone: "verified",
       stale: false,
-    };
-  }
-
-  if (stale) {
-    return {
-      label: "Community",
-      tone: "stale",
-      stale: true,
     };
   }
 

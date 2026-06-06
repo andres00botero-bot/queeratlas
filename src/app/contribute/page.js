@@ -29,7 +29,7 @@ import {
   syncModerationFromCloud,
   unblockItem,
 } from "@/lib/moderation";
-import { getEntityQuality, getQualityMap, getQualityStatus, upsertQuality } from "@/lib/quality";
+import { upsertQuality } from "@/lib/quality";
 import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
@@ -1441,13 +1441,10 @@ export default function ContributePage() {
         places: [],
         events: [],
         services: [],
-        stale: [],
         cityCounts: [],
-        totals: { places: 0, events: 0, services: 0, stale: 0 },
+        totals: { places: 0, events: 0, services: 0 },
       };
     }
-
-    const qualityMap = getQualityMap();
 
     const placeIssues = qaSnapshot.places
       .map((place) => {
@@ -1523,32 +1520,8 @@ export default function ContributePage() {
       })
       .filter((item) => item.issues.length > 0);
 
-    const staleItems = [
-      ...qaSnapshot.places.map((item) => ({ ...item, entityType: "place" })),
-      ...qaSnapshot.events.map((item) => ({ ...item, entityType: "event" })),
-      ...qaSnapshot.services.map((item) => ({ ...item, entityType: "service" })),
-    ]
-      .map((entity) => {
-        const quality = getEntityQuality({
-          targetType: entity.entityType,
-          targetId: entity.id,
-          entity,
-          map: qualityMap,
-        });
-        const status = getQualityStatus(quality);
-        if (!status.stale) return null;
-        return {
-          id: `${entity.entityType}-${entity.id}`,
-          city: entity.city || "",
-          name: entity.name || "Untitled",
-          entityType: entity.entityType,
-          label: status.label,
-        };
-      })
-      .filter(Boolean);
-
     const cityAccumulator = {};
-    [...placeIssues, ...eventIssues, ...serviceIssues, ...staleItems].forEach((item) => {
+    [...placeIssues, ...eventIssues, ...serviceIssues].forEach((item) => {
       const cityKey = String(item.city || "global").toLowerCase();
       cityAccumulator[cityKey] = (cityAccumulator[cityKey] || 0) + 1;
     });
@@ -1562,13 +1535,11 @@ export default function ContributePage() {
       places: placeIssues.slice(0, 10),
       events: eventIssues.slice(0, 10),
       services: serviceIssues.slice(0, 10),
-      stale: staleItems.slice(0, 10),
       cityCounts,
       totals: {
         places: placeIssues.length,
         events: eventIssues.length,
         services: serviceIssues.length,
-        stale: staleItems.length,
       },
     };
   })();
@@ -2146,7 +2117,7 @@ export default function ContributePage() {
                 <p className="text-xs uppercase tracking-[0.25em] text-cyan-200">Admin Content QA</p>
                 <h2 className="mt-2 text-2xl font-semibold text-white">Atlas quality snapshot</h2>
                 <p className="mt-2 text-sm text-white/65">
-                  Fast check of missing signal and stale entries before publishing updates.
+                  Fast check of missing content signals before publishing updates.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
@@ -2158,9 +2129,6 @@ export default function ContributePage() {
                 </span>
                 <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-3 py-1 text-emerald-100">
                   Services: {qaFindings.totals.services}
-                </span>
-                <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-amber-100">
-                  Needs refresh: {qaFindings.totals.stale}
                 </span>
               </div>
             </div>
@@ -2189,7 +2157,7 @@ export default function ContributePage() {
                   </div>
                 )}
 
-                <div className="grid gap-3 lg:grid-cols-4">
+                <div className="grid gap-3 lg:grid-cols-3">
                   <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
                     <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/80">Place issues</p>
                     <div className="mt-3 space-y-2">
@@ -2256,35 +2224,7 @@ export default function ContributePage() {
                     </div>
                   </article>
 
-                  <article className="rounded-2xl border border-white/10 bg-black/25 p-4">
-                    <p className="text-xs uppercase tracking-[0.16em] text-amber-100/90">Needs refresh</p>
-                    <div className="mt-3 space-y-2">
-                      {qaFindings.stale.length === 0 && (
-                        <p className="text-sm text-white/55">No stale items right now.</p>
-                      )}
-                      {qaFindings.stale.map((item) => (
-                        <button
-                          key={`qa-stale-${item.id}`}
-                          onClick={() =>
-                            router.push(
-                              item.entityType === "event"
-                                ? "/events"
-                                : item.entityType === "service"
-                                  ? citySelectionPath(item.city, { extraParams: { serviceId: item.id } })
-                                  : citySelectionPath(item.city, { placeId: item.id })
-                            )
-                          }
-                          className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-left transition hover:border-amber-200/30"
-                        >
-                          <p className="text-sm font-semibold text-white">{item.name}</p>
-                          <p className="mt-1 text-xs text-white/60">
-                            {formatCityLabel(item.city)} · {item.entityType}
-                          </p>
-                          <p className="mt-2 text-xs text-amber-100/90">{item.label}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </article>
+
                 </div>
               </>
             )}
