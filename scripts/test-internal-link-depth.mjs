@@ -1,7 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
-import { cityCoreConfig } from "../src/lib/cityCore.js";
 import { listCityClusterTopics } from "../src/lib/seo/cityClusters.js";
 import { listTopicHubs } from "../src/lib/seo/topicHubs.js";
+import {
+  isIndexableTopicHub,
+  isTier1CityTopic,
+  TIER1_CITY_SLUGS,
+} from "../src/lib/seo/indexingTier.js";
 
 function fail(message) {
   console.error(`[internal-link-depth] FAILED: ${message}`);
@@ -13,13 +17,13 @@ function read(path) {
   return readFileSync(path, "utf8");
 }
 
-const cityKeys = Object.keys(cityCoreConfig);
 const clusterTopics = listCityClusterTopics().map((topic) => topic.key);
-const featuredClusterTopics = clusterTopics.slice(0, 5);
-const topicHubs = listTopicHubs();
+const topicHubs = listTopicHubs().filter((hub) => isIndexableTopicHub(hub.key));
 
-const discoverRoutes = cityKeys.flatMap((city) =>
-  clusterTopics.map((topic) => `/${city}/discover/${topic}`),
+const discoverRoutes = TIER1_CITY_SLUGS.flatMap((city) =>
+  clusterTopics
+    .filter((topic) => isTier1CityTopic(city, topic))
+    .map((topic) => `/${city}/discover/${topic}`),
 );
 
 const inbound = new Map(discoverRoutes.map((route) => [route, 0]));
@@ -29,47 +33,42 @@ function addInbound(target) {
   inbound.set(target, (inbound.get(target) || 0) + 1);
 }
 
-// /cities and /now crawl subsets (first 12 cities) + topic hub pages.
-const crawlSubsetCities = cityKeys.slice(0, 12);
-for (const city of crawlSubsetCities) {
-  for (const topic of clusterTopics) {
-    addInbound(`/${city}/discover/${topic}`);
-  }
-}
-
-// Topic hubs link to selected city/topic combinations.
+// Topic hubs visibly link to every indexable city/topic combination.
 for (const hub of topicHubs) {
-  const hubCities = Array.isArray(hub.cities) ? hub.cities : [];
   const hubClusterKeys = Array.isArray(hub.clusterKeys)
     ? hub.clusterKeys
     : hub.clusterKey
       ? [hub.clusterKey]
       : [];
-  for (const city of hubCities) {
+  for (const city of TIER1_CITY_SLUGS) {
     for (const topic of hubClusterKeys) {
-      addInbound(`/${city}/discover/${topic}`);
+      if (isTier1CityTopic(city, topic)) {
+        addInbound(`/${city}/discover/${topic}`);
+      }
     }
   }
 }
 
 // City page topic pills link to the featured discover routes for each city.
-for (const city of cityKeys) {
+for (const city of TIER1_CITY_SLUGS) {
+  const featuredClusterTopics = clusterTopics
+    .filter((topic) => isTier1CityTopic(city, topic))
+    .slice(0, 5);
   for (const topic of featuredClusterTopics) {
     addInbound(`/${city}/discover/${topic}`);
   }
 }
 
-// /topics must expose full crawl coverage for all discover routes.
+// Coverage must come from visible topic hub cards, not a hidden bulk-link block.
 const topicsPagePath = "src/app/topics/page.js";
 const topicsPageSource = read(topicsPagePath);
-if (!/Internal discover crawl links/.test(topicsPageSource)) {
-  fail(`${topicsPagePath} is missing the discover crawl nav marker.`);
+if (/allDiscoverRoutes|Internal discover crawl links/.test(topicsPageSource)) {
+  fail(`${topicsPagePath} still contains hidden bulk discover links.`);
 }
-if (!/allDiscoverRoutes\.map\(/.test(topicsPageSource)) {
-  fail(`${topicsPagePath} is missing allDiscoverRoutes crawl mapping.`);
-}
-for (const route of discoverRoutes) {
-  addInbound(route);
+const topicHubPagePath = "src/app/topics/[topic]/page.js";
+const topicHubPageSource = read(topicHubPagePath);
+if (!/TIER1_CITY_SLUGS/.test(topicHubPageSource) || !/isTier1CityTopic/.test(topicHubPageSource)) {
+  fail(`${topicHubPagePath} is not aligned with the indexable city-topic tier.`);
 }
 
 const orphanRoutes = [];
@@ -85,7 +84,10 @@ for (const [route, count] of inbound.entries()) {
   else low += 1;
 }
 
-for (const city of cityKeys) {
+for (const city of TIER1_CITY_SLUGS) {
+  const featuredClusterTopics = clusterTopics
+    .filter((topic) => isTier1CityTopic(city, topic))
+    .slice(0, 5);
   for (const topic of featuredClusterTopics) {
     const route = `/${city}/discover/${topic}`;
     const count = inbound.get(route) || 0;

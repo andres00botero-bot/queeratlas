@@ -28,7 +28,7 @@ export default function CityServicesSection({
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-2xl font-semibold tracking-[-0.015em] text-emerald-100">Services</h2>
           <span className="inline-flex items-center rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/90">
-            {servicesLoading ? "Services syncing" : `${cityServiceCount} listed`}
+            {servicesLoading ? "Curated services" : `${cityServiceCount} listed`}
           </span>
         </div>
         <div className="mt-3 h-px w-full bg-gradient-to-r from-emerald-200/35 via-white/10 to-transparent" />
@@ -38,7 +38,7 @@ export default function CityServicesSection({
       </p>
       <div className="mb-4 flex flex-wrap gap-2">
         <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
-          {visibleServiceGroups.length} categories
+          {servicesLoading ? "Local categories" : `${visibleServiceGroups.length} categories`}
         </span>
         <span className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.09] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/88">
           Member-owned
@@ -59,7 +59,7 @@ export default function CityServicesSection({
 
       {servicesLoading && (
         <div className="mb-4 rounded-2xl border border-emerald-200/10 bg-emerald-200/[0.03] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-emerald-100/60">Loading local services</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-emerald-100/60">Local service guide</p>
           <SectionSkeleton tone="emerald" rows={2} />
         </div>
       )}

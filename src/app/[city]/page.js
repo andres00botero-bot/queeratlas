@@ -1221,12 +1221,12 @@ export default function CityPage() {
   const hasAnyPlaces = cityPlaceCount > 0;
   const hasAnyServices = cityServiceCount > 0;
   const placesChipLabel = placesLoading
-    ? "Places syncing"
+    ? "Curated places"
     : cityPlaceCount > 0
       ? `${cityPlaceCount} places`
       : "Places incoming";
   const eventsChipLabel = eventsLoading
-    ? "Events syncing"
+    ? "Event calendar"
     : cityEventCount > 0
       ? `${cityEventCount} events`
       : "Events incoming";

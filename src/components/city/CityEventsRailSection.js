@@ -57,7 +57,7 @@ export default function CityEventsRailSection({
       )}
       {eventsLoading && (
         <div className="mb-4 rounded-2xl border border-violet-200/10 bg-violet-200/[0.03] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">Loading events</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">Curated event calendar</p>
           <SectionSkeleton tone="violet" rows={2} />
         </div>
       )}

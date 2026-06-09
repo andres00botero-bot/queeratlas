@@ -31,7 +31,7 @@ export default function QuickGuideSection({
       </div>
       {placesLoading && (
         <div className="mb-4 rounded-2xl border border-amber-200/10 bg-amber-200/[0.03] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-amber-100/60">Loading guide signal</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-amber-100/60">Curated city guide</p>
           <SectionSkeleton tone="amber" rows={2} />
         </div>
       )}

@@ -164,54 +164,54 @@ export const cityGuideConfig = {
   "barcelona": [
     {
       "title": "About",
-      "text": "Barcelona feels like sun, skin, flirtation, and movement. It mixes beach-city openness with nightlife and a queer summer rhythm that can feel almost too easy to love. The city is sexy in a very direct way, but still layered enough to reward repeat visits.",
+      "text": "Barcelona feels like sun, skin, flirtation, and movement. It mixes beach-city openness with nightlife and a queer summer rhythm that can feel almost too easy to love. The city is sexy in a very direct way, but still layered enough to reward repeat visits. Queer life is visible in everyday cafes, shops, cultural spaces, and beaches as well as dedicated nightlife, so a good visit can feel social long before the first bar.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Eixample remains the key anchor, but beaches, terraces, and party circuits make the city feel more fluid than fixed. Barcelona works best when you let daytime and nightlife speak to each other instead of separating them too hard.",
+      "text": "Eixample remains the key anchor, especially the Gaixample area around the left side of the district, where queer-friendly bars, restaurants, shops, and hotels sit within a walkable grid. Sant Antoni and Raval add a more mixed local and cultural rhythm, while the waterfront changes the mood completely. Barcelona works best when daytime neighborhoods and nightlife speak to each other instead of being planned as separate trips.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Queer visibility is strong, but Barcelona absolutely requires practical awareness around phones, bags, and tourist-heavy nightlife routes. The city is more fun when you protect your energy and your wallet before the night starts.",
+      "text": "Queer visibility is strong in central areas, but Barcelona requires practical awareness around phones, bags, and tourist-heavy nightlife routes. Keep valuables controlled on crowded transport, terraces, beaches, and late walks between venues. The city is more fun when you protect your energy and your wallet before the night starts, know the route back, and avoid letting a busy public space make you careless.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Barcelona nights are warm, social, and built to escalate. Terrace drinks, beach energy, bars, and later dance floors all blend into a city that rewards people who stay flexible and say yes at the right moment.",
+      "text": "Barcelona nights are warm, social, and built to escalate. Terrace drinks, beach energy, compact bars, drag, and later dance floors can all fit into the same evening. Eixample is the easiest place to begin because several options remain close together, while larger parties may require a separate trip. Check the current event calendar before committing because the strongest queer nights often depend on the day, season, and promoter.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Barcelona sits in a workable middle range for Europe, but summer and big event periods raise the price quickly. It remains easier to do well than Paris or London if you stay smart.",
+      "text": "Barcelona sits in a workable middle range for Europe, but summer, Pride, festivals, and major event periods raise accommodation prices quickly. Staying near Eixample can cost more upfront but saves repeated late transport and makes flexible evenings easier. Book the room first, leave some budget for timed tickets and transit, and use neighborhood cafes and set menus to keep the daytime side of the trip balanced.",
       "extra": ""
     }
   ],
   "lisbon": [
     {
       "title": "About",
-      "text": "Lisbon feels scenic, flirtatious, and increasingly queer-visible, with a softness that makes it easy to sink into. It is less blunt than Madrid and less performative than Paris, but it has a warm, addictive rhythm of its own.",
+      "text": "Lisbon feels scenic, flirtatious, and increasingly queer-visible, with a softness that makes it easy to sink into. It is less blunt than Madrid and less performative than Paris, but it has a warm, addictive rhythm of its own. The queer experience is woven through neighborhood cafes, viewpoints, community spaces, bars, and recurring cultural events rather than contained inside one entertainment strip.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Neighborhood energy matters more than one giant queer district. The city works through hills, views, bars, dinners, and movement between areas that each shift the mood a little.",
+      "text": "Principe Real is the clearest queer anchor and a practical daytime base, with Bairro Alto immediately nearby for a denser late bar rhythm. Chiado and Baixa make central sightseeing easy, while Cais do Sodre adds a broader mixed nightlife circuit. These areas look close on a map, but hills and stone streets make short distances feel longer, so choose accommodation around the part of the day you care about most.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Lisbon is generally comfortable for queer travelers, though hills, late transport, and nightlife fatigue shape the real experience more than people admit. A well-located base changes everything here.",
+      "text": "Lisbon is generally comfortable for queer travelers in the central visitor districts, though normal city awareness still matters in crowded transport and nightlife streets. Hills, uneven paving, late transport, and nightlife fatigue shape the real experience more than people admit. Keep a simple route home, use a licensed ride when the walk no longer feels sensible, and remember that a well-located base changes everything here.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Lisbon rewards slower starts and layered nights. It is a city for letting dinner become drinks and drinks become one more stop. The payoff is atmosphere more than brute force.",
+      "text": "Lisbon rewards slower starts and layered nights. Begin around Principe Real or Bairro Alto, let dinner become drinks, and only then decide whether the night needs a club or a quieter final stop. The strongest option can change by weekday, season, and event calendar, and queer parties are not always tied to permanent venues. The payoff is atmosphere and social flow more than brute force.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Lisbon used to feel like an obvious bargain. It is less that now, but still often lands better than London, Paris, or Amsterdam if you plan with care.",
+      "text": "Lisbon used to feel like an obvious bargain. It is less that now, especially for central accommodation and popular weekends, but it can still land below London, Paris, or Amsterdam with careful timing. A room close to Principe Real, Bairro Alto, or a useful metro connection can justify a higher nightly rate by reducing late rides and steep walks. Reserve ahead and keep room for food, transit, and one unplanned night.",
       "extra": ""
     }
   ],
@@ -1298,27 +1298,27 @@ export const cityGuideConfig = {
   "sao_paulo": [
     {
       "title": "About",
-      "text": "Sao Paulo is one of the largest queer ecosystems in the world, with massive nightlife, strong local scenes, and deep cultural scale.",
+      "text": "Sao Paulo has one of the largest and most varied queer ecosystems in Latin America. Nightlife matters, but the city also carries queer culture through art, fashion, food, community organizing, performance, and everyday social spaces. Its scale creates room for many different crowds rather than one visitor-facing scene. The best trip comes from choosing a few strong areas and following the current calendar instead of trying to conquer the whole city.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Think in terms of nightlife corridors and neighborhoods rather than one single queer village. Scale shapes everything here.",
+      "text": "Think in terms of corridors and neighborhoods rather than one single queer village. Frei Caneca, Consolacao, and the lower Augusta axis form an accessible central starting point with long queer associations. Republica and Arouche connect to an older downtown social history, while Pinheiros can add a more mixed cafe, restaurant, and creative-nightlife rhythm. These zones are not interchangeable, and crossing the city can take time even when the map looks manageable.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "The city requires stronger practical awareness than many European capitals, especially around transport, phones, and late-night movement.",
+      "text": "Sao Paulo requires deliberate big-city awareness, especially around phones, transport, and late-night movement. Check the exact address before leaving, wait for rides indoors when possible, confirm the vehicle and driver, and avoid displaying valuables while navigating unfamiliar streets. Queer comfort can vary block by block outside established social areas, so confident planning matters more than fear. Keep your battery charged and share the return route when going out alone.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Sao Paulo is huge, varied, and high-energy. It rewards curation and local knowledge.",
+      "text": "Sao Paulo nightlife is huge, varied, and high-energy, with everything from conversation-led bars and drag to electronic parties and large dance floors. The strongest night may be a recurring event rather than a permanent venue, so current listings and trusted local signals matter. Build one geographic cluster per evening, allow more travel time than expected, and avoid stacking distant options. The city rewards curation and local knowledge far more than random venue hopping.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "The city can deliver excellent nightlife value depending on exchange context, though premium experiences still climb quickly.",
+      "text": "Sao Paulo can deliver strong value depending on exchange conditions, but premium hotels, restaurants, tickets, and repeated app rides still climb quickly. Staying near the corridor you plan to use most can save both money and hours. Prices vary sharply between neighborhood bars, major parties, and polished rooftops, so budget by type of night rather than assuming the whole city is inexpensive. Leave a transport margin because convenience is part of the safety plan.",
       "extra": ""
     }
   ],

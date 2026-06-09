@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { cityCoreConfig } from "@/lib/cityCore";
-import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
-import { isIndexableTopicHub, isTier1CityTopic } from "@/lib/seo/indexingTier";
+import { isIndexableTopicHub } from "@/lib/seo/indexingTier";
 
 export const metadata = {
   title: "Queer Topic Hubs 2026",
@@ -16,15 +14,6 @@ export const metadata = {
 
 export default function TopicsIndexPage() {
   const hubs = listTopicHubs().filter((hub) => isIndexableTopicHub(hub.key));
-  const cityKeys = Object.keys(cityCoreConfig);
-  const clusterTopics = listCityClusterTopics();
-  const allDiscoverRoutes = cityKeys.flatMap((city) =>
-    clusterTopics.map((topic) => ({
-      city,
-      topic: topic.key,
-      href: `/${city}/discover/${topic.key}`,
-    })).filter((route) => isTier1CityTopic(route.city, route.topic)),
-  );
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -67,19 +56,6 @@ export default function TopicsIndexPage() {
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
-      <nav aria-label="Internal discover crawl links" className="sr-only">
-        <Link href="/topics">topics</Link>
-        {hubs.map((hub) => (
-          <Link key={`topics-crawl-hub-${hub.key}`} href={`/topics/${hub.key}`}>
-            {hub.key}
-          </Link>
-        ))}
-        {allDiscoverRoutes.map((route) => (
-          <Link key={`topics-crawl-discover-${route.city}-${route.topic}`} href={route.href}>
-            {route.city} {route.topic}
-          </Link>
-        ))}
-      </nav>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <div className="mx-auto max-w-5xl space-y-6">

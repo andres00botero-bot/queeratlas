@@ -4,7 +4,11 @@ import { cityCoreConfig } from "@/lib/cityCore";
 import { getTopicHub, listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { humanizeCityKey, humanizeTopicKey } from "@/lib/seo/entityConsistency";
-import { isIndexableTopicHub } from "@/lib/seo/indexingTier";
+import {
+  isIndexableTopicHub,
+  isTier1CityTopic,
+  TIER1_CITY_SLUGS,
+} from "@/lib/seo/indexingTier";
 
 function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
@@ -12,6 +16,28 @@ function toAbsoluteUrl(path = "") {
 
 function buildTopicPath(topic = "") {
   return `/topics/${topic}`;
+}
+
+function getHubClusterKeys(hub) {
+  if (Array.isArray(hub?.clusterKeys) && hub.clusterKeys.length > 0) {
+    return hub.clusterKeys;
+  }
+  return hub?.clusterKey ? [hub.clusterKey] : [];
+}
+
+function buildIndexableHubRoutes(hub) {
+  const clusterKeys = getHubClusterKeys(hub);
+  return TIER1_CITY_SLUGS.flatMap((city) => {
+    if (!cityCoreConfig[city]) return [];
+    return clusterKeys
+      .filter((clusterKey) => isTier1CityTopic(city, clusterKey))
+      .map((clusterKey) => ({
+        city,
+        clusterKey,
+        href: `/${city}/discover/${clusterKey}`,
+        label: `${humanizeCityKey(city)} - ${humanizeTopicKey(clusterKey)}`,
+      }));
+  });
 }
 
 export function generateStaticParams() {
@@ -36,17 +62,12 @@ export async function generateMetadata({ params }) {
   }
 
   const canonical = buildTopicPath(hub.key);
-  const selectedCities = (hub.cities || []).filter((city) => cityCoreConfig[city]);
-  const clusterKeys = Array.isArray(hub.clusterKeys) && hub.clusterKeys.length > 0
-    ? hub.clusterKeys
-    : hub.clusterKey
-      ? [hub.clusterKey]
-      : [];
-  const routeCount = selectedCities.length * clusterKeys.length;
+  const cityClusterRoutes = buildIndexableHubRoutes(hub);
+  const selectedCitiesCount = new Set(cityClusterRoutes.map((route) => route.city)).size;
   const qualityReady = shouldIndexTopicHub({
     hub,
-    selectedCitiesCount: selectedCities.length,
-    routeCount,
+    selectedCitiesCount,
+    routeCount: cityClusterRoutes.length,
   });
   const tierReady = isIndexableTopicHub(hub.key);
   const shouldIndex = qualityReady && tierReady;
@@ -127,20 +148,8 @@ export default async function TopicHubPage({ params }) {
   if (!hub) notFound();
 
   const canonical = buildTopicPath(hub.key);
-  const selectedCities = hub.cities.filter((city) => cityCoreConfig[city]);
-  const clusterKeys = Array.isArray(hub.clusterKeys) && hub.clusterKeys.length > 0
-    ? hub.clusterKeys
-    : hub.clusterKey
-      ? [hub.clusterKey]
-      : [];
-  const cityClusterRoutes = selectedCities.flatMap((city) =>
-    clusterKeys.map((clusterKey) => ({
-      city,
-      clusterKey,
-      href: `/${city}/discover/${clusterKey}`,
-      label: `${humanizeCityKey(city)} - ${humanizeTopicKey(clusterKey)}`,
-    })),
-  );
+  const cityClusterRoutes = buildIndexableHubRoutes(hub);
+  const selectedCitiesCount = new Set(cityClusterRoutes.map((route) => route.city)).size;
 
   const itemListJsonLd = {
     "@context": "https://schema.org",
@@ -180,7 +189,7 @@ export default async function TopicHubPage({ params }) {
 
   const faqEntries = buildTopicHubFaqEntries({
     hub,
-    cityCount: selectedCities.length,
+    cityCount: selectedCitiesCount,
     routeCount: cityClusterRoutes.length,
   });
   const faqJsonLd = buildTopicHubFaqJsonLd({ faqEntries });
@@ -200,7 +209,7 @@ export default async function TopicHubPage({ params }) {
         <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
           <h2 className="text-lg font-semibold text-cyan-50">Evidence and freshness</h2>
           <p className="mt-2 text-sm leading-7 text-cyan-50/84">
-            This hub currently maps {cityClusterRoutes.length} city-topic routes across {selectedCities.length} cities.
+            This hub currently maps {cityClusterRoutes.length} city-topic routes across {selectedCitiesCount} cities.
             For full citation and source standards, open reports; for live momentum checks, use <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link>.
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">

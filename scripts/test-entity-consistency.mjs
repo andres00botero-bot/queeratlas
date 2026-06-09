@@ -2,6 +2,8 @@ import { listCityClusterTopics } from "../src/lib/seo/cityClusters.js";
 import { listTopicHubs } from "../src/lib/seo/topicHubs.js";
 import { listSeoReports } from "../src/lib/seo/reportsIndex.js";
 import { listCitationRules, listSourceTaxonomy } from "../src/lib/seo/entityConsistency.js";
+import { cityGuideConfig } from "../src/lib/cityGuides.js";
+import { TIER1_CITY_SLUGS } from "../src/lib/seo/indexingTier.js";
 
 function fail(message) {
   throw new Error(message);
@@ -54,11 +56,32 @@ if (!Array.isArray(citationRules) || citationRules.length < 3) {
   fail("[entity-consistency] Citation rules are incomplete.");
 }
 
+const requiredGuideSections = ["About", "Districts", "Safety", "Nightlife", "Cost"];
+for (const city of TIER1_CITY_SLUGS) {
+  const guide = cityGuideConfig[city];
+  if (!Array.isArray(guide)) {
+    fail(`[entity-consistency] Missing Tier 1 city guide: ${city}`);
+  }
+  const sections = new Map(guide.map((section) => [section.title, String(section.text || "").trim()]));
+  for (const title of requiredGuideSections) {
+    if (!sections.get(title)) {
+      fail(`[entity-consistency] ${city} is missing guide section: ${title}`);
+    }
+  }
+  const totalGuideLength = requiredGuideSections.reduce(
+    (total, title) => total + sections.get(title).length,
+    0,
+  );
+  if (totalGuideLength < 1400) {
+    fail(`[entity-consistency] ${city} Tier 1 guide is too thin: ${totalGuideLength} chars`);
+  }
+}
+
 console.log("[entity-consistency] PASSED", {
   topicCount: topics.length,
   hubCount: hubs.length,
   reportCount: reports.length,
   taxonomyCount: taxonomy.length,
   citationRuleCount: citationRules.length,
+  tier1CityGuideCount: TIER1_CITY_SLUGS.length,
 });
-
