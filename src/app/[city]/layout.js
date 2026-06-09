@@ -23,7 +23,7 @@ export async function generateMetadata({ params }) {
   const vibe = String(config.vibe || "").trim();
   const canonical = `/${city}`;
   const ownership = getCityKeywordOwnership(cityName);
-  const title = `Queer ${cityName} Guide 2026: Bars, Clubs, Events & Safety Signal`;
+  const title = `Queer ${cityName} Guide 2026: Bars, Events & Safety`;
   const description = `${cityName}, ${country}: ${ownership.primary}, trusted queer venues, live events, and route-smart safety context${vibe ? ` with a ${vibe} city vibe` : ""}. Updated for 2026.`;
 
   return {

@@ -6,7 +6,7 @@ import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
 import { isIndexableTopicHub, isTier1CityTopic } from "@/lib/seo/indexingTier";
 
 export const metadata = {
-  title: "Queer Topic Hubs 2026 | Queer Atlas",
+  title: "Queer Topic Hubs 2026",
   description:
     "Topical queer discovery hubs across nightlife, safety, events, cafes, and community-led route intelligence.",
   alternates: {

@@ -1,6 +1,9 @@
 export const metadata = {
   title: "Community Policy",
   description: "Queer Atlas community and reporting policy.",
+  alternates: {
+    canonical: "/community-policy",
+  },
 };
 
 export default function CommunityPolicyPage() {

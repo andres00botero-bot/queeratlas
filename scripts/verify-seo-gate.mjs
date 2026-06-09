@@ -68,11 +68,56 @@ for (const filePath of indexedRouteFiles) {
   );
   ensureContains(source, /title:/, `${filePath}: missing title`, failures);
   ensureContains(source, /description:/, `${filePath}: missing description`, failures);
-  const canonicalRequired = filePath !== "src/app/community-policy/page.js";
-  if (canonicalRequired) {
-    ensureContains(source, /alternates:\s*{[\s\S]*canonical:/, `${filePath}: missing canonical`, failures);
+  ensureContains(source, /alternates:\s*{[\s\S]*canonical:/, `${filePath}: missing canonical`, failures);
+}
+
+const guideMetadataChecks = [
+  ["src/app/gay-guide/page.js", "Gay Travel Guide 2026"],
+  ["src/app/queer-guide/page.js", "Queer Travel Guide 2026"],
+  ["src/app/hbtq-guide/page.js", "HBTQ Guide 2026"],
+];
+for (const [filePath, expectedTitle] of guideMetadataChecks) {
+  const source = read(filePath);
+  ensureContains(
+    source,
+    new RegExp(`title:\\s*"${expectedTitle}"`),
+    `${filePath}: HTML title must rely on the root brand template`,
+    failures
+  );
+  if (/languages:\s*{/.test(source)) {
+    failures.push(`${filePath}: hreflang must not map non-localized guide pages`);
   }
 }
+
+const reportsIndexSource = read("src/app/reports/page.js");
+ensureContains(
+  reportsIndexSource,
+  /title:\s*"Queer Reports 2026: Nightlife, Safety & Events"/,
+  "src/app/reports/page.js: missing concise non-duplicated title",
+  failures
+);
+const reportDetailSource = read("src/app/reports/[slug]/page.js");
+ensureContains(
+  reportDetailSource,
+  /const title = report\.title/,
+  "src/app/reports/[slug]/page.js: report title must rely on the root brand template",
+  failures
+);
+
+const topicsIndexSource = read("src/app/topics/page.js");
+ensureContains(
+  topicsIndexSource,
+  /title:\s*"Queer Topic Hubs 2026"/,
+  "src/app/topics/page.js: missing concise non-duplicated title",
+  failures
+);
+const topicDetailSource = read("src/app/topics/[topic]/page.js");
+ensureContains(
+  topicDetailSource,
+  /const title = `\$\{hub\.title\} 2026`/,
+  "src/app/topics/[topic]/page.js: topic title must rely on the root brand template",
+  failures
+);
 
 const cityLayoutPath = "src/app/[city]/layout.js";
 const cityLayout = read(cityLayoutPath);
@@ -80,6 +125,12 @@ ensureContains(cityLayout, /generateMetadata\s*\(/, `${cityLayoutPath}: missing 
 ensureContains(cityLayout, /title:/, `${cityLayoutPath}: missing title in generateMetadata`, failures);
 ensureContains(cityLayout, /description:/, `${cityLayoutPath}: missing description in generateMetadata`, failures);
 ensureContains(cityLayout, /alternates:\s*{[\s\S]*canonical/, `${cityLayoutPath}: missing canonical in generateMetadata`, failures);
+ensureContains(
+  cityLayout,
+  /Guide 2026: Bars, Events & Safety/,
+  `${cityLayoutPath}: city title template is missing or too verbose`,
+  failures
+);
 
 const sitemapPath = "src/app/sitemap.js";
 const sitemapSource = read(sitemapPath);
@@ -123,6 +174,24 @@ ensureContains(
   `${cityTopicPath}: indexability must require both content quality and tier eligibility`,
   failures
 );
+ensureContains(
+  cityTopicSource,
+  /const title = `\$\{topicConfig\.title\} in \$\{cityName\} \(2026\) \| Queer Atlas`/,
+  `${cityTopicPath}: city topic title must use the concise title template`,
+  failures
+);
+
+const homeClientPath = "src/components/home/HomePageClient.js";
+const homeClientSource = read(homeClientPath);
+ensureContains(
+  homeClientSource,
+  /across 130\+ cities/,
+  `${homeClientPath}: city coverage claim must match the configured inventory`,
+  failures
+);
+if (/across 300\+ cities/.test(homeClientSource)) {
+  failures.push(`${homeClientPath}: outdated 300+ cities claim`);
+}
 
 const robotsPath = "src/app/robots.js";
 const robotsSource = read(robotsPath);

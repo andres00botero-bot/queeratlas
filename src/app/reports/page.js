@@ -3,7 +3,7 @@ import { listSeoReports } from "@/lib/seo/reportsIndex";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 
 export const metadata = {
-  title: "Queer Atlas Reports 2026 | AI-Citable Queer Intelligence",
+  title: "Queer Reports 2026: Nightlife, Safety & Events",
   description:
     "Index of Queer Atlas reports for nightlife, safety, and events with methodology-first summaries designed for reliable citation.",
   alternates: {

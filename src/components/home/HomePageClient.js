@@ -900,7 +900,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               </div>
 
               <p className="qa-lead mt-7 max-w-[52ch] text-[1.02rem] leading-[1.62] tracking-[0.002em] text-white/76 sm:text-[1.16rem]">
-                Discover places, events, and communities across 300+ cities with verified
+                Discover places, events, and communities across 130+ cities with verified
                 local signal for nightlife, culture, and safe spaces.
               </p>
               {isDataLoading && (

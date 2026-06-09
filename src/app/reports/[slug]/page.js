@@ -22,13 +22,13 @@ export async function generateMetadata({ params }) {
 
   if (!report) {
     return {
-      title: "Report Not Found | Queer Atlas",
+      title: "Report Not Found",
       robots: { index: false, follow: false },
     };
   }
 
   const canonical = buildCanonical(report.slug);
-  const title = `${report.title} | Queer Atlas`;
+  const title = report.title;
   const description = report.summary;
   const ogTitle = String(report.socialMeta?.ogTitle || title).trim();
   const ogDescription = String(report.socialMeta?.ogDescription || description).trim();

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 
 export const metadata = {
-  title: "HBTQ Guide 2026 | Queer Atlas",
+  title: "HBTQ Guide 2026",
   description:
     "Global HBTQ guide for queer-friendly cities, LGBTQ events, safer nightlife, and trusted community signal.",
   keywords: [
@@ -11,12 +11,6 @@ export const metadata = {
   ],
   alternates: {
     canonical: "/hbtq-guide",
-    languages: {
-      "en-US": "/gay-guide",
-      en: "/queer-guide",
-      "sv-SE": "/hbtq-guide",
-      "x-default": "/queer-guide",
-    },
   },
   openGraph: {
     title: "HBTQ Guide 2026 | Queer Atlas",

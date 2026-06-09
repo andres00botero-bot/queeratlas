@@ -30,7 +30,7 @@ export async function generateMetadata({ params }) {
 
   if (!hub) {
     return {
-      title: "Topic Hub Not Found | Queer Atlas",
+      title: "Topic Hub Not Found",
       robots: { index: false, follow: false },
     };
   }
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }) {
   });
   const tierReady = isIndexableTopicHub(hub.key);
   const shouldIndex = qualityReady && tierReady;
-  const title = `${hub.title} 2026 | Queer Atlas`;
+  const title = `${hub.title} 2026`;
   const description = `${hub.description} Compare city-by-city discover routes, safety context, and social signal in one topical hub.`;
 
   return {

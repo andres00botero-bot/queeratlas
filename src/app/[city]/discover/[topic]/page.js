@@ -279,13 +279,6 @@ function buildFaqJsonLd({ faqEntries = [] }) {
 
 function buildClusterMetaCopy({ topicConfig, cityName }) {
   const intent = String(topicConfig?.intent || "").trim().toLowerCase();
-  const intentHooks = {
-    nightlife: "Techno, bars, and late-night flow",
-    safety: "Safer picks and route context",
-    community: "Sapphic social signal and nightlife",
-    daylife: "Daytime cafes and social starts",
-    events: "Tonight pulse and event routes",
-  };
   const intentLines = {
     nightlife: `Map stronger nightlife sequencing in ${cityName}, from low-friction starts to peak energy stops.`,
     safety: `Compare safer neighborhood options, fallback route choices, and confidence signals before you move.`,
@@ -293,10 +286,9 @@ function buildClusterMetaCopy({ topicConfig, cityName }) {
     daylife: `Use calmer daytime anchors for meetups, pre-night planning, and social momentum.`,
     events: `Track high-intent tonight planning with faster event choices and practical backup options.`,
   };
-  const hook = intentHooks[intent] || "Queer route planning signal";
   const line = intentLines[intent] || `Plan with clearer local context, stronger signal quality, and lower decision friction in ${cityName}.`;
 
-  const title = `${topicConfig.title} in ${cityName} (2026) | ${hook} | Queer Atlas`;
+  const title = `${topicConfig.title} in ${cityName} (2026) | Queer Atlas`;
   const description = `${topicConfig.summary} ${line}`;
 
   return { title, description };
