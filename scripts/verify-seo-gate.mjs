@@ -84,6 +84,21 @@ ensureContains(cityLayout, /alternates:\s*{[\s\S]*canonical/, `${cityLayoutPath}
 const sitemapPath = "src/app/sitemap.js";
 const sitemapSource = read(sitemapPath);
 ensureContains(sitemapSource, /const staticRoutes\s*=\s*\[/, `${sitemapPath}: missing staticRoutes`, failures);
+ensureContains(
+  sitemapSource,
+  /\.filter\(\(topic\)\s*=>\s*isTier1CityTopic\(city,\s*topic\.key\)\)/,
+  `${sitemapPath}: city topic routes must be limited by the indexing tier`,
+  failures
+);
+ensureContains(
+  sitemapSource,
+  /if\s*\(!value\)\s*return null/,
+  `${sitemapPath}: lastmod must be omitted when no verified content date exists`,
+  failures
+);
+if (/function resolveLastContentUpdate\(\)[\s\S]*?return new Date\(\)/.test(sitemapSource)) {
+  failures.push(`${sitemapPath}: lastmod must not default to the deployment date`);
+}
 for (const route of ["/cities", "/events", "/now", "/gay-guide", "/queer-guide", "/hbtq-guide"]) {
   const escaped = route.replace("/", "\\/");
   ensureContains(
@@ -93,6 +108,21 @@ for (const route of ["/cities", "/events", "/now", "/gay-guide", "/queer-guide",
     failures
   );
 }
+
+const cityTopicPath = "src/app/[city]/discover/[topic]/page.js";
+const cityTopicSource = read(cityTopicPath);
+ensureContains(
+  cityTopicSource,
+  /const tierReady = isTier1CityTopic\(city,\s*topic\)/,
+  `${cityTopicPath}: missing city topic indexing tier check`,
+  failures
+);
+ensureContains(
+  cityTopicSource,
+  /const shouldIndex = qualityReady && tierReady/,
+  `${cityTopicPath}: indexability must require both content quality and tier eligibility`,
+  failures
+);
 
 const robotsPath = "src/app/robots.js";
 const robotsSource = read(robotsPath);

@@ -4,7 +4,7 @@ import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { listSeoReports } from "@/lib/seo/reportsIndex";
 import { seedEvents, seedPlaces } from "@/lib/seedContent";
 import { buildEventPath, buildVenuePath } from "@/lib/seo/entitySlug";
-import { isIndexableTopicHub } from "@/lib/seo/indexingTier";
+import { isIndexableTopicHub, isTier1CityTopic } from "@/lib/seo/indexingTier";
 
 const BASE_URL = "https://www.queeratlas.app";
 const MAX_EVENT_ENTITY_ENTRIES = 250;
@@ -19,18 +19,15 @@ const CLUSTER_INTENT_PRIORITY = {
 const indexableCitySet = new Set(Object.keys(cityConfig));
 
 function resolveLastContentUpdate() {
-  const candidates = [
-    process.env.SITEMAP_LASTMOD_ISO,
-    process.env.VERCEL_GIT_COMMIT_DATE,
-  ];
+  const value = process.env.SITEMAP_LASTMOD_ISO;
+  if (!value) return null;
 
-  for (const value of candidates) {
-    if (!value) continue;
-    const date = new Date(value);
-    if (!Number.isNaN(date.getTime())) return date;
-  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-  return new Date();
+function withLastModified(entry, lastModified) {
+  return lastModified ? { ...entry, lastModified } : entry;
 }
 
 export default function sitemap() {
@@ -51,9 +48,8 @@ export default function sitemap() {
     "/community-policy",
   ];
 
-  const staticEntries = staticRoutes.map((route) => ({
+  const staticEntries = staticRoutes.map((route) => withLastModified({
     url: `${BASE_URL}${route}`,
-    lastModified: lastContentUpdate,
     changeFrequency: route === "" || route === "/now" ? "daily" : "weekly",
     priority:
       route === ""
@@ -63,38 +59,39 @@ export default function sitemap() {
           : route === "/cities" || route === "/events"
             ? 0.9
             : 0.75,
-  }));
+  }, lastContentUpdate));
 
-  const cityEntries = Object.keys(cityConfig).map((city) => ({
+  const cityEntries = Object.keys(cityConfig).map((city) => withLastModified({
     url: `${BASE_URL}/${city}`,
-    lastModified: lastContentUpdate,
     changeFrequency: "weekly",
     priority: 0.9,
-  }));
+  }, lastContentUpdate));
 
   const clusterTopics = listCityClusterTopics().map((topic) => ({
     key: topic.key,
     intent: String(topic.intent || "").trim().toLowerCase(),
   }));
   const cityClusterEntries = Object.keys(cityConfig).flatMap((city) =>
-    clusterTopics.map((topic) => ({
-      url: `${BASE_URL}/${city}/discover/${topic.key}`,
-      lastModified: lastContentUpdate,
-      changeFrequency: "weekly",
-      priority: CLUSTER_INTENT_PRIORITY[topic.intent] || 0.8,
-    })),
+    clusterTopics
+      .filter((topic) => isTier1CityTopic(city, topic.key))
+      .map((topic) => withLastModified({
+        url: `${BASE_URL}/${city}/discover/${topic.key}`,
+        changeFrequency: "weekly",
+        priority: CLUSTER_INTENT_PRIORITY[topic.intent] || 0.8,
+      }, lastContentUpdate)),
   );
 
-  const topicHubEntries = listTopicHubs().filter((hub) => isIndexableTopicHub(hub.key)).map((hub) => ({
-    url: `${BASE_URL}/topics/${hub.key}`,
-    lastModified: lastContentUpdate,
-    changeFrequency: "weekly",
-    priority: 0.86,
-  }));
+  const topicHubEntries = listTopicHubs()
+    .filter((hub) => isIndexableTopicHub(hub.key))
+    .map((hub) => withLastModified({
+      url: `${BASE_URL}/topics/${hub.key}`,
+      changeFrequency: "weekly",
+      priority: 0.86,
+    }, lastContentUpdate));
 
   const reportEntries = listSeoReports().map((report) => ({
     url: `${BASE_URL}/reports/${report.slug}`,
-    lastModified: new Date(report.updatedAt || lastContentUpdate),
+    ...(report.updatedAt ? { lastModified: new Date(report.updatedAt) } : {}),
     changeFrequency: "weekly",
     priority: 0.83,
   }));
@@ -104,23 +101,21 @@ export default function sitemap() {
     .filter((event) => indexableCitySet.has(String(event?.city || "").trim().toLowerCase()))
     .filter((event) => String(event?.date || "").trim() >= todayIso)
     .slice(0, MAX_EVENT_ENTITY_ENTRIES)
-    .map((event) => ({
+    .map((event) => withLastModified({
       url: `${BASE_URL}${buildEventPath(event.city, event)}`,
-      lastModified: lastContentUpdate,
       changeFrequency: "weekly",
       priority: 0.7,
-    }));
+    }, lastContentUpdate));
 
   const venueEntityEntries = seedPlaces
     .filter((place) => indexableCitySet.has(String(place?.city || "").trim().toLowerCase()))
     .filter((place) => String(place?.link || "").trim().length > 0)
     .slice(0, MAX_VENUE_ENTITY_ENTRIES)
-    .map((place) => ({
+    .map((place) => withLastModified({
       url: `${BASE_URL}${buildVenuePath(place.city, place)}`,
-      lastModified: lastContentUpdate,
       changeFrequency: "monthly",
       priority: 0.65,
-    }));
+    }, lastContentUpdate));
 
   const deduped = new Map();
   for (const entry of [

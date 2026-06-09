@@ -5,6 +5,7 @@ import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFea
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { getCityClusterTopic, listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { isTier1CityTopic } from "@/lib/seo/indexingTier";
 
 export const revalidate = 600;
 
@@ -328,7 +329,9 @@ export async function generateMetadata({ params }) {
   const ownership = getCityKeywordOwnership(cityName);
   const { title, description } = buildClusterMetaCopy({ topicConfig, cityName });
   const relatedTopicCount = listCityClusterTopics().filter((entry) => entry.key !== topic).length;
-  const shouldIndex = shouldIndexCityTopicPage({ topicConfig, cityName, relatedTopicCount });
+  const qualityReady = shouldIndexCityTopicPage({ topicConfig, cityName, relatedTopicCount });
+  const tierReady = isTier1CityTopic(city, topic);
+  const shouldIndex = qualityReady && tierReady;
 
   return {
     title,
