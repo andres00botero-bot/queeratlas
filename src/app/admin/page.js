@@ -25,6 +25,8 @@ import {
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
+import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
+import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 
 const MEMBER_AVATAR_BUCKET = "member-avatars";
 
@@ -104,7 +106,7 @@ function formatContactCategory(value = "") {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
+  const { isMember, isLoading: isAuthLoading, user, memberName, session } = useAuth();
   const { toast, showToast } = useActionToast();
 
   const [isReady, setIsReady] = useState(false);
@@ -484,6 +486,22 @@ export default function AdminPage() {
         });
         return;
       }
+
+      const indexNowUrls = buildPublishedEntityIndexNowUrls(
+        submission.entity_type,
+        publishRes.data || submission.payload || {},
+        submission
+      );
+      let accessToken = String(session?.access_token || "");
+      if (!accessToken) {
+        const { data } = await supabase.auth.getSession();
+        accessToken = String(data?.session?.access_token || "");
+      }
+      void notifyIndexNowUrls({
+        urls: indexNowUrls,
+        accessToken,
+        source: "admin-publish",
+      });
 
       showToast("Submission approved and published.", { tone: "ok", duration: 2200 });
       await refreshPendingSubmissions();

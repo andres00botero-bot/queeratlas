@@ -44,6 +44,8 @@ import DateInput from "@/components/ui/DateInput";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import { SERVICE_TYPES as CITY_SERVICE_TYPES } from "@/features/city/cityPageConstants";
+import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
+import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -202,7 +204,7 @@ export default function ContributePage() {
   const router = useRouter();
   const serviceFormPanelRef = useRef(null);
   const [isReady, setIsReady] = useState(false);
-  const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
+  const { isMember, isLoading: isAuthLoading, user, memberName, session } = useAuth();
   const [selectedCity, setSelectedCity] = useState("");
   const [addMode, setAddMode] = useState(false);
   const [addEventMode, setAddEventMode] = useState(false);
@@ -273,6 +275,20 @@ export default function ContributePage() {
     detail: "",
   });
   const canPublishDirect = isAdmin || isTrustedContributor;
+  const notifyPublishedEntity = useCallback(
+    async (entityType, entity, submission = {}, source = "contribute-publish") => {
+      const urls = buildPublishedEntityIndexNowUrls(entityType, entity, submission);
+      if (urls.length === 0) return;
+
+      let accessToken = String(session?.access_token || "");
+      if (!accessToken) {
+        const { data } = await supabase.auth.getSession();
+        accessToken = String(data?.session?.access_token || "");
+      }
+      await notifyIndexNowUrls({ urls, accessToken, source });
+    },
+    [session?.access_token]
+  );
 
   useEffect(() => {
     if (!isMember) return;
@@ -787,6 +803,7 @@ export default function ContributePage() {
           lastChecked: placeForm.lastChecked,
           verified: Boolean(placeForm.source && placeForm.lastChecked),
         });
+        void notifyPublishedEntity("place", createdPlace);
       }
 
       setPlaceForm({
@@ -972,6 +989,7 @@ export default function ContributePage() {
           lastChecked: eventForm.lastChecked,
           verified: Boolean(eventForm.source && eventForm.lastChecked),
         });
+        void notifyPublishedEntity("event", createdEvent);
       }
 
       setEventForm({
@@ -1147,6 +1165,7 @@ export default function ContributePage() {
           lastChecked: serviceForm.lastChecked,
           verified: Boolean(serviceForm.source && serviceForm.lastChecked),
         });
+        void notifyPublishedEntity("service", createdService);
       }
 
       const mappedCity = cityConfig[selectedCity]?.title?.replace("Queer ", "") || "";
@@ -1325,6 +1344,12 @@ export default function ContributePage() {
         return;
       }
 
+      void notifyPublishedEntity(
+        submission.entity_type,
+        publishRes.data || submission.payload || {},
+        submission,
+        "contribute-admin-publish"
+      );
       showToast("Submission approved and published.", { tone: "ok", duration: 2200 });
       await refreshPendingSubmissions();
     } finally {
