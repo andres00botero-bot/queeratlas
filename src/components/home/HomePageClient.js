@@ -134,6 +134,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState("");
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDeferredSections, setShowDeferredSections] = useState(false);
   const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
@@ -853,13 +854,22 @@ export default function HomePageClient({ initialHomeData = null }) {
 
               {isMember && (
                 <button
+                  disabled={isSigningOut}
                   onClick={async () => {
-                    await signOut();
+                    if (isSigningOut) return;
+                    setIsSigningOut(true);
+                    const result = await signOut();
+                    if (result?.error) {
+                      setAuthMessage("Could not sign out. Please try again.");
+                      setIsSigningOut(false);
+                      return;
+                    }
                     setShowSignup(false);
+                    window.location.replace("/");
                   }}
-                  className="qa-action inline-flex h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.02] px-4 text-sm font-medium text-white/70 transition hover:border-white/28 hover:text-white"
+                  className="qa-action inline-flex h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.02] px-4 text-sm font-medium text-white/70 transition hover:border-white/28 hover:text-white disabled:cursor-wait disabled:opacity-60"
                 >
-                  Sign out
+                  {isSigningOut ? "Signing out..." : "Sign out"}
                 </button>
               )}
             </div>

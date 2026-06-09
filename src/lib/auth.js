@@ -75,6 +75,23 @@ function consumePostLoginTarget() {
   return allowed ? raw : "/";
 }
 
+function clearLocalAuthState() {
+  if (typeof window === "undefined") return;
+
+  localStorage.removeItem("qa_redirect");
+  localStorage.removeItem("qa_post_login_target");
+
+  try {
+    const storageKey = String(supabase?.auth?.storageKey || "").trim();
+    if (storageKey) {
+      localStorage.removeItem(storageKey);
+      localStorage.removeItem(`${storageKey}-code-verifier`);
+    }
+  } catch {
+    // Redirect state is still cleared when the auth client is unavailable.
+  }
+}
+
 function localProfileWithoutAvatar() {
   const local = getMemberProfile();
   return {
@@ -386,13 +403,38 @@ export function AuthProvider({ children }) {
     };
 
     const signOut = async () => {
+      clearLocalAuthState();
+
       try {
-        return await supabase.auth.signOut();
+        const result = await supabase.auth.signOut({ scope: "local" });
+        if (result?.error) {
+          captureOperationalError("logout_fail", result.error, {
+            flow: "signout",
+            recoveredLocally: true,
+          });
+          clearLocalAuthState();
+        }
+
+        setSession(null);
+        setUser(null);
+        setIsAdminUser(false);
+        setMemberProfile(localProfileWithoutAvatar());
+
+        return {
+          error: null,
+          recoveredLocally: Boolean(result?.error),
+        };
       } catch (error) {
         captureOperationalError("logout_fail", error, {
           flow: "signout",
+          recoveredLocally: true,
         });
-        return { error };
+        clearLocalAuthState();
+        setSession(null);
+        setUser(null);
+        setIsAdminUser(false);
+        setMemberProfile(localProfileWithoutAvatar());
+        return { error: null, recoveredLocally: true };
       }
     };
 

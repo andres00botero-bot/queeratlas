@@ -308,34 +308,52 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
+    let active = true;
+
     if (isAuthLoading) return;
     if (!isMember) {
       localStorage.setItem("qa_redirect", "/admin");
       localStorage.setItem("qa_post_login_target", "/admin");
-      router.replace("/?join=true");
       queueMicrotask(() => {
+        if (!active) return;
+        setIsAdmin(false);
+        setAdminChecked(true);
         setIsReady(true);
       });
-      return;
+      router.replace("/?join=true");
+      return () => {
+        active = false;
+      };
     }
 
     queueMicrotask(async () => {
-      const { isAdmin: adminAccess } = await resolveAdminAccess({
-        email: user?.email,
-      });
+      try {
+        const { isAdmin: adminAccess } = await resolveAdminAccess({
+          email: user?.email,
+        });
+        if (!active) return;
 
-      setIsAdmin(adminAccess);
-      setAdminChecked(true);
-
-      if (!adminAccess) {
+        setIsAdmin(adminAccess);
+        setAdminChecked(true);
         setIsReady(true);
-        return;
-      }
 
-      await loadAdminState();
-      await loadMemberDirectory();
-      setIsReady(true);
+        if (!adminAccess) return;
+
+        await Promise.all([loadAdminState(), loadMemberDirectory()]);
+      } catch (error) {
+        if (!active) return;
+        setWarning(`Admin data could not be loaded: ${formatDbError(error)}`);
+      } finally {
+        if (active) {
+          setAdminChecked(true);
+          setIsReady(true);
+        }
+      }
     });
+
+    return () => {
+      active = false;
+    };
   }, [isAuthLoading, isMember, loadAdminState, loadMemberDirectory, router, user?.email]);
 
   const openReports = useMemo(
