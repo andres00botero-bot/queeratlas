@@ -26,13 +26,7 @@ function parseArgs(argv) {
 
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
   if (!url || !key) return null;
 
@@ -310,7 +304,7 @@ async function main() {
     } else {
       console.log("[seo-health-weekly-report] skipped: missing Supabase env vars.");
       console.log(
-        "[seo-health-weekly-report] required: NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (or compatible key)."
+        "[seo-health-weekly-report] required: NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY."
       );
     }
     process.exit(0);

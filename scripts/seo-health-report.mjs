@@ -26,13 +26,7 @@ function parseArgs(argv) {
 
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "";
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
   return { url, key };
 }
@@ -53,6 +47,12 @@ function hoursSince(isoDate) {
   const ts = Date.parse(String(isoDate || ""));
   if (Number.isNaN(ts)) return null;
   return (Date.now() - ts) / (1000 * 60 * 60);
+}
+
+function daysSinceIsoDate(isoDate) {
+  const ts = Date.parse(`${String(isoDate || "")}T00:00:00.000Z`);
+  if (Number.isNaN(ts)) return null;
+  return Math.floor((Date.now() - ts) / (24 * 60 * 60 * 1000));
 }
 
 function statusPriority(status) {
@@ -130,6 +130,7 @@ async function fetchCwvSummary(client) {
   return {
     ok: true,
     latestDay,
+    latestDayAgeDays: daysSinceIsoDate(latestDay),
     routesMeasured: routeRows.length,
     failingRoutesCount: failingRoutes.length,
     failingRoutes: failingRoutes.slice(0, 10).map((row) => row.route),
@@ -267,7 +268,7 @@ async function main() {
   if (!client) {
     console.log("[seo-health-report] skipped: missing Supabase env vars.");
     console.log(
-      "[seo-health-report] required: NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY (or compatible key)."
+      "[seo-health-report] required: NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY."
     );
     process.exit(0);
   }
@@ -290,6 +291,8 @@ async function main() {
 
   if (cwv.ok && cwv.routesMeasured === 0) {
     warnings.push("CWV telemetry has zero measured routes on latest day.");
+  } else if (cwv.ok && cwv.latestDayAgeDays !== null && cwv.latestDayAgeDays > 2) {
+    warnings.push(`CWV telemetry is stale (${cwv.latestDayAgeDays} days old).`);
   }
 
   if (crawler.ok && crawler.totalHits === 0) {

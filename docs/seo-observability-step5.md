@@ -21,9 +21,12 @@ node scripts/seo-health-weekly-report.mjs --out reports/seo-health-weekly-custom
 ## Required Environment Variables
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` (recommended for admin telemetry tables)
+- `SUPABASE_SERVICE_ROLE_KEY` (required for server-only telemetry writes and reports)
+- `QA_SEO_TELEMETRY=1`
+- `NEXT_PUBLIC_ENABLE_SEO_TELEMETRY=1`
+- `QA_SEO_TELEMETRY_KEY` (required for trusted crawler capture)
 
-Fallback keys are supported, but service role is the stable option for admin-only tables.
+Public Supabase keys are never used as a server fallback. Run both Step 5 SQL files before enabling telemetry.
 
 ## Expected Output
 
@@ -32,6 +35,17 @@ Fallback keys are supported, but service role is the stable option for admin-onl
 - Top check statuses
 - CWV latest-day coverage and failing route count
 - Crawler activity (last 7 days)
+
+Crawler rows represent observed user-agent signals. They are useful for trends but are not proof that
+the request originated from a search engine's verified IP range.
+
+## Deployment Order
+
+1. Run `supabase/seo-telemetry-v1.sql`.
+2. Run `supabase/seo-health-snapshot-v1.sql`.
+3. Deploy the app with all required environment variables.
+4. Open `/admin/seo-observability` and create a fresh health snapshot.
+5. Confirm the latest snapshot has no unexpected `fail` checks.
 
 ## Usage Pattern
 

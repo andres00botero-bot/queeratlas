@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import { cityCoreConfig } from "@/lib/cityCore";
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
@@ -9,12 +8,24 @@ function scoreFromStatus(status) {
   return 30;
 }
 
-function safeRead(relativePath) {
-  if (!existsSync(relativePath)) return null;
+async function fetchLiveHtml(baseUrl, path) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    return readFileSync(relativePath, "utf8");
+    const response = await fetch(new URL(path, baseUrl), {
+      method: "GET",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: { Accept: "text/html" },
+    });
+    if (!response.ok) {
+      return { ok: false, status: response.status, html: "" };
+    }
+    return { ok: true, status: response.status, html: await response.text() };
   } catch {
-    return null;
+    return { ok: false, status: 0, html: "" };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -33,54 +44,79 @@ function summarizeStatus(checks = []) {
   return { statusSummary, ...counts };
 }
 
-function buildCanonicalCoverageCheck() {
-  const files = [
-    "src/app/layout.js",
-    "src/app/cities/layout.js",
-    "src/app/events/layout.js",
-    "src/app/now/layout.js",
-    "src/app/search/layout.js",
-    "src/app/gay-guide/page.js",
-    "src/app/queer-guide/page.js",
-    "src/app/hbtq-guide/page.js",
-    "src/app/[city]/layout.js",
+function normalizeComparableUrl(value) {
+  try {
+    const parsed = new URL(value);
+    const pathname = parsed.pathname === "/" ? "" : parsed.pathname.replace(/\/+$/, "");
+    return `${parsed.protocol}//${parsed.host}${pathname}`;
+  } catch {
+    return String(value || "").replace(/\/+$/, "");
+  }
+}
+
+async function buildCanonicalCoverageCheck(baseUrl) {
+  const paths = [
+    "/",
+    "/cities",
+    "/events",
+    "/now",
+    "/gay-guide",
+    "/queer-guide",
+    "/hbtq-guide",
+    "/berlin",
+    "/topics",
+    "/reports",
   ];
 
   const missing = [];
-  for (const file of files) {
-    const source = safeRead(file);
-    if (!source) {
-      missing.push(`${file}:missing-file`);
+  for (const path of paths) {
+    const result = await fetchLiveHtml(baseUrl, path);
+    if (!result.ok) {
+      missing.push(`${path}:http-${result.status || "unavailable"}`);
       continue;
     }
-    const hasCanonical = /alternates:\s*{[\s\S]*canonical/.test(source);
-    if (!hasCanonical) {
-      missing.push(`${file}:missing-canonical`);
+    const canonical = result.html.match(
+      /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["'][^>]*>/i
+    )?.[1];
+    if (!canonical) {
+      missing.push(`${path}:missing-canonical`);
+      continue;
+    }
+    const expected = new URL(path, baseUrl).toString();
+    if (normalizeComparableUrl(canonical) !== normalizeComparableUrl(expected)) {
+      missing.push(`${path}:canonical=${canonical}`);
     }
   }
 
-  const status = missing.length === 0 ? "pass" : "fail";
+  const unavailable = missing.some((entry) => entry.includes("http-unavailable"));
+  const status = missing.length === 0 ? "pass" : unavailable ? "warn" : "fail";
   return {
     checkKey: "canonical_present_indexable_routes",
     status,
     score: scoreFromStatus(status),
     evidence: {
-      checkedFiles: files.length,
+      checkedPaths: paths.length,
       missing,
     },
     recommendation:
       missing.length === 0
-        ? "Canonical definitions exist across indexable route metadata."
-        : "Add missing canonical metadata on affected route layout/page files.",
+        ? "Canonical tags match the live indexable route URLs."
+        : "Inspect live canonical output on the affected routes.",
   };
 }
 
-function buildIndexableHeadingsCheck() {
-  const homeClient = safeRead("src/components/home/HomePageClient.js");
-  const cityHero = safeRead("src/components/city/CityHeroCard.js");
-  const homeHasH1 = Boolean(homeClient && /<h1[\s>]/i.test(homeClient));
-  const cityHasH1 = Boolean(cityHero && /<h1[\s>]/i.test(cityHero));
-  const status = homeHasH1 && cityHasH1 ? "pass" : "warn";
+async function buildIndexableHeadingsCheck(baseUrl) {
+  const [home, city] = await Promise.all([
+    fetchLiveHtml(baseUrl, "/"),
+    fetchLiveHtml(baseUrl, "/berlin"),
+  ]);
+  const homeHasH1 = home.ok && /<h1[\s>]/i.test(home.html);
+  const cityHasH1 = city.ok && /<h1[\s>]/i.test(city.html);
+  const status = homeHasH1 && cityHasH1
+    ? "pass"
+    : !home.ok || !city.ok
+      ? "warn"
+      : "fail";
 
   return {
     checkKey: "indexable_content_headings",
@@ -89,11 +125,13 @@ function buildIndexableHeadingsCheck() {
     evidence: {
       homeHasH1,
       cityHasH1,
+      homeStatus: home.status,
+      cityStatus: city.status,
     },
     recommendation:
       status === "pass"
-        ? "Primary indexable routes expose H1 heading anchors."
-        : "Ensure both home and city entry content expose a stable H1 heading.",
+        ? "Live home and city HTML expose H1 heading anchors."
+        : "Ensure live home and city HTML expose a stable H1 heading.",
   };
 }
 
@@ -146,34 +184,33 @@ async function countLiveSitemapRoutes(baseUrl) {
 
 async function buildSitemapCoverageCheck(baseUrl) {
   const generatedEntries = sitemap();
-  const staticExpected = 10; // from src/app/sitemap.js staticRoutes
-  const cityExpected = Object.keys(cityCoreConfig).length;
-  const expectedTotal = staticExpected + cityExpected;
   const generatedCount = Array.isArray(generatedEntries) ? generatedEntries.length : 0;
   const liveCount = await countLiveSitemapRoutes(baseUrl);
 
-  let status = "pass";
-  if (generatedCount < expectedTotal) {
-    status = "fail";
-  } else if (liveCount !== null && liveCount < expectedTotal) {
-    status = "warn";
-  }
+  const status =
+    generatedCount === 0
+      ? "fail"
+      : liveCount === null
+        ? "warn"
+        : liveCount === generatedCount
+          ? "pass"
+          : "fail";
 
   return {
     checkKey: "sitemap_route_coverage",
     status,
     score: scoreFromStatus(status),
     evidence: {
-      expectedTotal,
       generatedCount,
       liveCount,
-      staticExpected,
-      cityExpected,
+      countsMatch: liveCount !== null && liveCount === generatedCount,
     },
     recommendation:
       status === "pass"
-        ? "Sitemap coverage aligns with indexed static + city route inventory."
-        : "Rebuild sitemap coverage for all indexed static routes and city slugs.",
+        ? "Live sitemap count matches the generated indexable route inventory."
+        : liveCount === null
+          ? "Live sitemap could not be reached; verify deployment access and retry."
+          : "Live sitemap count differs from the generated route inventory; redeploy and inspect sitemap output.",
   };
 }
 
@@ -232,6 +269,10 @@ async function buildCwvThresholdCheck(supabase) {
     };
   }
 
+  const latestDayMs = Date.parse(`${mapped.latestDay}T00:00:00.000Z`);
+  const ageDays = Number.isNaN(latestDayMs)
+    ? null
+    : Math.floor((Date.now() - latestDayMs) / (24 * 60 * 60 * 1000));
   const failingRoutes = mapped.rows.filter(
     (row) =>
       (row.lcp !== null && row.lcp > 2500) ||
@@ -240,7 +281,12 @@ async function buildCwvThresholdCheck(supabase) {
   );
 
   const ratio = failingRoutes.length / mapped.rows.length;
-  const status = ratio === 0 ? "pass" : ratio <= 0.25 ? "warn" : "fail";
+  const thresholdsStatus = ratio === 0 ? "pass" : ratio <= 0.25 ? "warn" : "fail";
+  const status = ageDays === null || ageDays > 2
+    ? thresholdsStatus === "fail"
+      ? "fail"
+      : "warn"
+    : thresholdsStatus;
 
   return {
     checkKey: "cwv_lcp_inp_cls_thresholds",
@@ -248,13 +294,16 @@ async function buildCwvThresholdCheck(supabase) {
     score: scoreFromStatus(status),
     evidence: {
       latestDay: mapped.latestDay,
+      latestDayAgeDays: ageDays,
       routesMeasured: mapped.rows.length,
       failingRoutes: failingRoutes.slice(0, 12).map((row) => row.route),
       failingRatio: Number(ratio.toFixed(3)),
       thresholds: { lcpP75Ms: 2500, inpP75Ms: 200, clsP75: 0.1 },
     },
     recommendation:
-      status === "pass"
+      ageDays !== null && ageDays > 2
+        ? "CWV data is stale; collect fresh production samples on priority routes."
+        : status === "pass"
         ? "CWV p75 thresholds are healthy across measured routes."
         : "Prioritize route-level performance fixes for pages exceeding LCP/INP/CLS thresholds.",
   };
@@ -302,17 +351,17 @@ async function buildCrawlerActivityCheck(supabase) {
     },
     recommendation:
       status === "pass"
-        ? "Crawler telemetry shows recent bot activity."
-        : "No crawler hits in the last 7 days; verify crawl access and discoverability.",
+        ? "Crawler user-agent telemetry shows recent activity."
+        : "No crawler user-agent hits in the last 7 days; verify crawl access and discoverability.",
   };
 }
 
 export async function buildSeoHealthSnapshot({ supabase, baseUrl }) {
   const checks = [];
   checks.push(await buildSitemapCoverageCheck(baseUrl));
-  checks.push(buildCanonicalCoverageCheck());
+  checks.push(await buildCanonicalCoverageCheck(baseUrl));
   checks.push(buildRobotsCheck(baseUrl));
-  checks.push(buildIndexableHeadingsCheck());
+  checks.push(await buildIndexableHeadingsCheck(baseUrl));
   checks.push(await buildCwvThresholdCheck(supabase));
   checks.push(await buildCrawlerActivityCheck(supabase));
 

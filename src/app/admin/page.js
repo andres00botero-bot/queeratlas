@@ -721,16 +721,25 @@ export default function AdminPage() {
             <p className="text-xs text-cyan-100/70">
               Logged in as {memberName || user?.email || "Admin"}
             </p>
-            <button
-              type="button"
-              onClick={async () => {
-                await Promise.all([loadAdminState(), loadMemberDirectory(), refreshPendingSubmissions()]);
-              }}
-              disabled={isRefreshing}
-              className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
-            >
-              {isRefreshing ? "Refreshing..." : "Refresh dashboard"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => router.push("/admin/seo-observability")}
+                className="rounded-full border border-emerald-200/25 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
+              >
+                SEO health
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await Promise.all([loadAdminState(), loadMemberDirectory(), refreshPendingSubmissions()]);
+                }}
+                disabled={isRefreshing}
+                className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
+              >
+                {isRefreshing ? "Refreshing..." : "Refresh dashboard"}
+              </button>
+            </div>
           </div>
           {lastSyncedAt && (
             <p className="mt-2 text-[11px] text-cyan-100/62">
