@@ -919,7 +919,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className="relative mt-8 w-full max-w-[44rem] rounded-[30px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.035))] p-3.5 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:p-[18px]">
+              <div className="relative z-20 mt-8 w-full max-w-[44rem] rounded-[30px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.035))] p-3.5 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:p-[18px]">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
