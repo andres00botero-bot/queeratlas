@@ -1246,24 +1246,56 @@ export default function TripPlannerV2({
     const params = new URLSearchParams(window.location.search || "");
     const seed = String(params.get("trip_seed") || "").trim();
     if (!seed) return;
+
+    let cancelled = false;
     try {
       const parsed = JSON.parse(fromBase64Url(seed));
-      if (parsed?.city && plannerCities.includes(parsed.city)) setCity(parsed.city);
-      if (parsed?.horizon && HORIZONS.some((item) => item.value === parsed.horizon)) setHorizon(parsed.horizon);
-      if (parsed?.planDate) setPlanDate(String(parsed.planDate));
-      if (parsed?.variant && PLAN_VARIANTS.some((item) => item.value === parsed.variant)) {
-        applyVariantPreset(parsed.variant);
-      }
-      if (Array.isArray(parsed?.vibeTags) && parsed.vibeTags.length > 0) {
-        setSelectedVibeTags(normalizeVibeTags(parsed.vibeTags, { max: MAX_PLANNER_VIBE_TAGS }));
-      }
-      if (parsed?.budget && BUDGETS.some((item) => item.value === parsed.budget)) setBudget(parsed.budget);
-      if (Number.isFinite(Number(parsed?.energy))) setEnergy(Math.max(10, Math.min(100, Number(parsed.energy))));
-      if (typeof parsed?.soloSafe === "boolean") setSoloSafe(parsed.soloSafe);
-      setPlannerNotice("Trip seed loaded. Build to generate this route.");
+      const seededVariant = PLAN_VARIANTS.find((item) => item.value === parsed?.variant) || null;
+      const seededVibeTags =
+        Array.isArray(parsed?.vibeTags) && parsed.vibeTags.length > 0
+          ? normalizeVibeTags(parsed.vibeTags, { max: MAX_PLANNER_VIBE_TAGS })
+          : seededVariant?.preset.vibeTags;
+      const seededBudget =
+        parsed?.budget && BUDGETS.some((item) => item.value === parsed.budget)
+          ? parsed.budget
+          : seededVariant?.preset.budget;
+      const seededEnergy = Number.isFinite(Number(parsed?.energy))
+        ? Math.max(10, Math.min(100, Number(parsed.energy)))
+        : seededVariant?.preset.energy;
+      const seededSoloSafe =
+        typeof parsed?.soloSafe === "boolean"
+          ? parsed.soloSafe
+          : seededVariant?.preset.soloSafe;
+
+      queueMicrotask(() => {
+        if (cancelled) return;
+        if (parsed?.city && plannerCities.includes(parsed.city)) setCity(parsed.city);
+        if (parsed?.horizon && HORIZONS.some((item) => item.value === parsed.horizon)) {
+          setHorizon(parsed.horizon);
+        }
+        if (parsed?.planDate) setPlanDate(String(parsed.planDate));
+        if (seededVariant) setPlanVariant(seededVariant.value);
+        if (seededVibeTags) {
+          setSelectedVibeTags(
+            normalizeVibeTags(seededVibeTags, { max: MAX_PLANNER_VIBE_TAGS })
+          );
+        }
+        if (seededBudget) setBudget(seededBudget);
+        if (seededEnergy !== undefined) setEnergy(Number(seededEnergy));
+        if (seededSoloSafe !== undefined) setSoloSafe(Boolean(seededSoloSafe));
+        setPlannerNotice("Trip seed loaded. Build to generate this route.");
+      });
     } catch {
-      setPlannerNotice("Trip seed was invalid. Using default planner state.");
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setPlannerNotice("Trip seed was invalid. Using default planner state.");
+        }
+      });
     }
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

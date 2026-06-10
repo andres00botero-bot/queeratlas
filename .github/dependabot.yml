@@ -8,6 +8,17 @@ updates:
       time: "06:00"
       timezone: "Europe/Stockholm"
     open-pull-requests-limit: 10
+    groups:
+      react-runtime:
+        applies-to: "version-updates"
+        patterns:
+          - "react"
+          - "react-dom"
+      react-runtime-security:
+        applies-to: "security-updates"
+        patterns:
+          - "react"
+          - "react-dom"
     labels:
       - "dependencies"
       - "security"
