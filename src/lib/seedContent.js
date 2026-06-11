@@ -618,7 +618,7 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-vancouver-wreck",
     city: "vancouver",
-    name: "Wreck Beach",
+    name: "Oasis at Wreck Beach",
     type: "cruising_area",
     vibe: "nude beach summer cruising legend",
     description: "Wreck Beach belongs in any serious queer atlas because it is not just a beach, it is part of Vancouver's long queer geography. Clothing-optional, social, free-feeling, and historically important to the city's gay male summer life, it gives Vancouver a totally different register from the neat little Davie Village bar crawl. Best in warm weather, with sunscreen, water, and enough stamina for the stairs back up.",
