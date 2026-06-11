@@ -179,6 +179,13 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Legal baseline improved recently. Practical protection can still differ by local context.",
   },
+  Cyprus: {
+    legal: "good",
+    rights: "mixed",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex relationships are legal and civil unions are recognized, while family rights and everyday social comfort remain uneven outside the main urban and resort areas.",
+  },
   Estonia: {
     legal: "good",
     rights: "good",

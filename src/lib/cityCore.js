@@ -297,6 +297,16 @@ export const cityCoreConfig = {
     "country": "Greece",
     "vibe": "distributed island escape"
   },
+  "cyprus": {
+    "center": [
+      33.4299,
+      35.1264
+    ],
+    "zoom": 8,
+    "title": "Queer Cyprus",
+    "country": "Cyprus",
+    "vibe": "sunlit island micro-scenes"
+  },
   "mykonos": {
     "center": [
       25.3289,

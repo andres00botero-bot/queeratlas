@@ -890,6 +890,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "cyprus": [
+    {
+      "title": "About",
+      "text": "Cyprus is a queer island route rather than a single scene. Nicosia carries the strongest community and Pride infrastructure, Larnaca and Paphos have compact gay-bar anchors, Limassol adds mixed social nightlife, and Protaras delivers seasonal drag by the coast. The whole thing feels less like a gay village and more like a Mediterranean constellation: small points, warm weather, and a rental car doing emotional labor.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Use Nicosia for community organizations, Pride, Ithaki, and event-led drag; Larnaca for Lube Bar and summer boat-party signals; Paphos for Different Bar and romantic resort stays; Limassol for mixed old-town and garden-bar evenings; and Protaras or Ayia Napa for beaches, seasonal cabaret, and resort energy. Distances are too large for casual bar-hopping across cities, so build one regional chapter per day.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Tourist areas are generally welcoming, but social attitudes can become more conservative away from the main cities and resorts. Keep public affection measured where the room is unclear, use direct transport after late nights, and visit secluded queer beaches only in daylight with proper shoes, water, and a charged phone. Crossing between the southern and northern parts of Nicosia also requires current travel documents and border guidance.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "The permanent scene is small and the best nights are specific: karaoke or DJs at Lube, pop-camp at Ithaki, retro hits at Different, seasonal drag at Diamonds, and occasional Pride, boat-party, or guest-drag dates. Verify every event before travel. There is currently no verified active dedicated gay sauna on the island, so beach, bar, app, and event culture carry most of the social momentum.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Cyprus can feel moderate outside July and August, but island logistics change the equation. Resort rooms, rental cars, airport transfers, and cross-island nights add up faster than drinks do. The best-value plan is to choose one coast or city cluster, book key summer stays early, and let the rest of the island wait for another fabulous chapter.",
+      "extra": ""
+    }
+  ],
   "mykonos": [
     {
       "title": "About",
