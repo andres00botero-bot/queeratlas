@@ -347,6 +347,19 @@ export const cityConfig = {
       cost: "Milano is expensive by Italian standards, especially if you want the polished version of the city. The good news is that the right choices go a long way here.",
     }),
   },
+  bologna: {
+    center: [11.3426, 44.4949],
+    title: "Queer Bologna",
+    country: "Italy",
+    vibe: "radical culture and portico nights",
+    guide: buildGuide({
+      about: "Bologna combines one of Italy's deepest LGBTQIA+ community histories with a young university rhythm, progressive politics, food culture, and nightlife that moves between intimate bars, cultural programming, large club nights, and men-only venues. The scene is smaller than Milan or Rome but unusually rooted.",
+      district: "The historic center, university quarter, and Bologna Centrale corridor hold most of the practical queer route. Il Barattolo sits near the university lanes, Cassero and several services are west of the center, while Red Club and Steam Sauna require a planned ride beyond the most walkable core.",
+      safety: "Central Bologna is generally comfortable for visible queer travelers, especially around busy university and cultural areas. Standard late-night awareness still matters around the station and on quieter outer roads. For venues outside the center, confirm the return route before leaving.",
+      nightlife: "Start with Il Barattolo or Cassero programming, then match the night to your preference: Red Club for larger Saturday dance energy, Styx for men-only fetish and cruise formats, or the established Steam and Cosmos saunas. Bologna Pride and Gender Bender add major seasonal visibility, but dates should always be confirmed with organizers.",
+      cost: "Bologna is usually more manageable than Milan, Venice, or Florence, though central accommodation rises during fairs and festival weekends. Much of the historic center is walkable, but taxis or club transport should be budgeted for outer venues.",
+    }),
+  },
   oslo: {
     center: [10.7522, 59.9139],
     title: "Queer Oslo",

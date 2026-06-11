@@ -1,5 +1,6 @@
 ﻿import { MODULAR_CITY_SLUGS, modularSeedEvents } from "./seed/regions/emergingLatinAndBalkans.js";
 
+import { BOLOGNA_CITY_SLUGS, bolognaSeedEvents } from "./seed/regions/bologna.js";
 import { CRETE_CITY_SLUGS, creteSeedEvents } from "./seed/regions/crete.js";
 
 function normalizeSeedKey(value = "") {
@@ -1857,9 +1858,15 @@ export function mergeSeedEvents(databaseEvents = []) {
   const baseSeedEvents = seedEvents.filter(
     (event) =>
       !MODULAR_CITY_SLUGS.has(String(event.city || "")) &&
+      !BOLOGNA_CITY_SLUGS.has(String(event.city || "")) &&
       !CRETE_CITY_SLUGS.has(String(event.city || "")),
   );
-  const effectiveSeedEvents = [...baseSeedEvents, ...modularSeedEvents, ...creteSeedEvents];
+  const effectiveSeedEvents = [
+    ...baseSeedEvents,
+    ...modularSeedEvents,
+    ...creteSeedEvents,
+    ...bolognaSeedEvents,
+  ];
   const seenIds = new Set(databaseEvents.map((event) => String(event.id)));
   const seenEventKeys = new Set(
     databaseEvents.map((event) =>

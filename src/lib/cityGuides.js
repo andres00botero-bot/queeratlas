@@ -701,6 +701,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "bologna": [
+    {
+      "title": "About",
+      "text": "Bologna combines one of Italy's deepest LGBTQIA+ community histories with a young university rhythm, progressive politics, food culture, and nightlife that moves between intimate bars, cultural programming, large club nights, and men-only venues. The scene is smaller than Milan or Rome but unusually rooted.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "The historic center, university quarter, and Bologna Centrale corridor hold most of the practical queer route. Il Barattolo sits near the university lanes, Cassero and several services are west of the center, while Red Club and Steam Sauna require a planned ride beyond the most walkable core.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Central Bologna is generally comfortable for visible queer travelers, especially around busy university and cultural areas. Standard late-night awareness still matters around the station and on quieter outer roads. For venues outside the center, confirm the return route before leaving.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Start with Il Barattolo or Cassero programming, then match the night to your preference: Red Club for larger Saturday dance energy, Styx for men-only fetish and cruise formats, or the established Steam and Cosmos saunas. Bologna Pride and Gender Bender add major seasonal visibility, but dates should always be confirmed with organizers.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Bologna is usually more manageable than Milan, Venice, or Florence, though central accommodation rises during fairs and festival weekends. Much of the historic center is walkable, but taxis or club transport should be budgeted for outer venues.",
+      "extra": ""
+    }
+  ],
   "oslo": [
     {
       "title": "About",

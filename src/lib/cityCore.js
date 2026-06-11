@@ -233,6 +233,15 @@ export const cityCoreConfig = {
     "country": "Italy",
     "vibe": "fashion"
   },
+  "bologna": {
+    "center": [
+      11.3426,
+      44.4949
+    ],
+    "title": "Queer Bologna",
+    "country": "Italy",
+    "vibe": "radical culture and portico nights"
+  },
   "oslo": {
     "center": [
       10.7522,
