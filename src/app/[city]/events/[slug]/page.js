@@ -12,6 +12,7 @@ import {
   normalizeCitySlug,
   parseEntitySlug,
 } from "@/lib/seo/entitySlug";
+import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 
 export const revalidate = 300;
 
@@ -114,6 +115,16 @@ function buildEventJsonLd({ event, city, cityName }) {
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
     url: canonicalUrl,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": canonicalUrl,
+    },
+    isPartOf: {
+      "@id": QA_WEBSITE_ID,
+    },
+    publisher: {
+      "@id": QA_ORGANIZATION_ID,
+    },
     location: {
       "@type": "Place",
       name: String(event?.location || cityName),
@@ -134,6 +145,39 @@ function buildEventJsonLd({ event, city, cityName }) {
   }
 
   return payload;
+}
+
+function buildEventDetailBreadcrumbJsonLd({ city, cityName, event, canonicalUrl }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: toAbsoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Cities", item: toAbsoluteUrl("/cities") },
+      { "@type": "ListItem", position: 3, name: cityName, item: toAbsoluteUrl(`/${city}`) },
+      { "@type": "ListItem", position: 4, name: "Events", item: toAbsoluteUrl("/events") },
+      { "@type": "ListItem", position: 5, name: String(event?.name || "Event"), item: canonicalUrl },
+    ],
+  };
+}
+
+function buildEventDetailWebPageJsonLd({ cityName, canonicalUrl, eventJsonLdId }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${canonicalUrl}#webpage`,
+    url: canonicalUrl,
+    name: `Event detail: ${cityName}`,
+    isPartOf: {
+      "@id": QA_WEBSITE_ID,
+    },
+    publisher: {
+      "@id": QA_ORGANIZATION_ID,
+    },
+    mainEntity: {
+      "@id": eventJsonLdId,
+    },
+  };
 }
 
 export async function generateMetadata({ params }) {
@@ -198,6 +242,17 @@ export default async function CityEventDetailPage({ params }) {
   const canonicalPath = buildEventPath(city, event);
   const canonicalUrl = toAbsoluteUrl(canonicalPath);
   const eventJsonLd = buildEventJsonLd({ event, city, cityName });
+  const breadcrumbJsonLd = buildEventDetailBreadcrumbJsonLd({
+    city,
+    cityName,
+    event,
+    canonicalUrl,
+  });
+  const webPageJsonLd = buildEventDetailWebPageJsonLd({
+    cityName,
+    canonicalUrl,
+    eventJsonLdId: eventJsonLd["@id"],
+  });
   const vibeTags = normalizeTags(event?.vibe_tags).slice(0, 6);
   const fallbackSlug = buildEntitySlug(event.name, event.id);
   const discoverLinks = buildEventDiscoverLinks({ city, cityName, vibeTags });
@@ -207,6 +262,14 @@ export default async function CityEventDetailPage({ params }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
       />
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">

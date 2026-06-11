@@ -10,6 +10,7 @@ import {
   parseEntitySlug,
   placeMatchesSlug,
 } from "@/lib/seo/entitySlug";
+import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 
 export const revalidate = 300;
 
@@ -98,6 +99,16 @@ function buildPlaceJsonLd({ place, city, cityName }) {
     name: String(place?.name || ""),
     description: String(place?.description || "").trim() || `${String(place?.name || "")} in ${cityName}.`,
     url: canonicalUrl,
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": canonicalUrl,
+    },
+    isPartOf: {
+      "@id": QA_WEBSITE_ID,
+    },
+    publisher: {
+      "@id": QA_ORGANIZATION_ID,
+    },
     address: {
       "@type": "PostalAddress",
       streetAddress: String(place?.location || cityName),
@@ -126,6 +137,39 @@ function buildPlaceJsonLd({ place, city, cityName }) {
   }
 
   return payload;
+}
+
+function buildVenueDetailBreadcrumbJsonLd({ city, cityName, place, canonicalUrl }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: toAbsoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Cities", item: toAbsoluteUrl("/cities") },
+      { "@type": "ListItem", position: 3, name: cityName, item: toAbsoluteUrl(`/${city}`) },
+      { "@type": "ListItem", position: 4, name: "Venues", item: toAbsoluteUrl(`/${city}`) },
+      { "@type": "ListItem", position: 5, name: String(place?.name || "Venue"), item: canonicalUrl },
+    ],
+  };
+}
+
+function buildVenueDetailWebPageJsonLd({ cityName, canonicalUrl, placeJsonLdId }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${canonicalUrl}#webpage`,
+    url: canonicalUrl,
+    name: `Venue detail: ${cityName}`,
+    isPartOf: {
+      "@id": QA_WEBSITE_ID,
+    },
+    publisher: {
+      "@id": QA_ORGANIZATION_ID,
+    },
+    mainEntity: {
+      "@id": placeJsonLdId,
+    },
+  };
 }
 
 export async function generateMetadata({ params }) {
@@ -178,6 +222,17 @@ export default async function CityVenueDetailPage({ params }) {
   const canonicalPath = buildVenuePath(city, place);
   const canonicalUrl = toAbsoluteUrl(canonicalPath);
   const placeJsonLd = buildPlaceJsonLd({ place, city, cityName });
+  const breadcrumbJsonLd = buildVenueDetailBreadcrumbJsonLd({
+    city,
+    cityName,
+    place,
+    canonicalUrl,
+  });
+  const webPageJsonLd = buildVenueDetailWebPageJsonLd({
+    cityName,
+    canonicalUrl,
+    placeJsonLdId: placeJsonLd["@id"],
+  });
   const fallbackSlug = buildEntitySlug(place.name, place.id);
   const discoverLinks = buildVenueDiscoverLinks({
     city,
@@ -190,6 +245,14 @@ export default async function CityVenueDetailPage({ params }) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(placeJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
       />
       <div className="mx-auto max-w-4xl space-y-6">
         <header className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">

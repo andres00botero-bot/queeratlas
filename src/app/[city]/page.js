@@ -432,11 +432,11 @@ export default function CityPage() {
     if (!map || !Array.isArray(config?.center) || config.center.length < 2) return;
     map.flyTo({
       center: config.center,
-      zoom: 11,
+      zoom: config.zoom ?? 11,
       essential: true,
       duration: 900,
     });
-  }, [config?.center]);
+  }, [config?.center, config?.zoom]);
 
   const handleGoHomeDesktop = useCallback(() => {
     setAddMode(false);
@@ -2178,7 +2178,7 @@ export default function CityPage() {
           container: mapContainerRef.current,
           style: "mapbox://styles/mapbox/dark-v11",
           center: config.center,
-          zoom: 11,
+          zoom: config.zoom ?? 11,
         });
         hoverPopupRef.current = new mapboxgl.Popup({
           closeButton: false,
@@ -2268,7 +2268,7 @@ export default function CityPage() {
       hoverPopupRef.current?.remove();
       hoverPopupRef.current = null;
     };
-  }, [config.center, isMapboxStylesReady]);
+  }, [config.center, config.zoom, isMapboxStylesReady]);
 
   useEffect(() => {
     const mapboxgl = mapboxGlRef.current;

@@ -9,6 +9,7 @@ export default function CitySeoScaffold({
   cityBreadcrumbJsonLd,
   cityPlacesItemListJsonLd,
   cityEventsItemListJsonLd,
+  cityFaqJsonLd,
 }) {
   return (
     <>
@@ -17,6 +18,7 @@ export default function CitySeoScaffold({
         cityBreadcrumbJsonLd={cityBreadcrumbJsonLd}
         cityPlacesItemListJsonLd={cityPlacesItemListJsonLd}
         cityEventsItemListJsonLd={cityEventsItemListJsonLd}
+        cityFaqJsonLd={cityFaqJsonLd}
       />
     </>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Shield } from "lucide-react";
 import { getEntityQuality, getQualityStatus } from "@/lib/quality";
 import VibeTagChips from "@/components/ui/VibeTagChips";
@@ -7,6 +8,7 @@ import { qualityPillClass, normalizeExternalUrl } from "@/features/city/adminDra
 import { polishVenueDescription } from "@/features/city/liveVibeFeature";
 import { getSafetyToneClass } from "@/lib/placeSafetySignals";
 import { getDisplayedSafetyShields, getSafetyIconToneClass } from "@/features/city/placeSafetyUi";
+import { buildVenuePath } from "@/lib/seo/entitySlug";
 
 export default function PlaceGuideCard({
   place,
@@ -40,6 +42,7 @@ export default function PlaceGuideCard({
   const qualityStatus = getQualityStatus(quality);
   const isFavorite = favorites.includes(String(place.id));
   const venueDescription = polishVenueDescription(place, cityName, typeLabels);
+  const detailPath = buildVenuePath(place?.city || cityName, place);
 
   return (
     <div
@@ -159,6 +162,16 @@ export default function PlaceGuideCard({
           </a>
         </div>
       )}
+      <div className="mb-4">
+        <Link
+          href={detailPath}
+          onClick={(event) => event.stopPropagation()}
+          className="qa-action qa-city-cta-secondary inline-flex items-center rounded-full border border-white/16 bg-white/[0.06] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/84 transition hover:border-cyan-200/34 hover:text-cyan-100"
+          aria-label={`Open dedicated venue page for ${place.name}`}
+        >
+          Details Page
+        </Link>
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">

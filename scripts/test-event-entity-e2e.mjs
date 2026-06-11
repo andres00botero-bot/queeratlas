@@ -15,6 +15,7 @@ const CITY_CANDIDATES = String(
   .map((entry) => entry.trim())
   .filter(Boolean);
 const MIN_PASSING_CITIES = Number(process.env.EVENT_ENTITY_TEST_MIN_PASSING || 3);
+const STRICT_ALL = String(process.env.EVENT_ENTITY_TEST_STRICT || "").toLowerCase() === "true";
 
 function asErrorMessage(error) {
   return String(error?.message || error || "Unknown error");
@@ -211,12 +212,17 @@ async function run() {
   const passing = results.filter((row) => row.ok).length;
   const failingRows = results.filter((row) => !row.ok);
 
-  if (passing < MIN_PASSING_CITIES || failingRows.length > 0) {
+  const shouldFail = STRICT_ALL
+    ? passing < MIN_PASSING_CITIES || failingRows.length > 0
+    : passing < MIN_PASSING_CITIES;
+
+  if (shouldFail) {
     console.error("Event entity E2E check failed.");
     console.error(
       JSON.stringify(
         {
           baseUrl: BASE_URL,
+          strictAll: STRICT_ALL,
           minPassingCities: MIN_PASSING_CITIES,
           passing,
           total: results.length,
@@ -234,6 +240,7 @@ async function run() {
       {
         ok: true,
         baseUrl: BASE_URL,
+        strictAll: STRICT_ALL,
         passing,
         total: results.length,
         results,

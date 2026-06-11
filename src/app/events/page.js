@@ -83,6 +83,20 @@ function titleCaseWords(value = "") {
     .join(" ");
 }
 
+function resolveEventEffectiveEndDate(event = {}) {
+  const endDate = String(event?.endDate || event?.end_date || "").trim();
+  if (endDate) return endDate;
+  const startDate = String(event?.startDate || event?.start_date || "").trim();
+  if (startDate) return startDate;
+  return String(event?.date || "").trim();
+}
+
+function isExpiredEvent(event = {}, todayIso = "") {
+  const effectiveEndDate = resolveEventEffectiveEndDate(event);
+  if (!effectiveEndDate || !todayIso) return false;
+  return effectiveEndDate < todayIso;
+}
+
 function normalizeEventVibeKeys(event) {
   const tagKeys = normalizeVibeTags(event?.vibe_tags, event?.vibe)
     .map((tag) => String(tag || "").trim().toLowerCase())
@@ -461,6 +475,7 @@ export default function EventsPage() {
   }, [globalEvents, normalizedFocusedOffgridId]);
 
   const calendarEvents = useMemo(() => {
+    const todayIso = getLocalDateKey();
     const offGrid = globalEvents.map((event) => ({
       ...event,
       city: "Global",
@@ -468,7 +483,8 @@ export default function EventsPage() {
     }));
     return [...events, ...offGrid]
       .map((event) => normalizeEventRange(event))
-      .filter((event) => !blockedEventIds.has(String(event.id)));
+      .filter((event) => !blockedEventIds.has(String(event.id)))
+      .filter((event) => !isExpiredEvent(event, todayIso));
   }, [blockedEventIds, events, globalEvents]);
 
   const filteredEvents = useMemo(() => (

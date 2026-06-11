@@ -412,6 +412,20 @@ export const cityConfig = {
       cost: "Santorini is premium-priced, especially in peak season. The best strategy is fewer transitions, higher-quality stops, and one deliberately built night at a time.",
     }),
   },
+  crete: {
+    center: [24.8093, 35.2401],
+    zoom: 8,
+    title: "Queer Crete",
+    country: "Greece",
+    vibe: "distributed island escape",
+    guide: buildGuide({
+      about: "Crete is an island-wide queer destination rather than a single concentrated scene. Heraklion and Chania carry the strongest year-round social anchors, Hersonissos adds LGBTQ-focused accommodation, and the south coast brings quieter naturist and queer-popular beach routes.",
+      district: "Use Heraklion's Korai Square area for cafe-bar evenings, Chania Old Town for mixed nightlife and Apollo Party dates, Hersonissos and Koutouloufari for resort stays, and Rethymno or the south coast for food and slower beach days. The distances are real, so choose a regional base instead of treating the island like one walkable city.",
+      safety: "Tourism-heavy areas are generally comfortable for queer visitors, while smaller villages can feel more private and socially conservative. Use normal late-night awareness, avoid isolated beach access after dark, and plan a sober driver or licensed transfer because cross-island roads can be slow and winding.",
+      nightlife: "Crete's dedicated queer nightlife is event-led. Apollo Party publishes ticketed dates and changing venues, while established gay-friendly bars and cafes provide the steadier social layer. There is no verified permanent dedicated gay sauna on the island, and temporarily closed venues are intentionally excluded.",
+      cost: "Crete can be moderate outside July and August, but rental cars, long transfers, premium resorts, and peak-season rooms add up quickly. Staying near the part of the island you actually plan to use usually saves more than choosing the cheapest room far away.",
+    }),
+  },
   mykonos: {
     center: [25.3289, 37.4467],
     title: "Queer Mykonos",

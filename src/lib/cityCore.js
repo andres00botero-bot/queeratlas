@@ -278,6 +278,16 @@ export const cityCoreConfig = {
     "country": "Greece",
     "vibe": "sunset social escape"
   },
+  "crete": {
+    "center": [
+      24.8093,
+      35.2401
+    ],
+    "zoom": 8,
+    "title": "Queer Crete",
+    "country": "Greece",
+    "vibe": "distributed island escape"
+  },
   "mykonos": {
     "center": [
       25.3289,

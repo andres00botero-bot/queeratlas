@@ -1,3 +1,4 @@
+import { CRETE_CITY_SLUGS, creteSeedEvents, creteSeedPlaces } from "./seed/regions/crete.js";
 import { MODULAR_CITY_SLUGS, modularSeedEvents, modularSeedPlaces } from "./seed/regions/emergingLatinAndBalkans.js";
 
 const OFFICIAL_VENUE_LINKS = {
@@ -11377,9 +11378,11 @@ export const seedEvents = [
 
 export function mergeSeedPlaces(databasePlaces = []) {
   const baseSeedPlaces = seedPlaces.filter(
-    (place) => !MODULAR_CITY_SLUGS.has(String(place.city || "")),
+    (place) =>
+      !MODULAR_CITY_SLUGS.has(String(place.city || "")) &&
+      !CRETE_CITY_SLUGS.has(String(place.city || "")),
   );
-  const effectiveSeedPlaces = [...baseSeedPlaces, ...modularSeedPlaces];
+  const effectiveSeedPlaces = [...baseSeedPlaces, ...modularSeedPlaces, ...creteSeedPlaces];
   const normalizedDatabasePlaces = databasePlaces.map((place) => applyVenueOverride(place));
 
   const seenIds = new Set(normalizedDatabasePlaces.map((place) => String(place.id)));
@@ -11408,9 +11411,11 @@ export function mergeSeedPlaces(databasePlaces = []) {
 
 export function mergeSeedEvents(databaseEvents = []) {
   const baseSeedEvents = seedEvents.filter(
-    (event) => !MODULAR_CITY_SLUGS.has(String(event.city || "")),
+    (event) =>
+      !MODULAR_CITY_SLUGS.has(String(event.city || "")) &&
+      !CRETE_CITY_SLUGS.has(String(event.city || "")),
   );
-  const effectiveSeedEvents = [...baseSeedEvents, ...modularSeedEvents];
+  const effectiveSeedEvents = [...baseSeedEvents, ...modularSeedEvents, ...creteSeedEvents];
   const seenIds = new Set(databaseEvents.map((event) => String(event.id)));
   const seenEventKeys = new Set(
     databaseEvents.map((event) =>

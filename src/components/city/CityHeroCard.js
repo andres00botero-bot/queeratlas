@@ -7,7 +7,12 @@ export default function CityHeroCard({
   placesChipLabel,
   eventsChipLabel,
   cityHero,
+  heroIntro,
 }) {
+  const introCopy =
+    String(heroIntro || "").trim() ||
+    `${cityName}'s queer nightlife, trusted spots, and live city signal in one view.`;
+
   return (
     <div className="animate-cinematic-in relative mb-6 overflow-hidden rounded-[32px] border border-white/10 p-6 shadow-[0_28px_96px_rgba(0,0,0,0.40)] sm:p-7 xl:mb-0 xl:h-[calc(100vh-3rem)] xl:min-h-[460px]">
       <div
@@ -28,9 +33,7 @@ export default function CityHeroCard({
           />
           <h1 className="text-4xl font-bold tracking-[-0.03em]">{`Queer ${cityName}`}</h1>
         </div>
-        <p className="mb-5 max-w-3xl text-[15px] leading-8 text-white/84 sm:text-base">
-          {cityName}&rsquo;s queer nightlife, trusted spots, and live city signal in one view.
-        </p>
+        <p className="mb-5 max-w-3xl text-[15px] leading-8 text-white/84 sm:text-base">{introCopy}</p>
         <div className="mb-6 flex flex-wrap gap-2.5">
           <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/90">
             {placesChipLabel}

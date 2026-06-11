@@ -1,5 +1,7 @@
 ﻿import { MODULAR_CITY_SLUGS, modularSeedPlaces } from "./seed/regions/emergingLatinAndBalkans.js";
 
+import { CRETE_CITY_SLUGS, creteSeedPlaces } from "./seed/regions/crete.js";
+
 const OFFICIAL_VENUE_LINKS = {
   "seed-place-sydney-universal": "https://universal.sydney/",
   "seed-place-sydney-arq": "https://arq.com.au/",
@@ -9538,9 +9540,11 @@ export const seedPlaces = [
 
 export function mergeSeedPlaces(databasePlaces = []) {
   const baseSeedPlaces = seedPlaces.filter(
-    (place) => !MODULAR_CITY_SLUGS.has(String(place.city || "")),
+    (place) =>
+      !MODULAR_CITY_SLUGS.has(String(place.city || "")) &&
+      !CRETE_CITY_SLUGS.has(String(place.city || "")),
   );
-  const effectiveSeedPlaces = [...baseSeedPlaces, ...modularSeedPlaces];
+  const effectiveSeedPlaces = [...baseSeedPlaces, ...modularSeedPlaces, ...creteSeedPlaces];
   const normalizedDatabasePlaces = databasePlaces.map((place) => applyVenueOverride(place));
 
   const seenIds = new Set(normalizedDatabasePlaces.map((place) => String(place.id)));

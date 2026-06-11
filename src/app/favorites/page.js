@@ -2731,7 +2731,7 @@ export default function FavoritesPage() {
       ? selectedVibeTags.map((tag) => formatVibeTagLabel(tag) || tag).join(" + ")
       : "Mixed";
     const title = `${cityName} - ${String(payload?.horizon || "trip").replaceAll("_", " ")} - ${vibeLabel}`;
-    const note = `V2 plan - vibes: ${selectedVibeTags.join(", ") || "mixed"} - budget: ${payload?.budget || "balanced"} - energy: ${payload?.energy || 70} - solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
+    const note = `V2 plan - variant: ${payload?.variant || "custom"} - vibes: ${selectedVibeTags.join(", ") || "mixed"} - budget: ${payload?.budget || "balanced"} - energy: ${payload?.energy || 70} - solo-safe: ${payload?.soloSafe ? "on" : "off"}`;
 
     const draftPlan = {
       id: `plan-v2-${Date.now()}`,

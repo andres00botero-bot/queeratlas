@@ -10,6 +10,7 @@ export default function CityTopCluster({
   placesChipLabel,
   eventsChipLabel,
   cityHero,
+  cityHeroIntro,
   addMode,
   addEventMode,
   addServiceMode,
@@ -32,6 +33,7 @@ export default function CityTopCluster({
             placesChipLabel={placesChipLabel}
             eventsChipLabel={eventsChipLabel}
             cityHero={cityHero}
+            heroIntro={cityHeroIntro}
           />
           <CitySeoTopicLinks city={city} cityName={cityName} />
         </>
