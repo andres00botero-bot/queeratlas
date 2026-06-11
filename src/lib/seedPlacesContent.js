@@ -550,7 +550,7 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-vancouver-numbers",
     city: "vancouver",
-    name: "Numbers",
+    name: "Numbers Cabaret",
     type: "bar",
     vibe: "davie village staple",
     description: "Numbers is that long-running Davie Village comfort-zone venue that keeps proving usefulness beats hype. Drag, singalongs, event nights, and a neighborhood-room feeling that makes it very easy to start soft and then somehow still be there later than planned. Good for easing into Vancouver without losing queer signal.",
@@ -572,7 +572,7 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-vancouver-1181",
     city: "vancouver",
-    name: "1181",
+    name: "1181 Bar + Lounge",
     type: "bar",
     vibe: "upscale davie flirt",
     description: "1181 gives Vancouver a cleaner, more cocktail-led queer option without draining out the actual scene energy. It works well for drinks that still feel social, drag nights that do not need to scream for attention, and evenings where you want polish without losing all the pulse.",
