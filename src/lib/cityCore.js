@@ -370,6 +370,15 @@ export const cityCoreConfig = {
     "country": "Thailand",
     "vibe": "electric"
   },
+  "chiang_mai": {
+    "center": [
+      98.9853,
+      18.7883
+    ],
+    "title": "Queer Chiang Mai",
+    "country": "Thailand",
+    "vibe": "temple calm and night-market cabaret"
+  },
   "bali": {
     "center": [
       115.1889,

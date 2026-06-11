@@ -544,6 +544,19 @@ export const cityConfig = {
       cost: "Bangkok can still feel like excellent value for a major global city, especially compared with Western capitals. The danger is that convenience is so available that you can overspend without noticing. Better hotels, repeated ride apps, imported cocktails, and last-minute choices all add up. Even so, the city remains one of the best places in the world to build a high-signal queer trip without needing luxury-city money.",
     }),
   },
+  chiang_mai: {
+    center: [98.9853, 18.7883],
+    title: "Queer Chiang Mai",
+    country: "Thailand",
+    vibe: "temple calm and night-market cabaret",
+    guide: buildGuide({
+      about: "Chiang Mai pairs northern Thai food, temple-lined streets, mountain air, night markets, and a small but visible queer scene. It is calmer than Bangkok and easier to read at street level, with a social mix of local regulars, expats, travelers, drag, host bars, massage, and riverside recovery. The city works best when culture and nightlife share the itinerary instead of competing for it.",
+      district: "The clearest gay nightlife cluster sits around the Night Bazaar, Charoen Prathet Road, and Soi 6, where several bars can be reached on foot. Santitham and Chang Phueak hold established male show and host bars, while Nimman brings younger mixed nightlife, cafes, and club energy. Club One Seven sits farther south on the Ping River and is best reached by direct ride.",
+      safety: "Central Chiang Mai is generally comfortable for queer visitors, especially in tourism and nightlife districts. Normal late-night awareness still matters, and public affection may attract more attention in rural areas outside the city. Heat, scooters, alcohol, and seasonal smoke are the bigger practical risks: check air quality during the February-to-April burning season and use direct transport when tired.",
+      nightlife: "Chiang Mai nightlife is intimate, theatrical, and easy to layer. Start with an outdoor Night Bazaar drink, move into free drag or a male cabaret show, then choose a mixed Nimman dance floor or a quieter finish. The scene is smaller than Bangkok, but that makes it easier to recognize faces, change plans, and have a full night without crossing a megacity.",
+      cost: "Chiang Mai remains strong value for accommodation, food, local transport, massage, and ordinary drinks. Premium hotels and commercial show bars cost more, but the city is still forgiving by international standards. Staying near the Night Bazaar or Old City keeps most daytime and evening movement inexpensive.",
+    }),
+  },
   bali: {
     center: [115.1889, -8.4095],
     title: "Queer Bali",
