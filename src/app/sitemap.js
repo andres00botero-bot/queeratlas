@@ -7,6 +7,7 @@ import { bolognaSeedEvents, bolognaSeedPlaces } from "@/lib/seed/regions/bologna
 import { creteSeedEvents, creteSeedPlaces } from "@/lib/seed/regions/crete";
 import { cyprusSeedEvents, cyprusSeedPlaces } from "@/lib/seed/regions/cyprus";
 import { chiangMaiSeedEvents, chiangMaiSeedPlaces } from "@/lib/seed/regions/chiangMai";
+import { ljubljanaSeedEvents, ljubljanaSeedPlaces } from "@/lib/seed/regions/ljubljana";
 import { buildEventPath, buildVenuePath } from "@/lib/seo/entitySlug";
 import { isIndexableTopicHub, isTier1CityTopic } from "@/lib/seo/indexingTier";
 
@@ -101,7 +102,7 @@ export default function sitemap() {
   }));
 
   const todayIso = new Date().toISOString().slice(0, 10);
-  const eventEntityEntries = [...bolognaSeedEvents, ...creteSeedEvents, ...cyprusSeedEvents, ...chiangMaiSeedEvents, ...seedEvents]
+  const eventEntityEntries = [...bolognaSeedEvents, ...creteSeedEvents, ...cyprusSeedEvents, ...chiangMaiSeedEvents, ...ljubljanaSeedEvents, ...seedEvents]
     .filter((event) => indexableCitySet.has(String(event?.city || "").trim().toLowerCase()))
     .filter((event) => String(event?.date || "").trim() >= todayIso)
     .slice(0, MAX_EVENT_ENTITY_ENTRIES)
@@ -111,7 +112,7 @@ export default function sitemap() {
       priority: 0.7,
     }, lastContentUpdate));
 
-  const venueEntityEntries = [...bolognaSeedPlaces, ...creteSeedPlaces, ...cyprusSeedPlaces, ...chiangMaiSeedPlaces, ...seedPlaces]
+  const venueEntityEntries = [...bolognaSeedPlaces, ...creteSeedPlaces, ...cyprusSeedPlaces, ...chiangMaiSeedPlaces, ...ljubljanaSeedPlaces, ...seedPlaces]
     .filter((place) => indexableCitySet.has(String(place?.city || "").trim().toLowerCase()))
     .filter((place) => String(place?.link || "").trim().length > 0)
     .slice(0, MAX_VENUE_ENTITY_ENTRIES)

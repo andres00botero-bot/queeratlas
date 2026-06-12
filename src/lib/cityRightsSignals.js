@@ -186,6 +186,13 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Same-sex relationships are legal and civil unions are recognized, while family rights and everyday social comfort remain uneven outside the main urban and resort areas.",
   },
+  Slovenia: {
+    legal: "good",
+    rights: "good",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex marriage and joint adoption are recognized. Ljubljana has visible community infrastructure, while ordinary late-night caution and awareness of occasional harassment still matter.",
+  },
   Estonia: {
     legal: "good",
     rights: "good",

@@ -379,6 +379,15 @@ export const cityCoreConfig = {
     "country": "Thailand",
     "vibe": "temple calm and night-market cabaret"
   },
+  "ljubljana": {
+    "center": [
+      14.5058,
+      46.0569
+    ],
+    "title": "Queer Ljubljana",
+    "country": "Slovenia",
+    "vibe": "compact activist culture and Metelkova after dark"
+  },
   "bali": {
     "center": [
       115.1889,

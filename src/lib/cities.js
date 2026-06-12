@@ -557,6 +557,19 @@ export const cityConfig = {
       cost: "Chiang Mai remains strong value for accommodation, food, local transport, massage, and ordinary drinks. Premium hotels and commercial show bars cost more, but the city is still forgiving by international standards. Staying near the Night Bazaar or Old City keeps most daytime and evening movement inexpensive.",
     }),
   },
+  ljubljana: {
+    center: [14.5058, 46.0569],
+    title: "Queer Ljubljana",
+    country: "Slovenia",
+    vibe: "compact activist culture and Metelkova after dark",
+    guide: buildGuide({
+      about: "Ljubljana is a compact, green capital where queer life is small in volume but unusually strong in culture, activism, and chosen-family infrastructure. Clubs, community organizations, literature, film, performance, and political organizing overlap rather than living in separate worlds. It is a city for travelers who prefer five meaningful places over fifty interchangeable ones.",
+      district: "Metelkova is the clearest queer nightlife anchor, with Klub Tiffany and Klub Monokel sharing the alternative cultural complex near the station. The historic centre adds Pritličje's cafe and cultural programme, while nearby Kersnikova hosts K4 and its recurring K4 Roza nights. District35 sits north-west in Stegne and needs a direct bus or taxi rather than optimistic bar-hopping shoes.",
+      safety: "Slovenia recognizes same-sex marriage and joint adoption, and central Ljubljana is generally comfortable for queer visitors. The city still has occasional harassment and anti-LGBTQ vandalism, so legal progress should not be mistaken for universal social ease. Use normal late-night awareness, keep a direct route home from outlying venues, and check current community guidance during major public events.",
+      nightlife: "Ljubljana is event-led rather than built around a permanent gay strip. The strongest nights depend on Tiffany, Monokel, K4 Roza, Pride programming, and themed District35 sessions, so calendars matter more than opening-hour lists. Start with a central cultural drink, move toward Metelkova when the programme begins, and let one well-chosen room carry the night.",
+      cost: "Ljubljana is usually moderate compared with Western and Northern European capitals. The walkable centre keeps transport spending low, while club tickets, taxis to Stegne, and peak summer accommodation create the main jumps. Staying between the historic centre and Metelkova gives the best balance of daytime charm and low-friction queer nightlife.",
+    }),
+  },
   bali: {
     center: [115.1889, -8.4095],
     title: "Queer Bali",
