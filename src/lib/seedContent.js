@@ -2,6 +2,7 @@ import { BOLOGNA_CITY_SLUGS, bolognaSeedEvents, bolognaSeedPlaces } from "./seed
 import { CRETE_CITY_SLUGS, creteSeedEvents, creteSeedPlaces } from "./seed/regions/crete.js";
 import { CYPRUS_CITY_SLUGS, cyprusSeedEvents, cyprusSeedPlaces } from "./seed/regions/cyprus.js";
 import { CHIANG_MAI_CITY_SLUGS, chiangMaiSeedEvents, chiangMaiSeedPlaces } from "./seed/regions/chiangMai.js";
+import { KOH_SAMUI_CITY_SLUGS, kohSamuiSeedEvents, kohSamuiSeedPlaces } from "./seed/regions/kohSamui.js";
 import { LJUBLJANA_CITY_SLUGS, ljubljanaSeedEvents, ljubljanaSeedPlaces } from "./seed/regions/ljubljana.js";
 import { MARSEILLE_CITY_SLUGS, marseilleSeedEvents, marseilleSeedPlaces } from "./seed/regions/marseille.js";
 import { MODULAR_CITY_SLUGS, modularSeedEvents, modularSeedPlaces } from "./seed/regions/emergingLatinAndBalkans.js";
@@ -11389,6 +11390,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
       !CRETE_CITY_SLUGS.has(String(place.city || "")) &&
       !CYPRUS_CITY_SLUGS.has(String(place.city || "")) &&
       !CHIANG_MAI_CITY_SLUGS.has(String(place.city || "")) &&
+      !KOH_SAMUI_CITY_SLUGS.has(String(place.city || "")) &&
       !LJUBLJANA_CITY_SLUGS.has(String(place.city || "")) &&
       !MARSEILLE_CITY_SLUGS.has(String(place.city || "")),
   );
@@ -11398,6 +11400,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
     ...creteSeedPlaces,
     ...cyprusSeedPlaces,
     ...chiangMaiSeedPlaces,
+    ...kohSamuiSeedPlaces,
     ...ljubljanaSeedPlaces,
     ...marseilleSeedPlaces,
     ...bolognaSeedPlaces,
@@ -11436,6 +11439,7 @@ export function mergeSeedEvents(databaseEvents = []) {
       !CRETE_CITY_SLUGS.has(String(event.city || "")) &&
       !CYPRUS_CITY_SLUGS.has(String(event.city || "")) &&
       !CHIANG_MAI_CITY_SLUGS.has(String(event.city || "")) &&
+      !KOH_SAMUI_CITY_SLUGS.has(String(event.city || "")) &&
       !LJUBLJANA_CITY_SLUGS.has(String(event.city || "")) &&
       !MARSEILLE_CITY_SLUGS.has(String(event.city || "")),
   );
@@ -11445,6 +11449,7 @@ export function mergeSeedEvents(databaseEvents = []) {
     ...creteSeedEvents,
     ...cyprusSeedEvents,
     ...chiangMaiSeedEvents,
+    ...kohSamuiSeedEvents,
     ...ljubljanaSeedEvents,
     ...marseilleSeedEvents,
     ...bolognaSeedEvents,

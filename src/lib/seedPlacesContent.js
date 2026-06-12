@@ -4,6 +4,7 @@ import { BOLOGNA_CITY_SLUGS, bolognaSeedPlaces } from "./seed/regions/bologna.js
 import { CRETE_CITY_SLUGS, creteSeedPlaces } from "./seed/regions/crete.js";
 import { CYPRUS_CITY_SLUGS, cyprusSeedPlaces } from "./seed/regions/cyprus.js";
 import { CHIANG_MAI_CITY_SLUGS, chiangMaiSeedPlaces } from "./seed/regions/chiangMai.js";
+import { KOH_SAMUI_CITY_SLUGS, kohSamuiSeedPlaces } from "./seed/regions/kohSamui.js";
 import { LJUBLJANA_CITY_SLUGS, ljubljanaSeedPlaces } from "./seed/regions/ljubljana.js";
 import { MARSEILLE_CITY_SLUGS, marseilleSeedPlaces } from "./seed/regions/marseille.js";
 
@@ -9551,6 +9552,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
       !CRETE_CITY_SLUGS.has(String(place.city || "")) &&
       !CYPRUS_CITY_SLUGS.has(String(place.city || "")) &&
       !CHIANG_MAI_CITY_SLUGS.has(String(place.city || "")) &&
+      !KOH_SAMUI_CITY_SLUGS.has(String(place.city || "")) &&
       !LJUBLJANA_CITY_SLUGS.has(String(place.city || "")) &&
       !MARSEILLE_CITY_SLUGS.has(String(place.city || "")),
   );
@@ -9560,6 +9562,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
     ...creteSeedPlaces,
     ...cyprusSeedPlaces,
     ...chiangMaiSeedPlaces,
+    ...kohSamuiSeedPlaces,
     ...ljubljanaSeedPlaces,
     ...marseilleSeedPlaces,
     ...bolognaSeedPlaces,

@@ -557,6 +557,19 @@ export const cityConfig = {
       cost: "Chiang Mai remains strong value for accommodation, food, local transport, massage, and ordinary drinks. Premium hotels and commercial show bars cost more, but the city is still forgiving by international standards. Staying near the Night Bazaar or Old City keeps most daytime and evening movement inexpensive.",
     }),
   },
+  koh_samui: {
+    center: [100.063, 9.534],
+    title: "Queer Koh Samui",
+    country: "Thailand",
+    vibe: "tropical gay-resort calm and Chaweng after-dark sparkle",
+    guide: buildGuide({
+      about: "Koh Samui pairs tropical resort calm with a compact queer scene centered on Chaweng. It is smaller than Bangkok or Phuket, but the island offers a dedicated gay men's resort, sociable queer bars, cabaret, massage, and large mixed beach parties. The scene is easy to understand once you accept that one good night can move from poolside quiet to neon without crossing half a city.",
+      district: "Chaweng Beach is the practical queer anchor, especially the central nightlife streets around the beach road and boxing-stadium area. Pride Bar and the larger mixed clubs sit close to the busiest evening strip, while Alpha Gay Resort and Whisper are a short walk or direct ride inland. Lamai, Bophut, and the rest of the island are better treated as day-trip territory than queer nightlife districts.",
+      safety: "Thailand's marriage equality entered into force in January 2025, and Koh Samui's tourism zones are generally comfortable for queer visitors. Normal caution still matters around late-night transport, alcohol, traffic, and scooters. Use established taxis or ride services, avoid driving after drinking, and remember that public affection can feel more contextual outside the island's main tourist areas.",
+      nightlife: "Samui nightlife is compact, social, and schedule-led. Start with cocktails, karaoke, or cabaret at Pride Bar, try Whisper for a polished queer lounge, then move toward a larger mixed dance floor or ARKbar's beachfront spectacle. Same-day checks are useful because weekly programmes and seasonal crowds can change the shape of a night quickly.",
+      cost: "Koh Samui carries an island premium, especially for beachfront hotels, taxis, imported drinks, and resort dining. Staying near Chaweng reduces repeated transport costs, while local food and carefully chosen day tours keep the trip manageable. The best value comes from paying for location once instead of paying to cross the island every evening.",
+    }),
+  },
   ljubljana: {
     center: [14.5058, 46.0569],
     title: "Queer Ljubljana",

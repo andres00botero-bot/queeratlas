@@ -379,6 +379,15 @@ export const cityCoreConfig = {
     "country": "Thailand",
     "vibe": "temple calm and night-market cabaret"
   },
+  "koh_samui": {
+    "center": [
+      100.063,
+      9.534
+    ],
+    "title": "Queer Koh Samui",
+    "country": "Thailand",
+    "vibe": "tropical gay-resort calm and Chaweng after-dark sparkle"
+  },
   "ljubljana": {
     "center": [
       14.5058,
