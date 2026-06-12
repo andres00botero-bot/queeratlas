@@ -570,6 +570,19 @@ export const cityConfig = {
       cost: "Ljubljana is usually moderate compared with Western and Northern European capitals. The walkable centre keeps transport spending low, while club tickets, taxis to Stegne, and peak summer accommodation create the main jumps. Staying between the historic centre and Metelkova gives the best balance of daytime charm and low-friction queer nightlife.",
     }),
   },
+  marseille: {
+    center: [5.3698, 43.2965],
+    title: "Queer Marseille",
+    country: "France",
+    vibe: "Mediterranean port grit and defiant queer energy",
+    guide: buildGuide({
+      about: "Marseille is the glamorous troublemaker of the Mediterranean: salty, loud, beautifully mixed, and always ready to turn an innocent aperitif into a sunrise situation. Its queer scene is smaller than Paris but carries a distinctly local combination of terraces, drag, community organizing, saunas, cruising, and port-city directness.",
+      district: "Cours Julien and La Plaine are the clearest nightlife starting points, with Le Pulse, BOUM, and nearby late-night energy. Vieux-Port and Opera connect cocktails at Le Poli with central saunas and easy evening movement. Le Panier holds important community infrastructure around the Centre LGBTQIA+ and Transat, while several men-focused venues sit a short direct ride away.",
+      safety: "France has a strong legal baseline, and central Marseille is generally workable for queer visitors. Comfort can still change by district, especially late at night, so keep routes direct, watch belongings in crowded areas, and avoid isolated streets when tired. Cours Julien, La Plaine, Le Panier, and the Vieux-Port provide the most legible visitor routes.",
+      nightlife: "Marseille nightlife works in layers rather than through one giant gay strip. Start with a terrace around Cours Julien or the harbour, follow the programmed drag and DJ calendars, then choose between a dance floor, sauna, or men-focused cruise venue. Same-day social checks matter because several rooms are event-led and weekly schedules can move.",
+      cost: "Marseille is usually more manageable than Paris, though harbour hotels and summer weekends can rise sharply. Central routes keep ordinary transport spending low, while direct late-night rides are worth budgeting for. Food, terraces, and everyday drinks can still offer good value if accommodation is booked before peak heat and Pride demand arrive.",
+    }),
+  },
   bali: {
     center: [115.1889, -8.4095],
     title: "Queer Bali",

@@ -1160,6 +1160,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "marseille": [
+    {
+      "title": "About",
+      "text": "Marseille is the glamorous troublemaker of the Mediterranean: salty, loud, beautifully mixed, and always ready to turn an innocent aperitif into a sunrise situation. Its queer scene is smaller than Paris but carries a distinctly local combination of terraces, drag, community organizing, saunas, cruising, and port-city directness.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Cours Julien and La Plaine are the clearest nightlife starting points, with Le Pulse, BOUM, and nearby late-night energy. Vieux-Port and Opera connect cocktails at Le Poli with central saunas and easy evening movement. Le Panier holds important community infrastructure around the Centre LGBTQIA+ and Transat, while several men-focused venues sit a short direct ride away.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "France has a strong legal baseline, and central Marseille is generally workable for queer visitors. Comfort can still change by district, especially late at night, so keep routes direct, watch belongings in crowded areas, and avoid isolated streets when tired. Cours Julien, La Plaine, Le Panier, and the Vieux-Port provide the most legible visitor routes.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Marseille nightlife works in layers rather than through one giant gay strip. Start with a terrace around Cours Julien or the harbour, follow the programmed drag and DJ calendars, then choose between a dance floor, sauna, or men-focused cruise venue. Same-day social checks matter because several rooms are event-led and weekly schedules can move.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Marseille is usually more manageable than Paris, though harbour hotels and summer weekends can rise sharply. Central routes keep ordinary transport spending low, while direct late-night rides are worth budgeting for. Food, terraces, and everyday drinks can still offer good value if accommodation is booked before peak heat and Pride demand arrive.",
+      "extra": ""
+    }
+  ],
   "bali": [
     {
       "title": "About",

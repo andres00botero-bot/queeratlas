@@ -388,6 +388,15 @@ export const cityCoreConfig = {
     "country": "Slovenia",
     "vibe": "compact activist culture and Metelkova after dark"
   },
+  "marseille": {
+    "center": [
+      5.3698,
+      43.2965
+    ],
+    "title": "Queer Marseille",
+    "country": "France",
+    "vibe": "Mediterranean port grit and defiant queer energy"
+  },
   "bali": {
     "center": [
       115.1889,

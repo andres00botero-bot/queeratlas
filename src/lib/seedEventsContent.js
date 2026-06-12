@@ -5,6 +5,7 @@ import { CRETE_CITY_SLUGS, creteSeedEvents } from "./seed/regions/crete.js";
 import { CYPRUS_CITY_SLUGS, cyprusSeedEvents } from "./seed/regions/cyprus.js";
 import { CHIANG_MAI_CITY_SLUGS, chiangMaiSeedEvents } from "./seed/regions/chiangMai.js";
 import { LJUBLJANA_CITY_SLUGS, ljubljanaSeedEvents } from "./seed/regions/ljubljana.js";
+import { MARSEILLE_CITY_SLUGS, marseilleSeedEvents } from "./seed/regions/marseille.js";
 
 function normalizeSeedKey(value = "") {
   return String(value)
@@ -1865,7 +1866,8 @@ export function mergeSeedEvents(databaseEvents = []) {
       !CRETE_CITY_SLUGS.has(String(event.city || "")) &&
       !CYPRUS_CITY_SLUGS.has(String(event.city || "")) &&
       !CHIANG_MAI_CITY_SLUGS.has(String(event.city || "")) &&
-      !LJUBLJANA_CITY_SLUGS.has(String(event.city || "")),
+      !LJUBLJANA_CITY_SLUGS.has(String(event.city || "")) &&
+      !MARSEILLE_CITY_SLUGS.has(String(event.city || "")),
   );
   const effectiveSeedEvents = [
     ...baseSeedEvents,
@@ -1874,6 +1876,7 @@ export function mergeSeedEvents(databaseEvents = []) {
     ...cyprusSeedEvents,
     ...chiangMaiSeedEvents,
     ...ljubljanaSeedEvents,
+    ...marseilleSeedEvents,
     ...bolognaSeedEvents,
   ];
   const seenIds = new Set(databaseEvents.map((event) => String(event.id)));

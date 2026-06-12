@@ -5,6 +5,7 @@ import { CRETE_CITY_SLUGS, creteSeedPlaces } from "./seed/regions/crete.js";
 import { CYPRUS_CITY_SLUGS, cyprusSeedPlaces } from "./seed/regions/cyprus.js";
 import { CHIANG_MAI_CITY_SLUGS, chiangMaiSeedPlaces } from "./seed/regions/chiangMai.js";
 import { LJUBLJANA_CITY_SLUGS, ljubljanaSeedPlaces } from "./seed/regions/ljubljana.js";
+import { MARSEILLE_CITY_SLUGS, marseilleSeedPlaces } from "./seed/regions/marseille.js";
 
 const OFFICIAL_VENUE_LINKS = {
   "seed-place-sydney-universal": "https://universal.sydney/",
@@ -9550,7 +9551,8 @@ export function mergeSeedPlaces(databasePlaces = []) {
       !CRETE_CITY_SLUGS.has(String(place.city || "")) &&
       !CYPRUS_CITY_SLUGS.has(String(place.city || "")) &&
       !CHIANG_MAI_CITY_SLUGS.has(String(place.city || "")) &&
-      !LJUBLJANA_CITY_SLUGS.has(String(place.city || "")),
+      !LJUBLJANA_CITY_SLUGS.has(String(place.city || "")) &&
+      !MARSEILLE_CITY_SLUGS.has(String(place.city || "")),
   );
   const effectiveSeedPlaces = [
     ...baseSeedPlaces,
@@ -9559,6 +9561,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
     ...cyprusSeedPlaces,
     ...chiangMaiSeedPlaces,
     ...ljubljanaSeedPlaces,
+    ...marseilleSeedPlaces,
     ...bolognaSeedPlaces,
   ];
   const normalizedDatabasePlaces = databasePlaces.map((place) => applyVenueOverride(place));

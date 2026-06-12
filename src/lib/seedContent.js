@@ -3,6 +3,7 @@ import { CRETE_CITY_SLUGS, creteSeedEvents, creteSeedPlaces } from "./seed/regio
 import { CYPRUS_CITY_SLUGS, cyprusSeedEvents, cyprusSeedPlaces } from "./seed/regions/cyprus.js";
 import { CHIANG_MAI_CITY_SLUGS, chiangMaiSeedEvents, chiangMaiSeedPlaces } from "./seed/regions/chiangMai.js";
 import { LJUBLJANA_CITY_SLUGS, ljubljanaSeedEvents, ljubljanaSeedPlaces } from "./seed/regions/ljubljana.js";
+import { MARSEILLE_CITY_SLUGS, marseilleSeedEvents, marseilleSeedPlaces } from "./seed/regions/marseille.js";
 import { MODULAR_CITY_SLUGS, modularSeedEvents, modularSeedPlaces } from "./seed/regions/emergingLatinAndBalkans.js";
 
 const OFFICIAL_VENUE_LINKS = {
@@ -11388,7 +11389,8 @@ export function mergeSeedPlaces(databasePlaces = []) {
       !CRETE_CITY_SLUGS.has(String(place.city || "")) &&
       !CYPRUS_CITY_SLUGS.has(String(place.city || "")) &&
       !CHIANG_MAI_CITY_SLUGS.has(String(place.city || "")) &&
-      !LJUBLJANA_CITY_SLUGS.has(String(place.city || "")),
+      !LJUBLJANA_CITY_SLUGS.has(String(place.city || "")) &&
+      !MARSEILLE_CITY_SLUGS.has(String(place.city || "")),
   );
   const effectiveSeedPlaces = [
     ...baseSeedPlaces,
@@ -11397,6 +11399,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
     ...cyprusSeedPlaces,
     ...chiangMaiSeedPlaces,
     ...ljubljanaSeedPlaces,
+    ...marseilleSeedPlaces,
     ...bolognaSeedPlaces,
   ];
   const normalizedDatabasePlaces = databasePlaces.map((place) => applyVenueOverride(place));
@@ -11433,7 +11436,8 @@ export function mergeSeedEvents(databaseEvents = []) {
       !CRETE_CITY_SLUGS.has(String(event.city || "")) &&
       !CYPRUS_CITY_SLUGS.has(String(event.city || "")) &&
       !CHIANG_MAI_CITY_SLUGS.has(String(event.city || "")) &&
-      !LJUBLJANA_CITY_SLUGS.has(String(event.city || "")),
+      !LJUBLJANA_CITY_SLUGS.has(String(event.city || "")) &&
+      !MARSEILLE_CITY_SLUGS.has(String(event.city || "")),
   );
   const effectiveSeedEvents = [
     ...baseSeedEvents,
@@ -11442,6 +11446,7 @@ export function mergeSeedEvents(databaseEvents = []) {
     ...cyprusSeedEvents,
     ...chiangMaiSeedEvents,
     ...ljubljanaSeedEvents,
+    ...marseilleSeedEvents,
     ...bolognaSeedEvents,
   ];
   const seenIds = new Set(databaseEvents.map((event) => String(event.id)));
