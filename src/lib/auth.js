@@ -150,30 +150,42 @@ export function AuthProvider({ children }) {
     let mounted = true;
 
     const hydrate = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!mounted) return;
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
 
-      setSession(data.session || null);
-      setUser(data.session?.user || null);
-      if (data.session?.user?.id) {
-        const profile = await loadRemoteMemberProfile(data.session.user.id);
-        if (mounted) {
-          saveMemberProfile(profile);
-          setMemberProfile(profile);
+        setSession(data.session || null);
+        setUser(data.session?.user || null);
+        if (data.session?.user?.id) {
+          const profile = await loadRemoteMemberProfile(data.session.user.id);
+          if (mounted) {
+            saveMemberProfile(profile);
+            setMemberProfile(profile);
+          }
+        } else {
+          setMemberProfile(localProfileWithoutAvatar());
         }
-      } else {
-        setMemberProfile(localProfileWithoutAvatar());
-      }
-      setIsLoading(false);
 
-      if (data.session?.user) {
-        const target = consumePostLoginTarget();
-        if (target) {
-          const current = `${window.location.pathname}${window.location.search}`;
-          if (current !== target) {
-            window.location.replace(target);
+        if (data.session?.user) {
+          const target = consumePostLoginTarget();
+          if (target) {
+            const current = `${window.location.pathname}${window.location.search}`;
+            if (current !== target) {
+              window.location.replace(target);
+            }
           }
         }
+      } catch (error) {
+        captureOperationalError("auth_hydration_fail", error, {
+          flow: "initial_session",
+        });
+        if (mounted) {
+          setSession(null);
+          setUser(null);
+          setMemberProfile(localProfileWithoutAvatar());
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
       }
     };
 

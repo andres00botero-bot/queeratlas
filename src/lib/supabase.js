@@ -1,6 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
 const RETRY_DELAY_MS = 140;
+const REQUEST_TIMEOUT_MS = 12_000;
+const SUPABASE_UNAVAILABLE_MESSAGE =
+  "Supabase is temporarily unreachable. Please try again shortly or use another network or VPN.";
 
 function isRetryableFetchError(error) {
   if (!error) return false;
@@ -20,17 +23,66 @@ function wait(ms) {
   });
 }
 
+function createUnavailableError() {
+  const error = new Error(SUPABASE_UNAVAILABLE_MESSAGE);
+  error.name = "SupabaseUnavailableError";
+  return error;
+}
+
+function isGatewayUnavailable(response) {
+  return [502, 503, 504, 522, 523, 524].includes(Number(response?.status));
+}
+
+async function fetchWithTimeout(url, options) {
+  const controller = new AbortController();
+  const externalSignal = options.signal;
+  const abortFromExternalSignal = () => controller.abort(externalSignal?.reason);
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  if (externalSignal?.aborted) {
+    abortFromExternalSignal();
+  } else {
+    externalSignal?.addEventListener("abort", abortFromExternalSignal, { once: true });
+  }
+
+  try {
+    const response = await globalThis.fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    if (isGatewayUnavailable(response)) {
+      throw createUnavailableError();
+    }
+    return response;
+  } catch (error) {
+    if (controller.signal.aborted && !externalSignal?.aborted) {
+      throw createUnavailableError();
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    externalSignal?.removeEventListener("abort", abortFromExternalSignal);
+  }
+}
+
 const safeFetch = async (url, options = {}) => {
   const requestOptions = { ...options, cache: "no-store" };
 
   try {
-    return await globalThis.fetch(url, requestOptions);
+    return await fetchWithTimeout(url, requestOptions);
   } catch (firstError) {
     if (!isRetryableFetchError(firstError)) {
       throw firstError;
     }
     await wait(RETRY_DELAY_MS);
-    return globalThis.fetch(url, requestOptions);
+    try {
+      return await fetchWithTimeout(url, requestOptions);
+    } catch (retryError) {
+      if (isRetryableFetchError(retryError)) {
+        throw createUnavailableError();
+      }
+      throw retryError;
+    }
   }
 };
 
