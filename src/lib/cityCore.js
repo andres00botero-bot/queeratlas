@@ -361,6 +361,15 @@ export const cityCoreConfig = {
     "country": "Canada",
     "vibe": "coastal polished"
   },
+  "ottawa": {
+    "center": [
+      -75.6972,
+      45.4215
+    ],
+    "title": "Queer Ottawa",
+    "country": "Canada",
+    "vibe": "bilingual capital drag"
+  },
   "bangkok": {
     "center": [
       100.5018,

@@ -531,6 +531,19 @@ export const cityConfig = {
       cost: "Vancouver is expensive. Hotels, cocktails, casual food, and convenience spending all climb quickly, especially in the neighborhoods most visitors actually want to be in. The trick is to accept that the city rewards comfort and then spend selectively instead of pretending it is a budget destination. It is not.",
     }),
   },
+  ottawa: {
+    center: [-75.6972, 45.4215],
+    title: "Queer Ottawa",
+    country: "Canada",
+    vibe: "bilingual capital drag",
+    guide: buildGuide({
+      about: "Ottawa's queer scene is compact, bilingual, and more interesting than the capital-city stereotype suggests. Drag, pub nights, community groups, sexual-health services, and a long activist history sit close together, so a visitor can understand the city quickly without reducing it to one rainbow block. The energy is friendly rather than enormous, with enough regulars to feel local and enough major events to occasionally turn the volume all the way up.",
+      district: "Centretown is the practical anchor, especially the Village stretch of Bank Street between Somerset and Gladstone. T's, community services, restaurants, and the Pride street festival all sit in or near this orbit. ByWard Market is the second nightlife pole, led by The Lookout, while Hintonburg and Wellington West matter for Club Ottawa and the Ottawa Trans Library. House of TARG adds a playful mixed-night option farther south in Old Ottawa South.",
+      safety: "Ottawa has a strong legal and social baseline for queer travelers, especially in central neighborhoods and established community spaces. Normal late-night awareness still applies around busy bar districts, and government demonstrations can occasionally change routes around Parliament. Winter is the more distinctive practical risk: ice, deep cold, and reduced walking comfort make direct transit or a ride home worth budgeting for.",
+      nightlife: "The Lookout is the clearest drag-and-dance destination, Swizzles supplies karaoke, comedy, and community-bar warmth, and T's works as an easy Village pub base. Club Ottawa provides the city's dedicated men's sauna, while mixed venues such as Atomic Rooster, Pour Boy, and House of TARG broaden the night beyond explicitly queer rooms. Check same-day programming because Ottawa often runs on recurring events rather than seven identical nights.",
+      cost: "Ottawa sits in the moderate-to-expensive Canadian capital bracket. Drinks and casual food are usually manageable, but central hotels can jump during festivals, parliamentary events, and peak summer weekends. The compact core helps: staying near Centretown, downtown, or ByWard Market reduces ride costs, and much of the useful queer map is walkable in good weather.",
+    }),
+  },
   bangkok: {
     center: [100.5018, 13.7563],
     title: "Queer Bangkok",
