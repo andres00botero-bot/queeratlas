@@ -776,6 +776,45 @@ function testNowRankingsAreServerDiscoverable() {
   );
 }
 
+function testMobileCityTopicsFollowQuickNavigation() {
+  const cityPageSource = readFileSync(
+    new URL("../src/app/[city]/page.js", import.meta.url),
+    "utf8",
+  );
+  const cityTopClusterSource = readFileSync(
+    new URL("../src/components/city/CityTopCluster.js", import.meta.url),
+    "utf8",
+  );
+  const mobileNavigationStart = cityPageSource.indexOf(
+    '<div className="xl:hidden">',
+  );
+  const mobileTopicLinks = cityPageSource.indexOf(
+    "<CitySeoTopicLinks city={city} cityName={cityName} />",
+    mobileNavigationStart,
+  );
+  const mobileNavigation = cityPageSource.indexOf(
+    "<CityNavigationCluster",
+    mobileNavigationStart,
+  );
+
+  assert(
+    mobileNavigationStart >= 0 &&
+      mobileNavigation >= mobileNavigationStart &&
+      mobileTopicLinks > mobileNavigation &&
+      cityPageSource.includes(
+        'import CitySeoTopicLinks from "@/components/city/CitySeoTopicLinks";',
+      ),
+    "city mobile layout: Explore City Topics should render after Quick Navigation",
+  );
+  assert(
+    cityTopClusterSource.includes('<div className="hidden xl:block">') &&
+      cityTopClusterSource.includes(
+        "<CitySeoTopicLinks city={city} cityName={cityName} />",
+      ),
+    "city desktop layout: Explore City Topics should retain its desktop position without a mobile duplicate",
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -801,6 +840,7 @@ function run() {
   testServicePriceTierOptionsNormalization();
   testCitiesAreSortedAlphabetically();
   testNowRankingsAreServerDiscoverable();
+  testMobileCityTopicsFollowQuickNavigation();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");
