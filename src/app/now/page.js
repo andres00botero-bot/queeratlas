@@ -1917,9 +1917,9 @@ export default function NowPage() {
 
         {(isMixedSection || isRankingSection) && (
         <section className="mb-6">
-          <div className="grid items-stretch gap-6">
+          <div className="grid min-w-0 items-stretch gap-6">
             {isMixedSection && (
-            <section className="relative flex h-full flex-col p-0">
+            <section className="qa-now-news-feed relative flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden p-0">
               <div className="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
               <div className="pointer-events-none absolute -right-20 bottom-10 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -2128,7 +2128,7 @@ export default function NowPage() {
                       setReadingNewsItem(leadNewsItem);
                     }
                   }}
-                  className="qa-premium-card relative z-10 mb-4 overflow-hidden rounded-[22px] border border-cyan-200/26 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-3.5 shadow-[0_18px_50px_rgba(34,211,238,0.12)] transition hover:-translate-y-[1px] hover:border-cyan-200/44 sm:mb-5 sm:rounded-[22px] sm:p-3.5 sm:shadow-[0_14px_38px_rgba(34,211,238,0.1)]"
+                  className="qa-premium-card relative z-10 mb-4 min-w-0 w-full max-w-full overflow-hidden rounded-[22px] border border-cyan-200/26 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-3.5 shadow-[0_18px_50px_rgba(34,211,238,0.12)] transition hover:-translate-y-[1px] hover:border-cyan-200/44 sm:mb-5 sm:rounded-[22px] sm:p-3.5 sm:shadow-[0_14px_38px_rgba(34,211,238,0.1)]"
                 >
                   <div className="mb-3 overflow-hidden rounded-xl border border-cyan-200/18 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(217,70,239,0.14),rgba(12,12,12,0.7))] sm:mb-4 sm:rounded-2xl sm:border-cyan-200/20">
                     {leadNewsItem.imageUrl ? (
@@ -2234,7 +2234,7 @@ export default function NowPage() {
                 </article>
               ) : null}
 
-              <div className="qa-defer-render relative z-10 grid min-h-0 flex-1 content-start gap-3 overflow-visible pr-0 md:gap-4 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
+              <div className="qa-defer-render relative z-10 grid min-h-0 min-w-0 w-full max-w-full flex-1 content-start gap-3 overflow-visible pr-0 md:gap-4 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
                 {secondaryNewsItems.length > 0 ? (
                   secondaryNewsItems.map((item, itemIndex) => {
                     const canEditAdminNews = adminNewsIdSet.has(String(item.id));
@@ -2245,7 +2245,7 @@ export default function NowPage() {
                     const confidenceLabel = resolveNewsConfidence(item, canEditAdminNews);
                     const isExpanded = String(expandedNewsId) === String(item.id);
                     return (
-                      <div key={item.id} className="group relative h-full pb-3 [content-visibility:auto] [contain-intrinsic-size:420px]">
+                      <div key={item.id} className="group relative h-full min-w-0 max-w-full pb-3 [content-visibility:auto] [contain-intrinsic-size:420px]">
                         <article
                           role="button"
                           tabIndex={0}
@@ -2262,7 +2262,7 @@ export default function NowPage() {
                               );
                             }
                           }}
-                          className={`qa-premium-card relative z-10 h-auto cursor-pointer overflow-hidden rounded-[22px] border ${tone.cardBorder} bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-3.5 transition duration-300 hover:-translate-y-[2px] sm:rounded-[24px] sm:p-4 md:h-[25.5rem] ${tone.cardHover} ${tone.glow} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
+                          className={`qa-premium-card relative z-10 h-auto min-w-0 w-full max-w-full cursor-pointer overflow-hidden rounded-[22px] border ${tone.cardBorder} bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-3.5 transition duration-300 hover:-translate-y-[2px] sm:rounded-[24px] sm:p-4 md:h-[25.5rem] ${tone.cardHover} ${tone.glow} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45`}
                         >
                           <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 transition duration-300 group-hover:opacity-80 ${tone.overlay}`} />
                           <div className="pointer-events-none absolute inset-[1px] rounded-[22px] bg-[#0b0b0b]/96" />

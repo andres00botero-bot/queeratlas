@@ -777,6 +777,27 @@ function testNowRankingsAreServerDiscoverable() {
   );
 }
 
+function testNowNewsFeedFitsMobileViewport() {
+  const nowPageSource = readFileSync(
+    new URL("../src/app/now/page.js", import.meta.url),
+    "utf8",
+  );
+
+  assert(
+    nowPageSource.includes(
+      'className="qa-now-news-feed relative flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden p-0"',
+    ) &&
+      nowPageSource.includes("grid min-w-0 items-stretch gap-6") &&
+      nowPageSource.includes("grid min-h-0 min-w-0 w-full max-w-full flex-1"),
+    "now mobile news feed: grid item and card grid should shrink within the viewport",
+  );
+  assert(
+    nowPageSource.includes("qa-premium-card relative z-10 mb-4 min-w-0 w-full max-w-full") &&
+      nowPageSource.includes("qa-premium-card relative z-10 h-auto min-w-0 w-full max-w-full"),
+    "now mobile news feed: lead and secondary article cards should not exceed their container",
+  );
+}
+
 function testMobileCityTopicsFollowQuickNavigation() {
   const cityPageSource = readFileSync(
     new URL("../src/app/[city]/page.js", import.meta.url),
@@ -926,6 +947,7 @@ function run() {
   testServicePriceTierOptionsNormalization();
   testCitiesAreSortedAlphabetically();
   testNowRankingsAreServerDiscoverable();
+  testNowNewsFeedFitsMobileViewport();
   testMobileCityTopicsFollowQuickNavigation();
   testSearchRanksExplicitCityAndVenueTypeFirst();
 
