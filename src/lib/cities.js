@@ -544,6 +544,19 @@ export const cityConfig = {
       cost: "Ottawa sits in the moderate-to-expensive Canadian capital bracket. Drinks and casual food are usually manageable, but central hotels can jump during festivals, parliamentary events, and peak summer weekends. The compact core helps: staying near Centretown, downtown, or ByWard Market reduces ride costs, and much of the useful queer map is walkable in good weather.",
     }),
   },
+  belfast: {
+    center: [-5.9301, 54.5973],
+    title: "Queer Belfast",
+    country: "United Kingdom",
+    vibe: "rainbow-quarter warmth",
+    guide: buildGuide({
+      about: "Belfast has a compact, visible queer scene shaped by community organizing, drag, nightlife and the city's wider history of political change. The core venues are close enough to understand in one evening, while Belfast Pride, The Rainbow Project and long-running support groups give the scene more depth than a simple bar list suggests. The result is social, direct and often much warmer than first-time visitors expect.",
+      district: "The Rainbow Quarter around Union Street, Little Donegall Street and Donegall Street is the essential nightlife base. Union Street Bar and The Maverick sit almost door to door, with Kremlin and Boombox a short walk away. The Cathedral Quarter adds queer-friendly cocktails, food and design hotels, while Royal Avenue and Waring Street hold important Pride and community-service addresses.",
+      safety: "Central Belfast is generally straightforward for queer visitors, especially around established venues, hotels and cultural districts. Northern Ireland's legal protections and social climate have advanced significantly, but attitudes can still vary outside visible city-centre spaces, so ordinary awareness around public affection and late-night routes remains useful. Use licensed taxis or a ride service when tired, and avoid treating political murals or residential interfaces as nightlife scenery.",
+      nightlife: "Belfast nightlife is unusually convenient: start at Maverick or Union Street, then move to Kremlin or Boombox without turning the evening into a transport project. Drag, karaoke, cabaret and commercial pop dominate, with recurring themed nights doing much of the scheduling. No active dedicated gay sauna could be verified in June 2026; OUTSIDE Sauna is reported closed, so it is intentionally not listed as a current venue.",
+      cost: "Belfast is usually better value than London, Edinburgh or Dublin, though central hotel prices rise around Pride, concerts and major weekends. Pints, casual food and taxis remain relatively manageable by UK capital standards. Staying near the Cathedral Quarter, City Hall or the Linen Quarter keeps most queer nightlife walkable and protects the budget from repeated late-night rides.",
+    }),
+  },
   bangkok: {
     center: [100.5018, 13.7563],
     title: "Queer Bangkok",

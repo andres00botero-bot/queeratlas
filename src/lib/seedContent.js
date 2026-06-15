@@ -6,6 +6,7 @@ import { KOH_SAMUI_CITY_SLUGS, kohSamuiSeedEvents, kohSamuiSeedPlaces } from "./
 import { LJUBLJANA_CITY_SLUGS, ljubljanaSeedEvents, ljubljanaSeedPlaces } from "./seed/regions/ljubljana.js";
 import { MARSEILLE_CITY_SLUGS, marseilleSeedEvents, marseilleSeedPlaces } from "./seed/regions/marseille.js";
 import { OTTAWA_CITY_SLUGS, ottawaSeedEvents, ottawaSeedPlaces } from "./seed/regions/ottawa.js";
+import { BELFAST_CITY_SLUGS, belfastSeedEvents, belfastSeedPlaces } from "./seed/regions/belfast.js";
 import { MODULAR_CITY_SLUGS, modularSeedEvents, modularSeedPlaces } from "./seed/regions/emergingLatinAndBalkans.js";
 
 const OFFICIAL_VENUE_LINKS = {
@@ -11394,7 +11395,8 @@ export function mergeSeedPlaces(databasePlaces = []) {
       !KOH_SAMUI_CITY_SLUGS.has(String(place.city || "")) &&
       !LJUBLJANA_CITY_SLUGS.has(String(place.city || "")) &&
       !MARSEILLE_CITY_SLUGS.has(String(place.city || "")) &&
-      !OTTAWA_CITY_SLUGS.has(String(place.city || "")),
+      !OTTAWA_CITY_SLUGS.has(String(place.city || "")) &&
+      !BELFAST_CITY_SLUGS.has(String(place.city || "")),
   );
   const effectiveSeedPlaces = [
     ...baseSeedPlaces,
@@ -11406,6 +11408,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
     ...ljubljanaSeedPlaces,
     ...marseilleSeedPlaces,
     ...ottawaSeedPlaces,
+    ...belfastSeedPlaces,
     ...bolognaSeedPlaces,
   ];
   const normalizedDatabasePlaces = databasePlaces.map((place) => applyVenueOverride(place));
@@ -11445,7 +11448,8 @@ export function mergeSeedEvents(databaseEvents = []) {
       !KOH_SAMUI_CITY_SLUGS.has(String(event.city || "")) &&
       !LJUBLJANA_CITY_SLUGS.has(String(event.city || "")) &&
       !MARSEILLE_CITY_SLUGS.has(String(event.city || "")) &&
-      !OTTAWA_CITY_SLUGS.has(String(event.city || "")),
+      !OTTAWA_CITY_SLUGS.has(String(event.city || "")) &&
+      !BELFAST_CITY_SLUGS.has(String(event.city || "")),
   );
   const effectiveSeedEvents = [
     ...baseSeedEvents,
@@ -11457,6 +11461,7 @@ export function mergeSeedEvents(databaseEvents = []) {
     ...ljubljanaSeedEvents,
     ...marseilleSeedEvents,
     ...ottawaSeedEvents,
+    ...belfastSeedEvents,
     ...bolognaSeedEvents,
   ];
   const seenIds = new Set(databaseEvents.map((event) => String(event.id)));

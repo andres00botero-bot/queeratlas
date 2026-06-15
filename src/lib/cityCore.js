@@ -179,6 +179,15 @@ export const cityCoreConfig = {
     "country": "United Kingdom",
     "vibe": "raw social"
   },
+  "belfast": {
+    "center": [
+      -5.9301,
+      54.5973
+    ],
+    "title": "Queer Belfast",
+    "country": "United Kingdom",
+    "vibe": "rainbow-quarter warmth"
+  },
   "liverpool": {
     "center": [
       -2.9916,
