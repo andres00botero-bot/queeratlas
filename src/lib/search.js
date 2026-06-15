@@ -1,15 +1,28 @@
-import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
+import { cityCoreConfig as cityConfig } from "./cityCore.js";
 import {
   formatVibeTagLabel,
   inferVibeTagsFromLegacyVibe,
   normalizeVibeTag,
   normalizeVibeTags,
-} from "@/lib/vibeTaxonomy";
-import { getIntentSignalBoost, inferSearchIntent } from "@/lib/searchIntent";
+} from "./vibeTaxonomy.js";
+import { getIntentSignalBoost, inferSearchIntent } from "./searchIntent.js";
+
+const QUERY_CONNECTORS = new Set(["a", "an", "at", "for", "in", "me", "near", "of", "the", "to"]);
+
+function normalizeSearchText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function scoreMatch(text, query) {
   if (!text) return 0;
-  const value = text.toLowerCase();
+  const value = normalizeSearchText(text);
   if (value === query) return 140;
   if (value.startsWith(query)) return 100;
   if (value.includes(` ${query}`)) return 80;
@@ -21,8 +34,36 @@ function aggregateScore(parts, query) {
   return parts.reduce((sum, part) => sum + scoreMatch(part, query), 0);
 }
 
+function buildQueryTokens(query = "") {
+  return normalizeSearchText(query)
+    .split(" ")
+    .filter((token) => token && !QUERY_CONNECTORS.has(token));
+}
+
+function scoreTokenMatch(text, token) {
+  const value = normalizeSearchText(text);
+  if (!value || !token) return 0;
+  if (value === token) return 54;
+  if (value.startsWith(`${token} `)) return 42;
+  if (value.includes(` ${token} `) || value.endsWith(` ${token}`)) return 36;
+  if (value.includes(token)) return 16;
+  return 0;
+}
+
+function aggregateTokenScore(parts, tokens = []) {
+  if (tokens.length < 2) return 0;
+
+  const tokenScores = tokens.map((token) =>
+    parts.reduce((best, part) => Math.max(best, scoreTokenMatch(part, token)), 0)
+  );
+  const matchedCount = tokenScores.filter((score) => score > 0).length;
+  const coverageBoost = matchedCount === tokens.length ? 90 : matchedCount >= 2 ? 24 : 0;
+
+  return tokenScores.reduce((sum, score) => sum + score, 0) + coverageBoost;
+}
+
 function normalizeValue(value = "") {
-  return String(value || "").trim().toLowerCase();
+  return normalizeSearchText(value);
 }
 
 function resolveEntityVibeTags(entity = {}, fallbackText = "") {
@@ -111,7 +152,7 @@ export function buildAtlasSearchResults({
   nowTs = Date.now(),
   intentProfile = null,
 }) {
-  const normalized = query?.trim().toLowerCase();
+  const normalized = normalizeSearchText(query);
 
   if (!normalized) {
     return { cities: [], places: [], events: [], all: [] };
@@ -120,16 +161,16 @@ export function buildAtlasSearchResults({
   const favoriteSet = new Set((favoriteIds || []).map((item) => String(item)));
   const preferredCityKey = normalizeValue(preferredCity);
   const resolvedIntent = intentProfile || inferSearchIntent(normalized || "");
+  const queryTokens = buildQueryTokens(normalized);
 
   const cityResults = Object.entries(cityConfig)
     .map(([key, city]) => {
       const cityVibeKey = normalizeVibeTag(city.vibe || "");
       const cityVibeTags = cityVibeKey ? [cityVibeKey] : [];
       const cityVibeTerms = buildVibeSearchTerms(cityVibeTags, city.vibe);
-      const baseScore = aggregateScore(
-        [key, city.title, city.country, ...cityVibeTerms],
-        normalized
-      );
+      const searchParts = [key, city.title, city.country, ...cityVibeTerms];
+      const baseScore =
+        aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
       const cityName = city.title.replace("Queer ", "");
       const cityKey = normalizeValue(cityName);
       const cityAffinity = preferredCityKey && cityKey === preferredCityKey ? 18 : 0;
@@ -149,6 +190,14 @@ export function buildAtlasSearchResults({
         vibe_tags: cityVibeTags,
         type: "city",
         score: baseScore + cityAffinity + nameBoost + intentBoost,
+        searchSignals: {
+          matchedCity: Boolean(
+            resolvedIntent.detectedCity &&
+              cityKey === normalizeValue(resolvedIntent.detectedCity)
+          ),
+          matchedPlaceType: false,
+          matchedPlaceTypeLabel: "",
+        },
       };
     })
     .filter((item) => item.score > 0)
@@ -159,10 +208,17 @@ export function buildAtlasSearchResults({
     .map((place) => {
       const placeVibeTags = resolveEntityVibeTags(place, place.vibe);
       const placeVibeTerms = buildVibeSearchTerms(placeVibeTags, place.vibe);
-      const baseScore = aggregateScore(
-        [place.name, place.city, place.type, ...placeVibeTerms],
-        normalized
-      );
+      const searchParts = [
+        place.name,
+        place.city,
+        place.type,
+        place.description,
+        place.location,
+        place.address,
+        ...placeVibeTerms,
+      ];
+      const baseScore =
+        aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
       const cityAffinity =
         preferredCityKey && normalizeValue(place.city) === preferredCityKey ? 20 : 0;
       const socialProof = Math.min(Number(place.reviewCount || 0), 40) * 0.55;
@@ -187,7 +243,26 @@ export function buildAtlasSearchResults({
           intentBoost +
           semanticBoost
       );
-      return { ...place, type: "place", vibe_tags: placeVibeTags, score };
+      const normalizedPlaceType = normalizeValue(place.type).replace(/\s+/g, "_");
+      const matchedPlaceType = Boolean(resolvedIntent.placeTypes?.includes(normalizedPlaceType));
+      const matchedCity = Boolean(
+        resolvedIntent.detectedCity &&
+          normalizeValue(place.city) === normalizeValue(resolvedIntent.detectedCity)
+      );
+      return {
+        ...place,
+        placeType: place.type,
+        type: "place",
+        vibe_tags: placeVibeTags,
+        score,
+        searchSignals: {
+          matchedCity,
+          matchedPlaceType,
+          matchedPlaceTypeLabel: matchedPlaceType
+            ? resolvedIntent.placeTypeLabels?.[0] || normalizedPlaceType
+            : "",
+        },
+      };
     })
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
@@ -197,10 +272,16 @@ export function buildAtlasSearchResults({
     .map((event) => {
       const eventVibeTags = resolveEntityVibeTags(event, event.vibe);
       const eventVibeTerms = buildVibeSearchTerms(eventVibeTags, event.vibe);
-      const baseScore = aggregateScore(
-        [event.name, event.city, event.description, ...eventVibeTerms],
-        normalized
-      );
+      const searchParts = [
+        event.name,
+        event.city,
+        "event",
+        event.description,
+        event.location,
+        ...eventVibeTerms,
+      ];
+      const baseScore =
+        aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
       const cityAffinity =
         preferredCityKey && normalizeValue(event.city) === preferredCityKey ? 18 : 0;
       const freshness = eventFreshnessBoost(event.start_date || event.startDate || event.date, nowTs);
@@ -224,7 +305,20 @@ export function buildAtlasSearchResults({
           intentBoost +
           semanticBoost
       );
-      return { ...event, type: "event", vibe_tags: eventVibeTags, score };
+      return {
+        ...event,
+        type: "event",
+        vibe_tags: eventVibeTags,
+        score,
+        searchSignals: {
+          matchedCity: Boolean(
+            resolvedIntent.detectedCity &&
+              normalizeValue(event.city) === normalizeValue(resolvedIntent.detectedCity)
+          ),
+          matchedPlaceType: false,
+          matchedPlaceTypeLabel: "",
+        },
+      };
     })
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)

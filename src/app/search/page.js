@@ -66,6 +66,9 @@ function getItemDisplayName(item = {}) {
 }
 
 function getMatchReason(item = {}, query = "") {
+  if (item?.searchSignals?.matchedCity && item?.searchSignals?.matchedPlaceType) {
+    return `Matches city + ${item.searchSignals.matchedPlaceTypeLabel || "venue type"}`;
+  }
   const needle = normalizeValue(query);
   const name = normalizeValue(getItemDisplayName(item));
   if (!needle || !name) return "Matched by relevance";
@@ -153,11 +156,7 @@ export default function SearchPage() {
     () => true,
     () => false
   );
-  const [query, setQuery] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const params = new URLSearchParams(window.location.search || "");
-    return String(params.get("q") || "");
-  });
+  const [query, setQuery] = useState("");
   const [events, setEvents] = useState([]);
   const [typeFilter, setTypeFilter] = useState("all");
   const [cityFilter, setCityFilter] = useState("all");
@@ -180,6 +179,16 @@ export default function SearchPage() {
   const { places } = usePlaces();
   const activeQuery = hasHydrated ? query : "";
   const deferredQuery = useDeferredValue(activeQuery);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
+    const params = new URLSearchParams(window.location.search || "");
+    const initialQuery = String(params.get("q") || "");
+    if (!initialQuery) return;
+    queueMicrotask(() => {
+      setQuery((current) => current || initialQuery);
+    });
+  }, [hasHydrated]);
 
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);

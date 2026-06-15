@@ -31,6 +31,16 @@ function getCityNames() {
 
 const CITY_NAMES = getCityNames();
 
+const PLACE_TYPE_LABELS = Object.freeze({
+  bar: "bars",
+  cafe: "cafes",
+  club: "clubs",
+  cruise: "cruise venues",
+  hotel: "hotels",
+  restaurant: "restaurants",
+  sauna: "saunas",
+});
+
 function detectCityPrefixMatches(query = "", max = 4) {
   const normalized = normalizeText(query);
   if (!normalized) return [];
@@ -105,6 +115,20 @@ export function buildLiveSearchSuggestions({ query = "", intentProfile = null, m
   const firstPrefixCity = detectCityPrefixMatches(normalized, 1)[0] || "";
   const intentCity = String(intentProfile?.detectedCity || "").trim();
   const cityForTemplates = firstPrefixCity || intentCity;
+  const placeTypeLabel = String(intentProfile?.placeTypeLabels?.[0] || "").trim();
+
+  if (cityForTemplates && placeTypeLabel) {
+    const pluralLabel = PLACE_TYPE_LABELS[placeTypeLabel] || `${placeTypeLabel}s`;
+    suggestions.push({
+      id: `${cityForTemplates}-${placeTypeLabel}-intent`,
+      label: `${cityForTemplates} ${pluralLabel}`,
+      query: `${cityForTemplates} ${placeTypeLabel}`,
+      typeFilter: "place",
+      cityFilter: cityForTemplates,
+      qualityFilter: "all",
+      tone: "rose",
+    });
+  }
 
   if (cityForTemplates) {
     suggestions.push(...buildCityTemplateSuggestions(cityForTemplates));

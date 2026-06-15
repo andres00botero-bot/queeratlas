@@ -32,6 +32,7 @@ import {
 import { normalizeServicePriceTierOptions } from "../src/features/city/serviceFormUtils.js";
 import { normalizeCityKey } from "../src/features/city/checkinFeature.js";
 import { citySelectionPath } from "../src/lib/cityRouting.js";
+import { buildAtlasSearchResults } from "../src/lib/search.js";
 
 const failures = [];
 
@@ -815,6 +816,91 @@ function testMobileCityTopicsFollowQuickNavigation() {
   );
 }
 
+function testSearchRanksExplicitCityAndVenueTypeFirst() {
+  const places = [
+    {
+      id: "madrid-sauna",
+      name: "Sauna Octopus",
+      city: "madrid",
+      type: "sauna",
+      description: "Men-focused sauna in central Madrid.",
+      reviewCount: 0,
+      avgRating: 0,
+    },
+    {
+      id: "madrid-bar",
+      name: "Popular Madrid Bar",
+      city: "madrid",
+      type: "bar",
+      description: "A very popular nightlife venue.",
+      reviewCount: 500,
+      avgRating: 5,
+    },
+    {
+      id: "barcelona-sauna",
+      name: "Barcelona Sauna",
+      city: "barcelona",
+      type: "sauna",
+      description: "Men-focused sauna in Barcelona.",
+      reviewCount: 500,
+      avgRating: 5,
+    },
+  ];
+
+  const directResults = buildAtlasSearchResults({
+    query: "Madrid sauna",
+    places,
+    events: [],
+    cityLimit: 10,
+    placeLimit: 10,
+    eventLimit: 10,
+    preferredCity: "Madrid",
+  });
+  const synonymResults = buildAtlasSearchResults({
+    query: "Madrid bathhouse",
+    places,
+    events: [],
+    cityLimit: 10,
+    placeLimit: 10,
+    eventLimit: 10,
+    preferredCity: "Madrid",
+  });
+  const homeSource = readFileSync(
+    new URL("../src/components/home/HomePageClient.js", import.meta.url),
+    "utf8",
+  );
+
+  assert(
+    directResults.all[0]?.id === "madrid-sauna",
+    "search ranking: an explicit Madrid sauna must outrank popular Madrid venues and saunas in other cities",
+  );
+  assert(
+    directResults.all.findIndex((item) => item.id === "madrid-bar") <
+      directResults.all.findIndex((item) => item.id === "barcelona-sauna"),
+    "search ranking: an explicit city should outrank category-only matches from other cities",
+  );
+  assert(
+    synonymResults.all[0]?.id === "madrid-sauna",
+    "search ranking: bathhouse should resolve to the sauna venue type",
+  );
+  assert(
+    homeSource.includes("setResults(merged.all);") &&
+      !homeSource.includes("const orderedResults = [...merged.cities, ...merged.events, ...merged.places];"),
+    "home search: dropdown should preserve the global relevance order",
+  );
+
+  const searchPageSource = readFileSync(
+    new URL("../src/app/search/page.js", import.meta.url),
+    "utf8",
+  );
+  assert(
+    searchPageSource.includes('const [query, setQuery] = useState("");') &&
+      searchPageSource.includes("if (!hasHydrated) return;") &&
+      searchPageSource.includes("new URLSearchParams(window.location.search || \"\")"),
+    "search hydration: URL query should load after hydration instead of changing the first client render",
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -841,6 +927,7 @@ function run() {
   testCitiesAreSortedAlphabetically();
   testNowRankingsAreServerDiscoverable();
   testMobileCityTopicsFollowQuickNavigation();
+  testSearchRanksExplicitCityAndVenueTypeFirst();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");

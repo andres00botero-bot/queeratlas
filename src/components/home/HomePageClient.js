@@ -474,10 +474,8 @@ export default function HomePageClient({ initialHomeData = null }) {
         qualityMap: getQualityMap(),
       });
 
-      const orderedResults = [...merged.cities, ...merged.events, ...merged.places];
-
       startTransition(() => {
-        setResults(orderedResults);
+        setResults(merged.all);
         setShowResults(true);
       });
     }, 300);

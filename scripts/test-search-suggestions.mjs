@@ -40,5 +40,13 @@ function labels(list) {
   assert.equal(suggestions.length, 0, "single-char query should not open suggestions");
 }
 
-console.log("search-suggestions: 4/4 checks passed");
+{
+  const query = "Madrid sauna";
+  const intent = inferSearchIntent(query);
+  const suggestions = buildLiveSearchSuggestions({ query, intentProfile: intent, max: 7 });
+  assert.equal(suggestions[0]?.label, "Madrid saunas", "Madrid sauna: exact venue-type suggestion should rank first");
+  assert.equal(suggestions[0]?.typeFilter, "place", "Madrid sauna: suggestion should open place results");
+  assert.equal(suggestions[0]?.cityFilter, "Madrid", "Madrid sauna: suggestion should retain the detected city");
+}
 
+console.log("search-suggestions: 5/5 checks passed");

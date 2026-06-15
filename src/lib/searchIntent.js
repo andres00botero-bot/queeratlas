@@ -6,6 +6,7 @@ function normalizeText(value = "") {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[_-]+/g, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -17,8 +18,17 @@ function tokenize(value = "") {
     .filter(Boolean);
 }
 
+function includesPhrase(haystack, pattern) {
+  const normalizedPattern = normalizeText(pattern);
+  if (!haystack || !normalizedPattern) return false;
+  const escaped = normalizedPattern
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/\s+/g, "\\s+");
+  return new RegExp(`(^|\\s)${escaped}(?=\\s|$)`).test(haystack);
+}
+
 function includesAny(haystack, patterns = []) {
-  return patterns.some((pattern) => haystack.includes(pattern));
+  return patterns.some((pattern) => includesPhrase(haystack, pattern));
 }
 
 function buildCityAliases() {
@@ -35,10 +45,51 @@ function buildCityAliases() {
 
 const CITY_ALIASES = buildCityAliases();
 
+const PLACE_TYPE_INTENTS = Object.freeze([
+  {
+    label: "sauna",
+    types: ["sauna"],
+    aliases: ["sauna", "saunas", "bathhouse", "bathhouses", "bath house", "bath houses"],
+  },
+  {
+    label: "hotel",
+    types: ["hotel"],
+    aliases: ["hotel", "hotels", "hostel", "hostels", "accommodation"],
+  },
+  {
+    label: "bar",
+    types: ["bar"],
+    aliases: ["bar", "bars", "pub", "pubs"],
+  },
+  {
+    label: "club",
+    types: ["club"],
+    aliases: ["club", "clubs", "nightclub", "nightclubs", "dance club", "dance clubs"],
+  },
+  {
+    label: "cafe",
+    types: ["cafe"],
+    aliases: ["cafe", "cafes", "coffee", "coffee shop", "coffee shops"],
+  },
+  {
+    label: "restaurant",
+    types: ["restaurant"],
+    aliases: ["restaurant", "restaurants", "dining"],
+  },
+  {
+    label: "cruise",
+    types: ["cruise_club", "cruising_area"],
+    aliases: ["cruise", "cruising", "cruise club", "cruise clubs", "cruising area", "cruising areas"],
+  },
+]);
+
 export function inferSearchIntent(query = "") {
   const normalized = normalizeText(query);
   const tokens = tokenize(query);
   const hasQuery = normalized.length > 0;
+  const matchedPlaceTypes = PLACE_TYPE_INTENTS.filter((item) => includesAny(normalized, item.aliases));
+  const placeTypes = [...new Set(matchedPlaceTypes.flatMap((item) => item.types))];
+  const placeTypeLabels = [...new Set(matchedPlaceTypes.map((item) => item.label))];
 
   const flags = {
     nightlife: includesAny(normalized, ["nightlife", "bar", "bars", "club", "clubs", "party", "dance floor"]),
@@ -71,7 +122,15 @@ export function inferSearchIntent(query = "") {
     suggestedTypeFilter = "city";
   } else if (flags.events || flags.drag || flags.tonight || flags.community) {
     suggestedTypeFilter = "event";
-  } else if (flags.nightlife || flags.cafes || flags.safe || flags.quiet || flags.transFriendly || flags.lesbianFriendly) {
+  } else if (
+    placeTypes.length > 0 ||
+    flags.nightlife ||
+    flags.cafes ||
+    flags.safe ||
+    flags.quiet ||
+    flags.transFriendly ||
+    flags.lesbianFriendly
+  ) {
     suggestedTypeFilter = "place";
   }
 
@@ -89,6 +148,9 @@ export function inferSearchIntent(query = "") {
   if (flags.travel) tags.push("travel");
   if (flags.community) tags.push("community");
   if (flags.events) tags.push("events");
+  placeTypeLabels.forEach((label) => {
+    if (!tags.includes(label)) tags.push(label);
+  });
 
   return {
     rawQuery: String(query || ""),
@@ -96,6 +158,8 @@ export function inferSearchIntent(query = "") {
     tokens,
     flags,
     tags,
+    placeTypes,
+    placeTypeLabels,
     detectedCity,
     suggestedTypeFilter,
     suggestedQualityFilter,
@@ -116,6 +180,15 @@ export function getIntentSignalBoost({ targetType = "", entity = {}, intent = nu
 
   if (intent.suggestedTypeFilter !== "all") {
     score += type === intent.suggestedTypeFilter ? 22 : -6;
+  }
+
+  if (intent.placeTypes?.length > 0) {
+    const entityPlaceType = normalizeText(entity?.type || "").replace(/\s+/g, "_");
+    if (type === "place") {
+      score += intent.placeTypes.includes(entityPlaceType) ? 120 : -34;
+    } else {
+      score -= 80;
+    }
   }
 
   if (intent.flags.tonight) {
@@ -158,8 +231,13 @@ export function getIntentSignalBoost({ targetType = "", entity = {}, intent = nu
 
   if (intent.detectedCity) {
     const city = normalizeText(intent.detectedCity);
-    if (city && normalizeText(entity?.city || entity?.name || "").includes(city)) {
-      score += 14;
+    const entityCity = normalizeText(entity?.city || entity?.name || "");
+    if (city && entityCity === city) {
+      score += 42;
+    } else if (city && entityCity.includes(city)) {
+      score += 24;
+    } else if (city && (type === "place" || type === "event")) {
+      score -= 100;
     }
   }
 

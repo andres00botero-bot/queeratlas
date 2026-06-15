@@ -62,6 +62,14 @@ const CASES = [
     query: "chill queer lounge",
     expect: { type: "place", tags: ["quiet"] },
   },
+  {
+    query: "Madrid sauna",
+    expect: { type: "place", city: "Madrid", tags: ["sauna"], placeTypes: ["sauna"] },
+  },
+  {
+    query: "Madrid bathhouse",
+    expect: { type: "place", city: "Madrid", tags: ["sauna"], placeTypes: ["sauna"] },
+  },
 ];
 
 let passed = 0;
@@ -89,8 +97,14 @@ for (const testCase of CASES) {
     );
   }
 
+  for (const placeType of testCase.expect.placeTypes || []) {
+    assert(
+      result.placeTypes.includes(placeType),
+      `missing place type "${placeType}" for "${testCase.query}". got [${result.placeTypes.join(", ")}]`
+    );
+  }
+
   passed += 1;
 }
 
 console.log(`search-intent: ${passed}/${CASES.length} cases passed`);
-
