@@ -960,6 +960,19 @@ export const cityConfig = {
       cost: "Cape Town can offer stronger value than many American or Western European queer destinations, but premium views, polished hotels, and heavy rideshare use still add up. The city often feels most luxurious when you spend on location and ease rather than chasing every flashy extra.",
     }),
   },
+  johannesburg: {
+    center: [28.0473, -26.2041],
+    title: "Queer Johannesburg",
+    country: "South Africa",
+    vibe: "highveld queer pulse",
+    guide: buildGuide({
+      about: "Johannesburg has one of Africa's most significant queer histories and one of its most dispersed contemporary scenes. Constitutional protection, Pride organizing, Black queer activism, nightlife, archives and adult venues all matter here, but they do not sit inside one neat tourism district.",
+      district: "Melville is the easiest nightlife start, with Ratz and Liquid Blue close together. Illovo holds Babylon, while Rosebank and Oxford Parks provide strong hotel and restaurant infrastructure. Braamfontein and New Doornfontein matter for Kitchener's, GALA, Tennis Club and The Factory; Randburg holds The Rec Room.",
+      safety: "South Africa protects sexual orientation and same-sex marriage is legal, but Johannesburg still demands practical caution. Do not assume neighborhoods connect safely on foot after dark. Use a reputable ride service, confirm the number plate, keep valuables discreet and arrange the return ride before leaving a venue.",
+      nightlife: "Start with Ratz or Liquid Blue, choose Babylon for a large commercial gay-club night, and use Kitchener's or Tennis Club when the event calendar is strong. The Rec Room provides a dedicated sauna, while The Factory covers men-only cruising and fetish-led nights. Check same-day social channels.",
+      cost: "Johannesburg offers strong value for hotels, food and nightlife compared with many global cities, but repeated ride-hailing adds up. Staying in Rosebank, Melville or Oxford Parks gives the best balance of comfort and manageable routes to queer venues.",
+    }),
+  },
   seoul: {
     center: [126.978, 37.5665],
     title: "Queer Seoul",

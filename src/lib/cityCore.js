@@ -658,6 +658,15 @@ export const cityCoreConfig = {
     "country": "South Africa",
     "vibe": "dramatic scenic"
   },
+  "johannesburg": {
+    "center": [
+      28.0473,
+      -26.2041
+    ],
+    "title": "Queer Johannesburg",
+    "country": "South Africa",
+    "vibe": "highveld queer pulse"
+  },
   "seoul": {
     "center": [
       126.978,

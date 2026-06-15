@@ -1970,6 +1970,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "johannesburg": [
+    {
+      "title": "About",
+      "text": "Johannesburg has one of Africa's most significant queer histories and one of its most dispersed contemporary scenes. Constitutional protection, Pride organizing, Black queer activism, nightlife, archives and adult venues all matter here, but they do not sit inside one neat tourism district.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Melville is the easiest nightlife start, with Ratz and Liquid Blue close together. Illovo holds Babylon, while Rosebank and Oxford Parks provide strong hotel and restaurant infrastructure. Braamfontein and New Doornfontein matter for Kitchener's, GALA, Tennis Club and The Factory; Randburg holds The Rec Room.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "South Africa protects sexual orientation and same-sex marriage is legal, but Johannesburg still demands practical caution. Do not assume neighborhoods connect safely on foot after dark. Use a reputable ride service, confirm the number plate, keep valuables discreet and arrange the return ride before leaving a venue.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Start with Ratz or Liquid Blue, choose Babylon for a large commercial gay-club night, and use Kitchener's or Tennis Club when the event calendar is strong. The Rec Room provides a dedicated sauna, while The Factory covers men-only cruising and fetish-led nights. Check same-day social channels.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Johannesburg offers strong value for hotels, food and nightlife compared with many global cities, but repeated ride-hailing adds up. Staying in Rosebank, Melville or Oxford Parks gives the best balance of comfort and manageable routes to queer venues.",
+      "extra": ""
+    }
+  ],
   "seoul": [
     {
       "title": "About",
