@@ -980,12 +980,17 @@ export default function NowPage() {
       numberOfItems: topItems.length,
       itemListElement: topItems.map((item, index) => {
         const citySlug = String(item?.city || "").trim().toLowerCase().replaceAll(" ", "_");
+        const cityUrl = citySlug ? `${baseUrl}/${citySlug}` : `${baseUrl}/cities`;
         return {
           "@type": "ListItem",
           position: index + 1,
-          url: citySlug ? `${baseUrl}/${citySlug}` : `${baseUrl}/cities`,
-          name: formatCityLabel(item?.city),
-          description: clampSeoText(item?.signal || "Signal pending editorial update.", 180),
+          url: cityUrl,
+          item: {
+            "@type": "City",
+            "@id": cityUrl,
+            name: formatCityLabel(item?.city),
+            description: clampSeoText(item?.signal || "Signal pending editorial update.", 180),
+          },
         };
       }),
     };
@@ -1003,12 +1008,17 @@ export default function NowPage() {
       numberOfItems: topItems.length,
       itemListElement: topItems.map((item, index) => {
         const citySlug = String(item?.city || "").trim().toLowerCase().replaceAll(" ", "_");
+        const cityUrl = citySlug ? `${baseUrl}/${citySlug}` : `${baseUrl}/cities`;
         return {
           "@type": "ListItem",
           position: index + 1,
-          url: citySlug ? `${baseUrl}/${citySlug}` : `${baseUrl}/cities`,
-          name: formatCityLabel(item?.city),
-          description: clampSeoText(item?.signal || "Signal pending editorial update.", 180),
+          url: cityUrl,
+          item: {
+            "@type": "City",
+            "@id": cityUrl,
+            name: formatCityLabel(item?.city),
+            description: clampSeoText(item?.signal || "Signal pending editorial update.", 180),
+          },
         };
       }),
     };
@@ -1026,6 +1036,18 @@ export default function NowPage() {
         : `Safety ranking ${selectedSafetyRankingYear} is being updated.`,
     };
   }, [rankingItems, safetyRankingItems, selectedRankingYear, selectedSafetyRankingYear]);
+  const rankingSeoCities = useMemo(() => {
+    const unique = new Map();
+    [...rankingItems, ...safetyRankingItems].forEach((item) => {
+      const citySlug = String(item?.city || "").trim().toLowerCase().replaceAll(" ", "_");
+      if (!citySlug || !cityConfig[citySlug] || unique.has(citySlug)) return;
+      unique.set(citySlug, {
+        slug: citySlug,
+        label: formatCityLabel(item?.city),
+      });
+    });
+    return [...unique.values()];
+  }, [rankingItems, safetyRankingItems]);
 
   const rightsUpdates = useMemo(
     () =>
@@ -1733,6 +1755,45 @@ export default function NowPage() {
   if (!ready || !today) {
     return (
       <main className="qa-page min-h-screen bg-black px-6 py-8 text-white">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowTravelRankingJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowSafetyRankingJsonLd) }}
+        />
+        <section className="sr-only" aria-label="Queer Atlas ranking index">
+          <h1>Queer World News</h1>
+          <h2>Top 10 Queer Travel Destinations {selectedRankingYear}</h2>
+          <ol>
+            {rankingItems.map((item, index) => {
+              const citySlug = String(item?.city || "").trim().toLowerCase().replaceAll(" ", "_");
+              return (
+                <li key={`loading-travel-ranking-${citySlug || index}`}>
+                  <Link href={citySlug && cityConfig[citySlug] ? `/${citySlug}` : "/cities"}>
+                    {index + 1}. {formatCityLabel(item?.city)}
+                  </Link>
+                  {item?.signal ? ` - ${item.signal}` : ""}
+                </li>
+              );
+            })}
+          </ol>
+          <h2>Top 10 Queer Safety Destinations {selectedSafetyRankingYear}</h2>
+          <ol>
+            {safetyRankingItems.map((item, index) => {
+              const citySlug = String(item?.city || "").trim().toLowerCase().replaceAll(" ", "_");
+              return (
+                <li key={`loading-safety-ranking-${citySlug || index}`}>
+                  <Link href={citySlug && cityConfig[citySlug] ? `/${citySlug}` : "/cities"}>
+                    {index + 1}. {formatCityLabel(item?.city)}
+                  </Link>
+                  {item?.signal ? ` - ${item.signal}` : ""}
+                </li>
+              );
+            })}
+          </ol>
+        </section>
         <div className="mx-auto max-w-7xl space-y-6">
           <section className="rounded-[32px] border border-fuchsia-300/18 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.22),transparent_30%),radial-gradient(circle_at_82%_18%,rgba(251,146,60,0.14),transparent_32%),linear-gradient(135deg,rgba(46,13,62,0.94),rgba(11,10,18,0.98),rgba(61,24,38,0.9))] p-8">
             <div className="animate-pulse space-y-3" aria-hidden="true">
@@ -1787,6 +1848,11 @@ export default function NowPage() {
             </Link>
           ))
         )}
+        {rankingSeoCities.map((city) => (
+          <Link key={`now-ranking-city-${city.slug}`} href={`/${city.slug}`}>
+            Queer guide to {city.label}
+          </Link>
+        ))}
       </nav>
       <div className="qa-shell">
         <script
@@ -2345,6 +2411,9 @@ export default function NowPage() {
               <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-white/4 blur-3xl" />
               <div className="mb-4 rounded-2xl border border-white/12 bg-white/[0.03] px-4 py-3">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-white/60">Ranking brief</p>
+                <h2 className="qa-h2 mt-1 text-xl font-semibold text-white">
+                  Queer Atlas city rankings {selectedRankingYear}
+                </h2>
                 <p className="qa-copy-justify mt-1 text-sm leading-6 text-white/74">
                   {rankingSeoSummaryText.travel} {rankingSeoSummaryText.safety}
                 </p>

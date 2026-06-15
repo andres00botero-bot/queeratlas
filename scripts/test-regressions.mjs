@@ -733,6 +733,38 @@ function testCitiesAreSortedAlphabetically() {
   );
 }
 
+function testNowRankingsAreServerDiscoverable() {
+  const nowPageSource = readFileSync(
+    new URL("../src/app/now/page.js", import.meta.url),
+    "utf8",
+  );
+  const loadingStart = nowPageSource.indexOf("if (!ready || !today) {");
+  const normalRenderStart = nowPageSource.indexOf(
+    'return (\n    <main className="qa-page qa-now',
+    loadingStart,
+  );
+  const loadingBranch =
+    loadingStart >= 0 && normalRenderStart > loadingStart
+      ? nowPageSource.slice(loadingStart, normalRenderStart)
+      : "";
+
+  assert(
+    Boolean(loadingBranch) &&
+      loadingBranch.includes("nowTravelRankingJsonLd") &&
+      loadingBranch.includes("nowSafetyRankingJsonLd") &&
+      loadingBranch.includes("Top 10 Queer Travel Destinations") &&
+      loadingBranch.includes("Top 10 Queer Safety Destinations") &&
+      loadingBranch.includes("<Link"),
+    "now rankings SEO: loading HTML should expose both ranking schemas, headings, and crawlable city links",
+  );
+  assert(
+    nowPageSource.includes('"@type": "City"') &&
+      nowPageSource.includes("rankingSeoCities.map") &&
+      nowPageSource.includes("Queer Atlas city rankings"),
+    "now rankings SEO: ranking entries should resolve to City entities, persistent crawl links, and a section heading",
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -757,6 +789,7 @@ function run() {
   testVibeTagChipsRenderingWiring();
   testServicePriceTierOptionsNormalization();
   testCitiesAreSortedAlphabetically();
+  testNowRankingsAreServerDiscoverable();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");
