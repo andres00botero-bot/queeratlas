@@ -792,7 +792,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/5 blur-3xl" />
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
-          <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-5 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 xl:px-8 xl:py-8">
+          <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-5 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 lg:z-[100] lg:overflow-visible xl:px-8 xl:py-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
                 src="/home/home-hero-background-v4.webp"
@@ -945,7 +945,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
 
                   {showResults && results.length > 0 && (
-                    <div className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl">
+                    <div className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl lg:max-h-[560px]">
                       {results.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}

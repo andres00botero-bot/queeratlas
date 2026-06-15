@@ -909,6 +909,13 @@ function testSearchRanksExplicitCityAndVenueTypeFirst() {
       !homeSource.includes("const orderedResults = [...merged.cities, ...merged.events, ...merged.places];"),
     "home search: dropdown should preserve the global relevance order",
   );
+  assert(
+    homeSource.includes("lg:z-[100] lg:overflow-visible") &&
+      homeSource.includes("lg:max-h-[560px]") &&
+      homeSource.includes("w-full max-h-[360px]") &&
+      !homeSource.includes("lg:w-["),
+    "home search: desktop dropdown should be taller, retain its width, and layer above following sections",
+  );
 
   const searchPageSource = readFileSync(
     new URL("../src/app/search/page.js", import.meta.url),
