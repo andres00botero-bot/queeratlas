@@ -82,6 +82,10 @@ const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";
 const CITIES_METRICS_DAILY_CACHE_KEY = "qa_cities_metrics_daily_v1";
 const CITIES_CANONICAL_URL = "https://www.queeratlas.app/cities";
+const CITY_NAME_COLLATOR = new Intl.Collator("en", {
+  sensitivity: "base",
+  numeric: true,
+});
 
 function getLocalDateKey() {
   const now = new Date();
@@ -552,13 +556,7 @@ export default function CitiesPage() {
           city.vibe?.toLowerCase().includes(search)
         );
       })
-      .sort((a, b) => {
-        if ((b.reviewCount || 0) !== (a.reviewCount || 0)) {
-          return (b.reviewCount || 0) - (a.reviewCount || 0);
-        }
-
-        return a.title.localeCompare(b.title);
-      });
+      .sort((a, b) => CITY_NAME_COLLATOR.compare(a.title, b.title));
   }, [allCities, query, selectedCountry]);
 
   const lastExploredCityRecord = useMemo(

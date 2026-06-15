@@ -716,6 +716,23 @@ function testServicePriceTierOptionsNormalization() {
   );
 }
 
+function testCitiesAreSortedAlphabetically() {
+  const citiesPageSource = readFileSync(
+    new URL("../src/app/cities/page.js", import.meta.url),
+    "utf8",
+  );
+  const filteredCitiesBlock = citiesPageSource.match(
+    /const filteredCities = useMemo\(\(\) => \{[\s\S]*?\n  \}, \[allCities, query, selectedCountry\]\);/,
+  );
+
+  assert(
+    Boolean(filteredCitiesBlock) &&
+      filteredCitiesBlock[0].includes("CITY_NAME_COLLATOR.compare(a.title, b.title)") &&
+      !filteredCitiesBlock[0].includes("reviewCount"),
+    "cities page: filtered city cards should be ordered alphabetically instead of by review count",
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -739,6 +756,7 @@ function run() {
   testContributeAndSearchUseStandardizedVibeTags();
   testVibeTagChipsRenderingWiring();
   testServicePriceTierOptionsNormalization();
+  testCitiesAreSortedAlphabetically();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");
