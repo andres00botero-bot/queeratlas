@@ -763,6 +763,17 @@ function testNowRankingsAreServerDiscoverable() {
       nowPageSource.includes("Queer Atlas city rankings"),
     "now rankings SEO: ranking entries should resolve to City entities, persistent crawl links, and a section heading",
   );
+  assert(
+    nowPageSource.includes("const [rankingOverrides, setRankingOverrides] = useState({});") &&
+      nowPageSource.includes("const [safetyRankingOverrides, setSafetyRankingOverrides] = useState({});") &&
+      !nowPageSource.includes(
+        "useState(() => readLocalJson(RANKING_OVERRIDES_KEY",
+      ) &&
+      !nowPageSource.includes(
+        "useState(() =>\n    readLocalJson(SAFETY_RANKING_OVERRIDES_KEY",
+      ),
+    "now rankings hydration: server and client should start with the same ranking state before loading local overrides",
+  );
 }
 
 function run() {

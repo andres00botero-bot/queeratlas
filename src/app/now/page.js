@@ -468,10 +468,8 @@ export default function NowPage() {
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [activeNowSection, setActiveNowSection] = useState("mixed");
-  const [rankingOverrides, setRankingOverrides] = useState(() => readLocalJson(RANKING_OVERRIDES_KEY, {}));
-  const [safetyRankingOverrides, setSafetyRankingOverrides] = useState(() =>
-    readLocalJson(SAFETY_RANKING_OVERRIDES_KEY, {})
-  );
+  const [rankingOverrides, setRankingOverrides] = useState({});
+  const [safetyRankingOverrides, setSafetyRankingOverrides] = useState({});
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
   const [rankingDraft, setRankingDraft] = useState([]);
   const [isSafetyRankingEditorOpen, setIsSafetyRankingEditorOpen] = useState(false);
