@@ -221,6 +221,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Legal baseline is present with mixed protection depth and area-sensitive local experience.",
   },
+  "Bosnia and Herzegovina": {
+    legal: "good",
+    rights: "risk",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex relations are legal and anti-discrimination law includes sexual orientation, gender identity and sex characteristics, but same-sex couples still have no marriage, partnership or family-law recognition. Sarajevo has visible Pride and community infrastructure, while public comfort and late-night safety remain context-dependent.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Restricted",
+      antiDiscrimination: "Full coverage",
+    },
+    sources: {
+      legal: "https://rainbowmap.ilga-europe.org/",
+      rights: "https://rainbowmap.ilga-europe.org/",
+      safety: "https://soc.ba/",
+    },
+    confidence: "high",
+    updatedAt: "2026-06-16",
+  },
   Serbia: {
     legal: "good",
     rights: "risk",
@@ -501,19 +521,22 @@ export function getCityRightsSignals({ cityKey, country }) {
   };
 
   return {
-    updatedAt: "2026-05-04",
-    confidence: countrySnapshot.legal ? "medium" : "low",
+    updatedAt: countrySnapshot.updatedAt || "2026-05-04",
+    confidence: countrySnapshot.confidence || (countrySnapshot.legal ? "medium" : "low"),
     whatThisMeans,
     details: {
-      sameSexRelations: relationStatusByLegal[legal] || "Unknown",
-      unions: unionStatusByRights[rights] || "Unknown",
-      genderRecognition: genderStatusByRights[rights] || "Unknown",
-      antiDiscrimination: antiDiscriminationByRights[rights] || "Unknown",
+      sameSexRelations:
+        countrySnapshot.details?.sameSexRelations || relationStatusByLegal[legal] || "Unknown",
+      unions: countrySnapshot.details?.unions || unionStatusByRights[rights] || "Unknown",
+      genderRecognition:
+        countrySnapshot.details?.genderRecognition || genderStatusByRights[rights] || "Unknown",
+      antiDiscrimination:
+        countrySnapshot.details?.antiDiscrimination || antiDiscriminationByRights[rights] || "Unknown",
     },
     sources: {
-      legal: "https://ilga.org/ilga-world-maps/",
-      rights: "https://ilga.org/resources/ilga-world-database-resource/",
-      safety: "https://ilga.org/ilga-world-maps/",
+      legal: countrySnapshot.sources?.legal || "https://ilga.org/ilga-world-maps/",
+      rights: countrySnapshot.sources?.rights || "https://ilga.org/resources/ilga-world-database-resource/",
+      safety: countrySnapshot.sources?.safety || "https://ilga.org/ilga-world-maps/",
     },
     legal: toSignalRow("legal", legal),
     rights: toSignalRow("rights", rights),

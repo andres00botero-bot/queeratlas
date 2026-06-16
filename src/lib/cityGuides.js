@@ -3995,6 +3995,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "sarajevo": [
+    {
+      "title": "About",
+      "text": "Sarajevo has a small, resilient queer scene shaped more by community organizing, festivals, mixed nightlife and trusted local rooms than by a large permanent gay-bar district. The city is culturally rich and emotionally dense, so the strongest queer trip here is not a checklist of rainbow venues. It is a careful mix of Sarajevo Open Centre, Pride and Kvirhana programming, queer-friendly bars, cafes, and a realistic read of context.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "There is no single gay district. Most useful movement sits in the central city: Bascarsija for cafes and old-town dinners, Ferhadija and the Austro-Hungarian core for mixed bars, and nearby club rooms for late-night music. Treat Sarajevo as a compact route rather than a strip: start central, keep transitions short, and verify event-led spaces before going.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Sarajevo can be rewarding for queer travelers, but discretion and context-reading matter more here than in larger Western European scene cities. Same-sex relationships are legal, yet public visibility and social comfort can vary. Keep public affection measured where the room is unclear, use direct transport late at night, and lean on verified community channels for Pride, festival and safety updates.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "The scene is mixed, event-led and more discreet than destination-gay nightlife. Travel guides point to gay-popular or queer-friendly rooms such as The Loft, The Bar, City Pub and Pink Houdini, while places like Silver & Smoke and Cinemas Sloga work better as mixed nightlife options. No active dedicated gay sauna or cruise club could be verified for this package.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Sarajevo is generally better value than most Western European capitals, especially for food, cafes and ordinary transport. The main cost risk is not price but planning: because the queer scene is smaller, a good trip depends on checking current programmes, staying central and avoiding unnecessary late-night improvisation.",
+      "extra": ""
+    }
+  ],
   "belgrade": [
     {
       "title": "About",

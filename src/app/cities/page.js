@@ -68,6 +68,7 @@ const MAPBOX_COUNTRY_ALIASES = {
   "United States": ["United States", "United States of America", "USA"],
   "United Kingdom": ["United Kingdom", "UK", "Great Britain"],
   "Czech Republic": ["Czech Republic", "Czechia"],
+  "Bosnia and Herzegovina": ["Bosnia and Herzegovina", "Bosnia & Herzegovina", "Bosnia-Herzegovina"],
   Netherlands: ["Netherlands", "The Netherlands"],
 };
 const MAP_RISK_PALETTE = {

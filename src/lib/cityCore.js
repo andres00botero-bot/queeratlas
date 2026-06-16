@@ -1333,6 +1333,15 @@ export const cityCoreConfig = {
     "country": "Croatia",
     "vibe": "compact underground"
   },
+  "sarajevo": {
+    "center": [
+      18.4131,
+      43.8563
+    ],
+    "title": "Queer Sarajevo",
+    "country": "Bosnia and Herzegovina",
+    "vibe": "discreet community-led"
+  },
   "belgrade": {
     "center": [
       20.4489,
