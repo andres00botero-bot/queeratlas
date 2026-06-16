@@ -1169,8 +1169,10 @@ export default function CommunityPage() {
     const targetId = String(entry?.user_id || "").trim();
     if (!targetId) return;
     const safeName = String(entry?.display_name || "Member").trim() || "Member";
+    const avatarUrl = resolveAvatarUrlFromProfile(entry);
+    const avatarParam = avatarUrl ? `&member_avatar=${encodeURIComponent(avatarUrl)}` : "";
     router.push(
-      `/favorites?tab=about&member=${encodeURIComponent(targetId)}&member_name=${encodeURIComponent(safeName)}`
+      `/favorites?tab=about&member=${encodeURIComponent(targetId)}&member_name=${encodeURIComponent(safeName)}${avatarParam}`
     );
   };
 

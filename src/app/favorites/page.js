@@ -289,6 +289,7 @@ export default function FavoritesPage() {
   const [profileRouteParams, setProfileRouteParams] = useState({
     member: "",
     memberName: "",
+    memberAvatar: "",
     tab: "",
   });
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -399,19 +400,24 @@ export default function FavoritesPage() {
   const mapboxGlRef = useRef(null);
   const viewedMemberId = String(profileRouteParams.member || "").trim();
   const viewedMemberNameParam = String(profileRouteParams.memberName || "").trim();
+  const viewedMemberAvatarParam = String(profileRouteParams.memberAvatar || "").trim();
   const viewedTab = String(profileRouteParams.tab || "").trim().toLowerCase();
   const isViewingAnotherMember = Boolean(viewedMemberId && viewedMemberId !== String(user?.id || ""));
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search || "");
-    queueMicrotask(() => {
+    if (typeof window === "undefined") return undefined;
+    const syncRouteParams = () => {
+      const params = new URLSearchParams(window.location.search || "");
       setProfileRouteParams({
         member: String(params.get("member") || "").trim(),
         memberName: String(params.get("member_name") || "").trim(),
+        memberAvatar: String(params.get("member_avatar") || "").trim(),
         tab: String(params.get("tab") || "").trim(),
       });
-    });
+    };
+    queueMicrotask(syncRouteParams);
+    window.addEventListener("popstate", syncRouteParams);
+    return () => window.removeEventListener("popstate", syncRouteParams);
   }, []);
 
   useEffect(() => {
@@ -481,7 +487,7 @@ export default function FavoritesPage() {
         about: "",
         vibe: "",
         visibility: "members",
-        avatarUrl: "",
+        avatarUrl: viewedMemberAvatarParam,
         createdAt: "",
       });
     });
@@ -491,11 +497,19 @@ export default function FavoritesPage() {
     });
 
     queueMicrotask(async () => {
-      const { data, error } = await supabase
+      let profileRes = await supabase
         .from("member_profiles")
         .select("user_id, display_name, pronouns, home_city, resident_country, about, vibe, visibility, avatar_url, avatar_path, created_at")
         .eq("user_id", viewedMemberId)
         .maybeSingle();
+      if (profileRes.error) {
+        profileRes = await supabase
+          .from("member_profiles")
+          .select("user_id, display_name, pronouns, home_city, resident_country, about, vibe, visibility, avatar_url, avatar_path")
+          .eq("user_id", viewedMemberId)
+          .maybeSingle();
+      }
+      const { data, error } = profileRes;
 
       if (!active) return;
 
@@ -514,7 +528,7 @@ export default function FavoritesPage() {
         about: String(data.about || ""),
         vibe: String(data.vibe || ""),
         visibility: String(data.visibility || "members"),
-        avatarUrl: resolveAvatarUrlFromRow(data),
+        avatarUrl: resolveAvatarUrlFromRow(data) || viewedMemberAvatarParam,
         createdAt: String(data.created_at || ""),
       });
       setViewedProfileLoading(false);
@@ -524,7 +538,7 @@ export default function FavoritesPage() {
     return () => {
       active = false;
     };
-  }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId, viewedMemberNameParam, user?.id]);
+  }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberAvatarParam, viewedMemberId, viewedMemberNameParam, user?.id]);
 
   useEffect(() => {
     let active = true;
@@ -2174,6 +2188,29 @@ export default function FavoritesPage() {
     []
   );
 
+  const openMemberProfileFromFriend = useCallback((friend) => {
+    const friendUserId = String(friend?.userId || friend?.user_id || "").trim();
+    if (!friendUserId) return;
+    const friendName = String(friend?.displayName || friend?.display_name || "Member").trim() || "Member";
+    const nextRouteParams = {
+      member: friendUserId,
+      memberName: friendName,
+      memberAvatar: String(friend?.avatarUrl || friend?.avatar_url || "").trim(),
+      tab: "about",
+    };
+    setProfileRouteParams(nextRouteParams);
+    setActiveProfileTab("about");
+    const avatarParam = nextRouteParams.memberAvatar
+      ? `&member_avatar=${encodeURIComponent(nextRouteParams.memberAvatar)}`
+      : "";
+    router.push(
+      `/favorites?tab=about&member=${encodeURIComponent(friendUserId)}&member_name=${encodeURIComponent(friendName)}${avatarParam}`
+    );
+    window.setTimeout(() => {
+      favoritesControlsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 40);
+  }, [router]);
+
   const focusSavedPlaceOnMap = useCallback((place) => {
     if (!place) return;
     const markerId = `saved-${String(place.id || "")}`;
@@ -3046,10 +3083,7 @@ export default function FavoritesPage() {
                             <button
                               key={`profile-friend-${friend.userId || friend.displayName}`}
                               type="button"
-                              onClick={() => {
-                                if (!friend.userId) return;
-                                router.push(`/favorites?tab=about&member=${encodeURIComponent(friend.userId)}&member_name=${encodeURIComponent(friend.displayName || "Member")}`);
-                              }}
+                              onClick={() => openMemberProfileFromFriend(friend)}
                               className="rounded-2xl border border-white/12 bg-white/[0.055] p-2 text-left transition hover:-translate-y-0.5 hover:border-fuchsia-200/32 hover:bg-white/[0.08]"
                             >
                               <div className="flex items-center gap-2">
