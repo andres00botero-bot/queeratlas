@@ -1324,6 +1324,15 @@ export const cityCoreConfig = {
     "country": "Morocco",
     "vibe": "discreet nightlife under warm intensity"
   },
+  "albania": {
+    "center": [
+      19.8189,
+      41.3275
+    ],
+    "title": "Queer Albania",
+    "country": "Albania",
+    "vibe": "tirana-first country route"
+  },
   "montenegro": {
     "center": [
       19.2594,

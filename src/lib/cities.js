@@ -1922,6 +1922,19 @@ export const cityConfig = {
       cost: "Mid-range overall, with premium jumps in resort and top-club zones. Smart sequencing reduces transport friction and keeps the trip polished without excess spend.",
     }),
   },
+  albania: {
+    center: [19.8189, 41.3275],
+    title: "Queer Albania",
+    country: "Albania",
+    vibe: "tirana-first country route",
+    guide: buildGuide({
+      about: "Albania works best as a Tirana-first queer route rather than a classic gay-scene destination. Tirana has the strongest community infrastructure, Pride visibility, cafe culture and queer-friendly mixed bars, while the coast adds beach travel, resort stays and summer social energy. The scene is small, public gay venues are limited, and the best trip comes from realistic routing rather than expecting a big rainbow district.",
+      district: "Use Tirana's Blloku and central cafe corridors for most nightlife and low-friction social movement. Podgorica-style single-strip logic does not apply here: Tirana is the anchor, while Durres, Himare, Dhermi, Saranda and Ksamil work as coastal add-ons for beach and hotel energy. Keep the itinerary compact when nightlife matters.",
+      safety: "Same-sex relationships are legal and Albania has anti-discrimination protections, but there is no same-sex partnership or marriage recognition and public comfort can vary. Tirana is usually the most workable base for queer travelers. Keep public affection measured where the room is unclear, use direct transport late at night, and rely on community organizations for current Pride and safety context.",
+      nightlife: "Tirana nightlife is mostly mixed rather than gay-specific. Guides point to Radio Bar, Komiteti, Nouvelle Vague, Bunker 1944, Colonial and Blloku bars as queer-friendly or useful mixed rooms, not dedicated gay bars. No active dedicated gay sauna or permanent gay club could be verified for this package.",
+      cost: "Albania can be strong value compared with much of coastal Europe, especially for cafes, local food and ordinary transport. Prices rise on the Riviera in summer, and Tirana's best hotels and cocktail bars can feel more international than budget-local. Value is strongest when you keep Tirana central and use the coast selectively.",
+    }),
+  },
   montenegro: {
     center: [19.2594, 42.4304],
     title: "Queer Montenegro",

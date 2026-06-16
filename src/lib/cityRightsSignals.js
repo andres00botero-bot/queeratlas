@@ -179,6 +179,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Legal baseline improved recently. Practical protection can still differ by local context.",
   },
+  Albania: {
+    legal: "good",
+    rights: "risk",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex relations are legal and anti-discrimination law covers sexual orientation and gender identity, but Albania has no same-sex marriage, partnership or family-law recognition. Tirana has visible Pride and community organizations, while everyday comfort and public visibility remain context-dependent.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Restricted",
+      antiDiscrimination: "Full coverage",
+    },
+    sources: {
+      legal: "https://rainbowmap.ilga-europe.org/",
+      rights: "https://www.equaldex.com/region/albania",
+      safety: "https://www.aleancalgbt.org/",
+    },
+    confidence: "high",
+    updatedAt: "2026-06-16",
+  },
   Cyprus: {
     legal: "good",
     rights: "mixed",
