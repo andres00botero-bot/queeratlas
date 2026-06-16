@@ -174,6 +174,12 @@ function isProfileMemoriesTableMissingError(error) {
   return message.includes("qa_member_profile_memories") && message.includes("does not exist");
 }
 
+function isProfileStoryUserIdMissingError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+  return (code === "42703" || code === "PGRST204") && message.includes("user_id");
+}
+
 function resolveAvatarUrlFromRow(row) {
   const direct = String(row?.avatar_url || "").trim();
   if (direct) return direct;
@@ -192,6 +198,24 @@ function sanitizeProfileExtras(raw = {}) {
     vibe: String(raw?.vibe || "").slice(0, 80),
     phone: String(raw?.phone || "").slice(0, 40),
     contactEmail: String(raw?.contactEmail || "").slice(0, 120),
+  };
+}
+
+function createProfileClientId(prefix = "profile") {
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function mapProfileStoryRow(row = {}) {
+  return {
+    id: String(row?.id || createProfileClientId("story")),
+    userId: String(row?.user_id || ""),
+    title: String(row?.title || "").trim(),
+    city: String(row?.city || "").trim(),
+    author: String(row?.author || "Member").trim() || "Member",
+    category: String(row?.category || "Profile").trim() || "Profile",
+    excerpt: String(row?.excerpt || "").trim(),
+    body: String(row?.body || "").trim(),
+    createdAt: String(row?.created_at || row?.createdAt || new Date().toISOString()),
   };
 }
 
@@ -362,6 +386,19 @@ export default function FavoritesPage() {
   const [viewedProfileError, setViewedProfileError] = useState("");
   const [viewedProfileMemories, setViewedProfileMemories] = useState([]);
   const [viewedProfileMemoriesLoading, setViewedProfileMemoriesLoading] = useState(false);
+  const [profileStories, setProfileStories] = useState([]);
+  const [viewedProfileStories, setViewedProfileStories] = useState([]);
+  const [profileStoriesLoading, setProfileStoriesLoading] = useState(false);
+  const [showProfileStoryForm, setShowProfileStoryForm] = useState(false);
+  const [profileStoryForm, setProfileStoryForm] = useState({
+    title: "",
+    city: "",
+    category: "Profile",
+    excerpt: "",
+    body: "",
+  });
+  const [viewedProfileFriends, setViewedProfileFriends] = useState([]);
+  const [viewedProfileFriendsLoading, setViewedProfileFriendsLoading] = useState(false);
   const [viewedMemberRank, setViewedMemberRank] = useState(null);
   const [viewedContributionCounts, setViewedContributionCounts] = useState({
     stories: 0,
@@ -1174,6 +1211,162 @@ export default function FavoritesPage() {
   }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId, user?.id]);
 
   useEffect(() => {
+    let cancelled = false;
+    const targetUserId = isViewingAnotherMember ? viewedMemberId : String(user?.id || "");
+
+    if (!isReady || !isMember || !targetUserId) {
+      queueMicrotask(() => {
+        setProfileStories([]);
+        setViewedProfileStories([]);
+        setProfileStoriesLoading(false);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    queueMicrotask(() => {
+      setProfileStoriesLoading(true);
+    });
+
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("community_stories")
+        .select("id,user_id,title,city,author,category,excerpt,body,created_at")
+        .eq("user_id", targetUserId)
+        .order("created_at", { ascending: false })
+        .limit(6);
+
+      if (cancelled) return;
+
+      if (error) {
+        const localStories = readLocalJson("qa_community_stories", [])
+          .map(mapProfileStoryRow)
+          .filter((story) => {
+            if (isViewingAnotherMember) return false;
+            const nameKey = String(story.author || "").trim().toLowerCase();
+            const myNameKey = String(memberProfile?.displayName || authMemberName || memberName || "").trim().toLowerCase();
+            return nameKey && myNameKey && nameKey === myNameKey;
+          })
+          .slice(0, 6);
+        if (isViewingAnotherMember) {
+          setViewedProfileStories([]);
+        } else {
+          setProfileStories(localStories);
+        }
+        setProfileStoriesLoading(false);
+        return;
+      }
+
+      const normalized = (Array.isArray(data) ? data : [])
+        .map(mapProfileStoryRow)
+        .filter((story) => story.id && story.title)
+        .slice(0, 6);
+
+      if (isViewingAnotherMember) {
+        setViewedProfileStories(normalized);
+      } else {
+        setProfileStories(normalized);
+      }
+      setProfileStoriesLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    authMemberName,
+    isMember,
+    isReady,
+    isViewingAnotherMember,
+    memberName,
+    memberProfile?.displayName,
+    user?.id,
+    viewedMemberId,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!isReady || !isMember || !isViewingAnotherMember || !viewedMemberId) {
+      queueMicrotask(() => {
+        setViewedProfileFriends([]);
+        setViewedProfileFriendsLoading(false);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    queueMicrotask(() => {
+      setViewedProfileFriendsLoading(true);
+    });
+
+    queueMicrotask(async () => {
+      const { data, error } = await supabase
+        .from("member_following")
+        .select("follower_user_id,followed_user_id,created_at")
+        .or(`follower_user_id.eq.${viewedMemberId},followed_user_id.eq.${viewedMemberId}`)
+        .limit(12);
+
+      if (cancelled) return;
+      if (error) {
+        setViewedProfileFriends([]);
+        setViewedProfileFriendsLoading(false);
+        return;
+      }
+
+      const friendIds = [
+        ...new Set(
+          (Array.isArray(data) ? data : [])
+            .map((row) => {
+              const follower = String(row?.follower_user_id || "");
+              const followed = String(row?.followed_user_id || "");
+              return follower === viewedMemberId ? followed : follower;
+            })
+            .filter((id) => id && id !== viewedMemberId)
+        ),
+      ].slice(0, 8);
+
+      if (friendIds.length === 0) {
+        setViewedProfileFriends([]);
+        setViewedProfileFriendsLoading(false);
+        return;
+      }
+
+      let profilesRes = await supabase
+        .from("member_profiles")
+        .select("user_id,display_name,home_city,avatar_url,avatar_path")
+        .in("user_id", friendIds);
+
+      if (profilesRes.error && isAvatarColumnMissingError(profilesRes.error)) {
+        profilesRes = await supabase
+          .from("member_profiles")
+          .select("user_id,display_name,home_city,avatar_path")
+          .in("user_id", friendIds);
+      }
+
+      if (cancelled) return;
+
+      const profileRows = profilesRes.error || !Array.isArray(profilesRes.data) ? [] : profilesRes.data;
+      const mapped = friendIds.map((id) => {
+        const profile = profileRows.find((row) => String(row?.user_id || "") === id) || {};
+        return {
+          userId: id,
+          displayName: String(profile?.display_name || "Member").trim() || "Member",
+          homeCity: String(profile?.home_city || "").trim(),
+          avatarUrl: resolveAvatarUrlFromRow(profile),
+        };
+      });
+      setViewedProfileFriends(mapped);
+      setViewedProfileFriendsLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isMember, isReady, isViewingAnotherMember, viewedMemberId]);
+
+  useEffect(() => {
     const remoteExtras = sanitizeProfileExtras({
       about: memberProfile?.about,
       visibility: memberProfile?.visibility,
@@ -1743,7 +1936,7 @@ export default function FavoritesPage() {
   }, [eventsById, followingFeedRows, placesById]);
 
   const followingProfiles = useMemo(() => {
-    if (!showSignalDeck && activeProfileTab !== "friends") return [];
+    if (!showSignalDeck && activeProfileTab !== "friends" && activeProfileTab !== "about") return [];
     return computeFollowingProfiles({
       followingUserIds,
       followingFeedRows,
@@ -1997,6 +2190,68 @@ export default function FavoritesPage() {
     });
   };
 
+  const publishProfileStory = async (event) => {
+    event.preventDefault();
+    const title = String(profileStoryForm.title || "").trim();
+    const city = String(profileStoryForm.city || profileForm.homeCity || memberProfile?.homeCity || "").trim();
+    const body = String(profileStoryForm.body || "").trim();
+    if (!title || !body) {
+      showToast("Add a title and story before publishing.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const excerpt = String(profileStoryForm.excerpt || body.slice(0, 140)).trim();
+    const fallbackItem = mapProfileStoryRow({
+      id: createProfileClientId("story-local"),
+      user_id: user?.id || "",
+      title,
+      city,
+      author: memberProfile?.displayName || authMemberName || memberName || "Member",
+      category: profileStoryForm.category || "Profile",
+      excerpt,
+      body,
+      created_at: new Date().toISOString(),
+    });
+
+    let syncedItem = null;
+    let insertError = null;
+
+    if (user?.id) {
+      const payload = {
+        user_id: user.id,
+        title,
+        city,
+        author: memberProfile?.displayName || authMemberName || memberName || "Member",
+        category: profileStoryForm.category || "Profile",
+        excerpt,
+        body,
+      };
+      let res = await supabase.from("community_stories").insert([payload]).select("*").single();
+
+      if (res.error && isProfileStoryUserIdMissingError(res.error)) {
+        const legacyPayload = { ...payload };
+        delete legacyPayload.user_id;
+        res = await supabase.from("community_stories").insert([legacyPayload]).select("*").single();
+      }
+
+      insertError = res.error || null;
+      if (!res.error && res.data) {
+        syncedItem = mapProfileStoryRow(res.data);
+      }
+    }
+
+    const item = syncedItem || fallbackItem;
+    setProfileStories((current) => [item, ...(current || [])].slice(0, 6));
+    const localStories = readLocalJson("qa_community_stories", []);
+    writeLocalJson("qa_community_stories", [item, ...localStories].slice(0, 80));
+    setProfileStoryForm({ title: "", city: "", category: "Profile", excerpt: "", body: "" });
+    setShowProfileStoryForm(false);
+    showToast(insertError ? "Story saved locally. Cloud sync unavailable." : "Story added to your profile.", {
+      tone: insertError ? "info" : "ok",
+      duration: 2300,
+    });
+  };
+
   const hasProfileChanges = hasProfileFormChanges(profileForm, memberProfile || {});
   const greeting = resolveGreetingByHour();
   const displayName = resolveMemberDisplayName(memberName);
@@ -2045,6 +2300,17 @@ export default function FavoritesPage() {
     if (badges.length === 0) badges.push("Rising Voice");
     return badges.slice(0, 6);
   }, [activeContributionCounts, activeMemberRank]);
+  const activeProfileVisibility = isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility;
+  const profileVisibilityLabel =
+    activeProfileVisibility === "public"
+      ? "Visible to all"
+      : activeProfileVisibility === "friends"
+        ? "Visible to friends"
+        : "Visible to members";
+  const profileLocationLabel =
+    effectiveHomeCity || effectiveResidentCountry
+      ? [effectiveHomeCity, effectiveResidentCountry].filter(Boolean).join(", ")
+      : "Location not set";
   const joinedSinceLabel = useMemo(() => {
     const raw = String(user?.created_at || "").trim();
     if (!raw) return "Recently joined";
@@ -2059,9 +2325,12 @@ export default function FavoritesPage() {
     return [
       { label: "Top contribution", value: `${atlasCredScore} total posts` },
       { label: "Current level", value: atlasCredLevel },
-      { label: "Membership", value: joinedSinceLabel },
+      {
+        label: isViewingAnotherMember ? "Profile access" : "Membership",
+        value: isViewingAnotherMember ? profileVisibilityLabel : joinedSinceLabel,
+      },
     ];
-  }, [atlasCredLevel, atlasCredScore, joinedSinceLabel]);
+  }, [atlasCredLevel, atlasCredScore, isViewingAnotherMember, joinedSinceLabel, profileVisibilityLabel]);
   const displayInitials = useMemo(() => {
     const parts = String(effectiveDisplayName || "")
       .trim()
@@ -2076,6 +2345,15 @@ export default function FavoritesPage() {
     ? String(viewedProfile?.avatarUrl || "").trim()
     : String(profileAvatarDataUrl || "").trim();
   const effectiveProfileMemories = isReadOnlyPublicProfileView ? viewedProfileMemories : profileMemories;
+  const effectiveProfileStories = isReadOnlyPublicProfileView ? viewedProfileStories : profileStories;
+  const effectiveProfileFriends = isReadOnlyPublicProfileView
+    ? viewedProfileFriends
+    : (followingProfiles || []).map((profile) => ({
+        userId: String(profile?.userId || profile?.user_id || "").trim(),
+        displayName: String(profile?.displayName || profile?.display_name || "Member").trim() || "Member",
+        homeCity: String(profile?.homeCity || profile?.home_city || "").trim(),
+        avatarUrl: String(profile?.avatarUrl || profile?.avatar_url || "").trim(),
+      }));
   const shouldRenderAvatarImage = Boolean(effectiveAvatarUrl) && !profileAvatarLoadFailed;
   const profileTabs = useMemo(
     () =>
@@ -2818,45 +3096,7 @@ export default function FavoritesPage() {
           </div>
           <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/8 blur-3xl sm:bg-rose-400/12" />
           <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/7 blur-3xl sm:bg-cyan-400/10" />
-          <button
-            type="button"
-            onClick={() => {
-              if (!canEditOwnAvatar) return;
-              setActiveProfileTab("about");
-              openAvatarEditor();
-            }}
-            className="group absolute right-2 top-[calc(38%-19px)] inline-flex h-16 w-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl border border-white/20 bg-black/22 text-lg font-semibold text-white shadow-[0_10px_24px_rgba(0,0,0,0.32)] transition hover:border-white/34 before:pointer-events-none before:absolute before:inset-[-3px] before:-z-10 before:rounded-[18px] before:border before:border-white/10 before:bg-black/28 sm:right-[7rem] sm:h-36 sm:w-36 sm:rounded-[22px] sm:text-3xl sm:shadow-[0_16px_34px_rgba(0,0,0,0.36)] sm:before:rounded-[24px]"
-            aria-label={canEditOwnAvatar ? "Edit profile image" : "Member profile image"}
-          >
-            <span className="pointer-events-none absolute inset-0 rounded-[inherit] border border-white/16" aria-hidden="true" />
-            <span className="pointer-events-none absolute inset-[1px] rounded-[inherit] border border-white/10" aria-hidden="true" />
-            {shouldRenderAvatarImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={effectiveAvatarUrl}
-                alt=""
-                className="h-[80%] w-[80%] rounded-[14px] object-cover"
-                onError={() => setProfileAvatarLoadFailed(true)}
-              />
-            ) : (
-              <span className="inline-flex h-[80%] w-[80%] items-center justify-center rounded-[14px] bg-black/18">
-                {displayInitials}
-              </span>
-            )}
-            {canEditOwnAvatar ? (
-              <span className="absolute inset-x-0 bottom-0 bg-black/48 px-2 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-white/85 opacity-0 transition group-hover:opacity-100 sm:text-xs">
-                Edit
-              </span>
-            ) : null}
-          </button>
-          <input
-            ref={avatarFileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={onProfileAvatarSelected}
-            className="hidden"
-          />
-          <div className="relative z-10 max-w-4xl pr-[6rem] sm:pr-0">
+          <div className="relative z-10 max-w-4xl">
             <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-lg font-semibold tracking-[-0.01em] text-transparent sm:text-3xl sm:drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)]">
               {isReadOnlyPublicProfileView ? `${effectiveDisplayName}'s profile` : `${greeting}, ${displayName}`}
             </p>
@@ -2891,38 +3131,40 @@ export default function FavoritesPage() {
               </div>
             )}
           </div>
-          <div className="relative z-10 mt-4 sm:mt-5">
-            <PageControls
-              variant="favorites-desktop-luxe"
-              controlsRef={favoritesControlsRef}
-              controlButtonsRef={favoritesControlButtonsRef}
-              buttons={profileTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
-              activeButtonThemeById={{
-                about: {
-                  className:
-                    "sm:bg-[#A855F7] sm:text-white",
-                },
-                friends: {
-                  className:
-                    "sm:bg-emerald-300 sm:text-[#041514]",
-                },
-                map: {
-                  className:
-                    "sm:bg-violet-300 sm:text-[#0d1230]",
-                },
-                trips: {
-                  className:
-                    "sm:bg-[#8B5CF6] sm:text-white",
-                },
-                calendar: {
-                  className:
-                    "sm:bg-fuchsia-300 sm:text-[#2b0c15]",
-                },
-              }}
-              activeId={activeProfileTab}
-              onSelect={(tabId) => setActiveProfileTab(tabId)}
-            />
-          </div>
+          {!isReadOnlyPublicProfileView ? (
+            <div className="relative z-10 mt-4 sm:mt-5">
+              <PageControls
+                variant="favorites-desktop-luxe"
+                controlsRef={favoritesControlsRef}
+                controlButtonsRef={favoritesControlButtonsRef}
+                buttons={profileTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+                activeButtonThemeById={{
+                  about: {
+                    className:
+                      "sm:bg-[#A855F7] sm:text-white",
+                  },
+                  friends: {
+                    className:
+                      "sm:bg-emerald-300 sm:text-[#041514]",
+                  },
+                  map: {
+                    className:
+                      "sm:bg-violet-300 sm:text-[#0d1230]",
+                  },
+                  trips: {
+                    className:
+                      "sm:bg-[#8B5CF6] sm:text-white",
+                  },
+                  calendar: {
+                    className:
+                      "sm:bg-fuchsia-300 sm:text-[#2b0c15]",
+                  },
+                }}
+                activeId={activeProfileTab}
+                onSelect={(tabId) => setActiveProfileTab(tabId)}
+              />
+            </div>
+          ) : null}
         </section>
 
         {isProfileAboutTab ? (
@@ -2933,41 +3175,20 @@ export default function FavoritesPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="mt-1 bg-gradient-to-r from-cyan-100 via-fuchsia-100 to-amber-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-3xl sm:drop-shadow-[0_10px_26px_rgba(217,70,239,0.24)]">
-                Queer Signal
+                Member Signal
               </h2>
+              <p className="mt-1 text-xs text-white/56 sm:text-sm">
+                A warmer profile card for identity, vibe, trust, and community presence.
+              </p>
             </div>
             {isViewingAnotherMember ? (
-            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+            <div className="sm:absolute sm:right-5 sm:top-5">
               <button
                 type="button"
                 onClick={() => router.push("/community")}
                 className="rounded-full border border-rose-200/60 bg-[linear-gradient(135deg,rgba(251,113,133,0.34),rgba(217,70,239,0.26),rgba(24,10,24,0.92))] px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.34),0_0_26px_rgba(244,114,182,0.34)] transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/80 hover:shadow-[0_0_0_1px_rgba(251,113,133,0.5),0_0_32px_rgba(244,114,182,0.42)] sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em]"
               >
                 Close
-              </button>
-              <button
-                type="button"
-                onClick={toggleProfileFollow}
-                disabled={!viewedTargetUserId || viewedProfileLoading}
-                className="rounded-full border border-cyan-200/30 bg-cyan-200/14 px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-cyan-100 transition duration-300 hover:border-cyan-100/60 hover:bg-cyan-200/24 sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em] sm:shadow-[0_10px_24px_rgba(34,211,238,0.2)] sm:hover:-translate-y-0.5 sm:active:translate-y-0"
-              >
-                {isViewedProfileFollowed ? "Following" : "Follow"}
-              </button>
-              <button
-                type="button"
-                onClick={openProfileMessage}
-                disabled={!viewedTargetUserId || viewedProfileLoading}
-                className="rounded-full border border-emerald-200/30 bg-emerald-200/14 px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-emerald-100 transition duration-300 hover:border-emerald-100/60 hover:bg-emerald-200/24 sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em] sm:shadow-[0_10px_24px_rgba(16,185,129,0.2)] sm:hover:-translate-y-0.5 sm:active:translate-y-0"
-              >
-                Message
-              </button>
-              <button
-                type="button"
-                onClick={reportProfile}
-                disabled={!viewedTargetUserId || viewedProfileLoading}
-                className="rounded-full border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-[11px] uppercase tracking-[0.11em] text-rose-100 transition duration-300 hover:border-rose-100/60 hover:bg-rose-200/24 sm:px-3.5 sm:py-1.5 sm:text-[11px] sm:tracking-[0.11em] sm:shadow-[0_10px_24px_rgba(251,113,133,0.2)] sm:hover:-translate-y-0.5 sm:active:translate-y-0"
-              >
-                Report
               </button>
             </div>
             ) : null}
@@ -2983,77 +3204,281 @@ export default function FavoritesPage() {
           ) : null}
 
           {!isEditingAbout ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {!isViewingAnotherMember ? (
-                <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.10] p-3.5 sm:shadow-[0_16px_32px_rgba(34,211,238,0.09)]">
-                  <p className="text-xs uppercase tracking-[0.12em] text-cyan-100/78">Profile signal</p>
-                  <p className="mt-1 text-xs text-white/64">Keep your profile clear, current, and true to your vibe.</p>
-                </div>
-              ) : null}
-              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Display name</p>
-                <p className="mt-1 text-sm text-white">{effectiveDisplayName}</p>
-              </div>
-              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Visibility</p>
-                <p className="mt-1 text-sm text-white">
-                  {(isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility) === "public"
-                    ? "Visible to all"
-                    : (isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility) === "friends"
-                      ? "Visible to friends"
-                      : "Visible to members"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Location</p>
-                <p className="mt-1 text-sm text-white">
-                  {effectiveHomeCity || effectiveResidentCountry
-                    ? [effectiveHomeCity, effectiveResidentCountry].filter(Boolean).join(", ")
-                    : "Not set"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/14 bg-black/30 p-3 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-xs uppercase tracking-[0.12em] text-white/52">Pronouns</p>
-                <p className="mt-1 text-sm text-white">{effectivePronouns || "Not set"}</p>
-              </div>
-              <div className="sm:col-span-2 rounded-2xl border border-white/14 bg-black/30 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <p className="text-xs uppercase tracking-[0.12em] text-white/56">About me</p>
-                <p className="mt-1 text-sm leading-6 text-white/88">
-                  {profileAboutMe || "No about text yet."}
-                </p>
-              </div>
-              <div className="sm:col-span-2 rounded-2xl border border-fuchsia-200/26 bg-fuchsia-200/[0.11] p-3.5 sm:shadow-[0_18px_36px_rgba(217,70,239,0.11)]">
-                <p className="text-xs uppercase tracking-[0.12em] text-fuchsia-100/86">Vibe DNA</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {profileVibeChips.length > 0 ? (
-                    profileVibeChips.map((chip) => (
-                      <span
-                        key={`profile-vibe-${chip.key}`}
-                        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.11em] transition duration-300 sm:shadow-[0_8px_22px_rgba(0,0,0,0.28)] sm:hover:-translate-y-0.5 ${chip.tone}`}
-                      >
-                        {chip.label}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="rounded-full border border-white/20 bg-white/8 px-2.5 py-1 text-[11px] uppercase tracking-[0.11em] text-white/76">
-                      Open Circle
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="sm:col-span-2 rounded-2xl border border-white/14 bg-black/30 p-3.5 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/78">
-                    {isReadOnlyPublicProfileView ? "Memories" : "Memories (max 5)"}
-                  </p>
-                  {!isReadOnlyPublicProfileView ? (
+            <div className="relative z-10 mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+              <div className="overflow-hidden rounded-[30px] border border-white/16 bg-[linear-gradient(145deg,rgba(255,255,255,0.16),rgba(255,255,255,0.045)_42%,rgba(8,8,12,0.72))] p-3 shadow-[0_28px_80px_rgba(0,0,0,0.38)] backdrop-blur">
+                <div className="relative overflow-hidden rounded-[24px] border border-white/12 bg-[radial-gradient(circle_at_18%_12%,rgba(244,114,182,0.36),transparent_31%),radial-gradient(circle_at_82%_18%,rgba(34,211,238,0.30),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.09),rgba(0,0,0,0.34))] p-4 sm:p-5">
+                  <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-fuchsia-300/20 blur-3xl" />
+                  <div className="pointer-events-none absolute -bottom-12 left-8 h-40 w-40 rounded-full bg-cyan-300/16 blur-3xl" />
+                  <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
                     <button
                       type="button"
-                      onClick={openMemoriesEditor}
-                      className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-cyan-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/20"
+                      onClick={() => {
+                        if (!canEditOwnAvatar) return;
+                        openAvatarEditor();
+                      }}
+                      className="group relative inline-flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-[26px] border border-white/24 bg-black/26 text-3xl font-semibold text-white shadow-[0_18px_46px_rgba(0,0,0,0.36)] transition hover:-translate-y-0.5 hover:border-white/40 sm:h-36 sm:w-36 sm:text-4xl"
+                      aria-label={canEditOwnAvatar ? "Edit profile image" : "Member profile image"}
                     >
-                      Upload
+                      <span className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(135deg,rgba(255,255,255,0.16),transparent_48%,rgba(244,114,182,0.16))]" aria-hidden="true" />
+                      {shouldRenderAvatarImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={effectiveAvatarUrl}
+                          alt=""
+                          className="relative h-[88%] w-[88%] rounded-[22px] object-cover"
+                          onError={() => setProfileAvatarLoadFailed(true)}
+                        />
+                      ) : (
+                        <span className="relative inline-flex h-[88%] w-[88%] items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,rgba(244,114,182,0.26),rgba(34,211,238,0.18))]">
+                          {displayInitials}
+                        </span>
+                      )}
+                      {canEditOwnAvatar ? (
+                        <span className="absolute inset-x-3 bottom-3 rounded-full bg-black/56 px-2 py-1 text-center text-[10px] uppercase tracking-[0.12em] text-white/90 opacity-0 transition group-hover:opacity-100">
+                          Change
+                        </span>
+                      ) : null}
                     </button>
+                    <input
+                      ref={avatarFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={onProfileAvatarSelected}
+                      className="hidden"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap gap-2">
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.09em] ${memberTitleMeta.className}`}>
+                          {memberTitleMeta.label || "Contributor"}
+                        </span>
+                        <span className="inline-flex items-center rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2.5 py-1 text-[11px] uppercase tracking-[0.09em] text-cyan-100">
+                          {profileVisibilityLabel}
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-5xl">
+                        {effectiveDisplayName}
+                      </h3>
+                      <p className="mt-2 text-sm leading-6 text-white/72">
+                        {profileAboutMe || (isViewingAnotherMember ? "This member has not added an about line yet." : "Add a short intro so other members understand your vibe.")}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/78">
+                        <span className="rounded-full border border-white/12 bg-black/22 px-3 py-1.5">
+                          {profileLocationLabel}
+                        </span>
+                        <span className="rounded-full border border-white/12 bg-black/22 px-3 py-1.5">
+                          {effectivePronouns || "Pronouns not set"}
+                        </span>
+                      </div>
+                      {isViewingAnotherMember ? (
+                        <div className="mt-5 grid gap-2 sm:grid-cols-3">
+                          <button
+                            type="button"
+                            onClick={toggleProfileFollow}
+                            disabled={!viewedTargetUserId || viewedProfileLoading}
+                            className="rounded-full border border-cyan-200/30 bg-cyan-200/14 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-cyan-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/24 disabled:cursor-not-allowed disabled:opacity-55 sm:shadow-[0_10px_24px_rgba(34,211,238,0.16)]"
+                          >
+                            {isViewedProfileFollowed ? "Following" : "Follow"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={openProfileMessage}
+                            disabled={!viewedTargetUserId || viewedProfileLoading}
+                            className="rounded-full border border-emerald-200/30 bg-emerald-200/14 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-100 transition duration-300 hover:-translate-y-0.5 hover:border-emerald-100/60 hover:bg-emerald-200/24 disabled:cursor-not-allowed disabled:opacity-55 sm:shadow-[0_10px_24px_rgba(16,185,129,0.16)]"
+                          >
+                            Message
+                          </button>
+                          <button
+                            type="button"
+                            onClick={reportProfile}
+                            disabled={!viewedTargetUserId || viewedProfileLoading}
+                            className="rounded-full border border-rose-200/30 bg-rose-200/14 px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition duration-300 hover:-translate-y-0.5 hover:border-rose-100/60 hover:bg-rose-200/24 disabled:cursor-not-allowed disabled:opacity-55 sm:shadow-[0_10px_24px_rgba(251,113,133,0.16)]"
+                          >
+                            Report
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="relative mt-4 rounded-2xl border border-white/12 bg-black/20 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.13em] text-white/70">
+                          {isReadOnlyPublicProfileView ? "Friends" : "Your friends"}
+                        </p>
+                        <p className="mt-1 text-xs text-white/50">
+                          {isReadOnlyPublicProfileView
+                            ? "Visible trusted connections for this member."
+                            : "Members in your trusted signal network."}
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-white/14 bg-white/8 px-2.5 py-1 text-[11px] text-white/62">
+                        {effectiveProfileFriends.length}
+                      </span>
+                    </div>
+                    {isReadOnlyPublicProfileView && viewedProfileFriendsLoading ? (
+                      <p className="mt-3 text-xs text-white/56">Loading friends...</p>
+                    ) : effectiveProfileFriends.length > 0 ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                        {effectiveProfileFriends.slice(0, 5).map((friend) => {
+                          const friendInitials = String(friend.displayName || "M")
+                            .trim()
+                            .split(/\s+/)
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map((part) => part.charAt(0).toUpperCase())
+                            .join("") || "M";
+                          return (
+                            <button
+                              key={`profile-friend-${friend.userId || friend.displayName}`}
+                              type="button"
+                              onClick={() => {
+                                if (!friend.userId) return;
+                                router.push(`/favorites?tab=about&member=${encodeURIComponent(friend.userId)}&member_name=${encodeURIComponent(friend.displayName || "Member")}`);
+                              }}
+                              className="rounded-2xl border border-white/12 bg-white/[0.055] p-2 text-left transition hover:-translate-y-0.5 hover:border-fuchsia-200/32 hover:bg-white/[0.08]"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/14 bg-black/25 text-xs font-semibold text-white">
+                                  {friend.avatarUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={friend.avatarUrl} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    friendInitials
+                                  )}
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-xs font-semibold text-white/90">{friend.displayName}</span>
+                                  <span className="block truncate text-[11px] text-white/50">{friend.homeCity || "Atlas member"}</span>
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-3 rounded-xl border border-dashed border-white/12 bg-white/[0.035] px-3 py-2 text-xs text-white/54">
+                        {isReadOnlyPublicProfileView
+                          ? "No friends are visible for this member yet."
+                          : "Follow members from Community to build this row."}
+                      </p>
+                    )}
+                  </div>
+                  {!isViewingAnotherMember ? (
+                    <div className="relative mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-cyan-200/18 bg-cyan-200/[0.09] px-3 py-2.5">
+                      <p className="text-xs leading-5 text-cyan-50/82">Keep this card clear, warm, and current. It is the first thing members read before they follow or message you.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileForm({
+                            displayName: memberProfile?.displayName || authMemberName || memberName,
+                            pronouns: memberProfile?.pronouns || "",
+                            homeCity: memberProfile?.homeCity || "",
+                            residentCountry: memberProfile?.residentCountry || "",
+                          });
+                          setIsEditingAbout(true);
+                          setIsEditingProfile(true);
+                        }}
+                        className="rounded-full border border-white/18 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-white transition hover:-translate-y-0.5 hover:border-white/32"
+                      >
+                        Edit profile
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <aside className="grid gap-3">
+                <div className="rounded-[26px] border border-amber-200/24 bg-[linear-gradient(180deg,rgba(251,191,36,0.14),rgba(0,0,0,0.26))] p-4 shadow-[0_18px_48px_rgba(245,158,11,0.10)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/74">Atlas Cred</p>
+                      <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">{atlasCredLevel}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/16 bg-black/24 px-3 py-2 text-right">
+                      <p className="text-[10px] uppercase tracking-[0.1em] text-white/52">Signal</p>
+                      <p className="text-lg font-semibold text-white">{atlasCredScore}</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {Number.isFinite(Number(activeMemberRank?.rank)) ? (
+                      <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.09em] text-white/84">
+                        Rank #{Number(activeMemberRank.rank)}
+                      </span>
+                    ) : null}
+                    <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.09em] text-white/84">
+                      {atlasCredScore} contributions
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {atlasCredBadges.map((badge) => (
+                      <span
+                        key={`atlas-badge-${badge}`}
+                        className="inline-flex items-center rounded-full border border-amber-200/28 bg-amber-100/12 px-2.5 py-1 text-[11px] uppercase tracking-[0.09em] text-amber-100/90"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[26px] border border-fuchsia-200/22 bg-fuchsia-200/[0.10] p-4 shadow-[0_18px_42px_rgba(217,70,239,0.10)]">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/78">Vibe DNA</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {profileVibeChips.length > 0 ? (
+                      profileVibeChips.map((chip) => (
+                        <span
+                          key={`profile-vibe-${chip.key}`}
+                          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.09em] transition duration-300 sm:shadow-[0_8px_22px_rgba(0,0,0,0.22)] sm:hover:-translate-y-0.5 ${chip.tone}`}
+                        >
+                          {chip.label}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="rounded-full border border-white/20 bg-white/8 px-2.5 py-1 text-[11px] uppercase tracking-[0.09em] text-white/76">
+                        Open Circle
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
+                  {publicHighlights.map((item) => (
+                    <article
+                      key={`public-highlight-${item.label}`}
+                      className="rounded-2xl border border-white/12 bg-black/26 px-3 py-3"
+                    >
+                      <p className="text-[11px] uppercase tracking-[0.1em] text-white/50">{item.label}</p>
+                      <p className="mt-1 text-sm font-medium text-white/90">{item.value}</p>
+                    </article>
+                  ))}
+                </div>
+              </aside>
+
+              <div className="lg:col-span-2 overflow-hidden rounded-[30px] border border-white/14 bg-[radial-gradient(circle_at_14%_16%,rgba(244,114,182,0.18),transparent_32%),radial-gradient(circle_at_86%_10%,rgba(34,211,238,0.16),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.08),rgba(0,0,0,0.28))] p-3.5 shadow-[0_24px_70px_rgba(0,0,0,0.34)]">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/78">
+                      {isReadOnlyPublicProfileView ? "Moments & stories" : "Your moments & stories"}
+                    </p>
+                    <p className="mt-1 text-xs text-white/52">Images for the mood, stories for the context.</p>
+                  </div>
+                  {!isReadOnlyPublicProfileView ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={openMemoriesEditor}
+                        className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] text-cyan-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-100/60 hover:bg-cyan-200/20"
+                      >
+                        Upload moment
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowProfileStoryForm((current) => !current)}
+                        className="rounded-full border border-fuchsia-200/34 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] text-fuchsia-100 transition duration-300 hover:-translate-y-0.5 hover:border-fuchsia-100/60 hover:bg-fuchsia-200/22"
+                      >
+                        {showProfileStoryForm ? "Close story" : "Add story"}
+                      </button>
+                    </div>
                   ) : null}
                 </div>
                 <input
@@ -3064,106 +3489,141 @@ export default function FavoritesPage() {
                   onChange={onProfileMemoriesSelected}
                   className="hidden"
                 />
-                {isReadOnlyPublicProfileView && viewedProfileMemoriesLoading ? (
-                  <p className="mt-2 text-xs text-white/62">Loading memories...</p>
+
+                {showProfileStoryForm && !isReadOnlyPublicProfileView ? (
+                  <form onSubmit={publishProfileStory} className="mt-4 rounded-[24px] border border-fuchsia-200/20 bg-black/26 p-3">
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <input
+                        value={profileStoryForm.title}
+                        onChange={(event) => setProfileStoryForm((current) => ({ ...current, title: event.target.value }))}
+                        placeholder="Story title"
+                        className="rounded-xl border border-white/10 bg-black/28 px-3 py-2 text-sm text-white outline-none placeholder:text-white/34"
+                      />
+                      <input
+                        value={profileStoryForm.city}
+                        onChange={(event) => setProfileStoryForm((current) => ({ ...current, city: event.target.value }))}
+                        placeholder="City or scene"
+                        className="rounded-xl border border-white/10 bg-black/28 px-3 py-2 text-sm text-white outline-none placeholder:text-white/34"
+                      />
+                      <input
+                        value={profileStoryForm.category}
+                        onChange={(event) => setProfileStoryForm((current) => ({ ...current, category: event.target.value }))}
+                        placeholder="Category"
+                        className="rounded-xl border border-white/10 bg-black/28 px-3 py-2 text-sm text-white outline-none placeholder:text-white/34"
+                      />
+                    </div>
+                    <textarea
+                      value={profileStoryForm.body}
+                      onChange={(event) => setProfileStoryForm((current) => ({ ...current, body: event.target.value }))}
+                      placeholder="Write a short memory, tip, or scene note for members visiting your profile."
+                      className="mt-2 min-h-[96px] w-full rounded-xl border border-white/10 bg-black/28 px-3 py-2 text-sm text-white outline-none placeholder:text-white/34"
+                    />
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                      <input
+                        value={profileStoryForm.excerpt}
+                        onChange={(event) => setProfileStoryForm((current) => ({ ...current, excerpt: event.target.value }))}
+                        placeholder="Optional teaser line"
+                        className="min-w-[220px] flex-1 rounded-xl border border-white/10 bg-black/28 px-3 py-2 text-sm text-white outline-none placeholder:text-white/34"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-full bg-gradient-to-r from-fuchsia-200 via-rose-200 to-amber-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] text-black shadow-[0_12px_30px_rgba(244,114,182,0.18)]"
+                      >
+                        Publish story
+                      </button>
+                    </div>
+                  </form>
                 ) : null}
-                {effectiveProfileMemories.length > 0 ? (
-                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {effectiveProfileMemories.map((memory) => (
-                      <article key={String(memory.id)} className="relative overflow-hidden rounded-xl border border-white/12 bg-black/30 transition duration-300 hover:-translate-y-0.5 hover:border-white/24">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={String(memory.url || "")}
-                          alt=""
-                          className="h-32 w-full object-cover object-center sm:h-36"
-                        />
-                        {!isReadOnlyPublicProfileView ? (
-                          <button
-                            type="button"
-                            onClick={() => removeProfileMemory(memory.id)}
-                            className="absolute right-1 top-1 rounded-full border border-black/45 bg-black/55 px-1.5 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/90"
+
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+                  <div className="rounded-[24px] border border-white/12 bg-black/22 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-[0.13em] text-cyan-100/76">Photo moments</p>
+                      <span className="rounded-full border border-white/12 bg-white/8 px-2.5 py-1 text-[11px] text-white/56">
+                        {effectiveProfileMemories.length}/5
+                      </span>
+                    </div>
+                    {isReadOnlyPublicProfileView && viewedProfileMemoriesLoading ? (
+                      <p className="mt-3 text-xs text-white/62">Loading moments...</p>
+                    ) : null}
+                    {effectiveProfileMemories.length > 0 ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {effectiveProfileMemories.map((memory, index) => (
+                          <article
+                            key={String(memory.id)}
+                            className={`group relative overflow-hidden rounded-[22px] border border-white/12 bg-black/30 shadow-[0_12px_32px_rgba(0,0,0,0.22)] transition duration-300 hover:-translate-y-0.5 hover:border-fuchsia-200/34 ${
+                              index === 0 ? "col-span-2 sm:col-span-2" : ""
+                            }`}
                           >
-                            Remove
-                          </button>
-                        ) : null}
-                      </article>
-                    ))}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={String(memory.url || "")}
+                              alt=""
+                              className={`${index === 0 ? "h-44" : "h-32"} w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]`}
+                            />
+                            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent_42%,rgba(0,0,0,0.46))]" />
+                            {!isReadOnlyPublicProfileView ? (
+                              <button
+                                type="button"
+                                onClick={() => removeProfileMemory(memory.id)}
+                                className="absolute right-2 top-2 rounded-full border border-black/45 bg-black/62 px-2 py-1 text-[10px] uppercase tracking-[0.09em] text-white/90"
+                              >
+                                Remove
+                              </button>
+                            ) : null}
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-3 rounded-[22px] border border-dashed border-cyan-200/18 bg-cyan-200/[0.045] px-4 py-5 text-sm text-white/62">
+                        {isReadOnlyPublicProfileView
+                          ? "No public moments yet."
+                          : "No moments yet. Upload up to 5 images to make your profile feel more alive."}
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <p className="mt-2 text-xs text-white/62">
-                    {isReadOnlyPublicProfileView
-                      ? "No public memories yet."
-                      : "No memories yet. Upload up to 5 profile moments."}
-                  </p>
-                )}
-              </div>
-              <div className="sm:col-span-2 rounded-2xl border border-amber-200/26 bg-amber-200/[0.1] p-3.5 sm:shadow-[0_18px_34px_rgba(245,158,11,0.1)]">
-                <p className="text-xs uppercase tracking-[0.12em] text-amber-100/86">Atlas Cred</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-white">
-                  <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] ${memberTitleMeta.className}`}>
-                    {memberTitleMeta.label || "Contributor"}
-                  </span>
-                  {Number.isFinite(Number(activeMemberRank?.rank)) ? (
-                    <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
-                      Rank #{Number(activeMemberRank.rank)}
-                    </span>
-                  ) : null}
-                  <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
-                    {contributionCounts.total} contributions
-                  </span>
-                  <span className="rounded-full border border-white/18 bg-white/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-white/84">
-                    Level {atlasCredLevel}
-                  </span>
-                </div>
-                <p className="mt-2 text-xs text-white/62">
-                  How earned: contributions, consistency, and community quality signals.
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {atlasCredBadges.map((badge) => (
-                    <span
-                      key={`atlas-badge-${badge}`}
-                      className="inline-flex items-center rounded-full border border-amber-200/28 bg-amber-100/12 px-2.5 py-1 text-[11px] uppercase tracking-[0.1em] text-amber-100/90"
-                    >
-                      {badge}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="sm:col-span-2 rounded-2xl border border-cyan-200/24 bg-cyan-200/[0.09] p-3.5 sm:shadow-[0_16px_30px_rgba(34,211,238,0.08)]">
-                <p className="text-xs uppercase tracking-[0.12em] text-cyan-100/84">Public highlights</p>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                  {publicHighlights.map((item) => (
-                    <article
-                      key={`public-highlight-${item.label}`}
-                      className="rounded-xl border border-white/12 bg-black/25 px-3 py-2.5"
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.1em] text-white/56">{item.label}</p>
-                      <p className="mt-1 text-sm text-white/90">{item.value}</p>
-                    </article>
-                  ))}
+
+                  <div className="rounded-[24px] border border-fuchsia-200/16 bg-fuchsia-200/[0.08] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-[0.13em] text-fuchsia-100/78">Profile stories</p>
+                      <span className="rounded-full border border-white/12 bg-white/8 px-2.5 py-1 text-[11px] text-white/56">
+                        {effectiveProfileStories.length}
+                      </span>
+                    </div>
+                    {profileStoriesLoading ? (
+                      <p className="mt-3 text-xs text-white/58">Loading stories...</p>
+                    ) : effectiveProfileStories.length > 0 ? (
+                      <div className="mt-3 space-y-2">
+                        {effectiveProfileStories.slice(0, 4).map((story) => (
+                          <article
+                            key={`profile-story-${story.id}`}
+                            className="rounded-[20px] border border-white/12 bg-black/24 p-3 shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-[10px] uppercase tracking-[0.09em] text-fuchsia-100">
+                                {story.category || "Profile"}
+                              </span>
+                              {story.city ? (
+                                <span className="text-[11px] text-white/48">{story.city}</span>
+                              ) : null}
+                            </div>
+                            <h4 className="mt-2 text-sm font-semibold text-white">{story.title}</h4>
+                            <p className="mt-1 line-clamp-3 text-xs leading-5 text-white/64">
+                              {story.excerpt || story.body}
+                            </p>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="mt-3 rounded-[22px] border border-dashed border-fuchsia-200/18 bg-black/16 px-4 py-5 text-sm text-white/62">
+                        {isReadOnlyPublicProfileView
+                          ? "No profile stories yet."
+                          : "Add a story so members can read more than a bio."}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              {!isViewingAnotherMember ? (
-                <div className="sm:col-span-2 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileForm({
-                        displayName: memberProfile?.displayName || authMemberName || memberName,
-                        pronouns: memberProfile?.pronouns || "",
-                        homeCity: memberProfile?.homeCity || "",
-                        residentCountry: memberProfile?.residentCountry || "",
-                      });
-                      setIsEditingAbout(true);
-                      setIsEditingProfile(true);
-                    }}
-                    className="rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/80 transition duration-300 hover:-translate-y-0.5 hover:border-white/26"
-                    title="Edit profile home"
-                  >
-                    Edit about
-                  </button>
-                </div>
-              ) : null}
             </div>
           ) : (
             <form onSubmit={saveAboutProfile} className="mt-4 space-y-3">
