@@ -31,7 +31,6 @@ import {
   formatSavedTime,
   formatWeekRange,
   geocodeCheckinFromCityAndLabel,
-  isPresenceActiveNow,
   isWithinDays,
   mapCheckinRow,
   mapPlanRow,
@@ -61,7 +60,6 @@ import {
   getSelectedCityEvents,
   getSelectedCityPlaces,
   resolveCheckinMapCenter,
-  sortRecentFollowingCheckins,
 } from "@/features/favorites/logic/checkinSelectors";
 import {
   buildEditCheckinFormPatch,
@@ -94,9 +92,6 @@ import {
 import {
   buildBlockedLookup,
   hasTrustNetworkMissingTables,
-  mapFollowingCheckinsWithOwnerNames,
-  mapPresenceByUserId,
-  mapProfileDisplayNamesByUserId,
   mergeTrustMembersWithProfileRows,
   normalizeCheckins,
   normalizeTrustNetworkRows,
@@ -117,12 +112,9 @@ import {
 } from "@/features/favorites/logic/favoritesSummary";
 import {
   computeContributionCountsFromCollections,
-  computeForYouRecommendations,
-  computeFollowingFeedItems,
   computeFollowingProfiles,
   computeMomentumMilestones,
   computePlannerCities,
-  computeSuggestedMembers,
 } from "@/features/favorites/logic/favoritesInsights";
 import {
   buildCheckinMarkerById,
@@ -131,15 +123,12 @@ import {
 } from "@/features/favorites/checkinMapGuards";
 import {
   FAVORITES_CHECKIN_LIST_SCROLL_CLASS,
-  FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS,
 } from "@/features/favorites/favoritesUiConstants";
 import ActionToast from "@/components/ui/ActionToast";
 import PageControls from "@/components/ui/PageControls";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
 import FavoritesMomentumPanel from "@/components/favorites/FavoritesMomentumPanel";
-import FavoritesPeopleSignalPanel from "@/components/favorites/FavoritesPeopleSignalPanel";
-import FavoritesForYouPanel from "@/components/favorites/FavoritesForYouPanel";
 import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
 
 const TripPlannerV2 = dynamic(() => import("@/components/planner/TripPlannerV2"), {
@@ -322,10 +311,8 @@ export default function FavoritesPage() {
     networkMembers, setNetworkMembers,
     followingUserIds, setFollowingUserIds,
     followingFeedRows, setFollowingFeedRows,
-    networkLoading, setNetworkLoading,
-    networkWarning, setNetworkWarning,
-    recommendationMode, setRecommendationMode,
-    showSignalDeck, setShowSignalDeck,
+    setNetworkLoading,
+    setNetworkWarning,
     nowTs, setNowTs,
     checkins, setCheckins,
     checkinsWarning, setCheckinsWarning,
@@ -333,9 +320,6 @@ export default function FavoritesPage() {
     pendingCheckinVibe, setPendingCheckinVibe,
     isSubmittingCheckinVibe, setIsSubmittingCheckinVibe,
     checkinVibeCooldownUntil, setCheckinVibeCooldownUntil,
-    followingCheckins, setFollowingCheckins,
-    followingCheckinsWarning, setFollowingCheckinsWarning,
-    followingPresenceByUserId, setFollowingPresenceByUserId,
     checkinMapLoadFailed, setCheckinMapLoadFailed,
     checkinStaticFallbackFailed, setCheckinStaticFallbackFailed,
     editingCheckinId, setEditingCheckinId,
@@ -377,7 +361,6 @@ export default function FavoritesPage() {
   });
   const [profileAvatarDataUrl, setProfileAvatarDataUrl] = useState("");
   const [profileAvatarLoadFailed, setProfileAvatarLoadFailed] = useState(false);
-  const [friendAvatarByUserId, setFriendAvatarByUserId] = useState({});
   const [profileMemories, setProfileMemories] = useState(() =>
     readLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, [])
   );
@@ -409,7 +392,6 @@ export default function FavoritesPage() {
   });
   const tonightSectionRef = useRef(null);
   const tripSectionRef = useRef(null);
-  const pulseSectionRef = useRef(null);
   const favoritesControlsRef = useRef(null);
   const favoritesControlButtonsRef = useRef({});
   const avatarFileInputRef = useRef(null);
@@ -500,6 +482,7 @@ export default function FavoritesPage() {
         vibe: "",
         visibility: "members",
         avatarUrl: "",
+        createdAt: "",
       });
     });
     queueMicrotask(() => {
@@ -510,7 +493,7 @@ export default function FavoritesPage() {
     queueMicrotask(async () => {
       const { data, error } = await supabase
         .from("member_profiles")
-        .select("user_id, display_name, pronouns, home_city, resident_country, about, vibe, visibility, avatar_url, avatar_path")
+        .select("user_id, display_name, pronouns, home_city, resident_country, about, vibe, visibility, avatar_url, avatar_path, created_at")
         .eq("user_id", viewedMemberId)
         .maybeSingle();
 
@@ -532,6 +515,7 @@ export default function FavoritesPage() {
         vibe: String(data.vibe || ""),
         visibility: String(data.visibility || "members"),
         avatarUrl: resolveAvatarUrlFromRow(data),
+        createdAt: String(data.created_at || ""),
       });
       setViewedProfileLoading(false);
       setViewedProfileError("");
@@ -753,86 +737,6 @@ export default function FavoritesPage() {
     writeLocalJson(CHECKINS_STORAGE_KEY, mapped);
     setCheckinsWarning("");
   }, [setCheckins, setCheckinsWarning, user]);
-
-  const loadFollowingCheckins = useCallback(async () => {
-    if (!user?.id || !Array.isArray(followingUserIds) || followingUserIds.length === 0) {
-      setFollowingCheckins([]);
-      setFollowingPresenceByUserId({});
-      setFriendAvatarByUserId({});
-      setFollowingCheckinsWarning("");
-      return;
-    }
-
-    const targetIds = normalizeFollowingTargetIds(followingUserIds);
-    if (targetIds.length === 0) {
-      setFollowingCheckins([]);
-      setFollowingPresenceByUserId({});
-      setFriendAvatarByUserId({});
-      setFollowingCheckinsWarning("");
-      return;
-    }
-
-    const [checkinsRes, presenceRes] = await Promise.all([
-      supabase
-        .from("qa_member_checkins")
-        .select("id, user_id, mode, privacy, country, city, label, address, note, place_id, event_id, lat, lng, checked_in_at, created_at")
-        .in("user_id", targetIds)
-        .neq("privacy", "private")
-        .order("checked_in_at", { ascending: false })
-        .limit(150),
-      supabase
-        .from("qa_presence")
-        .select("user_id, is_online, last_seen_at")
-        .in("user_id", targetIds),
-    ]);
-
-    if (checkinsRes.error) {
-      if (isMissingTableError(checkinsRes.error)) {
-        setFollowingCheckinsWarning("Friends check-ins require updated check-in SQL policies.");
-      } else {
-        setFollowingCheckinsWarning("Could not load friends check-ins right now.");
-      }
-      setFollowingCheckins([]);
-      return;
-    }
-
-    let profileRows = [];
-    const profilesWithAvatarRes = await supabase
-      .from("member_profiles")
-      .select("user_id, display_name, avatar_url, avatar_path")
-      .in("user_id", targetIds);
-
-    if (profilesWithAvatarRes.error && isAvatarColumnMissingError(profilesWithAvatarRes.error)) {
-      const fallbackProfilesRes = await supabase
-        .from("member_profiles")
-        .select("user_id, display_name, avatar_path")
-        .in("user_id", targetIds);
-      profileRows = Array.isArray(fallbackProfilesRes.data) ? fallbackProfilesRes.data : [];
-    } else {
-      profileRows = Array.isArray(profilesWithAvatarRes.data) ? profilesWithAvatarRes.data : [];
-    }
-
-    const profileByUserId = mapProfileDisplayNamesByUserId(profileRows);
-    const avatarByUserId = {};
-    profileRows.forEach((row) => {
-      const key = String(row?.user_id || "").trim();
-      const avatar = resolveAvatarUrlFromRow(row);
-      if (!key || !avatar) return;
-      avatarByUserId[key] = avatar;
-    });
-    setFriendAvatarByUserId(avatarByUserId);
-    const presenceMap = mapPresenceByUserId(presenceRes.data);
-    setFollowingPresenceByUserId(presenceMap);
-
-    const mapped = mapFollowingCheckinsWithOwnerNames({
-      checkinRows: checkinsRes.data,
-      displayNameByUserId: profileByUserId,
-      mapCheckinRow,
-    });
-
-    setFollowingCheckins(mapped);
-    setFollowingCheckinsWarning("");
-  }, [followingUserIds, setFollowingCheckins, setFollowingCheckinsWarning, setFollowingPresenceByUserId, user?.id]);
 
   const blocked = useMemo(() => {
     return buildBlockedLookup(blockedItems);
@@ -1059,34 +963,6 @@ export default function FavoritesPage() {
       if (timeoutId) window.clearTimeout(timeoutId);
     };
   }, [isReady, isMember, loadTrustNetwork, user?.id]);
-
-  useEffect(() => {
-    if (!isReady || !isMember || !user?.id) return;
-    let timeoutId = null;
-    let cancelled = false;
-
-    const run = () => {
-      queueMicrotask(async () => {
-        if (cancelled) return;
-        await loadFollowingCheckins();
-      });
-    };
-
-    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
-      const idleId = window.requestIdleCallback(run, { timeout: 2200 });
-      return () => {
-        cancelled = true;
-        window.cancelIdleCallback(idleId);
-        if (timeoutId) window.clearTimeout(timeoutId);
-      };
-    }
-
-    timeoutId = window.setTimeout(run, 1300);
-    return () => {
-      cancelled = true;
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-  }, [isReady, isMember, loadFollowingCheckins, user?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1565,11 +1441,6 @@ export default function FavoritesPage() {
     return filterRecentCheckins(recentCheckins, checkinViewFilter);
   }, [checkinViewFilter, recentCheckins]);
 
-  const recentFollowingCheckins = useMemo(
-    () => sortRecentFollowingCheckins(followingCheckins),
-    [followingCheckins]
-  );
-
   const checkinCities = useMemo(
     () => getCheckinCities(checkins),
     [checkins]
@@ -1846,132 +1717,14 @@ export default function FavoritesPage() {
     () => new Set((followingUserIds || []).map((id) => String(id))),
     [followingUserIds]
   );
-  const memberDisplayNameById = useMemo(() => {
-    const map = new Map();
-    (networkMembers || []).forEach((member) => {
-      const key = String(member?.user_id || member?.id || "").trim();
-      if (!key) return;
-      const name = String(member?.display_name || member?.displayName || "").trim();
-      if (!name) return;
-      map.set(key, name);
-    });
-    return map;
-  }, [networkMembers]);
-  const memberAvatarById = useMemo(() => {
-    const map = new Map();
-    (networkMembers || []).forEach((member) => {
-      const key = String(member?.user_id || member?.id || "").trim();
-      if (!key) return;
-      const avatar = resolveAvatarUrlFromRow(member) || String(member?.avatarUrl || "").trim();
-      if (!avatar) return;
-      map.set(key, avatar);
-    });
-    return map;
-  }, [networkMembers]);
-  const followingFeedNameById = useMemo(() => {
-    const map = new Map();
-    (followingFeedRows || []).forEach((row) => {
-      const key = String(row?.owner_user_id || "").trim();
-      if (!key || map.has(key)) return;
-      const name = String(row?.display_name || "").trim();
-      if (!name || name.toLowerCase() === "member") return;
-      map.set(key, name);
-    });
-    return map;
-  }, [followingFeedRows]);
-  const followingFeedAvatarById = useMemo(() => {
-    const map = new Map();
-    (followingFeedRows || []).forEach((row) => {
-      const key = String(row?.owner_user_id || "").trim();
-      if (!key || map.has(key)) return;
-      const avatar = resolveAvatarUrlFromRow(row);
-      if (!avatar) return;
-      map.set(key, avatar);
-    });
-    return map;
-  }, [followingFeedRows]);
-  const followingCheckinNameById = useMemo(() => {
-    const map = new Map();
-    (followingCheckins || []).forEach((row) => {
-      const key = String(row?.ownerUserId || "").trim();
-      if (!key || map.has(key)) return;
-      const name = String(row?.ownerName || "").trim();
-      if (!name || name.toLowerCase() === "member") return;
-      map.set(key, name);
-    });
-    return map;
-  }, [followingCheckins]);
-
-  const placesById = useMemo(() => {
-    const map = new Map();
-    (places || []).forEach((entry) => {
-      const key = String(entry?.id || "");
-      if (!key) return;
-      map.set(key, entry);
-    });
-    return map;
-  }, [places]);
-
-  const eventsById = useMemo(() => {
-    const map = new Map();
-    (events || []).forEach((entry) => {
-      const key = String(entry?.id || "");
-      if (!key) return;
-      map.set(key, entry);
-    });
-    return map;
-  }, [events]);
-
-  const suggestedMembers = useMemo(() => {
-    if (!showSignalDeck && activeProfileTab !== "friends") return [];
-    return computeSuggestedMembers(networkMembers, user?.id);
-  }, [activeProfileTab, networkMembers, showSignalDeck, user?.id]);
-
-  const followingFeedItems = useMemo(() => {
-    return computeFollowingFeedItems({
-      followingFeedRows,
-      eventsById,
-      placesById,
-    });
-  }, [eventsById, followingFeedRows, placesById]);
-
   const followingProfiles = useMemo(() => {
-    if (!showSignalDeck && activeProfileTab !== "friends" && activeProfileTab !== "about") return [];
+    if (activeProfileTab !== "about") return [];
     return computeFollowingProfiles({
       followingUserIds,
       followingFeedRows,
       networkMembers,
     });
-  }, [activeProfileTab, followingFeedRows, followingUserIds, networkMembers, showSignalDeck]);
-  const followingProfileNameByUserId = useMemo(() => {
-    const map = new Map();
-    (followingProfiles || []).forEach((profile) => {
-      const key = String(profile?.userId || "").trim();
-      const name = String(profile?.displayName || "").trim();
-      if (!key || !name || name.toLowerCase() === "member") return;
-      map.set(key, name);
-    });
-    return map;
-  }, [followingProfiles]);
-
-  const forYouRecommendations = useMemo(() => {
-    if (!showSignalDeck) return [];
-    return computeForYouRecommendations({
-      recommendationMode,
-      blockedEvents: blocked.events,
-      blockedPlaces: blocked.places,
-      events,
-      favoriteIdSet,
-      followingFeedItems,
-      places,
-      savedPlaces,
-      normalizeCityKey,
-      resolvePrimaryVibeKey,
-      resolvePrimaryVibeLabel,
-      formatDate,
-    });
-  }, [blocked.events, blocked.places, events, favoriteIdSet, followingFeedItems, places, recommendationMode, savedPlaces, showSignalDeck]);
-
+  }, [activeProfileTab, followingFeedRows, followingUserIds, networkMembers]);
   const momentumMilestones = useMemo(() => {
     return computeMomentumMilestones({
       checkins,
@@ -2311,26 +2064,29 @@ export default function FavoritesPage() {
     effectiveHomeCity || effectiveResidentCountry
       ? [effectiveHomeCity, effectiveResidentCountry].filter(Boolean).join(", ")
       : "Location not set";
+  const activeJoinedAt = isViewingAnotherMember
+    ? String(viewedProfile?.createdAt || "").trim()
+    : String(user?.created_at || memberProfile?.createdAt || "").trim();
   const joinedSinceLabel = useMemo(() => {
-    const raw = String(user?.created_at || "").trim();
-    if (!raw) return "Recently joined";
+    const raw = String(activeJoinedAt || "").trim();
+    if (!raw) return "Joined recently";
     const parsed = new Date(raw);
-    if (Number.isNaN(parsed.getTime())) return "Recently joined";
+    if (Number.isNaN(parsed.getTime())) return "Joined recently";
     return `Joined ${parsed.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
     })}`;
-  }, [user?.created_at]);
+  }, [activeJoinedAt]);
   const publicHighlights = useMemo(() => {
     return [
       { label: "Top contribution", value: `${atlasCredScore} total posts` },
       { label: "Current level", value: atlasCredLevel },
       {
-        label: isViewingAnotherMember ? "Profile access" : "Membership",
-        value: isViewingAnotherMember ? profileVisibilityLabel : joinedSinceLabel,
+        label: "Joined",
+        value: joinedSinceLabel,
       },
     ];
-  }, [atlasCredLevel, atlasCredScore, isViewingAnotherMember, joinedSinceLabel, profileVisibilityLabel]);
+  }, [atlasCredLevel, atlasCredScore, joinedSinceLabel]);
   const displayInitials = useMemo(() => {
     const parts = String(effectiveDisplayName || "")
       .trim()
@@ -2352,7 +2108,7 @@ export default function FavoritesPage() {
         userId: String(profile?.userId || profile?.user_id || "").trim(),
         displayName: String(profile?.displayName || profile?.display_name || "Member").trim() || "Member",
         homeCity: String(profile?.homeCity || profile?.home_city || "").trim(),
-        avatarUrl: String(profile?.avatarUrl || profile?.avatar_url || "").trim(),
+        avatarUrl: resolveAvatarUrlFromRow(profile) || String(profile?.avatarUrl || "").trim(),
       }));
   const shouldRenderAvatarImage = Boolean(effectiveAvatarUrl) && !profileAvatarLoadFailed;
   const profileTabs = useMemo(
@@ -2361,7 +2117,6 @@ export default function FavoritesPage() {
         ? [{ id: "about", label: "Profile Home" }]
         : [
             { id: "about", label: "Home" },
-            { id: "friends", label: "Friends" },
             { id: "map", label: "My map" },
             { id: "trips", label: "Plan a trip" },
             { id: "calendar", label: "My Calendar" },
@@ -2382,72 +2137,42 @@ export default function FavoritesPage() {
   }, [events, places]);
   const isGoOutTonightIntent = activeFavoritesIntent === "go_out_tonight";
   const isPlanTripIntent = activeFavoritesIntent === "plan_a_trip";
-  const isFriendPulseIntent = activeFavoritesIntent === "check_friend_pulse";
   const isProfileAboutTab = activeProfileTab === "about";
   const isProfileActivityTab = false;
   const isProfileMapTab = activeProfileTab === "map";
   const isProfileTripsTab = activeProfileTab === "trips";
-  const isProfileFriendsTab = activeProfileTab === "friends";
   const isProfileCalendarTab = activeProfileTab === "calendar";
   const isCompactCheckinSection = showSecondaryPanels && !isGoOutTonightIntent;
   const isCompactTripSection = showSecondaryPanels && !isPlanTripIntent;
-  const isCompactPulseSection = showSecondaryPanels && !isFriendPulseIntent;
   const showCheckinSection = isProfileMapTab;
   const showTripSection = isProfileTripsTab;
-  const showPulseSection = isProfileFriendsTab;
   const showCalendarSection = isProfileCalendarTab;
   const primaryIntentCtaLabel = isGoOutTonightIntent
     ? "Start check-in now"
-    : isPlanTripIntent
-      ? "Open trip planner"
-      : "Open friend pulse";
+    : "Open trip planner";
 
   const openIntentView = useCallback(
     (nextIntent) => {
       const nextTab =
         nextIntent === "plan_a_trip"
           ? "trips"
-          : nextIntent === "check_friend_pulse"
-            ? "friends"
-            : "map";
+          : "map";
       setActiveProfileTab(nextTab);
       if (nextIntent === "go_out_tonight") {
         setMyMapView("checkins");
       }
       setActiveFavoritesIntent(nextIntent);
       setShowSecondaryPanels(false);
-      if (nextIntent === "check_friend_pulse") {
-        setShowSignalDeck(true);
-      }
       const targetRef =
         nextIntent === "go_out_tonight"
           ? tonightSectionRef
-          : nextIntent === "plan_a_trip"
-            ? tripSectionRef
-            : pulseSectionRef;
+          : tripSectionRef;
       window.setTimeout(() => {
         targetRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 20);
     },
-    [setShowSignalDeck]
+    []
   );
-
-  const resolveFriendDisplayName = useCallback((userId, fallbackName = "") => {
-    const key = String(userId || "").trim();
-    const profileListName = String(followingProfileNameByUserId.get(key) || "").trim();
-    const profileName = String(memberDisplayNameById.get(key) || "").trim();
-    const feedName = String(followingFeedNameById.get(key) || "").trim();
-    const checkinName = String(followingCheckinNameById.get(key) || "").trim();
-    const fallback = String(fallbackName || "").trim();
-    return (
-      (profileListName && profileListName.toLowerCase() !== "member" && profileListName) ||
-      (profileName && profileName.toLowerCase() !== "member" && profileName) ||
-      (feedName && feedName.toLowerCase() !== "member" && feedName) ||
-      (checkinName && checkinName.toLowerCase() !== "member" && checkinName) ||
-      (fallback && fallback.toLowerCase() !== "member" && fallback) ||
-      "Member"
-    );
-  }, [followingCheckinNameById, followingFeedNameById, followingProfileNameByUserId, memberDisplayNameById]);
 
   const focusSavedPlaceOnMap = useCallback((place) => {
     if (!place) return;
@@ -2460,12 +2185,6 @@ export default function FavoritesPage() {
     if (!map) return;
     map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 12), essential: true });
   }, [checkinMapRef, setSelectedCheckinId]);
-
-  useEffect(() => {
-    if (activeProfileTab === "friends" && !showSignalDeck) {
-      setShowSignalDeck(true);
-    }
-  }, [activeProfileTab, setShowSignalDeck, showSignalDeck]);
 
   useEffect(() => {
     writeLocalJson(FAVORITES_CALENDAR_REMINDER_STORAGE_KEY, calendarReminderByEventId || {});
@@ -3142,10 +2861,6 @@ export default function FavoritesPage() {
                   about: {
                     className:
                       "sm:bg-[#A855F7] sm:text-white",
-                  },
-                  friends: {
-                    className:
-                      "sm:bg-emerald-300 sm:text-[#041514]",
                   },
                   map: {
                     className:
@@ -3862,7 +3577,6 @@ export default function FavoritesPage() {
             {[
               { id: "go_out_tonight", label: "Check in now", hint: "Venue/event check-ins, live energy." },
               { id: "plan_a_trip", label: "Plan a trip", hint: "Route, stops, save flow." },
-              { id: "check_friend_pulse", label: "Check friend pulse", hint: "Friends, trusted signal." },
             ].map((intent) => {
               const isActive = activeFavoritesIntent === intent.id;
               return (
@@ -3927,12 +3641,6 @@ export default function FavoritesPage() {
             ) : null}
             {isPlanTripIntent && plans.length > 0 ? (
               <span>{plans.length} saved plans ready. Open one and continue from the latest stop.</span>
-            ) : null}
-            {isFriendPulseIntent && followingUserIds.length === 0 ? (
-              <span>Follow members to unlock your trusted friend pulse feed.</span>
-            ) : null}
-            {isFriendPulseIntent && followingUserIds.length > 0 ? (
-              <span>{followingUserIds.length} trusted connections active in your pulse network.</span>
             ) : null}
           </div>
 
@@ -4846,216 +4554,6 @@ export default function FavoritesPage() {
           </div>
           </div>
         </section>
-        )
-        ) : null}
-
-        {showPulseSection ? (
-        isCompactPulseSection ? (
-        <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,16,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.28)] sm:shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
-          <div className="flex flex-wrap items-center justify-between gap-2.5">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-violet-100/72">Check friend pulse</p>
-              <p className="mt-1 text-sm text-white/82">{followingUserIds.length} trusted members | {followingFeedItems.length} signal saves</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => openIntentView("check_friend_pulse")}
-              className="rounded-full border border-violet-200/28 bg-violet-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-violet-100 transition hover:border-violet-200/44"
-            >
-              Open full
-            </button>
-          </div>
-        </section>
-        ) : (
-        <div ref={pulseSectionRef}>
-          {isProfileFriendsTab ? (
-          <section className="qa-premium-card mb-6 rounded-[28px] border border-violet-200/16 bg-[linear-gradient(180deg,rgba(16,14,24,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.3)] sm:p-5 sm:shadow-[0_24px_70px_rgba(0,0,0,0.4)]">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-violet-100/70">Friends</p>
-                <h3 className="mt-1 text-xl font-semibold text-white sm:text-2xl">People you follow</h3>
-              </div>
-              <button
-                type="button"
-                onClick={loadTrustNetwork}
-                className="rounded-full border border-violet-200/26 bg-violet-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-violet-100 transition hover:border-violet-200/40"
-              >
-                Refresh
-              </button>
-            </div>
-            {followingProfiles.length > 0 ? (
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                {followingProfiles.map((profile) => {
-                  const userId = String(profile?.userId || "").trim();
-                  const fallbackName = memberDisplayNameById.get(userId) || "";
-                  const feedName = followingFeedNameById.get(userId) || "";
-                  const checkinName = followingCheckinNameById.get(userId) || "";
-                  const profileName = String(profile?.displayName || "").trim();
-                  const friendAvatarUrl = String(
-                    friendAvatarByUserId[userId] ||
-                    memberAvatarById.get(userId) ||
-                    followingFeedAvatarById.get(userId) ||
-                    ""
-                  ).trim();
-                  const friendName = resolveFriendDisplayName(
-                    userId,
-                    profileName || fallbackName || feedName || checkinName
-                  );
-                  const initials = friendName
-                    .split(/\s+/)
-                    .filter(Boolean)
-                    .slice(0, 2)
-                    .map((chunk) => chunk.charAt(0).toUpperCase())
-                    .join("");
-                  return (
-                  <article
-                    key={`friends-list-${profile.userId}`}
-                    className="rounded-2xl border border-white/12 bg-white/[0.04] p-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-cyan-200/28 bg-cyan-200/10 text-xs font-semibold text-cyan-100">
-                        {friendAvatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={friendAvatarUrl} alt={friendName} className="h-full w-full object-cover" />
-                        ) : (
-                          initials || "M"
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-white">{friendName}</p>
-                        <p className="mt-1 text-xs text-white/60">
-                          {profile.cityCount || 0} cities {" \u00B7 "} {profile.score || 0} pts
-                        </p>
-                        {profile.latestItemName ? (
-                          <p className="mt-1 truncate text-[11px] text-cyan-100/72">
-                            Latest: {profile.latestItemName}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(
-                            `/messages?user=${encodeURIComponent(String(profile?.userId || ""))}&name=${encodeURIComponent(
-                              friendName
-                            )}`
-                          )
-                        }
-                        className="rounded-full border border-cyan-200/26 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/44"
-                      >
-                        Message
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleFollowMember(String(profile?.userId || ""))}
-                        className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-white/26"
-                      >
-                        Unfollow
-                      </button>
-                    </div>
-                  </article>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/14 bg-black/25 px-4 py-6 text-sm text-white/48">
-                You are not following anyone yet. Add trusted members to start your friend pulse.
-              </div>
-            )}
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/78">Friend pulse</p>
-                <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/86">
-                  Live check-ins
-                </span>
-              </div>
-              {followingCheckinsWarning ? (
-                <div className="mb-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
-                  {followingCheckinsWarning}
-                </div>
-              ) : null}
-              <div
-                className={FAVORITES_FRIENDS_CHECKIN_LIST_SCROLL_CLASS}
-                style={{ scrollbarGutter: "stable", maxHeight: "17.25rem" }}
-              >
-                {recentFollowingCheckins.length > 0 ? (
-                  recentFollowingCheckins.map((entry) => {
-                    const presence = followingPresenceByUserId[String(entry.ownerUserId || "")] || null;
-                    const activeNow = isPresenceActiveNow(presence);
-                    return (
-                      <article key={`friend-${entry.id}`} className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.06] p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-white">
-                              {resolveFriendDisplayName(entry.ownerUserId, entry.ownerName)}
-                            </p>
-                            <p className="mt-1 text-xs text-white/65">
-                              {entry.label || "Unnamed check-in"} | {entry.city || "Unknown city"}
-                            </p>
-                            {entry.address ? <p className="mt-1 text-[11px] text-white/52">{entry.address}</p> : null}
-                          </div>
-                          <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${
-                            activeNow
-                              ? "border-emerald-200/30 bg-emerald-200/16 text-emerald-100"
-                              : "border-white/16 bg-white/8 text-white/62"
-                          }`}>
-                            {activeNow ? "Active now" : "Offline"}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-[11px] text-white/55">{formatCheckinTime(entry.checkedInAt)}</p>
-                      </article>
-                    );
-                  })
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
-                    No friend check-ins yet. Follow members and their travel signal appears here.
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-          ) : showSignalDeck ? (
-          <>
-            <FavoritesPeopleSignalPanel
-              networkWarning={networkWarning}
-              onRefresh={loadTrustNetwork}
-              followingProfiles={followingProfiles}
-              suggestedMembers={suggestedMembers}
-              followingFeedItems={followingFeedItems}
-              followingIdSet={followingIdSet}
-              networkLoading={networkLoading}
-              onMessageMember={(profile) =>
-                router.push(
-                  `/messages?user=${encodeURIComponent(String(profile?.userId || ""))}&name=${encodeURIComponent(
-                    String(profile?.displayName || "Member")
-                  )}`
-                )
-              }
-              onToggleFollow={(memberId) => toggleFollowMember(memberId)}
-              onSaveFromFeed={(item) => addFavoriteFromNetwork(item.favoriteId, item.name)}
-            />
-
-            <FavoritesForYouPanel
-              recommendationMode={recommendationMode}
-              setRecommendationMode={setRecommendationMode}
-              forYouRecommendations={forYouRecommendations}
-              onOpenRecommendation={(item) =>
-                router.push(
-                  citySelectionPath(item.city, {
-                    placeId: item.kind === "place" ? item.id : "",
-                    eventId: item.kind === "event" ? item.id : "",
-                  })
-                )
-              }
-              onSaveRecommendation={(item) =>
-                addFavoriteFromNetwork(item.kind === "event" ? `event-${item.id}` : item.id, item.name)
-              }
-            />
-          </>
-          ) : null}
-        </div>
         )
         ) : null}
 

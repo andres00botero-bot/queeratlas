@@ -9,9 +9,13 @@ import {
 } from "../src/features/favorites/logic/favoritesMutations.js";
 import {
   buildBlockedLookup,
+  mergeTrustMembersWithProfileRows,
   normalizeCheckins,
   normalizeFollowingTargetIds,
 } from "../src/features/favorites/logic/favoritesNetwork.js";
+import {
+  computeFollowingProfiles,
+} from "../src/features/favorites/logic/favoritesInsights.js";
 import {
   hasProfileFormChanges,
   resolveGreetingByHour,
@@ -75,6 +79,19 @@ function testFavoritesNetwork() {
     (row) => ({ label: row.label, checkedInAt: row.checked_in_at })
   );
   assert.equal(normalized[0].label, "New");
+
+  const mergedMembers = mergeTrustMembersWithProfileRows({
+    leaderboardMembers: [{ user_id: "a", display_name: "Member", avatar_url: "" }],
+    followedProfileRows: [{ user_id: "a", display_name: "Alex", avatar_path: "avatars/a.jpg" }],
+  });
+  assert.equal(mergedMembers[0].display_name, "Alex");
+  assert.equal(mergedMembers[0].avatar_path, "avatars/a.jpg");
+
+  const followingProfiles = computeFollowingProfiles({
+    followingUserIds: ["a"],
+    networkMembers: mergedMembers,
+  });
+  assert.equal(followingProfiles[0].avatar_path, "avatars/a.jpg");
 }
 
 function testFavoritesProfile() {

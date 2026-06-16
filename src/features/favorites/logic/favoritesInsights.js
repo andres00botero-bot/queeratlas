@@ -93,6 +93,8 @@ export function computeFollowingProfiles({
         rank: member?.rank || null,
         score: member?.score || 0,
         cityCount: member?.city_count || 0,
+        avatar_url: member?.avatar_url || "",
+        avatar_path: member?.avatar_path || "",
         latestItemName: latest?.item_name || latest?.favorite_id || "",
         latestItemCity: latest?.item_city || "",
         latestAt: latest?.created_at || "",

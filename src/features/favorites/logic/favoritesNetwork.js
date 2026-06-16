@@ -110,6 +110,7 @@ export function mergeTrustMembersWithProfileRows({
 
     const profileDisplayName = String(row?.display_name || "").trim();
     const profileAvatarUrl = String(row?.avatar_url || "").trim();
+    const profileAvatarPath = String(row?.avatar_path || "").trim();
     const current = memberByUserId.get(key);
 
     if (!current) {
@@ -121,6 +122,7 @@ export function mergeTrustMembersWithProfileRows({
         score: 0,
         city_count: 0,
         avatar_url: profileAvatarUrl || "",
+        avatar_path: profileAvatarPath || "",
       });
       orderedIds.push(key);
       return;
@@ -132,6 +134,9 @@ export function mergeTrustMembersWithProfileRows({
     }
     if (!String(next.avatar_url || "").trim() && profileAvatarUrl) {
       next.avatar_url = profileAvatarUrl;
+    }
+    if (!String(next.avatar_path || "").trim() && profileAvatarPath) {
+      next.avatar_path = profileAvatarPath;
     }
     memberByUserId.set(key, next);
   });
