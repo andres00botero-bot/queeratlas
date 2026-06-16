@@ -3968,6 +3968,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "montenegro": [
+    {
+      "title": "About",
+      "text": "Montenegro works best as a small-country queer route rather than a single city scene. There is community infrastructure in Podgorica, summer nightlife around Budva, beach and naturist culture near Ulcinj and Ada Bojana, and polished coastal stays around Kotor Bay and Tivat. The scene is not large or heavily branded, but the country can still be useful for queer travelers who plan with realistic expectations.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Use Podgorica for services, Pride and rights context; Budva for clubs, bars and summer nightlife; Kotor and Tivat for polished coastal bases; Ulcinj and Ada Bojana for beach, naturist and more relaxed travel energy. Distances are short by country standards, but the best route still needs planning because the queer signal is spread out.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Same-sex relationships are legal and same-sex life partnerships are recognized, but public visibility can feel uneven outside tourist zones and community-led spaces. Keep public affection measured where the room is unclear, verify beach and nightlife conditions locally, and use direct transport after late club nights.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Montenegro is more mixed and seasonal than gay-specific. Budva carries the strongest club output, with venues like Top Hill, Omnia and Casper Bar functioning as mixed nightlife anchors. Podgorica and Kotor add smaller alternative and old-town social rooms. No active dedicated gay sauna or permanent gay club could be verified for this package.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Montenegro is usually better value than the highest-priced Adriatic destinations, but coastal summer pricing can climb fast in Budva, Kotor Bay and Tivat. Podgorica is cheaper and more practical for services; the coast is where atmosphere, hotels and late-night spending rise.",
+      "extra": ""
+    }
+  ],
   "zagreb": [
     {
       "title": "About",

@@ -1324,6 +1324,15 @@ export const cityCoreConfig = {
     "country": "Morocco",
     "vibe": "discreet nightlife under warm intensity"
   },
+  "montenegro": {
+    "center": [
+      19.2594,
+      42.4304
+    ],
+    "title": "Queer Montenegro",
+    "country": "Montenegro",
+    "vibe": "coastal country route"
+  },
   "zagreb": {
     "center": [
       15.9819,

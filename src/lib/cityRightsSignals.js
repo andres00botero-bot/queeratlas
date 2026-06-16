@@ -241,6 +241,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-06-16",
   },
+  Montenegro: {
+    legal: "good",
+    rights: "mixed",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex relations are legal and same-sex life partnerships are recognized, but marriage equality and full family-rights parity are not in place. Anti-discrimination law covers sexual orientation and gender identity, while everyday comfort is strongest in tourist zones and community-led spaces.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "Civil union / partnership",
+      genderRecognition: "Restricted",
+      antiDiscrimination: "Full coverage",
+    },
+    sources: {
+      legal: "https://rainbowmap.ilga-europe.org/",
+      rights: "https://www.equaldex.com/region/montenegro",
+      safety: "https://queermontenegro.org/",
+    },
+    confidence: "high",
+    updatedAt: "2026-06-16",
+  },
   Serbia: {
     legal: "good",
     rights: "risk",
