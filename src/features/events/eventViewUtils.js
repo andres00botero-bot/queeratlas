@@ -37,6 +37,7 @@ export function mapGlobalEventRow(row) {
     vibe_tags: vibeTags,
     description: parsed.description || "",
     link: row.link || "",
+    ticket_url: row.ticket_url || "",
     source: row.source || "",
     lastChecked: row.last_checked || "",
     city: "Global",

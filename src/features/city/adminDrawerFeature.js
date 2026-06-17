@@ -75,6 +75,7 @@ export function buildEventAdminDraft(event) {
     vibe_tags: vibeTags,
     description: String(event?.description || ""),
     link: String(event?.link || ""),
+    ticket_url: String(event?.ticket_url || event?.ticketUrl || ""),
   };
 }
 

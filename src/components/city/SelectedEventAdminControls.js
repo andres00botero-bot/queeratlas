@@ -90,6 +90,20 @@ export default function SelectedEventAdminControls({
             placeholder="Official link"
             className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
           />
+          <label className="block rounded-xl border border-emerald-200/22 bg-emerald-200/[0.08] p-2.5">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100">
+              Ticket URL / Get tickets button
+            </span>
+            <span className="mt-1 block text-[11px] text-emerald-50/62">
+              Optional. Paste the page where people can buy tickets for this event.
+            </span>
+            <input
+              value={draft.ticket_url || ""}
+              onChange={(event) => setDraft((current) => ({ ...current, ticket_url: event.target.value }))}
+              placeholder="https://tickets.example.com/event"
+              className="mt-2 w-full rounded-xl border border-emerald-100/20 bg-black/45 px-3 py-2 text-sm text-white outline-none focus:border-emerald-100/55"
+            />
+          </label>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"

@@ -69,6 +69,13 @@ function getLocalDateKey() {
   return `${year}-${month}-${day}`;
 }
 
+function normalizeExternalUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `https://${raw}`;
+}
+
 function isDuplicateKeyError(error) {
   const code = String(error?.code || "").toUpperCase();
   return code === "23505";
@@ -153,6 +160,7 @@ export default function EventsPage() {
     vibe_tags: [],
     description: "",
     link: "",
+    ticket_url: "",
   });
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -920,6 +928,7 @@ export default function EventsPage() {
       vibe_tags: eventVibeTags,
       description: String(event?.description || ""),
       link: String(event?.link || ""),
+      ticket_url: String(event?.ticket_url || event?.ticketUrl || ""),
     });
     setCityEditOpen(true);
   };
@@ -963,6 +972,7 @@ export default function EventsPage() {
       vibe_tags: normalizeVibeTags(cityEditDraft.vibe_tags, { max: 3 }),
       description: cityEditDraft.description || null,
       link: cityEditDraft.link || null,
+      ticket_url: String(cityEditDraft.ticket_url || "").trim() || null,
     };
 
     const { data, error } = await updateCityEventRecord(cityEditDraft.id, payload);
@@ -1547,13 +1557,24 @@ export default function EventsPage() {
                               </button>
                               {event.link && (
                                 <a
-                                  href={event.link}
+                                  href={normalizeExternalUrl(event.link)}
                                   target="_blank"
                                   rel="noreferrer"
                                   onClick={(eventClick) => eventClick.stopPropagation()}
                                   className="qa-action qa-cta-primary rounded-2xl bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:opacity-95"
                                 >
                                   Open official link
+                                </a>
+                              )}
+                              {(event.ticket_url || event.ticketUrl) && (
+                                <a
+                                  href={normalizeExternalUrl(event.ticket_url || event.ticketUrl)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(eventClick) => eventClick.stopPropagation()}
+                                  className="rounded-2xl border border-emerald-200/30 bg-emerald-200/12 px-4 py-3 text-center text-sm font-semibold text-emerald-100 transition hover:border-emerald-200/48 hover:bg-emerald-200/18"
+                                >
+                                  Get tickets
                                 </a>
                               )}
 
@@ -1751,12 +1772,22 @@ export default function EventsPage() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {event.link && (
                         <a
-                          href={event.link}
+                          href={normalizeExternalUrl(event.link)}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/36 hover:bg-cyan-200/14"
                         >
                           Open official link
+                        </a>
+                      )}
+                      {(event.ticket_url || event.ticketUrl) && (
+                        <a
+                          href={normalizeExternalUrl(event.ticket_url || event.ticketUrl)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex rounded-xl border border-emerald-200/24 bg-emerald-200/10 px-3 py-2 text-xs text-emerald-100 transition hover:border-emerald-200/36 hover:bg-emerald-200/16"
+                        >
+                          Get tickets
                         </a>
                       )}
                       {isAdmin && (

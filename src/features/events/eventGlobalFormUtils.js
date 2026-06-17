@@ -10,6 +10,7 @@ export const EMPTY_GLOBAL_FORM = {
   vibe_tags: [],
   description: "",
   link: "",
+  ticket_url: "",
   source: "",
   lastChecked: "",
 };
@@ -32,6 +33,7 @@ export function buildGlobalFormFromEvent(event = {}) {
     vibe_tags: vibeTags,
     description: String(event?.description || ""),
     link: String(event?.link || ""),
+    ticket_url: String(event?.ticket_url || event?.ticketUrl || ""),
     source: String(event?.source || ""),
     lastChecked: String(event?.lastChecked || ""),
   };
@@ -59,6 +61,7 @@ export function buildGlobalEventPayloadFromForm(globalForm = {}) {
       ...vibeFields,
       description: globalForm.description || null,
       link: globalForm.link || null,
+      ticket_url: String(globalForm.ticket_url || "").trim() || null,
       source: globalForm.source || null,
       last_checked: globalForm.lastChecked || null,
     },

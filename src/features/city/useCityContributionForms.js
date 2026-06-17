@@ -22,6 +22,7 @@ export function useCityContributionForms() {
   const [eventVibeTags, setEventVibeTags] = useState([]);
   const [eventDescription, setEventDescription] = useState("");
   const [eventLink, setEventLink] = useState("");
+  const [eventTicketUrl, setEventTicketUrl] = useState("");
 
   const resetPlaceForm = useCallback(() => {
     setName("");
@@ -43,6 +44,7 @@ export function useCityContributionForms() {
     setEventVibeTags([]);
     setEventDescription("");
     setEventLink("");
+    setEventTicketUrl("");
   }, []);
 
   return {
@@ -78,6 +80,8 @@ export function useCityContributionForms() {
     setEventDescription,
     eventLink,
     setEventLink,
+    eventTicketUrl,
+    setEventTicketUrl,
     resetPlaceForm,
     resetEventForm,
   };

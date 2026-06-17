@@ -239,6 +239,8 @@ export default function CityPage() {
     setEventDescription,
     eventLink,
     setEventLink,
+    eventTicketUrl,
+    setEventTicketUrl,
     resetPlaceForm,
     resetEventForm,
   } = useCityContributionForms();
@@ -2905,6 +2907,7 @@ export default function CityPage() {
         }),
         description: eventDescription,
         link: eventLink,
+        ticket_url: eventTicketUrl.trim() || null,
       };
 
       if (!canPublishDirect) {
@@ -2956,8 +2959,10 @@ export default function CityPage() {
         const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
         const missingLocation =
           errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingTicketUrl =
+          errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
+        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
           const legacyPayload = {
             name: eventName,
             city,
@@ -2967,6 +2972,9 @@ export default function CityPage() {
             description: eventDescription,
             link: eventLink,
           };
+          if (!missingTicketUrl) {
+            legacyPayload.ticket_url = eventTicketUrl.trim() || null;
+          }
           if (!missingVibe) {
             legacyPayload.vibe = eventVibe.trim() || null;
           }
@@ -3939,6 +3947,7 @@ export default function CityPage() {
     }
     setIsSavingEventAdmin(true);
     try {
+      const ticketUrlValue = String(eventAdminDraft.ticket_url || "").trim();
       const dbId = await resolveEventDbId(selectedEvent);
       let nextLat = selectedEvent.lat ?? null;
       let nextLng = selectedEvent.lng ?? null;
@@ -3967,6 +3976,7 @@ export default function CityPage() {
         }),
         description: eventAdminDraft.description.trim(),
         link: eventAdminDraft.link.trim() || null,
+        ticket_url: ticketUrlValue || null,
       };
 
       if (dbId) {
@@ -3987,8 +3997,10 @@ export default function CityPage() {
           const missingVibeTags = isMissingVibeTagsColumnError(updateResult.error);
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingTicketUrl =
+            errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
             const legacyPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -3997,6 +4009,9 @@ export default function CityPage() {
               description: eventAdminDraft.description.trim(),
               link: eventAdminDraft.link.trim() || null,
             };
+            if (!missingTicketUrl) {
+              legacyPayload.ticket_url = ticketUrlValue || null;
+            }
             if (!missingVibe) {
               legacyPayload.vibe = eventAdminDraft.vibe.trim() || null;
             }
@@ -4047,8 +4062,10 @@ export default function CityPage() {
           const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
           const missingLocation =
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingTicketUrl =
+            errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
             const legacyInsertPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -4058,6 +4075,9 @@ export default function CityPage() {
               lat: nextLat,
               lng: nextLng,
             };
+            if (!missingTicketUrl) {
+              legacyInsertPayload.ticket_url = ticketUrlValue || null;
+            }
             if (!missingVibe) {
               legacyInsertPayload.vibe = eventAdminDraft.vibe.trim() || null;
             }
@@ -4546,6 +4566,8 @@ export default function CityPage() {
                   setEventVibe,
                   eventLink,
                   setEventLink,
+                  eventTicketUrl,
+                  setEventTicketUrl,
                   eventAddress,
                   setEventAddress,
                   eventStartDate,

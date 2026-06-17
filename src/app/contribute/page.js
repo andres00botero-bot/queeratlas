@@ -262,6 +262,7 @@ export default function ContributePage() {
     date: "",
     description: "",
     link: "",
+    ticket_url: "",
     vibe: "",
     vibe_tags: [],
     source: "",
@@ -873,6 +874,7 @@ export default function ContributePage() {
         }),
         description: eventForm.description,
         link: eventForm.link,
+        ticket_url: String(eventForm.ticket_url || "").trim() || null,
       };
 
       if (!canPublishDirect) {
@@ -911,6 +913,7 @@ export default function ContributePage() {
           date: "",
           description: "",
           link: "",
+          ticket_url: "",
           vibe: "",
           vibe_tags: [],
           source: "",
@@ -940,8 +943,11 @@ export default function ContributePage() {
         const missingLocation =
           errorText.includes("location") &&
           (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingTicketUrl =
+          errorText.includes("ticket_url") &&
+          (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingDateRange || missingVibe || missingVibeTags || missingLocation) {
+        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
           const legacyPayload = {
             name: eventForm.name,
             city: cityName,
@@ -951,6 +957,9 @@ export default function ContributePage() {
             description: eventForm.description,
             link: eventForm.link,
           };
+          if (!missingTicketUrl) {
+            legacyPayload.ticket_url = String(eventForm.ticket_url || "").trim() || null;
+          }
           if (!missingVibe) {
             legacyPayload.vibe = eventForm.vibe.trim() || null;
           }
@@ -999,6 +1008,7 @@ export default function ContributePage() {
         date: "",
         description: "",
         link: "",
+        ticket_url: "",
         vibe: "",
         vibe_tags: [],
         source: "",
@@ -1796,6 +1806,20 @@ export default function ContributePage() {
                   tone="violet"
                   />
                   <Field value={eventForm.link} onChange={(event) => setEventForm((current) => ({ ...current, link: event.target.value }))} placeholder="Event link (optional)" />
+                  <label className="block rounded-xl border border-emerald-200/28 bg-emerald-200/[0.10] p-3">
+                    <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
+                      Ticket URL / Get tickets button
+                    </span>
+                    <span className="mt-1 block text-xs text-emerald-50/70">
+                      Optional. Paste the page where people can buy tickets for this event.
+                    </span>
+                    <input
+                      value={eventForm.ticket_url || ""}
+                      onChange={(event) => setEventForm((current) => ({ ...current, ticket_url: event.target.value }))}
+                      placeholder="https://tickets.example.com/event"
+                      className="mt-2 w-full rounded-xl border border-emerald-100/24 bg-black px-4 py-3 text-sm outline-none transition focus:border-emerald-100/55"
+                    />
+                  </label>
                   <Field
                     value={eventForm.vibe}
                     onChange={(event) => setEventForm((current) => ({ ...current, vibe: event.target.value }))}

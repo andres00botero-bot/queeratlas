@@ -15,6 +15,7 @@ export default function SelectedEventActions({
   const favoriteKey = `event-${selectedEvent.id}`;
   const isSaved = favorites.includes(favoriteKey);
   const eventLinkUrl = normalizeExternalUrl(selectedEvent?.link || "");
+  const ticketUrl = normalizeExternalUrl(selectedEvent?.ticket_url || selectedEvent?.ticketUrl || "");
 
   return (
     <div className="mt-3 space-y-2">
@@ -38,6 +39,16 @@ export default function SelectedEventActions({
           className="qa-action qa-action-strong qa-city-cta-primary block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
         >
           Open official link
+        </a>
+      )}
+      {ticketUrl && (
+        <a
+          href={ticketUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="qa-action qa-action-strong block w-full rounded-2xl border border-emerald-200/35 bg-emerald-200/14 py-3 text-center font-semibold text-emerald-100 transition hover:border-emerald-200/55 hover:bg-emerald-200/20"
+        >
+          Get tickets
         </a>
       )}
 

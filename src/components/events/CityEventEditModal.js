@@ -83,6 +83,20 @@ export default function CityEventEditModal({
               className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
               placeholder="External link (optional)"
             />
+            <label className="block rounded-2xl border border-emerald-200/22 bg-emerald-200/[0.08] p-3">
+              <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100">
+                Ticket URL / Get tickets button
+              </span>
+              <span className="mt-1 block text-[11px] text-emerald-50/62">
+                Optional. Paste the page where people can buy tickets for this event.
+              </span>
+              <input
+                value={draft.ticket_url || ""}
+                onChange={(event) => setDraft((current) => ({ ...current, ticket_url: event.target.value }))}
+                className="mt-2 w-full rounded-2xl border border-emerald-100/20 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/40"
+                placeholder="https://tickets.example.com/event"
+              />
+            </label>
 
             {error && (
               <p className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">

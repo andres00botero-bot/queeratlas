@@ -15,6 +15,8 @@ export default function AddEventInlineForm({
   setEventVibe,
   eventLink,
   setEventLink,
+  eventTicketUrl,
+  setEventTicketUrl,
   eventAddress,
   setEventAddress,
   eventStartDate,
@@ -41,6 +43,20 @@ export default function AddEventInlineForm({
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <input value={eventLink} onChange={(event) => setEventLink(event.target.value)} placeholder="Event link (Instagram, RA, etc)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+      <label className="block rounded-2xl border border-emerald-200/28 bg-emerald-200/[0.10] p-3">
+        <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">
+          Ticket URL / Get tickets button
+        </span>
+        <span className="mt-1 block text-xs text-emerald-50/70">
+          Optional. Paste the page where people can buy tickets for this event.
+        </span>
+        <input
+          value={eventTicketUrl}
+          onChange={(event) => setEventTicketUrl(event.target.value)}
+          placeholder="https://tickets.example.com/event"
+          className="mt-2 w-full rounded-2xl border border-emerald-100/24 bg-black/35 p-3 outline-none focus:border-emerald-100/55"
+        />
+      </label>
       <input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
