@@ -1499,17 +1499,6 @@ export const seedPlaces = [
     lng: -99.1663,
   }),
   createPlace({
-    id: "seed-place-mexicocity-cabaretito",
-    city: "mexico_city",
-    name: "CabarÃ©tito FusiÃ³n",
-    type: "club",
-    vibe: "cheap-drag chaos with huge local pull",
-    description: "CabarÃ©tito FusiÃ³n is where cheap drinks, drag, comedy, and dance-floor release all get thrown into the same wonderfully noisy machine. The room skews younger, flirtier, and less polished than the fancier addresses, which is exactly what gives it life. This is a great choice if you want Mexico City to feel playful, packed, and gloriously unserious.",
-    hours: "Tue 18:00-02:00, Thu-Sat 18:00-03:00, Sun-Mon-Wed closed.",
-    lat: 19.4254,
-    lng: -99.1668,
-  }),
-  createPlace({
     id: "seed-place-mexicocity-baby",
     city: "mexico_city",
     name: "Baby",
