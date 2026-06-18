@@ -1515,13 +1515,29 @@ export default function EventsPage() {
                               )}
                             </div>
 
-                            <div className="mb-3">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                               <button
                                 onClick={(clickEvent) => refreshQuality(event, clickEvent)}
                                 disabled={event.isGlobal && !isAdmin}
                                 className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.14em] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 ${qualityPillClass(qualityStatus.tone)}`}>
                                 {qualityStatus.label}
                               </button>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {!event.isGlobal && isAdmin && (
+                                  <button
+                                    onClick={(eventClick) => openCityEdit(event, eventClick)}
+                                    className="rounded-full border border-emerald-200/22 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium text-emerald-100/88 transition hover:border-emerald-200/40 hover:bg-emerald-200/14"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                                <button
+                                  onClick={(eventClick) => handleReport(event, eventClick)}
+                                  className="rounded-full border border-rose-200/20 bg-rose-200/[0.07] px-3 py-1 text-[11px] font-medium text-rose-100/82 transition hover:border-rose-200/38 hover:bg-rose-200/12"
+                                >
+                                  Report
+                                </button>
+                              </div>
                             </div>
                             {quality.lastChecked && (
                               <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-white/50">
@@ -1595,21 +1611,6 @@ export default function EventsPage() {
                                 </button>
                               )}
 
-                              {!event.isGlobal && isAdmin && (
-                                <button
-                                  onClick={(eventClick) => openCityEdit(event, eventClick)}
-                                  className="rounded-2xl border border-emerald-200/24 bg-emerald-200/10 px-4 py-3 text-sm text-emerald-100 transition hover:border-emerald-200/36 hover:bg-emerald-200/16"
-                                >
-                                  Edit event
-                                </button>
-                              )}
-
-                              <button
-                                onClick={(eventClick) => handleReport(event, eventClick)}
-                                className="rounded-2xl border border-rose-200/24 bg-rose-200/10 px-4 py-3 text-sm text-rose-100 transition hover:border-rose-200/36 hover:bg-rose-200/16"
-                              >
-                                Report event
-                              </button>
                             </div>
                           </div>
                           );
@@ -1757,6 +1758,22 @@ export default function EventsPage() {
                         </button>
                       </div>
                     </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                      {isAdmin && (
+                        <button
+                          onClick={(clickEvent) => startEditGlobalEvent(event, clickEvent)}
+                          className="rounded-full border border-emerald-200/22 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium text-emerald-100/88 transition hover:border-emerald-200/40 hover:bg-emerald-200/14"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      <button
+                        onClick={(clickEvent) => handleReport(event, clickEvent)}
+                        className="rounded-full border border-rose-200/20 bg-rose-200/[0.07] px-3 py-1 text-[11px] font-medium text-rose-100/82 transition hover:border-rose-200/38 hover:bg-rose-200/12"
+                      >
+                        Report
+                      </button>
+                    </div>
                     {quality.lastChecked && (
                       <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/50">
                         Checked {formatDateLabel(quality.lastChecked)}
@@ -1792,14 +1809,6 @@ export default function EventsPage() {
                       )}
                       {isAdmin && (
                         <button
-                          onClick={(clickEvent) => startEditGlobalEvent(event, clickEvent)}
-                          className="inline-flex rounded-xl border border-emerald-200/24 bg-emerald-200/10 px-3 py-2 text-xs text-emerald-100 transition hover:border-emerald-200/36 hover:bg-emerald-200/16"
-                        >
-                          Edit event
-                        </button>
-                      )}
-                      {isAdmin && (
-                        <button
                           onClick={(clickEvent) => deleteGlobalEvent(event.id, clickEvent)}
                           disabled={deletingGlobalEventId === String(event.id || "")}
                           className="inline-flex rounded-xl border border-rose-300/24 bg-rose-300/10 px-3 py-2 text-xs text-rose-100 transition hover:border-rose-300/40 hover:bg-rose-300/16 disabled:cursor-not-allowed disabled:opacity-55"
@@ -1807,12 +1816,6 @@ export default function EventsPage() {
                           {deletingGlobalEventId === String(event.id || "") ? "Deleting..." : "Delete event"}
                         </button>
                       )}
-                      <button
-                        onClick={(clickEvent) => handleReport(event, clickEvent)}
-                        className="inline-flex rounded-xl border border-rose-200/24 bg-rose-200/10 px-3 py-2 text-xs text-rose-100 transition hover:border-rose-200/36 hover:bg-rose-200/16"
-                      >
-                        Report event
-                      </button>
                     </div>
                   </div>
                     );
