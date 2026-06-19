@@ -243,6 +243,19 @@ export const cityConfig = {
       cost: "Stockholm is expensive, especially once drinks, transport, and convenience start stacking. The payoff is ease and overall quality of experience.",
     }),
   },
+  malmo: {
+    center: [13.0038, 55.6050],
+    title: "Queer Malmö",
+    country: "Sweden",
+    vibe: "compact",
+    guide: buildGuide({
+      about: "Malmö has a compact but unusually useful queer rhythm: one dedicated queer bar, recurring takeover parties, fetish and community spaces, film, culture, and a strong crossover with Copenhagen just across the bridge. It is not a huge scene, but it is legible, warm, and easy to route when you know the key anchors.",
+      district: "Möllan, Folkets Park, Bergsgatan, and the central corridors around Triangeln and Davidshall are the practical zones. Malmö works best when you think in clusters rather than expecting one branded gay district.",
+      safety: "Sweden gives Malmö a strong legal and social baseline, but late-night comfort still depends on normal city awareness, crowd context, and how far you move between venues. Keep routes simple around Möllan and central Malmö after dark.",
+      nightlife: "Atemlos is the clearest dedicated queer bar. Around it, Malmö builds through event-led energy: Le Queer, Malmö Guerrilla Queer Bar, SLM nights, Plan B, Moriskan, Inkonst, Pride, and film/culture programming.",
+      cost: "Malmö is usually easier than Stockholm or Copenhagen on total spend, especially for food and hotels. Prices still feel Nordic, but the city gives good value because distances are short and many strong stops are walkable.",
+    }),
+  },
   manchester: {
     center: [-2.2426, 53.4808],
     title: "Queer Manchester",

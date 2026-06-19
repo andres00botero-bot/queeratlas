@@ -161,6 +161,15 @@ export const cityCoreConfig = {
     "country": "Sweden",
     "vibe": "clean"
   },
+  "malmo": {
+    "center": [
+      13.0038,
+      55.605
+    ],
+    "title": "Queer Malmö",
+    "country": "Sweden",
+    "vibe": "compact"
+  },
   "manchester": {
     "center": [
       -2.2426,
