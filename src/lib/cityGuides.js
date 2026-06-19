@@ -3914,6 +3914,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "algarve": [
+    {
+      "title": "About",
+      "text": "The Algarve works best as a whole-region queer beach route rather than one single city scene. Albufeira brings the most obvious nightlife, Portimao adds The Loft and Praia da Rocha energy, Lagos brings a softer old-town and boat-trip layer, and Faro is the practical airport and capital gateway.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Think in coastal chapters: Albufeira and The Strip for dedicated gay-bar nightlife, Portimao and Praia da Rocha for late club and beach-base convenience, Lagos for a more charming social stay, and Vilamoura or Quinta do Lago for polished resort comfort. A car or planned transfers make the region feel much easier.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Portugal gives the Algarve a strong legal baseline and the tourist coast is generally comfortable for LGBTQ travelers. The real safety work is practical: beach access, low-tide timing, summer crowds, late-night transport, and avoiding isolated coves after dark.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Algarve nightlife is seasonal and town-based. CONNECTION Bar in Albufeira and The Loft in Portimao are the clearest dedicated queer anchors, while restaurants, beach bars, mixed resort venues, and Pride-season events fill in the social route.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "The Algarve can feel good value outside peak summer, but July, August, Pride periods, and beachfront hotels can climb quickly. Staying near the town you will actually go out in saves money and keeps late-night logistics calm.",
+      "extra": ""
+    }
+  ],
   "lyon": [
     {
       "title": "About",

@@ -1306,6 +1306,15 @@ export const cityCoreConfig = {
     "country": "Portugal",
     "vibe": "historic city queer night flow"
   },
+  "algarve": {
+    "center": [
+      -8.3068,
+      37.2445
+    ],
+    "title": "Queer Algarve",
+    "country": "Portugal",
+    "vibe": "sunny coast region route"
+  },
   "lyon": {
     "center": [
       4.8357,
