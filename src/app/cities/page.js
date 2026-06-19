@@ -71,6 +71,17 @@ const MAPBOX_COUNTRY_ALIASES = {
   "Bosnia and Herzegovina": ["Bosnia and Herzegovina", "Bosnia & Herzegovina", "Bosnia-Herzegovina"],
   Netherlands: ["Netherlands", "The Netherlands"],
 };
+const MAPBOX_COUNTRY_CLICK_OVERRIDES = [
+  {
+    country: "Taiwan",
+    bounds: {
+      west: 119.2,
+      south: 21.7,
+      east: 122.2,
+      north: 25.5,
+    },
+  },
+];
 const MAP_RISK_PALETTE = {
   open: { label: "Open", color: "#3b82f6" },
   steady: { label: "Steady", color: "#22c55e" },
@@ -153,6 +164,22 @@ function resolveMapboxCountryToAppCountry(mapboxName, countries) {
   }
 
   return null;
+}
+
+function resolveCoordinateOverrideCountry(lngLat, countries) {
+  if (!lngLat) return null;
+  const countrySet = new Set(countries);
+  const lng = Number(lngLat.lng);
+  const lat = Number(lngLat.lat);
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
+
+  const match = MAPBOX_COUNTRY_CLICK_OVERRIDES.find((item) => {
+    if (!countrySet.has(item.country)) return false;
+    const bounds = item.bounds;
+    return lng >= bounds.west && lng <= bounds.east && lat >= bounds.south && lat <= bounds.north;
+  });
+
+  return match?.country || null;
 }
 
 function normalizeStatusToken(value = "") {
@@ -458,7 +485,9 @@ export default function CitiesPage() {
         map.on("click", "qa-countries-fill", (event) => {
           const feature = event.features?.[0];
           const rawCountry = feature?.properties?.name_en || feature?.properties?.name || feature?.properties?.name_long;
-          const matchedCountry = resolveMapboxCountryToAppCountry(rawCountry, availableCountries);
+          const matchedCountry =
+            resolveCoordinateOverrideCountry(event.lngLat, availableCountries) ||
+            resolveMapboxCountryToAppCountry(rawCountry, availableCountries);
 
           if (!matchedCountry) {
             return;

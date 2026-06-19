@@ -328,7 +328,20 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     rights: "good",
     safety: "good",
     whatThisMeans:
-      "Strong legal and rights framework with generally stable city-level safety conditions.",
+      "Same-sex relations are legal, same-sex marriage has been recognized since 2019, and same-sex couples have full adoption rights. Anti-discrimination protections cover key areas including education and employment. Taiwan has one of Asia's strongest LGBTQ legal baselines, with Taipei offering the clearest day-to-night queer visibility.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "Marriage recognized",
+      genderRecognition: "Available",
+      antiDiscrimination: "Full coverage",
+    },
+    sources: {
+      legal: "https://www.iglta.org/destinations/asia-middle-east/taiwan/",
+      rights: "https://www.equaldex.com/region/taiwan",
+      safety: "https://hotline.org.tw/",
+    },
+    confidence: "high",
+    updatedAt: "2026-06-19",
   },
   China: {
     legal: "good",
