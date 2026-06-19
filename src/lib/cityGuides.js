@@ -2078,6 +2078,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "busan": [
+    {
+      "title": "About",
+      "text": "Busan is South Korea's beach-city counterpoint to Seoul: softer, smaller, more coastal, and much more hidden. The queer scene exists, but it is concentrated in small Beomil-dong bars, karaoke rooms, drag nights, and friendly bartender-led spaces rather than a loud public district.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Beomil-dong around Beomil Station is the practical gay nightlife anchor, with small bars and late rooms close enough to move between once you know the route. Haeundae and Gwangalli matter for beaches, hotels, cocktail bars, and mixed nightlife rather than dedicated queer venues.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "South Korea has a legal baseline for same-sex relations, but public comfort and formal protections remain mixed. Busan is generally usable for visitors, yet local queer life can be discreet. Read the room, keep public affection measured where the context is unclear, and use direct transport after late Beomil nights.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Busan nightlife is conversation-led and compact: TOOL or MARU for drinks, BUNKER or TightHall for stronger late energy, and BLUE for men-only karaoke if that fits your comfort zone. There are no verified dedicated gay saunas in Busan, so avoid planning around one.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Busan is usually easier on the budget than Seoul for hotels and food, especially outside peak beach and festival periods. Staying in Seomyeon, Beomil, or Haeundae changes the trip completely: pick Beomil/Seomyeon for scene access, Haeundae for beach comfort.",
+      "extra": ""
+    }
+  ],
   "ibiza": [
     {
       "title": "About",

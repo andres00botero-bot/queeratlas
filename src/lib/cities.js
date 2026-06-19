@@ -1012,6 +1012,19 @@ export const cityConfig = {
       cost: "Seoul can feel moderate compared with London, New York, or Tokyo if you are thoughtful, but premium neighborhoods, late taxis, and one-more-stop decisions still add up. The city gives strong nightlife return on relatively contained spending, which is part of why it works so well once you find your orbit.",
     }),
   },
+  busan: {
+    center: [129.0756, 35.1796],
+    title: "Queer Busan",
+    country: "South Korea",
+    vibe: "beach-city coded nightlife",
+    guide: buildGuide({
+      about: "Busan is South Korea's beach-city counterpoint to Seoul: softer, smaller, more coastal, and much more hidden. The queer scene exists, but it is concentrated in small Beomil-dong bars, karaoke rooms, drag nights, and friendly bartender-led spaces rather than a loud public district.",
+      district: "Beomil-dong around Beomil Station is the practical gay nightlife anchor, with small bars and late rooms close enough to move between once you know the route. Haeundae and Gwangalli matter for beaches, hotels, cocktail bars, and mixed nightlife rather than dedicated queer venues.",
+      safety: "South Korea has a legal baseline for same-sex relations, but public comfort and formal protections remain mixed. Busan is generally usable for visitors, yet local queer life can be discreet. Read the room, keep public affection measured where the context is unclear, and use direct transport after late Beomil nights.",
+      nightlife: "Busan nightlife is conversation-led and compact: TOOL or MARU for drinks, BUNKER or TightHall for stronger late energy, and BLUE for men-only karaoke if that fits your comfort zone. There are no verified dedicated gay saunas in Busan, so avoid planning around one.",
+      cost: "Busan is usually easier on the budget than Seoul for hotels and food, especially outside peak beach and festival periods. Staying in Seomyeon, Beomil, or Haeundae changes the trip completely: pick Beomil/Seomyeon for scene access, Haeundae for beach comfort.",
+    }),
+  },
   ibiza: {
     center: [1.432, 38.9067],
     title: "Queer Ibiza",

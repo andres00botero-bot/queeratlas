@@ -694,6 +694,15 @@ export const cityCoreConfig = {
     "country": "South Korea",
     "vibe": "nightcoded"
   },
+  "busan": {
+    "center": [
+      129.0756,
+      35.1796
+    ],
+    "title": "Queer Busan",
+    "country": "South Korea",
+    "vibe": "beach-city coded nightlife"
+  },
   "ibiza": {
     "center": [
       1.432,
