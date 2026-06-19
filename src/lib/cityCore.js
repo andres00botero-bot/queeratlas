@@ -44,6 +44,15 @@ export const cityCoreConfig = {
     "country": "Netherlands",
     "vibe": "open"
   },
+  "rotterdam": {
+    "center": [
+      4.4777,
+      51.9244
+    ],
+    "title": "Queer Rotterdam",
+    "country": "Netherlands",
+    "vibe": "industrial"
+  },
   "london": {
     "center": [
       -0.1276,

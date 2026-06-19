@@ -74,6 +74,19 @@ export const cityConfig = {
       cost: "Amsterdam is not cheap, especially in peak periods, but it can still feel more playful than punishing if you plan around location and season.",
     }),
   },
+  rotterdam: {
+    center: [4.4777, 51.9244],
+    title: "Queer Rotterdam",
+    country: "Netherlands",
+    vibe: "industrial",
+    guide: buildGuide({
+      about: "Rotterdam is the sharper, more architectural Dutch counterpoint to Amsterdam: modern, port-city, practical, and quietly queer. The scene is smaller, but it is compact enough to understand quickly, with bars, late-night rooms, community spaces, and Pride energy sitting close to the central core.",
+      district: "The easiest queer route sits around Westblaak, Van Oldenbarneveltstraat, Keerweer, Schiedamsedijk, and nearby central streets. It is less of a branded gay village and more of a walkable nightlife cluster, which makes Rotterdam work well for travelers who like a clear route without a theme-park feeling.",
+      safety: "Rotterdam is generally workable for queer travelers, especially in the central nightlife zone, but it is still a real port city with late-night edges. Keep your route compact, watch normal city basics around transport and phones, and check opening days because some venues are strongest from Thursday onward.",
+      nightlife: "Rotterdam nightlife is small but direct: early drinks and food, classic local bars, karaoke and mixed queer rooms, then late bars that can stretch into morning. It suits travelers who want something more local and less touristic than Amsterdam, with enough options for a full night if planned well.",
+      cost: "Rotterdam often feels more manageable than Amsterdam for hotels and general spending, though weekend prices and event dates can still jump. Staying near the centre or just south-east of Central Station keeps taxis and late-night friction down.",
+    }),
+  },
   london: {
     center: [-0.1276, 51.5074],
     title: "Queer London",
