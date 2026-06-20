@@ -83,11 +83,11 @@ const MAPBOX_COUNTRY_CLICK_OVERRIDES = [
   },
 ];
 const MAP_RISK_PALETTE = {
-  open: { label: "Open", color: "#3b82f6" },
-  steady: { label: "Steady", color: "#22c55e" },
-  watch: { label: "Watch", color: "#facc15" },
-  caution: { label: "Caution", color: "#f472b6" },
-  restricted: { label: "Restricted", color: "#dc2626" },
+  open: { label: "Very safe", color: "#3b82f6" },
+  steady: { label: "Generally safe", color: "#22c55e" },
+  watch: { label: "Be aware", color: "#facc15" },
+  caution: { label: "Use caution", color: "#f472b6" },
+  restricted: { label: "High risk", color: "#dc2626" },
   unknown: { label: "Unknown", color: "#64748b" },
 };
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
@@ -1247,7 +1247,14 @@ export default function CitiesPage() {
                   </div>
 
                   <div className="mb-5">
-                    <CityRightsSignals snapshot={countryRightsSnapshots[country]} country={country} />
+                    <CityRightsSignals
+                      snapshot={countryRightsSnapshots[country]}
+                      country={country}
+                      riskTier={deriveMapRiskTier(
+                        countryRightsProfilesByCountry[normalizeCountry(country)],
+                        countryRightsSnapshots[country],
+                      )}
+                    />
                     {countryRightsLoadError ? (
                       <p className="mt-2 text-[11px] text-rose-200/85">
                         Could not load live country rights data from Supabase. Showing fallback signals.

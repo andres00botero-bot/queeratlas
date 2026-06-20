@@ -69,6 +69,87 @@ const LEVEL_THEME = {
   },
 };
 
+const MAP_TIER_THEME = {
+  open: {
+    label: "Very safe",
+    eyebrow: "Top map tier",
+    labelClass: "text-[1.65rem] sm:text-base",
+    mapColor: "#3b82f6",
+    rgb: "59,130,246",
+    dot: "bg-blue-300",
+    text: "text-blue-100",
+    softText: "text-blue-100/78",
+    chip: "border-blue-200/30 bg-blue-300/14 text-blue-50",
+    glow: "from-blue-300/24 via-cyan-300/10 to-transparent",
+    summary: "This matches the map's Very safe tier: a strong legal baseline and broadly stable public context.",
+  },
+  steady: {
+    label: "Generally safe",
+    eyebrow: "Stable map tier",
+    labelClass: "text-[1.35rem] sm:text-[0.88rem]",
+    mapColor: "#22c55e",
+    rgb: "34,197,94",
+    dot: "bg-emerald-300",
+    text: "text-emerald-100",
+    softText: "text-emerald-100/78",
+    chip: "border-emerald-200/28 bg-emerald-300/13 text-emerald-50",
+    glow: "from-emerald-300/24 via-cyan-300/10 to-transparent",
+    summary: "This matches the map's Generally safe tier: generally workable, with normal local awareness still useful.",
+  },
+  watch: {
+    label: "Be aware",
+    eyebrow: "Context matters",
+    labelClass: "text-[1.65rem] sm:text-base",
+    mapColor: "#facc15",
+    rgb: "250,204,21",
+    dot: "bg-amber-300",
+    text: "text-amber-100",
+    softText: "text-amber-100/78",
+    chip: "border-amber-200/30 bg-amber-300/14 text-amber-50",
+    glow: "from-amber-300/24 via-fuchsia-300/8 to-transparent",
+    summary: "This matches the map's Be aware tier: conditions can shift by law, public comfort, or local safety context.",
+  },
+  caution: {
+    label: "Use caution",
+    eyebrow: "Plan carefully",
+    labelClass: "text-[1.45rem] sm:text-[0.95rem]",
+    mapColor: "#f472b6",
+    rgb: "244,114,182",
+    dot: "bg-pink-300",
+    text: "text-pink-100",
+    softText: "text-pink-100/78",
+    chip: "border-pink-200/30 bg-pink-300/14 text-pink-50",
+    glow: "from-pink-300/24 via-orange-300/8 to-transparent",
+    summary: "This matches the map's Use caution tier: extra discretion and route planning are part of safer travel.",
+  },
+  restricted: {
+    label: "High risk",
+    eyebrow: "High caution",
+    labelClass: "text-[1.65rem] sm:text-base",
+    mapColor: "#dc2626",
+    rgb: "220,38,38",
+    dot: "bg-red-400",
+    text: "text-red-100",
+    softText: "text-red-100/78",
+    chip: "border-red-200/30 bg-red-400/14 text-red-50",
+    glow: "from-red-400/24 via-rose-300/10 to-transparent",
+    summary: "This matches the map's High risk tier: legal or public-safety conditions require strong caution.",
+  },
+  unknown: {
+    label: "Unknown",
+    eyebrow: "Being verified",
+    labelClass: "text-[1.65rem] sm:text-base",
+    mapColor: "#64748b",
+    rgb: "100,116,139",
+    dot: "bg-slate-300",
+    text: "text-slate-100",
+    softText: "text-slate-100/70",
+    chip: "border-slate-200/22 bg-slate-300/12 text-slate-50",
+    glow: "from-slate-300/18 via-cyan-300/5 to-transparent",
+    summary: "This matches the map's Unknown tier: rights context is still being verified.",
+  },
+};
+
 const DETAIL_ROWS = [
   { key: "sameSexRelations", label: "Same-sex relations" },
   { key: "unions", label: "Marriage / partnership" },
@@ -184,6 +265,13 @@ function getDetailTone(value = "") {
   return "unknown";
 }
 
+function resolveFallbackRiskTier(overallLevel = "unknown") {
+  if (overallLevel === "good") return "steady";
+  if (overallLevel === "mixed") return "watch";
+  if (overallLevel === "risk") return "caution";
+  return "unknown";
+}
+
 function StatusChip({ value }) {
   const tone = getDetailTone(value);
   const theme = LEVEL_THEME[tone] || LEVEL_THEME.unknown;
@@ -230,7 +318,7 @@ function SourceLink({ href, label }) {
   );
 }
 
-export default function CityRightsSignals({ snapshot, country = "" }) {
+export default function CityRightsSignals({ snapshot, country = "", riskTier = "" }) {
   if (!snapshot) return null;
 
   const legalSignal = resolveLegalSignalFromDetails(snapshot.legal, snapshot.details);
@@ -238,7 +326,8 @@ export default function CityRightsSignals({ snapshot, country = "" }) {
   if (signals.length === 0) return null;
 
   const overallLevel = resolveOverallLevel(signals);
-  const overallTheme = LEVEL_THEME[overallLevel] || LEVEL_THEME.unknown;
+  const normalizedRiskTier = String(riskTier || resolveFallbackRiskTier(overallLevel)).trim().toLowerCase();
+  const overallTheme = MAP_TIER_THEME[normalizedRiskTier] || MAP_TIER_THEME.unknown;
   const confidence = String(snapshot.confidence || "medium").trim();
   const updatedAt = snapshot.updatedAt ? new Date(snapshot.updatedAt).getFullYear() : null;
   const overallColor = overallTheme.mapColor || "#ffffff";
@@ -268,7 +357,7 @@ export default function CityRightsSignals({ snapshot, country = "" }) {
             >
               <div className="pointer-events-none absolute -right-5 -top-5 h-14 w-14 rounded-full bg-white/14 blur-xl" />
               <div className="text-center">
-                <p className="text-2xl font-black tracking-[-0.05em] text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.38)]">
+                <p className={`${overallTheme.labelClass || "text-[1.65rem] sm:text-base"} mx-auto flex max-w-[9rem] items-center justify-center px-2 text-center font-semibold leading-[1.08] tracking-normal text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.34)]`}>
                   {overallTheme.label}
                 </p>
               </div>
