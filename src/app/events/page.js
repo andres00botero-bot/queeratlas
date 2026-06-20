@@ -173,7 +173,7 @@ export default function EventsPage() {
   });
   const [favoriteIds, setFavoriteIds] = useState(() => readLocalJson(FAVORITES_STORAGE_KEY, []));
   const [addedEntries, setAddedEntries] = useState(() => readLocalJson(ADDED_STORAGE_KEY, []));
-  const [activeEventsSection, setActiveEventsSection] = useState("search");
+  const [activeEventsSection, setActiveEventsSection] = useState("calendar");
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -1058,9 +1058,9 @@ export default function EventsPage() {
 
   const eventSectionButtons = useMemo(
     () => ([
-      { id: "search", label: "Search" },
-      { id: "calendar", label: "Calender" },
+      { id: "calendar", label: "Calendar" },
       { id: "offgrid", label: "Off-grid events" },
+      { id: "search", label: "Search" },
     ]),
     []
   );
