@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { BookmarkCheck, MapPinned, RadioTower } from "lucide-react";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -3718,33 +3719,51 @@ export default function FavoritesPage() {
         ) : (
         <section
           ref={tonightSectionRef}
-          className="qa-premium-card mb-6 rounded-[30px] border border-fuchsia-200/14 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_30%),radial-gradient(circle_at_82%_16%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(26,14,24,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_18px_52px_rgba(0,0,0,0.32)] sm:rounded-[32px] sm:p-5 sm:shadow-[0_34px_104px_rgba(0,0,0,0.42)]"
+          className="qa-atlas-section mb-6"
         >
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-fuchsia-200/75">
+              <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/18 bg-fuchsia-200/[0.07] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/78">
+                <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-200 shadow-[0_0_16px_rgba(244,114,182,0.85)]" />
+                My map
+              </div>
+              <h2 className="qa-h2 mt-3 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-2xl font-semibold tracking-[-0.02em] text-transparent sm:text-3xl">
                 Atlas signal map
-              </p>
-              <h2 className="qa-h2 mt-2 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-2xl">
-                Live map layers
               </h2>
-              <p className="mt-2 text-sm leading-6 text-white/56">
-                Switch between your live check-ins and your saved venues in one premium map surface.
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/62">
+                Your saved places, check-ins, and route signals in one premium map surface.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-white/12 bg-white/7 px-3 py-1 text-xs text-white/70">
-                {myMapView === "checkins" ? `${checkins.length} check-ins` : `${savedPlaces.length} saved places`}
-              </span>
-              <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100/85">
-                {myMapView === "checkins" ? checkinCities.length : savedPlaceCities} {myMapView === "checkins" ? (checkinCities.length === 1 ? "city" : "cities") : (savedPlaceCities === 1 ? "city" : "cities")}
-              </span>
+            <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[27rem]">
+              <div className="rounded-2xl border border-fuchsia-200/16 bg-fuchsia-200/[0.07] px-3 py-3 shadow-[0_14px_34px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/62">Check-ins</p>
+                  <RadioTower size={15} className="text-fuchsia-100/58" strokeWidth={1.8} />
+                </div>
+                <p className="mt-1 text-xl font-semibold text-white">{checkins.length}</p>
+              </div>
+              <div className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.07] px-3 py-3 shadow-[0_14px_34px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/62">Saved places</p>
+                  <BookmarkCheck size={15} className="text-cyan-100/58" strokeWidth={1.8} />
+                </div>
+                <p className="mt-1 text-xl font-semibold text-white">{savedPlaces.length}</p>
+              </div>
+              <div className="rounded-2xl border border-white/12 bg-white/[0.055] px-3 py-3 shadow-[0_14px_34px_rgba(0,0,0,0.2)]">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/48">Cities</p>
+                  <MapPinned size={15} className="text-white/48" strokeWidth={1.8} />
+                </div>
+                <p className="mt-1 text-xl font-semibold text-white">
+                  {myMapView === "checkins" ? checkinCities.length : savedPlaceCities}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+          <div className="mb-5 grid gap-2 rounded-[24px] border border-white/10 bg-black/22 p-2 sm:grid-cols-2">
             {[
-              { id: "checkins", label: "My check ins" },
-              { id: "saved", label: "My saved places" },
+              { id: "checkins", label: "Check-ins", detail: "Live visits and vibe taps" },
+              { id: "saved", label: "Saved places", detail: "Venues you want nearby" },
             ].map((view) => {
               const isActive = myMapView === view.id;
               return (
@@ -3753,15 +3772,16 @@ export default function FavoritesPage() {
                   type="button"
                   onClick={() => setMyMapView(view.id)}
                   aria-pressed={isActive}
-                  className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] transition-colors ${
+                  className={`rounded-[18px] border px-4 py-3 text-left transition-colors ${
                     isActive
                       ? view.id === "checkins"
-                        ? "border-fuchsia-300/70 bg-fuchsia-500/34 text-fuchsia-50"
-                        : "border-cyan-300/70 bg-cyan-500/34 text-cyan-50"
-                      : "border-white/16 bg-white/8 text-white/78 hover:border-white/26 hover:bg-white/12 hover:text-white"
+                        ? "border-fuchsia-300/62 bg-fuchsia-500/24 text-fuchsia-50 shadow-[0_18px_48px_rgba(244,114,182,0.12)]"
+                        : "border-cyan-300/62 bg-cyan-500/24 text-cyan-50 shadow-[0_18px_48px_rgba(34,211,238,0.12)]"
+                      : "border-white/10 bg-white/[0.045] text-white/74 hover:border-white/22 hover:bg-white/[0.075] hover:text-white"
                   }`}
                 >
-                  {view.label}
+                  <span className="block text-xs font-semibold uppercase tracking-[0.14em]">{view.label}</span>
+                  <span className="mt-1 block text-[11px] text-white/48">{view.detail}</span>
                 </button>
               );
             })}
@@ -3770,54 +3790,71 @@ export default function FavoritesPage() {
           <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
             <div
               ref={checkinMapCardRef}
-              className={`qa-premium-card rounded-3xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 shadow-[0_18px_38px_rgba(0,0,0,0.28)] transition ${
+              className={`qa-premium-card rounded-[30px] border bg-[radial-gradient(circle_at_12%_0%,rgba(244,114,182,0.12),transparent_34%),radial-gradient(circle_at_92%_8%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.075),rgba(255,255,255,0.022))] p-3 shadow-[0_24px_76px_rgba(0,0,0,0.36)] transition sm:p-4 ${
                 selectedCheckin
-                  ? "border-fuchsia-200/34 shadow-[0_0_0_1px_rgba(244,114,182,0.18),0_24px_80px_rgba(244,114,182,0.14)]"
-                  : "border-white/10 hover:shadow-[0_24px_54px_rgba(6,182,212,0.16),0_10px_26px_rgba(0,0,0,0.34)]"
+                  ? "border-fuchsia-200/34 shadow-[0_0_0_1px_rgba(244,114,182,0.18),0_28px_88px_rgba(244,114,182,0.14)]"
+                  : "border-white/10 hover:shadow-[0_28px_78px_rgba(6,182,212,0.16),0_10px_26px_rgba(0,0,0,0.34)]"
               }`}
             >
               {selectedCheckin ? (
-                <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-3 py-1 text-[11px] text-fuchsia-100/95">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200" />
+                <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] text-fuchsia-100/95 shadow-[0_14px_34px_rgba(244,114,182,0.12)]">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200 shadow-[0_0_14px_rgba(244,114,182,0.85)]" />
                   <span className="truncate">
                     Selected: {selectedCheckin.label || "Check-in"} | {selectedCheckin.city || "City"}
                   </span>
                 </div>
               ) : null}
-              {mapboxToken && !checkinMapLoadFailed ? (
-                <div
-                  ref={checkinMapContainerRef}
-                  className="h-[230px] w-full overflow-hidden rounded-2xl border border-white/10 bg-black/25 sm:h-[280px]"
-                />
-              ) : checkinMapEmbedUrl ? (
-                <iframe
-                  title="Your check-in map"
-                  src={checkinMapEmbedUrl}
-                  className="h-[230px] w-full rounded-2xl border border-white/10 bg-black/25 sm:h-[280px]"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              ) : staticMapUrl && !checkinMapLoadFailed ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={staticMapUrl}
-                  alt="Your check-in map"
-                  onError={() => setCheckinMapLoadFailed(true)}
-                  className="h-[230px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain sm:h-[280px]"
-                />
-              ) : openStreetMapStaticUrl && !checkinStaticFallbackFailed ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={openStreetMapStaticUrl}
-                  alt="Your check-in map fallback"
-                  onError={() => setCheckinStaticFallbackFailed(true)}
-                  className="h-[230px] w-full rounded-2xl border border-white/10 bg-black/25 object-contain sm:h-[280px]"
-                />
-              ) : (
-                <div className="flex h-[230px] items-center justify-center rounded-2xl border border-dashed border-white/12 bg-black/20 px-4 text-sm text-white/45 sm:h-[280px]">
-                  Check-ins auto-pin from city + venue. Add more check-ins to render the map.
+              <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-black/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                {mapboxToken && !checkinMapLoadFailed ? (
+                  <div
+                    ref={checkinMapContainerRef}
+                    className="h-[300px] w-full overflow-hidden bg-black/25 sm:h-[360px] xl:h-[400px]"
+                  />
+                ) : checkinMapEmbedUrl ? (
+                  <iframe
+                    title="Your check-in map"
+                    src={checkinMapEmbedUrl}
+                    className="h-[300px] w-full bg-black/25 sm:h-[360px] xl:h-[400px]"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : staticMapUrl && !checkinMapLoadFailed ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={staticMapUrl}
+                    alt="Your check-in map"
+                    onError={() => setCheckinMapLoadFailed(true)}
+                    className="h-[300px] w-full bg-black/25 object-contain sm:h-[360px] xl:h-[400px]"
+                  />
+                ) : openStreetMapStaticUrl && !checkinStaticFallbackFailed ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={openStreetMapStaticUrl}
+                    alt="Your check-in map fallback"
+                    onError={() => setCheckinStaticFallbackFailed(true)}
+                    className="h-[300px] w-full bg-black/25 object-contain sm:h-[360px] xl:h-[400px]"
+                  />
+                ) : (
+                  <div className="flex h-[300px] items-center justify-center border border-dashed border-white/12 bg-black/20 px-4 text-center text-sm text-white/45 sm:h-[360px] xl:h-[400px]">
+                    Check-ins auto-pin from city + venue. Add more check-ins to render the map.
+                  </div>
+                )}
+                <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-200/22 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/86 backdrop-blur">
+                    <span className="h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_14px_rgba(244,114,182,0.8)]" />
+                    Check-ins
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/22 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/86 backdrop-blur">
+                    <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.8)]" />
+                    Saved
+                  </span>
+                  {selectedCheckin ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/18 bg-white/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-white/78 backdrop-blur">
+                      Selected
+                    </span>
+                  ) : null}
                 </div>
-              )}
+              </div>
 
               {myMapView === "checkins" ? (
               <>
@@ -4089,17 +4126,33 @@ export default function FavoritesPage() {
               )}
             </div>
 
-            <div className="qa-premium-card rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 shadow-[0_18px_38px_rgba(0,0,0,0.28)]">
-              <p className="text-xs uppercase tracking-[0.18em] text-white/42">
-                {myMapView === "checkins" ? "Your check-ins" : "My saved places"}
-              </p>
+            <div className="qa-premium-card rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.32)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/42">
+                    {myMapView === "checkins" ? "Your check-ins" : "My saved places"}
+                  </p>
+                  <p className="mt-1 text-sm text-white/62">
+                    {myMapView === "checkins"
+                      ? "Tap a card to focus the map."
+                      : "Turn saved venues into check-ins or routes."}
+                  </p>
+                </div>
+                <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${
+                  myMapView === "checkins"
+                    ? "border-fuchsia-200/22 bg-fuchsia-200/[0.09] text-fuchsia-100/78"
+                    : "border-cyan-200/22 bg-cyan-200/[0.09] text-cyan-100/78"
+                }`}>
+                  {myMapView === "checkins" ? filteredRecentCheckins.length : savedPlaces.length}
+                </span>
+              </div>
               {myMapView === "checkins" ? (
               <>
                 <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                   <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
                   <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved check-ins</span>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-black/18 p-2">
                   {[
                     { id: "all", label: "All" },
                     { id: "places", label: "Places" },
@@ -4110,9 +4163,9 @@ export default function FavoritesPage() {
                       key={filter.id}
                       type="button"
                       onClick={() => setCheckinViewFilter(filter.id)}
-                      className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.11em] transition ${
+                      className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] transition ${
                         checkinViewFilter === filter.id
-                          ? "border-fuchsia-200/45 bg-fuchsia-200/16 text-fuchsia-100"
+                          ? "border-fuchsia-200/50 bg-fuchsia-200/18 text-fuchsia-100 shadow-[0_12px_30px_rgba(244,114,182,0.12)]"
                           : "border-white/14 bg-white/6 text-white/62 hover:border-white/24 hover:text-white/82"
                       }`}
                     >
@@ -4125,30 +4178,34 @@ export default function FavoritesPage() {
                   style={{ scrollbarGutter: "stable", minHeight: "31rem", maxHeight: "31rem" }}
                 >
                 {filteredRecentCheckins.length > 0 ? (
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       {filteredRecentCheckins.map((entry) => (
                         <article
                           key={entry.id}
                           onClick={() => focusCheckinOnMap(entry)}
-                          className={`cursor-pointer rounded-2xl border bg-black/20 p-3 transition ${
+                          className={`qa-premium-card cursor-pointer rounded-[22px] border bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-3.5 transition ${
                             String(selectedCheckinId) === String(entry.id)
-                              ? "border-fuchsia-200/45 shadow-[0_0_0_1px_rgba(244,114,182,0.25)]"
-                              : "border-white/10 hover:border-white/24"
+                              ? "border-fuchsia-200/48 shadow-[0_0_0_1px_rgba(244,114,182,0.25),0_18px_44px_rgba(244,114,182,0.12)]"
+                              : "border-white/10 hover:border-white/24 hover:bg-white/[0.055]"
                           }`}
                         >
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                            {entry.city || "Unknown city"}{entry.country ? ` | ${entry.country}` : ""}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
-                          {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-white/55">
-                            <span>{formatCheckinTime(entry.checkedInAt)}</span>
-                            <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/78">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
+                                {entry.city || "Unknown city"}{entry.country ? ` | ${entry.country}` : ""}
+                              </p>
+                              <p className="mt-1 truncate text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
+                            </div>
+                            <span className="shrink-0 rounded-full border border-white/12 bg-white/[0.06] px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/62">
                               {String(entry.mode).replaceAll("_", " ")}
                             </span>
                           </div>
+                          {entry.address ? <p className="mt-1 text-xs text-white/62">{entry.address}</p> : null}
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/55">
+                            <span>{formatCheckinTime(entry.checkedInAt)}</span>
+                          </div>
                           {entry.note ? <p className="mt-1 text-xs text-white/62">{entry.note}</p> : null}
-                          <div className="mt-3 flex flex-wrap gap-2">
+                          <div className="mt-3 flex flex-wrap gap-2 border-t border-white/8 pt-3">
                             <button
                               type="button"
                               onClick={(event) => {
@@ -4195,26 +4252,31 @@ export default function FavoritesPage() {
                   </div>
                   <div
                     className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
-                    style={{ scrollbarGutter: "stable", maxHeight: "13.25rem" }}
+                    style={{ scrollbarGutter: "stable", maxHeight: "31rem" }}
                   >
                     {savedPlaces.length > 0 ? (
-                      <div className="space-y-2.5">
+                      <div className="space-y-3">
                       {savedPlaces.map((place) => (
                         <article
                           key={`saved-map-${place.id}`}
-                          className="rounded-2xl border border-white/10 bg-black/20 p-3 transition hover:border-white/24"
+                          className="qa-premium-card rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-3.5 transition hover:border-cyan-200/24 hover:bg-white/[0.055]"
                         >
-                          <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                            {place.city || "Unknown city"}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-white">{place.name || "Unnamed place"}</p>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
+                                {place.city || "Unknown city"}
+                              </p>
+                              <p className="mt-1 truncate text-sm font-semibold text-white">{place.name || "Unnamed place"}</p>
+                            </div>
+                            <BookmarkCheck className="shrink-0 text-cyan-100/62" size={17} strokeWidth={1.8} />
+                          </div>
                           {place.location || place.address ? (
                             <p className="mt-1 text-xs text-white/62">{place.location || place.address}</p>
                           ) : null}
                           <div className="mt-1 text-xs text-white/55">
                             Saved {formatSavedTime(place.addedAt)}
                           </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
+                          <div className="mt-3 flex flex-wrap gap-2 border-t border-white/8 pt-3">
                             <button
                               type="button"
                               onClick={() => focusSavedPlaceOnMap(place)}
