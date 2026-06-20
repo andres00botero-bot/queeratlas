@@ -3911,12 +3911,30 @@ export default function FavoritesPage() {
 
                   await submitCheckin(payload);
                   }}
-                  className="mt-4 grid gap-2 sm:grid-cols-2"
+                  className="mt-4 grid gap-3 rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(244,114,182,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.018))] p-3.5 shadow-[0_20px_58px_rgba(0,0,0,0.30)] sm:grid-cols-2 sm:p-4"
                 >
+                <div className="sm:col-span-2">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/70">
+                        Add signal
+                      </p>
+                      <h3 className="mt-1 text-base font-semibold tracking-[-0.01em] text-white">
+                        Check in to your map
+                      </h3>
+                    </div>
+                    <span className="rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/56">
+                      {editingCheckinId ? "Editing" : "New pin"}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-white/50">
+                    Choose an atlas venue/event or add a manual place. Coordinates are resolved automatically when possible.
+                  </p>
+                </div>
                 <select
                   value={checkinForm.mode}
                   onChange={(event) => setCheckinForm((current) => ({ ...current, mode: event.target.value }))}
-                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
                 >
                   <option value="trip">Trip</option>
                   <option value="home">Home</option>
@@ -3925,7 +3943,7 @@ export default function FavoritesPage() {
                 <select
                   value={checkinForm.privacy}
                   onChange={(event) => setCheckinForm((current) => ({ ...current, privacy: event.target.value }))}
-                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
                 >
                   <option value="friends">Friends</option>
                   <option value="private">Private</option>
@@ -3943,7 +3961,7 @@ export default function FavoritesPage() {
                       address: "",
                     }))
                   }
-                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
                 >
                   {checkinCountryOptions.length === 0 ? <option value="">No countries yet</option> : null}
                   {checkinCountryOptions.map((country) => (
@@ -3963,7 +3981,7 @@ export default function FavoritesPage() {
                       address: "",
                     }))
                   }
-                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none"
+                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
                 >
                   {checkinCityOptions.length === 0 ? <option value="">No cities yet</option> : null}
                   {checkinCityOptions.map((city) => (
@@ -3983,7 +4001,7 @@ export default function FavoritesPage() {
                       address: "",
                     }))
                   }
-                  className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
                 >
                   <option value="manual">Manual venue/event</option>
                   <option value="atlas_place">Choose atlas venue</option>
@@ -4001,7 +4019,7 @@ export default function FavoritesPage() {
                         address: selected ? String(selected.location || selected.address || "") : "",
                       }));
                     }}
-                    className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                    className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
                   >
                     <option value="">
                       {selectedCityPlaces.length > 0 ? "Select venue" : "No venues in this city yet"}
@@ -4025,7 +4043,7 @@ export default function FavoritesPage() {
                         address: selected ? String(selected.location || selected.address || "") : "",
                       }));
                     }}
-                    className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                    className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
                   >
                     <option value="">
                       {selectedCityEvents.length > 0 ? "Select event" : "No events in this city yet"}
@@ -4043,13 +4061,13 @@ export default function FavoritesPage() {
                       value={checkinForm.label}
                       onChange={(event) => setCheckinForm((current) => ({ ...current, label: event.target.value }))}
                       placeholder="Venue / event / area"
-                      className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                      className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition placeholder:text-white/34 focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
                     />
                     <input
                       value={checkinForm.address}
                       onChange={(event) => setCheckinForm((current) => ({ ...current, address: event.target.value }))}
                       placeholder="Address (recommended for accurate map pin)"
-                      className="rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                      className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition placeholder:text-white/34 focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
                     />
                   </>
                 ) : null}
@@ -4057,12 +4075,12 @@ export default function FavoritesPage() {
                   value={checkinForm.note}
                   onChange={(event) => setCheckinForm((current) => ({ ...current, note: event.target.value }))}
                   placeholder="Note (optional)"
-                  className="min-h-[72px] rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm outline-none sm:col-span-2"
+                  className="min-h-[82px] rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition placeholder:text-white/34 focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
                 />
                 <button
                   type="submit"
                   disabled={isSavingCheckin}
-                  className="rounded-xl border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/55 disabled:opacity-60 sm:col-span-2"
+                  className="qa-action qa-action-strong rounded-2xl border border-fuchsia-100/55 bg-gradient-to-r from-fuchsia-300 via-pink-300 to-cyan-200 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
                 >
                   {isSavingCheckin ? "Saving check-in..." : editingCheckinId ? "Save check-in changes" : "Check in now"}
                 </button>
@@ -4070,7 +4088,7 @@ export default function FavoritesPage() {
                   <button
                     type="button"
                     onClick={cancelEditCheckin}
-                    className="rounded-xl border border-white/16 bg-white/7 px-3 py-2 text-xs uppercase tracking-[0.12em] text-white/75 transition hover:border-white/24 sm:col-span-2"
+                    className="rounded-2xl border border-white/16 bg-white/7 px-3 py-2.5 text-xs uppercase tracking-[0.12em] text-white/75 transition hover:border-white/24 sm:col-span-2"
                   >
                     Cancel edit
                   </button>
