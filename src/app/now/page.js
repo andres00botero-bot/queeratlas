@@ -1922,68 +1922,69 @@ export default function NowPage() {
             <section className="qa-now-news-feed relative flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden p-0">
               <div className="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
               <div className="pointer-events-none absolute -right-20 bottom-10 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
-              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/80">News feed</p>
-                  <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
-                </div>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (showAdminForm) {
-                        resetAdminNewsComposer();
-                        return;
-                      }
-                      setShowPolicyAdminForm(false);
-                      setAdminComposerLane("mixed");
-                      setEditingNewsId("");
-                      setAdminImageFile(null);
-                      setRemoveAdminImage(false);
-                      setAdminForm(createAdminNewsFormDefault());
-                      setShowAdminForm(true);
-                    }}
-                    className="rounded-full border border-cyan-300/28 bg-cyan-300/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/45"
-                  >
-                    {showAdminForm ? "Close admin composer" : "Admin publish"}
-                  </button>
-                )}
-              </div>
-              <div className="relative z-10 mb-5 flex flex-wrap gap-2">
-                {mixedFeedCategories.map((category) => {
-                  const isActive = selectedNewsCategory === category.key;
-                  const toneClassByCategory =
-                    category.key === "rising_spot"
-                      ? isActive
-                        ? "border-emerald-200/70 bg-emerald-200/30 text-emerald-50 shadow-[0_0_0_1px_rgba(110,231,183,0.28)]"
-                        : "border-emerald-200/34 bg-emerald-300/[0.12] text-emerald-100/86 hover:border-emerald-200/52 hover:text-emerald-100"
-                      : category.key === "rights_safety"
-                        ? isActive
-                          ? "border-rose-200/72 bg-rose-200/32 text-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.3)]"
-                          : "border-rose-200/36 bg-rose-300/[0.12] text-rose-100/86 hover:border-rose-200/54 hover:text-rose-100"
-                        : category.key === "nightlife_change"
-                          ? isActive
-                            ? "border-amber-200/70 bg-amber-200/30 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.28)]"
-                            : "border-amber-200/36 bg-amber-300/[0.12] text-amber-100/86 hover:border-amber-200/54 hover:text-amber-100"
-                          : category.key === "major_event"
-                            ? isActive
-                              ? "border-violet-200/70 bg-violet-200/30 text-violet-50 shadow-[0_0_0_1px_rgba(196,181,253,0.3)]"
-                              : "border-violet-200/36 bg-violet-300/[0.12] text-violet-100/86 hover:border-violet-200/54 hover:text-violet-100"
-                            : isActive
-                              ? "border-cyan-200/70 bg-cyan-200/30 text-cyan-50 shadow-[0_0_0_1px_rgba(103,232,249,0.3)]"
-                              : "border-cyan-200/36 bg-cyan-300/[0.12] text-cyan-100/88 hover:border-cyan-200/54 hover:text-cyan-100";
-                  return (
+              <div className="relative z-10 mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_14%_0%,rgba(34,211,238,0.13),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.10),transparent_30%),linear-gradient(180deg,rgba(14,19,28,0.78),rgba(8,10,15,0.88))] p-4 shadow-[0_22px_70px_rgba(0,0,0,0.28)] sm:p-5">
+                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/80">News feed</p>
+                    <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
+                  </div>
+                  {isAdmin && (
                     <button
-                      key={category.key}
                       type="button"
-                      onClick={() => setSelectedNewsCategory(category.key)}
-                      className={`rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.1em] transition sm:px-3 sm:py-1.5 sm:text-[11px] sm:tracking-[0.14em] ${toneClassByCategory}`}
+                      onClick={() => {
+                        if (showAdminForm) {
+                          resetAdminNewsComposer();
+                          return;
+                        }
+                        setShowPolicyAdminForm(false);
+                        setAdminComposerLane("mixed");
+                        setEditingNewsId("");
+                        setAdminImageFile(null);
+                        setRemoveAdminImage(false);
+                        setAdminForm(createAdminNewsFormDefault());
+                        setShowAdminForm(true);
+                      }}
+                      className="rounded-full border border-cyan-300/28 bg-cyan-300/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/45"
                     >
-                      {categoryLabels[category.key] || category.label}
+                      {showAdminForm ? "Close admin composer" : "Admin publish"}
                     </button>
-                  );
-                })}
-              </div>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {mixedFeedCategories.map((category) => {
+                    const isActive = selectedNewsCategory === category.key;
+                    const toneClassByCategory =
+                      category.key === "rising_spot"
+                        ? isActive
+                          ? "border-emerald-200/70 bg-emerald-200/30 text-emerald-50 shadow-[0_0_0_1px_rgba(110,231,183,0.28)]"
+                          : "border-emerald-200/34 bg-emerald-300/[0.12] text-emerald-100/86 hover:border-emerald-200/52 hover:text-emerald-100"
+                        : category.key === "rights_safety"
+                          ? isActive
+                            ? "border-rose-200/72 bg-rose-200/32 text-rose-50 shadow-[0_0_0_1px_rgba(251,113,133,0.3)]"
+                            : "border-rose-200/36 bg-rose-300/[0.12] text-rose-100/86 hover:border-rose-200/54 hover:text-rose-100"
+                          : category.key === "nightlife_change"
+                            ? isActive
+                              ? "border-amber-200/70 bg-amber-200/30 text-amber-50 shadow-[0_0_0_1px_rgba(251,191,36,0.28)]"
+                              : "border-amber-200/36 bg-amber-300/[0.12] text-amber-100/86 hover:border-amber-200/54 hover:text-amber-100"
+                            : category.key === "major_event"
+                              ? isActive
+                                ? "border-violet-200/70 bg-violet-200/30 text-violet-50 shadow-[0_0_0_1px_rgba(196,181,253,0.3)]"
+                                : "border-violet-200/36 bg-violet-300/[0.12] text-violet-100/86 hover:border-violet-200/54 hover:text-violet-100"
+                              : isActive
+                                ? "border-cyan-200/70 bg-cyan-200/30 text-cyan-50 shadow-[0_0_0_1px_rgba(103,232,249,0.3)]"
+                                : "border-cyan-200/36 bg-cyan-300/[0.12] text-cyan-100/88 hover:border-cyan-200/54 hover:text-cyan-100";
+                    return (
+                      <button
+                        key={category.key}
+                        type="button"
+                        onClick={() => setSelectedNewsCategory(category.key)}
+                        className={`rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.1em] transition sm:px-3 sm:py-1.5 sm:text-[11px] sm:tracking-[0.14em] ${toneClassByCategory}`}
+                      >
+                        {categoryLabels[category.key] || category.label}
+                      </button>
+                    );
+                  })}
+                </div>
 
               {isAdmin && showAdminForm && (
                 <form ref={adminComposerRef} onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
@@ -2112,10 +2113,11 @@ export default function NowPage() {
                 </form>
               )}
 
-              <p className="mb-4 text-[11px] uppercase tracking-[0.15em] text-white/45">
+                <p className="mt-4 text-[11px] uppercase tracking-[0.15em] text-white/50">
                 Showing {displayedNewsItems.length} stories
                 {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
               </p>
+              </div>
 
               {leadNewsItem ? (
                 <article
