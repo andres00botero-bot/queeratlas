@@ -1324,6 +1324,19 @@ export const cityConfig = {
       cost: "Good value for the region, especially compared with North American nightlife capitals. Covers and drinks are usually manageable, so a strong weekend route can be built without luxury-level spend.",
     }),
   },
+  guatemala_city: {
+    center: [-90.5069, 14.6349],
+    title: "Queer Guatemala City",
+    country: "Guatemala",
+    vibe: "coded central-zone nightlife",
+    guide: buildGuide({
+      about: "Guatemala City has a small but real queer scene built through central-zone bars, dance clubs, men-only saunas, drag nights, and rights organizations rather than a polished rainbow district. It is one of those cities where the queer trip is rewarding when you plan carefully: culture by day, Zona 4 and Zona 10 for easier visitor movement, then verified nightlife in Zone 1 and nearby central routes.",
+      district: "Zone 1 carries much of the historic gay nightlife memory and several current bars, clubs and sauna references. Zone 4 is better for cafes, street art, creative food and a softer daytime base. Zones 9 and 10 are the easiest hotel and restaurant areas for many travelers, while Zone 11 is useful for Tikal Futura and Miraflores. Avoid treating the city as walkable at night across zones; short direct rides are the move.",
+      safety: "Guatemala City requires practical caution. Same-sex relations are legal, but public comfort and legal protections remain limited, and the city has sharply different safety conditions by zone. Keep public affection measured outside queer spaces, avoid high-risk outer zones, use registered taxis or ride apps after dark, and do not wander between nightlife stops when tired.",
+      nightlife: "The scene is compact, local and late: G Bistro, Genetic Majestic, Black Club, Glam Garden, The Box, Casa Vintage and SO36 cover dance, drag, karaoke, electronic and cruise-coded moods, while Dansei, Greco and G Wet Sauna add men-only bathhouse options. Verify current socials before going because openings and names can change faster than guide pages.",
+      cost: "Guatemala City can be good value for food, rides and nightlife, but safety and convenience are worth paying for. Staying in Zone 4, 9 or 10 often costs more than the cheapest central rooms, yet it can save stress and make the whole trip smoother. Budget for rides between zones rather than trying to force cheap late-night walking.",
+    }),
+  },
   bratislava: {
     center: [17.1067, 48.1482],
     title: "Queer Bratislava",

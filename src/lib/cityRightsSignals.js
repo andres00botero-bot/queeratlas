@@ -391,6 +391,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Legal baseline is strong nationally, with practical safety varying by city zone and timing.",
   },
+  Guatemala: {
+    legal: "good",
+    rights: "risk",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex relations are legal, but same-sex marriage and civil unions are not recognized, legal gender recognition is limited, and broad national anti-discrimination and hate-crime protections remain weak. Guatemala City has visible community spaces and organizations, but public comfort and practical safety are highly context-dependent.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Limited / name change only",
+      antiDiscrimination: "Limited coverage",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/guatemala",
+      rights: "https://visibles.gt/",
+      safety: "https://travel.state.gov/content/travel/en/traveladvisories/traveladvisories/guatemala-travel-advisory.html",
+    },
+    confidence: "high",
+    updatedAt: "2026-06-20",
+  },
   Brazil: {
     legal: "good",
     rights: "mixed",

@@ -910,6 +910,15 @@ export const cityCoreConfig = {
     "country": "Costa Rica",
     "vibe": "tropical after-dark"
   },
+  "guatemala_city": {
+    "center": [
+      -90.5069,
+      14.6349
+    ],
+    "title": "Queer Guatemala City",
+    "country": "Guatemala",
+    "vibe": "coded central-zone nightlife"
+  },
   "bratislava": {
     "center": [
       17.1067,
