@@ -804,6 +804,19 @@ export const cityConfig = {
       cost: "Rio can stretch from surprisingly workable to very expensive depending on neighborhood, season, and how close you stay to the beach. Ipanema and Leblon carry the premium fantasy, while Copacabana can offer more flexibility. Drinks and nightlife can still be manageable compared with some North American and Western European capitals, but repeated ride apps, beach spending, and peak-season accommodation will add up fast. The smartest move is to budget for convenience, because in Rio the right location saves energy as much as money.",
     }),
   },
+  salvador_bahia: {
+    center: [-38.4906, -12.9918],
+    title: "Queer Salvador Bahia",
+    country: "Brazil",
+    vibe: "afro-brazilian drag and beach current",
+    guide: buildGuide({
+      about: "Salvador is Brazil's Afro-Brazilian cultural powerhouse: old colonial layers, Candomble influence, music, carnival, beaches, food and a local LGBTQ scene that feels more intimate than Rio or Sao Paulo but still real. The queer value here is not a huge polished district. It is a compact mix of drag bars, Rio Vermelho club nights, saunas, Porto da Barra beach energy, and Grupo Gay da Bahia's historic rights presence.",
+      district: "Rua Carlos Gomes and the old Beco dos Artistas area remain the classic gay nightlife reference, especially for drag bars and community-heavy rooms. Rio Vermelho is the stronger club and mixed-nightlife base, with restaurants, bars and late movement. Barra and Porto da Barra work best for beach days and easier hotel logic, while Pelourinho adds culture and GGB history.",
+      safety: "Brazil has a strong legal baseline for LGBTQ people, but Salvador and Bahia still require practical caution. Keep public affection measured outside queer-friendly spaces, use direct rides at night, avoid isolated beach or old-town routes after dark, and watch phones in dense carnival, beach and nightlife crowds. The city rewards confidence, but not carelessness.",
+      nightlife: "Salvador nightlife is drag-forward, local and late. Bar Ancora do Marujo and Carmen Lounge Bar anchor the Carlos Gomes drag lane, San Sebastian is the most tourist-friendly gay club reference in Rio Vermelho, and Amsterdam Pop Club plus Boate Tropical add gay-popular or queer-event energy. Sauna culture exists too, with Clube 11 and Clube Rio's as the clearest verified men-focused options.",
+      cost: "Salvador can be good value compared with Rio, Sao Paulo and many beach capitals, but Carnival, Pride, New Year and beachfront hotel dates can move prices quickly. Staying in Rio Vermelho, Barra or central Pelourinho changes the trip completely, so spend first on location and safe transport rather than trying to save money on every late-night movement.",
+    }),
+  },
   mexico_city: {
     center: [-99.1332, 19.4326],
     title: "Queer Mexico City",

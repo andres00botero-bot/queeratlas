@@ -550,6 +550,15 @@ export const cityCoreConfig = {
     "country": "Brazil",
     "vibe": "beach ecstatic"
   },
+  "salvador_bahia": {
+    "center": [
+      -38.4906,
+      -12.9918
+    ],
+    "title": "Queer Salvador Bahia",
+    "country": "Brazil",
+    "vibe": "afro-brazilian drag and beach current"
+  },
   "mexico_city": {
     "center": [
       -99.1332,
