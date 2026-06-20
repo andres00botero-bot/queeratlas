@@ -1974,6 +1974,19 @@ export const cityConfig = {
       cost: "Mid-range overall, with premium jumps in resort and top-club zones. Smart sequencing reduces transport friction and keeps the trip polished without excess spend.",
     }),
   },
+  beirut: {
+    center: [35.5018, 33.8938],
+    title: "Queer Beirut",
+    country: "Lebanon",
+    vibe: "discreet resilient nightlife",
+    guide: buildGuide({
+      about: "Beirut has one of the Middle East's most resilient queer scenes, but it is not an easy open-scene destination. Queer life here is built through discreet clubs, gay-friendly cafes, community organizations, Pride memory, art spaces and trusted local signals rather than a simple rainbow district. The city can feel magnetic, cultured and socially brave, but it has to be approached with realism.",
+      district: "Use Hamra for cafes, hotels and easy daytime movement, Mar Mikhael and Gemmayzeh for mixed bar energy, Bourj Hammoud and Karantina for selected late club routes, and Achrafieh for polished hotel bases. There is no single gay village. A good Beirut route is compact, verified same day, and built around trusted venues instead of open wandering.",
+      safety: "Lebanon's legal and security context requires extra caution. Same-sex intimacy sits in an ambiguous legal environment, public displays of affection are not advisable, and the current travel-advisory climate is high-risk. Keep LGBTQ content discreet at borders and in public, avoid southern Beirut/Dahiyeh and protest areas, use direct transport at night, and verify local conditions before any trip.",
+      nightlife: "Beirut nightlife is coded, late and highly context-dependent. POSH, B 018 and Ego are the clearest gay or gay-popular club references, while Om and Cafe Younes give softer social starts. Some older gay venues have closed, and no active official gay sauna or cruising venue could be safely verified for this package.",
+      cost: "Beirut can be uneven on cost because the economy is dollarized in many tourist settings and card acceptance can vary. Hotels range from boutique value to serious luxury, but planning matters more than chasing bargains: stay central, carry practical cash, keep transport direct, and spend where safety and location reduce friction.",
+    }),
+  },
   albania: {
     center: [19.8189, 41.3275],
     title: "Queer Albania",

@@ -302,6 +302,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Strong community presence with mixed legal pathways and area-dependent safety context.",
   },
+  Lebanon: {
+    legal: "risk",
+    rights: "risk",
+    safety: "risk",
+    whatThisMeans:
+      "Lebanon has an ambiguous legal baseline: courts have repeatedly limited the use of Article 534 against consensual same-sex relations, but the article remains on the books and police harassment, censorship and event disruption remain documented risks. There is no same-sex partnership or marriage recognition, and the current security/travel-advisory climate requires extra caution.",
+    details: {
+      sameSexRelations: "Ambiguous / disputed criminalization",
+      unions: "No legal recognition",
+      genderRecognition: "Limited / court-based",
+      antiDiscrimination: "No broad national coverage",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/lebanon",
+      rights: "https://www.hrw.org/news/2023/07/19/lebanon-edges-closer-decriminalizing-same-sex-conduct",
+      safety: "https://travel.state.gov/en/international-travel/travel-advisories/lebanon.html",
+    },
+    confidence: "high",
+    updatedAt: "2026-06-20",
+  },
   Japan: {
     legal: "good",
     rights: "mixed",

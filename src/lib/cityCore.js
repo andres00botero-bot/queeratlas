@@ -1360,6 +1360,15 @@ export const cityCoreConfig = {
     "country": "Morocco",
     "vibe": "discreet nightlife under warm intensity"
   },
+  "beirut": {
+    "center": [
+      35.5018,
+      33.8938
+    ],
+    "title": "Queer Beirut",
+    "country": "Lebanon",
+    "vibe": "discreet resilient nightlife"
+  },
   "albania": {
     "center": [
       19.8189,
