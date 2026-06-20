@@ -294,6 +294,46 @@ body > div:first-child {
     0 18px 40px rgba(0, 0, 0, 0.34);
 }
 
+.qa-atlas-section {
+  position: relative;
+  overflow: hidden;
+  border-radius: clamp(1.55rem, 1.38rem + 0.72vw, 2.15rem);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.1), transparent 34%),
+    radial-gradient(circle at 88% 12%, rgba(244, 114, 182, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(18, 18, 24, 0.94), rgba(7, 7, 12, 0.985));
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset;
+  padding: clamp(1.15rem, 0.95rem + 0.85vw, 2rem);
+  backdrop-filter: blur(18px);
+}
+
+.qa-atlas-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 1.25rem auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(165, 243, 252, 0.42), rgba(244, 114, 182, 0.28), transparent);
+  opacity: 0.78;
+  pointer-events: none;
+}
+
+.qa-atlas-section::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.055), transparent 42%);
+  pointer-events: none;
+}
+
+.qa-atlas-section > * {
+  position: relative;
+  z-index: 1;
+}
+
 .qa-lane-cta {
   display: inline-flex;
   align-items: center;

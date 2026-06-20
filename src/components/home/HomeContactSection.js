@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ArrowUpRight, BriefcaseBusiness, ShieldCheck } from "lucide-react";
 
 const CATEGORY_OPTIONS = {
   community: [
@@ -101,7 +102,7 @@ export default function HomeContactSection({
   };
 
   return (
-    <section className={`${className} rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-5 shadow-[0_22px_72px_rgba(0,0,0,0.28)] sm:p-6`}>
+    <section className={`${className} qa-atlas-section`}>
       <div className="mb-5">
         <h2 className="text-2xl font-semibold tracking-[-0.015em] text-white">
           Contact Us
@@ -112,33 +113,61 @@ export default function HomeContactSection({
       </div>
 
       {!isExpanded ? (
-        <div className="rounded-2xl border border-white/12 bg-black/20 p-4">
-          <p className="text-sm leading-7 text-white/78">
-            Need help, want to report something, or discuss a partnership?
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="qa-premium-card relative overflow-hidden rounded-[24px] border border-cyan-200/16 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.16),transparent_36%),linear-gradient(180deg,rgba(10,28,38,0.78),rgba(6,8,12,0.96))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.28)] sm:p-5">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100/20 bg-cyan-100/[0.08] text-cyan-100">
+                <ShieldCheck size={21} strokeWidth={1.8} />
+              </span>
+              <span className="rounded-full border border-cyan-100/16 bg-cyan-100/[0.07] px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] text-cyan-100/72">
+                Support
+              </span>
+            </div>
+            <h3 className="text-lg font-semibold tracking-[-0.01em] text-white">
+              Community support
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-white/66">
+              Report a safety concern, suggest a correction, or tell us what would make the atlas more useful.
+            </p>
             <button
               type="button"
               onClick={() => {
                 handleIntentChange("community");
                 setIsExpanded(true);
               }}
-              className="rounded-full border border-cyan-200/35 bg-cyan-200/12 px-4 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55"
+              className="qa-action mt-5 inline-flex items-center gap-2 rounded-full border border-cyan-200/35 bg-cyan-200/12 px-4 py-2 text-xs uppercase tracking-[0.14em] text-cyan-100 transition hover:border-cyan-200/55"
             >
-              Community support
+              Start support <ArrowUpRight size={13} />
             </button>
+          </div>
+
+          <div className="qa-premium-card relative overflow-hidden rounded-[24px] border border-fuchsia-200/16 bg-[radial-gradient(circle_at_12%_0%,rgba(244,114,182,0.16),transparent_36%),linear-gradient(180deg,rgba(35,14,34,0.78),rgba(7,7,12,0.96))] p-4 shadow-[0_18px_48px_rgba(0,0,0,0.28)] sm:p-5">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-fuchsia-100/20 bg-fuchsia-100/[0.08] text-fuchsia-100">
+                <BriefcaseBusiness size={21} strokeWidth={1.8} />
+              </span>
+              <span className="rounded-full border border-fuchsia-100/16 bg-fuchsia-100/[0.07] px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] text-fuchsia-100/72">
+                Partners
+              </span>
+            </div>
+            <h3 className="text-lg font-semibold tracking-[-0.01em] text-white">
+              Business & partnerships
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-white/66">
+              Talk to us about visibility, collaboration, destination work, or ways to support queer travel.
+            </p>
             <button
               type="button"
               onClick={() => {
                 handleIntentChange("business");
                 setIsExpanded(true);
               }}
-              className="rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/55"
+              className="qa-action mt-5 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.14em] text-fuchsia-100 transition hover:border-fuchsia-200/55"
             >
-              Business & partnerships
+              Start partnership <ArrowUpRight size={13} />
             </button>
           </div>
-          <p className="mt-3 text-xs text-white/60">
+          <p className="md:col-span-2 text-xs text-white/60">
             Usually replies within 24-48 hours.
           </p>
         </div>

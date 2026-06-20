@@ -661,6 +661,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       subtitle: "Explore destinations",
       description: "Navigate queer geography city by city.",
       icon: "Cities",
+      metric: `${cityCountDisplay} cities`,
+      signal: `${placeCountDisplay} places mapped across the atlas`,
+      preview: ["Safety map", "Venues", "City guides"],
       accent: "from-violet-400 via-blue-400 to-sky-300",
       glow: "shadow-[0_24px_80px_rgba(96,165,250,0.16)]",
       onClick: () => router.push("/cities"),
@@ -670,6 +673,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       subtitle: "Parties & festivals",
       description: "Track time-based queer culture and movement.",
       icon: "Events",
+      metric: `${eventCountDisplay} events`,
+      signal: nextUpcomingEvent
+        ? `Next: ${formatCityLabel(nextUpcomingEvent.city)} · ${formatDateShort(nextUpcomingEvent.date)}`
+        : "Calendar, off-grid listings, and live event flow",
+      preview: ["Calendar", "Tickets", "Off-grid"],
       accent: "from-rose-400 via-orange-300 to-amber-200",
       glow: "shadow-[0_24px_80px_rgba(251,146,60,0.16)]",
       onClick: () => router.push("/events"),
@@ -682,6 +690,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       subtitle: "Live + editorial signal",
       description: "Now, rising spots, rights & safety, nightlife changes, major events, and culture tips in one flow.",
       icon: "News",
+      metric: `${homeNewsItems.length || 0} fresh stories`,
+      signal: latestPulseNews?.title ? `Latest: ${latestPulseNews.title}` : "Live queer travel and culture updates",
+      preview: ["Travel", "Safety", "Culture"],
       accent: "from-cyan-300 via-sky-300 to-amber-300",
       glow: "shadow-[0_24px_80px_rgba(56,189,248,0.16)]",
       onClick: () => router.push("/now"),
@@ -691,6 +702,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       subtitle: "Stories & guides",
       description: "Lived experience, practical wisdom, and member signal.",
       icon: "Community",
+      metric: isMember ? "Member space" : "Join to unlock",
+      signal: "Follow members, open profiles, and read local stories",
+      preview: ["Stories", "Profiles", "Threads"],
       accent: "from-emerald-300 via-teal-200 to-cyan-200",
       glow: "shadow-[0_24px_80px_rgba(45,212,191,0.14)]",
       onClick: () => {
@@ -707,6 +721,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       subtitle: "Grow the atlas",
       description: "Add places, events, stories, and corrections.",
       icon: "Contribute",
+      metric: "Community powered",
+      signal: `${placeCountDisplay} places and ${eventCountDisplay} events need fresh local signal`,
+      preview: ["Add venues", "Fix details", "Share tips"],
       accent: "from-fuchsia-300 via-pink-300 to-violet-300",
       glow: "shadow-[0_24px_80px_rgba(217,70,239,0.14)]",
       onClick: () => {
@@ -727,6 +744,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       description: `${formatCityLabel(nextUpcomingEvent?.city)} - ${
         nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : "No date available"
       }.`,
+      meta: nextUpcomingEvent ? "Next calendar signal" : "Calendar warming up",
+      signalLabel: "Event route",
+      signalValue: nextUpcomingEvent
+        ? `${formatCityLabel(nextUpcomingEvent.city)} · ${formatDateShort(nextUpcomingEvent.date)}`
+        : "Open the events calendar",
       badge: nextEventFreshness.label,
       badgeClass:
         nextEventFreshness.tone === "live"
@@ -752,8 +774,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       subtitle: "Latest news",
       title: latestPulseNews?.title || "No published news yet",
       description: `${formatCityLabel(latestPulseNews?.city)} - Global queer news, verified and fresh.`,
-      badge: "",
-      badgeClass: "",
+      meta: latestPulseNews?.city ? `${formatCityLabel(latestPulseNews.city)} signal` : "Editorial desk",
+      signalLabel: "News lane",
+      signalValue: homeNewsItems.length ? `${homeNewsItems.length} fresh stories` : "Open queer world news",
+      badge: latestPulseNews ? "Fresh" : "Pending",
+      badgeClass: "border-cyan-200/30 bg-cyan-200/12 text-cyan-100/90",
       cardClass:
         "border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] hover:border-cyan-200/44",
       ctaLabel: "Open story",
@@ -766,6 +791,11 @@ export default function HomePageClient({ initialHomeData = null }) {
         ? formatCityLabel(strongestCitySignal.city)
         : "Signal is still warming up",
       description: "Highest current community pull in the atlas feed.",
+      meta: strongestCitySignal ? `${strongestCitySignal.count || 0} mapped places` : "Community signal",
+      signalLabel: "City pull",
+      signalValue: strongestCitySignal
+        ? `${strongestCitySignal.reviews || 0} reviews right now`
+        : "Explore city rankings",
       badge: strongestCitySignal ? `${strongestCitySignal.reviews || 0} reviews` : "Pending",
       badgeClass: "border-fuchsia-200/24 bg-fuchsia-200/12 text-fuchsia-100/90",
       cardClass:
