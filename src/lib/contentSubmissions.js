@@ -208,7 +208,7 @@ export async function publishContentSubmission({
   }
 
   let payload = submission?.payload && typeof submission.payload === "object" ? { ...submission.payload } : {};
-  if (targetTable === "services" && !payload.created_by) {
+  if (["places", "events", "global_events", "services"].includes(targetTable) && !payload.created_by) {
     payload.created_by = normalizeText(submission?.submitted_by || "") || null;
   }
 

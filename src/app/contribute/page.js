@@ -742,6 +742,7 @@ export default function ContributePage() {
         lng: coords.lng,
         city: cityName,
         location: placeForm.address,
+        created_by: user.id,
       };
 
       if (!canPublishDirect) {
@@ -875,6 +876,7 @@ export default function ContributePage() {
         description: eventForm.description,
         link: eventForm.link,
         ticket_url: String(eventForm.ticket_url || "").trim() || null,
+        created_by: user.id,
       };
 
       if (!canPublishDirect) {
@@ -956,6 +958,7 @@ export default function ContributePage() {
             date: startDate,
             description: eventForm.description,
             link: eventForm.link,
+            created_by: user.id,
           };
           if (!missingTicketUrl) {
             legacyPayload.ticket_url = String(eventForm.ticket_url || "").trim() || null;

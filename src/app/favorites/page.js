@@ -2297,17 +2297,38 @@ export default function FavoritesPage() {
     [effectiveVibe, topVibe]
   );
   const profileAboutMe = effectiveAbout;
-  const atlasCredScore = Number(activeContributionCounts?.total || 0);
+  const atlasCommunityPosts = Number(activeContributionCounts?.total || 0);
+  const atlasPlacesAdded = Number(activeMemberRank?.places_added || 0);
+  const atlasEventsAdded = Number(activeMemberRank?.events_added || 0);
+  const atlasReviewsWritten = Number(activeMemberRank?.reviews_written || 0);
+  const atlasCredScore = atlasCommunityPosts + atlasPlacesAdded + atlasEventsAdded + atlasReviewsWritten;
+  const atlasSignalScore = Number(activeMemberRank?.score || 0);
   const atlasCredLevel =
-    atlasCredScore >= 60
+    activeMemberRank?.title ||
+    (atlasCredScore >= 60
       ? "Icon"
       : atlasCredScore >= 30
         ? "Connector"
         : atlasCredScore >= 12
           ? "Curator"
-          : "Scout";
+          : "Scout");
+  const topContributionLabel = useMemo(() => {
+    const items = [
+      { label: "Places", value: atlasPlacesAdded },
+      { label: "Events", value: atlasEventsAdded },
+      { label: "Reviews", value: atlasReviewsWritten },
+      { label: "Posts", value: atlasCommunityPosts },
+    ].filter((item) => item.value > 0);
+
+    if (!items.length) return "No credited activity yet";
+    const top = items.sort((a, b) => b.value - a.value)[0];
+    return `${top.value} ${top.label.toLowerCase()}`;
+  }, [atlasCommunityPosts, atlasEventsAdded, atlasPlacesAdded, atlasReviewsWritten]);
   const atlasCredBadges = useMemo(() => {
     const badges = [];
+    if (atlasPlacesAdded >= 1) badges.push("Venue Scout");
+    if (atlasEventsAdded >= 1) badges.push("Event Finder");
+    if (atlasReviewsWritten >= 1) badges.push("Review Voice");
     if ((activeContributionCounts?.stories || 0) >= 1) badges.push("Story Starter");
     if ((activeContributionCounts?.guides || 0) >= 1) badges.push("Guide Builder");
     if ((activeContributionCounts?.ideas || 0) >= 2) badges.push("Idea Engine");
@@ -2317,7 +2338,7 @@ export default function FavoritesPage() {
     }
     if (badges.length === 0) badges.push("Rising Voice");
     return badges.slice(0, 6);
-  }, [activeContributionCounts, activeMemberRank]);
+  }, [activeContributionCounts, activeMemberRank, atlasEventsAdded, atlasPlacesAdded, atlasReviewsWritten]);
   const activeProfileVisibility = isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility;
   const profileVisibilityLabel =
     activeProfileVisibility === "public"
@@ -2344,14 +2365,14 @@ export default function FavoritesPage() {
   }, [activeJoinedAt]);
   const publicHighlights = useMemo(() => {
     return [
-      { label: "Top contribution", value: `${atlasCredScore} total posts` },
+      { label: "Top contribution", value: topContributionLabel },
       { label: "Current level", value: atlasCredLevel },
       {
         label: "Joined",
         value: joinedSinceLabel,
       },
     ];
-  }, [atlasCredLevel, atlasCredScore, joinedSinceLabel]);
+  }, [atlasCredLevel, joinedSinceLabel, topContributionLabel]);
   const displayInitials = useMemo(() => {
     const parts = String(effectiveDisplayName || "")
       .trim()
@@ -3474,7 +3495,7 @@ export default function FavoritesPage() {
                     </div>
                     <div className="rounded-2xl border border-white/16 bg-black/24 px-3 py-2 text-right">
                       <p className="text-[10px] uppercase tracking-[0.1em] text-white/52">Signal</p>
-                      <p className="text-lg font-semibold text-white">{atlasCredScore}</p>
+                      <p className="text-lg font-semibold text-white">{atlasSignalScore || atlasCredScore}</p>
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
