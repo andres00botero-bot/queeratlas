@@ -1766,6 +1766,19 @@ export const cityConfig = {
       cost: "Moderate to high by Indian metro standards, with central nightlife and premium hotel zones costing more. Tight routing keeps both travel time and spend under control.",
     }),
   },
+  mumbai: {
+    center: [72.8777, 19.076],
+    title: "Queer Mumbai",
+    country: "India",
+    vibe: "event-led coastal metro",
+    guide: buildGuide({
+      about: "Mumbai's queer scene is big-city, creative, and event-led rather than built around one fixed gay strip. The strongest signal comes from club nights, Pride and film-festival windows, community collectives, drag and karaoke pop-ups, and long-running health and rights organizations. It can feel glamorous one night and grassroots the next, which is very Mumbai.",
+      district: "Colaba and Kala Ghoda are useful for culture, classic hotels, and older queer social references. Bandra, Khar, Juhu, Andheri, and BKC are better for current party routing, hotel comfort, and event venues. Because the city is long and traffic-heavy, pick a north/south plan for the night instead of trying to cross the whole map late.",
+      safety: "Same-sex relations are legal in India, but public comfort, family pressure, police sensitivity, and venue-by-venue discretion still matter. Use direct rides after dark, verify queer events through official organizer channels, and avoid assuming every mixed venue is equally safe for visible affection. Mumbai is workable, but it rewards practical planning.",
+      nightlife: "Expect pop-up queer parties, hotel-club nights, drag, karaoke, Pride season events, and mixed venues that become queer depending on the organizer. Kitty Su and The LaLiT network give the city a visible luxury-club anchor, while Gay Bombay, Gaysi, Salvation Star, The Gay Gaze, and KASHISH add community rhythm.",
+      cost: "Mumbai is one of India's pricier metros. Premium hotels in Colaba, BKC, Juhu, and airport zones can climb quickly, and rides across the city add up. The best value comes from choosing a base near your planned event cluster, then using cafes, galleries, and daytime neighborhoods to balance the spend.",
+    }),
+  },
   havana: {
     center: [-82.3666, 23.1136],
     title: "Queer Havana",

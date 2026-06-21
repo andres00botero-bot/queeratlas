@@ -1216,6 +1216,15 @@ export const cityCoreConfig = {
     "country": "India",
     "vibe": "capital pride current"
   },
+  "mumbai": {
+    "center": [
+      72.8777,
+      19.076
+    ],
+    "title": "Queer Mumbai",
+    "country": "India",
+    "vibe": "event-led coastal metro"
+  },
   "havana": {
     "center": [
       -82.3666,
