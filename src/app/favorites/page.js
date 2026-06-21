@@ -135,18 +135,76 @@ import { useFavoritesStateController } from "@/features/favorites/useFavoritesSt
 const TripPlannerV2 = dynamic(() => import("@/components/planner/TripPlannerV2"), {
   loading: () => <FavoritesCardSkeleton />,
 });
-const SavedEventsPanel = dynamic(() => import("@/components/favorites/SavedEventsPanel"), {
-  loading: () => <FavoritesCardSkeleton />,
-});
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
 const PREMIUM_CHECKIN_SELECT_CLASS =
   "w-full rounded-2xl border border-white/12 bg-[#15101b] px-3.5 py-2.5 text-sm font-medium text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_30px_rgba(0,0,0,0.18)] transition hover:border-white/22 hover:bg-[#1b1423] focus:border-fuchsia-200/50 focus:ring-2 focus:ring-fuchsia-200/16 [&_option]:bg-[#15101b] [&_option]:text-white";
 const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
 const FAVORITES_PROFILE_MEMORIES_STORAGE_KEY = "qa_favorites_profile_memories_v1";
+const FAVORITES_PERSONAL_CALENDAR_STORAGE_KEY = "qa_favorites_personal_calendar_v1";
 const FAVORITES_CALENDAR_REMINDER_STORAGE_KEY = "qa_favorites_calendar_reminders_v1";
 const FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY = "qa_favorites_calendar_last_alert_day_v1";
 const MEMBER_AVATAR_BUCKET = "member-avatars";
+
+function formatCalendarDateKey(date = new Date()) {
+  const current = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(current.getTime())) return "";
+  const year = current.getFullYear();
+  const month = String(current.getMonth() + 1).padStart(2, "0");
+  const day = String(current.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getCalendarDateKey(value = "") {
+  const raw = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+  return formatCalendarDateKey(new Date(raw));
+}
+
+function getCalendarMonthKey(date = new Date()) {
+  const current = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(current.getTime())) return formatCalendarDateKey(new Date()).slice(0, 7);
+  return `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function buildCalendarMonthCells(monthKey = getCalendarMonthKey()) {
+  const [year, month] = String(monthKey || "").split("-").map(Number);
+  const firstDay = new Date(year || new Date().getFullYear(), (month || 1) - 1, 1);
+  const start = new Date(firstDay);
+  start.setDate(firstDay.getDate() - ((firstDay.getDay() + 6) % 7));
+  return Array.from({ length: 42 }).map((_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    const dateKey = formatCalendarDateKey(date);
+    return {
+      date,
+      dateKey,
+      dayNumber: date.getDate(),
+      isCurrentMonth: date.getMonth() === firstDay.getMonth(),
+    };
+  });
+}
+
+function normalizePersonalCalendarItem(raw = {}) {
+  const title = String(raw?.title || "").trim().slice(0, 120);
+  const dateKey = getCalendarDateKey(raw?.date);
+  if (!title || !dateKey) return null;
+  const reminderMode = ["day_before", "day_of", "hour_before"].includes(String(raw?.reminderMode || ""))
+    ? String(raw.reminderMode)
+    : "off";
+  return {
+    id: String(raw?.id || `personal-${Date.now()}`),
+    title,
+    type: String(raw?.type || "plan").trim().slice(0, 40) || "plan",
+    date: dateKey,
+    time: String(raw?.time || "").trim().slice(0, 8),
+    city: String(raw?.city || "").trim().slice(0, 80),
+    notes: String(raw?.notes || "").trim().slice(0, 500),
+    reminderMode,
+    createdAt: String(raw?.createdAt || new Date().toISOString()),
+  };
+}
 
 function isAvatarColumnMissingError(error) {
   const code = String(error?.code || "").toUpperCase();
@@ -359,6 +417,24 @@ export default function FavoritesPage() {
   const [calendarReminderByEventId, setCalendarReminderByEventId] = useState(() =>
     readLocalJson(FAVORITES_CALENDAR_REMINDER_STORAGE_KEY, {})
   );
+  const [personalCalendarItems, setPersonalCalendarItems] = useState(() =>
+    (readLocalJson(FAVORITES_PERSONAL_CALENDAR_STORAGE_KEY, []) || [])
+      .map((item) => normalizePersonalCalendarItem(item))
+      .filter(Boolean)
+  );
+  const [selectedCalendarDateKey, setSelectedCalendarDateKey] = useState(() =>
+    formatCalendarDateKey(new Date())
+  );
+  const [calendarMonthKey, setCalendarMonthKey] = useState(() => getCalendarMonthKey(new Date()));
+  const [calendarItemForm, setCalendarItemForm] = useState(() => ({
+    title: "",
+    type: "plan",
+    date: formatCalendarDateKey(new Date()),
+    time: "",
+    city: "",
+    notes: "",
+    reminderMode: "off",
+  }));
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [profileExtras, setProfileExtras] = useState({
     about: "",
@@ -1361,6 +1437,83 @@ export default function FavoritesPage() {
       }),
     [calendarEvents, todayDateKey]
   );
+  const planCalendarEntries = useMemo(() => {
+    return (plans || [])
+      .map((plan) => {
+        const dateKey = getCalendarDateKey(plan?.date);
+        if (!dateKey) return null;
+        return {
+          id: `plan-${String(plan.id || dateKey)}`,
+          sourceId: String(plan.id || ""),
+          kind: "plan",
+          title: plan.title || "Saved trip plan",
+          city: plan.city || "",
+          dateKey,
+          time: "",
+          reminderMode: "off",
+          stopsCount: Array.isArray(plan.stops) ? plan.stops.length : 0,
+          raw: plan,
+        };
+      })
+      .filter(Boolean);
+  }, [plans]);
+  const personalCalendarEntries = useMemo(() => {
+    return (personalCalendarItems || [])
+      .map((item) => ({
+        id: item.id,
+        sourceId: item.id,
+        kind: "personal",
+        title: item.title,
+        city: item.city,
+        dateKey: item.date,
+        time: item.time,
+        type: item.type,
+        notes: item.notes,
+        reminderMode: item.reminderMode,
+        raw: item,
+      }))
+      .filter((item) => item.dateKey);
+  }, [personalCalendarItems]);
+  const unifiedCalendarEntries = useMemo(() => {
+    const eventEntries = calendarEvents.map((event) => ({
+      id: `event-${String(event.id || event.name || event.date)}`,
+      sourceId: String(event.id || ""),
+      kind: "event",
+      title: event.name || "Saved event",
+      city: event.city || "",
+      dateKey: event.calendarDate.toISOString().slice(0, 10),
+      time: String(event.time || event.start_time || "").slice(0, 5),
+      reminderMode: String(calendarReminderByEventId?.[String(event.id || "")] || "off"),
+      raw: event,
+    }));
+    return [...eventEntries, ...planCalendarEntries, ...personalCalendarEntries].sort((a, b) => {
+      const dateCompare = String(a.dateKey || "").localeCompare(String(b.dateKey || ""));
+      if (dateCompare !== 0) return dateCompare;
+      return String(a.time || "99:99").localeCompare(String(b.time || "99:99"));
+    });
+  }, [calendarEvents, calendarReminderByEventId, personalCalendarEntries, planCalendarEntries]);
+  const calendarEntriesByDate = useMemo(() => {
+    const lookup = new Map();
+    unifiedCalendarEntries.forEach((entry) => {
+      const key = String(entry.dateKey || "");
+      if (!key) return;
+      if (!lookup.has(key)) lookup.set(key, []);
+      lookup.get(key).push(entry);
+    });
+    return lookup;
+  }, [unifiedCalendarEntries]);
+  const calendarMonthCells = useMemo(
+    () => buildCalendarMonthCells(calendarMonthKey),
+    [calendarMonthKey]
+  );
+  const selectedCalendarEntries = useMemo(
+    () => calendarEntriesByDate.get(selectedCalendarDateKey) || [],
+    [calendarEntriesByDate, selectedCalendarDateKey]
+  );
+  const reminderCalendarEntries = useMemo(
+    () => unifiedCalendarEntries.filter((entry) => String(entry.reminderMode || "off") !== "off"),
+    [unifiedCalendarEntries]
+  );
 
   const totalPlaces = savedPlaces.length;
   const totalEvents = savedEvents.length;
@@ -2244,24 +2397,32 @@ export default function FavoritesPage() {
   }, [calendarReminderByEventId]);
 
   useEffect(() => {
+    writeLocalJson(FAVORITES_PERSONAL_CALENDAR_STORAGE_KEY, personalCalendarItems || []);
+  }, [personalCalendarItems]);
+
+  useEffect(() => {
     if (activeProfileTab !== "calendar") return;
     const todayWithReminder = todayCalendarEvents.filter((event) => {
       const mode = String(calendarReminderByEventId?.[String(event.id)] || "off");
       return mode === "day_of";
     });
-    if (todayWithReminder.length === 0) return;
+    const todayPersonalReminders = personalCalendarItems.filter((item) => {
+      return item.date === todayDateKey && item.reminderMode === "day_of";
+    });
+    const reminderCount = todayWithReminder.length + todayPersonalReminders.length;
+    if (reminderCount === 0) return;
     const lastShownDay = String(
       readLocalJson(FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY, "") || ""
     );
     if (lastShownDay === todayDateKey) return;
     showToast(
-      `You have ${todayWithReminder.length} saved event reminder${
-        todayWithReminder.length > 1 ? "s" : ""
+      `You have ${reminderCount} calendar reminder${
+        reminderCount > 1 ? "s" : ""
       } today.`,
       { tone: "info", duration: 2800 }
     );
     writeLocalJson(FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY, todayDateKey);
-  }, [activeProfileTab, calendarReminderByEventId, showToast, todayCalendarEvents, todayDateKey]);
+  }, [activeProfileTab, calendarReminderByEventId, personalCalendarItems, showToast, todayCalendarEvents, todayDateKey]);
 
   const removeFavorite = async (favoriteId, label = "Item") => {
     const nextState = removeFavoriteLocalState({ favorites, added, favoriteId });
@@ -2345,6 +2506,76 @@ export default function FavoritesPage() {
         : "Reminder set: on event day.",
       { tone: "ok", duration: 1600 }
     );
+  }, [showToast]);
+
+  const moveCalendarMonth = useCallback((offset) => {
+    setCalendarMonthKey((current) => {
+      const [year, month] = String(current || getCalendarMonthKey()).split("-").map(Number);
+      const next = new Date(year || new Date().getFullYear(), (month || 1) - 1 + offset, 1);
+      return getCalendarMonthKey(next);
+    });
+  }, []);
+
+  const selectCalendarDate = useCallback((dateKey) => {
+    const safeDateKey = getCalendarDateKey(dateKey);
+    if (!safeDateKey) return;
+    setSelectedCalendarDateKey(safeDateKey);
+    setCalendarItemForm((current) => ({
+      ...current,
+      date: safeDateKey,
+    }));
+  }, []);
+
+  const savePersonalCalendarItem = useCallback((event) => {
+    event.preventDefault();
+    const normalized = normalizePersonalCalendarItem({
+      ...calendarItemForm,
+      id: `personal-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    });
+    if (!normalized) {
+      showToast("Add a title and date first.", { tone: "warn", duration: 1800 });
+      return;
+    }
+    setPersonalCalendarItems((current) => [normalized, ...(current || [])].slice(0, 160));
+    setSelectedCalendarDateKey(normalized.date);
+    setCalendarMonthKey(getCalendarMonthKey(new Date(`${normalized.date}T12:00:00`)));
+    setCalendarItemForm({
+      title: "",
+      type: "plan",
+      date: normalized.date,
+      time: "",
+      city: normalized.city,
+      notes: "",
+      reminderMode: "off",
+    });
+    showToast("Calendar item saved.", { tone: "ok", duration: 1600 });
+  }, [calendarItemForm, showToast]);
+
+  const removePersonalCalendarItem = useCallback((itemId) => {
+    const safeId = String(itemId || "").trim();
+    if (!safeId) return;
+    setPersonalCalendarItems((current) =>
+      (current || []).filter((item) => String(item.id || "") !== safeId)
+    );
+    showToast("Calendar item removed.", { tone: "info", duration: 1400 });
+  }, [showToast]);
+
+  const setPersonalCalendarReminderMode = useCallback((itemId, mode) => {
+    const safeId = String(itemId || "").trim();
+    const safeMode = ["day_before", "day_of", "hour_before"].includes(String(mode || ""))
+      ? String(mode)
+      : "off";
+    if (!safeId) return;
+    setPersonalCalendarItems((current) =>
+      (current || []).map((item) =>
+        String(item.id || "") === safeId ? { ...item, reminderMode: safeMode } : item
+      )
+    );
+    showToast(safeMode === "off" ? "Reminder removed." : "Reminder saved.", {
+      tone: safeMode === "off" ? "info" : "ok",
+      duration: 1400,
+    });
   }, [showToast]);
 
   const resolveCheckinPlaceDbId = useCallback(async (entry) => {
@@ -4550,114 +4781,352 @@ export default function FavoritesPage() {
         ) : null}
 
         {showCalendarSection ? (
-        <section className="qa-premium-card mb-6 rounded-[30px] border border-rose-200/16 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.14),transparent_32%),radial-gradient(circle_at_85%_14%,rgba(34,211,238,0.1),transparent_28%),linear-gradient(180deg,rgba(22,14,18,0.96),rgba(10,10,10,0.99))] p-4 shadow-[0_16px_46px_rgba(0,0,0,0.3)] sm:p-5 sm:shadow-[0_30px_90px_rgba(0,0,0,0.38)]">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section className="qa-atlas-section mb-6">
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-rose-100/78">My Calendar</p>
-              <h3 className="mt-1 text-2xl font-semibold text-white">Your upcoming event pulse</h3>
-              <p className="mt-2 text-sm text-white/62">
-                Save events, set reminder mode, and keep your next queer moments in one timeline.
+              <p className="text-xs uppercase tracking-[0.22em] text-rose-100/78">My Calendar</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+                Calendar Studio
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
+                Saved events, trip plans, personal notes, and reminders in one interactive agenda.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1 text-xs text-rose-100">
-                Today: {todayCalendarEvents.length}
+              <span className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1.5 text-xs text-rose-100">
+                Today {todayCalendarEvents.length}
               </span>
-              <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">
-                Upcoming: {upcomingCalendarEvents.length}
+              <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1.5 text-xs text-cyan-100">
+                Upcoming {upcomingCalendarEvents.length}
+              </span>
+              <span className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1.5 text-xs text-amber-100">
+                Reminders {reminderCalendarEntries.length}
               </span>
             </div>
           </div>
 
-          {calendarEvents.length > 0 ? (
-            <div className="space-y-3">
-              {calendarEvents.map((event) => {
-                const eventId = String(event.id || "");
-                const reminderMode = String(calendarReminderByEventId?.[eventId] || "off");
-                const eventDateKey = event.calendarDate.toISOString().slice(0, 10);
-                const isToday = eventDateKey === todayDateKey;
-                const isPast = eventDateKey < todayDateKey;
-                return (
-                  <article
-                    key={`calendar-${eventId}`}
-                    className={`rounded-2xl border p-3.5 transition ${
-                      isToday
-                        ? "border-rose-200/34 bg-rose-200/12 shadow-[0_0_0_1px_rgba(251,113,133,0.24)]"
-                        : "border-white/12 bg-white/[0.03] hover:border-white/20"
-                    }`}
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.82fr)] xl:items-stretch">
+            <div className="qa-premium-card rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.13),transparent_32%),radial-gradient(circle_at_92%_4%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(18,16,22,0.96),rgba(9,9,11,0.99))] p-4 shadow-[0_28px_82px_rgba(0,0,0,0.38)] sm:p-5 xl:h-[54rem] xl:overflow-y-auto">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/48">Month view</p>
+                  <h3 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
+                    {new Date(`${calendarMonthKey}-01T12:00:00`).toLocaleDateString("en-US", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => moveCalendarMonth(-1)}
+                    className="rounded-full border border-white/14 bg-white/7 px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-white/72 transition hover:border-white/26"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2.5">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white">{event.name}</p>
-                        <p className="mt-1 text-xs text-white/62">
-                          {formatDate(event.date)} - {formatCityLabel(event.city || "")}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {isToday ? (
-                          <span className="rounded-full border border-rose-200/30 bg-rose-200/14 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100">
-                            Today
-                          </span>
-                        ) : null}
-                        {isPast ? (
-                          <span className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/70">
-                            Past
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setCalendarReminderMode(eventId, reminderMode === "off" ? "day_of" : "off")}
-                        className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
-                          reminderMode === "day_of"
-                            ? "border-cyan-200/36 bg-cyan-200/16 text-cyan-100"
-                            : "border-white/14 bg-white/8 text-white/74 hover:border-white/28"
-                        }`}
-                      >
-                        Day-of reminder
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setCalendarReminderMode(eventId, reminderMode === "day_before" ? "off" : "day_before")}
-                        className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.12em] transition ${
-                          reminderMode === "day_before"
-                            ? "border-amber-200/36 bg-amber-200/16 text-amber-100"
-                            : "border-white/14 bg-white/8 text-white/74 hover:border-white/28"
-                        }`}
-                      >
-                        1 day before
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => router.push(citySelectionPath(event.city, { eventId: event.id }))}
-                        className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/42"
-                      >
-                        Open event
-                      </button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-white/12 bg-black/28 px-4 py-7 text-sm text-white/55">
-              No saved events yet. Save events from city pages or events page, then manage reminders here.
-            </div>
-          )}
+                    Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const today = formatCalendarDateKey(new Date());
+                      setCalendarMonthKey(getCalendarMonthKey(new Date()));
+                      selectCalendarDate(today);
+                    }}
+                    className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/42"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveCalendarMonth(1)}
+                    className="rounded-full border border-white/14 bg-white/7 px-3 py-2 text-[11px] uppercase tracking-[0.12em] text-white/72 transition hover:border-white/26"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
 
-          <div className="mt-4">
-            <SavedEventsPanel
-              isAtlasLoading={isAtlasLoading}
-              savedEvents={savedEvents}
-              formatDate={formatDate}
-              onOpenEvent={(event) => router.push(citySelectionPath(event.city, { eventId: event.id }))}
-              onQuickCheckin={(event) => quickCheckinFromItem(event, "event")}
-              onRemoveFavorite={removeFavorite}
-              onBrowseEvents={() => router.push("/events")}
-              renderSkeleton={() => <FavoritesCardSkeleton />}
-            />
+              <div className="grid grid-cols-7 gap-2 text-center text-[10px] uppercase tracking-[0.14em] text-white/42">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((dayLabel) => (
+                  <div key={`calendar-weekday-${dayLabel}`} className="py-1">
+                    {dayLabel}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-2 grid grid-cols-7 gap-2">
+                {calendarMonthCells.map((day) => {
+                  const entries = calendarEntriesByDate.get(day.dateKey) || [];
+                  const isSelected = selectedCalendarDateKey === day.dateKey;
+                  const isToday = todayDateKey === day.dateKey;
+                  const hasEvent = entries.some((entry) => entry.kind === "event");
+                  const hasPlan = entries.some((entry) => entry.kind === "plan");
+                  const hasPersonal = entries.some((entry) => entry.kind === "personal");
+                  return (
+                    <button
+                      key={`calendar-day-${day.dateKey}`}
+                      type="button"
+                      onClick={() => selectCalendarDate(day.dateKey)}
+                      className={`min-h-[5.8rem] rounded-[20px] border p-2 text-left transition ${
+                        isSelected
+                          ? "border-cyan-100/48 bg-cyan-200/14 shadow-[0_0_0_1px_rgba(34,211,238,0.25),0_18px_42px_rgba(34,211,238,0.10)]"
+                          : isToday
+                            ? "border-rose-200/34 bg-rose-200/12"
+                            : day.isCurrentMonth
+                              ? "border-white/10 bg-white/[0.035] hover:border-white/22 hover:bg-white/[0.055]"
+                              : "border-white/6 bg-white/[0.018] opacity-45 hover:opacity-75"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-sm font-semibold ${isSelected ? "text-cyan-50" : "text-white/82"}`}>
+                          {day.dayNumber}
+                        </span>
+                        {entries.length > 0 ? (
+                          <span className="rounded-full border border-white/12 bg-black/30 px-1.5 py-0.5 text-[10px] text-white/70">
+                            {entries.length}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {hasEvent ? <span className="h-2 w-2 rounded-full bg-rose-300" /> : null}
+                        {hasPlan ? <span className="h-2 w-2 rounded-full bg-cyan-300" /> : null}
+                        {hasPersonal ? <span className="h-2 w-2 rounded-full bg-amber-300" /> : null}
+                      </div>
+                      {entries[0]?.title ? (
+                        <p className="mt-2 line-clamp-2 text-[10px] leading-4 text-white/54">
+                          {entries[0].title}
+                        </p>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+
+            </div>
+
+            <aside className="qa-premium-card rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(251,113,133,0.12),transparent_34%),linear-gradient(180deg,rgba(22,15,20,0.96),rgba(9,9,11,0.99))] p-5 shadow-[0_28px_82px_rgba(0,0,0,0.38)] xl:h-[54rem] xl:overflow-y-auto">
+              <div className="mb-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-rose-100/70">Selected day</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">
+                  {formatDate(selectedCalendarDateKey)}
+                </h3>
+                <p className="mt-2 text-xs leading-5 text-white/56">
+                  {selectedCalendarEntries.length > 0
+                    ? `${selectedCalendarEntries.length} item${selectedCalendarEntries.length === 1 ? "" : "s"} planned.`
+                    : "Nothing planned yet. Add something cute."}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {selectedCalendarEntries.length > 0 ? (
+                  selectedCalendarEntries.map((entry) => {
+                    const isPersonal = entry.kind === "personal";
+                    const isEvent = entry.kind === "event";
+                    const isPlan = entry.kind === "plan";
+                    const toneClass = isEvent
+                      ? "border-rose-200/18 bg-rose-200/[0.075] text-rose-100"
+                      : isPlan
+                        ? "border-cyan-200/18 bg-cyan-200/[0.075] text-cyan-100"
+                        : "border-amber-200/18 bg-amber-200/[0.075] text-amber-100";
+                    return (
+                      <article
+                        key={`selected-calendar-${entry.id}`}
+                        className="rounded-[22px] border border-white/10 bg-white/[0.04] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${toneClass}`}>
+                              {isEvent ? "Saved event" : isPlan ? "Trip plan" : entry.type || "Personal"}
+                            </span>
+                            <h4 className="mt-2 truncate text-sm font-semibold text-white">{entry.title}</h4>
+                            <p className="mt-1 text-xs text-white/54">
+                              {entry.time ? `${entry.time} - ` : ""}
+                              {entry.city ? formatCityLabel(entry.city) : "No city set"}
+                            </p>
+                            {entry.notes ? (
+                              <p className="mt-2 text-xs leading-5 text-white/58">{entry.notes}</p>
+                            ) : null}
+                          </div>
+                          {entry.reminderMode && entry.reminderMode !== "off" ? (
+                            <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-2 py-1 text-[10px] text-emerald-100">
+                              Reminder
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {isEvent ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setCalendarReminderMode(entry.sourceId, entry.reminderMode === "day_of" ? "off" : "day_of")}
+                                className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.11em] transition ${
+                                  entry.reminderMode === "day_of"
+                                    ? "border-cyan-200/36 bg-cyan-200/16 text-cyan-100"
+                                    : "border-white/14 bg-white/8 text-white/70 hover:border-white/26"
+                                }`}
+                              >
+                                Day-of
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCalendarReminderMode(entry.sourceId, entry.reminderMode === "day_before" ? "off" : "day_before")}
+                                className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.11em] transition ${
+                                  entry.reminderMode === "day_before"
+                                    ? "border-amber-200/36 bg-amber-200/16 text-amber-100"
+                                    : "border-white/14 bg-white/8 text-white/70 hover:border-white/26"
+                                }`}
+                              >
+                                1 day before
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => router.push(citySelectionPath(entry.city, { eventId: entry.sourceId }))}
+                                className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1 text-[10px] uppercase tracking-[0.11em] text-rose-100 transition hover:border-rose-200/42"
+                              >
+                                Open
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => quickCheckinFromItem(entry.raw, "event")}
+                                className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/38"
+                              >
+                                Check in
+                              </button>
+                            </>
+                          ) : null}
+                          {isPersonal ? (
+                            <>
+                              {[
+                                { id: "day_of", label: "Day-of" },
+                                { id: "day_before", label: "1 day before" },
+                                { id: "hour_before", label: "1 hour" },
+                              ].map((mode) => (
+                                <button
+                                  key={`personal-reminder-${entry.id}-${mode.id}`}
+                                  type="button"
+                                  onClick={() => setPersonalCalendarReminderMode(entry.sourceId, entry.reminderMode === mode.id ? "off" : mode.id)}
+                                  className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.11em] transition ${
+                                    entry.reminderMode === mode.id
+                                      ? "border-amber-200/36 bg-amber-200/16 text-amber-100"
+                                      : "border-white/14 bg-white/8 text-white/70 hover:border-white/26"
+                                  }`}
+                                >
+                                  {mode.label}
+                                </button>
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => removePersonalCalendarItem(entry.sourceId)}
+                                className="rounded-full border border-rose-200/20 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.11em] text-rose-100 transition hover:border-rose-200/38"
+                              >
+                                Remove
+                              </button>
+                            </>
+                          ) : null}
+                          {isPlan ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveProfileTab("trips");
+                                setExpandedPlanId(entry.sourceId);
+                                window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+                              }}
+                              className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1 text-[10px] uppercase tracking-[0.11em] text-cyan-100 transition hover:border-cyan-200/42"
+                            >
+                              Open plan
+                            </button>
+                          ) : null}
+                        </div>
+                      </article>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-[22px] border border-dashed border-white/12 bg-white/[0.025] px-4 py-6 text-sm leading-6 text-white/48">
+                    No items on this day yet. Add a plan, reminder, meetup, or travel note below.
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={savePersonalCalendarItem} className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-white/46">Add to calendar</p>
+                <div className="mt-3 grid gap-2">
+                  <input
+                    value={calendarItemForm.title}
+                    onChange={(event) => setCalendarItemForm((current) => ({ ...current, title: event.target.value }))}
+                    placeholder="Title"
+                    className="rounded-2xl border border-white/12 bg-black/30 px-3.5 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-rose-200/40"
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <select
+                      value={calendarItemForm.type}
+                      onChange={(event) => setCalendarItemForm((current) => ({ ...current, type: event.target.value }))}
+                      className="rounded-2xl border border-white/12 bg-[#151018] px-3.5 py-3 text-sm text-white outline-none focus:border-rose-200/40 [&_option]:bg-[#151018]"
+                    >
+                      <option value="plan">Plan</option>
+                      <option value="reminder">Reminder</option>
+                      <option value="meetup">Meetup</option>
+                      <option value="travel">Travel</option>
+                      <option value="personal">Personal</option>
+                    </select>
+                    <input
+                      type="date"
+                      value={calendarItemForm.date}
+                      onChange={(event) => {
+                        const nextDate = event.target.value;
+                        setCalendarItemForm((current) => ({ ...current, date: nextDate }));
+                        selectCalendarDate(nextDate);
+                        setCalendarMonthKey(getCalendarMonthKey(new Date(`${nextDate}T12:00:00`)));
+                      }}
+                      className="rounded-2xl border border-white/12 bg-black/30 px-3.5 py-3 text-sm text-white outline-none focus:border-rose-200/40"
+                    />
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <input
+                      type="time"
+                      value={calendarItemForm.time}
+                      onChange={(event) => setCalendarItemForm((current) => ({ ...current, time: event.target.value }))}
+                      className="rounded-2xl border border-white/12 bg-black/30 px-3.5 py-3 text-sm text-white outline-none focus:border-rose-200/40"
+                    />
+                    <input
+                      value={calendarItemForm.city}
+                      onChange={(event) => setCalendarItemForm((current) => ({ ...current, city: event.target.value }))}
+                      placeholder="City optional"
+                      className="rounded-2xl border border-white/12 bg-black/30 px-3.5 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-rose-200/40"
+                    />
+                  </div>
+                  <select
+                    value={calendarItemForm.reminderMode}
+                    onChange={(event) => setCalendarItemForm((current) => ({ ...current, reminderMode: event.target.value }))}
+                    className="rounded-2xl border border-white/12 bg-[#151018] px-3.5 py-3 text-sm text-white outline-none focus:border-rose-200/40 [&_option]:bg-[#151018]"
+                  >
+                    <option value="off">No reminder</option>
+                    <option value="day_of">Day-of reminder</option>
+                    <option value="day_before">1 day before</option>
+                    <option value="hour_before">1 hour before</option>
+                  </select>
+                  <textarea
+                    value={calendarItemForm.notes}
+                    onChange={(event) => setCalendarItemForm((current) => ({ ...current, notes: event.target.value }))}
+                    placeholder="Notes optional"
+                    className="min-h-20 resize-none rounded-2xl border border-white/12 bg-black/30 px-3.5 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-rose-200/40"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-gradient-to-r from-rose-200 via-fuchsia-200 to-cyan-200 px-4 py-3 text-sm font-semibold text-black shadow-[0_16px_40px_rgba(244,114,182,0.18)] transition hover:brightness-105"
+                  >
+                    Save calendar item
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/events")}
+                    className="rounded-full border border-white/14 bg-white/[0.065] px-4 py-2.5 text-xs uppercase tracking-[0.12em] text-white/72 transition hover:border-white/26"
+                  >
+                    Browse events
+                  </button>
+                </div>
+              </form>
+            </aside>
           </div>
         </section>
         ) : null}
