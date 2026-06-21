@@ -104,6 +104,34 @@ function formatContactCategory(value = "") {
   return map[String(value || "").trim()] || formatTitle(value);
 }
 
+function parseCommunityIdeaText(value = "") {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^\[([^\]]+)\]\s*(.*)$/);
+  if (!match) {
+    return {
+      category: "Idea",
+      body: raw,
+    };
+  }
+  return {
+    category: String(match[1] || "Idea").trim() || "Idea",
+    body: String(match[2] || "").trim() || raw,
+  };
+}
+
+function mapCommunityIdeaRow(row = {}) {
+  const parsed = parseCommunityIdeaText(row.text);
+  return {
+    id: String(row.id || ""),
+    rawText: String(row.text || ""),
+    text: parsed.body,
+    category: parsed.category,
+    author: String(row.author || "Member").trim() || "Member",
+    votes: Number(row.votes || 0),
+    createdAt: row.created_at || "",
+  };
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName, session } = useAuth();
@@ -153,12 +181,23 @@ export default function AdminPage() {
   const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
   const [isProcessingSubmissionId, setIsProcessingSubmissionId] = useState("");
   const [contactThreads, setContactThreads] = useState([]);
+  const [communityIdeas, setCommunityIdeas] = useState([]);
+  const [communityIdeasNotice, setCommunityIdeasNotice] = useState("");
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
     setWarning("");
+    setCommunityIdeasNotice("");
     try {
-      const [placesCountRes, eventsCountRes, servicesCountRes, globalEventsRes, moderationRes, contactThreadsRes] =
+      const [
+        placesCountRes,
+        eventsCountRes,
+        servicesCountRes,
+        globalEventsRes,
+        moderationRes,
+        contactThreadsRes,
+        communityIdeasRes,
+      ] =
         await Promise.all([
           fetchPlacesQueryWithFallback({ select: "*", options: { count: "exact", head: true } }),
           supabase.from("events").select("*", { count: "exact", head: true }),
@@ -170,6 +209,11 @@ export default function AdminPage() {
             .select("id,created_at,updated_at,status,priority,category,subject,message,is_anonymous,sender_name,sender_email,user_id,city_context,page_context")
             .order("created_at", { ascending: false })
             .limit(120),
+          supabase
+            .from("community_ideas")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(160),
         ]);
 
       const reportsRows = moderationRes?.reports || getReports();
@@ -179,6 +223,12 @@ export default function AdminPage() {
         contactThreadsRes?.error &&
         !isMissingRelationError(contactThreadsRes.error)
           ? `Contact inbox unavailable: ${formatDbError(contactThreadsRes.error)}`
+          : "";
+      const ideaRows = Array.isArray(communityIdeasRes?.data) ? communityIdeasRes.data : [];
+      const ideasWarning =
+        communityIdeasRes?.error &&
+        !isMissingRelationError(communityIdeasRes.error)
+          ? `Improve Atlas inbox unavailable: ${formatDbError(communityIdeasRes.error)}`
           : "";
       const trafficRes = await fetchTrafficSummary(30);
 
@@ -202,6 +252,14 @@ export default function AdminPage() {
           pageContext: String(row.page_context || ""),
         }))
       );
+      setCommunityIdeas(ideaRows.map(mapCommunityIdeaRow));
+      if (communityIdeasRes?.error) {
+        setCommunityIdeasNotice(
+          isMissingRelationError(communityIdeasRes.error)
+            ? "Improve Atlas inbox is not configured yet. The community_ideas table was not found."
+            : "Could not load Improve Atlas ideas right now."
+        );
+      }
       setSelectedReportIds((current) =>
         current.filter((id) => reportsRows.some((row) => String(row.id) === String(id)))
       );
@@ -215,9 +273,9 @@ export default function AdminPage() {
       });
       setTrafficSummary(trafficRes);
 
-      if (moderationRes?.warning || (!trafficRes.ok && trafficRes.message) || contactWarning) {
+      if (moderationRes?.warning || (!trafficRes.ok && trafficRes.message) || contactWarning || ideasWarning) {
         setWarning(
-          [moderationRes?.warning, !trafficRes.ok ? trafficRes.message : "", contactWarning]
+          [moderationRes?.warning, !trafficRes.ok ? trafficRes.message : "", contactWarning, ideasWarning]
             .filter(Boolean)
             .join(" ")
         );
@@ -549,6 +607,24 @@ export default function AdminPage() {
     link.click();
     URL.revokeObjectURL(url);
     showToast("CSV exported.", { tone: "ok", duration: 1600 });
+  };
+
+  const deleteCommunityIdea = async (ideaId) => {
+    const id = String(ideaId || "").trim();
+    if (!id) return;
+    const busyKey = `idea:${id}`;
+    setBusyMap((current) => ({ ...current, [busyKey]: true }));
+    try {
+      const { error } = await supabase.from("community_ideas").delete().eq("id", id);
+      if (error) {
+        showToast(error.message || "Could not delete idea.", { tone: "warn", duration: 2400 });
+        return;
+      }
+      setCommunityIdeas((current) => current.filter((idea) => idea.id !== id));
+      showToast("Improve Atlas idea deleted.", { tone: "ok", duration: 1900 });
+    } finally {
+      setBusyMap((current) => ({ ...current, [busyKey]: false }));
+    }
   };
 
   const setReportStatus = async (reportId, status) => {
@@ -1087,6 +1163,91 @@ export default function AdminPage() {
               })}
             </div>
           )}
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-amber-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.13),transparent_28%),linear-gradient(180deg,rgba(45,31,10,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_24px_80px_rgba(251,191,36,0.08)]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Improve Atlas</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">Atlas Improvement Inbox</h2>
+              <p className="mt-2 text-sm text-white/65">
+                Member ideas from the Community Improve Atlas panel. Use this as a lightweight roadmap signal.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">
+                {communityIdeas.length} ideas
+              </span>
+              <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-xs text-white/72">
+                Top vote: {communityIdeas.reduce((max, idea) => Math.max(max, Number(idea.votes || 0)), 0)}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  exportCsv(
+                    communityIdeas.map((idea) => ({
+                      id: idea.id,
+                      category: idea.category,
+                      text: idea.text,
+                      author: idea.author,
+                      votes: idea.votes,
+                      created_at: idea.createdAt,
+                    })),
+                    "qa-improve-atlas-ideas.csv"
+                  )
+                }
+                className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/78 transition hover:border-amber-200/35 hover:text-amber-100"
+              >
+                Export CSV
+              </button>
+            </div>
+          </div>
+
+          {communityIdeasNotice ? (
+            <div className="mb-3 rounded-xl border border-amber-200/24 bg-amber-200/12 px-3 py-2 text-xs text-amber-100">
+              {communityIdeasNotice}
+            </div>
+          ) : null}
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            {communityIdeas.length > 0 ? (
+              communityIdeas.map((idea) => {
+                const busyKey = `idea:${idea.id}`;
+                return (
+                  <article key={idea.id} className="rounded-2xl border border-white/12 bg-black/25 p-4 transition hover:border-amber-200/28 hover:bg-amber-200/6">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-amber-200/24 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-amber-100">
+                            {idea.category}
+                          </span>
+                          <span className="rounded-full border border-white/14 bg-white/6 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/70">
+                            {idea.votes} votes
+                          </span>
+                        </div>
+                        <p className="text-sm leading-6 text-white/82">{idea.text || "No idea text provided."}</p>
+                        <p className="mt-2 text-xs text-white/55">
+                          {idea.author} | {timeAgo(idea.createdAt)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={Boolean(busyMap[busyKey])}
+                        onClick={() => deleteCommunityIdea(idea.id)}
+                        className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+                      >
+                        {busyMap[busyKey] ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55 lg:col-span-2">
+                No Improve Atlas ideas yet. Member suggestions from Community will appear here.
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="mb-8 rounded-[30px] border border-amber-300/16 bg-[linear-gradient(180deg,rgba(45,31,10,0.85),rgba(10,10,10,0.98))] p-6">
