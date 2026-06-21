@@ -235,6 +235,13 @@ function isProfileStoryUserIdMissingError(error) {
   return (code === "42703" || code === "PGRST204") && message.includes("user_id");
 }
 
+function isCommunityContributionSchemaError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
+  return code === "42P01" || code === "42703" || code === "PGRST204" ||
+    (message.includes("does not exist") && (message.includes("community_") || message.includes("user_id")));
+}
+
 function resolveAvatarUrlFromRow(row) {
   const direct = String(row?.avatar_url || "").trim();
   if (direct) return direct;
@@ -475,6 +482,13 @@ export default function FavoritesPage() {
     topics: 0,
     total: 0,
   });
+  const [ownContributionCounts, setOwnContributionCounts] = useState({
+    stories: 0,
+    guides: 0,
+    ideas: 0,
+    topics: 0,
+    total: 0,
+  });
   const tonightSectionRef = useRef(null);
   const tripSectionRef = useRef(null);
   const favoritesControlsRef = useRef(null);
@@ -708,6 +722,96 @@ export default function FavoritesPage() {
       active = false;
     };
   }, [isAuthLoading, isMember, isViewingAnotherMember, viewedMemberId]);
+
+  const currentUserId = String(user?.id || "");
+  const loadOwnContributionCounts = useCallback(async () => {
+    if (!isReady || !isMember || !currentUserId) {
+      setOwnContributionCounts({ stories: 0, guides: 0, ideas: 0, topics: 0, total: 0 });
+      return;
+    }
+
+    const userId = currentUserId;
+    const displayName = String(memberProfile?.displayName || authMemberName || memberName || "")
+      .trim()
+      .toLowerCase();
+
+    const countRowsForTable = async (table) => {
+      let response = await supabase
+        .from(table)
+        .select("id,user_id,author")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+
+      if (response.error && isCommunityContributionSchemaError(response.error)) {
+        response = await supabase
+          .from(table)
+          .select("id,author")
+          .order("created_at", { ascending: false })
+          .limit(1000);
+      }
+
+      if (response.error) return null;
+
+      const seen = new Set();
+      (Array.isArray(response.data) ? response.data : []).forEach((row) => {
+        const id = String(row?.id || "");
+        if (!id) return;
+        const rowUserId = String(row?.user_id || "").trim();
+        const rowAuthor = String(row?.author || "").trim().toLowerCase();
+        if (rowUserId === userId || (displayName && rowAuthor === displayName)) {
+          seen.add(id);
+        }
+      });
+      return seen.size;
+    };
+
+    const [stories, guides, ideas, topics] = await Promise.all([
+      countRowsForTable("community_stories"),
+      countRowsForTable("community_guides"),
+      countRowsForTable("community_ideas"),
+      countRowsForTable("community_topics"),
+    ]);
+
+    if ([stories, guides, ideas, topics].some((value) => value === null)) {
+      const localStories = readLocalJson("qa_community_stories", []);
+      const localGuides = readLocalJson("qa_community_guides", []);
+      const localIdeas = readLocalJson("qa_community_ideas", []);
+      const localTopics = readLocalJson("qa_community_topics", []);
+      setOwnContributionCounts(
+        computeContributionCountsFromCollections({
+          stories: localStories,
+          guides: localGuides,
+          ideas: localIdeas,
+          topics: localTopics,
+          memberIdentity: memberProfile?.displayName || authMemberName || memberName || "",
+        })
+      );
+      return;
+    }
+
+    const nextCounts = {
+      stories: Number(stories || 0),
+      guides: Number(guides || 0),
+      ideas: Number(ideas || 0),
+      topics: Number(topics || 0),
+    };
+    setOwnContributionCounts({
+      ...nextCounts,
+      total: nextCounts.stories + nextCounts.guides + nextCounts.ideas + nextCounts.topics,
+    });
+  }, [authMemberName, currentUserId, isMember, isReady, memberName, memberProfile?.displayName]);
+
+  useEffect(() => {
+    if (!isReady || !isMember || !currentUserId) return;
+    let active = true;
+    queueMicrotask(async () => {
+      await loadOwnContributionCounts();
+      if (!active) return;
+    });
+    return () => {
+      active = false;
+    };
+  }, [currentUserId, isMember, isReady, loadOwnContributionCounts]);
 
   const loadMemberCollections = useCallback(async (userId, localFavorites, localPlans) => {
     const [favoritesRes, plansRes] = await Promise.all([
@@ -1916,31 +2020,6 @@ export default function FavoritesPage() {
     });
   }, [checkins, totalPlaces]);
 
-  const contributionCounts = useMemo(() => {
-    if (typeof window === "undefined") {
-      return {
-        stories: 0,
-        guides: 0,
-        ideas: 0,
-        topics: 0,
-        total: 0,
-      };
-    }
-
-    const stories = readLocalJson("qa_community_stories", []);
-    const guides = readLocalJson("qa_community_guides", []);
-    const ideas = readLocalJson("qa_community_ideas", []);
-    const topics = readLocalJson("qa_community_topics", []);
-
-    return computeContributionCountsFromCollections({
-      stories,
-      guides,
-      ideas,
-      topics,
-      memberIdentity: memberProfile?.displayName || authMemberName || memberName || "",
-    });
-  }, [authMemberName, memberName, memberProfile?.displayName]);
-
   const saveProfile = async (event) => {
     event.preventDefault();
     const sanitizedExtras = sanitizeProfileExtras(profileExtras);
@@ -2186,6 +2265,9 @@ export default function FavoritesPage() {
       tone: insertError ? "info" : "ok",
       duration: 2300,
     });
+    queueMicrotask(() => {
+      loadOwnContributionCounts();
+    });
   };
 
   const hasProfileChanges = hasProfileFormChanges(profileForm, memberProfile || {});
@@ -2208,7 +2290,7 @@ export default function FavoritesPage() {
     isViewingAnotherMember && viewedTargetUserId && followingIdSet.has(viewedTargetUserId)
   );
   const activeMemberRank = isViewingAnotherMember ? viewedMemberRank : memberRank;
-  const activeContributionCounts = isViewingAnotherMember ? viewedContributionCounts : contributionCounts;
+  const activeContributionCounts = isViewingAnotherMember ? viewedContributionCounts : ownContributionCounts;
   const memberTitleMeta = getMemberTitleMeta(activeMemberRank?.title || "");
   const profileVibeChips = useMemo(
     () => resolveProfileVibeChips(effectiveVibe, topVibe),

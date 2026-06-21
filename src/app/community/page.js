@@ -114,6 +114,8 @@ function mapStoryRow(row) {
     title: row.title || "",
     city: row.city || "",
     author: row.author || "Member",
+    authorUserId: row.user_id ? String(row.user_id) : "",
+    authorEmail: row.created_by_email || "",
     category: row.category || "Experience",
     excerpt: row.excerpt || "",
     body: row.body || "",
@@ -127,6 +129,8 @@ function mapGuideRow(row) {
     title: row.title || "",
     city: row.city || "Multi-city",
     author: row.author || "Member",
+    authorUserId: row.user_id ? String(row.user_id) : "",
+    authorEmail: row.created_by_email || "",
     focus: row.focus || "Community",
     summary: row.summary || "",
     content: row.content || "",
@@ -153,6 +157,8 @@ function mapIdeaRow(row) {
     text: row.text || "",
     votes: Number(row.votes || 0),
     author: row.author || "Member",
+    authorUserId: row.user_id ? String(row.user_id) : "",
+    authorEmail: row.created_by_email || "",
     createdAt: row.created_at || new Date().toISOString(),
   };
 }
@@ -256,6 +262,26 @@ function isMissingDbObjectError(error) {
     code === "42883" ||
     (text.includes("does not exist") && (text.includes("function") || text.includes("relation")))
   );
+}
+
+function isCommunityIdentityColumnMissingError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
+  return (code === "42703" || code === "PGRST204") &&
+    (message.includes("user_id") || message.includes("created_by_email"));
+}
+
+async function insertCommunityRowWithIdentity(table, payload) {
+  let response = await supabase.from(table).insert([payload]).select("*").single();
+  if (!response.error || !isCommunityIdentityColumnMissingError(response.error)) {
+    return response;
+  }
+
+  const legacyPayload = { ...payload };
+  delete legacyPayload.user_id;
+  delete legacyPayload.created_by_email;
+  response = await supabase.from(table).insert([legacyPayload]).select("*").single();
+  return response;
 }
 
 function formatMemberSeen(lastSeenAt = "", isOnline = false) {
@@ -974,19 +1000,25 @@ export default function CommunityPage() {
       showToast("Story not published. Fill all required fields.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: createClientId("s"), ...storyForm, excerpt: storyForm.excerpt || storyForm.body.slice(0, 120), createdAt: new Date().toISOString() };
-    const { data, error } = await supabase
-      .from("community_stories")
-      .insert([{
+    const fallbackItem = {
+      id: createClientId("s"),
+      ...storyForm,
+      author: memberName || "Member",
+      authorUserId: String(user?.id || ""),
+      authorEmail: String(user?.email || ""),
+      excerpt: storyForm.excerpt || storyForm.body.slice(0, 120),
+      createdAt: new Date().toISOString(),
+    };
+    const { data, error } = await insertCommunityRowWithIdentity("community_stories", {
         title: storyForm.title,
         city: storyForm.city,
         author: memberName || "Member",
+        user_id: user?.id || null,
+        created_by_email: user?.email || null,
         category: storyForm.category || "Experience",
         excerpt: storyForm.excerpt || storyForm.body.slice(0, 120),
         body: storyForm.body,
-      }])
-      .select("*")
-      .single();
+      });
 
     const item = error || !data ? fallbackItem : mapStoryRow(data);
     setStories((current) => [item, ...current]);
@@ -1001,19 +1033,27 @@ export default function CommunityPage() {
       showToast("Guide not published. Fill required fields.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: createClientId("g"), ...guideForm, city: guideForm.city || "Multi-city", focus: guideForm.focus || "Community", summary: guideForm.summary || guideForm.content.slice(0, 120), createdAt: new Date().toISOString() };
-    const { data, error } = await supabase
-      .from("community_guides")
-      .insert([{
+    const fallbackItem = {
+      id: createClientId("g"),
+      ...guideForm,
+      city: guideForm.city || "Multi-city",
+      author: memberName || "Member",
+      authorUserId: String(user?.id || ""),
+      authorEmail: String(user?.email || ""),
+      focus: guideForm.focus || "Community",
+      summary: guideForm.summary || guideForm.content.slice(0, 120),
+      createdAt: new Date().toISOString(),
+    };
+    const { data, error } = await insertCommunityRowWithIdentity("community_guides", {
         title: guideForm.title,
         city: guideForm.city || "Multi-city",
         author: memberName || "Member",
+        user_id: user?.id || null,
+        created_by_email: user?.email || null,
         focus: guideForm.focus || "Community",
         summary: guideForm.summary || guideForm.content.slice(0, 120),
         content: guideForm.content,
-      }])
-      .select("*")
-      .single();
+      });
 
     const item = error || !data ? fallbackItem : mapGuideRow(data);
     setGuides((current) => [item, ...current]);
@@ -1076,16 +1116,14 @@ export default function CommunityPage() {
       authorEmail: String(user?.email || ""),
       createdAt: new Date().toISOString(),
     };
-    const { data, error } = await supabase
-      .from("community_topics")
-      .insert([{
+    const { data, error } = await insertCommunityRowWithIdentity("community_topics", {
         name: topicForm.name,
         mood: topicForm.mood || "Fresh",
         description: topicForm.description,
         author: memberName || "Member",
-      }])
-      .select("*")
-      .single();
+        user_id: user?.id || null,
+        created_by_email: user?.email || null,
+      });
 
     const item =
       error || !data
@@ -1111,16 +1149,22 @@ export default function CommunityPage() {
     }
     const ideaCategory = String(ideaForm.category || "Feature").trim() || "Feature";
     const ideaText = `[${ideaCategory}] ${ideaForm.text.trim()}`;
-    const fallbackItem = { id: createClientId("i"), text: ideaText, author: memberName || "Member", votes: 1, createdAt: new Date().toISOString() };
-    const { data, error } = await supabase
-      .from("community_ideas")
-      .insert([{
+    const fallbackItem = {
+      id: createClientId("i"),
+      text: ideaText,
+      author: memberName || "Member",
+      authorUserId: String(user?.id || ""),
+      authorEmail: String(user?.email || ""),
+      votes: 1,
+      createdAt: new Date().toISOString(),
+    };
+    const { data, error } = await insertCommunityRowWithIdentity("community_ideas", {
         text: ideaText,
         author: memberName || "Member",
+        user_id: user?.id || null,
+        created_by_email: user?.email || null,
         votes: 1,
-      }])
-      .select("*")
-      .single();
+      });
 
     const item = error || !data ? fallbackItem : mapIdeaRow(data);
     setIdeas((current) => [item, ...current]);
