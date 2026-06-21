@@ -6,7 +6,7 @@ export const CHECKINS_STORAGE_KEY = "qa_member_checkins";
 export function createInitialCheckinForm() {
   return {
     mode: "trip",
-    privacy: "friends",
+    privacy: "private",
     country: "",
     city: "",
     sourceType: "manual",

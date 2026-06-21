@@ -52,7 +52,7 @@ export function buildQuickCheckinPayload({
   const countryValue = cityCountryLookup.get(normalizeCityKey(cityValue)) || "";
   return {
     mode: "trip",
-    privacy: "friends",
+    privacy: "private",
     country: countryValue,
     city: cityValue,
     label: String(item.name || item.title || "Unknown stop"),

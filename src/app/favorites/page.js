@@ -140,6 +140,8 @@ const SavedEventsPanel = dynamic(() => import("@/components/favorites/SavedEvent
 });
 
 const CHECKIN_VIBE_COOLDOWN_MS = 30 * 1000;
+const PREMIUM_CHECKIN_SELECT_CLASS =
+  "w-full rounded-2xl border border-white/12 bg-[#15101b] px-3.5 py-2.5 text-sm font-medium text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_30px_rgba(0,0,0,0.18)] transition hover:border-white/22 hover:bg-[#1b1423] focus:border-fuchsia-200/50 focus:ring-2 focus:ring-fuchsia-200/16 [&_option]:bg-[#15101b] [&_option]:text-white";
 const FAVORITES_PROFILE_EXTRAS_STORAGE_KEY = "qa_favorites_profile_extras_v1";
 const FAVORITES_PROFILE_MEMORIES_STORAGE_KEY = "qa_favorites_profile_memories_v1";
 const FAVORITES_CALENDAR_REMINDER_STORAGE_KEY = "qa_favorites_calendar_reminders_v1";
@@ -155,6 +157,11 @@ function isAvatarColumnMissingError(error) {
     message.includes("avatar_url") ||
     message.includes("avatar_path");
   return mentionsAvatarField && (message.includes("does not exist") || message.includes("schema cache"));
+}
+
+function normalizeCheckinPrivacy(value) {
+  const normalized = String(value || "private");
+  return normalized === "friends" ? "private" : normalized;
 }
 
 function isProfileMemoriesTableMissingError(error) {
@@ -1516,7 +1523,7 @@ export default function FavoritesPage() {
     const mine = checkinMarkers.map((item) => ({
       ...item,
       markerId: `mine-${String(item.id)}`,
-      markerKind: "mine",
+      markerKind: myMapView === "saved" ? "saved" : "mine",
     }));
     const friends = followingCheckinMarkers.map((item) => ({
       ...item,
@@ -1524,7 +1531,7 @@ export default function FavoritesPage() {
       markerKind: "friend",
     }));
     return [...mine, ...friends];
-  }, [checkinMarkers, followingCheckinMarkers]);
+  }, [checkinMarkers, followingCheckinMarkers, myMapView]);
 
   const selectedCheckin = useMemo(() => {
     return getSelectedCheckin(checkinMarkers, selectedCheckinId);
@@ -1685,13 +1692,21 @@ export default function FavoritesPage() {
       markerEl.style.height = "14px";
       markerEl.style.borderRadius = "9999px";
       markerEl.style.border = "2px solid rgba(255,255,255,0.85)";
-      markerEl.style.background = point.markerKind === "friend" ? "#22d3ee" : "#f472b6";
-      markerEl.style.boxShadow = "0 0 0 2px rgba(0,0,0,0.42)";
+      markerEl.style.background =
+        point.markerKind === "saved"
+          ? "#34d399"
+          : point.markerKind === "friend"
+            ? "#22d3ee"
+            : "#f472b6";
+      markerEl.style.boxShadow =
+        point.markerKind === "saved"
+          ? "0 0 0 2px rgba(0,0,0,0.42), 0 0 18px rgba(52,211,153,0.42)"
+          : "0 0 0 2px rgba(0,0,0,0.42), 0 0 18px rgba(244,114,182,0.36)";
       markerEl.style.cursor = "pointer";
       markerEl.style.transform = String(selectedCheckinId) === String(point.id) ? "scale(1.2)" : "scale(1)";
       markerEl.title = String(point.label || point.ownerName || "Check-in");
       markerEl.addEventListener("click", () => {
-        if (point.markerKind === "mine") {
+        if (point.markerKind === "mine" || point.markerKind === "saved") {
           setSelectedCheckinId(String(point.id || ""));
         }
         map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 12), essential: true });
@@ -2417,7 +2432,7 @@ export default function FavoritesPage() {
     }
 
     const modeValue = String(payload?.mode || "trip");
-    const privacyValue = String(payload?.privacy || "friends");
+    const privacyValue = normalizeCheckinPrivacy(payload?.privacy);
     const latValue = Number(payload?.lat);
     const lngValue = Number(payload?.lng);
     let resolvedCoords =
@@ -3844,8 +3859,8 @@ export default function FavoritesPage() {
                     <span className="h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_14px_rgba(244,114,182,0.8)]" />
                     Check-ins
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/22 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100/86 backdrop-blur">
-                    <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_14px_rgba(34,211,238,0.8)]" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/22 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100/86 backdrop-blur">
+                    <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.8)]" />
                     Saved
                   </span>
                   {selectedCheckin ? (
@@ -3934,7 +3949,7 @@ export default function FavoritesPage() {
                 <select
                   value={checkinForm.mode}
                   onChange={(event) => setCheckinForm((current) => ({ ...current, mode: event.target.value }))}
-                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
+                  className={PREMIUM_CHECKIN_SELECT_CLASS}
                 >
                   <option value="trip">Trip</option>
                   <option value="home">Home</option>
@@ -3943,9 +3958,8 @@ export default function FavoritesPage() {
                 <select
                   value={checkinForm.privacy}
                   onChange={(event) => setCheckinForm((current) => ({ ...current, privacy: event.target.value }))}
-                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
+                  className={PREMIUM_CHECKIN_SELECT_CLASS}
                 >
-                  <option value="friends">Friends</option>
                   <option value="private">Private</option>
                   <option value="public">Public</option>
                 </select>
@@ -3961,7 +3975,7 @@ export default function FavoritesPage() {
                       address: "",
                     }))
                   }
-                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
+                  className={PREMIUM_CHECKIN_SELECT_CLASS}
                 >
                   {checkinCountryOptions.length === 0 ? <option value="">No countries yet</option> : null}
                   {checkinCountryOptions.map((country) => (
@@ -3981,7 +3995,7 @@ export default function FavoritesPage() {
                       address: "",
                     }))
                   }
-                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12"
+                  className={PREMIUM_CHECKIN_SELECT_CLASS}
                 >
                   {checkinCityOptions.length === 0 ? <option value="">No cities yet</option> : null}
                   {checkinCityOptions.map((city) => (
@@ -4001,7 +4015,7 @@ export default function FavoritesPage() {
                       address: "",
                     }))
                   }
-                  className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
+                  className={`${PREMIUM_CHECKIN_SELECT_CLASS} sm:col-span-2`}
                 >
                   <option value="manual">Manual venue/event</option>
                   <option value="atlas_place">Choose atlas venue</option>
@@ -4019,7 +4033,7 @@ export default function FavoritesPage() {
                         address: selected ? String(selected.location || selected.address || "") : "",
                       }));
                     }}
-                    className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
+                    className={`${PREMIUM_CHECKIN_SELECT_CLASS} sm:col-span-2`}
                   >
                     <option value="">
                       {selectedCityPlaces.length > 0 ? "Select venue" : "No venues in this city yet"}
@@ -4043,7 +4057,7 @@ export default function FavoritesPage() {
                         address: selected ? String(selected.location || selected.address || "") : "",
                       }));
                     }}
-                    className="rounded-2xl border border-white/12 bg-black/38 px-3.5 py-2.5 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus:border-fuchsia-200/42 focus:ring-2 focus:ring-fuchsia-200/12 sm:col-span-2"
+                    className={`${PREMIUM_CHECKIN_SELECT_CLASS} sm:col-span-2`}
                   >
                     <option value="">
                       {selectedCityEvents.length > 0 ? "Select event" : "No events in this city yet"}
@@ -4144,7 +4158,9 @@ export default function FavoritesPage() {
               )}
             </div>
 
-            <div className="qa-premium-card rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_85%_0%,rgba(34,211,238,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.32)]">
+            <div className={`qa-premium-card relative flex min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/12 bg-[radial-gradient(circle_at_10%_0%,rgba(244,114,182,0.10),transparent_32%),radial-gradient(circle_at_92%_0%,rgba(34,211,238,0.12),transparent_36%),linear-gradient(180deg,rgba(18,18,26,0.94),rgba(7,8,12,0.98))] p-4 shadow-[0_34px_110px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] ${myMapView === "checkins" ? "xl:h-[56rem]" : "xl:h-[34rem]"}`}>
+              <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/35 to-transparent" />
+              <div className="mb-3 rounded-[24px] border border-white/10 bg-white/[0.035] p-3 shadow-[0_16px_42px_rgba(0,0,0,0.20)]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-white/42">
@@ -4164,8 +4180,9 @@ export default function FavoritesPage() {
                   {myMapView === "checkins" ? filteredRecentCheckins.length : savedPlaces.length}
                 </span>
               </div>
+              </div>
               {myMapView === "checkins" ? (
-              <>
+              <div className="flex min-h-0 flex-1 flex-col">
                 <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                   <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
                   <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved check-ins</span>
@@ -4192,8 +4209,8 @@ export default function FavoritesPage() {
                   ))}
                 </div>
                 <div
-                  className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
-                  style={{ scrollbarGutter: "stable", minHeight: "31rem", maxHeight: "31rem" }}
+                  className={`${FAVORITES_CHECKIN_LIST_SCROLL_CLASS} rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_18%_0%,rgba(244,114,182,0.08),transparent_32%),linear-gradient(180deg,rgba(0,0,0,0.24),rgba(0,0,0,0.13))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] xl:h-auto xl:min-h-0 xl:flex-1`}
+                  style={{ scrollbarGutter: "stable" }}
                 >
                 {filteredRecentCheckins.length > 0 ? (
                     <div className="space-y-3">
@@ -4201,10 +4218,10 @@ export default function FavoritesPage() {
                         <article
                           key={entry.id}
                           onClick={() => focusCheckinOnMap(entry)}
-                          className={`qa-premium-card cursor-pointer rounded-[22px] border bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-3.5 transition ${
+                          className={`qa-premium-card cursor-pointer rounded-[22px] border bg-[radial-gradient(circle_at_12%_0%,rgba(244,114,182,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-3.5 shadow-[0_16px_38px_rgba(0,0,0,0.22)] transition ${
                             String(selectedCheckinId) === String(entry.id)
                               ? "border-fuchsia-200/48 shadow-[0_0_0_1px_rgba(244,114,182,0.25),0_18px_44px_rgba(244,114,182,0.12)]"
-                              : "border-white/10 hover:border-white/24 hover:bg-white/[0.055]"
+                              : "border-white/10 hover:border-fuchsia-200/22 hover:bg-white/[0.06] hover:shadow-[0_20px_52px_rgba(244,114,182,0.10),0_12px_28px_rgba(0,0,0,0.28)]"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -4261,23 +4278,23 @@ export default function FavoritesPage() {
                   </div>
                 )}
                 </div>
-              </>
+              </div>
               ) : (
-                <>
+                <div className="flex min-h-0 flex-1 flex-col">
                   <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                     <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-cyan-100/90">Saved</span>
                     <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved venues</span>
                   </div>
                   <div
-                    className={FAVORITES_CHECKIN_LIST_SCROLL_CLASS}
-                    style={{ scrollbarGutter: "stable", maxHeight: "31rem" }}
+                    className={`${FAVORITES_CHECKIN_LIST_SCROLL_CLASS} rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.08),transparent_32%),linear-gradient(180deg,rgba(0,0,0,0.24),rgba(0,0,0,0.13))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] xl:h-auto xl:min-h-0 xl:flex-1`}
+                    style={{ scrollbarGutter: "stable" }}
                   >
                     {savedPlaces.length > 0 ? (
                       <div className="space-y-3">
                       {savedPlaces.map((place) => (
                         <article
                           key={`saved-map-${place.id}`}
-                          className="qa-premium-card rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-3.5 transition hover:border-cyan-200/24 hover:bg-white/[0.055]"
+                          className="qa-premium-card rounded-[22px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-3.5 shadow-[0_16px_38px_rgba(0,0,0,0.22)] transition hover:border-cyan-200/24 hover:bg-white/[0.06] hover:shadow-[0_20px_52px_rgba(34,211,238,0.10),0_12px_28px_rgba(0,0,0,0.28)]"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -4329,7 +4346,7 @@ export default function FavoritesPage() {
                       </div>
                     )}
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>

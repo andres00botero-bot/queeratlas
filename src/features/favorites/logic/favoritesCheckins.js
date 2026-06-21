@@ -7,6 +7,11 @@ function normalizeLookupValue(value) {
     .replace(/\s+/g, " ");
 }
 
+function normalizeCheckinPrivacy(value) {
+  const normalized = String(value || "private");
+  return normalized === "friends" ? "private" : normalized;
+}
+
 export function resolveDirectPlaceDbId(placeId) {
   const rawPlaceId = String(placeId || "").trim();
   if (rawPlaceId && !rawPlaceId.startsWith("seed-place-") && /^\d+$/.test(rawPlaceId)) {
@@ -41,7 +46,7 @@ export function buildNextCheckin({
   const labelValue = String(payload?.label || "").trim();
   const addressValue = String(payload?.address || "").trim();
   const modeValue = String(payload?.mode || "trip");
-  const privacyValue = String(payload?.privacy || "friends");
+  const privacyValue = normalizeCheckinPrivacy(payload?.privacy);
 
   return {
     id: isEditing ? editingId : `local-${Date.now()}`,
@@ -85,7 +90,7 @@ export function buildEditCheckinFormPatch({
   const countryFallback = cityCountryLookup.get(normalizeCityKey(cityValue)) || currentCountry || "";
   return {
     mode: String(entry?.mode || "trip"),
-    privacy: String(entry?.privacy || "friends"),
+    privacy: normalizeCheckinPrivacy(entry?.privacy),
     country: String(entry?.country || countryFallback),
     city: formatCityLabel(String(cityValue || "")),
     sourceType: "manual",
