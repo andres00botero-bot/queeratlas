@@ -333,7 +333,7 @@ export default function CommunityPage() {
   const [guideForm, setGuideForm] = useState({ title: "", city: "", focus: "", summary: "", content: "" });
   const [messageForm, setMessageForm] = useState({ text: "" });
   const [topicForm, setTopicForm] = useState({ name: "", mood: "Fresh", description: "" });
-  const [ideaForm, setIdeaForm] = useState({ text: "" });
+  const [ideaForm, setIdeaForm] = useState({ text: "", category: "Feature" });
   const [syncError, setSyncError] = useState("");
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [leaderboard, setLeaderboard] = useState([]);
@@ -1109,11 +1109,13 @@ export default function CommunityPage() {
       showToast("Idea not shared. Add idea text.", { tone: "warn", duration: 2400 });
       return;
     }
-    const fallbackItem = { id: createClientId("i"), text: ideaForm.text, author: memberName || "Member", votes: 1, createdAt: new Date().toISOString() };
+    const ideaCategory = String(ideaForm.category || "Feature").trim() || "Feature";
+    const ideaText = `[${ideaCategory}] ${ideaForm.text.trim()}`;
+    const fallbackItem = { id: createClientId("i"), text: ideaText, author: memberName || "Member", votes: 1, createdAt: new Date().toISOString() };
     const { data, error } = await supabase
       .from("community_ideas")
       .insert([{
-        text: ideaForm.text,
+        text: ideaText,
         author: memberName || "Member",
         votes: 1,
       }])
@@ -1122,7 +1124,7 @@ export default function CommunityPage() {
 
     const item = error || !data ? fallbackItem : mapIdeaRow(data);
     setIdeas((current) => [item, ...current]);
-    setIdeaForm({ text: "" });
+    setIdeaForm({ text: "", category: "Feature" });
     setShowIdeaForm(false);
     showToast(error ? "Idea saved locally. Supabase sync unavailable." : "Idea shared.", { tone: error ? "info" : "ok", duration: 2200 });
   };
@@ -1995,6 +1997,125 @@ export default function CommunityPage() {
         ) : null}
 
         {isImprovePanel ? (
+        <section aria-labelledby="community-ideas-heading-lab" className="qa-premium-card animate-rise-in mt-6 rounded-[30px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),radial-gradient(circle_at_88%_10%,rgba(167,139,250,0.12),transparent_30%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Improve Queer Atlas</p>
+              <h2 id="community-ideas-heading-lab" className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Atlas Improvement Lab</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-100/70">Suggest what we should build, fix, research, or polish next together.</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-amber-200/24 bg-amber-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-amber-100">
+                {sortedIdeas.length} ideas
+              </span>
+              <span className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-violet-100">
+                Top vote {sortedIdeas[0]?.votes || 0}
+              </span>
+              <span className="rounded-full border border-white/12 bg-white/7 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/64">
+                Community powered
+              </span>
+            </div>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(20rem,0.78fr)_minmax(0,1.22fr)] xl:items-start">
+            <div className="qa-premium-card rounded-[28px] border border-amber-300/18 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_34%),linear-gradient(180deg,rgba(48,33,12,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(251,191,36,0.10)] sm:p-5">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-amber-100/70">Submit an idea</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Help shape the atlas</h3>
+              <p className="mt-2 text-xs leading-5 text-white/56">Tell us what would make the app safer, smarter, prettier, or more useful.</p>
+
+              <form id="community-idea-form-lab" onSubmit={publishIdea} className="mt-4 space-y-3">
+                <select
+                  value={ideaForm.category}
+                  onChange={(event) => setIdeaForm((current) => ({ ...current, category: event.target.value }))}
+                  className="w-full rounded-xl border border-amber-200/20 bg-[#1c160d] px-4 py-3 text-sm text-white outline-none transition focus:border-amber-200/50 [&_option]:bg-[#1c160d]"
+                >
+                  <option value="Feature">Feature</option>
+                  <option value="Bug / Fix">Bug / Fix</option>
+                  <option value="City data">City data</option>
+                  <option value="Safety">Safety</option>
+                  <option value="Design">Design</option>
+                </select>
+                <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What should we improve in the app?" area />
+                <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
+              </form>
+
+              <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.035] p-3">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/44">How it helps</p>
+                <p className="mt-2 text-xs leading-5 text-white/58">High-vote ideas help us choose roadmap priorities. Clear city-data and safety reports make updates faster.</p>
+              </div>
+            </div>
+
+            <div className="qa-premium-card rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(167,139,250,0.12),transparent_34%),linear-gradient(180deg,rgba(34,25,12,0.86),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.24)] sm:p-5">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-violet-100/70">Community roadmap</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Most wanted improvements</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/56">Vote on what matters. Report unsafe or irrelevant entries.</p>
+                </div>
+              </div>
+
+              <div className="qa-defer-render max-h-[52rem] space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                {sortedIdeas.map((idea, index) => {
+                  const statusLabel =
+                    index === 0 && Number(idea.votes || 0) > 1
+                      ? "Most wanted"
+                      : index < 3
+                        ? "Community pick"
+                        : isWithinDays(idea.createdAt, 7)
+                          ? "Fresh"
+                          : "Needs review";
+                  const statusClass =
+                    statusLabel === "Most wanted"
+                      ? "border-amber-200/34 bg-amber-200/14 text-amber-100"
+                      : statusLabel === "Community pick"
+                        ? "border-violet-200/28 bg-violet-200/12 text-violet-100"
+                        : statusLabel === "Fresh"
+                          ? "border-emerald-200/24 bg-emerald-200/10 text-emerald-100"
+                          : "border-white/14 bg-white/7 text-white/66";
+                  return (
+                    <article key={idea.id} className="qa-premium-card animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(46,31,10,0.78),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-amber-200/30 hover:shadow-[0_24px_60px_rgba(251,191,36,0.14)]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${statusClass}`}>
+                            {statusLabel}
+                          </span>
+                          <p className="mt-3 text-sm leading-6 text-white/78">{idea.text}</p>
+                          <p className="mt-2 text-xs text-white/60">{idea.author} | {timeAgo(idea.createdAt)}</p>
+                        </div>
+                        <button onClick={() => upvoteIdea(idea.id)} className="qa-action shrink-0 rounded-[18px] border border-amber-300/34 bg-amber-300/12 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">
+                          <span className="block text-base leading-none">{idea.votes}</span>
+                          <span className="mt-1 block text-[10px] uppercase tracking-[0.11em]">Vote +1</span>
+                        </button>
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          onClick={() =>
+                            reportContent({
+                              targetType: "community-idea",
+                              targetId: idea.id,
+                              title: idea.text.slice(0, 80),
+                            })
+                          }
+                          className="qa-action rounded-full border border-amber-200/22 bg-amber-200/10 px-3 py-1 text-xs text-amber-100 transition hover:border-amber-200/37"
+                        >
+                          Report
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+                {sortedIdeas.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-amber-300/26 px-4 py-8 text-sm text-white/62">
+                    No ideas yet. Suggest the first improvement for Queer Atlas.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+        ) : null}
+
+        {false && isImprovePanel ? (
         <section aria-labelledby="community-ideas-heading" className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
             <div>
