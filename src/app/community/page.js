@@ -1771,55 +1771,68 @@ export default function CommunityPage() {
         ) : null}
 
         {isChatPanel ? (
-        <section aria-labelledby="community-chat-heading" className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
+        <section aria-labelledby="community-chat-heading" className="qa-premium-card animate-rise-in mt-6 rounded-[30px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_12%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Discussions</p>
-              <h2 id="community-chat-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Live chat</h2>
-              <p className="mt-1 text-xs text-cyan-100/70">Fast questions, local context, and real-time signal.</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Live Chat Lounge</p>
+              <h2 id="community-chat-heading" className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Rooms and real-time signal</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-cyan-100/70">Ask locals, coordinate tonight, and share fresh community context in focused rooms.</p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                const node = document.getElementById("community-topic-form");
-                if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
-              }}
-              className="qa-action qa-action-strong rounded-full border border-cyan-200/42 bg-cyan-200/16 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/62"
-            >
-              Start topic
-            </button>
-          </div>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            {[
-              "Anyone around this area tonight?",
-              "Best low-key spot for first-time visitors?",
-              "How's the vibe this weekend?",
-            ].map((preset) => (
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-cyan-100">
+                {visibleTopics.length} rooms
+              </span>
+              <span className="rounded-full border border-sky-200/22 bg-sky-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-sky-100">
+                {Object.values(messages || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0)} messages
+              </span>
               <button
-                key={preset}
                 type="button"
-                onClick={() => setMessageForm({ text: preset })}
-                className="qa-action rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/40"
+                onClick={() => {
+                  const node = document.getElementById("community-topic-form");
+                  if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+                className="qa-action qa-action-strong rounded-full border border-cyan-200/42 bg-cyan-200/16 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/62"
               >
-                {preset}
+                Start topic
               </button>
-            ))}
+            </div>
           </div>
-          <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-            <div className="space-y-3">
-              <div className="qa-defer-render grid gap-3 md:grid-cols-2 xl:grid-cols-1">
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(20rem,0.82fr)_minmax(0,1.18fr)] xl:items-stretch">
+            <div className="qa-premium-card flex flex-col rounded-[28px] border border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.13),transparent_34%),linear-gradient(180deg,rgba(8,31,39,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(34,211,238,0.10)] sm:p-5 xl:h-[52rem]">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/70">Rooms</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Choose a room</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/56">Focused conversations for tonight, questions, safety, and local signal.</p>
+                </div>
+                {busiestTopic ? (
+                  <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
+                    Trending
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
                 {visibleTopics.map((topic) => {
                   const replies = (messages[topic.id] || []).length;
                   const active = activeTopic?.id === topic.id;
                   return (
-                    <article key={topic.id} className={`qa-premium-card w-full rounded-2xl border p-4 text-left transition ${active ? "border-cyan-300 bg-cyan-300/12 shadow-[0_12px_30px_rgba(34,211,238,0.12)]" : "border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.74),rgba(11,11,11,0.95))] hover:border-cyan-300/30"} animate-rise-in`}>
+                    <article key={topic.id} className={`qa-premium-card w-full rounded-[22px] border p-3.5 text-left transition ${active ? "border-cyan-200/46 bg-cyan-300/14 shadow-[0_14px_34px_rgba(34,211,238,0.16)]" : "border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.74),rgba(11,11,11,0.95))] hover:border-cyan-300/30"} animate-rise-in`}>
                       <button onClick={() => setTopicId(topic.id)} className="w-full text-left">
-                        <div className="flex items-center justify-between gap-3">
-                          <h3 className="text-sm font-semibold">{topic.name}</h3>
-                          <span className="rounded-full bg-cyan-300/10 px-2 py-1 text-xs text-cyan-200">{topic.mood}</span>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-sm font-semibold text-white">{topic.name}</h3>
+                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{topic.description}</p>
+                          </div>
+                          <span className="shrink-0 rounded-full border border-cyan-200/20 bg-cyan-300/10 px-2 py-1 text-[10px] uppercase tracking-[0.11em] text-cyan-100">{topic.mood}</span>
                         </div>
-                        <p className="mt-2 text-xs leading-5 text-white/72">{topic.description}</p>
-                        <p className="mt-3 text-xs text-white/60">{replies} replies</p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/58">
+                          <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5">{replies} replies</span>
+                          {busiestTopic?.id === topic.id ? (
+                            <span className="rounded-full border border-emerald-200/18 bg-emerald-200/10 px-2 py-0.5 text-emerald-100">Most active</span>
+                          ) : null}
+                        </div>
                       </button>
                       {canDeleteTopic(topic) && (
                         <div className="mt-3 flex justify-end">
@@ -1834,126 +1847,147 @@ export default function CommunityPage() {
                     </article>
                   );
                 })}
+                {visibleTopics.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-cyan-200/18 px-4 py-8 text-sm text-white/62">
+                    No rooms yet. Start the first topic.
+                  </div>
+                )}
               </div>
-              <form id="community-topic-form" onSubmit={createTopic} className="rounded-2xl border border-cyan-400/20 bg-cyan-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+
+              <form id="community-topic-form" onSubmit={createTopic} className="mt-4 rounded-[24px] border border-cyan-400/20 bg-cyan-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Start a topic</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-3 xl:grid-cols-1">
+                <div className="mt-3 grid gap-3">
                   <Field value={topicForm.name} onChange={(event) => setTopicForm((current) => ({ ...current, name: event.target.value }))} placeholder="Topic name" />
                   <Field value={topicForm.mood} onChange={(event) => setTopicForm((current) => ({ ...current, mood: event.target.value }))} placeholder="Mood" />
-                  <div className="md:col-span-3 xl:col-span-1">
-                    <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder="What should people discuss here?" area />
-                  </div>
-                  <div className="md:col-span-3 xl:col-span-1">
-                    <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Create topic</button>
-                  </div>
+                  <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder="What should people discuss here?" area />
+                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Create topic</button>
                 </div>
               </form>
             </div>
-            <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.8),rgba(11,11,11,0.96))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:p-4">
-              {activeTopic && (
+
+            <div className="qa-premium-card flex flex-col rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.13),transparent_34%),linear-gradient(180deg,rgba(8,30,38,0.90),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(14,165,233,0.10)] sm:p-5 xl:h-[52rem]">
+              {activeTopic ? (
                 <>
-                  <div className="border-b border-gray-800 pb-3 sm:pb-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <div className="border-b border-white/10 pb-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">{activeTopic.mood}</p>
-                        <h3 className="mt-2 text-lg font-semibold">{activeTopic.name}</h3>
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-300">{activeTopic.mood}</p>
+                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{activeTopic.name}</h3>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/66">{activeTopic.description}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[11px] text-cyan-100 sm:px-3 sm:text-xs">
-                          {busiestTopic ? `Trending: ${busiestTopic.name}` : "New conversation"}
-                        </div>
+                        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] text-cyan-100">
+                          {activeMessages.length} messages
+                        </span>
                         {canDeleteTopic(activeTopic) && (
                           <button
                             onClick={() => deleteTopic(activeTopic)}
-                            className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 sm:px-3"
+                            className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
                           >
                             Delete topic
                           </button>
                         )}
                       </div>
                     </div>
-                    <p className="mt-2 text-sm leading-5 text-white/72 sm:leading-6">{activeTopic.description}</p>
-                    <p className="mt-2 text-[11px] text-cyan-100/60">
-                      Topic policy: max {MAX_TOPICS} topics, kept for {TOPIC_RETENTION_DAYS} days.
+                    <p className="mt-3 rounded-2xl border border-cyan-200/12 bg-cyan-200/[0.055] px-3 py-2 text-[11px] leading-5 text-cyan-100/72">
+                      Keep it kind. Report unsafe, harmful, or private-identifying content.
                     </p>
                   </div>
-                  <div className="mt-3 rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(10,28,36,0.8),rgba(8,8,8,0.96))] p-2.5 sm:mt-4 sm:p-3">
-                    <div className="mb-3 flex flex-col gap-1.5 border-b border-white/10 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                      <p className="text-xs text-white/74">Signed in as <span className="font-semibold text-cyan-200">{memberName || "Member"}</span></p>
-                      <p className="text-xs text-white/60">{activeMessages.length} messages in this topic</p>
-                    </div>
-                    <div ref={chatMessagesRef} className="h-[300px] space-y-2.5 overflow-y-auto pr-0.5 sm:h-[340px] sm:space-y-3 sm:pr-1">
-                      {activeMessages.length === 0 && (
-                        <div className="rounded-2xl border border-dashed border-gray-700 px-4 py-6 text-sm text-white/60">No messages yet. Be first to start this conversation.</div>
-                      )}
-                      {activeMessages.map((message) => {
-                        const isMine = message.author === (memberName || "Member");
-                        return (
-                          <div key={message.id} className={`flex gap-2 sm:gap-3 ${isMine ? "justify-end" : "justify-start"}`}>
-                            {!isMine && (
-                              <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-[11px] font-semibold text-cyan-100 sm:h-8 sm:w-8 sm:text-xs">
-                                {message.author.slice(0, 1).toUpperCase()}
-                              </div>
-                            )}
-                            <div className={`max-w-[92%] rounded-2xl px-3 py-2.5 sm:max-w-[85%] sm:px-4 sm:py-3 ${isMine ? "border border-cyan-300/35 bg-cyan-300/18" : "border border-white/10 bg-black/35"}`}>
-                              <div className="flex flex-col gap-1 sm:gap-1.5">
-                                <p className="text-[11px] font-semibold text-white/76 sm:text-xs">
-                                  {(() => {
-                                    const rankMeta = getAuthorIdentityMeta(message.author);
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5">
-                                        {rankMeta?.icon ? (
-                                          <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
-                                            {rankMeta.icon}
-                                          </span>
-                                        ) : null}
-                                        <span>{message.author}</span>
-                                      </span>
-                                    );
-                                  })()}
-                                </p>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-xs text-white/60">{timeAgo(message.createdAt)}</p>
-                                  <button
-                                    onClick={() =>
-                                      reportContent({
-                                        targetType: "community-message",
-                                        targetId: message.id,
-                                        title: activeTopic?.name || "Community message",
-                                      })
-                                    }
-                                    className="qa-action rounded-full border border-white/14 bg-white/7 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/66 transition hover:text-white"
-                                  >
-                                    Report
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="mt-1.5 text-sm leading-5 text-white/82 sm:leading-6">{message.text}</p>
+
+                  <div ref={chatMessagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto py-4 pr-1 [scrollbar-gutter:stable]">
+                    {activeMessages.length === 0 && (
+                      <div className="rounded-[24px] border border-dashed border-cyan-200/18 bg-white/[0.025] px-4 py-8 text-sm text-white/60">This room is quiet. Start the signal.</div>
+                    )}
+                    {activeMessages.map((message) => {
+                      const isMine = message.author === (memberName || "Member");
+                      return (
+                        <div key={message.id} className={`flex gap-2 sm:gap-3 ${isMine ? "justify-end" : "justify-start"}`}>
+                          {!isMine && (
+                            <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-xs font-semibold text-cyan-100">
+                              {message.author.slice(0, 1).toUpperCase()}
+                            </div>
+                          )}
+                          <div className={`max-w-[92%] rounded-[22px] px-3.5 py-3 shadow-[0_12px_30px_rgba(0,0,0,0.18)] sm:max-w-[82%] ${isMine ? "border border-cyan-200/34 bg-cyan-200/16" : "border border-white/10 bg-black/35"}`}>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-[11px] font-semibold text-white/78">
+                                {(() => {
+                                  const rankMeta = getAuthorIdentityMeta(message.author);
+                                  return (
+                                    <span className="inline-flex items-center gap-1.5">
+                                      {rankMeta?.icon ? (
+                                        <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
+                                          {rankMeta.icon}
+                                        </span>
+                                      ) : null}
+                                      <span>{message.author}</span>
+                                    </span>
+                                  );
+                                })()}
+                              </p>
+                              <span className="text-[10px] text-white/45">{timeAgo(message.createdAt)}</span>
+                            </div>
+                            <p className="mt-2 text-sm leading-6 text-white/84">{message.text}</p>
+                            <div className="mt-2 flex justify-end">
+                              <button
+                                onClick={() =>
+                                  reportContent({
+                                    targetType: "community-message",
+                                    targetId: message.id,
+                                    title: activeTopic?.name || "Community message",
+                                  })
+                                }
+                                className="qa-action rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/54 transition hover:text-white"
+                              >
+                                Report
+                              </button>
                             </div>
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="border-t border-white/10 pt-4">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                      {[
+                        "Anyone around this area tonight?",
+                        "Best low-key spot for first-time visitors?",
+                        "How's the vibe this weekend?",
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setMessageForm({ text: preset })}
+                          className="qa-action rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/40"
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                    <form onSubmit={sendMessage} className="grid gap-2.5 md:grid-cols-[1fr_auto] md:gap-3">
+                      <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder="Write a message to the room" />
+                      <button type="submit" className="qa-action qa-action-strong min-h-[44px] rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
+                    </form>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <p className="text-[11px] text-cyan-100/60">Messages auto-scroll when this room updates.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const node = chatMessagesRef.current;
+                          if (!node) return;
+                          node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
+                        }}
+                        className="qa-action rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/45"
+                      >
+                        Jump to latest
+                      </button>
                     </div>
                   </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <p className="text-[11px] text-cyan-100/65">Messages auto-scroll to the latest in this topic.</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const node = chatMessagesRef.current;
-                        if (!node) return;
-                        node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
-                      }}
-                      className="qa-action rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/45"
-                    >
-                      Jump to latest
-                    </button>
-                  </div>
-                  <form onSubmit={sendMessage} className="mt-3 grid gap-2.5 md:mt-4 md:grid-cols-[1fr_auto] md:gap-3">
-                    <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder="Write a message to the topic" />
-                    <button type="submit" className="qa-action qa-action-strong min-h-[44px] rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
-                  </form>
                 </>
+              ) : (
+                <div className="flex min-h-[28rem] items-center justify-center rounded-[24px] border border-dashed border-cyan-200/18 px-4 py-8 text-center text-sm text-white/58">
+                  Choose or create a room to start chatting.
+                </div>
               )}
             </div>
           </div>
