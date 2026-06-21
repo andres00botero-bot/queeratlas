@@ -4372,175 +4372,22 @@ export default function FavoritesPage() {
           </div>
         </section>
         ) : (
-        <section ref={tripSectionRef} className="mb-8">
-          <div className="hidden rounded-[34px] border border-emerald-200/16 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.18),transparent_30%),linear-gradient(180deg,rgba(11,38,31,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.36)]">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-emerald-200/72">Profile (optional)</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">
-                  Your footprint
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-white/56">
-                  Keep your profile signal clean so your atlas recommendations stay relevant.
-                </p>
-              </div>
-              <div className="rounded-full border border-emerald-200/16 bg-emerald-200/[0.08] px-3 py-1.5 text-[11px] text-emerald-100">
-                {contributionCounts.total} contributions
-              </div>
+        <section ref={tripSectionRef} className="qa-atlas-section mb-8">
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">Plan a trip</p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+                Trip Studio
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
+                Build a queer night, weekend, or city flow from saved places, events, hotels, and local signal.
+              </p>
             </div>
-
-            <form onSubmit={saveProfile} className="space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/18 bg-emerald-200/10 px-3 py-1">
-                  <span className="text-[10px] uppercase tracking-[0.14em] text-emerald-100/80">Member</span>
-                  <span className="text-xs font-medium text-white">
-                    {(memberProfile?.displayName || memberName || "Explorer")}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                {!isEditingProfile ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setProfileForm({
-                        displayName: memberProfile?.displayName || authMemberName || memberName,
-                        pronouns: memberProfile?.pronouns || "",
-                        homeCity: memberProfile?.homeCity || "",
-                        residentCountry: memberProfile?.residentCountry || "",
-                      });
-                      setIsEditingProfile(true);
-                    }}
-                    className="rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-[11px] text-white/72 transition hover:border-white/20 hover:text-white"
-                  >
-                    Edit profile
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="submit"
-                      disabled={!hasProfileChanges}
-                      className="rounded-full bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-4 py-2 text-xs font-semibold text-black shadow-[0_14px_40px_rgba(45,212,191,0.16)] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {hasProfileChanges ? "Save profile" : "Saved"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfileForm({
-                          displayName: memberProfile?.displayName || authMemberName || memberName,
-                          pronouns: memberProfile?.pronouns || "",
-                          homeCity: memberProfile?.homeCity || "",
-                          residentCountry: memberProfile?.residentCountry || "",
-                        });
-                        setIsEditingProfile(false);
-                      }}
-                      className="rounded-full border border-white/12 bg-white/6 px-3 py-1.5 text-[11px] text-white/72 transition hover:border-white/20 hover:text-white"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-                </div>
-              </div>
-
-              {isEditingProfile && (
-                <div className="grid gap-2 rounded-2xl border border-emerald-200/16 bg-emerald-200/[0.05] p-3 sm:grid-cols-2">
-                  <input
-                    value={profileForm.displayName}
-                    onChange={(event) =>
-                      setProfileForm((current) => ({ ...current, displayName: event.target.value }))
-                    }
-                    placeholder="Display name"
-                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={profileForm.pronouns}
-                    onChange={(event) =>
-                      setProfileForm((current) => ({ ...current, pronouns: event.target.value }))
-                    }
-                    placeholder="Pronouns"
-                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={profileForm.homeCity}
-                    onChange={(event) =>
-                      setProfileForm((current) => ({ ...current, homeCity: event.target.value }))
-                    }
-                    placeholder="Home city"
-                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                  />
-                  <input
-                    value={profileForm.residentCountry}
-                    onChange={(event) =>
-                      setProfileForm((current) => ({ ...current, residentCountry: event.target.value }))
-                    }
-                    placeholder="Country"
-                    className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                  />
-                </div>
-              )}
-
-              <div className="rounded-2xl border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-4">
-                <p className="text-sm text-white/85">
-                  {(memberProfile?.displayName || memberName || "Explorer")}
-                  {memberProfile?.pronouns ? ` | ${memberProfile.pronouns}` : ""}
-                </p>
-                {memberRank?.title && (
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/10 px-2.5 py-1">
-                    <span className="text-[10px] text-white/65">#{memberRank.rank}</span>
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${memberTitleMeta.className}`}>
-                      <span>{memberTitleMeta.icon}</span>
-                      {memberTitleMeta.label}
-                    </span>
-                  </div>
-                )}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[11px] text-white/62">
-                    {memberProfile?.homeCity ? `Home: ${memberProfile.homeCity}` : "Home city not set"}
-                  </span>
-                  <span className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[11px] text-white/62">
-                    {memberProfile?.residentCountry ? `Country: ${memberProfile.residentCountry}` : "Country not set"}
-                  </span>
-                  <span className="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-[11px] text-white/62">
-                    Last saved: {formatSavedTime(memberProfile?.updatedAt)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-rose-200/18 bg-rose-200/8 p-2.5">
-                  <p className="text-[10px] uppercase tracking-[0.13em] text-rose-100/72">Stories</p>
-                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.stories}</p>
-                </div>
-                <div className="rounded-xl border border-violet-200/18 bg-violet-200/8 p-2.5">
-                  <p className="text-[10px] uppercase tracking-[0.13em] text-violet-100/72">Guides</p>
-                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.guides}</p>
-                </div>
-                <div className="rounded-xl border border-amber-200/18 bg-amber-200/8 p-2.5">
-                  <p className="text-[10px] uppercase tracking-[0.13em] text-amber-100/72">Ideas</p>
-                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.ideas}</p>
-                </div>
-                <div className="rounded-xl border border-cyan-200/18 bg-cyan-200/8 p-2.5">
-                  <p className="text-[10px] uppercase tracking-[0.13em] text-cyan-100/72">Topics</p>
-                  <p className="mt-1 text-base font-semibold text-white">{contributionCounts.topics}</p>
-                </div>
-              </div>
-            </form>
           </div>
 
-          <div className="qa-premium-card overflow-visible rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.10),transparent_30%),radial-gradient(circle_at_10%_8%,rgba(244,114,182,0.07),transparent_28%),linear-gradient(180deg,rgba(18,18,20,0.95),rgba(10,10,10,0.99))] p-4 shadow-[0_18px_54px_rgba(0,0,0,0.34)] sm:rounded-[32px] sm:p-5 sm:shadow-[0_36px_108px_rgba(0,0,0,0.48)]">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold tracking-[-0.02em] text-white sm:text-3xl">
-                  Trip planner
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-white/62">
-                  Plan a night or city flow. Build and save itinerary flows based on your vibe, timing, and city context.
-                </p>
-              </div>
-            </div>
-
-          <TripPlannerV2
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.42fr)_minmax(22rem,0.78fr)] xl:items-stretch">
+            <div className="min-w-0">
+              <TripPlannerV2
             plannerCities={plannerCities}
             places={places}
             events={events}
@@ -4555,19 +4402,32 @@ export default function FavoritesPage() {
             }, {})}
             onOpenStop={openPlannerStopOnMap}
             onSavePlan={saveV2Plan}
-          />
+            hotelSuggestionsPortalId="trip-hotel-suggestions-panel"
+              />
+            </div>
 
-          <div className="space-y-3">
-            {isAtlasLoading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <FavoritesCardSkeleton key={`plan-skeleton-${index}`} />
-              ))
-            ) : plans.length > 0 ? (
-              plans.map((plan, index) => (
-                <article
-                  key={plan.id}
-                  className="qa-premium-card animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.20)] sm:p-4"
-                >
+            <aside className="qa-premium-card flex flex-col overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(20,16,24,0.95),rgba(8,8,10,0.99))] p-5 shadow-[0_28px_82px_rgba(0,0,0,0.38)] xl:h-[48rem]">
+              <div className="mb-4">
+                <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/70">Saved itineraries</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Your route library</h3>
+                <p className="mt-2 text-xs leading-5 text-white/56">
+                  Open a saved plan, check the route, or remove flows you no longer need.
+                </p>
+              </div>
+
+              <div id="trip-hotel-suggestions-panel" />
+
+              <div className="min-h-[14rem] space-y-3 overflow-y-auto pr-1 xl:min-h-0 xl:flex-1" style={{ scrollbarGutter: "stable" }}>
+                {isAtlasLoading ? (
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <FavoritesCardSkeleton key={`plan-skeleton-${index}`} />
+                  ))
+                ) : plans.length > 0 ? (
+                  plans.map((plan, index) => (
+                    <article
+                      key={plan.id}
+                      className="qa-premium-card animate-rise-in rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.08),transparent_34%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-3.5 shadow-[0_18px_48px_rgba(0,0,0,0.24)] sm:p-4"
+                    >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -4675,14 +4535,15 @@ export default function FavoritesPage() {
                       )}
                     </div>
                   )}
-                </article>
-              ))
-            ) : (
-              <div className="rounded-[24px] border border-dashed border-white/10 px-5 py-8 text-sm text-white/42">
-                No plans yet. Build your first night or city flow from saved places and events.
+                    </article>
+                  ))
+                ) : (
+                  <div className="rounded-[24px] border border-dashed border-white/12 bg-white/[0.025] px-5 py-8 text-sm leading-6 text-white/48">
+                    No plans yet. Build your first night or city flow from saved places and events.
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </aside>
           </div>
         </section>
         )

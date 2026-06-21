@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import DateInput from "@/components/ui/DateInput";
 import { getEntityQuality, getQualityStatus } from "@/lib/quality";
 import { resolveVibeTagsForEntity } from "@/lib/vibeDisplay";
@@ -46,6 +47,15 @@ const PLAN_VARIANTS = [
     preset: { vibeTags: ["chill", "relax", "cozy"], budget: "balanced", energy: 35, soloSafe: true },
   },
 ];
+
+const PLANNER_STEP_CARD_CLASS =
+  "group rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_42px_rgba(0,0,0,0.22)] transition hover:border-cyan-200/22 hover:bg-white/[0.06]";
+const PLANNER_SELECT_CLASS =
+  "mt-2 w-full rounded-2xl border border-white/12 bg-[#11131a] px-3.5 py-3 text-sm font-medium text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_30px_rgba(0,0,0,0.18)] transition hover:border-cyan-200/24 focus:border-cyan-200/48 focus:ring-2 focus:ring-cyan-200/16 [&_option]:bg-[#11131a] [&_option]:text-white";
+const PLANNER_INPUT_CLASS =
+  "mt-2 w-full rounded-2xl border border-white/12 bg-black/30 px-3.5 py-3 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition placeholder:text-white/34 focus:border-cyan-200/40 focus:ring-2 focus:ring-cyan-200/12";
+const PLANNER_SECONDARY_BUTTON_CLASS =
+  "rounded-full border border-white/14 bg-white/[0.065] px-4 py-2.5 text-sm font-medium text-white/78 transition hover:border-white/26 hover:bg-white/[0.095] disabled:cursor-not-allowed disabled:opacity-45";
 
 const DAY_INDEX = {
   sun: 0,
@@ -1130,10 +1140,11 @@ export default function TripPlannerV2({
   trustedFavoriteStats = {},
   onOpenStop,
   onSavePlan,
+  hotelSuggestionsPortalId = "",
 }) {
   const [planTitle, setPlanTitle] = useState("");
   const [planDate, setPlanDate] = useState("");
-  const [city, setCity] = useState(plannerCities[0] || "");
+  const [city, setCity] = useState("");
   const [note, setNote] = useState("");
   const [horizon, setHorizon] = useState("three_days");
   const [planVariant, setPlanVariant] = useState("social");
@@ -1147,6 +1158,7 @@ export default function TripPlannerV2({
   const [locks, setLocks] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [plannerNotice, setPlannerNotice] = useState("");
+  const [hotelSuggestionsPortalTarget, setHotelSuggestionsPortalTarget] = useState(null);
   const plannerTopRef = useRef(null);
   const itinerarySectionRef = useRef(null);
   const shouldScrollToItineraryRef = useRef(false);
@@ -1219,17 +1231,17 @@ export default function TripPlannerV2({
     [city, places, selectedVibeTags, planDate, trustedFavoriteStats, qualityMap]
   );
 
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!hotelSuggestionsPortalId || typeof document === "undefined") {
+        setHotelSuggestionsPortalTarget(null);
+        return;
+      }
+      setHotelSuggestionsPortalTarget(document.getElementById(hotelSuggestionsPortalId));
+    });
+  }, [hotelSuggestionsPortalId]);
+
   const canBuild = Boolean(city);
-
-  const cityPlacesCount = useMemo(
-    () => places.filter((p) => normalize(p.city) === normalize(city)).length,
-    [city, places]
-  );
-
-  const cityEventsCount = useMemo(
-    () => events.filter((e) => normalize(e.city) === normalize(city)).length,
-    [city, events]
-  );
 
   const applyVariantPreset = (variantValue) => {
     const variant = PLAN_VARIANTS.find((item) => item.value === variantValue);
@@ -1503,29 +1515,80 @@ export default function TripPlannerV2({
     setPlannerNotice("Calendar export ready.");
   };
 
+  const hotelSuggestionsPanel = hotelSuggestions.length > 0 ? (
+    <div className={`${hotelSuggestionsPortalId ? "mb-4" : "mt-4"} rounded-[24px] border border-cyan-200/14 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.10),transparent_34%),rgba(34,211,238,0.04)] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]`}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold text-cyan-100">Suggested hotels</p>
+          <p className="mt-1 text-[11px] text-white/50">Stay bases picked before the route flow.</p>
+        </div>
+        <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[10px] text-cyan-100/75">Optional</span>
+      </div>
+      <div className={`grid gap-2 ${hotelSuggestionsPortalId ? "grid-cols-1" : "md:grid-cols-3"}`}>
+        {hotelSuggestions.map((hotel) => (
+          <article key={`hotel-${hotel.id}`} className="rounded-2xl border border-white/10 bg-black/25 p-3 shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
+            <p className="truncate text-sm font-medium text-white">{hotel.name}</p>
+            <p className="mt-1 text-[11px] text-white/62 capitalize">{hotel.city} stay base</p>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-[10px] text-cyan-50">
+                Score {hotel.plannerScore}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  onOpenStop?.({
+                    id: hotel.id,
+                    name: hotel.name,
+                    city: hotel.city,
+                    itemType: "place",
+                    slotLabel: "Suggested hotel",
+                    time: "16:00",
+                    reason: "Recommended stay base before itinerary flow.",
+                  })
+                }
+                className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] text-cyan-100 transition hover:border-cyan-200/40"
+              >
+                Open
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div
       ref={plannerTopRef}
-      className="mb-5 rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(165deg,rgba(12,18,26,0.96),rgba(8,8,10,0.99))] p-4 shadow-[0_22px_56px_rgba(0,0,0,0.38)]"
+      className="overflow-hidden rounded-[30px] border border-cyan-200/16 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_92%_8%,rgba(244,114,182,0.10),transparent_30%),linear-gradient(165deg,rgba(14,18,27,0.96),rgba(8,8,10,0.99))] p-4 shadow-[0_28px_82px_rgba(0,0,0,0.42)] sm:p-5 xl:min-h-[48rem]"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/72">Trip planner</p>
-          <p className="mt-1 text-xs text-white/60">Three inputs: City, Mood, and When. Then build.</p>
-        </div>
-        <div className="rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] text-cyan-100/90">
-          {cityPlacesCount} places | {cityEventsCount} events
+          <p className="text-[10px] uppercase tracking-[0.22em] text-cyan-100/72">Build your flow</p>
+          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">Start with three choices</h3>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-white/60">
+            Pick a city, choose the vibe, set the trip window, then let the atlas build a route you can save or export.
+          </p>
         </div>
       </div>
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-3">
-        <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <p className="text-[11px] text-white/55">1) City</p>
+      <div className="mt-5 grid gap-3 lg:grid-cols-3">
+        <section className={PLANNER_STEP_CARD_CLASS}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-cyan-200/26 bg-cyan-200/12 text-xs font-semibold text-cyan-100">1</span>
+            <div>
+              <p className="text-sm font-semibold text-white">City</p>
+              <p className="text-[11px] text-white/48">Where should the route happen?</p>
+            </div>
+          </div>
           <select
             value={city}
             onChange={(event) => setCity(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+            className={PLANNER_SELECT_CLASS}
           >
+            <option value="" disabled>
+              Choose a city
+            </option>
             {plannerCities.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -1534,39 +1597,51 @@ export default function TripPlannerV2({
           </select>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <p className="text-[11px] text-white/55">2) Mood</p>
-          <div className="mt-1 flex flex-wrap gap-2">
+        <section className={PLANNER_STEP_CARD_CLASS}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 text-xs font-semibold text-fuchsia-100">2</span>
+            <div>
+              <p className="text-sm font-semibold text-white">Mood</p>
+              <p className="text-[11px] text-white/48">Choose the kind of night.</p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
             {PLAN_VARIANTS.map((variant) => (
               <button
                 key={variant.value}
                 type="button"
                 onClick={() => applyVariantPreset(variant.value)}
-                className={`rounded-full border px-3 py-1 text-xs transition ${
+                className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${
                   planVariant === variant.value
-                    ? "border-cyan-200/46 bg-cyan-200/18 text-cyan-50"
-                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                    ? "border-fuchsia-100/46 bg-fuchsia-200/18 text-fuchsia-50 shadow-[0_10px_26px_rgba(244,114,182,0.16)]"
+                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22 hover:text-white"
                 }`}
               >
                 {variant.label}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-white/62">{selectedVariantMeta.summary}</p>
+          <p className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-[11px] leading-5 text-white/62">{selectedVariantMeta.summary}</p>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <p className="text-[11px] text-white/55">3) When</p>
-          <div className="mt-1 flex flex-wrap gap-2">
+        <section className={PLANNER_STEP_CARD_CLASS}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/26 bg-amber-200/12 text-xs font-semibold text-amber-100">3</span>
+            <div>
+              <p className="text-sm font-semibold text-white">When</p>
+              <p className="text-[11px] text-white/48">Set the length and date.</p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
             {HORIZONS.map((item) => (
               <button
                 key={item.value}
                 type="button"
                 onClick={() => setHorizon(item.value)}
-                className={`rounded-full border px-3 py-1 text-xs transition ${
+                className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${
                   horizon === item.value
-                    ? "border-cyan-200/40 bg-cyan-200/16 text-cyan-100"
-                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22"
+                    ? "border-amber-100/42 bg-amber-200/16 text-amber-50 shadow-[0_10px_26px_rgba(251,191,36,0.13)]"
+                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22 hover:text-white"
                 }`}
               >
                 {item.label}
@@ -1585,14 +1660,20 @@ export default function TripPlannerV2({
         </section>
       </div>
 
-      <section className="mt-3 rounded-2xl border border-white/10 bg-black/20 p-3">
-        <p className="text-[11px] text-white/55">Actions</p>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <section className="mt-4 rounded-[24px] border border-white/10 bg-[linear-gradient(120deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025))] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/58">Next step</p>
+            <p className="mt-1 text-sm text-white/72">Build the itinerary first. Save, share, and export appear once a route exists.</p>
+          </div>
+          {plannerNotice ? <p className="text-[11px] text-cyan-100/78">{plannerNotice}</p> : null}
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           <button
             type="button"
             onClick={generate}
             disabled={!canBuild}
-            className="rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-4 py-2 text-sm font-semibold text-black transition hover:brightness-105 disabled:opacity-60"
+            className="rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-5 py-3 text-sm font-semibold text-black shadow-[0_16px_40px_rgba(34,211,238,0.22)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2 lg:col-span-1"
           >
             Build itinerary
           </button>
@@ -1600,7 +1681,7 @@ export default function TripPlannerV2({
             type="button"
             onClick={shuffleUnlocked}
             disabled={itinerary.length === 0}
-            className="rounded-full border border-white/14 bg-white/6 px-4 py-2 text-sm text-white/80 transition hover:border-white/24 disabled:opacity-60"
+            className={PLANNER_SECONDARY_BUTTON_CLASS}
           >
             Shuffle unlocked
           </button>
@@ -1608,7 +1689,7 @@ export default function TripPlannerV2({
             type="button"
             onClick={handleSave}
             disabled={itinerary.length === 0 || isSaving}
-            className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 py-2 text-sm text-emerald-100 transition hover:border-emerald-200/48 disabled:opacity-60"
+            className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 py-2.5 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200/48 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {isSaving ? "Saving..." : "Save plan"}
           </button>
@@ -1616,14 +1697,14 @@ export default function TripPlannerV2({
             type="button"
             onClick={exportItineraryIcs}
             disabled={itinerary.length === 0}
-            className="rounded-full border border-violet-200/30 bg-violet-200/12 px-4 py-2 text-sm text-violet-100 transition hover:border-violet-200/48 disabled:opacity-60"
+            className="rounded-full border border-violet-200/30 bg-violet-200/12 px-4 py-2.5 text-sm font-medium text-violet-100 transition hover:border-violet-200/48 disabled:cursor-not-allowed disabled:opacity-45"
           >
             Export calendar
           </button>
           <button
             type="button"
             onClick={copyShareLink}
-            className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/48"
+            className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-4 py-2.5 text-sm font-medium text-cyan-100 transition hover:border-cyan-200/48"
           >
             Share link
           </button>
@@ -1653,7 +1734,6 @@ export default function TripPlannerV2({
             Fine-tune vibe tags, budget, energy, solo-safe, and notes.
           </p>
         )}
-        {plannerNotice ? <p className="mt-2 text-[11px] text-cyan-100/78">{plannerNotice}</p> : null}
         {trustedFavoritesSet.size > 0 && (
           <p className="mt-2 text-[11px] text-cyan-100/72">Trusted network signal active.</p>
         )}
@@ -1697,19 +1777,19 @@ export default function TripPlannerV2({
 
       {showAdvanced && (
         <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-white/10 bg-black/20 p-3 md:col-span-2 xl:col-span-2">
-            <p className="text-[11px] text-white/55">Plan title</p>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:col-span-2 xl:col-span-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">Plan title</p>
             <input
               value={planTitle}
               onChange={(event) => setPlanTitle(event.target.value)}
               placeholder="ex. Berlin peak weekend"
-              className="mt-1 w-full rounded-lg border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+              className={PLANNER_INPUT_CLASS}
             />
           </div>
 
-          <div className="rounded-xl border border-cyan-200/16 bg-cyan-200/[0.05] p-3 md:col-span-2 xl:col-span-2">
+          <div className="rounded-[22px] border border-cyan-200/16 bg-cyan-200/[0.055] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:col-span-2 xl:col-span-2">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[11px] text-cyan-100/80">Vibe tags (up to 3)</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-cyan-100/80">Vibe tags</p>
               <p className="text-[10px] text-cyan-100/65">{selectedVibeLabels.length}/3 selected</p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1735,8 +1815,8 @@ export default function TripPlannerV2({
             </p>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-            <p className="text-[11px] text-white/55">Budget</p>
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">Budget</p>
             <div className="mt-1 flex flex-wrap gap-2">
               {BUDGETS.map((item) => (
                 <button
@@ -1755,9 +1835,9 @@ export default function TripPlannerV2({
             </div>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/20 p-3 md:col-span-2 xl:col-span-2">
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:col-span-2 xl:col-span-2">
             <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] text-white/55">Energy</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/55">Energy</p>
               <p className="text-[11px] text-white/62">{energyLabel}</p>
             </div>
             <input
@@ -1780,7 +1860,7 @@ export default function TripPlannerV2({
             </label>
           </div>
 
-          <div className="rounded-xl border border-white/10 bg-black/20 p-3 md:col-span-2 xl:col-span-2">
+          <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:col-span-2 xl:col-span-2">
             <button
               type="button"
               onClick={() => setShowNotes((current) => !current)}
@@ -1793,61 +1873,30 @@ export default function TripPlannerV2({
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 placeholder="Add intent, pacing, or must-hit stops."
-                className="mt-2 h-20 w-full rounded-lg border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none"
+                className={`${PLANNER_INPUT_CLASS} h-24 resize-none`}
               />
             )}
           </div>
         </div>
       )}
 
-      {hotelSuggestions.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-cyan-200/14 bg-cyan-200/[0.04] p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs font-semibold text-cyan-100">Suggested hotels</p>
-            <span className="text-[10px] text-cyan-100/70">Picked before itinerary flow</span>
-          </div>
-          <div className="grid gap-2 md:grid-cols-3">
-            {hotelSuggestions.map((hotel) => (
-              <article key={`hotel-${hotel.id}`} className="rounded-xl border border-white/10 bg-black/25 p-2.5">
-                <p className="truncate text-sm font-medium text-white">{hotel.name}</p>
-                <p className="mt-1 text-[11px] text-white/62 capitalize">{hotel.city} stay base</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-[10px] text-cyan-50">
-                    Score {hotel.plannerScore}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onOpenStop?.({
-                        id: hotel.id,
-                        name: hotel.name,
-                        city: hotel.city,
-                        itemType: "place",
-                        slotLabel: "Suggested hotel",
-                        time: "16:00",
-                        reason: "Recommended stay base before itinerary flow.",
-                      })
-                    }
-                    className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] text-cyan-100 transition hover:border-cyan-200/40"
-                  >
-                    Open
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      )}
+      {hotelSuggestionsPortalId && hotelSuggestionsPortalTarget
+        ? createPortal(hotelSuggestionsPanel, hotelSuggestionsPortalTarget)
+        : null}
+      {!hotelSuggestionsPortalId ? hotelSuggestionsPanel : null}
 
       {itinerary.length > 0 && (
         <div ref={itinerarySectionRef} className="mt-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.05] px-3 py-2">
-            <p className="text-xs font-semibold text-cyan-100">Route ready</p>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-[22px] border border-cyan-200/16 bg-cyan-200/[0.07] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <div>
+              <p className="text-xs font-semibold text-cyan-100">Route ready</p>
+              <p className="mt-1 text-[11px] text-white/52">Review stops, pin favorites, then save the flow.</p>
+            </div>
             <p className="text-[11px] text-white/68">
               {lockedStopsCount} pinned stop{lockedStopsCount === 1 ? "" : "s"} | tap Open details
             </p>
           </div>
-          <div className="mb-3 rounded-xl border border-fuchsia-200/18 bg-fuchsia-200/[0.06] px-3 py-2">
+          <div className="mb-3 rounded-[22px] border border-fuchsia-200/18 bg-fuchsia-200/[0.06] px-4 py-3">
             <p className="text-[11px] uppercase tracking-[0.12em] text-fuchsia-100/78">Story arc</p>
             <p className="mt-1 text-xs text-white/74">
               Warm-up {"->"} Build momentum {"->"} Peak energy {"->"} Recover with lower-friction landings.
@@ -1858,9 +1907,9 @@ export default function TripPlannerV2({
             {itinerary.map((day, dayIdx) => (
               <article
                 key={day.dayKey}
-                className="rounded-2xl border border-cyan-200/16 bg-[linear-gradient(160deg,rgba(15,21,28,0.5),rgba(9,9,11,0.6))] p-3 shadow-[0_14px_30px_rgba(0,0,0,0.2)]"
+                className="rounded-[24px] border border-cyan-200/16 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.08),transparent_34%),linear-gradient(160deg,rgba(15,21,28,0.62),rgba(9,9,11,0.78))] p-3.5 shadow-[0_18px_42px_rgba(0,0,0,0.24)]"
               >
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs font-semibold text-cyan-100">{day.dayLabel}</p>
                   <span className="rounded-full border border-white/14 bg-white/6 px-2 py-0.5 text-[10px] text-white/75">
                     {day.stops.length} stops
@@ -1879,7 +1928,7 @@ export default function TripPlannerV2({
                     return (
                       <div
                         key={stop.key}
-                        className="rounded-xl border border-white/12 bg-[linear-gradient(165deg,rgba(20,20,24,0.92),rgba(10,10,12,0.96))] p-3 shadow-[0_10px_24px_rgba(0,0,0,0.24)]"
+                        className="rounded-[20px] border border-white/12 bg-[linear-gradient(165deg,rgba(25,24,31,0.94),rgba(10,10,12,0.98))] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.28)]"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
