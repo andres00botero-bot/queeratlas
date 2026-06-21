@@ -1327,7 +1327,6 @@ export default function CommunityPage() {
             activeId={activeCommunityPanel}
             onSelect={(panelId) => {
               setActiveCommunityPanel(panelId);
-              if (panelId === "feed" && communityFeedMode === "all") setCommunityFeedMode("stories");
             }}
           />
         </section>
@@ -1523,6 +1522,137 @@ export default function CommunityPage() {
         ) : null}
 
         {isFeedPanel ? (
+        <section aria-labelledby="community-feed-heading-premium" className="qa-premium-card rounded-[30px] border border-violet-300/16 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.13),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(180deg,rgba(20,16,34,0.95),rgba(10,10,10,1))] p-5 shadow-[0_34px_110px_rgba(139,92,246,0.12),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-violet-200/80">Community Library</p>
+              <h2 id="community-feed-heading-premium" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Stories and guides</h2>
+              <p className="mt-1 text-xs text-violet-100/70">Personal experience on the left, practical city knowledge on the right.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
+                {showStoryForm ? "Close story form" : "Write story"}
+              </button>
+              <button onClick={() => setShowGuideForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-violet-300/34 bg-violet-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-violet-100 transition hover:border-violet-200/62">
+                {showGuideForm ? "Close guide form" : "New guide"}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-2 xl:items-start">
+            <div className="rounded-[28px] border border-rose-300/18 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.16),transparent_34%),linear-gradient(180deg,rgba(34,17,28,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(244,63,94,0.10)] sm:p-5">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-rose-100/70">Member Stories</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Lived experience</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/56">Personal moments, local feeling, and what it was actually like.</p>
+                </div>
+                <span className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100">
+                  {sortedStories.length} stories
+                </span>
+              </div>
+
+              {showStoryForm && (
+                <form id="community-story-form-feed-premium" onSubmit={publishStory} className="mb-4 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4">
+                  <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                    <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
+                  </div>
+                  <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
+                  <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder="Write your experience" area />
+                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
+                </form>
+              )}
+
+              <div className="max-h-[720px] space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                {sortedStories.map((story) => (
+                  <article key={`story-panel-${story.id}`} className="qa-premium-card rounded-[24px] border border-rose-300/22 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-4">
+                    <span className="inline-flex rounded-full border border-rose-200/32 bg-rose-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-100">Member Story</span>
+                    <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-rose-100/66">
+                      Personal experience | {story.city}
+                      <span className="hidden sm:inline"> | {story.category}</span>
+                    </p>
+                    <h3 className="mt-3 text-base font-semibold text-white">{story.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-white/78">{story.excerpt}</p>
+                    {expandedStoryIds.includes(story.id) && <p className="mt-2 text-sm leading-7 text-white/72">{story.body}</p>}
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs text-white/62">{story.author} | {timeAgo(story.createdAt)}</p>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
+                        <button onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+                {sortedStories.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-rose-200/18 px-4 py-8 text-sm text-white/62">
+                    No stories yet. Be the first to share a local moment.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-violet-300/18 bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.16),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(23,19,43,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(139,92,246,0.10)] sm:p-5">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-violet-100/70">City Guides</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Practical wisdom</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/56">Useful routes, city notes, safety context, and member-made planning help.</p>
+                </div>
+                <span className="rounded-full border border-violet-200/24 bg-violet-200/12 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-violet-100">
+                  {sortedGuides.length} guides
+                </span>
+              </div>
+
+              {showGuideForm && (
+                <form id="community-guide-form-feed-premium" onSubmit={publishGuide} className="mb-4 space-y-3 rounded-2xl border border-violet-400/20 bg-violet-300/6 p-4">
+                  <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field value={guideForm.city} onChange={(event) => setGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or region" />
+                    <Field value={guideForm.focus} onChange={(event) => setGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder="Focus" />
+                  </div>
+                  <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Short summary" area />
+                  <Field value={guideForm.content} onChange={(event) => setGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the guide" area />
+                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
+                </form>
+              )}
+
+              <div className="max-h-[720px] space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                {sortedGuides.map((guide) => {
+                  const isExpanded = expandedGuideIds.includes(guide.id);
+                  return (
+                    <article key={`guide-panel-${guide.id}`} className="qa-premium-card rounded-[24px] border border-violet-300/22 bg-[linear-gradient(180deg,rgba(23,19,42,0.78),rgba(11,11,11,0.96))] p-4">
+                      <span className="inline-flex rounded-full border border-violet-200/32 bg-violet-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-100">City Guide</span>
+                      <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-violet-100/66">
+                        Practical guide | {guide.city}
+                        <span className="hidden sm:inline"> | {guide.focus}</span>
+                      </p>
+                      <h3 className="mt-3 text-base font-semibold text-white">{guide.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-white/78">{guide.summary}</p>
+                      {isExpanded && <p className="mt-2 text-sm leading-7 text-white/72">{guide.content}</p>}
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-white/62">{guide.author} | {timeAgo(guide.createdAt)}</p>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read guide"}</button>
+                          <button onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+                {sortedGuides.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-violet-200/18 px-4 py-8 text-sm text-white/62">
+                    No guides yet. Add the first practical route or city note.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+        ) : null}
+
+        {false && isFeedPanel ? (
         <section aria-labelledby="community-feed-heading" className="qa-premium-card rounded-[30px] border border-violet-300/16 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.14),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(180deg,rgba(20,16,34,0.95),rgba(10,10,10,1))] p-5 shadow-[0_34px_110px_rgba(139,92,246,0.12),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
             <div>
@@ -1577,11 +1707,25 @@ export default function CommunityPage() {
               if (item.type === "story") {
                 const story = item.payload;
                 return (
-                  <article key={item.id} className="qa-premium-card rounded-2xl border border-rose-300/22 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-4">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-rose-200/80">
+                  <article key={item.id} className="qa-premium-card rounded-[24px] border border-rose-300/24 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.16),transparent_32%),linear-gradient(180deg,rgba(38,18,29,0.94),rgba(12,12,12,0.97))] p-4 shadow-[0_18px_48px_rgba(244,63,94,0.10)]">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <span className="inline-flex rounded-full border border-rose-200/32 bg-rose-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-100">
+                          Member Story
+                        </span>
+                        <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-rose-100/66">
+                          <span>Personal experience | {story.city}</span>
+                          <span className="hidden sm:inline"> | {story.category}</span>
+                          <span className="hidden">
                       Story · {story.city}
                       <span className="hidden sm:inline"> · {story.category}</span>
-                    </p>
+                          </span>
+                        </p>
+                      </div>
+                      <span className="rounded-full border border-white/12 bg-white/7 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/56">
+                        Story
+                      </span>
+                    </div>
                     <h3 className="mt-2 text-base font-semibold text-white">{story.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-white/78">{story.excerpt}</p>
                     {expandedStoryIds.includes(story.id) && <p className="mt-2 text-sm leading-7 text-white/72">{story.body}</p>}
