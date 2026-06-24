@@ -27,6 +27,7 @@ const MEMBER_AVATAR_BUCKET = "member-avatars";
 const KEYS = {
   stories: "qa_community_stories",
   guides: "qa_community_guides",
+  jobs: "qa_community_jobs",
   topics: "qa_community_topics",
   messages: "qa_community_messages",
   messageArchive: "qa_community_messages_archive",
@@ -42,6 +43,8 @@ const baseGuides = [
   { id: "g1", title: "Best queer weekend in Berlin", city: "Berlin", author: "Atlas Member", focus: "Weekend flow", summary: "A flow from Friday arrival to Sunday peak energy.", content: "Start softer on Friday, keep Saturday open, and save your energy for Sunday. Build the weekend around neighborhoods.", createdAt: "2026-04-01T12:00:00.000Z" },
   { id: "g2", title: "Where to go if you're shy", city: "Multi-city", author: "Nico", focus: "Low-pressure starts", summary: "Softer venues and lower-pressure starts in major cities.", content: "Begin with cafes, terraces, and earlier bars. They make it easier to read the city before committing to nightlife.", createdAt: "2026-04-03T09:00:00.000Z" },
 ];
+
+const baseJobs = [];
 
 const baseTopics = [
   { id: "t1", name: "Berlin this weekend", mood: "Active now", description: "Plans, crowd energy, and where members are heading." },
@@ -78,6 +81,24 @@ const MAX_MESSAGES_PER_TOPIC = 100;
 const MAX_TOPICS = 120;
 const TOPIC_RETENTION_DAYS = 365;
 const MEMBER_SEARCH_PAGE_SIZE = 18;
+const JOB_REVIEW_STATUSES = ["pending", "published", "rejected", "expired", "removed"];
+const JOB_LOCATION_MODES = ["On-site", "Hybrid", "Remote"];
+const JOB_EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Freelance", "Contract", "Internship", "Volunteer"];
+const JOB_CATEGORIES = ["Venue / nightlife", "Events", "Community org", "Creative", "Hospitality", "Tech", "Health", "Operations", "Other"];
+const DEFAULT_JOB_CITY_OPTIONS = [
+  "Amsterdam",
+  "Barcelona",
+  "Berlin",
+  "Copenhagen",
+  "Lisbon",
+  "London",
+  "Madrid",
+  "Manila",
+  "New York",
+  "Paris",
+  "Stockholm",
+  "Toronto",
+];
 const REPORT_REASON_OPTIONS = [
   { value: "1", label: "Safety issue" },
   { value: "2", label: "Wrong info" },
@@ -135,6 +156,33 @@ function mapGuideRow(row) {
     summary: row.summary || "",
     content: row.content || "",
     createdAt: row.created_at || new Date().toISOString(),
+  };
+}
+
+function mapJobRow(row) {
+  return {
+    id: String(row.id),
+    title: row.title || "",
+    organizationName: row.organization_name || "",
+    organizationUrl: row.organization_url || "",
+    city: row.city || "",
+    country: row.country || "",
+    locationMode: row.location_mode || "On-site",
+    employmentType: row.employment_type || "Part-time",
+    category: row.category || "Other",
+    compensation: row.compensation || "",
+    description: row.description || "",
+    requirements: row.requirements || "",
+    applyUrl: row.apply_url || "",
+    applyEmail: row.apply_email || "",
+    status: JOB_REVIEW_STATUSES.includes(row.status) ? row.status : "pending",
+    verificationStatus: row.verification_status || "unverified",
+    author: row.author || "Member",
+    authorUserId: row.user_id ? String(row.user_id) : "",
+    authorEmail: row.created_by_email || "",
+    createdAt: row.created_at || new Date().toISOString(),
+    publishedAt: row.published_at || "",
+    expiresAt: row.expires_at || "",
   };
 }
 
@@ -240,6 +288,51 @@ function timeAgo(value) {
   return new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
+function addDaysIso(days) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString();
+}
+
+function formatJobLocation(job) {
+  const locationParts = [job.city, job.country].filter(Boolean);
+  const location = locationParts.length > 0 ? locationParts.join(", ") : "Location flexible";
+  return `${job.locationMode || "On-site"} | ${location}`;
+}
+
+function formatJobStatus(status = "pending") {
+  const safeStatus = String(status || "pending").toLowerCase();
+  if (safeStatus === "published") return "Published";
+  if (safeStatus === "rejected") return "Rejected";
+  if (safeStatus === "expired") return "Expired";
+  if (safeStatus === "removed") return "Removed";
+  return "Pending review";
+}
+
+function isExpiredJob(job) {
+  if (!job?.expiresAt) return false;
+  const expires = new Date(job.expiresAt).getTime();
+  return Number.isFinite(expires) && expires < Date.now();
+}
+
+function normalizeExternalUrl(value = "") {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const url = new URL(withProtocol);
+    if (!["http:", "https:"].includes(url.protocol)) return "";
+    return url.href;
+  } catch {
+    return "";
+  }
+}
+
+function normalizeEmail(value = "") {
+  const raw = String(value || "").trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw) ? raw : "";
+}
+
 function normalizeReportReason(input = "") {
   const value = String(input || "").trim();
   if (!value) return "";
@@ -343,6 +436,7 @@ export default function CommunityPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [stories, setStories] = useState(baseStories);
   const [guides, setGuides] = useState(baseGuides);
+  const [jobs, setJobs] = useState(baseJobs);
   const [topics, setTopics] = useState(baseTopics);
   const [messages, setMessages] = useState(baseMessages);
   const [messageArchive, setMessageArchive] = useState(() =>
@@ -352,11 +446,30 @@ export default function CommunityPage() {
   const [topicId, setTopicId] = useState("t1");
   const [showStoryForm, setShowStoryForm] = useState(false);
   const [showGuideForm, setShowGuideForm] = useState(false);
+  const [showJobForm, setShowJobForm] = useState(false);
   const [expandedStoryIds, setExpandedStoryIds] = useState([]);
   const [expandedGuideIds, setExpandedGuideIds] = useState([]);
+  const [expandedJobIds, setExpandedJobIds] = useState([]);
   const [showIdeaForm, setShowIdeaForm] = useState(false);
   const [storyForm, setStoryForm] = useState({ title: "", city: "", category: "Experience", excerpt: "", body: "" });
   const [guideForm, setGuideForm] = useState({ title: "", city: "", focus: "", summary: "", content: "" });
+  const [jobForm, setJobForm] = useState({
+    title: "",
+    organizationName: "",
+    organizationUrl: "",
+    city: "",
+    country: "",
+    locationMode: "On-site",
+    employmentType: "Part-time",
+    category: "Venue / nightlife",
+    compensation: "",
+    description: "",
+    requirements: "",
+    applyUrl: "",
+    applyEmail: "",
+  });
+  const [jobCityFilter, setJobCityFilter] = useState("");
+  const [jobModeFilter, setJobModeFilter] = useState("all");
   const [messageForm, setMessageForm] = useState({ text: "" });
   const [topicForm, setTopicForm] = useState({ name: "", mood: "Fresh", description: "" });
   const [ideaForm, setIdeaForm] = useState({ text: "", category: "Feature" });
@@ -427,14 +540,16 @@ export default function CommunityPage() {
     setSyncError("");
     const localStories = readStored(KEYS.stories, baseStories);
     const localGuides = readStored(KEYS.guides, baseGuides);
+    const localJobs = readStored(KEYS.jobs, baseJobs);
     const localTopics = applyTopicPolicy(readStored(KEYS.topics, baseTopics));
     const localMessages = readStored(KEYS.messages, baseMessages);
     const localIdeas = readStored(KEYS.ideas, baseIdeas);
     const localArchive = readStored(KEYS.messageArchive, {});
 
-    const [storiesRes, guidesRes, topicsRes, messagesRes, ideasRes, leaderboardRes] = await Promise.all([
+    const [storiesRes, guidesRes, jobsRes, topicsRes, messagesRes, ideasRes, leaderboardRes] = await Promise.all([
       supabase.from("community_stories").select("*").order("created_at", { ascending: false }),
       supabase.from("community_guides").select("*").order("created_at", { ascending: false }),
+      supabase.from("community_jobs").select("*").order("created_at", { ascending: false }),
       supabase.from("community_topics").select("*").order("created_at", { ascending: false }),
       supabase.from("community_messages").select("*").order("created_at", { ascending: true }),
       supabase.from("community_ideas").select("*").order("created_at", { ascending: false }),
@@ -444,6 +559,7 @@ export default function CommunityPage() {
     const errorParts = [];
     if (storiesRes.error) errorParts.push("stories");
     if (guidesRes.error) errorParts.push("guides");
+    if (jobsRes.error) errorParts.push("jobs");
     if (topicsRes.error) errorParts.push("topics");
     if (messagesRes.error) errorParts.push("messages");
     if (ideasRes.error) errorParts.push("ideas");
@@ -458,6 +574,9 @@ export default function CommunityPage() {
       : (guidesRes.data || []).length > 0
         ? (guidesRes.data || []).map(mapGuideRow)
         : baseGuides;
+    const nextJobs = jobsRes.error
+      ? localJobs
+      : (jobsRes.data || []).map(mapJobRow);
     const nextTopics = applyTopicPolicy(
       topicsRes.error
         ? localTopics
@@ -545,6 +664,7 @@ export default function CommunityPage() {
 
     setStories(nextStories);
     setGuides(nextGuides);
+    setJobs(nextJobs);
     setTopics(nextTopics);
     setMessages(Object.keys(cappedMessages).length > 0 ? cappedMessages : baseMessages);
     setMessageArchive(nextArchive);
@@ -572,6 +692,15 @@ export default function CommunityPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "community_messages" },
+        () => {
+          queueMicrotask(async () => {
+            await loadCommunityData();
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_jobs" },
         () => {
           queueMicrotask(async () => {
             await loadCommunityData();
@@ -607,11 +736,12 @@ export default function CommunityPage() {
     if (!isReady || !isMember) return;
     writeLocalJson(KEYS.stories, stories);
     writeLocalJson(KEYS.guides, guides);
+    writeLocalJson(KEYS.jobs, jobs);
     writeLocalJson(KEYS.topics, topics);
     writeLocalJson(KEYS.messages, messages);
     writeLocalJson(KEYS.messageArchive, messageArchive);
     writeLocalJson(KEYS.ideas, ideas);
-  }, [isReady, isMember, stories, guides, topics, messages, messageArchive, ideas]);
+  }, [isReady, isMember, stories, guides, jobs, topics, messages, messageArchive, ideas]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -863,11 +993,42 @@ export default function CommunityPage() {
 
   const visibleStories = stories.filter((story) => !isBlocked("community-story", story.id));
   const visibleGuides = guides.filter((guide) => !isBlocked("community-guide", guide.id));
+  const visibleJobs = jobs.filter((job) => {
+    if (isBlocked("community-job", job.id)) return false;
+    if (job.status === "removed") return false;
+    if (isAdmin) return true;
+    const isOwnJob =
+      (job.authorUserId && memberUserId && String(job.authorUserId) === memberUserId) ||
+      (normalizeMemberKey(job.authorEmail) && normalizeMemberKey(user?.email) && normalizeMemberKey(job.authorEmail) === normalizeMemberKey(user?.email));
+    if (isOwnJob) return true;
+    return job.status === "published" && !isExpiredJob(job);
+  });
   const visibleIdeas = ideas.filter((idea) => !isBlocked("community-idea", idea.id));
   const visibleTopics = topics.filter((topic) => !isBlocked("community-topic", topic.id));
 
   const sortedStories = [...visibleStories].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const sortedGuides = [...visibleGuides].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const jobCities = [
+    ...new Set(
+      [
+        ...visibleJobs.map((job) => job.city),
+        ...visibleStories.map((story) => story.city),
+        ...visibleGuides.map((guide) => guide.city),
+        ...memberSearchRows.map((row) => row.home_city),
+        ...DEFAULT_JOB_CITY_OPTIONS,
+      ]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+    ),
+  ].sort((a, b) => a.localeCompare(b));
+  const publishedJobs = visibleJobs.filter((job) => job.status === "published" && !isExpiredJob(job));
+  const pendingJobs = visibleJobs.filter((job) => job.status === "pending");
+  const filteredJobs = publishedJobs.filter((job) => {
+    const cityPass = !jobCityFilter || normalizeMemberKey(job.city) === normalizeMemberKey(jobCityFilter);
+    const modePass = jobModeFilter === "all" || normalizeMemberKey(job.locationMode) === normalizeMemberKey(jobModeFilter);
+    return cityPass && modePass;
+  }).sort((a, b) => new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt));
+  const reviewJobs = pendingJobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const unifiedFeedItems = [...sortedStories.map((story) => ({
     id: `story-${story.id}`,
     type: "story",
@@ -1060,6 +1221,127 @@ export default function CommunityPage() {
     setGuideForm({ title: "", city: "", focus: "", summary: "", content: "" });
     setShowGuideForm(false);
     showToast(error ? "Guide saved locally. Supabase sync unavailable." : "Guide published.", { tone: error ? "info" : "ok", duration: 2400 });
+  };
+
+  const resetJobForm = () => {
+    setJobForm({
+      title: "",
+      organizationName: "",
+      organizationUrl: "",
+      city: "",
+      country: "",
+      locationMode: "On-site",
+      employmentType: "Part-time",
+      category: "Venue / nightlife",
+      compensation: "",
+      description: "",
+      requirements: "",
+      applyUrl: "",
+      applyEmail: "",
+    });
+  };
+
+  const publishJob = async (event) => {
+    event.preventDefault();
+    const applyUrl = normalizeExternalUrl(jobForm.applyUrl);
+    const applyEmail = normalizeEmail(jobForm.applyEmail);
+
+    if (!jobForm.title || !jobForm.organizationName || !jobForm.description || (!applyUrl && !applyEmail)) {
+      showToast("Job not submitted. Add title, organization, description, and an apply link or email.", { tone: "warn", duration: 2800 });
+      return;
+    }
+
+    const reviewStatus = isAdmin ? "published" : "pending";
+    const nowIso = new Date().toISOString();
+    const expiresAt = addDaysIso(45);
+    const fallbackItem = {
+      id: createClientId("job"),
+      ...jobForm,
+      organizationUrl: normalizeExternalUrl(jobForm.organizationUrl),
+      applyUrl,
+      applyEmail,
+      status: reviewStatus,
+      verificationStatus: isAdmin ? "admin_verified" : "unverified",
+      author: memberName || "Member",
+      authorUserId: String(user?.id || ""),
+      authorEmail: String(user?.email || ""),
+      createdAt: nowIso,
+      publishedAt: reviewStatus === "published" ? nowIso : "",
+      expiresAt,
+    };
+
+    const { data, error } = await insertCommunityRowWithIdentity("community_jobs", {
+      title: jobForm.title.trim(),
+      organization_name: jobForm.organizationName.trim(),
+      organization_url: normalizeExternalUrl(jobForm.organizationUrl),
+      city: jobForm.city.trim(),
+      country: jobForm.country.trim(),
+      location_mode: jobForm.locationMode || "On-site",
+      employment_type: jobForm.employmentType || "Part-time",
+      category: jobForm.category || "Other",
+      compensation: jobForm.compensation.trim(),
+      description: jobForm.description.trim(),
+      requirements: jobForm.requirements.trim(),
+      apply_url: applyUrl,
+      apply_email: applyEmail,
+      status: reviewStatus,
+      verification_status: isAdmin ? "admin_verified" : "unverified",
+      author: memberName || "Member",
+      user_id: user?.id || null,
+      created_by_email: user?.email || null,
+      published_at: reviewStatus === "published" ? nowIso : null,
+      expires_at: expiresAt,
+    });
+
+    const item = error || !data ? fallbackItem : mapJobRow(data);
+    setJobs((current) => [item, ...current]);
+    resetJobForm();
+    setShowJobForm(false);
+    showToast(
+      error
+        ? "Job saved locally. Supabase sync unavailable."
+        : reviewStatus === "published"
+          ? "Job published."
+          : "Job submitted for admin review.",
+      { tone: error ? "info" : "ok", duration: 2600 }
+    );
+  };
+
+  const updateJobStatus = async (job, nextStatus) => {
+    if (!isAdmin || !job?.id) {
+      showToast("Only admins can moderate job posts.", { tone: "warn", duration: 2200 });
+      return;
+    }
+
+    const publishedAt = nextStatus === "published" ? new Date().toISOString() : job.publishedAt || null;
+    setJobs((current) =>
+      current.map((entry) =>
+        String(entry.id) === String(job.id)
+          ? {
+              ...entry,
+              status: nextStatus,
+              verificationStatus: nextStatus === "published" ? "admin_verified" : entry.verificationStatus,
+              publishedAt: publishedAt || "",
+            }
+          : entry
+      )
+    );
+
+    const { error } = await supabase
+      .from("community_jobs")
+      .update({
+        status: nextStatus,
+        verification_status: nextStatus === "published" ? "admin_verified" : job.verificationStatus,
+        published_at: publishedAt,
+      })
+      .eq("id", job.id);
+
+    if (error) {
+      showToast("Job updated locally. Supabase sync unavailable.", { tone: "info", duration: 2400 });
+      return;
+    }
+
+    showToast(nextStatus === "published" ? "Job published." : "Job updated.", { tone: "ok", duration: 2200 });
   };
 
   const sendMessage = async (event) => {
@@ -1313,8 +1595,17 @@ export default function CommunityPage() {
     );
   };
 
+  const toggleJobExpanded = (jobIdValue) => {
+    setExpandedJobIds((current) =>
+      current.includes(jobIdValue)
+        ? current.filter((id) => id !== jobIdValue)
+        : [...current, jobIdValue]
+    );
+  };
+
   const isDiscoveryPanel = activeCommunityPanel === "discovery";
   const isFeedPanel = activeCommunityPanel === "feed";
+  const isJobsPanel = activeCommunityPanel === "jobs";
   const isChatPanel = activeCommunityPanel === "chat";
   const isImprovePanel = activeCommunityPanel === "improve";
 
@@ -1367,6 +1658,7 @@ export default function CommunityPage() {
             buttons={[
               { id: "discovery", label: "Member discovery" },
               { id: "feed", label: "Member stories & guides" },
+              { id: "jobs", label: "Queer jobs" },
               { id: "chat", label: "Live chat" },
               { id: "improve", label: "Improve atlas" },
             ]}
@@ -1690,6 +1982,253 @@ export default function CommunityPage() {
                 {sortedGuides.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-violet-200/18 px-4 py-8 text-sm text-white/62">
                     No guides yet. Add the first practical route or city note.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+        ) : null}
+
+        {isJobsPanel ? (
+        <section aria-labelledby="community-jobs-heading" className="qa-premium-card animate-rise-in overflow-hidden rounded-[30px] border border-emerald-300/18 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.18),transparent_30%),radial-gradient(circle_at_82%_6%,rgba(244,114,182,0.12),transparent_24%),radial-gradient(circle_at_88%_24%,rgba(34,211,238,0.12),transparent_30%),linear-gradient(180deg,rgba(10,34,28,0.96),rgba(9,10,10,1))] p-5 shadow-[0_34px_110px_rgba(16,185,129,0.14),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-emerald-200/80">Community Jobs</p>
+              <h2 id="community-jobs-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Queer jobs from the Atlas network</h2>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-emerald-100/70">Member-posted opportunities for queer venues, community orgs, events, hospitality, creative teams, and inclusive employers.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["Reviewed before public", "SEO-ready job data", "Scam-aware apply links"].map((label) => (
+                  <span key={label} className="rounded-full border border-white/12 bg-white/[0.055] px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-white/68">
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-emerald-200/24 bg-emerald-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100">
+                {publishedJobs.length} live
+              </span>
+              {reviewJobs.length > 0 && (
+                <span className="rounded-full border border-amber-200/28 bg-amber-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-amber-100">
+                  {reviewJobs.length} pending
+                </span>
+              )}
+              <button
+                onClick={() => setShowJobForm((current) => !current)}
+                className="qa-action qa-action-strong rounded-full border border-emerald-300/40 bg-emerald-300/14 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-100 transition hover:border-emerald-200/62"
+              >
+                {showJobForm ? "Close job form" : "Post a queer job"}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(20rem,0.74fr)_minmax(0,1.26fr)] xl:items-start">
+            <div className="qa-premium-card rounded-[28px] border border-emerald-300/20 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.18),transparent_34%),radial-gradient(circle_at_92%_0%,rgba(244,114,182,0.10),transparent_28%),linear-gradient(180deg,rgba(13,45,35,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(16,185,129,0.12)] sm:p-5">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/70">Post opportunity</p>
+              <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Share a job with the community</h3>
+              <p className="mt-2 text-xs leading-5 text-white/58">Posts go through review before they become visible to everyone. No upfront-payment, crypto-task, or WhatsApp-only jobs.</p>
+              <div className="mt-3 rounded-[22px] border border-pink-200/16 bg-pink-200/[0.055] px-3 py-2">
+                <p className="text-xs leading-5 text-pink-50/74">Cute enough to invite people in, strict enough to keep bad listings out.</p>
+              </div>
+
+              {showJobForm ? (
+                <form id="community-job-form" onSubmit={publishJob} className="mt-4 space-y-3">
+                  <Field value={jobForm.title} onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))} placeholder="Job title" />
+                  <Field value={jobForm.organizationName} onChange={(event) => setJobForm((current) => ({ ...current, organizationName: event.target.value }))} placeholder="Organization / employer" />
+                  <Field value={jobForm.organizationUrl} onChange={(event) => setJobForm((current) => ({ ...current, organizationUrl: event.target.value }))} placeholder="Organization website (optional)" />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field value={jobForm.city} onChange={(event) => setJobForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                    <Field value={jobForm.country} onChange={(event) => setJobForm((current) => ({ ...current, country: event.target.value }))} placeholder="Country" />
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <select
+                      value={jobForm.locationMode}
+                      onChange={(event) => setJobForm((current) => ({ ...current, locationMode: event.target.value }))}
+                      className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
+                    >
+                      {JOB_LOCATION_MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+                    </select>
+                    <select
+                      value={jobForm.employmentType}
+                      onChange={(event) => setJobForm((current) => ({ ...current, employmentType: event.target.value }))}
+                      className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
+                    >
+                      {JOB_EMPLOYMENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                  </div>
+                  <select
+                    value={jobForm.category}
+                    onChange={(event) => setJobForm((current) => ({ ...current, category: event.target.value }))}
+                    className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
+                  >
+                    {JOB_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                  </select>
+                  <Field value={jobForm.compensation} onChange={(event) => setJobForm((current) => ({ ...current, compensation: event.target.value }))} placeholder="Pay range / compensation (recommended)" />
+                  <Field value={jobForm.description} onChange={(event) => setJobForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe the role, workplace, and why it is a good fit for queer community" area />
+                  <Field value={jobForm.requirements} onChange={(event) => setJobForm((current) => ({ ...current, requirements: event.target.value }))} placeholder="Requirements, schedule, language, or access notes (optional)" area />
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field value={jobForm.applyUrl} onChange={(event) => setJobForm((current) => ({ ...current, applyUrl: event.target.value }))} placeholder="Apply URL" />
+                    <Field value={jobForm.applyEmail} onChange={(event) => setJobForm((current) => ({ ...current, applyEmail: event.target.value }))} placeholder="Apply email" />
+                  </div>
+                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-emerald-100/65 bg-gradient-to-r from-emerald-200 via-cyan-200 to-lime-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">
+                    {isAdmin ? "Publish job" : "Submit for review"}
+                  </button>
+                </form>
+              ) : (
+                <button
+                  onClick={() => setShowJobForm(true)}
+                  className="qa-action qa-action-strong mt-4 min-h-[44px] w-full rounded-xl border border-emerald-100/55 bg-gradient-to-r from-emerald-200 via-cyan-200 to-lime-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95"
+                >
+                  Post a queer job
+                </button>
+              )}
+
+              <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.035] p-3">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/44">Trust rules</p>
+                <p className="mt-2 text-xs leading-5 text-white/58">Never pay to get paid. Report jobs that ask for upfront fees, crypto deposits, ID documents too early, or suspicious private messaging.</p>
+              </div>
+            </div>
+
+            <div className="qa-premium-card rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.13),transparent_34%),radial-gradient(circle_at_10%_0%,rgba(52,211,153,0.10),transparent_30%),linear-gradient(180deg,rgba(12,38,32,0.88),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.24)] sm:p-5">
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/70">Browse jobs</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Live opportunities</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/56">Filter by city or work mode. Each public listing expires after 45 days unless renewed.</p>
+                </div>
+              </div>
+
+              <div className="mb-4 grid gap-3 md:grid-cols-2">
+                <select
+                  value={jobCityFilter}
+                  onChange={(event) => setJobCityFilter(event.target.value)}
+                  className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
+                >
+                  <option value="">All cities</option>
+                  {jobCities.map((city) => <option key={city} value={city}>{formatCityLabel(city)}</option>)}
+                </select>
+                <select
+                  value={jobModeFilter}
+                  onChange={(event) => setJobModeFilter(event.target.value)}
+                  className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
+                >
+                  <option value="all">All work modes</option>
+                  {JOB_LOCATION_MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+                </select>
+              </div>
+
+              <div className="mb-4 flex flex-wrap gap-2">
+                {jobCities.slice(0, 10).map((city) => {
+                  const active = normalizeMemberKey(jobCityFilter) === normalizeMemberKey(city);
+                  return (
+                    <button
+                      key={`job-city-chip-${city}`}
+                      type="button"
+                      onClick={() => setJobCityFilter(active ? "" : city)}
+                      className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                        active
+                          ? "border-emerald-100/55 bg-emerald-200/18 text-emerald-50"
+                          : "border-white/12 bg-white/[0.045] text-white/66 hover:border-emerald-200/32 hover:text-white"
+                      }`}
+                    >
+                      {formatCityLabel(city)}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {reviewJobs.length > 0 && (
+                <div className="mb-4 rounded-[24px] border border-amber-200/22 bg-amber-200/8 p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pending review</p>
+                    <span className="rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-amber-100">
+                      {isAdmin ? "Admin queue" : "Your submissions"}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {reviewJobs.map((job) => (
+                      <article key={`pending-job-${job.id}`} className="rounded-2xl border border-amber-200/18 bg-black/24 p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-white">{job.title}</p>
+                            <p className="mt-1 text-xs text-amber-100/72">{job.organizationName} | {formatJobLocation(job)}</p>
+                          </div>
+                          <span className="rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-amber-100">{formatJobStatus(job.status)}</span>
+                        </div>
+                        {isAdmin && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button onClick={() => updateJobStatus(job, "published")} className="qa-action qa-action-strong rounded-full border border-emerald-200/38 bg-emerald-200/14 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:border-emerald-200/60">Publish</button>
+                            <button onClick={() => updateJobStatus(job, "rejected")} className="qa-action rounded-full border border-rose-200/30 bg-rose-200/10 px-3 py-1.5 text-xs font-semibold text-rose-100 transition hover:border-rose-200/52">Reject</button>
+                          </div>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="qa-defer-render max-h-[52rem] space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                {filteredJobs.map((job) => {
+                  const isExpanded = expandedJobIds.includes(job.id);
+                  const applyHref = normalizeExternalUrl(job.applyUrl) || (normalizeEmail(job.applyEmail) ? `mailto:${normalizeEmail(job.applyEmail)}` : "");
+                  const orgHref = normalizeExternalUrl(job.organizationUrl);
+                  return (
+                    <article key={`job-${job.id}`} itemScope itemType="https://schema.org/JobPosting" className="qa-premium-card animate-rise-in rounded-[24px] border border-emerald-300/20 bg-[linear-gradient(180deg,rgba(14,42,34,0.82),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-emerald-200/34 hover:shadow-[0_24px_60px_rgba(16,185,129,0.14)]">
+                      <meta itemProp="datePosted" content={job.publishedAt || job.createdAt} />
+                      {job.expiresAt && <meta itemProp="validThrough" content={job.expiresAt} />}
+                      <meta itemProp="employmentType" content={job.employmentType} />
+                      <meta itemProp="jobLocationType" content={job.locationMode === "Remote" ? "TELECOMMUTE" : job.locationMode} />
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap gap-2">
+                            <span className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100">{job.category}</span>
+                            <span className="rounded-full border border-cyan-200/26 bg-cyan-200/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100">{job.employmentType}</span>
+                            {job.verificationStatus === "admin_verified" && (
+                              <span className="rounded-full border border-lime-200/28 bg-lime-200/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-lime-100">Verified</span>
+                            )}
+                          </div>
+                          <h3 itemProp="title" className="mt-3 text-base font-semibold text-white">{job.title}</h3>
+                          <p itemProp="hiringOrganization" itemScope itemType="https://schema.org/Organization" className="mt-1 text-sm text-emerald-100/78">
+                            <meta itemProp="name" content={job.organizationName} />
+                            {orgHref ? (
+                              <a href={orgHref} target="_blank" rel="noreferrer" itemProp="url" className="underline underline-offset-2 transition hover:text-white">{job.organizationName}</a>
+                            ) : job.organizationName}
+                          </p>
+                          <p className="mt-2 text-xs uppercase tracking-[0.12em] text-emerald-100/62">{formatJobLocation(job)}</p>
+                        </div>
+                        <span className="rounded-full border border-white/12 bg-white/7 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/58">{timeAgo(job.publishedAt || job.createdAt)}</span>
+                      </div>
+                      {job.compensation && <p className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/72">{job.compensation}</p>}
+                      <p itemProp="description" className="mt-3 text-sm leading-6 text-white/78">{job.description}</p>
+                      {isExpanded && job.requirements && <p className="mt-2 text-sm leading-7 text-white/70">{job.requirements}</p>}
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-white/56">Posted by {job.author} | expires {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "soon"}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {job.requirements && (
+                            <button onClick={() => toggleJobExpanded(job.id)} className="qa-action rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-xs text-emerald-100">
+                              {isExpanded ? "Show less" : "Details"}
+                            </button>
+                          )}
+                          <button onClick={() => reportContent({ targetType: "community-job", targetId: job.id, title: job.title })} className="qa-action rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-xs text-emerald-100">Report</button>
+                          {isAdmin && (
+                            <button onClick={() => updateJobStatus(job, "removed")} className="qa-action rounded-full border border-rose-200/26 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Remove</button>
+                          )}
+                          {applyHref ? (
+                            <a href={applyHref} target={applyHref.startsWith("mailto:") ? undefined : "_blank"} rel={applyHref.startsWith("mailto:") ? undefined : "noreferrer"} className="qa-action qa-action-strong rounded-full border border-emerald-100/55 bg-gradient-to-r from-emerald-200 via-cyan-200 to-lime-200 px-4 py-2 text-xs font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Apply</a>
+                          ) : (
+                            <span className="rounded-full border border-white/12 bg-white/7 px-4 py-2 text-xs text-white/56">Apply details hidden</span>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
+                {filteredJobs.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-emerald-300/26 px-4 py-8 text-sm text-white/62">
+                    {jobCityFilter
+                      ? `No live jobs in ${formatCityLabel(jobCityFilter)} yet. Clear the city filter or post the first opportunity.`
+                      : "No live jobs match this filter yet. Post the first opportunity or broaden the filters."}
                   </div>
                 )}
               </div>
