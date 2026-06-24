@@ -256,6 +256,7 @@ export default async function CityEventDetailPage({ params }) {
   const vibeTags = normalizeTags(event?.vibe_tags).slice(0, 6);
   const fallbackSlug = buildEntitySlug(event.name, event.id);
   const discoverLinks = buildEventDiscoverLinks({ city, cityName, vibeTags });
+  const cityPanelHref = `/${city}?eventId=${encodeURIComponent(String(event.id))}`;
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
@@ -293,6 +294,12 @@ export default async function CityEventDetailPage({ params }) {
               Vibe: {String(event?.vibe || "community event")}
             </span>
           </div>
+          <Link
+            href={cityPanelHref}
+            className="qa-event-panel-cta mt-5 flex w-full items-center justify-center rounded-2xl px-5 py-4 text-center text-sm font-black uppercase tracking-[0.16em] text-white sm:text-base"
+          >
+            Open in city panel
+          </Link>
         </header>
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
@@ -373,7 +380,7 @@ export default async function CityEventDetailPage({ params }) {
             Back to {cityName}
           </Link>
           <Link
-            href={`/${city}?eventId=${encodeURIComponent(String(event.id))}`}
+            href={cityPanelHref}
             className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-fuchsia-100"
           >
             Open in city panel
