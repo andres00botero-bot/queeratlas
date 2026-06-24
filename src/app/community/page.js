@@ -7,6 +7,7 @@ import Image from "next/image";
 import "../signal-motion.css";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { cityConfig } from "@/lib/cities";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import {
   addReport,
@@ -85,20 +86,6 @@ const JOB_REVIEW_STATUSES = ["pending", "published", "rejected", "expired", "rem
 const JOB_LOCATION_MODES = ["On-site", "Hybrid", "Remote"];
 const JOB_EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Freelance", "Contract", "Internship", "Volunteer"];
 const JOB_CATEGORIES = ["Venue / nightlife", "Events", "Community org", "Creative", "Hospitality", "Tech", "Health", "Operations", "Other"];
-const DEFAULT_JOB_CITY_OPTIONS = [
-  "Amsterdam",
-  "Barcelona",
-  "Berlin",
-  "Copenhagen",
-  "Lisbon",
-  "London",
-  "Madrid",
-  "Manila",
-  "New York",
-  "Paris",
-  "Stockholm",
-  "Toronto",
-];
 const REPORT_REASON_OPTIONS = [
   { value: "1", label: "Safety issue" },
   { value: "2", label: "Wrong info" },
@@ -121,7 +108,7 @@ function isGenericMemberName(value = "") {
 
 function formatCityLabel(value = "") {
   return String(value || "")
-    .replaceAll("_", " ")
+    .replace(/[_-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .split(" ")
@@ -1008,6 +995,7 @@ export default function CommunityPage() {
 
   const sortedStories = [...visibleStories].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const sortedGuides = [...visibleGuides].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const atlasCityLabels = Object.keys(cityConfig || {}).map(formatCityLabel);
   const jobCities = [
     ...new Set(
       [
@@ -1015,7 +1003,7 @@ export default function CommunityPage() {
         ...visibleStories.map((story) => story.city),
         ...visibleGuides.map((guide) => guide.city),
         ...memberSearchRows.map((row) => row.home_city),
-        ...DEFAULT_JOB_CITY_OPTIONS,
+        ...atlasCityLabels,
       ]
         .map((value) => String(value || "").trim())
         .filter(Boolean)
