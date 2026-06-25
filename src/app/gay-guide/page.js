@@ -114,11 +114,11 @@ export default function GayGuidePage() {
             <Link href="/topics/events" className="text-cyan-200 underline decoration-cyan-200/50 underline-offset-4 hover:text-cyan-100">events-first routing</Link> to turn broad city intent into concrete route decisions.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
+            <Link href="/events" className="motion-safe:animate-pulse rounded-full border border-white/45 bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-lime-200 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_0_42px_rgba(34,211,238,0.34),0_0_24px_rgba(244,114,182,0.22)] transition hover:scale-[1.02] hover:shadow-[0_0_62px_rgba(34,211,238,0.42),0_0_34px_rgba(244,114,182,0.30)]">
+              Open global events
+            </Link>
             <Link href="/cities" className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-4 py-2 text-sm text-fuchsia-100 transition hover:border-fuchsia-200/40">
               Explore all cities
-            </Link>
-            <Link href="/events" className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100 transition hover:border-cyan-200/40">
-              Open global events
             </Link>
             <Link href="/favorites" className="rounded-full border border-white/16 bg-white/6 px-4 py-2 text-sm text-white/80 transition hover:border-white/30 hover:text-white">
               Build my travel stack
