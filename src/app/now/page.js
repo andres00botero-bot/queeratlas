@@ -25,6 +25,7 @@ import {
   TIER1_CITY_SLUGS,
   TIER1_TOPIC_KEYS,
 } from "@/lib/seo/indexingTier";
+import { ATLAS_COLLECTION_FILTERS, ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
@@ -213,6 +214,63 @@ function createCommunityStoryFormDefault() {
     summary: "",
     whyItMatters: "",
   };
+}
+
+function createCollectionNominationDefault() {
+  return {
+    title: "",
+    category: "Nightlife",
+    reason: "",
+  };
+}
+
+const ATLAS_COLLECTION_CARD_STYLES = {
+  cyan: {
+    card: "border-cyan-200/24 bg-[radial-gradient(circle_at_0%_0%,rgba(34,211,238,0.22),transparent_34%),linear-gradient(160deg,rgba(8,18,28,0.96),rgba(8,9,16,0.98))]",
+    poster: "from-cyan-200 via-sky-300 to-violet-300",
+    number: "text-cyan-100",
+    chip: "border-cyan-100/24 bg-cyan-100/10 text-cyan-50",
+    button: "border-cyan-100/48 bg-cyan-200/14 text-cyan-50 hover:bg-cyan-200/22",
+  },
+  amber: {
+    card: "border-orange-200/24 bg-[radial-gradient(circle_at_0%_0%,rgba(251,146,60,0.22),transparent_34%),linear-gradient(160deg,rgba(28,16,10,0.96),rgba(9,9,14,0.98))]",
+    poster: "from-orange-200 via-rose-200 to-yellow-100",
+    number: "text-orange-100",
+    chip: "border-orange-100/24 bg-orange-100/10 text-orange-50",
+    button: "border-orange-100/48 bg-orange-200/14 text-orange-50 hover:bg-orange-200/22",
+  },
+  fuchsia: {
+    card: "border-fuchsia-200/24 bg-[radial-gradient(circle_at_0%_0%,rgba(217,70,239,0.22),transparent_34%),linear-gradient(160deg,rgba(26,11,30,0.96),rgba(8,8,15,0.98))]",
+    poster: "from-fuchsia-200 via-rose-200 to-cyan-100",
+    number: "text-fuchsia-100",
+    chip: "border-fuchsia-100/24 bg-fuchsia-100/10 text-fuchsia-50",
+    button: "border-fuchsia-100/48 bg-fuchsia-200/14 text-fuchsia-50 hover:bg-fuchsia-200/22",
+  },
+  rose: {
+    card: "border-rose-200/24 bg-[radial-gradient(circle_at_0%_0%,rgba(244,63,94,0.22),transparent_34%),linear-gradient(160deg,rgba(30,10,18,0.96),rgba(9,9,14,0.98))]",
+    poster: "from-rose-200 via-pink-200 to-violet-200",
+    number: "text-rose-100",
+    chip: "border-rose-100/24 bg-rose-100/10 text-rose-50",
+    button: "border-rose-100/48 bg-rose-200/14 text-rose-50 hover:bg-rose-200/22",
+  },
+  violet: {
+    card: "border-violet-200/24 bg-[radial-gradient(circle_at_0%_0%,rgba(139,92,246,0.22),transparent_34%),linear-gradient(160deg,rgba(18,13,35,0.96),rgba(7,8,14,0.98))]",
+    poster: "from-violet-200 via-indigo-200 to-emerald-100",
+    number: "text-violet-100",
+    chip: "border-violet-100/24 bg-violet-100/10 text-violet-50",
+    button: "border-violet-100/48 bg-violet-200/14 text-violet-50 hover:bg-violet-200/22",
+  },
+  emerald: {
+    card: "border-emerald-200/24 bg-[radial-gradient(circle_at_0%_0%,rgba(52,211,153,0.2),transparent_34%),linear-gradient(160deg,rgba(8,26,21,0.96),rgba(7,9,14,0.98))]",
+    poster: "from-emerald-200 via-lime-100 to-cyan-200",
+    number: "text-emerald-100",
+    chip: "border-emerald-100/24 bg-emerald-100/10 text-emerald-50",
+    button: "border-emerald-100/48 bg-emerald-200/14 text-emerald-50 hover:bg-emerald-200/22",
+  },
+};
+
+function getAtlasCollectionStyle(accent = "cyan") {
+  return ATLAS_COLLECTION_CARD_STYLES[accent] || ATLAS_COLLECTION_CARD_STYLES.cyan;
 }
 
 function getCommunityStoryCategory(storyType = "") {
@@ -468,6 +526,11 @@ export default function NowPage() {
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [activeNowSection, setActiveNowSection] = useState("mixed");
+  const [activeCollectionFilter, setActiveCollectionFilter] = useState("all");
+  const [showCollectionNominationForm, setShowCollectionNominationForm] = useState(false);
+  const [collectionNominationForm, setCollectionNominationForm] = useState(() => createCollectionNominationDefault());
+  const [collectionNominationNotice, setCollectionNominationNotice] = useState("");
+  const [isSubmittingCollectionNomination, setIsSubmittingCollectionNomination] = useState(false);
   const [rankingOverrides, setRankingOverrides] = useState({});
   const [safetyRankingOverrides, setSafetyRankingOverrides] = useState({});
   const [isRankingEditorOpen, setIsRankingEditorOpen] = useState(false);
@@ -905,6 +968,15 @@ export default function NowPage() {
   }, [mixedFeedItems, selectedNewsCategory]);
   const leadNewsItem = displayedNewsItems[0] || null;
   const secondaryNewsItems = displayedNewsItems.slice(1);
+  const featuredCollection = ATLAS_COLLECTIONS[0];
+  const featuredCollectionStyle = getAtlasCollectionStyle(featuredCollection?.accent);
+  const filteredAtlasCollections = useMemo(
+    () =>
+      activeCollectionFilter === "all"
+        ? ATLAS_COLLECTIONS
+        : ATLAS_COLLECTIONS.filter((collection) => collection.filter === activeCollectionFilter),
+    [activeCollectionFilter]
+  );
   const nowNewsJsonLd = useMemo(() => {
     const baseUrl = QA_SITE_URL;
     const topItems = displayedNewsItems.slice(0, 10);
@@ -1022,6 +1094,48 @@ export default function NowPage() {
     };
   }, [safetyRankingItems, selectedSafetyRankingYear]);
 
+  const nowCollectionsJsonLd = useMemo(() => {
+    const baseUrl = QA_SITE_URL;
+    return {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "@id": `${baseUrl}/now#atlas-collections`,
+      url: `${baseUrl}/now#atlas-collections`,
+      name: "Atlas Collections",
+      description:
+        "Curated Queer Atlas collections for queer nightlife, beaches, lesbian bars, drag venues, hidden cafes, and solo traveler routes.",
+      inLanguage: "en",
+      isPartOf: {
+        "@id": QA_WEBSITE_ID,
+      },
+      publisher: {
+        "@id": QA_ORGANIZATION_ID,
+      },
+      mainEntity: {
+        "@type": "ItemList",
+        itemListOrder: "https://schema.org/ItemListOrderAscending",
+        numberOfItems: ATLAS_COLLECTIONS.length,
+        itemListElement: ATLAS_COLLECTIONS.map((collection, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${baseUrl}${collection.href}`,
+          item: {
+            "@type": "CreativeWork",
+            "@id": `${baseUrl}${collection.href}`,
+            name: collection.title,
+            headline: collection.title,
+            description: clampSeoText(collection.summary, 220),
+            keywords: collection.tags,
+            about: collection.intent,
+            publisher: {
+              "@id": QA_ORGANIZATION_ID,
+            },
+          },
+        })),
+      },
+    };
+  }, []);
+
   const rankingSeoSummaryText = useMemo(() => {
     const travelTop3 = rankingItems.slice(0, 3).map((item) => formatCityLabel(item?.city)).filter(Boolean);
     const safetyTop3 = safetyRankingItems.slice(0, 3).map((item) => formatCityLabel(item?.city)).filter(Boolean);
@@ -1066,6 +1180,7 @@ export default function NowPage() {
     () => [
       { id: "mixed", label: "News feed", tone: "cyan", count: displayedNewsItems.length },
       { id: "rankings", label: "Rankings", tone: "emerald", count: rankingItems.length },
+      { id: "collections", label: "Atlas Collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
       { id: "voices", label: "Voices", tone: "fuchsia", count: communityStories.length },
       { id: "happening", label: "Happening soon", tone: "violet", count: happeningSoonEvents.length },
     ],
@@ -1101,6 +1216,10 @@ export default function NowPage() {
   const resetCommunityStoryForm = useCallback(() => {
     setCommunityStoryForm(createCommunityStoryFormDefault());
     setShowCommunityStoryForm(false);
+  }, []);
+  const resetCollectionNominationForm = useCallback(() => {
+    setCollectionNominationForm(createCollectionNominationDefault());
+    setShowCollectionNominationForm(false);
   }, []);
   const closeNewsReader = useCallback(() => {
     setReadingNewsItem(null);
@@ -1225,6 +1344,65 @@ export default function NowPage() {
       resetCommunityStoryForm();
     } finally {
       setIsSubmittingCommunityStory(false);
+    }
+  };
+
+  const submitCollectionNomination = async (event) => {
+    event.preventDefault();
+    if (!isMember || !user?.id) {
+      localStorage.setItem("qa_post_login_target", "/now");
+      router.push("/?join=true");
+      return;
+    }
+    if (isSubmittingCollectionNomination) return;
+
+    const title = String(collectionNominationForm.title || "").trim();
+    const reason = String(collectionNominationForm.reason || "").trim();
+    if (!title || !reason) {
+      setCollectionNominationNotice("Add a title and a short reason.");
+      return;
+    }
+
+    setIsSubmittingCollectionNomination(true);
+    setCollectionNominationNotice("");
+
+    try {
+      const payload = {
+        id: createClientId("collection-nomination"),
+        title,
+        category: collectionNominationForm.category,
+        reason,
+        source_name: `${memberName || "Member"} | Collection idea`,
+      };
+
+      const submissionRes = await createContentSubmission({
+        entityType: "collection_nomination",
+        actionType: "create",
+        city: "global",
+        title,
+        payload,
+        user: {
+          id: user.id,
+          email: user.email || "",
+          memberName: memberName || "Member",
+        },
+        isTrustedContributor: Boolean(memberProfile?.trustedContributor),
+      });
+
+      if (submissionRes.tableMissing) {
+        setCollectionNominationNotice("Moderation queue is not configured yet. Run supabase/content-submissions-v3-atlas-collections.sql.");
+        return;
+      }
+
+      if (submissionRes.error) {
+        setCollectionNominationNotice(submissionRes.error.message || "Could not save the idea right now.");
+        return;
+      }
+
+      setCollectionNominationNotice("Idea submitted. Atlas will review it.");
+      resetCollectionNominationForm();
+    } finally {
+      setIsSubmittingCollectionNomination(false);
     }
   };
 
@@ -1739,6 +1917,7 @@ export default function NowPage() {
 
   const isMixedSection = activeNowSection === "mixed";
   const isRankingSection = activeNowSection === "rankings";
+  const isCollectionsSection = activeNowSection === "collections";
   const isPolicySection = activeNowSection === "policy";
   const isVoicesSection = activeNowSection === "voices";
   const isHappeningSection = activeNowSection === "happening";
@@ -1760,6 +1939,10 @@ export default function NowPage() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(nowSafetyRankingJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowCollectionsJsonLd) }}
         />
         <section className="sr-only" aria-label="Queer Atlas ranking index">
           <h1>Queer World News</h1>
@@ -1851,6 +2034,12 @@ export default function NowPage() {
             Queer guide to {city.label}
           </Link>
         ))}
+        <Link href="/now#atlas-collections">Atlas Collections</Link>
+        {ATLAS_COLLECTIONS.map((collection) => (
+          <Link key={`now-crawl-collection-${collection.id}`} href={collection.href}>
+            {collection.title}
+          </Link>
+        ))}
       </nav>
       <div className="qa-shell">
         <script
@@ -1864,6 +2053,10 @@ export default function NowPage() {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(nowSafetyRankingJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowCollectionsJsonLd) }}
         />
         <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
@@ -2870,6 +3063,237 @@ export default function NowPage() {
               </div>
             </section>
             )}
+          </div>
+        </section>
+        )}
+
+        {isCollectionsSection && (
+        <section id="atlas-collections" aria-labelledby="atlas-collections-heading" className="mt-8 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_8%_4%,rgba(34,211,238,0.16),transparent_28%),radial-gradient(circle_at_48%_-4%,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_92%_10%,rgba(190,242,100,0.10),transparent_26%),radial-gradient(circle_at_76%_90%,rgba(167,139,250,0.12),transparent_34%),linear-gradient(180deg,rgba(8,11,23,0.98),rgba(8,9,15,0.99),rgba(4,4,7,1))] p-5 shadow-[0_34px_120px_rgba(2,6,23,0.46)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/76">Atlas Collections</p>
+              <h2 id="atlas-collections-heading" className="qa-h2 mt-2 text-2xl font-semibold text-white sm:text-3xl">
+                Curated queer lists built for discovery
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-white/70">
+                Hand-picked lists for nights out, beach days, first stops, drag rooms, lesbian bars, and softer daytime finds.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCollectionNominationForm((current) => !current);
+                  setCollectionNominationNotice("");
+                }}
+                className="motion-safe:animate-pulse rounded-full border border-white/45 bg-gradient-to-r from-fuchsia-300 via-cyan-200 to-lime-200 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-black shadow-[0_0_42px_rgba(34,211,238,0.35)] transition hover:scale-[1.02] hover:shadow-[0_0_62px_rgba(244,114,182,0.38)]"
+              >
+                {showCollectionNominationForm ? "Close" : "Suggest a collection"}
+              </button>
+              <Link
+                href="/now/collections"
+                className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/76 transition hover:border-white/28 hover:text-white"
+              >
+                All collections
+              </Link>
+              {collectionNominationNotice && (
+                <p className="basis-full text-xs text-cyan-100/82 lg:text-right">{collectionNominationNotice}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(19rem,0.55fr)]">
+            <article id={featuredCollection.id} className={`relative overflow-hidden rounded-[28px] border p-5 shadow-[0_24px_90px_rgba(34,211,238,0.13)] sm:p-6 ${featuredCollectionStyle.card}`}>
+              <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-fuchsia-300/12 blur-3xl" />
+              <div className="pointer-events-none absolute -left-16 bottom-0 h-52 w-52 rounded-full bg-cyan-300/12 blur-3xl" />
+              <div className="relative z-10">
+                <div className="mb-5 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full border border-cyan-200/34 bg-cyan-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100">
+                    Featured collection
+                  </span>
+                  <span className="rounded-full border border-white/12 bg-white/[0.055] px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-white/65">
+                    {featuredCollection.cities.length} cities
+                  </span>
+                  <span className="rounded-full border border-white/12 bg-white/[0.055] px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-white/65">
+                    {featuredCollection.items.length} picks
+                  </span>
+                </div>
+                <h3 className="mt-2 max-w-2xl text-2xl font-semibold tracking-[-0.03em] text-white sm:text-4xl">
+                  {featuredCollection.title}
+                </h3>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/76">{featuredCollection.summary}</p>
+                <div className="mt-5 grid gap-3 md:grid-cols-3">
+                  {featuredCollection.items.slice(0, 3).map((item, index) => (
+                    <div key={`featured-collection-${item}`} className="relative overflow-hidden rounded-2xl border border-white/12 bg-white/[0.06] p-3">
+                      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${featuredCollectionStyle.poster}`} />
+                      <p className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${featuredCollectionStyle.number}`}>#{index + 1}</p>
+                      <p className="mt-2 text-sm font-semibold text-white">{item}</p>
+                      <p className="mt-1 text-xs text-white/54">{featuredCollection.cities[index] || "Global"}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  {featuredCollection.tags.map((tag) => (
+                    <span key={`featured-tag-${tag}`} className={`rounded-full border px-3 py-1 text-[11px] ${featuredCollectionStyle.chip}`}>
+                      {tag}
+                    </span>
+                  ))}
+                  <Link
+                    href={featuredCollection.href}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${featuredCollectionStyle.button}`}
+                  >
+                    View collection
+                  </Link>
+                </div>
+              </div>
+            </article>
+
+            <aside className="relative overflow-hidden rounded-[28px] border border-fuchsia-200/24 bg-[radial-gradient(circle_at_8%_8%,rgba(244,114,182,0.24),transparent_34%),radial-gradient(circle_at_95%_4%,rgba(34,211,238,0.16),transparent_34%),linear-gradient(145deg,rgba(40,13,38,0.96),rgba(21,20,40,0.98)_48%,rgba(6,25,35,0.98))] p-5 text-white shadow-[0_24px_80px_rgba(244,114,182,0.13)]">
+              <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-cyan-300/18 blur-2xl" />
+              <div className="absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-fuchsia-300/20 blur-2xl" />
+              <div className="relative">
+              <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-100/62">How it works</p>
+              <h3 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">Three tiny steps</h3>
+              <div className="mt-5 grid gap-3">
+                {[
+                  ["Idea", "Send a list idea or one place worth adding."],
+                  ["Check", "Atlas reviews vibe, city, safety, and usefulness."],
+                  ["Publish", "The strongest picks become a collection."],
+                ].map(([step, text]) => (
+                  <div key={`collection-method-${step}`} className="rounded-2xl border border-white/13 bg-white/[0.075] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:-translate-y-[1px] hover:border-fuchsia-100/28 hover:bg-white/[0.095]">
+                    <span className="inline-flex rounded-full bg-gradient-to-r from-fuchsia-200 to-cyan-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-950">
+                      {step}
+                    </span>
+                    <p className="mt-2 text-sm leading-6 text-white/74">{text}</p>
+                  </div>
+                ))}
+              </div>
+              </div>
+            </aside>
+          </div>
+
+          {showCollectionNominationForm && (
+            <form onSubmit={submitCollectionNomination} className="mt-5 grid gap-3 rounded-[26px] border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.08),rgba(255,255,255,0.03))] p-4 md:grid-cols-[1fr_0.7fr]">
+              <div className="md:col-span-2">
+                <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/74">Suggest a collection</p>
+                <p className="mt-1 text-sm text-white/62">Share one strong idea for a future list.</p>
+              </div>
+              <input
+                value={collectionNominationForm.title}
+                onChange={(event) => setCollectionNominationForm((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Example: Best queer saunas in Europe"
+                className="rounded-xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/45"
+              />
+              <select
+                value={collectionNominationForm.category}
+                onChange={(event) => setCollectionNominationForm((current) => ({ ...current, category: event.target.value }))}
+                className="rounded-xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/45"
+              >
+                <option value="Nightlife">Nightlife</option>
+                <option value="Beaches">Beaches</option>
+                <option value="Cruising">Cruising</option>
+                <option value="Women-led">Women-led</option>
+                <option value="Food & cafes">Food & cafes</option>
+                <option value="Hidden gems">Hidden gems</option>
+                <option value="Safety">Safety</option>
+              </select>
+              <textarea
+                value={collectionNominationForm.reason}
+                onChange={(event) => setCollectionNominationForm((current) => ({ ...current, reason: event.target.value }))}
+                placeholder="Why would this be useful?"
+                className="min-h-[96px] rounded-xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/45 md:col-span-2"
+              />
+              <div className="flex flex-wrap items-center gap-2 md:col-span-2">
+                <button
+                  type="submit"
+                  disabled={isSubmittingCollectionNomination}
+                  className="rounded-full border border-cyan-100/45 bg-gradient-to-r from-cyan-200 via-sky-200 to-violet-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmittingCollectionNomination ? "Saving..." : "Save idea"}
+                </button>
+                <button type="button" onClick={resetCollectionNominationForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/68 transition hover:border-white/28 hover:text-white">
+                  Cancel
+                </button>
+                {collectionNominationNotice && <p className="text-xs text-cyan-100/80">{collectionNominationNotice}</p>}
+              </div>
+            </form>
+          )}
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            {ATLAS_COLLECTION_FILTERS.map((filter) => {
+              const active = activeCollectionFilter === filter.id;
+              return (
+                <button
+                  key={`collection-filter-${filter.id}`}
+                  type="button"
+                  onClick={() => setActiveCollectionFilter(filter.id)}
+                  className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] transition ${
+                    active
+                      ? "border-cyan-100/55 bg-cyan-200/18 text-cyan-50"
+                      : "border-white/12 bg-white/[0.045] text-white/62 hover:border-cyan-200/32 hover:text-white"
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredAtlasCollections.map((collection) => {
+              const style = getAtlasCollectionStyle(collection.accent);
+              return (
+                <article
+                  id={`collection-card-${collection.id}`}
+                  key={collection.id}
+                  className={`group relative overflow-hidden rounded-[26px] border p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] transition hover:-translate-y-[2px] hover:shadow-[0_26px_80px_rgba(15,23,42,0.24)] ${style.card}`}
+                >
+                  <div className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${style.poster}`} />
+                  <div className="pointer-events-none absolute -right-14 -top-14 h-36 w-36 rounded-full bg-white/10 blur-2xl transition group-hover:bg-white/16" />
+                  <div className="relative">
+                    <div className="mb-5 flex items-center justify-between gap-3">
+                      <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.13em] ${style.chip}`}>
+                        {collection.items.length} picks
+                      </span>
+                      <span className={`font-mono text-4xl font-black leading-none ${style.number}`}>
+                        {String(ATLAS_COLLECTIONS.findIndex((item) => item.id === collection.id) + 1).padStart(2, "0")}
+                      </span>
+                    </div>
+                    <h3 className="mt-3 text-xl font-black tracking-[-0.035em] text-white">{collection.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-white/70">{collection.summary}</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {collection.tags.map((tag) => (
+                        <span key={`${collection.id}-${tag}`} className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[11px] text-white/64">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-black/24 p-3">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-white/42">Preview picks</p>
+                      <ol className="mt-2 space-y-1.5">
+                        {collection.items.slice(0, 3).map((item, index) => (
+                          <li key={`${collection.id}-pick-${item}`} className="grid grid-cols-[auto_1fr] gap-2 text-xs leading-5 text-white/70">
+                            <span className={style.number}>#{index + 1}</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
+                        {collection.cities.length} cities
+                      </p>
+                      <Link
+                        href={collection.href}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${style.button}`}
+                      >
+                        View collection
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
         )}

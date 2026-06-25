@@ -7,7 +7,7 @@ function normalizeText(value = "") {
 }
 
 function normalizeEntityType(value = "") {
-  const allowed = new Set(["place", "event", "service", "community_story"]);
+  const allowed = new Set(["place", "event", "service", "community_story", "collection_nomination"]);
   const normalized = normalizeText(value).toLowerCase();
   return allowed.has(normalized) ? normalized : "";
 }
@@ -169,6 +169,7 @@ function resolvePublishTarget(entityType = "") {
   if (normalized === "event") return "events";
   if (normalized === "service") return "services";
   if (normalized === "community_story") return "qa_world_news";
+  if (normalized === "collection_nomination") return "submission_status_only";
   return "";
 }
 
@@ -205,6 +206,16 @@ export async function publishContentSubmission({
   const targetTable = resolvePublishTarget(submission?.entity_type);
   if (!targetTable) {
     return { data: null, error: new Error("Unknown submission entity type."), tableMissing: false };
+  }
+
+  if (targetTable === "submission_status_only") {
+    return updateContentSubmissionStatus({
+      submissionId: submission?.id,
+      status: "approved",
+      reviewer,
+      adminNote: "",
+      client,
+    });
   }
 
   let payload = submission?.payload && typeof submission.payload === "object" ? { ...submission.payload } : {};

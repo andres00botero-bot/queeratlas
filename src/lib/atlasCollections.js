@@ -1,0 +1,110 @@
+export const ATLAS_COLLECTION_FILTERS = [
+  { id: "all", label: "All collections" },
+  { id: "nightlife", label: "Nightlife" },
+  { id: "beach", label: "Beaches" },
+  { id: "women", label: "Women-led" },
+  { id: "hidden", label: "Hidden gems" },
+];
+
+export const ATLAS_COLLECTIONS = [
+  {
+    id: "best-queer-techno-clubs-world",
+    slug: "best-queer-techno-clubs-world",
+    title: "Best Queer Techno Clubs in the World",
+    eyebrow: "After dark",
+    filter: "nightlife",
+    intent: "queer techno clubs world",
+    summary:
+      "A sharp route through clubs and party cities known for queer dance floors, harder sound, door culture, and late-night energy.",
+    methodology: "Chosen for queer relevance, city nightlife strength, programming depth, visitor usefulness, and current safety context.",
+    cities: ["Berlin", "Amsterdam", "Madrid", "London", "Paris", "New York"],
+    items: ["Berghain / Panorama Bar", "De School legacy lane", "Club Chinois / queer party circuits", "Fold", "Rex-adjacent queer nights", "Brooklyn warehouse circuit"],
+    tags: ["Techno", "Nightlife", "Global"],
+    href: "/now/collections/best-queer-techno-clubs-world",
+    accent: "cyan",
+  },
+  {
+    id: "best-queer-beaches-europe",
+    slug: "best-queer-beaches-europe",
+    title: "Best Queer Beaches in Europe",
+    eyebrow: "Beach escapes",
+    filter: "beach",
+    intent: "best queer beaches europe",
+    summary:
+      "Warm-weather beaches and beach towns where queer visibility, daytime social flow, and nearby nightlife create a real destination rhythm.",
+    methodology: "Curated from Atlas city data, known beach routes, summer event gravity, access notes, and safety context.",
+    cities: ["Sitges", "Torremolinos", "Mykonos", "Gran Canaria", "Barcelona", "Malta"],
+    items: ["Platja de la Bassa Rodona", "Bajondillo / La Nogalera flow", "Super Paradise", "Maspalomas dunes", "Mar Bella", "St Julian's summer route"],
+    tags: ["Beach", "Europe", "Summer"],
+    href: "/now/collections/best-queer-beaches-europe",
+    accent: "amber",
+  },
+  {
+    id: "best-lesbian-bars-europe",
+    slug: "best-lesbian-bars-europe",
+    title: "Best Lesbian Bars in Europe",
+    eyebrow: "Sapphic nights",
+    filter: "women",
+    intent: "best lesbian bars europe",
+    summary:
+      "A growing editorial list for lesbian bars, women-led nights, sapphic-friendly rooms, and community spaces that deserve stronger discovery.",
+    methodology: "Prioritizes dedicated lesbian venues where available, then recurring women-led nights, inclusive safety, and community consistency.",
+    cities: ["London", "Berlin", "Madrid", "Paris", "Barcelona", "Amsterdam"],
+    items: ["She Soho", "SilverFuture", "Mujeres nightlife routes", "La Mutinerie", "Sapphic Barcelona nights", "Amsterdam women-led programming"],
+    tags: ["Lesbian bars", "Women-led", "Europe"],
+    href: "/now/collections/best-lesbian-bars-europe",
+    accent: "fuchsia",
+  },
+  {
+    id: "best-drag-venues",
+    slug: "best-drag-venues",
+    title: "Best Drag Venues",
+    eyebrow: "Performance rooms",
+    filter: "nightlife",
+    intent: "best drag venues queer travel",
+    summary:
+      "Cabaret rooms, drag bars, and performance-led venues where the show is not decoration but the reason the room has a pulse.",
+    methodology: "Looks at programming consistency, local drag reputation, visitor usefulness, venue atmosphere, and city-event crossover.",
+    cities: ["London", "New York", "Bangkok", "Manchester", "Madrid", "Manila"],
+    items: ["The Glory legacy lane", "Pieces / Monster route", "Silom cabaret circuit", "Village drag rooms", "Chueca performance bars", "O Bar / Nectar lanes"],
+    tags: ["Drag", "Performance", "Nightlife"],
+    href: "/now/collections/best-drag-venues",
+    accent: "rose",
+  },
+  {
+    id: "hidden-queer-cafes",
+    slug: "hidden-queer-cafes",
+    title: "Hidden Queer Cafes",
+    eyebrow: "Soft discovery",
+    filter: "hidden",
+    intent: "hidden queer cafes",
+    summary:
+      "Lower-pressure cafes, bookstores, terraces, and daytime rooms that help travelers enter queer city life without starting at midnight.",
+    methodology: "Curated from city guide context, cafe-type Atlas places, member stories, and low-pressure social usefulness.",
+    cities: ["Paris", "Amsterdam", "Lisbon", "Montreal", "Zagreb", "Buenos Aires"],
+    items: ["Marais daytime route", "Canal-side queer-friendly cafes", "Intendente soft starts", "Village terrace culture", "KIC cafe lane", "Palermo cafe routes"],
+    tags: ["Cafes", "Hidden gems", "Daytime"],
+    href: "/now/collections/hidden-queer-cafes",
+    accent: "violet",
+  },
+  {
+    id: "best-first-night-bars-solo",
+    slug: "best-first-night-bars-solo",
+    title: "Best First-Night Bars for Solo Queer Travelers",
+    eyebrow: "Solo-friendly",
+    filter: "hidden",
+    intent: "best queer bars solo travelers",
+    summary:
+      "Approachable first stops where solo travelers can read the city, talk to people, and decide whether the night should stay soft or escalate.",
+    methodology: "Weighted toward readable neighborhoods, social-first rooms, transit ease, safety context, and low-friction opening moves.",
+    cities: ["Berlin", "Copenhagen", "Toronto", "Brighton", "Lisbon", "Melbourne"],
+    items: ["Schoneberg first stop", "Central Copenhagen bars", "Church-Wellesley opener", "Kemptown route", "Principe Real start", "Fitzroy social lane"],
+    tags: ["Solo travel", "Bars", "Safety"],
+    href: "/now/collections/best-first-night-bars-solo",
+    accent: "emerald",
+  },
+];
+
+export function getAtlasCollectionBySlug(slug = "") {
+  return ATLAS_COLLECTIONS.find((collection) => collection.slug === String(slug || "").trim()) || null;
+}

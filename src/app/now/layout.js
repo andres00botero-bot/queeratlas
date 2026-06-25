@@ -1,7 +1,7 @@
 export const metadata = {
-  title: "Queer News Feed, Safety Index & Top Queer Destinations",
+  title: "Queer News, Rankings & Atlas Collections",
   description:
-    "Daily queer news plus Queer Safety Index and Top Queer Destinations rankings with LGBTQ travel safety signals, nightlife shifts, and policy watch across major cities.",
+    "Daily queer news plus Queer Safety Index, Top Queer Destinations rankings, and Atlas Collections for LGBTQ nightlife, beaches, drag venues, lesbian bars, and hidden cafes.",
   keywords: [
     "queer news",
     "LGBTQ news",
@@ -18,6 +18,12 @@ export const metadata = {
     "queer rights news",
     "LGBTQ events news",
     "queer city updates",
+    "best queer techno clubs",
+    "best queer beaches",
+    "lesbian bars Europe",
+    "best drag venues",
+    "hidden queer cafes",
+    "queer travel collections",
   ],
   alternates: {
     canonical: "/now",
@@ -34,9 +40,9 @@ export const metadata = {
     },
   },
   openGraph: {
-    title: "Queer Safety Index & Top Queer Destinations | Queer Atlas",
+    title: "Queer News, Rankings & Atlas Collections | Queer Atlas",
     description:
-      "Track queer world news plus live Top Queer Destinations and Queer Safety Index rankings in one premium editorial feed.",
+      "Track queer world news, Top Queer Destinations, Queer Safety Index rankings, and curated Atlas Collections for LGBTQ travel discovery.",
     url: "/now",
     type: "website",
     images: [
@@ -50,9 +56,9 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Queer Safety Index & Top Queer Destinations | Queer Atlas",
+    title: "Queer News, Rankings & Atlas Collections | Queer Atlas",
     description:
-      "Daily queer news with Top Queer Destinations and Queer Safety Index rankings, plus travel safety and nightlife shifts.",
+      "Daily queer news with rankings and curated Atlas Collections for queer nightlife, beaches, drag venues, lesbian bars, and hidden cafes.",
     images: ["/queer-atlas-heart-logo-progress.png"],
   },
 };
