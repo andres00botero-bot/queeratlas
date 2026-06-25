@@ -117,11 +117,11 @@ export default function GayGuidePage() {
             <Link href="/events" className="motion-safe:animate-pulse rounded-full border border-white/45 bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-lime-200 px-5 py-3 text-sm font-black uppercase tracking-[0.12em] text-black shadow-[0_0_42px_rgba(34,211,238,0.34),0_0_24px_rgba(244,114,182,0.22)] transition hover:scale-[1.02] hover:shadow-[0_0_62px_rgba(34,211,238,0.42),0_0_34px_rgba(244,114,182,0.30)]">
               Open global events
             </Link>
-            <Link href="/cities" className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-4 py-2 text-sm text-fuchsia-100 transition hover:border-fuchsia-200/40">
+            <Link href="/cities" className="rounded-full border border-fuchsia-100/44 bg-gradient-to-r from-fuchsia-500/30 via-violet-400/24 to-cyan-300/22 px-4 py-2.5 text-sm font-bold text-fuchsia-50 shadow-[0_0_28px_rgba(217,70,239,0.18)] transition hover:-translate-y-[1px] hover:border-fuchsia-100/62 hover:from-fuchsia-400/38 hover:via-violet-300/30 hover:to-cyan-200/28 hover:shadow-[0_0_38px_rgba(217,70,239,0.26)]">
               Explore all cities
             </Link>
-            <Link href="/favorites" className="rounded-full border border-white/16 bg-white/6 px-4 py-2 text-sm text-white/80 transition hover:border-white/30 hover:text-white">
-              Build my travel stack
+            <Link href="/" className="rounded-full border border-lime-100/40 bg-gradient-to-r from-lime-300/24 via-cyan-300/22 to-white/12 px-4 py-2.5 text-sm font-bold text-lime-50 shadow-[0_0_28px_rgba(190,242,100,0.14)] transition hover:-translate-y-[1px] hover:border-lime-100/58 hover:from-lime-200/32 hover:via-cyan-200/28 hover:to-white/18 hover:shadow-[0_0_38px_rgba(190,242,100,0.22)]">
+              Start from homepage
             </Link>
           </div>
         </section>
