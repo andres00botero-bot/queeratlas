@@ -369,8 +369,6 @@ export default async function CityClusterTopicPage({ params }) {
   }
 
   const cityName = cityNameFromConfig(config, city);
-  const canonicalPath = buildCanonicalPath(city, topic);
-  const canonicalUrl = toAbsoluteUrl(canonicalPath);
   const relatedTopics = listCityClusterTopics().filter((entry) => entry.key !== topic).slice(0, 4);
   const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig });
@@ -381,30 +379,60 @@ export default async function CityClusterTopicPage({ params }) {
   const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, faqJsonLd];
 
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_92%_8%,rgba(244,114,182,0.10),transparent_30%),linear-gradient(180deg,#05070d_0%,#07070b_48%,#030305_100%)] px-4 py-8 text-white sm:px-6">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(graphJsonLd) }}
       />
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">City Cluster Guide</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{topicConfig.title} in {cityName}</h1>
-          <p className="mt-3 text-sm leading-7 text-white/82">
-            {topicConfig.summary} {intentBlueprint.headerLine}
-          </p>
+      <div className="mx-auto max-w-5xl space-y-6">
+        <header className="relative overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_8%_0%,rgba(34,211,238,0.18),transparent_32%),radial-gradient(circle_at_90%_8%,rgba(244,114,182,0.16),transparent_30%),linear-gradient(160deg,rgba(18,24,38,0.96),rgba(8,9,15,0.99))] p-6 shadow-[0_32px_100px_rgba(0,0,0,0.40)] sm:p-7">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-300/10 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-fuchsia-300/10 blur-3xl" />
+          <div className="relative">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-100/78">Discover path</p>
+            <h1 className="mt-2 max-w-3xl text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{topicConfig.title} in {cityName}</h1>
+            <p className="mt-3 text-sm leading-7 text-white/82">
+              {topicConfig.summary} {intentBlueprint.headerLine}
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Link
+                href={`/${city}`}
+                className="rounded-2xl border border-white/16 bg-white/[0.07] px-4 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:-translate-y-[1px] hover:border-white/32 hover:bg-white/[0.10]"
+              >
+                Open {cityName} guide
+              </Link>
+              <Link
+                href={`/${city}?section=events`}
+                className="rounded-2xl border border-fuchsia-100/34 bg-gradient-to-r from-fuchsia-400/22 via-rose-300/16 to-cyan-300/12 px-4 py-3 text-sm font-bold text-fuchsia-50 shadow-[0_0_28px_rgba(244,114,182,0.14)] transition hover:-translate-y-[1px] hover:border-fuchsia-100/54 hover:shadow-[0_0_36px_rgba(244,114,182,0.22)]"
+              >
+                Open city events
+              </Link>
+              <Link
+                href="/cities"
+                className="rounded-2xl border border-cyan-100/42 bg-gradient-to-r from-cyan-300/24 via-sky-300/18 to-fuchsia-300/18 px-4 py-3 text-sm font-bold text-cyan-50 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition hover:-translate-y-[1px] hover:border-cyan-100/62 hover:shadow-[0_0_38px_rgba(34,211,238,0.24)]"
+              >
+                Explore all cities
+              </Link>
+              <Link
+                href="/"
+                className="rounded-2xl border border-lime-100/40 bg-gradient-to-r from-lime-300/22 via-emerald-300/16 to-cyan-300/16 px-4 py-3 text-sm font-bold text-lime-50 shadow-[0_0_28px_rgba(190,242,100,0.13)] transition hover:-translate-y-[1px] hover:border-lime-100/58 hover:shadow-[0_0_38px_rgba(190,242,100,0.21)]"
+              >
+                Start from homepage
+              </Link>
+            </div>
+          </div>
         </header>
 
-        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+        <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
           <h2 className="text-lg font-semibold">What this cluster solves</h2>
-          <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-white/82">
+          <ul className="mt-3 grid gap-3 text-sm leading-7 text-white/82 sm:grid-cols-3">
             {intentBlueprint.solvingPoints.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item} className="rounded-2xl border border-white/10 bg-black/22 p-3">{item}</li>
             ))}
           </ul>
         </section>
 
-        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+        <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(34,211,238,0.07),rgba(255,255,255,0.025))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.20)]">
           <h2 className="text-lg font-semibold">{intentBlueprint.frameworkTitle}</h2>
           <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-7 text-white/82">
             {intentBlueprint.frameworkSteps.map((step) => (
@@ -413,14 +441,14 @@ export default async function CityClusterTopicPage({ params }) {
           </ol>
         </section>
 
-        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+        <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(244,114,182,0.065),rgba(255,255,255,0.025))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.20)]">
           <h2 className="text-lg font-semibold">Related cluster pages</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {relatedTopics.map((entry) => (
               <Link
                 key={entry.key}
                 href={buildCanonicalPath(city, entry.key)}
-                className="rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/84 transition hover:border-cyan-200/34 hover:text-white"
+                className="rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:-translate-y-[1px] hover:border-cyan-200/34 hover:bg-white/[0.06] hover:text-white"
               >
                 {entry.title} in {cityName}
               </Link>
@@ -428,7 +456,7 @@ export default async function CityClusterTopicPage({ params }) {
           </div>
         </section>
 
-        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+        <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
           <h2 className="text-lg font-semibold">FAQ</h2>
           <div className="mt-3 space-y-4">
             {faqEntries.map((entry) => (
@@ -453,9 +481,6 @@ export default async function CityClusterTopicPage({ params }) {
           >
             Open Events in City
           </Link>
-          <span className="rounded-full border border-white/12 bg-black/35 px-4 py-2 text-[11px] uppercase tracking-[0.12em] text-white/52">
-            canonical: {canonicalUrl}
-          </span>
         </nav>
       </div>
     </main>
