@@ -2104,6 +2104,10 @@ export default function NowPage() {
           buttons={nowSections.map((section) => ({ id: section.id, label: section.label }))}
           activeId={activeNowSection}
           onSelect={(sectionId) => {
+            if (sectionId === "collections") {
+              router.push("/now/collections");
+              return;
+            }
             setActiveNowSection(sectionId);
           }}
         />
