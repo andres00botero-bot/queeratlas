@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
+import { cityPath } from "@/lib/cityRouting";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import {
   buildEntitySlug,
@@ -47,6 +48,17 @@ function toAbsoluteUrl(path = "") {
     process.env.SITE_URL ||
     "https://www.queeratlas.app";
   return `${String(baseUrl).replace(/\/+$/, "")}${path}`;
+}
+
+function buildVenueFallbackPath(city = "", slug = "") {
+  const basePath = cityPath(city, "");
+  if (!basePath) return "/cities";
+  const parsed = parseEntitySlug(slug);
+  const placeId = String(parsed.id || "").trim();
+  if (placeId) {
+    return `${basePath}?placeId=${encodeURIComponent(placeId)}`;
+  }
+  return `${basePath}?section=venues`;
 }
 
 function buildVenueDiscoverLinks({ city, cityName, placeType }) {
@@ -214,8 +226,12 @@ export default async function CityVenueDetailPage({ params }) {
   const resolved = await params;
   const { city, place, coreConfig } = await findVenueByParams(resolved?.city, resolved?.slug);
 
-  if (!place || !coreConfig) {
+  if (!coreConfig) {
     notFound();
+  }
+
+  if (!place) {
+    redirect(buildVenueFallbackPath(city, resolved?.slug));
   }
 
   const cityName = cityNameFromConfig(coreConfig, city);
