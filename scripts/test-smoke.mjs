@@ -71,6 +71,16 @@ function checkCanonicalDomainConfig() {
   );
 }
 
+function checkCityEventsIndexRedirect() {
+  const redirectRoute = readText("src/app/[city]/events/page.js");
+
+  assert(
+    redirectRoute.includes("permanentRedirect") &&
+      redirectRoute.includes("?section=events"),
+    "src/app/[city]/events/page.js: city events index URLs must permanently redirect to the city events section"
+  );
+}
+
 function run() {
   checkNoMergeMarkers("package.json");
   checkNoMergeMarkers("src/lib/seedContent.js");
@@ -83,6 +93,7 @@ function run() {
 
   checkNoDesktopMirrorFiles();
   checkCanonicalDomainConfig();
+  checkCityEventsIndexRedirect();
 
   if (failures.length > 0) {
     console.error("Smoke test failed:");
