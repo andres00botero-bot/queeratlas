@@ -44,9 +44,9 @@ export async function generateMetadata({ params }) {
       type: "article",
       images: [
         {
-          url: "/queer-atlas-heart-logo-progress.png",
-          width: 1200,
-          height: 630,
+          url: "/queer-atlas-logo.png",
+          width: 1024,
+          height: 1024,
           alt: collection.title,
         },
       ],
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }) {
       card: "summary_large_image",
       title: `${collection.title} | Queer Atlas`,
       description: formatCollectionDescription(collection),
-      images: ["/queer-atlas-heart-logo-progress.png"],
+      images: ["/queer-atlas-logo.png"],
     },
   };
 }

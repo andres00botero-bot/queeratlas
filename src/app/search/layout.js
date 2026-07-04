@@ -3,10 +3,10 @@ export const metadata = {
   description:
     "Search queer-friendly cities, venues, and events with live intent-aware results and map discovery.",
   robots: {
-    index: true,
+    index: false,
     follow: true,
     googleBot: {
-      index: true,
+      index: false,
       follow: true,
       "max-image-preview": "large",
       "max-snippet": -1,

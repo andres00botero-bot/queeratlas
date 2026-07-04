@@ -47,9 +47,9 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "/queer-atlas-heart-logo-progress.png",
-        width: 1200,
-        height: 630,
+        url: "/queer-atlas-logo.png",
+        width: 1024,
+        height: 1024,
         alt: "Queer Atlas Now - queer news feed",
       },
     ],
@@ -59,7 +59,7 @@ export const metadata = {
     title: "Queer News, Rankings & Atlas Collections | Queer Atlas",
     description:
       "Daily queer news with rankings and curated Atlas Collections for queer nightlife, beaches, drag venues, lesbian bars, and hidden cafes.",
-    images: ["/queer-atlas-heart-logo-progress.png"],
+    images: ["/queer-atlas-logo.png"],
   },
 };
 

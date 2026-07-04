@@ -25,8 +25,8 @@ export default function CityHeroCard({
       <div className="relative z-10">
         <div className="mb-[calc(1.75rem+0.5cm)] flex items-center gap-4">
           <Image
-            src="/queer-atlas-heart-logo-progress.png"
-            alt="Queer Atlas heart"
+            src="/queer-atlas-logo.png"
+            alt="Queer Atlas logo"
             width={64}
             height={64}
             className="h-12 w-12 shrink-0 sm:h-14 sm:w-14"

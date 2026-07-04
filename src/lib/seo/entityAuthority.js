@@ -2,7 +2,7 @@ export const QA_SITE_URL = "https://www.queeratlas.app";
 export const QA_WEBSITE_ID = `${QA_SITE_URL}/#website`;
 export const QA_ORGANIZATION_ID = `${QA_SITE_URL}/#organization`;
 export const QA_ORGANIZATION_NAME = "Queer Atlas";
-export const QA_LOGO_URL = `${QA_SITE_URL}/icons/icon-512.png`;
+export const QA_LOGO_URL = `${QA_SITE_URL}/icons/qa-logo-512.png`;
 
 const QA_PRIMARY_HUB_PATHS = [
   "/",

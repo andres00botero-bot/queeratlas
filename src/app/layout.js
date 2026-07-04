@@ -25,10 +25,10 @@ export const metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/qa-logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/qa-logo-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/icons/qa-logo-192.png", sizes: "192x192", type: "image/png" }],
   },
   category: "travel",
   robots: {
@@ -75,9 +75,9 @@ export const metadata = {
     siteName: "Queer Atlas",
     images: [
       {
-        url: "/queer-atlas-heart-logo-progress.png",
-        width: 1200,
-        height: 630,
+        url: "/queer-atlas-logo.png",
+        width: 1024,
+        height: 1024,
         alt: "Queer Atlas",
       },
     ],
@@ -89,7 +89,7 @@ export const metadata = {
     title: "Queer Atlas - Global Queer Guide, Events & Venues",
     description:
       "LGBTQ travel, queer-safe nightlife, events, and trusted city-by-city signal.",
-    images: ["/queer-atlas-heart-logo-progress.png"],
+    images: ["/queer-atlas-logo.png"],
   },
 };
 

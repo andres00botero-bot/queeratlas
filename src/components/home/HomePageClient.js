@@ -829,7 +829,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 alt=""
                 fill
                 priority
-                quality={90}
+                quality={75}
                 sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
                 className="object-cover object-center opacity-96"
                 style={{ objectPosition: "center calc(50% - 1.5cm)" }}
@@ -907,8 +907,8 @@ export default function HomePageClient({ initialHomeData = null }) {
             <section className="pt-4 xl:pt-14">
               <div className="flex items-center gap-4 sm:gap-5">
                 <Image
-                  src="/queer-atlas-heart-logo-progress.png"
-                  alt="Queer Atlas heart"
+                  src="/queer-atlas-logo.png"
+                  alt="Queer Atlas logo"
                   width={96}
                   height={96}
                   priority
