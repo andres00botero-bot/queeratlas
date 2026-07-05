@@ -4,6 +4,7 @@ import { shouldFallbackFromPlacesWithStats } from "./supabaseErrorGuards";
 
 const PLACES_FALLBACK_SELECT =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
+const SUPABASE_PAGE_SIZE = 1000;
 let skipPlacesWithStatsView = false;
 
 function applyPlacesFilters(query, filters = {}) {
@@ -24,6 +25,25 @@ function selectPlaces(client, table, select, options, filters) {
 
 function normalizeRows(data) {
   return Array.isArray(data) ? data : [];
+}
+
+async function fetchAllPages(buildQuery) {
+  const rows = [];
+
+  for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+    const to = from + SUPABASE_PAGE_SIZE - 1;
+    const response = await buildQuery().range(from, to);
+    if (response?.error) {
+      return { data: rows, error: response.error, count: response.count ?? null };
+    }
+
+    const pageRows = normalizeRows(response?.data);
+    rows.push(...pageRows);
+
+    if (pageRows.length < SUPABASE_PAGE_SIZE) {
+      return { data: rows, error: null, count: response.count ?? rows.length };
+    }
+  }
 }
 
 function isMissingColumnSelectionError(error) {
@@ -64,15 +84,20 @@ async function fetchReviewStatsByPlaceId(client, placeIds = []) {
   if (uniquePlaceIds.length === 0) return new Map();
 
   try {
-    const { data, error } = await client
-      .from("reviews")
-      .select("place_id, rating")
-      .in("place_id", uniquePlaceIds);
-    if (error || !Array.isArray(data)) {
-      return new Map();
+    const rows = [];
+    for (let i = 0; i < uniquePlaceIds.length; i += SUPABASE_PAGE_SIZE) {
+      const chunk = uniquePlaceIds.slice(i, i + SUPABASE_PAGE_SIZE);
+      const { data, error } = await client
+        .from("reviews")
+        .select("place_id, rating")
+        .in("place_id", chunk);
+      if (error || !Array.isArray(data)) {
+        return new Map();
+      }
+      rows.push(...data);
     }
 
-    return data.reduce((acc, row) => {
+    return rows.reduce((acc, row) => {
       const placeId = String(row?.place_id || "");
       if (!placeId) return acc;
       const rating = Number(row?.rating);
@@ -170,7 +195,9 @@ export async function fetchPlacesQueryWithFallback({
 }
 
 export async function fetchPlacesForAtlas({ client = supabase } = {}) {
-  const placesRes = await selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined);
+  const placesRes = await fetchAllPages(() =>
+    selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined)
+  );
 
   const baseRows = normalizeRows(placesRes?.data);
   const basePlaceIds = baseRows.map((row) => row?.id);

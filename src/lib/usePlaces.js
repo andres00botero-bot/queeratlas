@@ -17,6 +17,7 @@ const PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG =
   "id, name, type, city, lat, lng, description, vibe, vibe_tags, hours, link, location";
 const PLACE_SELECT_FIELDS_LEGACY =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
+const SUPABASE_PAGE_SIZE = 1000;
 
 function isMissingColumnError(error, columnName = "") {
   const text = `${error?.code || ""} ${error?.message || ""} ${error?.details || ""}`.toLowerCase();
@@ -37,13 +38,32 @@ function buildPlacesSelectQuery(client, selectFields, city) {
   return query;
 }
 
+async function fetchAllPlacePages(client, selectFields, city) {
+  const rows = [];
+
+  for (let from = 0; ; from += SUPABASE_PAGE_SIZE) {
+    const to = from + SUPABASE_PAGE_SIZE - 1;
+    const response = await buildPlacesSelectQuery(client, selectFields, city).range(from, to);
+    if (response?.error) {
+      return { data: rows, error: response.error, count: response.count ?? null };
+    }
+
+    const pageRows = Array.isArray(response?.data) ? response.data : [];
+    rows.push(...pageRows);
+
+    if (pageRows.length < SUPABASE_PAGE_SIZE) {
+      return { data: rows, error: null, count: response.count ?? rows.length };
+    }
+  }
+}
+
 async function fetchPlacesRows(client, city) {
-  let response = await buildPlacesSelectQuery(client, PLACE_SELECT_FIELDS, city);
+  let response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS, city);
   if (response?.error && isMissingColumnError(response.error, "legacy_vibe_user_set")) {
-    response = await buildPlacesSelectQuery(client, PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG, city);
+    response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG, city);
   }
   if (response?.error && isMissingVibeTagsColumnError(response.error)) {
-    response = await buildPlacesSelectQuery(client, PLACE_SELECT_FIELDS_LEGACY, city);
+    response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_LEGACY, city);
   }
   return response;
 }
@@ -57,6 +77,27 @@ function formatSupabaseError(error) {
     hint: error.hint || "",
   };
   return JSON.stringify(details);
+}
+
+async function fetchReviewRowsByPlaceId(client, placeIds = []) {
+  const uniquePlaceIds = [...new Set((placeIds || []).map((id) => String(id || "").trim()).filter(Boolean))];
+  const rows = [];
+
+  for (let i = 0; i < uniquePlaceIds.length; i += SUPABASE_PAGE_SIZE) {
+    const chunk = uniquePlaceIds.slice(i, i + SUPABASE_PAGE_SIZE);
+    const { data, error } = await client
+      .from("reviews")
+      .select("place_id, rating")
+      .in("place_id", chunk);
+
+    if (error) {
+      return { data: rows, error };
+    }
+
+    rows.push(...(Array.isArray(data) ? data : []));
+  }
+
+  return { data: rows, error: null };
 }
 
 function toOperationalError(error) {
@@ -161,10 +202,7 @@ export function usePlaces(city) {
         .filter(Boolean);
 
       if (placeIds.length > 0) {
-        const { data: reviewsData, error: reviewsError } = await supabase
-          .from("reviews")
-          .select("place_id, rating")
-          .in("place_id", placeIds);
+        const { data: reviewsData, error: reviewsError } = await fetchReviewRowsByPlaceId(supabase, placeIds);
 
         if (reviewsError) {
           logDevError("Reviews query error:", formatSupabaseError(reviewsError));

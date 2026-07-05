@@ -294,6 +294,7 @@ function testNowRankingAdminControls() {
 
 function testPlacesAtlasNormalizesRatingFields() {
   const source = readFileSync(new URL("../src/lib/placesDataApi.js", import.meta.url), "utf8");
+  const usePlacesSource = readFileSync(new URL("../src/lib/usePlaces.js", import.meta.url), "utf8");
   assert(
     source.includes("reviewCount,"),
     "places atlas stats: data layer should expose reviewCount on place rows"
@@ -309,6 +310,18 @@ function testPlacesAtlasNormalizesRatingFields() {
   assert(
     source.includes('selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined)'),
     "places atlas stats: atlas loader should read directly from places table"
+  );
+  assert(
+    source.includes("SUPABASE_PAGE_SIZE = 1000") &&
+      source.includes("fetchAllPages") &&
+      source.includes(".range(from, to)"),
+    "places atlas stats: atlas loader should paginate places beyond Supabase's default 1000-row response"
+  );
+  assert(
+    usePlacesSource.includes("SUPABASE_PAGE_SIZE = 1000") &&
+      usePlacesSource.includes("fetchAllPlacePages") &&
+      usePlacesSource.includes(".range(from, to)"),
+    "usePlaces loader: global place search should paginate places beyond Supabase's default 1000-row response"
   );
 }
 
