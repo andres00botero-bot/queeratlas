@@ -35,8 +35,10 @@ export default function CityTopCluster({
             cityHero={cityHero}
             heroIntro={cityHeroIntro}
           />
-          <div className="mt-8 hidden xl:block">
-            <CitySeoTopicLinks city={city} cityName={cityName} />
+          <div className="hidden xl:block">
+            <div className="mt-8">
+              <CitySeoTopicLinks city={city} cityName={cityName} />
+            </div>
           </div>
         </>
       ) : null}
