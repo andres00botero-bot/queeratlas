@@ -12,7 +12,7 @@ export default function SelectedPlaceActions({
   const isSaved = favorites.includes(String(selectedPlace.id));
 
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className="mt-3 grid gap-2 sm:grid-cols-2">
       <button
         onClick={() =>
           handleReport({
@@ -21,17 +21,17 @@ export default function SelectedPlaceActions({
             title: selectedPlace.name,
           })
         }
-        className="qa-action qa-city-cta-tertiary rounded-full border border-rose-200/20 bg-rose-200/8 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+        className="qa-action rounded-2xl border border-rose-100/24 bg-rose-300/[0.09] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-rose-50 transition hover:border-rose-100/42 hover:bg-rose-300/[0.13]"
         aria-label={`Report place ${selectedPlace.name}`}
       >
         Report issue
       </button>
       <button
         onClick={() => toggleFavorite(selectedPlace.id)}
-        className={`qa-action qa-action-strong ${isSaved ? "qa-city-cta-primary" : "qa-city-cta-secondary"} rounded-full border px-4 py-2.5 text-xs ${
+        className={`qa-action qa-action-strong rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] transition ${
           isSaved
-            ? "border-pink-300/30 bg-pink-300/12 text-pink-100"
-            : "border-white/12 bg-white/6 text-white/70 hover:border-white/20 hover:text-white"
+            ? "border-pink-100/42 bg-[linear-gradient(135deg,rgba(244,114,182,0.24),rgba(168,85,247,0.16))] text-pink-50 shadow-[0_12px_30px_rgba(244,114,182,0.16)]"
+            : "border-amber-100/32 bg-[linear-gradient(135deg,rgba(251,191,36,0.16),rgba(255,255,255,0.07))] text-amber-50 hover:border-amber-100/52"
         }`}
         aria-label={isSaved ? `Remove ${selectedPlace.name} from favorites` : `Save ${selectedPlace.name} to favorites`}
         aria-pressed={isSaved}
@@ -43,7 +43,7 @@ export default function SelectedPlaceActions({
           type="button"
           onClick={handleAdminDeletePlace}
           disabled={isDeletingPlaceAdmin}
-          className="qa-action qa-city-cta-tertiary rounded-full border border-rose-200/25 bg-rose-200/12 px-4 py-2.5 text-xs text-rose-100 hover:border-rose-200/45 disabled:opacity-60"
+          className="qa-action rounded-2xl border border-rose-200/25 bg-rose-200/12 px-4 py-3 text-xs text-rose-100 hover:border-rose-200/45 disabled:opacity-60 sm:col-span-2"
           aria-label={`Delete venue ${selectedPlace.name}`}
         >
           {isDeletingPlaceAdmin ? "Deleting..." : "Delete venue"}

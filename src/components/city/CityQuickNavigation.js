@@ -158,10 +158,9 @@ export default function CityQuickNavigation({
         aria-label="City sections"
         className="qa-city-panel-cq relative overflow-hidden rounded-[26px] border border-white/18 bg-[linear-gradient(150deg,rgba(255,79,163,0.14),rgba(34,211,238,0.10),rgba(13,15,22,0.95))] p-3.5 shadow-[0_24px_64px_rgba(91,33,182,0.22)] backdrop-blur"
       >
-        <div className="relative mb-2.5 flex items-center justify-between px-2 py-1">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.22em] text-white/78">City Menu</span>
-          <span className="rounded-full border border-white/24 bg-white/12 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-white/76">
-            Explore
+        <div className="relative mb-3 px-2 py-1">
+          <span className="inline-flex rounded-full border border-amber-100/30 bg-[linear-gradient(135deg,rgba(251,191,36,0.18),rgba(244,114,182,0.12),rgba(255,255,255,0.08))] px-3 py-1.5 text-[12px] font-bold uppercase tracking-[0.22em] text-amber-50 shadow-[0_12px_30px_rgba(251,191,36,0.12)]">
+            City Menu
           </span>
         </div>
         <div className="mb-2 h-px w-full bg-[linear-gradient(90deg,transparent,#ff7ac3,#4de1ff,transparent)] opacity-70" />

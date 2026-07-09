@@ -4,6 +4,10 @@ import Image from "next/image";
 
 export default function SelectedPlaceLiveVibePanel({
   liveVibeSummary,
+  liveVibeHeadline,
+  liveVibePulse,
+  liveVibeConsensus,
+  liveVibeUpdatedLabel,
   liveVibeTableMissing,
   handleSubmitLiveVibe,
   isSubmittingLiveVibe,
@@ -17,18 +21,43 @@ export default function SelectedPlaceLiveVibePanel({
   liveVibeError,
   liveVibeCooldownRemainingSec,
 }) {
+  const getSignalText = (value) => {
+    if (!value) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "number") return String(value);
+    if (typeof value === "object") {
+      return String(value.label || value.hint || "").trim();
+    }
+    return "";
+  };
+  const headlineText = getSignalText(liveVibeHeadline) || "How does it feel right now?";
+  const pulseText =
+    getSignalText(liveVibePulse) ||
+    getSignalText(liveVibeConsensus) ||
+    "Tap one signal to help others read the room.";
+
   return (
-    <div className="mt-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.07] p-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/80">Live vibe now</p>
-        <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/80">
-          {liveVibeSummary.total} signal{liveVibeSummary.total === 1 ? "" : "s"} - 6h
+    <div className="rounded-[28px] border border-fuchsia-100/24 bg-[linear-gradient(145deg,rgba(244,114,182,0.18),rgba(139,92,246,0.12),rgba(34,211,238,0.08),rgba(255,255,255,0.06))] p-5 shadow-[0_22px_62px_rgba(217,70,239,0.16)]">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.20em] text-fuchsia-100/78">Live Signal</p>
+          <h3 className="mt-2 text-2xl font-bold tracking-[-0.02em] text-white">
+            {headlineText}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-white/70">
+            {pulseText}
+          </p>
+        </div>
+        <span className="rounded-full border border-fuchsia-100/28 bg-fuchsia-300/14 px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] text-fuchsia-50">
+          {liveVibeSummary.total} signal{liveVibeSummary.total === 1 ? "" : "s"} / 6h
         </span>
       </div>
-      <p className="mt-1 text-base font-semibold tracking-[0.03em] text-yellow-200">
-        Tap to update the room signal.
-      </p>
-      <div className="mt-3 flex items-start justify-center gap-5">
+      {liveVibeUpdatedLabel ? (
+        <p className="mb-4 rounded-full border border-white/14 bg-white/[0.07] px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] text-white/66">
+          Updated {liveVibeUpdatedLabel}
+        </p>
+      ) : null}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {LIVE_VIBE_OPTIONS.map((option) => {
           const displayLabel =
             option.key === "packed"
@@ -50,22 +79,22 @@ export default function SelectedPlaceLiveVibePanel({
               onClick={() => {
                 handleSubmitLiveVibe(option.key);
               }}
-              className={`qa-cinematic-hover group relative w-[5.35rem] rounded-2xl border border-white/18 bg-[linear-gradient(160deg,rgba(11,11,20,0.95),rgba(26,11,35,0.9))] p-1.5 text-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`qa-cinematic-hover group relative rounded-[22px] border border-white/18 bg-white/[0.075] p-2.5 text-xs shadow-[0_14px_34px_rgba(0,0,0,0.12)] transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 isSelectedSignal
-                  ? "ring-2 ring-fuchsia-300/55 shadow-[0_0_0_1px_rgba(255,255,255,0.24)_inset,0_14px_30px_rgba(217,70,239,0.28)]"
-                  : "hover:border-fuchsia-200/38 hover:shadow-[0_10px_24px_rgba(99,102,241,0.2)]"
+                  ? "border-fuchsia-100/58 bg-fuchsia-300/18 ring-2 ring-fuchsia-300/55 shadow-[0_0_0_1px_rgba(255,255,255,0.24)_inset,0_16px_34px_rgba(217,70,239,0.24)]"
+                  : "hover:border-fuchsia-100/42 hover:bg-white/[0.11] hover:shadow-[0_14px_30px_rgba(99,102,241,0.18)]"
               } ${isJustSentSignal ? "scale-[1.03] shadow-[0_16px_34px_rgba(244,114,182,0.3)]" : ""}`}
             >
-              <span className="relative block aspect-square overflow-hidden rounded-xl border border-white/14 bg-black/35">
+              <span className="relative block aspect-square overflow-hidden rounded-2xl border border-white/18 bg-black/26">
                 <Image
                   src={option.iconSrc}
                   alt={option.label}
                   fill
                   sizes="72px"
-                  className="object-contain p-1 saturate-125 contrast-110"
+                  className="object-contain p-2 saturate-125 contrast-110"
                 />
               </span>
-              <span className="mt-1.5 block text-center text-[9px] font-medium tracking-[0.01em] text-white/88">
+              <span className="mt-2 block text-center text-[11px] font-semibold tracking-[0.01em] text-white/90">
                 {displayLabel}
               </span>
               <span className="sr-only">
@@ -76,7 +105,7 @@ export default function SelectedPlaceLiveVibePanel({
         })}
       </div>
       {isMember && liveVibeSelectedOption && (
-        <p className="mt-2 text-[11px] text-fuchsia-100/82">
+        <p className="mt-4 rounded-2xl border border-fuchsia-100/22 bg-fuchsia-300/[0.10] px-3 py-2 text-[12px] text-fuchsia-50/88">
           Your live signal: {liveVibeSelectedOption.label}
         </p>
       )}

@@ -96,7 +96,7 @@ export default function PlaceGuideCard({
               event.stopPropagation();
               openPlace(place);
             }}
-            className="qa-action inline-flex items-center gap-2 rounded-full border border-white/28 bg-white/[0.12] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_10px_26px_rgba(255,255,255,0.08)] transition hover:border-fuchsia-100/48 hover:bg-fuchsia-200/[0.14]"
+            className="qa-action qa-action-strong inline-flex items-center gap-2 rounded-full border border-fuchsia-100/48 bg-[linear-gradient(135deg,rgba(244,114,182,0.30),rgba(139,92,246,0.22),rgba(34,211,238,0.16))] px-5 py-2.5 text-[12px] font-bold uppercase tracking-[0.15em] text-white shadow-[0_14px_34px_rgba(244,114,182,0.20)] transition hover:border-fuchsia-100/70 hover:shadow-[0_18px_42px_rgba(244,114,182,0.28)]"
           >
             <MousePointerClick className="h-3.5 w-3.5" aria-hidden="true" />
             Open
