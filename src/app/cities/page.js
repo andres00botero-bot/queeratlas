@@ -25,6 +25,7 @@ import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
 import CitiesSeoClusterPanel from "@/components/cities/CitiesSeoClusterPanel";
 import EmptyState from "@/components/ui/EmptyState";
+import BrandMark from "@/components/ui/BrandMark";
 
 const COUNTRY_TONES = [
   {
@@ -987,7 +988,8 @@ export default function CitiesPage() {
             <p className="qa-eyebrow text-white/45">
               Live Discovery + Atlas Signal
             </p>
-            <h1 className="qa-display qa-h1 mt-4 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-5xl font-bold text-transparent sm:text-6xl">
+            <h1 className="qa-display qa-h1 mt-4 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-5xl font-bold text-transparent sm:gap-4 sm:text-6xl">
+              <BrandMark iconOnly className="h-10 w-10 sm:h-14 sm:w-14" />
               Cities Atlas
             </h1>
             <p className="qa-lead mt-5 max-w-2xl text-base text-white/62">

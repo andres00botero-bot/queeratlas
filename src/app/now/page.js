@@ -33,6 +33,7 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import { createContentSubmission } from "@/lib/contentSubmissions";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
 import VibeTagChips from "@/components/ui/VibeTagChips";
+import BrandMark from "@/components/ui/BrandMark";
 import EmptyState from "@/components/ui/EmptyState";
 import PageControls from "@/components/ui/PageControls";
 
@@ -2074,7 +2075,10 @@ export default function NowPage() {
           </div>
           <div className="relative z-10 max-w-3xl">
             <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
-            <h1 className="qa-display qa-h1 mt-3 text-4xl font-bold text-white sm:text-5xl">Queer World News</h1>
+            <h1 className="qa-display qa-h1 mt-3 inline-flex items-center gap-3 text-4xl font-bold text-white sm:gap-4 sm:text-5xl">
+              <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12" />
+              Queer World News
+            </h1>
             <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
               Real-time queer signal across discovery, rights, and community narratives - curated in one premium flow.
             </p>

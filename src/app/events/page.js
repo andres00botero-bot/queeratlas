@@ -56,6 +56,7 @@ import EventQualityModal from "@/components/events/EventQualityModal";
 import GlobalEventForm from "@/components/events/GlobalEventForm";
 import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
+import BrandMark from "@/components/ui/BrandMark";
 import PageControls from "@/components/ui/PageControls";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 
@@ -1098,7 +1099,8 @@ export default function EventsPage() {
 
                 <div className="flex flex-1 items-center pt-3 sm:pt-4 xl:pt-0">
                   <div className="mx-auto w-full max-w-3xl text-center xl:mx-0 xl:max-w-none xl:text-left">
-                    <h1 className="qa-display qa-h1 text-4xl font-semibold text-white sm:text-5xl xl:max-w-2xl xl:text-6xl">
+                    <h1 className="qa-display qa-h1 inline-flex items-center justify-center gap-3 text-4xl font-semibold text-white sm:gap-4 sm:text-5xl xl:max-w-2xl xl:justify-start xl:text-6xl">
+                      <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12 xl:h-14 xl:w-14" />
                       Events Radar
                     </h1>
 

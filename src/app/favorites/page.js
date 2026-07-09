@@ -126,6 +126,7 @@ import {
   FAVORITES_CHECKIN_LIST_SCROLL_CLASS,
 } from "@/features/favorites/favoritesUiConstants";
 import ActionToast from "@/components/ui/ActionToast";
+import BrandMark from "@/components/ui/BrandMark";
 import PageControls from "@/components/ui/PageControls";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
@@ -3206,7 +3207,8 @@ export default function FavoritesPage() {
             <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-lg font-semibold tracking-[-0.01em] text-transparent sm:text-3xl sm:drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)]">
               {isReadOnlyPublicProfileView ? `${effectiveDisplayName}'s profile` : `${greeting}, ${displayName}`}
             </p>
-            <h1 className="qa-display qa-h1 mt-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold text-transparent sm:mt-4 sm:text-6xl">
+            <h1 className="qa-display qa-h1 mt-3 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold text-transparent sm:mt-4 sm:gap-4 sm:text-6xl">
+              <BrandMark iconOnly className="h-10 w-10 sm:h-14 sm:w-14" />
               {isReadOnlyPublicProfileView ? "Member Profile" : "Your Atlas"}
             </h1>
             <p className="qa-lead mt-3 max-w-2xl text-sm text-white/64 sm:mt-5 sm:text-base">

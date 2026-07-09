@@ -201,7 +201,7 @@ export default function FloatingHomeButton() {
     <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] w-[min(96vw,30rem)] -translate-x-1/2 px-2 md:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:left-auto md:w-auto md:translate-x-0 md:px-0 md:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
       <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(56,189,248,0.22),rgba(244,114,182,0.16),transparent_72%)] blur-xl" />
       <div className="mb-1.5 flex justify-center md:mb-2 md:justify-end">
-        <span className="rounded-full border border-white/24 bg-black/50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/78 shadow-[0_8px_20px_rgba(0,0,0,0.32)]">
+        <span className="inline-flex h-5 items-center rounded-full border border-cyan-100/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(244,114,182,0.14),rgba(0,0,0,0.72))] px-2.5 text-[10px] font-bold uppercase text-white shadow-[0_8px_22px_rgba(34,211,238,0.16),0_8px_20px_rgba(0,0,0,0.34)] ring-1 ring-white/10">
           Navigate
         </span>
       </div>

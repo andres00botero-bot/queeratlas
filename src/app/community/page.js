@@ -20,6 +20,7 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import ActionToast from "@/components/ui/ActionToast";
+import BrandMark from "@/components/ui/BrandMark";
 import PageControls from "@/components/ui/PageControls";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 
@@ -1621,7 +1622,10 @@ export default function CommunityPage() {
           <div className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full bg-fuchsia-300/10 blur-3xl" />
           <div className="relative z-10 max-w-3xl">
             <p className="text-xs uppercase tracking-[0.35em] text-white/68">Community Signal</p>
-            <h1 className="qa-display mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:mt-3 sm:text-5xl">Community</h1>
+            <h1 className="qa-display mt-2 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:mt-3 sm:gap-4 sm:text-5xl">
+              <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12" />
+              Community
+            </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:mt-4 sm:leading-7">Live member signal, practical city knowledge, and trusted conversations in one focused flow.</p>
             <p className="mt-2 text-xs text-white/64 sm:mt-3">
               Safety-first participation. Read our{" "}
