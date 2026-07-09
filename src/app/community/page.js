@@ -1088,6 +1088,21 @@ export default function CommunityPage() {
   })();
 
   const displayedMemberRows = memberSearchRows;
+  const memberDiscoveryStats = (() => {
+    const activeNow = displayedMemberRows.filter((row) => row.is_online).length;
+    const trustedVoices = displayedMemberRows.filter((row) => row.trusted_contributor).length;
+    const cityCount = new Set(
+      displayedMemberRows
+        .map((row) => String(row.home_city || "").trim())
+        .filter(Boolean)
+    ).size;
+
+    return [
+      { label: "Active now", value: activeNow, className: "border-emerald-200/24 bg-emerald-200/10 text-emerald-100" },
+      { label: "Trusted voices", value: trustedVoices, className: "border-cyan-200/24 bg-cyan-200/10 text-cyan-100" },
+      { label: "Cities", value: cityCount, className: "border-amber-200/24 bg-amber-200/10 text-amber-100" },
+    ];
+  })();
 
   const canDeleteTopic = (topic) => {
     if (!topic) return false;
@@ -1662,45 +1677,57 @@ export default function CommunityPage() {
         </section>
 
         {isDiscoveryPanel ? (
-        <section aria-labelledby="community-discovery-heading" className="qa-premium-card animate-rise-in mb-6 rounded-[24px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.18),transparent_28%),linear-gradient(180deg,rgba(38,14,44,0.94),rgba(10,10,10,0.98))] p-4 shadow-[0_30px_96px_rgba(217,70,239,0.15),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[26px] sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section aria-labelledby="community-discovery-heading" className="qa-premium-card animate-rise-in mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.18),transparent_30%),radial-gradient(circle_at_88%_8%,rgba(244,114,182,0.18),transparent_32%),radial-gradient(circle_at_48%_100%,rgba(251,191,36,0.10),transparent_28%),linear-gradient(180deg,rgba(17,20,29,0.97),rgba(8,8,10,1))] p-4 shadow-[0_34px_110px_rgba(34,211,238,0.10),0_22px_70px_rgba(244,114,182,0.10),0_14px_34px_rgba(0,0,0,0.34)] transition-all duration-300 sm:p-5 lg:p-6">
+          <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr] xl:items-end">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-200/85">Member Discovery</p>
-              <h2 id="community-discovery-heading" className="mt-1 text-lg font-semibold text-white">Find people by name, city, and signal</h2>
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/78">Member Discovery</p>
+              <h2 id="community-discovery-heading" className="mt-2 max-w-2xl text-2xl font-semibold leading-tight text-white sm:text-3xl">Find trusted people in the atlas</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/68">Search by name, city, title, and community signal.</p>
             </div>
-            <p className="text-xs text-fuchsia-100/75" aria-live="polite">
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {memberDiscoveryStats.map((stat) => (
+                  <div key={stat.label} className={`rounded-2xl border px-3 py-3 ${stat.className}`}>
+                    <p className="text-xl font-semibold leading-none text-white sm:text-2xl">{stat.value}</p>
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-current">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            <p className="text-right text-xs text-cyan-100/75" aria-live="polite">
               {memberSearchLoading
                 ? "Refreshing live member graph..."
-                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " · more available" : ""}`}
+                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " - more available" : ""}`}
             </p>
+            </div>
           </div>
 
-          <div className="mt-3 inline-flex rounded-full border border-fuchsia-200/24 bg-black/35 p-1">
+          <div className="mt-5 rounded-[24px] border border-white/12 bg-black/28 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:p-4">
+          <div className="inline-flex rounded-full border border-white/12 bg-white/6 p-1">
             <button
               onClick={() => setMemberSearchScope("all")}
-              className={`rounded-full px-3 py-1 text-xs transition ${memberSearchScope === "all" ? "bg-fuchsia-200/22 text-white" : "text-white/72 hover:text-white"}`}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${memberSearchScope === "all" ? "bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.12)]" : "text-white/72 hover:text-white"}`}
             >
               All members
             </button>
             <button
               onClick={() => setMemberSearchScope("friends")}
-              className={`rounded-full px-3 py-1 text-xs transition ${memberSearchScope === "friends" ? "bg-fuchsia-200/22 text-white" : "text-white/72 hover:text-white"}`}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${memberSearchScope === "friends" ? "bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.12)]" : "text-white/72 hover:text-white"}`}
             >
               My friends only
             </button>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-[1.4fr_1fr_0.8fr_auto]">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1.35fr_1fr_0.85fr_auto]">
             <input
               value={memberSearchTerm}
               onChange={(event) => setMemberSearchTerm(event.target.value)}
               placeholder="Search member name, city, title, pronouns"
-              className="w-full rounded-xl border border-fuchsia-200/24 bg-black/45 px-4 py-3 text-sm text-white outline-none transition focus:border-fuchsia-200/55"
+              className="w-full rounded-2xl border border-white/12 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/38 focus:border-cyan-200/55 focus:bg-white/[0.10]"
             />
             <select
               value={memberSearchCity}
               onChange={(event) => setMemberSearchCity(event.target.value)}
-              className="w-full rounded-xl border border-fuchsia-200/24 bg-black/45 px-4 py-3 text-sm text-white outline-none transition focus:border-fuchsia-200/55"
+              className="w-full rounded-2xl border border-white/12 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200/55 focus:bg-white/[0.10]"
             >
               <option value="">All cities</option>
               {memberDiscoveryCities.map((city) => (
@@ -1712,7 +1739,7 @@ export default function CommunityPage() {
             <select
               value={memberSearchSort}
               onChange={(event) => setMemberSearchSort(event.target.value)}
-              className="w-full rounded-xl border border-fuchsia-200/24 bg-black/45 px-4 py-3 text-sm text-white outline-none transition focus:border-fuchsia-200/55"
+              className="w-full rounded-2xl border border-white/12 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200/55 focus:bg-white/[0.10]"
             >
               <option value="best">Best match</option>
               <option value="active">Most active</option>
@@ -1725,19 +1752,20 @@ export default function CommunityPage() {
                   await loadMemberDiscovery({ offset: 0, append: false, force: true });
                 });
               }}
-              className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/42 bg-[linear-gradient(135deg,rgba(232,121,249,0.24),rgba(99,102,241,0.18),rgba(14,10,20,0.94))] px-4 py-3 text-sm font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62"
+              className="qa-action qa-action-strong rounded-2xl border border-cyan-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(244,114,182,0.18),rgba(255,255,255,0.08))] px-4 py-3 text-sm font-semibold text-cyan-50 transition hover:border-cyan-100/62"
             >
               Refresh
             </button>
           </div>
+          </div>
 
           {memberSearchWarning && (
-            <p className="mt-3 rounded-xl border border-amber-200/22 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+            <p className="mt-3 rounded-2xl border border-amber-200/24 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
               {memberSearchWarning}
             </p>
           )}
 
-          <div className="mt-4 max-h-[62vh] overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+          <div className="mt-5 max-h-[62vh] overflow-y-auto pr-1 [scrollbar-gutter:stable]">
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {displayedMemberRows.map((entry) => {
               const titleMeta = getMemberTitleMeta(entry.title || "");
@@ -1751,10 +1779,10 @@ export default function CommunityPage() {
                   .map((chunk) => chunk.charAt(0).toUpperCase())
                   .join("") || "M";
               return (
-                <article key={entry.user_id} className="qa-premium-card rounded-2xl border border-white/10 bg-black/28 p-4 transition hover:border-fuchsia-200/30 hover:bg-black/35 hover:shadow-[0_20px_50px_rgba(217,70,239,0.14)]">
+                <article key={entry.user_id} className="group rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_16%_0%,rgba(34,211,238,0.10),transparent_36%),radial-gradient(circle_at_96%_18%,rgba(244,114,182,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] transition hover:-translate-y-0.5 hover:border-cyan-100/28 hover:bg-white/[0.075] hover:shadow-[0_22px_60px_rgba(34,211,238,0.10),0_16px_44px_rgba(244,114,182,0.08)]">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-start gap-2.5">
-                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 text-[11px] font-semibold text-fuchsia-100">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-white/14 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(244,114,182,0.14))] text-sm font-semibold text-white shadow-[0_12px_34px_rgba(0,0,0,0.24)]">
                         {avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarUrl} alt={entry.display_name} className="h-full w-full object-cover" />
@@ -1762,58 +1790,61 @@ export default function CommunityPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-white">{entry.display_name}</p>
+                        <p className="truncate text-base font-semibold text-white">{entry.display_name}</p>
                         {entry.trusted_contributor && (
                           <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
                             Trusted
                           </span>
                         )}
                         </div>
-                      <p className="mt-1 text-xs text-white/62">
-                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" · ") || "City not set"}
+                      <p className="mt-1 text-sm leading-5 text-white/62">
+                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" - ") || "City not set"}
                       </p>
                     </div>
                     </div>
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
+                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
                       <span>{titleMeta.icon}</span>
                       {titleMeta.label}
                     </span>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${entry.is_online ? "border-emerald-200/30 bg-emerald-200/14 text-emerald-100" : "border-white/14 bg-white/6 text-white/75"}`}>
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/18 p-3">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Live signal</p>
+                    <div className="flex flex-wrap gap-2">
+                    <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${entry.is_online ? "border-emerald-200/30 bg-emerald-200/14 text-emerald-100" : "border-white/14 bg-white/6 text-white/75"}`}>
                       {formatMemberSeen(entry.last_seen_at, entry.is_online)}
                     </span>
                     {entry.follows_you && (
-                      <span className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
+                      <span className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
                         Follows you
                       </span>
                     )}
                     {entry.mutual_count > 0 && (
-                      <span className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100">
+                      <span className="rounded-full border border-pink-200/26 bg-pink-200/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-pink-100">
                         {entry.mutual_count} mutual
                       </span>
                     )}
+                    </div>
                   </div>
 
-                  <div className="mt-3 grid gap-2">
+                  <div className="mt-4 grid gap-2">
                     <button
                       onClick={() => openMemberProfile(entry)}
-                      className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.22),rgba(99,102,241,0.16),rgba(14,10,20,0.94))] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62"
+                      className="qa-action qa-action-strong rounded-2xl border border-white/18 bg-white px-3 py-2.5 text-sm font-semibold text-black transition hover:border-cyan-100/60 hover:shadow-[0_14px_32px_rgba(255,255,255,0.10)]"
                     >
                       Open profile
                     </button>
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => openMemberThread(entry)}
-                        className="qa-action rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-3 py-2 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/50"
+                        className="qa-action rounded-2xl border border-cyan-200/24 bg-cyan-200/10 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/48"
                       >
                         Message
                       </button>
                       <button
                         onClick={() => toggleMemberFollow(entry)}
                         disabled={busy}
-                        className="qa-action qa-action-strong rounded-xl border border-fuchsia-200/40 bg-[linear-gradient(135deg,rgba(232,121,249,0.22),rgba(99,102,241,0.16),rgba(14,10,20,0.94))] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/62 disabled:cursor-wait disabled:opacity-65"
+                        className="qa-action rounded-2xl border border-pink-200/24 bg-pink-200/10 px-3 py-2.5 text-xs font-semibold text-pink-100 transition hover:border-pink-200/48 disabled:cursor-wait disabled:opacity-65"
                       >
                         {busy ? "Saving..." : entry.is_following ? "Following" : "Add friend"}
                       </button>
@@ -1823,7 +1854,7 @@ export default function CommunityPage() {
               );
             })}
             {!memberSearchLoading && displayedMemberRows.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-fuchsia-200/26 px-4 py-6 text-sm text-white/62 md:col-span-2 xl:col-span-3">
+              <div className="rounded-[24px] border border-dashed border-cyan-200/24 bg-white/[0.04] px-4 py-6 text-sm text-white/62 md:col-span-2 xl:col-span-3">
                 No members match this filter yet. Try another city or broaden your search.
               </div>
             )}
@@ -1831,7 +1862,7 @@ export default function CommunityPage() {
           </div>
           <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
           <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-[11px] text-fuchsia-100/65">
+            <p className="text-[11px] text-white/50">
               Stable paging: {displayedMemberRows.length} members loaded
             </p>
             {memberSearchHasMore && (
@@ -1842,7 +1873,7 @@ export default function CommunityPage() {
                   });
                 }}
                 disabled={memberSearchLoading}
-                className="qa-action qa-action-strong rounded-full border border-fuchsia-200/36 bg-fuchsia-200/16 px-3 py-1 text-[11px] font-semibold text-fuchsia-50 transition hover:border-fuchsia-200/56 disabled:opacity-60"
+                className="qa-action qa-action-strong rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-[11px] font-semibold text-cyan-50 transition hover:border-cyan-200/56 disabled:opacity-60"
               >
                       {memberSearchLoading ? "Loading..." : "Load more members"}
               </button>
@@ -1888,7 +1919,7 @@ export default function CommunityPage() {
                   <div className="grid gap-3 md:grid-cols-2">
                     <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
                     <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
-                  </div>
+                    </div>
                   <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
                   <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder="Write your experience" area />
                   <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
