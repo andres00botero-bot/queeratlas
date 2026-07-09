@@ -152,6 +152,25 @@ export default function SelectedPlacePanel({
               isDeletingPlaceAdmin={isDeletingPlaceAdmin}
             />
           </div>
+
+          {isAdmin ? (
+            <div className="mt-4 rounded-[24px] border border-amber-100/24 bg-[linear-gradient(135deg,rgba(251,191,36,0.13),rgba(244,114,182,0.08),rgba(255,255,255,0.06))] p-4 shadow-[0_16px_42px_rgba(251,191,36,0.10)]">
+              <SelectedPlaceAdminControls
+                isAdmin={isAdmin}
+                isOpen={placeAdminOpen}
+                onToggleOpen={onTogglePlaceAdmin}
+                draft={placeAdminDraft}
+                setDraft={setPlaceAdminDraft}
+                onSaveAddressOnly={handleAdminSavePlaceAddressOnly}
+                isSavingAddressOnly={isSavingPlaceAddressOnly}
+                onSave={handleAdminSavePlace}
+                isSaving={isSavingPlaceAdmin}
+                onDelete={handleAdminDeletePlace}
+                isDeleting={isDeletingPlaceAdmin}
+                placeTypes={placeTypes}
+              />
+            </div>
+          ) : null}
         </>
       ) : null}
 
@@ -183,29 +202,10 @@ export default function SelectedPlacePanel({
 
       {activeTab === "reviews" ? (
         <>
-          {isAdmin ? (
-            <div className="rounded-[24px] border border-white/14 bg-white/[0.055] p-4">
-              <SelectedPlaceAdminControls
-                isAdmin={isAdmin}
-                isOpen={placeAdminOpen}
-                onToggleOpen={onTogglePlaceAdmin}
-                draft={placeAdminDraft}
-                setDraft={setPlaceAdminDraft}
-                onSaveAddressOnly={handleAdminSavePlaceAddressOnly}
-                isSavingAddressOnly={isSavingPlaceAddressOnly}
-                onSave={handleAdminSavePlace}
-                isSaving={isSavingPlaceAdmin}
-                onDelete={handleAdminDeletePlace}
-                isDeleting={isDeletingPlaceAdmin}
-                placeTypes={placeTypes}
-              />
-            </div>
-          ) : (
-            <div className="rounded-[24px] border border-cyan-100/24 bg-[linear-gradient(135deg,rgba(34,211,238,0.13),rgba(244,114,182,0.08),rgba(255,255,255,0.06))] p-4 shadow-[0_16px_42px_rgba(34,211,238,0.10)]">
-              <p className="text-base font-semibold tracking-[0.01em] text-white">Reviews</p>
-              <p className="mt-1 text-xs leading-5 text-cyan-50/78">Community ratings and notes for this venue.</p>
-            </div>
-          )}
+          <div className="rounded-[24px] border border-cyan-100/24 bg-[linear-gradient(135deg,rgba(34,211,238,0.13),rgba(244,114,182,0.08),rgba(255,255,255,0.06))] p-4 shadow-[0_16px_42px_rgba(34,211,238,0.10)]">
+            <p className="text-base font-semibold tracking-[0.01em] text-white">Reviews</p>
+            <p className="mt-1 text-xs leading-5 text-cyan-50/78">Community ratings and notes for this venue.</p>
+          </div>
 
           <div className="mt-4 rounded-[24px] border border-white/14 bg-white/[0.055] p-4">
             <SelectedPlaceReviewsList reviews={reviews} />
