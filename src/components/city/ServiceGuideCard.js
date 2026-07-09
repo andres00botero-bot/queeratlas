@@ -30,11 +30,11 @@ export default function ServiceGuideCard({
       role="button"
       tabIndex={0}
       style={{ animationDelay: `${Math.min(index * 40, 220)}ms` }}
-      className={`qa-cinematic-hover qa-city-card animate-rise-in rounded-[24px] border p-5 ${style.card} ${
+      className={`qa-cinematic-hover qa-city-card qa-city-copy-left animate-rise-in rounded-[22px] border p-4 sm:p-5 ${style.card} ${
         isSelectedService
-          ? "border-emerald-200/40 shadow-[0_18px_48px_rgba(16,185,129,0.16)]"
+          ? "border-emerald-200/40 shadow-[0_16px_42px_rgba(16,185,129,0.14)]"
           : "hover:border-emerald-200/22"
-      } cursor-pointer`}
+      } cursor-pointer bg-white/[0.065] shadow-[0_18px_46px_rgba(16,185,129,0.10)]`}
       onMouseEnter={() => setHoveredServiceId(String(service.id))}
       onMouseLeave={() => setHoveredServiceId(null)}
       onClick={() => openService(service)}
@@ -46,7 +46,7 @@ export default function ServiceGuideCard({
       }}
     >
       {coverImage && (
-        <div className="mb-3 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
+        <div className="mb-4 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
           <Image
             src={coverImage}
             alt={`${service.name} photo`}
@@ -57,7 +57,7 @@ export default function ServiceGuideCard({
           />
         </div>
       )}
-      <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${style.line}`} />
+      <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${style.line} shadow-[0_0_22px_rgba(255,255,255,0.18)]`} />
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-lg font-semibold leading-tight tracking-[-0.01em] text-white">
@@ -77,31 +77,31 @@ export default function ServiceGuideCard({
       </div>
 
       {service.description && (
-        <div className="mb-3 rounded-2xl border border-white/10 bg-black/28 p-3">
+        <div className="mb-3 rounded-2xl border border-white/12 bg-white/[0.055] p-3.5">
           <p className="line-clamp-3 text-sm leading-6 text-white/68">{String(service.description)}</p>
         </div>
       )}
 
       <VibeTagChips entity={service} tone="cyan" className="mb-3" includeMixedFallback />
 
-      <div className="space-y-1.5 text-xs text-white/62">
+      <div className="grid gap-2 text-xs text-white/62">
         {providerName && (
-          <p>
+          <p className="rounded-xl border border-emerald-100/18 bg-emerald-300/[0.07] px-3 py-2">
             <span className="text-white/48">Provider:</span> {providerName}
           </p>
         )}
         {locationLabel && (
-          <p>
+          <p className="rounded-xl border border-cyan-100/18 bg-cyan-300/[0.07] px-3 py-2">
             <span className="text-white/48">Area:</span> {locationLabel}
           </p>
         )}
         {service.hours && (
-          <p>
+          <p className="rounded-xl border border-amber-100/18 bg-amber-300/[0.07] px-3 py-2">
             <span className="text-white/48">Availability:</span> {String(service.hours)}
           </p>
         )}
         {contact && (
-          <p>
+          <p className="rounded-xl border border-fuchsia-100/18 bg-fuchsia-300/[0.07] px-3 py-2">
             <span className="text-white/48">Contact:</span> {contact}
           </p>
         )}

@@ -7,19 +7,19 @@ export default function CitySignalSummaryBar({
   activeCitySection,
 }) {
   return (
-    <div className="mb-6 rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-3 shadow-[0_12px_34px_rgba(0,0,0,0.22)]">
+    <div className="mb-6 rounded-[20px] border border-white/18 bg-[linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,79,163,0.08),rgba(34,211,238,0.08))] p-3 shadow-[0_12px_34px_rgba(91,33,182,0.12)] backdrop-blur">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-cyan-100">
+        <span className="rounded-full border border-cyan-100/32 bg-cyan-300/14 px-3 py-1 text-cyan-50">
           {cityPlacesCount} venues
         </span>
-        <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-fuchsia-100">
+        <span className="rounded-full border border-fuchsia-100/32 bg-fuchsia-300/14 px-3 py-1 text-fuchsia-50">
           {cityEventCount} events
         </span>
-        <span className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-emerald-100">
+        <span className="rounded-full border border-emerald-100/32 bg-emerald-300/14 px-3 py-1 text-emerald-50">
           {cityServiceCount} services
         </span>
-        <span className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-white/80">
-          Active section: {activeCitySection}
+        <span className="rounded-full border border-white/22 bg-white/12 px-3 py-1 text-white/82">
+          Viewing: {activeCitySection}
         </span>
       </div>
     </div>

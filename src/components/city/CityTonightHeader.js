@@ -13,21 +13,20 @@ export default function CityTonightHeader({
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/65">Events in {cityName}</p>
-        <h2 className="mt-1 text-xl tracking-[0.02em] text-fuchsia-100">Events</h2>
-        <p className="mt-1 text-xs text-white/62">
-          Choose <span className="text-violet-100">Public</span> for official city events, or{" "}
-          <span className="text-fuchsia-100">VIP / Invites</span> for private member plans.
+        <p className="text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/62">Events in {cityName}</p>
+        <h2 className="mt-1 text-2xl font-semibold tracking-[-0.01em] text-white">Events</h2>
+        <p className="mt-1 text-sm leading-6 text-white/58">
+          Public listings and member plans for the city.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2">
-        <div className="inline-flex rounded-full border border-white/14 bg-black/40 p-1 text-xs shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
+        <div className="inline-flex rounded-full border border-white/14 bg-black/34 p-1 text-xs shadow-[0_10px_26px_rgba(0,0,0,0.22)]">
           <button
             type="button"
             onClick={() => onSetTonightFeedTab("public")}
             className={`qa-action qa-city-card rounded-full px-3 py-1.5 transition ${
               tonightFeedTab === "public"
-                ? "border border-cyan-200/50 bg-cyan-200/20 text-cyan-100 shadow-[0_8px_22px_rgba(34,211,238,0.18)]"
+                ? "border border-cyan-200/42 bg-cyan-200/14 text-cyan-100"
                 : "text-white/68 hover:text-white"
             }`}
           >
@@ -38,7 +37,7 @@ export default function CityTonightHeader({
             onClick={() => onSetTonightFeedTab("vip")}
             className={`qa-action qa-city-card rounded-full px-3 py-1.5 transition ${
               tonightFeedTab === "vip"
-                ? "border border-fuchsia-200/52 bg-fuchsia-200/22 text-fuchsia-100 shadow-[0_8px_22px_rgba(217,70,239,0.2)]"
+                ? "border border-fuchsia-200/42 bg-fuchsia-200/14 text-fuchsia-100"
                 : "text-white/68 hover:text-white"
             }`}
           >

@@ -14,20 +14,23 @@ export default function QuickGuideSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section animate-cinematic-in relative mb-10 overflow-hidden rounded-[34px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 text-justify shadow-[0_24px_82px_rgba(0,0,0,0.34)]"
+      className="qa-city-section qa-city-copy-left animate-cinematic-in relative mb-10 overflow-hidden rounded-[30px] border border-white/16 bg-[linear-gradient(145deg,rgba(255,79,163,0.12),rgba(251,191,36,0.08),rgba(14,15,22,0.96))] p-5 shadow-[0_24px_72px_rgba(91,33,182,0.18)] sm:p-6"
       style={{ animationDelay: "250ms" }}
     >
-      <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-8 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
-      <div className="mb-7">
-        <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">Guide Lane</p>
+      <div className="mb-8">
+        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-amber-100/78">City guide</p>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-2xl font-semibold tracking-[-0.015em] text-white">Quick Guide</h2>
-          <span className="inline-flex items-center rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-amber-100/90">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">Essential guide</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-white/58">
+              The fast read before you choose where to stay, go out, and move around.
+            </p>
+          </div>
+          <span className="inline-flex items-center rounded-full border border-amber-200/20 bg-amber-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-amber-100/86">
             {Array.isArray(config?.guide) ? config.guide.length : 0} tips
           </span>
         </div>
-        <div className="mt-3 h-px w-full bg-gradient-to-r from-amber-200/35 via-white/10 to-transparent" />
+        <div className="mt-4 h-px w-full bg-[linear-gradient(90deg,#ffd166,#ff5fb7,#4de1ff,transparent)] opacity-70" />
       </div>
       {placesLoading && (
         <div className="mb-4 rounded-2xl border border-amber-200/10 bg-amber-200/[0.03] p-4">
@@ -51,66 +54,59 @@ export default function QuickGuideSection({
           const guideTone =
             index % 4 === 0
               ? {
-                  card: "border-cyan-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-cyan-200/30 shadow-[0_24px_80px_rgba(56,189,248,0.14)]",
-                  strip: "from-amber-300/90 via-orange-300/60 to-transparent",
-                  type: "text-cyan-100 border-cyan-200/30 bg-cyan-200/12",
-                  vibe: "Night pulse",
+                  card: "border-cyan-100/28 bg-[linear-gradient(135deg,rgba(34,211,238,0.14),rgba(255,255,255,0.06))] hover:border-cyan-100/48 shadow-[0_18px_44px_rgba(34,211,238,0.10)]",
+                  index: "text-cyan-50 border-cyan-100/34 bg-cyan-300/16",
+                  label: "Overview",
                 }
               : index % 4 === 1
                 ? {
-                    card: "border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-fuchsia-200/30 shadow-[0_24px_80px_rgba(217,70,239,0.12)]",
-                    strip: "from-cyan-300/90 via-sky-300/60 to-transparent",
-                    type: "text-fuchsia-100 border-fuchsia-200/30 bg-fuchsia-200/12",
-                    vibe: "Local rhythm",
+                    card: "border-fuchsia-100/28 bg-[linear-gradient(135deg,rgba(244,114,182,0.14),rgba(255,255,255,0.06))] hover:border-fuchsia-100/48 shadow-[0_18px_44px_rgba(217,70,239,0.10)]",
+                    index: "text-fuchsia-50 border-fuchsia-100/34 bg-fuchsia-300/16",
+                    label: "Area logic",
                   }
                 : index % 4 === 2
                   ? {
-                      card: "border-emerald-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-emerald-200/30 shadow-[0_24px_80px_rgba(45,212,191,0.12)]",
-                      strip: "from-violet-300/90 via-fuchsia-300/60 to-transparent",
-                      type: "text-emerald-100 border-emerald-200/30 bg-emerald-200/12",
-                      vibe: "After-dark flow",
+                      card: "border-emerald-100/28 bg-[linear-gradient(135deg,rgba(52,211,153,0.13),rgba(255,255,255,0.06))] hover:border-emerald-100/48 shadow-[0_18px_44px_rgba(16,185,129,0.10)]",
+                      index: "text-emerald-50 border-emerald-100/34 bg-emerald-300/16",
+                      label: "Safety read",
                     }
                   : {
-                      card: "border-amber-200/18 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] hover:border-amber-200/30 shadow-[0_24px_80px_rgba(251,191,36,0.12)]",
-                      strip: "from-emerald-300/90 via-teal-300/60 to-transparent",
-                      type: "text-amber-100 border-amber-200/30 bg-amber-200/12",
-                      vibe: "Soft start",
+                      card: "border-amber-100/28 bg-[linear-gradient(135deg,rgba(251,191,36,0.14),rgba(255,255,255,0.06))] hover:border-amber-100/48 shadow-[0_18px_44px_rgba(251,191,36,0.10)]",
+                      index: "text-amber-50 border-amber-100/34 bg-amber-300/16",
+                      label: "Trip planning",
                     };
           return (
             <div
               key={`${item.title}-${index}`}
-              className={`qa-cinematic-hover qa-city-card rounded-[24px] border p-5 ${guideTone.card}`}
+              className={`qa-cinematic-hover qa-city-card rounded-[22px] border p-5 transition sm:p-6 ${guideTone.card}`}
             >
-              <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${guideTone.strip}`} />
-              <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="grid gap-5 md:grid-cols-[11rem_1fr] md:gap-7">
                 <div className="min-w-0">
-                  <h3 className="text-lg font-semibold leading-tight tracking-[-0.01em] text-white">
+                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${guideTone.index}`}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <p className="mt-5 text-[10px] uppercase tracking-[0.16em] text-white/46">
+                    {guideTone.label}
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold leading-tight tracking-[-0.01em] text-white">
                     {item.title}
                   </h3>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${guideTone.type}`}>
-                      Guide
-                    </span>
-                    <span className="rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
-                      {guideTone.vibe}
-                    </span>
-                  </div>
+                </div>
+
+                <div>
+                  <p className="qa-city-guide-copy text-[15px] leading-8 text-white/82 sm:text-base sm:leading-8">
+                    {polishGuideText(item.text, {
+                      sectionTitle: item.title,
+                      cityName,
+                      vibe: config.vibe,
+                    })}
+                  </p>
+
+                  {item.extra && (
+                    <p className="mt-4 text-xs uppercase tracking-[0.14em] text-white/42">{item.extra}</p>
+                  )}
                 </div>
               </div>
-
-              <div className="rounded-2xl border border-white/8 bg-black/24 p-4">
-                <p className="qa-copy-justify text-sm leading-7 text-white/78">
-                  {polishGuideText(item.text, {
-                    sectionTitle: item.title,
-                    cityName,
-                    vibe: config.vibe,
-                  })}
-                </p>
-              </div>
-
-              {item.extra && (
-                <p className="mt-4 text-xs uppercase tracking-[0.14em] text-white/42">{item.extra}</p>
-              )}
             </div>
           );
         })}

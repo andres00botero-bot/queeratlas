@@ -26,24 +26,24 @@ export default function CitySeoTopicLinks({ city = "", cityName = "" }) {
   return (
     <section
       aria-label={`Explore ${cityName} topic guides`}
-      className="mb-6 rounded-[22px] border border-cyan-200/16 bg-[linear-gradient(150deg,rgba(34,211,238,0.08),rgba(12,12,12,0.94))] p-4"
+      className="qa-city-copy-left mb-8 rounded-[24px] border border-white/16 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(244,114,182,0.08),rgba(255,255,255,0.055))] p-5 shadow-[0_18px_48px_rgba(34,211,238,0.10)] backdrop-blur"
     >
-      <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/72">Explore City Topics</p>
-      <h2 className="mt-1 text-sm font-semibold tracking-[0.01em] text-cyan-50">
-        Long-tail guides for {cityName}
+      <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/76">Explore City Topics</p>
+      <h2 className="mt-2 text-base font-semibold tracking-[-0.01em] text-white">
+        More ways into {cityName}
       </h2>
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2.5">
         {topics.map((entry) => (
           <Link
             key={entry.key}
             href={`/${city}/discover/${entry.key}`}
-            className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-3 py-1.5 text-[11px] text-cyan-50 transition hover:border-cyan-100/42 hover:bg-cyan-200/18"
+            className="rounded-full border border-white/18 bg-white/[0.075] px-3 py-1.5 text-[11px] text-white/84 transition hover:border-cyan-100/42 hover:bg-cyan-200/14 hover:text-white"
           >
             {entry.title}
           </Link>
         ))}
       </div>
-      <p className="mt-3 text-xs leading-6 text-cyan-50/80">
+      <p className="mt-4 text-xs leading-6 text-white/70">
         Start with{" "}
         <Link
           href={semanticAnchors[0]?.cityHref || `/${city}/discover/queer-techno-clubs`}

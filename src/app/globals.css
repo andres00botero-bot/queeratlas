@@ -425,10 +425,37 @@ body > div:first-child {
   hyphens: auto;
 }
 
+.qa-city .qa-city-copy-left,
+.qa-city .qa-city-copy-left p,
+.qa-city .qa-city-copy-left li {
+  text-align: left !important;
+  text-justify: auto !important;
+  hyphens: manual;
+}
+
 .qa-city .qa-copy-justify {
   text-align: justify !important;
   text-justify: inter-word !important;
   hyphens: auto;
+}
+
+.qa-city .qa-city-guide-copy {
+  text-align: justify !important;
+  text-justify: inter-word !important;
+  text-align-last: left;
+  hyphens: auto;
+}
+
+.qa-city .qa-city-copy-left .qa-city-guide-copy,
+.qa-city .qa-city-copy-left p.qa-city-guide-copy {
+  display: block;
+  width: 100%;
+  text-align: justify !important;
+  text-align-last: left;
+  text-justify: inter-word !important;
+  hyphens: auto !important;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .qa-page :is(p, li, h1, h2, h3, h4, h5, h6) {

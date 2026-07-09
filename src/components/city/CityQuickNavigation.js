@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronDown, HeartHandshake, Map, MapPin } from "lucide-react";
 
 export default function CityQuickNavigation({
   onGoHome,
@@ -38,33 +38,37 @@ export default function CityQuickNavigation({
       key: "map",
       onClick: onGoMap,
       label: "Map",
-      eyebrow: "Primary jump",
+      eyebrow: "Explore nearby",
+      Icon: Map,
       className:
-        "border-cyan-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(59,130,246,0.20),rgba(12,10,18,0.94))] text-cyan-50 shadow-[0_14px_34px_rgba(34,211,238,0.18)] hover:border-cyan-200/55",
+        "border-cyan-100/38 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(59,130,246,0.16),rgba(255,255,255,0.07))] text-cyan-50 shadow-[0_14px_34px_rgba(34,211,238,0.16)] hover:border-cyan-100/60 hover:bg-cyan-200/[0.18]",
     },
     {
       key: "events",
       onClick: onGoEvents,
       label: "Events",
-      eyebrow: "Primary jump",
+      eyebrow: "Tonight and soon",
+      Icon: CalendarDays,
       className:
-        "border-fuchsia-200/34 bg-[linear-gradient(135deg,rgba(232,121,249,0.24),rgba(99,102,241,0.20),rgba(12,10,18,0.94))] text-fuchsia-50 shadow-[0_14px_34px_rgba(217,70,239,0.2)] hover:border-fuchsia-200/55",
+        "border-fuchsia-100/38 bg-[linear-gradient(135deg,rgba(244,114,182,0.25),rgba(139,92,246,0.18),rgba(255,255,255,0.07))] text-fuchsia-50 shadow-[0_14px_34px_rgba(217,70,239,0.16)] hover:border-fuchsia-100/60 hover:bg-fuchsia-200/[0.18]",
     },
     {
       key: "guide",
       onClick: onGoGuide,
-      label: "Quick Guide",
-      eyebrow: "Jump to",
+      label: "Guide",
+      eyebrow: "City basics",
+      Icon: BookOpen,
       className:
-        "border-cyan-200/24 bg-cyan-200/[0.08] text-cyan-100 hover:border-cyan-200/42",
+        "border-amber-100/34 bg-[linear-gradient(135deg,rgba(251,191,36,0.22),rgba(248,113,113,0.12),rgba(255,255,255,0.07))] text-amber-50 hover:border-amber-100/54 hover:bg-amber-200/[0.16]",
     },
     {
       key: "services",
       onClick: onGoServices,
       label: "Services",
-      eyebrow: "Jump to",
+      eyebrow: "Local support",
+      Icon: HeartHandshake,
       className:
-        "border-emerald-200/24 bg-emerald-200/[0.08] text-emerald-100 hover:border-emerald-200/42",
+        "border-emerald-100/34 bg-[linear-gradient(135deg,rgba(52,211,153,0.22),rgba(45,212,191,0.13),rgba(255,255,255,0.07))] text-emerald-50 hover:border-emerald-100/54 hover:bg-emerald-200/[0.16]",
     },
     {
       key: "venues",
@@ -73,9 +77,10 @@ export default function CityQuickNavigation({
         setShowVenuePicker(true);
       },
       label: "Venues",
-      eyebrow: "Jump to",
+      eyebrow: "Bars and places",
+      Icon: MapPin,
       className:
-        "border-amber-200/24 bg-amber-200/[0.08] text-amber-100 hover:border-amber-200/42",
+        "border-pink-100/34 bg-[linear-gradient(135deg,rgba(251,113,133,0.20),rgba(34,211,238,0.12),rgba(255,255,255,0.08))] text-white hover:border-pink-100/54 hover:bg-pink-200/[0.13]",
     },
   ];
 
@@ -103,28 +108,28 @@ export default function CityQuickNavigation({
     return (
       <div
         aria-label="Contribute actions"
-        className="qa-city-panel-cq rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(155deg,rgba(14,116,244,0.18),rgba(168,85,247,0.14),rgba(9,10,18,0.94))] p-3.5 shadow-[0_18px_58px_rgba(8,47,73,0.34)] backdrop-blur"
+        className="qa-city-panel-cq rounded-[24px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.16),rgba(34,211,238,0.12),rgba(15,18,24,0.92))] p-3.5 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur"
       >
-        <div className="mb-[0.35cm] px-1 text-[13px] font-semibold uppercase tracking-[0.18em] text-cyan-100/95">Contribute</div>
+        <div className="mb-3 px-1 text-[12px] font-semibold uppercase tracking-[0.18em] text-white/64">Contribute</div>
         <div className="space-y-2">
           <button
             type="button"
             onClick={onAddPlace}
-            className="qa-action w-full rounded-xl border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] px-3 py-2.5 text-left text-[13px] text-cyan-50/92 transition hover:border-cyan-100/40 hover:bg-white/[0.10] hover:text-white"
+            className="qa-action w-full rounded-xl border border-white/12 bg-white/[0.045] px-3 py-2.5 text-left text-[13px] text-white/82 transition hover:border-cyan-100/32 hover:bg-white/[0.08] hover:text-white"
           >
             + Add place
           </button>
           <button
             type="button"
             onClick={onAddEvent}
-            className="qa-action w-full rounded-xl border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] px-3 py-2.5 text-left text-[13px] text-cyan-50/92 transition hover:border-cyan-100/40 hover:bg-white/[0.10] hover:text-white"
+            className="qa-action w-full rounded-xl border border-white/12 bg-white/[0.045] px-3 py-2.5 text-left text-[13px] text-white/82 transition hover:border-fuchsia-100/32 hover:bg-white/[0.08] hover:text-white"
           >
             + Add event
           </button>
           <button
             type="button"
             onClick={onAddService}
-            className="qa-action w-full rounded-xl border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] px-3 py-2.5 text-left text-[13px] text-cyan-50/92 transition hover:border-cyan-100/40 hover:bg-white/[0.10] hover:text-white"
+            className="qa-action w-full rounded-xl border border-white/12 bg-white/[0.045] px-3 py-2.5 text-left text-[13px] text-white/82 transition hover:border-emerald-100/32 hover:bg-white/[0.08] hover:text-white"
           >
             + Add service
           </button>
@@ -151,17 +156,15 @@ export default function CityQuickNavigation({
     return (
       <nav
         aria-label="City sections"
-        className="qa-city-panel-cq relative overflow-hidden rounded-[26px] border border-slate-200/20 bg-[linear-gradient(170deg,rgba(13,17,28,0.97),rgba(7,10,16,0.99))] p-3.5 shadow-[0_24px_68px_rgba(0,0,0,0.4)] backdrop-blur"
+        className="qa-city-panel-cq relative overflow-hidden rounded-[26px] border border-white/18 bg-[linear-gradient(150deg,rgba(255,79,163,0.14),rgba(34,211,238,0.10),rgba(13,15,22,0.95))] p-3.5 shadow-[0_24px_64px_rgba(91,33,182,0.22)] backdrop-blur"
       >
-        <div className="pointer-events-none absolute -left-10 top-3 h-20 w-20 rounded-full bg-cyan-300/12 blur-2xl" />
-        <div className="pointer-events-none absolute -right-10 top-12 h-24 w-24 rounded-full bg-indigo-300/10 blur-2xl" />
         <div className="relative mb-2.5 flex items-center justify-between px-2 py-1">
-          <span className="text-[13px] font-semibold uppercase tracking-[0.24em] text-cyan-100/95">City Menu</span>
-          <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-cyan-100/88">
-            Navigate
+          <span className="text-[12px] font-semibold uppercase tracking-[0.22em] text-white/78">City Menu</span>
+          <span className="rounded-full border border-white/24 bg-white/12 px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] text-white/76">
+            Explore
           </span>
         </div>
-        <div className="mb-2 h-px w-full bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent" />
+        <div className="mb-2 h-px w-full bg-[linear-gradient(90deg,transparent,#ff7ac3,#4de1ff,transparent)] opacity-70" />
         <div className="space-y-2">
           {railItems.map((item) => {
             const isActive =
@@ -178,12 +181,12 @@ export default function CityQuickNavigation({
                 }}
                 className={`qa-action relative w-full rounded-xl border px-3 py-3 text-left text-sm font-semibold transition ${
                   isActive
-                    ? "border-cyan-200/58 bg-[linear-gradient(135deg,rgba(56,189,248,0.24),rgba(34,211,238,0.16),rgba(10,14,24,0.96))] text-white shadow-[0_12px_30px_rgba(34,211,238,0.28)]"
-                    : "border-slate-200/16 bg-[linear-gradient(140deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01))] text-white/84 hover:border-cyan-100/34 hover:bg-white/[0.08]"
+                    ? "border-cyan-100/52 bg-cyan-200/[0.18] text-white shadow-[0_10px_28px_rgba(34,211,238,0.18)]"
+                    : "border-white/14 bg-white/[0.055] text-white/82 hover:border-white/30 hover:bg-white/[0.10]"
                 }`}
               >
                 {isActive ? (
-                  <span className="absolute inset-y-2 left-1 w-1 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(34,211,238,0.9)]" />
+                  <span className="absolute inset-y-2 left-1 w-1 rounded-full bg-cyan-200" />
                 ) : null}
                 <span className="flex items-center justify-between gap-2">
                   <span>{item.label}</span>
@@ -200,8 +203,8 @@ export default function CityQuickNavigation({
         </div>
 
         {showVenuePicker ? (
-          <div className="mt-3 rounded-xl border border-cyan-200/20 bg-[linear-gradient(150deg,rgba(56,189,248,0.12),rgba(10,12,18,0.92))] p-2.5">
-            <div className="mb-2 px-1 text-[10px] uppercase tracking-[0.16em] text-cyan-100/86">Venue Types</div>
+          <div className="mt-3 rounded-xl border border-white/12 bg-black/22 p-2.5">
+            <div className="mb-2 px-1 text-[10px] uppercase tracking-[0.16em] text-white/56">Venue Types</div>
             <div className="space-y-1.5">
               {venueMenuItems.map((item) => {
                 const isActive = isVenueTypeActive(item.value);
@@ -215,8 +218,8 @@ export default function CityQuickNavigation({
                   aria-pressed={isActive}
                   className={`qa-action w-full rounded-lg border px-3 py-2 text-left text-[13px] transition ${
                     isActive
-                      ? "border-cyan-200/56 bg-cyan-200/18 text-cyan-50 shadow-[0_8px_22px_rgba(34,211,238,0.24)]"
-                      : "border-slate-200/16 bg-white/[0.03] text-white/84 hover:border-cyan-100/34 hover:bg-white/[0.08] hover:text-white"
+                      ? "border-cyan-200/48 bg-cyan-200/14 text-cyan-50"
+                      : "border-white/10 bg-white/[0.03] text-white/78 hover:border-white/24 hover:bg-white/[0.07] hover:text-white"
                   }`}
                 >
                   {item.label}
@@ -233,15 +236,21 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className="qa-city-panel-cq animate-cinematic-in sticky top-3 z-30 mb-8 rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-4 shadow-[0_16px_50px_rgba(0,0,0,0.26)] backdrop-blur"
+      className="qa-city-panel-cq animate-cinematic-in sticky top-3 z-30 mb-8 rounded-[24px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-4 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur"
       style={{ animationDelay: "170ms" }}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-white/50">Quick Navigation</p>
-        <p className="text-[11px] text-white/62">You are here: {activeSection || "overview"}</p>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-white/72">Explore this city</p>
+        <p className="rounded-full border border-white/14 bg-white/[0.08] px-2 py-1 text-[11px] text-white/72">
+          Current: {activeSection || "overview"}
+        </p>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {items.map((item) => (
+        {items.map((item) => {
+          const Icon = item.Icon;
+          const isActive =
+            activeSection === item.key || (activeSection === "venues" && item.key === "venues");
+          return (
           <button
             key={item.key}
             type="button"
@@ -258,15 +267,18 @@ export default function CityQuickNavigation({
                   }
                 : undefined
             }
-            className={`qa-cinematic-hover rounded-2xl border px-4 py-3 text-left text-sm transition ${item.className} ${
-              activeSection === item.key || (activeSection === "venues" && item.key === "venues")
-                ? "ring-1 ring-white/45"
+            className={`qa-cinematic-hover min-h-[5.1rem] rounded-2xl border px-4 py-3 text-left text-sm transition ${item.className} ${
+              isActive
+                ? "ring-1 ring-white/34"
                 : ""
             }`}
           >
-            <p className="text-[10px] uppercase tracking-[0.14em] opacity-80">{item.eyebrow}</p>
-            <p className="mt-1 flex items-center justify-between gap-2 font-semibold">
-              <span>{item.label}</span>
+            <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] opacity-72">
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>{item.eyebrow}</span>
+            </p>
+            <p className="mt-2 flex items-center justify-between gap-2 font-semibold">
+              <span className="text-white">{item.label}</span>
               {item.key === "venues" ? (
                 <ChevronDown
                   className={`h-3.5 w-3.5 transition ${showVenuePicker ? "rotate-180" : "rotate-0"}`}
@@ -275,12 +287,13 @@ export default function CityQuickNavigation({
               ) : null}
             </p>
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {showVenuePicker && venueGroups.length > 0 ? (
-        <div className="mt-3 rounded-2xl border border-amber-200/24 bg-[linear-gradient(140deg,rgba(251,191,36,0.13),rgba(12,10,9,0.9))] p-3">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-amber-100/75">Jump to venue vibe</p>
+        <div className="mt-3 rounded-2xl border border-white/18 bg-white/[0.08] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-white/70">Venue types</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               key="venue-jump-all"
@@ -289,7 +302,7 @@ export default function CityQuickNavigation({
                 onGoVenues?.();
                 setShowVenuePicker(false);
               }}
-              className="qa-action rounded-full border border-white/30 bg-white/14 px-3 py-1.5 text-[11px] text-white transition hover:border-white/55 hover:bg-white/20"
+              className="qa-action rounded-full border border-white/18 bg-white/[0.07] px-3 py-1.5 text-[11px] text-white/82 transition hover:border-white/34 hover:bg-white/[0.11]"
             >
               All venues
             </button>
@@ -305,8 +318,8 @@ export default function CityQuickNavigation({
                 aria-pressed={isActive}
                 className={`qa-action rounded-full border px-3 py-1.5 text-[11px] transition ${
                   isActive
-                    ? "border-amber-200/60 bg-amber-200/20 text-amber-50 shadow-[0_8px_20px_rgba(251,191,36,0.18)]"
-                    : "border-amber-200/30 bg-amber-200/12 text-amber-100 hover:border-amber-200/55 hover:bg-amber-200/18"
+                    ? "border-amber-200/52 bg-amber-200/16 text-amber-50"
+                    : "border-white/14 bg-white/[0.045] text-white/72 hover:border-amber-200/34 hover:bg-amber-200/[0.08] hover:text-amber-50"
                 }`}
               >
                 {group.label}

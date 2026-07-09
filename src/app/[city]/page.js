@@ -4439,7 +4439,7 @@ export default function CityPage() {
   }, [closeService, fetchServices, isAdmin, resolveServiceDbId, selectedService, showToast]);
 
   return (
-    <main className="qa-city flex min-h-screen bg-[#050505] text-white xl:h-screen xl:overflow-hidden">
+    <main className="qa-city flex min-h-screen bg-[linear-gradient(135deg,#170a24,#071826_46%,#1b0b19)] text-white xl:h-screen xl:overflow-hidden">
       <CitySeoScaffold
         city={city}
         cityName={cityName}

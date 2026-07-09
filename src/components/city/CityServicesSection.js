@@ -20,18 +20,18 @@ export default function CityServicesSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section animate-cinematic-in mb-10 rounded-[30px] border border-emerald-200/12 bg-[linear-gradient(180deg,rgba(12,30,26,0.86),rgba(12,12,12,0.98))] p-6 text-justify shadow-[0_18px_52px_rgba(16,185,129,0.06)]"
+      className="qa-city-section qa-city-copy-left animate-cinematic-in mb-10 rounded-[30px] border border-white/16 bg-[linear-gradient(145deg,rgba(52,211,153,0.13),rgba(34,211,238,0.07),rgba(9,15,18,0.96))] p-5 shadow-[0_22px_64px_rgba(16,185,129,0.14)] sm:p-6"
       style={{ animationDelay: "270ms" }}
     >
       <div className="mb-7">
-        <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-emerald-100/55">Service Lane</p>
+        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-emerald-100/58">Local services</p>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-2xl font-semibold tracking-[-0.015em] text-emerald-100">Services</h2>
-          <span className="inline-flex items-center rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/90">
+          <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">Services</h2>
+          <span className="inline-flex items-center rounded-full border border-emerald-200/20 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/86">
             {servicesLoading ? "Curated services" : `${cityServiceCount} listed`}
           </span>
         </div>
-        <div className="mt-3 h-px w-full bg-gradient-to-r from-emerald-200/35 via-white/10 to-transparent" />
+        <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,#34d399,#4de1ff,transparent)] opacity-60" />
       </div>
       <p className="mb-4 text-sm text-white/65">
         Private services curated for this city: massage, tours, concierge, and premium support lanes.

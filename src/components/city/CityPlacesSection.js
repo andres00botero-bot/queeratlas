@@ -86,20 +86,20 @@ export default function CityPlacesSection({
         <div
           ref={attachGroupRef}
           key={group.value}
-          className={`qa-city-section animate-cinematic-in mb-10 border border-white/10 bg-[linear-gradient(180deg,rgba(17,17,17,0.96),rgba(10,10,10,0.99))] p-6 text-justify shadow-[0_18px_52px_rgba(0,0,0,0.24)] ${
-            groupIndex % 2 === 0 ? "rounded-[34px]" : "rounded-[28px]"
+          className={`qa-city-section qa-city-copy-left animate-cinematic-in mb-10 border border-white/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.10),rgba(255,79,163,0.07),rgba(12,14,20,0.96))] p-5 shadow-[0_22px_64px_rgba(8,47,73,0.18)] sm:p-6 ${
+            groupIndex % 2 === 0 ? "rounded-[30px]" : "rounded-[26px]"
           }`}
             style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
           >
             <div className="mb-7">
-              <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">Venue Category</p>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-white/48">Venue category</p>
               <div className="flex flex-wrap items-end justify-between gap-3">
-                <h2 className="text-2xl font-semibold tracking-[-0.015em] text-white">{group.label}</h2>
-                <span className="inline-flex items-center rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-cyan-100/88">
+                <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">{group.label}</h2>
+                <span className="inline-flex items-center rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-cyan-100/86">
                   {items.length} venues
                 </span>
               </div>
-              <div className="mt-3 h-px w-full bg-gradient-to-r from-cyan-200/35 via-white/10 to-transparent" />
+              <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,#4de1ff,#ff7ac3,transparent)] opacity-60" />
             </div>
 
             <div>
