@@ -215,11 +215,11 @@ function deriveMapRiskTier(profile, snapshot) {
   if (relationsStatus === "criminalized") return "restricted";
   if (relationsStatus === "restricted") return "caution";
 
-  if (safetyLevel === "risk" && rightsLevel === "risk") return "caution";
-  if (legalLevel === "risk" && rightsLevel === "risk") return "caution";
+  if (safetyLevel === "risk" && rightsLevel === "risk") return "restricted";
+  if (legalLevel === "risk" && rightsLevel === "risk") return "restricted";
 
-  if (safetyLevel === "risk") return "watch";
-  if (rightsLevel === "risk") return "watch";
+  if (safetyLevel === "risk") return "caution";
+  if (rightsLevel === "risk") return "caution";
   if (protectionStatus === "limited_or_none") return "watch";
 
   if (legalLevel === "good" && rightsLevel === "good" && safetyLevel === "good") return "open";

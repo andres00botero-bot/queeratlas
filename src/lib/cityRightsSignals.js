@@ -411,6 +411,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-06-20",
   },
+  "El Salvador": {
+    legal: "good",
+    rights: "risk",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex relations are legal and LGBTQ events are not legally restricted, but same-sex unions are not recognized, LGBTQ topics face state-enforced education censorship, legal gender recognition remains limited, and protections are uneven. San Salvador is the main practical base, but travelers should use direct rides, avoid public buses, keep public affection measured, and follow trusted local community updates.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Restricted",
+      antiDiscrimination: "Partial coverage",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/el-salvador",
+      rights: "https://www.hrw.org/news/2022/07/18/el-salvador-transgender-people-denied-equal-rights",
+      safety: "https://travel.state.gov/content/travel/en/international-travel/International-Travel-Country-Information-Pages/ElSalvador.html",
+    },
+    confidence: "high",
+    updatedAt: "2026-07-10",
+  },
   Honduras: {
     legal: "good",
     rights: "risk",

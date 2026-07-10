@@ -2753,6 +2753,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "san_salvador": [
+    {
+      "title": "About",
+      "text": "San Salvador has a small, discreet queer scene rather than a large gay district. Its strongest visitor rhythm is a mix of Zona Rosa / San Benito hotels, queer-friendly bars listed by specialist guides, arts venues, Pride history, and resilient community organizations. The city can feel warmer and more social when you plan with current local signals instead of expecting a huge fixed scene.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "Use Zona Rosa, Colonia San Benito, Escalon and Antiguo Cuscatlan as the practical visitor base for hotels, restaurants and safer ride logistics. Centro Historico matters for cultural memory and Pride history, but late-night movement should be direct. Fixed gay nightlife is limited, so routes work best when you combine one verified venue with a trusted mixed bar, hotel pickup point or event flyer.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "El Salvador currently has no legal restrictions on consensual same-sex relations, but same-sex couples are not recognized and the public-rights climate is uneven. The State of Exception, limited legal gender recognition, and documented discrimination against trans people mean LGBTQ travelers should keep public affection measured, use hotel taxis or rideshare after dark, avoid public buses, and be careful with dating-app meetups.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "GayCities lists Nomada and Scape as San Salvador gay / queer-friendly nightlife references, but the scene is thin and can change quickly. Treat nightlife as a curated night out rather than a big crawl: verify same-day hours, pick a San Benito or Escalon base, and avoid improvising unknown late-night cruising or sauna claims.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "San Salvador can be manageable on food and rides, but safety-conscious choices add value: a better-located hotel, direct transport and a reliable phone plan matter more than chasing the cheapest stay. Zona Rosa and San Benito cost more than outer neighborhoods, but they reduce friction for a short queer city visit.",
+      "extra": ""
+    }
+  ],
   "tegucigalpa": [
     {
       "title": "About",

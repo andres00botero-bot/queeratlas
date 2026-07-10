@@ -919,6 +919,15 @@ export const cityCoreConfig = {
     "country": "Guatemala",
     "vibe": "coded central-zone nightlife"
   },
+  "san_salvador": {
+    "center": [
+      -89.2182,
+      13.6929
+    ],
+    "title": "Queer San Salvador",
+    "country": "El Salvador",
+    "vibe": "small-scene capital with Zona Rosa polish"
+  },
   "tegucigalpa": {
     "center": [
       -87.2068,
