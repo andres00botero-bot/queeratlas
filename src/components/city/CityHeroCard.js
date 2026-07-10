@@ -98,26 +98,17 @@ export default function CityHeroCard({
         </div>
 
         {highlights.length > 0 ? (
-          <div className="space-y-3.5">
+          <div className="grid gap-5 sm:grid-cols-3">
             {highlights.map((item, index) => (
               <div
                 key={item.label}
-                className={`rounded-[24px] border px-4 py-4 shadow-[0_20px_54px_rgba(0,0,0,0.16)] backdrop-blur sm:px-5 sm:py-5 ${item.tone}`}
+                className={`min-h-[10.5rem] rounded-[24px] border p-4 shadow-[0_20px_54px_rgba(0,0,0,0.16)] backdrop-blur sm:p-5 ${item.tone}`}
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
-                  <div className="flex shrink-0 items-center gap-3 sm:w-44">
-                    <div className={`h-10 w-1.5 rounded-full bg-gradient-to-b ${item.accent}`} />
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
-                        {String(index + 1).padStart(2, "0")}
-                      </p>
-                      <p className="mt-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-white">
-                        {item.label}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-[15px] leading-7 text-white/92 sm:flex-1">{item.value}</p>
-                </div>
+                <div className={`mb-4 h-1.5 w-14 rounded-full bg-gradient-to-r ${item.accent}`} />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/66">
+                  {String(index + 1).padStart(2, "0")} / {item.label}
+                </p>
+                <p className="mt-3 text-sm leading-7 text-white/92">{item.value}</p>
               </div>
             ))}
           </div>
