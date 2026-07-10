@@ -1337,6 +1337,19 @@ export const cityConfig = {
       cost: "Guatemala City can be good value for food, rides and nightlife, but safety and convenience are worth paying for. Staying in Zone 4, 9 or 10 often costs more than the cheapest central rooms, yet it can save stress and make the whole trip smoother. Budget for rides between zones rather than trying to force cheap late-night walking.",
     }),
   },
+  tegucigalpa: {
+    center: [-87.2068, 14.0723],
+    title: "Queer Tegucigalpa",
+    country: "Honduras",
+    vibe: "resilient community-first capital",
+    guide: buildGuide({
+      about: "Tegucigalpa is a community-first queer capital rather than a polished gay nightlife destination. The strongest signal comes from rights organizations, HIV and safety networks, cultural memory, discreet social routes, and occasional drag or diversity events. Build the trip around verified community channels, daytime culture, and safer hotel logistics.",
+      district: "Use Colonia Palmira, Boulevard Morazan, Boulevard Juan Pablo II and the Multiplaza / Avenida Roble area as practical visitor anchors for hotels, restaurants and rides. Centro Historico matters for culture and memory, but late-night movement should stay direct. There is no reliably documented fixed gay strip in Tegucigalpa right now.",
+      safety: "Honduras requires high practical caution for LGBTQ travelers. Same-sex relations are legal, but public comfort is uneven and violence against LGBTQ people remains a documented concern. Keep public affection measured, use direct rides after dark, verify events through trusted organizers, and avoid informal cruising or unknown late-night meeting points.",
+      nightlife: "Tegucigalpa has drag and queer nightlife history, but current dedicated bars, saunas and cruising clubs are not consistently verifiable from public sources. Treat nightlife as event-led: look for same-week flyers, hotel-based transformismo events, private community gatherings and mixed venues known through local contacts rather than assuming permanent gay venues are active.",
+      cost: "Daily costs can be moderate, but paying for safer location and transport is worth it. A central hotel base and direct rides will matter more than saving a little on the room. Community events may be low-cost, while premium hotels and taxis can raise the budget quickly.",
+    }),
+  },
   bratislava: {
     center: [17.1067, 48.1482],
     title: "Queer Bratislava",

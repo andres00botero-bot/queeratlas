@@ -919,6 +919,15 @@ export const cityCoreConfig = {
     "country": "Guatemala",
     "vibe": "coded central-zone nightlife"
   },
+  "tegucigalpa": {
+    "center": [
+      -87.2068,
+      14.0723
+    ],
+    "title": "Queer Tegucigalpa",
+    "country": "Honduras",
+    "vibe": "resilient community-first capital"
+  },
   "bratislava": {
     "center": [
       17.1067,

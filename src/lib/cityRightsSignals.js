@@ -411,6 +411,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-06-20",
   },
+  Honduras: {
+    legal: "good",
+    rights: "risk",
+    safety: "risk",
+    whatThisMeans:
+      "Same-sex relations are legal, but same-sex marriage and civil unions are not recognized, legal gender recognition is not available, and practical safety requires strong caution. Crimes against LGBTI people, impunity concerns, and reports of police harassment mean travelers should keep public affection measured, use direct rides after dark, and rely on trusted community sources.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Not available",
+      antiDiscrimination: "Partial coverage",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/honduras",
+      rights: "https://www.cattrachas.org/",
+      safety: "https://travel.state.gov/content/travel/en/international-travel/International-Travel-Country-Information-Pages/Honduras.html",
+    },
+    confidence: "high",
+    updatedAt: "2026-07-10",
+  },
   Brazil: {
     legal: "good",
     rights: "mixed",
