@@ -91,6 +91,9 @@ const MAP_RISK_PALETTE = {
   restricted: { label: "High risk", color: "#dc2626" },
   unknown: { label: "Unknown", color: "#64748b" },
 };
+const MAP_RISK_TIER_OVERRIDES = {
+  Honduras: "restricted",
+};
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";
 const CITIES_METRICS_DAILY_CACHE_KEY = "qa_cities_metrics_daily_v1";
@@ -215,11 +218,11 @@ function deriveMapRiskTier(profile, snapshot) {
   if (relationsStatus === "criminalized") return "restricted";
   if (relationsStatus === "restricted") return "caution";
 
-  if (safetyLevel === "risk" && rightsLevel === "risk") return "restricted";
-  if (legalLevel === "risk" && rightsLevel === "risk") return "restricted";
+  if (safetyLevel === "risk" && rightsLevel === "risk") return "caution";
+  if (legalLevel === "risk" && rightsLevel === "risk") return "caution";
 
-  if (safetyLevel === "risk") return "caution";
-  if (rightsLevel === "risk") return "caution";
+  if (safetyLevel === "risk") return "watch";
+  if (rightsLevel === "risk") return "watch";
   if (protectionStatus === "limited_or_none") return "watch";
 
   if (legalLevel === "good" && rightsLevel === "good" && safetyLevel === "good") return "open";
@@ -346,7 +349,7 @@ export default function CitiesPage() {
       const fromDb = buildRightsSnapshotFromProfile(dbByCountry.get(normalizeCountry(country)));
       const snapshot = fromDb || getCityRightsSignals({ country });
       const profile = dbByCountry.get(normalizeCountry(country));
-      const tier = deriveMapRiskTier(profile, snapshot);
+      const tier = getMapRiskTier(country, profile, snapshot);
       const aliases = getCountryMapboxNames(country);
       if (tier === "open") {
         openNames.push(...aliases);
@@ -1252,7 +1255,8 @@ export default function CitiesPage() {
                     <CityRightsSignals
                       snapshot={countryRightsSnapshots[country]}
                       country={country}
-                      riskTier={deriveMapRiskTier(
+                      riskTier={getMapRiskTier(
+                        country,
                         countryRightsProfilesByCountry[normalizeCountry(country)],
                         countryRightsSnapshots[country],
                       )}
@@ -1390,5 +1394,9 @@ export default function CitiesPage() {
       </div>
     </main>
   );
+}
+
+function getMapRiskTier(country, profile, snapshot) {
+  return MAP_RISK_TIER_OVERRIDES[country] || deriveMapRiskTier(profile, snapshot);
 }
 
