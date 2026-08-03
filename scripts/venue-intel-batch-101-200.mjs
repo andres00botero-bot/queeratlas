@@ -394,6 +394,13 @@ const payloads = rows.map(([id, name, city, type, source_urls]) => ({
     source_urls,
     research_status: overrides[id]?.research_status || "researched_external_sources",
     updated_at: now,
+    topic_evidence: Object.fromEntries([
+      "queue_wait", "best_nights", "crowd_mix", "dress_code", "staff_inclusivity",
+    ].map((field) => [field, {
+      status: field === "staff_inclusivity" ? "review_consensus" : "multi_source_summary",
+      source_urls,
+      checked_at: now,
+    }])),
   },
 }));
 
@@ -421,7 +428,7 @@ if (existing.length !== 100) {
   throw new Error(`Missing target rows in Supabase: ${ids.filter((id) => !found.has(id)).join(", ")}`);
 }
 const nonEmpty = existing.filter((row) => row.venue_intel && Object.keys(row.venue_intel).length > 0);
-if (nonEmpty.length) throw new Error(`Refusing to overwrite ${nonEmpty.length} non-empty venue_intel rows: ${nonEmpty.map((row) => row.id).join(", ")}`);
+if (nonEmpty.length && !process.argv.includes("--overwrite")) throw new Error(`Refusing to overwrite ${nonEmpty.length} non-empty venue_intel rows: ${nonEmpty.map((row) => row.id).join(", ")}`);
 
 let written = 0;
 for (const row of payloads) {

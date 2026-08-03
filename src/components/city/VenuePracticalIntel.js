@@ -33,9 +33,15 @@ const EVIDENCE_LABELS = {
   verified: "Source verified",
   verified_policy: "Policy verified",
   community_signal: "Community signal",
+  profile_summary: "Venue profile",
+  source_summary: "Source summary",
+  multi_source_summary: "Multi-source summary",
+  review_consensus: "Review consensus",
   not_published: "Not published by source",
   source_unavailable: "Source unavailable",
 };
+
+const HIDDEN_EVIDENCE_STATUSES = new Set(["not_published", "source_unavailable"]);
 
 export default function VenuePracticalIntel({ place, compact = false }) {
   const intel = normalizeVenueIntel(place);
@@ -74,8 +80,9 @@ export default function VenuePracticalIntel({ place, compact = false }) {
 
       <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
         {fields.map((field) => {
-          const isKnown = field.isKnown ?? Boolean(field.value);
-          const value = field.value || EMPTY_VALUES[field.key];
+          const hidesUnsupportedText = HIDDEN_EVIDENCE_STATUSES.has(field.evidence?.status);
+          const isKnown = field.isKnown ?? Boolean(field.value && !hidesUnsupportedText);
+          const value = hidesUnsupportedText ? EMPTY_VALUES[field.key] : field.value || EMPTY_VALUES[field.key];
           return (
             <div
               key={field.key}
@@ -84,7 +91,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
               <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/48">{field.label}</p>
               <p className={`mt-1.5 text-sm leading-5 ${isKnown ? "text-white/90" : "text-white/48"}`}>{value}</p>
               {field.detail ? <p className="mt-1 text-[11px] text-white/46">{field.detail}</p> : null}
-              {field.evidence?.status ? (
+              {field.evidence?.status && !hidesUnsupportedText ? (
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-cyan-50/58">
                   <span className="rounded-full border border-cyan-100/14 bg-cyan-200/[0.05] px-2 py-0.5">
                     {EVIDENCE_LABELS[field.evidence.status] || "Evidence checked"}

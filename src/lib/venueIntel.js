@@ -6,7 +6,7 @@ const VENUE_INTEL_FIELDS = [
   ["staff_inclusivity", "staffInclusivity"],
 ];
 
-const EVIDENCE_STATUSES = new Set(["verified", "verified_policy", "community_signal", "not_published", "source_unavailable"]);
+const EVIDENCE_STATUSES = new Set(["verified", "verified_policy", "community_signal", "profile_summary", "source_summary", "multi_source_summary", "review_consensus", "not_published", "source_unavailable"]);
 
 function cleanText(value = "") {
   return String(value || "").trim().replace(/\s+/g, " ").slice(0, 320);

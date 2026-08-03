@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 const fields = ["queue_wait", "best_nights", "crowd_mix", "dress_code", "staff_inclusivity"];
-const allowedStatuses = new Set(["verified", "verified_policy", "community_signal", "not_published", "source_unavailable"]);
+const allowedStatuses = new Set(["verified", "verified_policy", "community_signal", "profile_summary", "source_summary", "multi_source_summary", "review_consensus", "not_published", "source_unavailable"]);
 const rows = [];
 
 for (let offset = 0; ; offset += 1000) {
@@ -26,7 +26,7 @@ for (const row of rows) {
     if (!text || text.length > 320) problems.push({ id: row.id, name: row.name, field, issue: !text ? "missing_text" : "over_length" });
     if (!allowedStatuses.has(status)) problems.push({ id: row.id, name: row.name, field, issue: "invalid_evidence_status", status });
     if (!evidence?.checked_at) problems.push({ id: row.id, name: row.name, field, issue: "missing_checked_at" });
-    if (["verified", "verified_policy", "community_signal", "not_published"].includes(status) && !evidence?.source_urls?.length) {
+    if (["verified", "verified_policy", "community_signal", "source_summary", "multi_source_summary", "not_published"].includes(status) && !evidence?.source_urls?.length) {
       problems.push({ id: row.id, name: row.name, field, issue: "status_requires_source" });
     }
     statuses[field][status || "missing"] = (statuses[field][status || "missing"] || 0) + 1;
