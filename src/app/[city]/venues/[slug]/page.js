@@ -13,6 +13,7 @@ import {
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
+import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
 export const revalidate = 300;
 
@@ -308,19 +309,6 @@ export default async function CityVenueDetailPage({ params }) {
               <span className="text-white/55">Hours:</span>{" "}
               {String(place?.hours || "").trim() || "Hours vary by night; verify before going."}
             </p>
-            {place?.link ? (
-              <p>
-                <span className="text-white/55">Official link:</span>{" "}
-                <a
-                  href={String(place.link)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-cyan-100 underline decoration-cyan-200/45 underline-offset-2"
-                >
-                  {String(place.link)}
-                </a>
-              </p>
-            ) : null}
             <p>
               <span className="text-white/55">Canonical:</span>{" "}
               <a href={canonicalUrl} className="text-cyan-100 underline decoration-cyan-200/45 underline-offset-2">
@@ -328,6 +316,13 @@ export default async function CityVenueDetailPage({ params }) {
               </a>
             </p>
           </div>
+          {place?.link ? (
+            <OfficialExternalLink
+              href={String(place.link)}
+              kind="venue"
+              className="mt-6 sm:max-w-sm"
+            />
+          ) : null}
         </section>
 
         <VenuePracticalIntel place={place} />

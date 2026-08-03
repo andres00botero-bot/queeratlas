@@ -1,6 +1,7 @@
 "use client";
 
 import { normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
+import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
 export default function SelectedEventActions({
   selectedEvent,
@@ -32,14 +33,11 @@ export default function SelectedEventActions({
         {isSaved ? "Saved in atlas" : "Save to atlas"}
       </button>
       {eventLinkUrl && (
-        <a
+        <OfficialExternalLink
           href={eventLinkUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="qa-action qa-action-strong qa-city-cta-primary block w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 text-center font-semibold text-black"
-        >
-          Open official link
-        </a>
+          kind="event"
+          className="!mt-5 mb-3"
+        />
       )}
       {ticketUrl && (
         <a

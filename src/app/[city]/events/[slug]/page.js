@@ -14,6 +14,7 @@ import {
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
+import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
 export const revalidate = 300;
 
@@ -330,19 +331,6 @@ export default async function CityEventDetailPage({ params }) {
               <span className="text-white/55">Address:</span>{" "}
               {String(event?.location || cityName)}
             </p>
-            {event?.link ? (
-              <p>
-                <span className="text-white/55">Official link:</span>{" "}
-                <a
-                  href={String(event.link)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-cyan-100 underline decoration-cyan-200/45 underline-offset-2"
-                >
-                  {String(event.link)}
-                </a>
-              </p>
-            ) : null}
             <p>
               <span className="text-white/55">Canonical:</span>{" "}
               <a
@@ -353,6 +341,13 @@ export default async function CityEventDetailPage({ params }) {
               </a>
             </p>
           </div>
+          {event?.link ? (
+            <OfficialExternalLink
+              href={String(event.link)}
+              kind="event"
+              className="mt-6 sm:max-w-sm"
+            />
+          ) : null}
         </section>
 
         <EntityPracticalIntel entity={event} kind="event" compact={false} />

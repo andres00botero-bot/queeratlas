@@ -1,12 +1,13 @@
 "use client";
 
-import { ExternalLink, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { getEntityAddressLabel, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
 import { polishVenueDescription } from "@/features/city/liveVibeFeature";
 import { getDisplayedSafetyShields, shouldShowLegacyVibe } from "@/features/city/placeSafetyUi";
 import { getSafetyToneClass } from "@/lib/placeSafetySignals";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
+import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
 export default function SelectedPlaceSummary({
   selectedPlace,
@@ -63,15 +64,11 @@ export default function SelectedPlaceSummary({
       </div>
       <VenuePracticalIntel place={selectedPlace} compact />
       {selectedPlace.link && (
-        <a
+        <OfficialExternalLink
           href={normalizeExternalUrl(selectedPlace.link)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="qa-action qa-action-strong mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-100/42 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(244,114,182,0.16),rgba(255,255,255,0.09))] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_12px_30px_rgba(34,211,238,0.14)] transition hover:border-cyan-100/64"
-        >
-          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-          Official Link
-        </a>
+          kind="venue"
+          className="mb-5 mt-8"
+        />
       )}
       <div className="mt-3 grid grid-cols-2 gap-2.5">
         <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
