@@ -2,6 +2,7 @@
 
 import DateInput from "@/components/ui/DateInput";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 
 export default function SelectedEventAdminControls({
   isAdmin,
@@ -104,6 +105,25 @@ export default function SelectedEventAdminControls({
               className="mt-2 w-full rounded-xl border border-emerald-100/20 bg-black/45 px-3 py-2 text-sm text-white outline-none focus:border-emerald-100/55"
             />
           </label>
+          <PracticalIntelFields
+            title="Practical event intelligence"
+            description="These fields are shown in Know before you go. Keep claims factual and current."
+            tone="violet"
+            fields={[
+              { key: "entry", label: "Entry wait", value: draft.entry_wait, onChange: (value) => setDraft((current) => ({ ...current, entry_wait: value })), placeholder: "Typical queue or entry wait" },
+              { key: "arrival", label: "Best arrival time", value: draft.best_arrival, onChange: (value) => setDraft((current) => ({ ...current, best_arrival: value })), placeholder: "Best arrival window" },
+              { key: "crowd", label: "Attendee mix", value: draft.crowd_mix, onChange: (value) => setDraft((current) => ({ ...current, crowd_mix: value })), placeholder: "Locals, visitors and community mix" },
+              { key: "dress", label: "Dress code in practice", value: draft.dress_code, onChange: (value) => setDraft((current) => ({ ...current, dress_code: value })), placeholder: "What people actually wear" },
+              { key: "inclusion", label: "Host and security inclusion", value: draft.host_inclusivity, onChange: (value) => setDraft((current) => ({ ...current, host_inclusivity: value })), placeholder: "Factual inclusion or accessibility signal", wide: true },
+            ]}
+          />
+          <button
+            type="button"
+            onClick={() => setDraft((current) => ({ ...current, entry_wait: "", best_arrival: "", crowd_mix: "", dress_code: "", host_inclusivity: "" }))}
+            className="w-full rounded-xl border border-white/14 bg-white/[0.04] px-3 py-2 text-xs uppercase tracking-[0.14em] text-white/65"
+          >
+            Clear event intelligence
+          </button>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
@@ -111,7 +131,7 @@ export default function SelectedEventAdminControls({
               disabled={isSaving}
               className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
             >
-              {isSaving ? "Saving..." : "Save changes"}
+              {isSaving ? "Saving..." : "Save all changes"}
             </button>
             <button
               type="button"

@@ -2,6 +2,8 @@
 
 import DateInput from "@/components/ui/DateInput";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import PracticalIntelFields from "@/components/city/PracticalIntelFields";
+import { getServiceIntelLabels } from "@/lib/entityIntel";
 
 export default function SelectedServiceAdminControls({
   canEdit,
@@ -20,6 +22,7 @@ export default function SelectedServiceAdminControls({
   priceTierOptions,
 }) {
   if (!canEdit) return null;
+  const intelLabels = getServiceIntelLabels(draft.type);
 
   return (
     <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
@@ -138,6 +141,25 @@ export default function SelectedServiceAdminControls({
             onChange={(event) => setDraft((current) => ({ ...current, lastChecked: event.target.value }))}
             placeholder="Last checked (optional)"
           />
+          <PracticalIntelFields
+            title="Practical service intelligence"
+            description="The prompts adapt to the selected service type and appear in Know before you go."
+            tone="cyan"
+            fields={[
+              { key: "lead", label: intelLabels.bookingLeadTime, value: draft.booking_lead_time, onChange: (value) => setDraft((current) => ({ ...current, booking_lead_time: value })), placeholder: "How far ahead should someone book?" },
+              { key: "time", label: intelLabels.bestTime, value: draft.best_time, onChange: (value) => setDraft((current) => ({ ...current, best_time: value })), placeholder: "When is the experience usually best?" },
+              { key: "mix", label: intelLabels.clientMix, value: draft.client_mix, onChange: (value) => setDraft((current) => ({ ...current, client_mix: value })), placeholder: "Who typically uses or enjoys this service?" },
+              { key: "prepare", label: intelLabels.preparation, value: draft.preparation, onChange: (value) => setDraft((current) => ({ ...current, preparation: value })), placeholder: "What should someone know, wear or bring?" },
+              { key: "inclusion", label: intelLabels.providerInclusivity, value: draft.provider_inclusivity, onChange: (value) => setDraft((current) => ({ ...current, provider_inclusivity: value })), placeholder: "Factual inclusion or accessibility signal", wide: true },
+            ]}
+          />
+          <button
+            type="button"
+            onClick={() => setDraft((current) => ({ ...current, booking_lead_time: "", best_time: "", client_mix: "", preparation: "", provider_inclusivity: "" }))}
+            className="w-full rounded-xl border border-white/14 bg-white/[0.04] px-3 py-2 text-xs uppercase tracking-[0.14em] text-white/65"
+          >
+            Clear service intelligence
+          </button>
           <div className={`grid gap-2 ${canDelete ? "grid-cols-2" : "grid-cols-1"}`}>
             <button
               type="button"
@@ -145,7 +167,7 @@ export default function SelectedServiceAdminControls({
               disabled={isSaving}
               className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
             >
-              {isSaving ? "Saving..." : "Save changes"}
+              {isSaving ? "Saving..." : "Save all changes"}
             </button>
             {canDelete && (
               <button

@@ -1,8 +1,9 @@
 import { supabase } from "./supabase";
 import { isMissingVibeTagsColumnError } from "./vibeTaxonomy";
+import { buildServiceIntelFallback } from "./intelFallbacks";
 
 const DEFAULT_SERVICE_SELECT =
-  "id, name, city, type, description, hours, link, location, lat, lng, price_tier, provider_name, contact, booking_link, image_urls, vibe, vibe_tags, source, lastChecked, verified, created_by";
+  "id, name, city, type, description, hours, link, location, lat, lng, price_tier, provider_name, contact, booking_link, image_urls, vibe, vibe_tags, source, lastChecked, verified, created_by, service_intel";
 
 function isMissingTableError(error) {
   if (!error) return false;
@@ -15,7 +16,9 @@ function extractMissingColumn(error) {
   if (!error) return "";
   const haystack = `${error.message || ""} ${error.details || ""} ${error.hint || ""}`;
   const match = haystack.match(/column\s+["']?([a-zA-Z0-9_]+)["']?\s+does not exist/i);
-  return String(match?.[1] || "").trim();
+  if (match?.[1]) return String(match[1]).trim();
+  const schemaCacheMatch = haystack.match(/(?:find\s+)?["']([a-zA-Z0-9_]+)["']\s+column/i);
+  return String(schemaCacheMatch?.[1] || "").trim();
 }
 
 function removeSelectColumn(select, column) {
@@ -38,6 +41,7 @@ function normalizeRows(rows = []) {
   const safeRows = Array.isArray(rows) ? rows : [];
   return safeRows.map((row) => ({
     ...row,
+    service_intel: buildServiceIntelFallback(row),
     image_urls: Array.isArray(row?.image_urls)
       ? row.image_urls.map((value) => String(value || "").trim()).filter(Boolean)
       : [],

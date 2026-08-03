@@ -44,6 +44,8 @@ import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
 import { buildPlaceSafetySignalMap } from "@/lib/placeSafetySignals";
+import { buildVenueIntelPayload, hasVenueIntel } from "@/lib/venueIntel";
+import { buildEventIntelPayload, buildServiceIntelPayload, hasEventIntel, hasServiceIntel } from "@/lib/entityIntel";
 import ActionToast from "@/components/ui/ActionToast";
 import { useCityRouteConfig } from "@/components/city/CityRouteConfigProvider";
 import CityDetailsLayer from "@/components/city/CityDetailsLayer";
@@ -223,6 +225,16 @@ export default function CityPage() {
     setPlaceHours,
     placeLink,
     setPlaceLink,
+    placeQueueWait,
+    setPlaceQueueWait,
+    placeBestNights,
+    setPlaceBestNights,
+    placeCrowdMix,
+    setPlaceCrowdMix,
+    placeDressCode,
+    setPlaceDressCode,
+    placeStaffInclusivity,
+    setPlaceStaffInclusivity,
     eventName,
     setEventName,
     eventAddress,
@@ -241,6 +253,16 @@ export default function CityPage() {
     setEventLink,
     eventTicketUrl,
     setEventTicketUrl,
+    eventEntryWait,
+    setEventEntryWait,
+    eventBestArrival,
+    setEventBestArrival,
+    eventCrowdMix,
+    setEventCrowdMix,
+    eventDressCode,
+    setEventDressCode,
+    eventHostInclusivity,
+    setEventHostInclusivity,
     resetPlaceForm,
     resetEventForm,
   } = useCityContributionForms();
@@ -271,6 +293,16 @@ export default function CityPage() {
     setServicePriceTier,
     serviceImageUrlsInput,
     setServiceImageUrlsInput,
+    serviceBookingLeadTime,
+    setServiceBookingLeadTime,
+    serviceBestTime,
+    setServiceBestTime,
+    serviceClientMix,
+    setServiceClientMix,
+    servicePreparation,
+    setServicePreparation,
+    serviceProviderInclusivity,
+    setServiceProviderInclusivity,
     resetServiceForm,
   } = useCityServiceForm();
   const [rating, setRating] = useState(5);
@@ -1513,7 +1545,7 @@ export default function CityPage() {
     try {
       const result = await fetchServicesQuery({
         select:
-          "id, name, city, type, description, hours, link, location, lat, lng, price_tier, provider_name, contact, booking_link, image_urls, vibe, vibe_tags, source, lastChecked, verified, created_by",
+          "id, name, city, type, description, hours, link, location, lat, lng, price_tier, provider_name, contact, booking_link, image_urls, vibe, vibe_tags, source, lastChecked, verified, created_by, service_intel",
       });
 
       if (result?.error) {
@@ -2800,6 +2832,13 @@ export default function CityPage() {
         lat: coords.lat,
         lng: coords.lng,
         city,
+        venue_intel: buildVenueIntelPayload({
+          queueWait: placeQueueWait,
+          bestNights: placeBestNights,
+          crowdMix: placeCrowdMix,
+          dressCode: placeDressCode,
+          staffInclusivity: placeStaffInclusivity,
+        }),
       };
 
       if (!canPublishDirect) {
@@ -2908,7 +2947,15 @@ export default function CityPage() {
         description: eventDescription,
         link: eventLink,
         ticket_url: eventTicketUrl.trim() || null,
+        event_intel: buildEventIntelPayload({
+          entryWait: eventEntryWait,
+          bestArrival: eventBestArrival,
+          crowdMix: eventCrowdMix,
+          dressCode: eventDressCode,
+          hostInclusivity: eventHostInclusivity,
+        }),
       };
+      const hasRequestedEventIntel = hasEventIntel(insertBasePayload.event_intel);
 
       if (!canPublishDirect) {
         const submissionRes = await createContentSubmission({
@@ -2961,8 +3008,15 @@ export default function CityPage() {
           errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
         const missingTicketUrl =
           errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingEventIntel =
+          errorText.includes("event_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
+        if (missingEventIntel && hasRequestedEventIntel) {
+          showToast("Run supabase/entity-intelligence-v2.sql before saving event intelligence.", { tone: "warn", duration: 3600 });
+          return;
+        }
+
+        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel) {
           const legacyPayload = {
             name: eventName,
             city,
@@ -2972,6 +3026,9 @@ export default function CityPage() {
             description: eventDescription,
             link: eventLink,
           };
+          if (!missingEventIntel) {
+            legacyPayload.event_intel = insertBasePayload.event_intel;
+          }
           if (!missingTicketUrl) {
             legacyPayload.ticket_url = eventTicketUrl.trim() || null;
           }
@@ -3071,7 +3128,15 @@ export default function CityPage() {
           vibe: serviceVibe,
           vibeTags: normalizeVibeTags(serviceVibeTags, { max: 3 }),
         }),
+        service_intel: buildServiceIntelPayload({
+          bookingLeadTime: serviceBookingLeadTime,
+          bestTime: serviceBestTime,
+          clientMix: serviceClientMix,
+          preparation: servicePreparation,
+          providerInclusivity: serviceProviderInclusivity,
+        }),
       };
+      const hasRequestedServiceIntel = hasServiceIntel(basePayload.service_intel);
 
       if (!canPublishDirect) {
         const submissionRes = await createContentSubmission({
@@ -3120,8 +3185,15 @@ export default function CityPage() {
         const errorText = `${insertResult.error?.code || ""} ${insertResult.error?.message || ""}`.toLowerCase();
         const missingVibeTags = isMissingVibeTagsColumnError(insertResult.error);
         const missingVibe = /\bvibe\b/.test(errorText) && (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingServiceIntel =
+          errorText.includes("service_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingVibeTags || missingVibe) {
+        if (missingServiceIntel && hasRequestedServiceIntel) {
+          showToast("Run supabase/entity-intelligence-v2.sql before saving service intelligence.", { tone: "warn", duration: 3600 });
+          return;
+        }
+
+        if (missingVibeTags || missingVibe || missingServiceIntel) {
           const legacyPayload = {
             name: serviceName.trim(),
             city,
@@ -3139,6 +3211,10 @@ export default function CityPage() {
             lng: coords.lng,
             created_by: user?.id || null,
           };
+
+          if (!missingServiceIntel) {
+            legacyPayload.service_intel = basePayload.service_intel;
+          }
 
           if (!missingVibe) {
             legacyPayload.vibe = serviceVibe.trim() || null;
@@ -3193,7 +3269,7 @@ export default function CityPage() {
       });
       showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
     }
-  }, [canPublishDirect, city, fetchServices, geocodeAddress, memberName, resetServiceForm, serviceAddress, serviceBookingLink, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceName, servicePriceTier, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
+  }, [canPublishDirect, city, fetchServices, geocodeAddress, memberName, resetServiceForm, serviceAddress, serviceBestTime, serviceBookingLeadTime, serviceBookingLink, serviceClientMix, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceName, servicePreparation, servicePriceTier, serviceProviderInclusivity, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
 
   const handleReport = ({ targetType, targetId, title }) => {
     setReportDraft(createCityReportDraftFromTarget({
@@ -3731,6 +3807,11 @@ export default function CityPage() {
         lat: nextLat,
         lng: nextLng,
       };
+      const nextVenueIntel = buildVenueIntelPayload(placeAdminDraft);
+      const hasRequestedVenueIntel = hasVenueIntel(nextVenueIntel);
+      payload.venue_intel = hasRequestedVenueIntel
+        ? { ...nextVenueIntel, updated_at: new Date().toISOString() }
+        : {};
 
       if (dbId) {
         let updateResult = await supabase
@@ -3748,8 +3829,19 @@ export default function CityPage() {
           const missingLegacyVibeUserSet =
             errorText.includes("legacy_vibe_user_set") &&
             (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVenueIntel =
+            errorText.includes("venue_intel") &&
+            (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingLocation || missingVibeTags || missingLegacyVibeUserSet) {
+          if (missingVenueIntel && hasRequestedVenueIntel) {
+            showToast("Venue intelligence needs the Supabase migration before it can be saved.", {
+              tone: "warn",
+              duration: 4200,
+            });
+            return;
+          }
+
+          if (missingLocation || missingVibeTags || missingLegacyVibeUserSet || missingVenueIntel) {
             const fallbackPayload = { ...payload };
             if (missingLocation) {
               delete fallbackPayload.location;
@@ -3759,6 +3851,9 @@ export default function CityPage() {
             }
             if (missingLegacyVibeUserSet) {
               delete fallbackPayload.legacy_vibe_user_set;
+            }
+            if (missingVenueIntel) {
+              delete fallbackPayload.venue_intel;
             }
             updateResult = await supabase
               .from("places")
@@ -3793,8 +3888,19 @@ export default function CityPage() {
           const missingLegacyVibeUserSet =
             errorText.includes("legacy_vibe_user_set") &&
             (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingVenueIntel =
+            errorText.includes("venue_intel") &&
+            (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingLocation || missingVibeTags || missingLegacyVibeUserSet) {
+          if (missingVenueIntel && hasRequestedVenueIntel) {
+            showToast("Venue intelligence needs the Supabase migration before it can be saved.", {
+              tone: "warn",
+              duration: 4200,
+            });
+            return;
+          }
+
+          if (missingLocation || missingVibeTags || missingLegacyVibeUserSet || missingVenueIntel) {
             insertPayload = { ...insertPayload };
             if (missingLocation) {
               delete insertPayload.location;
@@ -3804,6 +3910,9 @@ export default function CityPage() {
             }
             if (missingLegacyVibeUserSet) {
               delete insertPayload.legacy_vibe_user_set;
+            }
+            if (missingVenueIntel) {
+              delete insertPayload.venue_intel;
             }
             insertResult = await supabase
               .from("places")
@@ -3977,7 +4086,15 @@ export default function CityPage() {
         description: eventAdminDraft.description.trim(),
         link: eventAdminDraft.link.trim() || null,
         ticket_url: ticketUrlValue || null,
+        event_intel: buildEventIntelPayload({
+          entryWait: eventAdminDraft.entry_wait,
+          bestArrival: eventAdminDraft.best_arrival,
+          crowdMix: eventAdminDraft.crowd_mix,
+          dressCode: eventAdminDraft.dress_code,
+          hostInclusivity: eventAdminDraft.host_inclusivity,
+        }),
       };
+      const hasRequestedEventIntel = hasEventIntel(payload.event_intel);
 
       if (dbId) {
         let updateResult = await supabase
@@ -3999,8 +4116,15 @@ export default function CityPage() {
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
           const missingTicketUrl =
             errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingEventIntel =
+            errorText.includes("event_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
+          if (missingEventIntel && hasRequestedEventIntel) {
+            showToast("Run supabase/entity-intelligence-v2.sql before saving event intelligence.", { tone: "warn", duration: 3600 });
+            return;
+          }
+
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel) {
             const legacyPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -4009,6 +4133,9 @@ export default function CityPage() {
               description: eventAdminDraft.description.trim(),
               link: eventAdminDraft.link.trim() || null,
             };
+            if (!missingEventIntel) {
+              legacyPayload.event_intel = payload.event_intel;
+            }
             if (!missingTicketUrl) {
               legacyPayload.ticket_url = ticketUrlValue || null;
             }
@@ -4064,8 +4191,15 @@ export default function CityPage() {
             errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
           const missingTicketUrl =
             errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingEventIntel =
+            errorText.includes("event_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
+          if (missingEventIntel && hasRequestedEventIntel) {
+            showToast("Run supabase/entity-intelligence-v2.sql before saving event intelligence.", { tone: "warn", duration: 3600 });
+            return;
+          }
+
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel) {
             const legacyInsertPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -4075,6 +4209,9 @@ export default function CityPage() {
               lat: nextLat,
               lng: nextLng,
             };
+            if (!missingEventIntel) {
+              legacyInsertPayload.event_intel = payload.event_intel;
+            }
             if (!missingTicketUrl) {
               legacyInsertPayload.ticket_url = ticketUrlValue || null;
             }
@@ -4277,7 +4414,15 @@ export default function CityPage() {
         source: sourceValue || null,
         lastChecked: lastCheckedValue || null,
         verified: Boolean(sourceValue && lastCheckedValue),
+        service_intel: buildServiceIntelPayload({
+          bookingLeadTime: serviceAdminDraft.booking_lead_time,
+          bestTime: serviceAdminDraft.best_time,
+          clientMix: serviceAdminDraft.client_mix,
+          preparation: serviceAdminDraft.preparation,
+          providerInclusivity: serviceAdminDraft.provider_inclusivity,
+        }),
       };
+      const hasRequestedServiceIntel = hasServiceIntel(payload.service_intel);
 
       let updateResult = await supabase
         .from("services")
@@ -4291,14 +4436,24 @@ export default function CityPage() {
         const missingLocation =
           errorText.includes("location") && (errorText.includes("column") || errorText.includes("schema cache"));
         const missingVibeTags = isMissingVibeTagsColumnError(updateResult.error);
+        const missingServiceIntel =
+          errorText.includes("service_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingLocation || missingVibeTags) {
+        if (missingServiceIntel && hasRequestedServiceIntel) {
+          showToast("Run supabase/entity-intelligence-v2.sql before saving service intelligence.", { tone: "warn", duration: 3600 });
+          return;
+        }
+
+        if (missingLocation || missingVibeTags || missingServiceIntel) {
           const fallbackPayload = { ...payload };
           if (missingLocation) {
             delete fallbackPayload.location;
           }
           if (missingVibeTags) {
             delete fallbackPayload.vibe_tags;
+          }
+          if (missingServiceIntel) {
+            delete fallbackPayload.service_intel;
           }
           updateResult = await supabase
             .from("services")
@@ -4547,6 +4702,16 @@ export default function CityPage() {
                   setPlaceHours,
                   placeLink,
                   setPlaceLink,
+                  placeQueueWait,
+                  setPlaceQueueWait,
+                  placeBestNights,
+                  setPlaceBestNights,
+                  placeCrowdMix,
+                  setPlaceCrowdMix,
+                  placeDressCode,
+                  setPlaceDressCode,
+                  placeStaffInclusivity,
+                  setPlaceStaffInclusivity,
                   address,
                   setAddress,
                   type,
@@ -4574,6 +4739,16 @@ export default function CityPage() {
                   setEventStartDate,
                   eventEndDate,
                   setEventEndDate,
+                  eventEntryWait,
+                  setEventEntryWait,
+                  eventBestArrival,
+                  setEventBestArrival,
+                  eventCrowdMix,
+                  setEventCrowdMix,
+                  eventDressCode,
+                  setEventDressCode,
+                  eventHostInclusivity,
+                  setEventHostInclusivity,
                   onSaveEvent: handleAddEvent,
                 }}
                 serviceFormProps={{
@@ -4606,6 +4781,16 @@ export default function CityPage() {
                   setServiceLink,
                   serviceImageUrlsInput,
                   setServiceImageUrlsInput,
+                  serviceBookingLeadTime,
+                  setServiceBookingLeadTime,
+                  serviceBestTime,
+                  setServiceBestTime,
+                  serviceClientMix,
+                  setServiceClientMix,
+                  servicePreparation,
+                  setServicePreparation,
+                  serviceProviderInclusivity,
+                  setServiceProviderInclusivity,
                   onSaveService: handleAddService,
                 }}
               />

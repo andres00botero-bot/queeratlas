@@ -6,6 +6,7 @@ import { getEntityAddressLabel, normalizeExternalUrl } from "@/features/city/adm
 import { polishVenueDescription } from "@/features/city/liveVibeFeature";
 import { getDisplayedSafetyShields, shouldShowLegacyVibe } from "@/features/city/placeSafetyUi";
 import { getSafetyToneClass } from "@/lib/placeSafetySignals";
+import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 
 export default function SelectedPlaceSummary({
   selectedPlace,
@@ -60,6 +61,7 @@ export default function SelectedPlaceSummary({
           {String(selectedPlace.hours || "").trim() || "Hours vary by night. Check official channels before going."}
         </p>
       </div>
+      <VenuePracticalIntel place={selectedPlace} compact />
       {selectedPlace.link && (
         <a
           href={normalizeExternalUrl(selectedPlace.link)}
@@ -71,11 +73,7 @@ export default function SelectedPlaceSummary({
           Official Link
         </a>
       )}
-      <div className="mt-3 grid grid-cols-3 gap-2.5">
-        <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">Rating</p>
-          <p className="mt-1 text-base font-semibold text-white">{selectedPlace.avgRating?.toFixed(1) || "-"}</p>
-        </div>
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
         <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
           <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">Reviews</p>
           <p className="mt-1 text-base font-semibold text-white">{selectedPlace.reviewCount || 0}</p>

@@ -10,6 +10,7 @@ import { MARSEILLE_CITY_SLUGS, marseilleSeedEvents } from "./seed/regions/marsei
 import { OTTAWA_CITY_SLUGS, ottawaSeedEvents } from "./seed/regions/ottawa.js";
 import { BELFAST_CITY_SLUGS, belfastSeedEvents } from "./seed/regions/belfast.js";
 import { JOHANNESBURG_CITY_SLUGS, johannesburgSeedEvents } from "./seed/regions/johannesburg.js";
+import { buildEventIntelFallback } from "./intelFallbacks.js";
 
 function normalizeSeedKey(value = "") {
   return String(value)
@@ -1912,5 +1913,8 @@ export function mergeSeedEvents(databaseEvents = []) {
   return [
     ...databaseEvents,
     ...uniqueSeedEvents,
-  ];
+  ].map((event) => ({
+    ...event,
+    event_intel: buildEventIntelFallback(event),
+  }));
 }

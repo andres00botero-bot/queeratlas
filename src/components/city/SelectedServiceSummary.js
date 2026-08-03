@@ -3,6 +3,7 @@
 import Image from "next/image";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
+import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 
 export default function SelectedServiceSummary({
   selectedService,
@@ -95,6 +96,8 @@ export default function SelectedServiceSummary({
           </div>
         )}
       </div>
+
+      <EntityPracticalIntel entity={selectedService} kind="service" />
 
       {selectedServiceQuality && (
         <div className="mt-3 flex flex-wrap items-center gap-2">

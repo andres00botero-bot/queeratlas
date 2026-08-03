@@ -154,6 +154,22 @@ async function insertWithFallback(table, payload, client = supabase) {
       break;
     }
 
+    const protectedIntelColumns = new Set(["venue_intel", "event_intel", "service_intel"]);
+    const intelValue = workingPayload[missingColumn];
+    if (
+      protectedIntelColumns.has(missingColumn) &&
+      intelValue &&
+      typeof intelValue === "object" &&
+      !Array.isArray(intelValue) &&
+      Object.keys(intelValue).length > 0
+    ) {
+      return {
+        data: null,
+        error: new Error("Practical intelligence cannot be published until supabase/entity-intelligence-v2.sql has been run."),
+        tableMissing: false,
+      };
+    }
+
     const nextPayload = { ...workingPayload };
     delete nextPayload[missingColumn];
     workingPayload = nextPayload;

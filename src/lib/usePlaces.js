@@ -10,7 +10,10 @@ import {
   isMissingVibeTagsColumnError,
   normalizeVibeTags,
 } from "./vibeTaxonomy";
+import { hasVenueIntel } from "./venueIntel";
 
+const PLACE_SELECT_FIELDS_WITH_INTEL =
+  "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, venue_intel";
 const PLACE_SELECT_FIELDS =
   "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location";
 const PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG =
@@ -58,7 +61,10 @@ async function fetchAllPlacePages(client, selectFields, city) {
 }
 
 async function fetchPlacesRows(client, city) {
-  let response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS, city);
+  let response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_WITH_INTEL, city);
+  if (response?.error && isMissingColumnError(response.error, "venue_intel")) {
+    response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS, city);
+  }
   if (response?.error && isMissingColumnError(response.error, "legacy_vibe_user_set")) {
     response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG, city);
   }
@@ -310,6 +316,19 @@ export function usePlaces(city) {
           Boolean(row?.legacy_vibe_user_set),
         ]),
     );
+    const placeVenueIntelById = new Map(
+      placeRows
+        .filter((row) => row?.id && row?.venue_intel && typeof row.venue_intel === "object")
+        .map((row) => [String(row.id), row.venue_intel]),
+    );
+    const placeVenueIntelByCityName = new Map(
+      placeRows
+        .filter((row) => row?.name && row?.city && row?.venue_intel && typeof row.venue_intel === "object")
+        .map((row) => [
+          `${String(row.city).toLowerCase()}::${String(row.name).trim().toLowerCase()}`,
+          row.venue_intel,
+        ]),
+    );
 
     const statsByPlaceId = reviewRows.reduce((acc, row) => {
       const placeId = String(row?.place_id || "");
@@ -390,6 +409,10 @@ export function usePlaces(city) {
       const legacyVibeUserSetByCityName = placeLegacyVibeUserSetByCityName.get(
         `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
       );
+      const venueIntelById = placeVenueIntelById.get(String(row.id || ""));
+      const venueIntelByCityName = placeVenueIntelByCityName.get(
+        `${String(row.city || "").toLowerCase()}::${String(row.name || "").trim().toLowerCase()}`,
+      );
       return {
         ...row,
         reviewCount,
@@ -408,6 +431,7 @@ export function usePlaces(city) {
         legacy_vibe_user_set: Boolean(
           row?.legacy_vibe_user_set ?? legacyVibeUserSetById ?? legacyVibeUserSetByCityName ?? false
         ),
+        venue_intel: row?.venue_intel ?? venueIntelById ?? venueIntelByCityName ?? {},
       };
     });
 
@@ -459,6 +483,7 @@ export function usePlaces(city) {
       lat: place.lat,
       lng: place.lng,
       city: place.city,
+      venue_intel: place?.venue_intel && typeof place.venue_intel === "object" ? place.venue_intel : {},
     };
     let insertResult = await supabase
       .from("places")
@@ -466,10 +491,15 @@ export function usePlaces(city) {
       .select("*")
       .single();
 
-    if (insertResult.error && (isMissingVibeTagsColumnError(insertResult.error) || isMissingColumnError(insertResult.error, "legacy_vibe_user_set"))) {
+    if (insertResult.error && isMissingColumnError(insertResult.error, "venue_intel") && hasVenueIntel(place?.venue_intel || {})) {
+      throw new Error("Venue intelligence needs the Supabase entity-intelligence-v2 migration before it can be saved.");
+    }
+
+    if (insertResult.error && (isMissingVibeTagsColumnError(insertResult.error) || isMissingColumnError(insertResult.error, "legacy_vibe_user_set") || isMissingColumnError(insertResult.error, "venue_intel"))) {
       const legacyPayload = { ...basePayload };
       delete legacyPayload.vibe_tags;
       delete legacyPayload.legacy_vibe_user_set;
+      delete legacyPayload.venue_intel;
       insertResult = await supabase
         .from("places")
         .insert([legacyPayload])

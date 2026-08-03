@@ -19,6 +19,11 @@ export function useCityServiceForm() {
   const [serviceProviderName, setServiceProviderName] = useState("");
   const [servicePriceTier, setServicePriceTier] = useState("");
   const [serviceImageUrlsInput, setServiceImageUrlsInput] = useState("");
+  const [serviceBookingLeadTime, setServiceBookingLeadTime] = useState("");
+  const [serviceBestTime, setServiceBestTime] = useState("");
+  const [serviceClientMix, setServiceClientMix] = useState("");
+  const [servicePreparation, setServicePreparation] = useState("");
+  const [serviceProviderInclusivity, setServiceProviderInclusivity] = useState("");
 
   const resetServiceForm = useCallback(() => {
     setServiceName("");
@@ -34,6 +39,11 @@ export function useCityServiceForm() {
     setServiceProviderName("");
     setServicePriceTier("");
     setServiceImageUrlsInput("");
+    setServiceBookingLeadTime("");
+    setServiceBestTime("");
+    setServiceClientMix("");
+    setServicePreparation("");
+    setServiceProviderInclusivity("");
   }, []);
 
   return {
@@ -63,6 +73,16 @@ export function useCityServiceForm() {
     setServicePriceTier,
     serviceImageUrlsInput,
     setServiceImageUrlsInput,
+    serviceBookingLeadTime,
+    setServiceBookingLeadTime,
+    serviceBestTime,
+    setServiceBestTime,
+    serviceClientMix,
+    setServiceClientMix,
+    servicePreparation,
+    setServicePreparation,
+    serviceProviderInclusivity,
+    setServiceProviderInclusivity,
     resetServiceForm,
   };
 }

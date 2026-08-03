@@ -49,7 +49,6 @@ const indexedRouteFiles = [
   "src/app/cities/layout.js",
   "src/app/events/layout.js",
   "src/app/now/layout.js",
-  "src/app/search/layout.js",
   "src/app/gay-guide/page.js",
   "src/app/queer-guide/page.js",
   "src/app/hbtq-guide/page.js",
@@ -69,6 +68,37 @@ for (const filePath of indexedRouteFiles) {
   ensureContains(source, /title:/, `${filePath}: missing title`, failures);
   ensureContains(source, /description:/, `${filePath}: missing description`, failures);
   ensureContains(source, /alternates:\s*{[\s\S]*canonical:/, `${filePath}: missing canonical`, failures);
+}
+
+const noindexRouteChecks = [
+  { path: "src/app/admin/layout.js", follow: false },
+  { path: "src/app/community/layout.js", follow: true },
+  { path: "src/app/contribute/layout.js", follow: true },
+  { path: "src/app/favorites/layout.js", follow: true },
+  { path: "src/app/messages/layout.js", follow: true },
+  { path: "src/app/search/layout.js", follow: true },
+];
+
+for (const check of noindexRouteChecks) {
+  const source = read(check.path);
+  ensureContains(
+    source,
+    /robots:\s*{[\s\S]*?index:\s*false/,
+    `${check.path}: route must remain noindex`,
+    failures
+  );
+  ensureContains(
+    source,
+    new RegExp(`robots:\\s*{[\\s\\S]*?follow:\\s*${check.follow}`),
+    `${check.path}: unexpected robots follow policy`,
+    failures
+  );
+  ensureContains(
+    source,
+    /googleBot:\s*{[\s\S]*?index:\s*false/,
+    `${check.path}: Googlebot must remain noindex`,
+    failures
+  );
 }
 
 const guideMetadataChecks = [

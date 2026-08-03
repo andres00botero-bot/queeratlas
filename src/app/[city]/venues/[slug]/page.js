@@ -12,6 +12,7 @@ import {
   placeMatchesSlug,
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 
 export const revalidate = 300;
 
@@ -328,6 +329,8 @@ export default async function CityVenueDetailPage({ params }) {
             </p>
           </div>
         </section>
+
+        <VenuePracticalIntel place={place} />
 
         <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
           <h2 className="text-lg font-semibold text-cyan-50">Related planning routes</h2>

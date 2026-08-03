@@ -13,6 +13,11 @@ export function useCityContributionForms() {
   const [vibeTags, setVibeTags] = useState([]);
   const [placeHours, setPlaceHours] = useState("");
   const [placeLink, setPlaceLink] = useState("");
+  const [placeQueueWait, setPlaceQueueWait] = useState("");
+  const [placeBestNights, setPlaceBestNights] = useState("");
+  const [placeCrowdMix, setPlaceCrowdMix] = useState("");
+  const [placeDressCode, setPlaceDressCode] = useState("");
+  const [placeStaffInclusivity, setPlaceStaffInclusivity] = useState("");
 
   const [eventName, setEventName] = useState("");
   const [eventAddress, setEventAddress] = useState("");
@@ -23,6 +28,11 @@ export function useCityContributionForms() {
   const [eventDescription, setEventDescription] = useState("");
   const [eventLink, setEventLink] = useState("");
   const [eventTicketUrl, setEventTicketUrl] = useState("");
+  const [eventEntryWait, setEventEntryWait] = useState("");
+  const [eventBestArrival, setEventBestArrival] = useState("");
+  const [eventCrowdMix, setEventCrowdMix] = useState("");
+  const [eventDressCode, setEventDressCode] = useState("");
+  const [eventHostInclusivity, setEventHostInclusivity] = useState("");
 
   const resetPlaceForm = useCallback(() => {
     setName("");
@@ -33,6 +43,11 @@ export function useCityContributionForms() {
     setVibeTags([]);
     setPlaceHours("");
     setPlaceLink("");
+    setPlaceQueueWait("");
+    setPlaceBestNights("");
+    setPlaceCrowdMix("");
+    setPlaceDressCode("");
+    setPlaceStaffInclusivity("");
   }, []);
 
   const resetEventForm = useCallback(() => {
@@ -45,6 +60,11 @@ export function useCityContributionForms() {
     setEventDescription("");
     setEventLink("");
     setEventTicketUrl("");
+    setEventEntryWait("");
+    setEventBestArrival("");
+    setEventCrowdMix("");
+    setEventDressCode("");
+    setEventHostInclusivity("");
   }, []);
 
   return {
@@ -64,6 +84,16 @@ export function useCityContributionForms() {
     setPlaceHours,
     placeLink,
     setPlaceLink,
+    placeQueueWait,
+    setPlaceQueueWait,
+    placeBestNights,
+    setPlaceBestNights,
+    placeCrowdMix,
+    setPlaceCrowdMix,
+    placeDressCode,
+    setPlaceDressCode,
+    placeStaffInclusivity,
+    setPlaceStaffInclusivity,
     eventName,
     setEventName,
     eventAddress,
@@ -82,6 +112,16 @@ export function useCityContributionForms() {
     setEventLink,
     eventTicketUrl,
     setEventTicketUrl,
+    eventEntryWait,
+    setEventEntryWait,
+    eventBestArrival,
+    setEventBestArrival,
+    eventCrowdMix,
+    setEventCrowdMix,
+    eventDressCode,
+    setEventDressCode,
+    eventHostInclusivity,
+    setEventHostInclusivity,
     resetPlaceForm,
     resetEventForm,
   };

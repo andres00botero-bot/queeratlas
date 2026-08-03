@@ -2,6 +2,7 @@
 
 import DateInput from "@/components/ui/DateInput";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 
 export default function AddEventInlineForm({
   addEventFormRef,
@@ -23,6 +24,16 @@ export default function AddEventInlineForm({
   setEventStartDate,
   eventEndDate,
   setEventEndDate,
+  eventEntryWait,
+  setEventEntryWait,
+  eventBestArrival,
+  setEventBestArrival,
+  eventCrowdMix,
+  setEventCrowdMix,
+  eventDressCode,
+  setEventDressCode,
+  eventHostInclusivity,
+  setEventHostInclusivity,
   onSaveEvent,
 }) {
   return (
@@ -69,6 +80,18 @@ export default function AddEventInlineForm({
         </div>
       </div>
       <p className="text-[11px] text-white/50">Leave &quot;To&quot; empty for single-day events.</p>
+      <PracticalIntelFields
+        title="Practical event intelligence"
+        description="Optional details for the actual event experience, not just the venue."
+        tone="violet"
+        fields={[
+          { key: "entry", label: "Entry wait", value: eventEntryWait, onChange: setEventEntryWait, placeholder: "For example: usually 15 minutes after 22:00" },
+          { key: "arrival", label: "Best arrival time", value: eventBestArrival, onChange: setEventBestArrival, placeholder: "For example: arrive by 21:30 for the opening show" },
+          { key: "crowd", label: "Attendee mix", value: eventCrowdMix, onChange: setEventCrowdMix, placeholder: "Describe locals, visitors and the community mix" },
+          { key: "dress", label: "Dress code in practice", value: eventDressCode, onChange: setEventDressCode, placeholder: "What do people actually wear?" },
+          { key: "inclusion", label: "Host and security inclusion", value: eventHostInclusivity, onChange: setEventHostInclusivity, placeholder: "Share a factual inclusion or accessibility signal", wide: true },
+        ]}
+      />
       <button onClick={onSaveEvent} className="w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 font-semibold text-black">
         Save event
       </button>

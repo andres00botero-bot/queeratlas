@@ -4,6 +4,7 @@ import VibeTagChips from "@/components/ui/VibeTagChips";
 import { getEntityAddressLabel } from "@/features/city/adminDrawerFeature";
 import { formatEventDateLabel, normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
+import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 
 export default function SelectedEventSummary({
   selectedEvent,
@@ -39,6 +40,7 @@ export default function SelectedEventSummary({
           <p className="qa-copy-justify text-sm leading-7 text-white/80">{polishEventDescription(selectedEvent, cityName)}</p>
         </div>
       )}
+      <EntityPracticalIntel entity={selectedEvent} kind="event" />
     </>
   );
 }

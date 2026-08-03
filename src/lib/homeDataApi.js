@@ -3,6 +3,7 @@ import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { unstable_cache } from "next/cache";
+import { buildEventIntelFallback } from "@/lib/intelFallbacks";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 
@@ -22,12 +23,12 @@ function splitLegacyVibe(description = "") {
   };
 }
 
-function mapGlobalEventForSearch(row = {}) {
+export function mapGlobalEventForSearch(row = {}) {
   const parsed = splitLegacyVibe(row.description || "");
   const startDate = String(row.start_date || row.date || "").slice(0, 10);
   const endDate = String(row.end_date || row.start_date || row.date || "").slice(0, 10);
 
-  return {
+  const event = {
     id: `global-${String(row.id || "")}`,
     name: String(row.name || "").trim(),
     city: "Global",
@@ -40,6 +41,7 @@ function mapGlobalEventForSearch(row = {}) {
     link: String(row.link || "").trim(),
     isGlobal: true,
   };
+  return { ...event, event_intel: buildEventIntelFallback(event) };
 }
 
 function parseNewsTimestamp(value) {
@@ -152,6 +154,7 @@ function buildInitialHomeData(payload) {
         "vibe",
         "vibe_tags",
         "isGlobal",
+        "event_intel",
       ])
     ),
     places: places.map((place) =>

@@ -1,5 +1,7 @@
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
+import { normalizeVenueIntel } from "@/lib/venueIntel";
+import { normalizeEventIntel, normalizeServiceIntel } from "@/lib/entityIntel";
 
 export function normalizeExternalUrl(value = "") {
   const raw = String(value || "").trim();
@@ -39,6 +41,7 @@ export function getEntityAddressLabel(entity) {
 
 export function buildPlaceAdminDraft(place) {
   const vibeValue = String(place?.vibe || "");
+  const venueIntel = normalizeVenueIntel(place || {});
   const vibeTags = normalizeVibeTags(
     Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
       ? place.vibe_tags
@@ -54,11 +57,19 @@ export function buildPlaceAdminDraft(place) {
     location: String(place?.location || ""),
     hours: String(place?.hours || ""),
     link: String(place?.link || ""),
+    queue_wait: venueIntel.queueWait,
+    best_nights: venueIntel.bestNights,
+    crowd_mix: venueIntel.crowdMix,
+    dress_code: venueIntel.dressCode,
+    staff_inclusivity: venueIntel.staffInclusivity,
+    source_urls: venueIntel.sourceUrls.join("\n"),
+    research_status: venueIntel.researchStatus,
   };
 }
 
 export function buildEventAdminDraft(event) {
   const normalized = normalizeEventRange(event || {});
+  const eventIntel = normalizeEventIntel(event || {});
   const vibeValue = String(event?.vibe || "");
   const vibeTags = normalizeVibeTags(
     Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
@@ -76,10 +87,16 @@ export function buildEventAdminDraft(event) {
     description: String(event?.description || ""),
     link: String(event?.link || ""),
     ticket_url: String(event?.ticket_url || event?.ticketUrl || ""),
+    entry_wait: eventIntel.entryWait,
+    best_arrival: eventIntel.bestArrival,
+    crowd_mix: eventIntel.crowdMix,
+    dress_code: eventIntel.dressCode,
+    host_inclusivity: eventIntel.hostInclusivity,
   };
 }
 
 export function buildServiceAdminDraft(service) {
+  const serviceIntel = normalizeServiceIntel(service || {});
   const vibeValue = String(service?.vibe || "");
   const vibeTags = normalizeVibeTags(
     Array.isArray(service?.vibe_tags) && service.vibe_tags.length > 0
@@ -103,5 +120,10 @@ export function buildServiceAdminDraft(service) {
     vibe_tags: vibeTags,
     source: String(service?.source || ""),
     lastChecked: String(service?.lastChecked || ""),
+    booking_lead_time: serviceIntel.bookingLeadTime,
+    best_time: serviceIntel.bestTime,
+    client_mix: serviceIntel.clientMix,
+    preparation: serviceIntel.preparation,
+    provider_inclusivity: serviceIntel.providerInclusivity,
   };
 }

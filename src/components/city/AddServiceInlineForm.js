@@ -2,6 +2,8 @@
 
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import { normalizeServicePriceTierOptions } from "@/features/city/serviceFormUtils";
+import PracticalIntelFields from "@/components/city/PracticalIntelFields";
+import { getServiceIntelLabels } from "@/lib/entityIntel";
 
 export default function AddServiceInlineForm({
   addServiceFormRef,
@@ -33,9 +35,20 @@ export default function AddServiceInlineForm({
   setServiceLink,
   serviceImageUrlsInput,
   setServiceImageUrlsInput,
+  serviceBookingLeadTime,
+  setServiceBookingLeadTime,
+  serviceBestTime,
+  setServiceBestTime,
+  serviceClientMix,
+  setServiceClientMix,
+  servicePreparation,
+  setServicePreparation,
+  serviceProviderInclusivity,
+  setServiceProviderInclusivity,
   onSaveService,
 }) {
   const priceTierOptions = normalizeServicePriceTierOptions(servicePriceTierOptions);
+  const intelLabels = getServiceIntelLabels(serviceType);
 
   return (
     <div
@@ -132,6 +145,18 @@ export default function AddServiceInlineForm({
         onChange={(event) => setServiceVibe(event.target.value)}
         placeholder="Legacy vibe label (optional)"
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
+      />
+      <PracticalIntelFields
+        title="Practical service intelligence"
+        description="Optional practical context adapted to the selected service type."
+        tone="cyan"
+        fields={[
+          { key: "lead", label: intelLabels.bookingLeadTime, value: serviceBookingLeadTime, onChange: setServiceBookingLeadTime, placeholder: "How far ahead should someone book?" },
+          { key: "time", label: intelLabels.bestTime, value: serviceBestTime, onChange: setServiceBestTime, placeholder: "When is the experience usually best?" },
+          { key: "mix", label: intelLabels.clientMix, value: serviceClientMix, onChange: setServiceClientMix, placeholder: "Who typically uses or enjoys this service?" },
+          { key: "prepare", label: intelLabels.preparation, value: servicePreparation, onChange: setServicePreparation, placeholder: "What should someone know, wear or bring?" },
+          { key: "inclusion", label: intelLabels.providerInclusivity, value: serviceProviderInclusivity, onChange: setServiceProviderInclusivity, placeholder: "Share a factual inclusion or accessibility signal", wide: true },
+        ]}
       />
       <button
         onClick={onSaveService}

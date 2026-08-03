@@ -2,6 +2,8 @@ import { supabase } from "./supabase";
 import { mergeSeedPlacesAsync } from "./seedMerge";
 import { shouldFallbackFromPlacesWithStats } from "./supabaseErrorGuards";
 
+const PLACES_FALLBACK_SELECT_WITH_INTEL =
+  "id, name, type, city, lat, lng, description, vibe, hours, link, location, venue_intel";
 const PLACES_FALLBACK_SELECT =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
 const SUPABASE_PAGE_SIZE = 1000;
@@ -195,9 +197,14 @@ export async function fetchPlacesQueryWithFallback({
 }
 
 export async function fetchPlacesForAtlas({ client = supabase } = {}) {
-  const placesRes = await fetchAllPages(() =>
-    selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined)
+  let placesRes = await fetchAllPages(() =>
+    selectPlaces(client, "places", PLACES_FALLBACK_SELECT_WITH_INTEL, undefined, undefined)
   );
+  if (placesRes?.error && isMissingColumnSelectionError(placesRes.error)) {
+    placesRes = await fetchAllPages(() =>
+      selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined)
+    );
+  }
 
   const baseRows = normalizeRows(placesRes?.data);
   const basePlaceIds = baseRows.map((row) => row?.id);
