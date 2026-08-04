@@ -818,6 +818,13 @@ export default function AdminPage() {
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
+                onClick={() => router.push("/admin/editorial")}
+                className="rounded-full border border-fuchsia-200/25 bg-fuchsia-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
+              >
+                Editorial studio
+              </button>
+              <button
+                type="button"
                 onClick={() => router.push("/admin/seo-observability")}
                 className="rounded-full border border-emerald-200/25 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
               >

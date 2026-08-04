@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM } from "@/lib/editorialTrust";
 import { getSeoReport, listSeoReports } from "@/lib/seo/reportsIndex";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
@@ -12,6 +13,8 @@ function toAbsoluteUrl(path = "") {
 function buildCanonical(slug = "") {
   return `/reports/${slug}`;
 }
+
+export const revalidate = 600;
 
 export function generateStaticParams() {
   return listSeoReports().map((report) => ({ slug: report.slug }));
@@ -79,6 +82,14 @@ export default async function ReportDetailPage({ params }) {
 
   if (!report) notFound();
 
+  const editorial = await getPublishedEditorialRecord(`report:${report.slug}`, {
+    publishedAt: report.publishedAt,
+    updatedAt: report.updatedAt,
+    researchScope: report.researchScope,
+    changeLog: report.changeLog,
+    author: EDITORIAL_TEAM,
+  });
+
   const canonical = buildCanonical(report.slug);
   const canonicalUrl = toAbsoluteUrl(canonical);
   const faqEntries = buildFaqEntries(report);
@@ -95,15 +106,17 @@ export default async function ReportDetailPage({ params }) {
     headline: report.title,
     description: report.summary,
     url: canonicalUrl,
-    datePublished: report.publishedAt,
-    dateModified: report.updatedAt,
+    datePublished: editorial.publishedAt,
+    dateModified: editorial.updatedAt,
     isPartOf: {
       "@id": QA_WEBSITE_ID,
     },
     publisher: {
       "@id": QA_ORGANIZATION_ID,
     },
-    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    author: buildEditorialAuthorJsonLd(editorial.author),
+    ...(editorial.reviewer ? { reviewedBy: buildEditorialAuthorJsonLd(editorial.reviewer) } : {}),
+    ...(editorial.sources.length > 0 ? { citation: editorial.sources.map((source) => source.url) } : {}),
     publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
     about: report.keyphrases,
   };
@@ -142,15 +155,18 @@ export default async function ReportDetailPage({ params }) {
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{report.title}</h1>
           <p className="mt-3 text-sm leading-7 text-white/82">{report.summary}</p>
           <p className="mt-2 text-xs text-white/60">
-            Published {report.publishedAt} | Updated {report.updatedAt}
+            Published {editorial.publishedAt} | Updated {editorial.updatedAt}
           </p>
         </header>
 
         <EditorialDisclosure
-          publishedAt={report.publishedAt}
-          updatedAt={report.updatedAt}
-          researchScope={report.researchScope}
-          changeLog={report.changeLog}
+          author={editorial.author}
+          reviewer={editorial.reviewer}
+          publishedAt={editorial.publishedAt}
+          updatedAt={editorial.updatedAt}
+          researchScope={editorial.researchScope}
+          changeLog={editorial.changeLog}
+          sources={editorial.sources}
         />
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">

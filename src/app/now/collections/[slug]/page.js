@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { ATLAS_COLLECTIONS, getAtlasCollectionBySlug } from "@/lib/atlasCollections";
 import { cityCoreConfig } from "@/lib/cityCore";
+import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import {
   QA_LOGO_URL,
@@ -19,6 +20,8 @@ function formatCitySlug(value = "") {
 function formatCollectionDescription(collection) {
   return String(collection?.summary || "").replace(/\s+/g, " ").trim().slice(0, 155);
 }
+
+export const revalidate = 600;
 
 export function generateStaticParams() {
   return ATLAS_COLLECTIONS.map((collection) => ({ slug: collection.slug }));
@@ -66,8 +69,12 @@ export default async function AtlasCollectionDetailPage({ params }) {
   const { slug } = await params;
   const collection = getAtlasCollectionBySlug(slug);
   if (!collection) notFound();
-  const editorial = GUIDE_EDITORIAL_META.collection;
   const researchScope = `${collection.methodology} The current collection reviews ${collection.items.length} named picks or routes across ${collection.cities.length} city references. Operating details and door policies should be confirmed before travel.`;
+  const editorial = await getPublishedEditorialRecord(`collection:${collection.slug}`, {
+    ...GUIDE_EDITORIAL_META.collection,
+    researchScope,
+    author: EDITORIAL_TEAM,
+  });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -91,7 +98,9 @@ export default async function AtlasCollectionDetailPage({ params }) {
         url: QA_LOGO_URL,
       },
     },
-    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    author: buildEditorialAuthorJsonLd(editorial.author),
+    ...(editorial.reviewer ? { reviewedBy: buildEditorialAuthorJsonLd(editorial.reviewer) } : {}),
+    ...(editorial.sources.length > 0 ? { citation: editorial.sources.map((source) => source.url) } : {}),
     publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
     mainEntity: {
       "@type": "ItemList",
@@ -138,10 +147,13 @@ export default async function AtlasCollectionDetailPage({ params }) {
 
         <EditorialDisclosure
           className="mt-5"
+          author={editorial.author}
+          reviewer={editorial.reviewer}
           publishedAt={editorial.publishedAt}
           updatedAt={editorial.updatedAt}
-          researchScope={researchScope}
+          researchScope={editorial.researchScope}
           changeLog={editorial.changeLog}
+          sources={editorial.sources}
         />
 
         <section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">

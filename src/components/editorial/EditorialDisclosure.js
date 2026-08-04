@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpenCheck, CalendarDays, ChevronDown, History, ShieldCheck } from "lucide-react";
+import { BookOpenCheck, CalendarDays, ChevronDown, ExternalLink, History, ShieldCheck } from "lucide-react";
 import { EDITORIAL_TEAM } from "@/lib/editorialTrust";
 
 function formatEditorialDate(value = "") {
@@ -22,6 +22,7 @@ export default function EditorialDisclosure({
   updatedAt = "",
   researchScope = "",
   changeLog = [],
+  sources = [],
   className = "",
 }) {
   return (
@@ -54,8 +55,8 @@ export default function EditorialDisclosure({
         </div>
       </div>
 
-      {(researchScope || changeLog.length > 0) ? (
-        <div className="grid border-t border-white/8 sm:grid-cols-2">
+      {(researchScope || changeLog.length > 0 || sources.length > 0) ? (
+        <div className={`grid border-t border-white/8 ${sources.length > 0 ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
           {researchScope ? (
             <details className="group border-b border-white/8 sm:border-b-0 sm:border-r">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold text-white/76 transition hover:bg-white/[0.035] hover:text-white sm:px-5">
@@ -67,7 +68,7 @@ export default function EditorialDisclosure({
           ) : null}
 
           {changeLog.length > 0 ? (
-            <details className="group">
+            <details className={`group ${sources.length > 0 ? "border-b border-white/8 sm:border-b-0 sm:border-r" : ""}`}>
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold text-white/76 transition hover:bg-white/[0.035] hover:text-white sm:px-5">
                 <span className="flex items-center gap-2"><History size={14} className="text-fuchsia-100/78" aria-hidden="true" /> Change history</span>
                 <ChevronDown size={14} className="transition group-open:rotate-180" aria-hidden="true" />
@@ -79,6 +80,26 @@ export default function EditorialDisclosure({
                   </li>
                 ))}
               </ol>
+            </details>
+          ) : null}
+
+          {sources.length > 0 ? (
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-xs font-semibold text-white/76 transition hover:bg-white/[0.035] hover:text-white sm:px-5">
+                <span className="flex items-center gap-2"><ExternalLink size={14} className="text-emerald-100/78" aria-hidden="true" /> Sources ({sources.length})</span>
+                <ChevronDown size={14} className="transition group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <ul className="space-y-2 px-4 pb-4 text-xs leading-5 sm:px-5">
+                {sources.map((source) => (
+                  <li key={source.id || source.url}>
+                    <a href={source.url} target="_blank" rel="noreferrer" className="inline-flex items-start gap-1.5 text-white/68 transition hover:text-emerald-100">
+                      <span>{source.name}</span>
+                      <ExternalLink size={11} className="mt-1 shrink-0" aria-hidden="true" />
+                    </a>
+                    {source.claimScope ? <p className="mt-0.5 text-[11px] text-white/42">{source.claimScope}</p> : null}
+                  </li>
+                ))}
+              </ul>
             </details>
           ) : null}
         </div>

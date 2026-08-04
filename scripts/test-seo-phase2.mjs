@@ -53,6 +53,30 @@ for (const marker of ["contactPoint", "publishingPrinciples", "correctionsPolicy
   if (!authority.includes(marker)) failures.push(`Organization schema missing ${marker}`);
 }
 
+const editorialMigration = read("supabase/editorial-system-v1.sql");
+for (const table of [
+  "qa_editorial_people",
+  "qa_editorial_entries",
+  "qa_editorial_sources",
+  "qa_editorial_revisions",
+]) {
+  if (!editorialMigration.includes(`create table if not exists public.${table}`)) {
+    failures.push(`Editorial migration missing table: ${table}`);
+  }
+  if (!editorialMigration.includes(`alter table public.${table} enable row level security`)) {
+    failures.push(`Editorial migration missing RLS: ${table}`);
+  }
+}
+
+if (!fs.existsSync(path.join(root, "src/app/admin/editorial/page.js"))) {
+  failures.push("Missing editorial admin route");
+}
+
+const editorialData = read("src/lib/editorialData.js");
+if (!editorialData.includes("getPublishedEditorialRecord")) {
+  failures.push("Missing public editorial data resolver");
+}
+
 if (failures.length > 0) {
   console.error("SEO phase 2 trust test failed:\n- " + failures.join("\n- "));
   process.exit(1);

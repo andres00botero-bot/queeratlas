@@ -1,5 +1,6 @@
 import Link from "next/link";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 
@@ -29,6 +30,8 @@ export const metadata = {
       "Queer travel with safer nightlife context, events, and community-backed city discovery.",
   },
 };
+
+export const revalidate = 600;
 
 const FEATURES = [
   {
@@ -75,8 +78,11 @@ const faqs = [
   },
 ];
 
-export default function QueerGuidePage() {
-  const editorial = GUIDE_EDITORIAL_META.queerGuide;
+export default async function QueerGuidePage() {
+  const editorial = await getPublishedEditorialRecord("guide:queer-guide", {
+    ...GUIDE_EDITORIAL_META.queerGuide,
+    author: EDITORIAL_TEAM,
+  });
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -85,7 +91,9 @@ export default function QueerGuidePage() {
     url: "https://www.queeratlas.app/queer-guide",
     datePublished: editorial.publishedAt,
     dateModified: editorial.updatedAt,
-    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    author: buildEditorialAuthorJsonLd(editorial.author),
+    ...(editorial.reviewer ? { reviewedBy: buildEditorialAuthorJsonLd(editorial.reviewer) } : {}),
+    ...(editorial.sources.length > 0 ? { citation: editorial.sources.map((source) => source.url) } : {}),
     publisher: { "@id": "https://www.queeratlas.app/#organization" },
     publishingPrinciples: "https://www.queeratlas.app/editorial-policy",
   };
@@ -150,10 +158,13 @@ export default function QueerGuidePage() {
 
         <EditorialDisclosure
           className="mt-5"
+          author={editorial.author}
+          reviewer={editorial.reviewer}
           publishedAt={editorial.publishedAt}
           updatedAt={editorial.updatedAt}
           researchScope={editorial.researchScope}
           changeLog={editorial.changeLog}
+          sources={editorial.sources}
         />
 
         <section className="mt-8 grid gap-4 md:grid-cols-3">

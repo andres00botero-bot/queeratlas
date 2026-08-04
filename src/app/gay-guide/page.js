@@ -1,5 +1,6 @@
 import Link from "next/link";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 
@@ -29,6 +30,8 @@ export const metadata = {
       "Find gay-friendly cities, events, and safe nightlife routes in one global travel guide.",
   },
 };
+
+export const revalidate = 600;
 
 const CITY_HIGHLIGHTS = [
   { slug: "berlin", label: "Berlin", note: "techno gravity + leather history" },
@@ -69,8 +72,11 @@ const faqs = [
   },
 ];
 
-export default function GayGuidePage() {
-  const editorial = GUIDE_EDITORIAL_META.gayGuide;
+export default async function GayGuidePage() {
+  const editorial = await getPublishedEditorialRecord("guide:gay-guide", {
+    ...GUIDE_EDITORIAL_META.gayGuide,
+    author: EDITORIAL_TEAM,
+  });
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -79,7 +85,9 @@ export default function GayGuidePage() {
     url: "https://www.queeratlas.app/gay-guide",
     datePublished: editorial.publishedAt,
     dateModified: editorial.updatedAt,
-    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    author: buildEditorialAuthorJsonLd(editorial.author),
+    ...(editorial.reviewer ? { reviewedBy: buildEditorialAuthorJsonLd(editorial.reviewer) } : {}),
+    ...(editorial.sources.length > 0 ? { citation: editorial.sources.map((source) => source.url) } : {}),
     publisher: { "@id": "https://www.queeratlas.app/#organization" },
     publishingPrinciples: "https://www.queeratlas.app/editorial-policy",
   };
@@ -144,10 +152,13 @@ export default function GayGuidePage() {
 
         <EditorialDisclosure
           className="mt-5"
+          author={editorial.author}
+          reviewer={editorial.reviewer}
           publishedAt={editorial.publishedAt}
           updatedAt={editorial.updatedAt}
           researchScope={editorial.researchScope}
           changeLog={editorial.changeLog}
+          sources={editorial.sources}
         />
 
         <section className="mt-8 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(22,22,22,0.94),rgba(10,10,10,0.98))] p-6">

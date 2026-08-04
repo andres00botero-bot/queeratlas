@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { cityCoreConfig } from "@/lib/cityCore";
+import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
@@ -23,7 +24,7 @@ function buildCanonicalPath(city = "", topic = "") {
   return `/${city}/discover/${topic}`;
 }
 
-function buildClusterJsonLd({ city, cityName, topic, topicConfig }) {
+function buildClusterJsonLd({ city, cityName, topic, topicConfig, editorial }) {
   const canonicalPath = buildCanonicalPath(city, topic);
   const canonicalUrl = toAbsoluteUrl(canonicalPath);
   const related = [
@@ -46,9 +47,11 @@ function buildClusterJsonLd({ city, cityName, topic, topicConfig }) {
     publisher: {
       "@id": QA_ORGANIZATION_ID,
     },
-    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
-    datePublished: GUIDE_EDITORIAL_META.cityDiscovery.publishedAt,
-    dateModified: GUIDE_EDITORIAL_META.cityDiscovery.updatedAt,
+    author: buildEditorialAuthorJsonLd(editorial.author),
+    ...(editorial.reviewer ? { reviewedBy: buildEditorialAuthorJsonLd(editorial.reviewer) } : {}),
+    ...(editorial.sources.length > 0 ? { citation: editorial.sources.map((source) => source.url) } : {}),
+    datePublished: editorial.publishedAt,
+    dateModified: editorial.updatedAt,
     publishingPrinciples: toAbsoluteUrl("/editorial-policy"),
     relatedLink: related,
   };
@@ -376,14 +379,18 @@ export default async function CityClusterTopicPage({ params }) {
 
   const cityName = cityNameFromConfig(config, city);
   const relatedTopics = listCityClusterTopics().filter((entry) => entry.key !== topic).slice(0, 4);
-  const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig });
+  const researchScope = `This route applies the ${topicConfig.intent} discovery framework to ${cityName} using Queer Atlas city configuration, topic taxonomy, and linked place and event routes. It is a planning framework, not a claim that every linked operation was independently checked on the same day.`;
+  const editorial = await getPublishedEditorialRecord(`city-discovery:${city}:${topic}`, {
+    ...GUIDE_EDITORIAL_META.cityDiscovery,
+    researchScope,
+    author: EDITORIAL_TEAM,
+  });
+  const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig, editorial });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig });
   const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics });
   const faqEntries = buildFaqEntries({ cityName, topicConfig });
   const faqJsonLd = buildFaqJsonLd({ faqEntries });
   const intentBlueprint = buildIntentBlueprint({ cityName, topicConfig });
-  const editorial = GUIDE_EDITORIAL_META.cityDiscovery;
-  const researchScope = `This route applies the ${topicConfig.intent} discovery framework to ${cityName} using Queer Atlas city configuration, topic taxonomy, and linked place and event routes. It is a planning framework, not a claim that every linked operation was independently checked on the same day.`;
   const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, faqJsonLd];
 
   return (
@@ -432,10 +439,13 @@ export default async function CityClusterTopicPage({ params }) {
         </header>
 
         <EditorialDisclosure
+          author={editorial.author}
+          reviewer={editorial.reviewer}
           publishedAt={editorial.publishedAt}
           updatedAt={editorial.updatedAt}
-          researchScope={researchScope}
+          researchScope={editorial.researchScope}
           changeLog={editorial.changeLog}
+          sources={editorial.sources}
         />
 
         <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
