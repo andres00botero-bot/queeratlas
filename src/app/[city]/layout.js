@@ -2,6 +2,7 @@ import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { cityGuideConfig } from "@/lib/cityGuides";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
+import CityEntityCrawlSection from "@/components/city/CityEntityCrawlSection";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 
 export async function generateMetadata({ params }) {
@@ -65,6 +66,7 @@ export default async function CityLayout({ children, params }) {
   return (
     <CityRouteConfigProvider config={routeConfig}>
       {children}
+      <CityEntityCrawlSection city={city} cityName={String(coreConfig.title || city).replace(/^Queer\s+/i, "").trim()} />
     </CityRouteConfigProvider>
   );
 }

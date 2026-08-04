@@ -1,6 +1,11 @@
 import { cityCoreConfig } from "@/lib/cityCore";
 import robots from "@/app/robots";
-import sitemap from "@/app/sitemap";
+import {
+  getEventSitemapEntries,
+  getPageSitemapEntries,
+  getServiceSitemapEntries,
+  getVenueSitemapEntries,
+} from "@/lib/seo/sitemapEntries";
 
 function scoreFromStatus(status) {
   if (status === "pass") return 100;
@@ -161,20 +166,17 @@ function buildRobotsCheck(baseUrl) {
   };
 }
 
-async function countLiveSitemapRoutes(baseUrl) {
+async function fetchSitemapXml(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    const response = await fetch(`${baseUrl}/sitemap.xml`, {
+    const response = await fetch(url, {
       method: "GET",
       cache: "no-store",
       signal: controller.signal,
       headers: { Accept: "application/xml,text/xml" },
     });
-    if (!response.ok) return null;
-    const xml = await response.text();
-    const matches = xml.match(/<loc>/g);
-    return Array.isArray(matches) ? matches.length : 0;
+    return response.ok ? await response.text() : null;
   } catch {
     return null;
   } finally {
@@ -182,9 +184,35 @@ async function countLiveSitemapRoutes(baseUrl) {
   }
 }
 
+async function countLiveSitemapRoutes(baseUrl) {
+  const rootXml = await fetchSitemapXml(`${baseUrl}/sitemap.xml`);
+  if (!rootXml) return null;
+
+  if (!/<sitemapindex[\s>]/i.test(rootXml)) {
+    const matches = rootXml.match(/<url[\s>]/g);
+    return Array.isArray(matches) ? matches.length : 0;
+  }
+
+  const childUrls = [...rootXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]);
+  const childXmlDocuments = await Promise.all(childUrls.map((url) => fetchSitemapXml(url)));
+  if (childXmlDocuments.some((xml) => xml === null)) return null;
+  return childXmlDocuments.reduce((total, xml) => {
+    const matches = String(xml).match(/<url[\s>]/g);
+    return total + (Array.isArray(matches) ? matches.length : 0);
+  }, 0);
+}
+
 async function buildSitemapCoverageCheck(baseUrl) {
-  const generatedEntries = sitemap();
-  const generatedCount = Array.isArray(generatedEntries) ? generatedEntries.length : 0;
+  const generatedGroups = await Promise.all([
+    getPageSitemapEntries(),
+    getVenueSitemapEntries(),
+    getEventSitemapEntries(),
+    getServiceSitemapEntries(),
+  ]);
+  const generatedCount = generatedGroups.reduce(
+    (total, entries) => total + (Array.isArray(entries) ? entries.length : 0),
+    0,
+  );
   const liveCount = await countLiveSitemapRoutes(baseUrl);
 
   const status =

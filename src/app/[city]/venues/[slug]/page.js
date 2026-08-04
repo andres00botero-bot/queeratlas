@@ -12,6 +12,7 @@ import {
   placeMatchesSlug,
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
@@ -203,6 +204,7 @@ export async function generateMetadata({ params }) {
   const description =
     String(place?.description || "").trim() ||
     `${place.name} in ${cityName}: opening hours, vibe, location, and trusted queer nightlife context.`;
+  const quality = evaluateVenueSeoQuality(place);
 
   return {
     title,
@@ -210,6 +212,9 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical: canonicalPath,
     },
+    robots: quality.indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     openGraph: {
       title,
       description,

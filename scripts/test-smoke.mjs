@@ -50,7 +50,8 @@ function checkCanonicalDomainConfig() {
   const nextConfig = readText("next.config.mjs");
   const entityAuthority = readText("src/lib/seo/entityAuthority.js");
   const robots = readText("src/app/robots.js");
-  const sitemap = readText("src/app/sitemap.js");
+  const sitemap = readText("src/lib/seo/sitemapXml.js");
+  const sitemapIndex = readText("src/app/sitemap.xml/route.js");
 
   assert(
     !nextConfig.includes('type: "host"'),
@@ -66,8 +67,11 @@ function checkCanonicalDomainConfig() {
     "src/app/robots.js: host and sitemap must use the canonical www origin"
   );
   assert(
-    sitemap.includes(`BASE_URL = "${canonicalOrigin}"`),
-    "src/app/sitemap.js: sitemap URLs must use the canonical www origin"
+    sitemap.includes(`QA_SITE_URL = "${canonicalOrigin}"`) &&
+      sitemapIndex.includes('"/sitemap-venues.xml"') &&
+      sitemapIndex.includes('"/sitemap-events.xml"') &&
+      sitemapIndex.includes('"/sitemap-services.xml"'),
+    "split sitemap index must use the canonical www origin and list every entity sitemap"
   );
 }
 

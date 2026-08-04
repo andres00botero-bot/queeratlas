@@ -13,6 +13,7 @@ import {
   parseEntitySlug,
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { evaluateEventSeoQuality } from "@/lib/seo/entityIndexing";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
@@ -203,6 +204,7 @@ export async function generateMetadata({ params }) {
   const description =
     String(event?.description || "").trim() ||
     `${event.name} in ${cityName}: date, location, vibe and safer queer nightlife context.`;
+  const quality = evaluateEventSeoQuality(event);
 
   return {
     title,
@@ -210,6 +212,9 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical: canonicalPath,
     },
+    robots: quality.indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
     openGraph: {
       title,
       description,

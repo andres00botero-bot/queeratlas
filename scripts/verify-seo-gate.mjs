@@ -162,7 +162,7 @@ ensureContains(
   failures
 );
 
-const sitemapPath = "src/app/sitemap.js";
+const sitemapPath = "src/lib/seo/sitemapEntries.js";
 const sitemapSource = read(sitemapPath);
 ensureContains(sitemapSource, /const staticRoutes\s*=\s*\[/, `${sitemapPath}: missing staticRoutes`, failures);
 ensureContains(
@@ -172,13 +172,13 @@ ensureContains(
   failures
 );
 ensureContains(
-  sitemapSource,
-  /if\s*\(!value\)\s*return null/,
-  `${sitemapPath}: lastmod must be omitted when no verified content date exists`,
+  read("src/lib/seo/entityIndexing.js"),
+  /export function resolveEntityLastModified/,
+  "src/lib/seo/entityIndexing.js: missing per-entity lastmod resolver",
   failures
 );
-if (/function resolveLastContentUpdate\(\)[\s\S]*?return new Date\(\)/.test(sitemapSource)) {
-  failures.push(`${sitemapPath}: lastmod must not default to the deployment date`);
+if (/MAX_(EVENT|VENUE)_ENTITY_ENTRIES|\.slice\(0,\s*MAX_/.test(sitemapSource)) {
+  failures.push(`${sitemapPath}: entity sitemaps must not have a fixed inventory cap`);
 }
 for (const route of ["/cities", "/events", "/now", "/gay-guide", "/queer-guide", "/hbtq-guide"]) {
   const escaped = route.replace("/", "\\/");
@@ -188,6 +188,38 @@ for (const route of ["/cities", "/events", "/now", "/gay-guide", "/queer-guide",
     `${sitemapPath}: indexed route ${route} missing from sitemap`,
     failures
   );
+}
+
+const sitemapIndexSource = read("src/app/sitemap.xml/route.js");
+for (const sitemapRoute of [
+  "/sitemap-pages.xml",
+  "/sitemap-venues.xml",
+  "/sitemap-events.xml",
+  "/sitemap-services.xml",
+]) {
+  ensureContains(
+    sitemapIndexSource,
+    new RegExp(sitemapRoute.replaceAll("/", "\\/")),
+    `src/app/sitemap.xml/route.js: missing ${sitemapRoute}`,
+    failures
+  );
+}
+ensureContains(
+  read("src/lib/seo/entityInventory.js"),
+  /fetchAllRows\("places"\)[\s\S]*fetchAllRows\("events"\)[\s\S]*fetchAllRows\("services"\)/,
+  "src/lib/seo/entityInventory.js: sitemap inventory must load places, events and services from Supabase",
+  failures
+);
+
+const cityEntityLinksSource = read("src/components/city/CityEntityCrawlSection.js");
+ensureContains(
+  cityEntityLinksSource,
+  /buildVenuePath[\s\S]*buildEventPath[\s\S]*buildServicePath/,
+  "src/components/city/CityEntityCrawlSection.js: missing server-rendered entity link groups",
+  failures
+);
+if (/sr-only/.test(cityEntityLinksSource)) {
+  failures.push("src/components/city/CityEntityCrawlSection.js: entity crawl links must remain visible to users");
 }
 
 const cityTopicPath = "src/app/[city]/discover/[topic]/page.js";

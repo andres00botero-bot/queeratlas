@@ -6,6 +6,8 @@ import { unstable_cache } from "next/cache";
 import { buildEventIntelFallback } from "@/lib/intelFallbacks";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
+const INITIAL_EVENT_LIMIT = 80;
+const INITIAL_PLACE_LIMIT = 120;
 
 function splitLegacyVibe(description = "") {
   const raw = String(description || "");
@@ -142,7 +144,7 @@ function buildInitialHomeData(payload) {
   const worldNews = Array.isArray(payload?.worldNews) ? payload.worldNews : [];
 
   return {
-    events: events.map((event) =>
+    events: events.slice(0, INITIAL_EVENT_LIMIT).map((event) =>
       pickFields(event, [
         "id",
         "name",
@@ -157,7 +159,7 @@ function buildInitialHomeData(payload) {
         "event_intel",
       ])
     ),
-    places: places.map((place) =>
+    places: places.slice(0, INITIAL_PLACE_LIMIT).map((place) =>
       pickFields(place, [
         "id",
         "name",

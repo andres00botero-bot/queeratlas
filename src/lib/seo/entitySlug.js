@@ -72,3 +72,21 @@ export function eventMatchesSlug(event = {}, slug = "") {
   const eventNameSlug = slugifyEntityName(event?.name || "");
   return Boolean(eventNameSlug && nameSlug && eventNameSlug === nameSlug);
 }
+
+export function buildServicePath(city = "", service = {}) {
+  const normalizedCity = normalizeCitySlug(city || service?.city || "");
+  const basePath = cityPath(normalizedCity, "");
+  const slug = buildEntitySlug(service?.name, service?.id);
+  if (!basePath || !slug) return "/cities";
+  return `${basePath}/services/${slug}`;
+}
+
+export function serviceMatchesSlug(service = {}, slug = "") {
+  const { nameSlug, id } = parseEntitySlug(slug);
+  if (!nameSlug && !id) return false;
+
+  if (id && String(service?.id || "") === id) return true;
+
+  const serviceNameSlug = slugifyEntityName(service?.name || "");
+  return Boolean(serviceNameSlug && nameSlug && serviceNameSlug === nameSlug);
+}
