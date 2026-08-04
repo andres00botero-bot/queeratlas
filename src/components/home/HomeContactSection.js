@@ -19,6 +19,7 @@ export default function HomeContactSection({
   isMember = false,
   userId = "",
   defaultName = "",
+  pageContext = "/home",
   className = "mt-12",
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -84,7 +85,7 @@ export default function HomeContactSection({
           senderName,
           isAnonymous: canUseAnonymous ? isAnonymous : false,
           userId: isMember ? userId : "",
-          pageContext: "/home",
+          pageContext,
         }),
       });
 

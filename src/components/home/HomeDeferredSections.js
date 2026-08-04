@@ -365,7 +365,35 @@ export default function HomeDeferredSections({
             </Link>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-[11px] text-white/45">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[11px] text-white/45">
+          <Link
+            href="/about"
+            className="underline underline-offset-2 transition hover:text-white"
+          >
+            About
+          </Link>
+          <span className="text-white/25">|</span>
+          <Link
+            href="/editorial-policy"
+            className="underline underline-offset-2 transition hover:text-white"
+          >
+            Editorial standards
+          </Link>
+          <span className="text-white/25">|</span>
+          <Link
+            href="/corrections"
+            className="underline underline-offset-2 transition hover:text-white"
+          >
+            Corrections
+          </Link>
+          <span className="text-white/25">|</span>
+          <Link
+            href="/contact"
+            className="underline underline-offset-2 transition hover:text-white"
+          >
+            Contact & press
+          </Link>
+          <span className="text-white/25">|</span>
           <Link
             href="/privacy"
             className="underline underline-offset-2 transition hover:text-white"

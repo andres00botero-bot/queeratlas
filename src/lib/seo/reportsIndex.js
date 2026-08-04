@@ -10,7 +10,20 @@ export const SEO_REPORTS = [
         "A methodology-first ranking of queer nightlife cities based on route continuity, social signal depth, and practical fallback strength.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-05-27",
+    updatedAt: "2026-08-04",
+    authorId: "queer-atlas-editorial-team",
+    researchScope:
+      "This edition reviews route-quality patterns across Queer Atlas city, venue, event, and topic coverage. It does not yet publish a city-level score table or raw source ledger, so comparative claims should be read as an editorial model rather than an independently audited index.",
+    changeLog: [
+      {
+        date: "2026-08-04",
+        note: "Added editorial ownership, a specific research disclosure, and a public change history; ranking findings were not changed.",
+      },
+      {
+        date: "2026-05-27",
+        note: "Initial methodology-first report published with stable report and city-route links.",
+      },
+    ],
     intent: "nightlife",
     keyphrases: [
       "queer nightlife index 2026",
@@ -42,7 +55,20 @@ export const SEO_REPORTS = [
         "Compare cities by movement confidence, moderation signal, and fallback route depth for safer queer nightlife decisions.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-05-27",
+    updatedAt: "2026-08-04",
+    authorId: "queer-atlas-editorial-team",
+    researchScope:
+      "This edition reviews movement confidence, moderation signal, route continuity, and fallback depth represented in Queer Atlas city coverage. It is not a legal-risk index, and no city-level raw score table is published in the current edition.",
+    changeLog: [
+      {
+        date: "2026-08-04",
+        note: "Added editorial ownership, research limitations, and a public change history; safety conclusions were not expanded.",
+      },
+      {
+        date: "2026-05-27",
+        note: "Initial safety-routing methodology published.",
+      },
+    ],
     intent: "safety",
     keyphrases: [
       "safest queer cities 2026",
@@ -74,7 +100,20 @@ export const SEO_REPORTS = [
         "A global event-intent report mapping timing density and route execution quality across top queer cities.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-05-27",
+    updatedAt: "2026-08-04",
+    authorId: "queer-atlas-editorial-team",
+    researchScope:
+      "This edition reviews event timing, discoverability, and route execution patterns represented in Queer Atlas event and city-topic coverage. It does not claim to be a complete global event census.",
+    changeLog: [
+      {
+        date: "2026-08-04",
+        note: "Added editorial ownership, research limitations, and a public change history; event findings were not changed.",
+      },
+      {
+        date: "2026-05-27",
+        note: "Initial event-intent methodology published.",
+      },
+    ],
     intent: "events",
     keyphrases: [
       "global queer event report 2026",
@@ -106,7 +145,20 @@ export const SEO_REPORTS = [
         "Destination ranking built on nightlife depth, route breadth, and social-fit consistency, not one-off hype.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-05-27",
+    updatedAt: "2026-08-04",
+    authorId: "queer-atlas-editorial-team",
+    researchScope:
+      "This edition reviews nightlife depth, route breadth, and social-fit coverage across Queer Atlas destinations. The current page does not expose a raw destination score table, so it should not be treated as an independently audited league table.",
+    changeLog: [
+      {
+        date: "2026-08-04",
+        note: "Added editorial ownership, research limitations, and a public change history; destination findings were not changed.",
+      },
+      {
+        date: "2026-05-27",
+        note: "Initial destination methodology published.",
+      },
+    ],
     intent: "nightlife",
     keyphrases: [
       "top LGBTQ nightlife destinations",

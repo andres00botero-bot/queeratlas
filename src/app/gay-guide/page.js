@@ -1,4 +1,6 @@
 import Link from "next/link";
+import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 
 export const metadata = {
@@ -68,6 +70,19 @@ const faqs = [
 ];
 
 export default function GayGuidePage() {
+  const editorial = GUIDE_EDITORIAL_META.gayGuide;
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": "https://www.queeratlas.app/gay-guide#article",
+    headline: "Gay Travel Guide 2026",
+    url: "https://www.queeratlas.app/gay-guide",
+    datePublished: editorial.publishedAt,
+    dateModified: editorial.updatedAt,
+    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    publisher: { "@id": "https://www.queeratlas.app/#organization" },
+    publishingPrinciples: "https://www.queeratlas.app/editorial-policy",
+  };
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -92,6 +107,7 @@ export default function GayGuidePage() {
 
   return (
     <main className="min-h-screen bg-[#050505] px-6 py-8 text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -125,6 +141,14 @@ export default function GayGuidePage() {
             </Link>
           </div>
         </section>
+
+        <EditorialDisclosure
+          className="mt-5"
+          publishedAt={editorial.publishedAt}
+          updatedAt={editorial.updatedAt}
+          researchScope={editorial.researchScope}
+          changeLog={editorial.changeLog}
+        />
 
         <section className="mt-8 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(22,22,22,0.94),rgba(10,10,10,0.98))] p-6">
           <h2 className="text-xl font-semibold tracking-[-0.01em]">Top Gay Travel Cities Right Now</h2>

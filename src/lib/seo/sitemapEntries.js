@@ -51,6 +51,13 @@ export async function getPageSitemapEntries() {
     "/terms",
     "/privacy",
     "/community-policy",
+    "/about",
+    "/editorial-policy",
+    "/verification",
+    "/sources-and-reviews",
+    "/corrections",
+    "/contributors",
+    "/contact",
   ];
 
   const staticEntries = staticRoutes.map((route) => ({

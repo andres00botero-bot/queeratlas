@@ -1,4 +1,6 @@
 import Link from "next/link";
+import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
 
 export const metadata = {
@@ -74,6 +76,19 @@ const faqs = [
 ];
 
 export default function QueerGuidePage() {
+  const editorial = GUIDE_EDITORIAL_META.queerGuide;
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": "https://www.queeratlas.app/queer-guide#article",
+    headline: "Queer Travel Guide 2026",
+    url: "https://www.queeratlas.app/queer-guide",
+    datePublished: editorial.publishedAt,
+    dateModified: editorial.updatedAt,
+    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    publisher: { "@id": "https://www.queeratlas.app/#organization" },
+    publishingPrinciples: "https://www.queeratlas.app/editorial-policy",
+  };
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -98,6 +113,7 @@ export default function QueerGuidePage() {
 
   return (
     <main className="min-h-screen bg-[#050505] px-6 py-8 text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
@@ -131,6 +147,14 @@ export default function QueerGuidePage() {
             </Link>
           </div>
         </section>
+
+        <EditorialDisclosure
+          className="mt-5"
+          publishedAt={editorial.publishedAt}
+          updatedAt={editorial.updatedAt}
+          researchScope={editorial.researchScope}
+          changeLog={editorial.changeLog}
+        />
 
         <section className="mt-8 grid gap-4 md:grid-cols-3">
           {FEATURES.map((item) => (

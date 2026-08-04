@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { ATLAS_COLLECTIONS, getAtlasCollectionBySlug } from "@/lib/atlasCollections";
 import { cityCoreConfig } from "@/lib/cityCore";
+import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import {
   QA_LOGO_URL,
   QA_ORGANIZATION_ID,
@@ -64,6 +66,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
   const { slug } = await params;
   const collection = getAtlasCollectionBySlug(slug);
   if (!collection) notFound();
+  const editorial = GUIDE_EDITORIAL_META.collection;
+  const researchScope = `${collection.methodology} The current collection reviews ${collection.items.length} named picks or routes across ${collection.cities.length} city references. Operating details and door policies should be confirmed before travel.`;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -72,7 +76,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
     url: `${QA_SITE_URL}${collection.href}`,
     headline: collection.title,
     description: collection.summary,
-    dateModified: "2026-06-25",
+    datePublished: editorial.publishedAt,
+    dateModified: editorial.updatedAt,
     inLanguage: "en",
     isPartOf: {
       "@id": QA_WEBSITE_ID,
@@ -86,6 +91,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
         url: QA_LOGO_URL,
       },
     },
+    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
     mainEntity: {
       "@type": "ItemList",
       name: collection.title,
@@ -129,6 +136,14 @@ export default async function AtlasCollectionDetailPage({ params }) {
           </div>
         </section>
 
+        <EditorialDisclosure
+          className="mt-5"
+          publishedAt={editorial.publishedAt}
+          updatedAt={editorial.updatedAt}
+          researchScope={researchScope}
+          changeLog={editorial.changeLog}
+        />
+
         <section className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.02))] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/72">The picks</p>
@@ -162,7 +177,7 @@ export default async function AtlasCollectionDetailPage({ params }) {
             <p className="mt-3 text-sm leading-7 text-white/70">{collection.methodology}</p>
             <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
               <p className="text-xs uppercase tracking-[0.14em] text-white/44">Updated</p>
-              <p className="mt-1 text-sm text-white/72">June 2026</p>
+              <p className="mt-1 text-sm text-white/72">August 2026</p>
             </div>
           </aside>
         </section>

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM } from "@/lib/editorialTrust";
 import { getSeoReport, listSeoReports } from "@/lib/seo/reportsIndex";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 
@@ -101,6 +103,8 @@ export default async function ReportDetailPage({ params }) {
     publisher: {
       "@id": QA_ORGANIZATION_ID,
     },
+    author: buildEditorialAuthorJsonLd(EDITORIAL_TEAM),
+    publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
     about: report.keyphrases,
   };
 
@@ -141,6 +145,13 @@ export default async function ReportDetailPage({ params }) {
             Published {report.publishedAt} | Updated {report.updatedAt}
           </p>
         </header>
+
+        <EditorialDisclosure
+          publishedAt={report.publishedAt}
+          updatedAt={report.updatedAt}
+          researchScope={report.researchScope}
+          changeLog={report.changeLog}
+        />
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
           <h2 className="text-lg font-semibold">Methodology</h2>
