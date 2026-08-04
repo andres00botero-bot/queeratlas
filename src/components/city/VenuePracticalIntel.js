@@ -67,13 +67,13 @@ export default function VenuePracticalIntel({ place, compact = false }) {
   const Heading = compact ? "h3" : "h2";
 
   return (
-    <section className={compact ? "mt-4" : "rounded-[24px] border border-fuchsia-200/16 bg-[linear-gradient(145deg,rgba(244,114,182,0.08),rgba(34,211,238,0.05),rgba(10,10,10,0.96))] p-6"}>
+    <section className={compact ? "mt-4" : "rounded-[20px] border border-fuchsia-200/16 bg-[linear-gradient(145deg,rgba(244,114,182,0.08),rgba(34,211,238,0.05),rgba(10,10,10,0.96))] p-4 sm:rounded-[24px] sm:p-6"}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/68">Venue intelligence</p>
           <Heading className={`${compact ? "mt-1 text-base" : "mt-1 text-lg"} font-semibold text-white`}>Know before you go</Heading>
         </div>
-        <span className="rounded-full border border-cyan-100/18 bg-cyan-300/[0.08] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-50/72">
+        <span className="hidden rounded-full border border-cyan-100/18 bg-cyan-300/[0.08] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-50/72 sm:inline-flex">
           Community + editorial
         </span>
       </div>
@@ -92,7 +92,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
               <p className={`mt-1.5 text-sm leading-5 ${isKnown ? "text-white/90" : "text-white/48"}`}>{value}</p>
               {field.detail ? <p className="mt-1 text-[11px] text-white/46">{field.detail}</p> : null}
               {field.evidence?.status && !hidesUnsupportedText ? (
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-cyan-50/58">
+                <div className="mt-2 hidden flex-wrap items-center gap-2 text-[10px] text-cyan-50/58 sm:flex">
                   <span className="rounded-full border border-cyan-100/14 bg-cyan-200/[0.05] px-2 py-0.5">
                     {EVIDENCE_LABELS[field.evidence.status] || "Evidence checked"}
                   </span>
@@ -113,7 +113,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
         })}
       </div>
 
-      <p className="mt-3 text-[11px] leading-5 text-white/46">
+      <p className="mt-3 hidden text-[11px] leading-5 text-white/46 sm:block">
         Patterns can change by event and season. Recent community reports should always outweigh old venue notes.
       </p>
 

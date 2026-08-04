@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Home, MapPinned, MessageCircle, Newspaper, Star, Users } from "lucide-react";
+import { CalendarDays, Home, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { supabase } from "@/lib/supabase";
@@ -154,30 +154,41 @@ export default function FloatingHomeButton() {
       label: "Home",
       icon: Home,
       accent: "fuchsia",
+      mobile: true,
     },
     {
-      href: "/favorites",
-      label: "Your Atlas",
-      icon: Star,
-      accent: "amber",
+      href: "/search",
+      label: "Search",
+      icon: Search,
+      accent: "violet",
+      mobile: true,
     },
     {
       href: "/events",
       label: "Events",
       icon: CalendarDays,
       accent: "cyan",
-    },
-    {
-      href: "/now",
-      label: "News",
-      icon: Newspaper,
-      accent: "rose",
+      mobile: true,
     },
     {
       href: "/cities",
       label: "Cities",
       icon: MapPinned,
       accent: "emerald",
+      mobile: true,
+    },
+    {
+      href: "/favorites",
+      label: "Atlas",
+      icon: Star,
+      accent: "amber",
+      mobile: true,
+    },
+    {
+      href: "/now",
+      label: "News",
+      icon: Newspaper,
+      accent: "rose",
     },
     ...(isMember
       ? [
@@ -200,14 +211,14 @@ export default function FloatingHomeButton() {
   return (
     <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] w-[min(96vw,30rem)] -translate-x-1/2 px-2 md:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:left-auto md:w-auto md:translate-x-0 md:px-0 md:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
       <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(56,189,248,0.22),rgba(244,114,182,0.16),transparent_72%)] blur-xl" />
-      <div className="mb-1.5 flex justify-center md:mb-2 md:justify-end">
+      <div className="mb-1.5 hidden justify-center md:mb-2 md:flex md:justify-end">
         <span className="inline-flex h-5 items-center rounded-full border border-cyan-100/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(244,114,182,0.14),rgba(0,0,0,0.72))] px-2.5 text-[10px] font-bold uppercase text-white shadow-[0_8px_22px_rgba(34,211,238,0.16),0_8px_20px_rgba(0,0,0,0.34)] ring-1 ring-white/10">
           Navigate
         </span>
       </div>
       <nav
         aria-label="Quick navigation"
-        className="relative flex w-full items-center justify-center gap-1 rounded-full border border-white/34 bg-[linear-gradient(135deg,rgba(6,9,18,0.98),rgba(20,21,36,0.97),rgba(8,8,8,0.99))] px-1.5 py-1.5 shadow-[0_24px_64px_rgba(2,6,20,0.66),0_0_0_1px_rgba(255,255,255,0.09)] backdrop-blur-xl md:w-auto md:gap-1.5 md:px-2 md:py-2"
+        className="relative flex w-full items-center justify-center gap-1 rounded-[22px] border border-white/28 bg-[linear-gradient(135deg,rgba(6,9,18,0.98),rgba(20,21,36,0.97),rgba(8,8,8,0.99))] px-1.5 py-1.5 shadow-[0_18px_48px_rgba(2,6,20,0.62),0_0_0_1px_rgba(255,255,255,0.09)] backdrop-blur-xl md:w-auto md:gap-1.5 md:rounded-full md:px-2 md:py-2"
       >
         <span
           aria-hidden="true"
@@ -237,7 +248,7 @@ export default function FloatingHomeButton() {
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               title={item.label}
-              className={`group relative inline-flex h-9 w-9 items-center justify-center rounded-full border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black min-[400px]:h-10 min-[400px]:w-10 md:h-11 md:w-11 ${
+              className={`group relative flex h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[16px] border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:inline-flex md:h-11 md:w-11 md:flex-none md:flex-row md:rounded-full ${item.mobile ? "" : "hidden md:inline-flex"} ${
                 isActive
                   ? "border-white/55 bg-[linear-gradient(135deg,rgba(255,255,255,0.26),rgba(255,255,255,0.1),rgba(10,10,10,0.86))] text-white shadow-[0_12px_34px_rgba(0,0,0,0.44)]"
                   : `${inactiveToneClass} text-white/90 hover:-translate-y-[1px]`
@@ -275,6 +286,9 @@ export default function FloatingHomeButton() {
                 }`}
                 aria-hidden="true"
               />
+              <span className="max-w-full truncate text-[9px] font-semibold leading-none text-white/82 md:hidden">
+                {item.label}
+              </span>
               <span className="pointer-events-none absolute -top-9 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-white/20 bg-black/85 px-2 py-1 text-[10px] font-medium text-white/90 shadow-[0_8px_24px_rgba(2,6,23,0.45)] md:block md:opacity-0 md:transition md:duration-150 md:group-hover:opacity-100">
                 {item.label}
               </span>

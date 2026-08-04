@@ -4604,9 +4604,9 @@ export default function CityPage() {
         cityFaqJsonLd={cityFaqJsonLd}
       />
       <ActionToast toast={toast} />
-      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-5 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
+      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-3.5 py-4 pb-24 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
         <div className="mx-auto w-full max-w-[1900px]">
-          <div className="xl:grid xl:min-h-[calc(100vh-3rem)] xl:grid-cols-[224px_minmax(0,1fr)_minmax(360px,440px)] xl:items-start xl:gap-[0.9rem]">
+          <div className="flex flex-col xl:grid xl:min-h-[calc(100vh-3rem)] xl:grid-cols-[224px_minmax(0,1fr)_minmax(360px,440px)] xl:items-start xl:gap-[0.9rem]">
             <aside className="hidden xl:self-start xl:block">
               <div className="sticky top-6 h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
                 <CityNavigationCluster
@@ -4657,7 +4657,7 @@ export default function CityPage() {
               </div>
             </aside>
 
-            <aside className="min-w-0 xl:col-start-3 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start">
+            <aside className="order-2 min-w-0 xl:order-none xl:col-start-3 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start">
               <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
                 <CityMapSection
                   mapWrapperRef={mapWrapperRef}
@@ -4672,7 +4672,7 @@ export default function CityPage() {
 
             <section
               ref={centerColumnScrollRef}
-              className="min-w-0 xl:col-start-2 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto"
+              className="order-1 min-w-0 xl:order-none xl:col-start-2 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto"
             >
               <CityTopCluster
                 city={city}

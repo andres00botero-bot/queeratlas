@@ -17,15 +17,15 @@ export default function PageOpeningState({
   const style = TONE_STYLES[tone] || TONE_STYLES.violet;
 
   return (
-    <div className={`qa-panel qa-elev-3 w-full max-w-xl rounded-[32px] border p-6 ${style}`}>
+    <div className={`qa-panel qa-elev-3 w-full max-w-xl rounded-[22px] border p-4 sm:rounded-[32px] sm:p-6 ${style}`}>
       <div className="h-1.5 w-24 rounded-full bg-gradient-to-r from-fuchsia-300/80 via-orange-300/80 to-cyan-300/80" />
       <p className="qa-eyebrow text-white/52">{title}</p>
-      <p className="qa-clamp-2 mt-2 text-sm text-white/72">{subtitle}</p>
-      <div className="mt-5 space-y-3" aria-hidden="true">
+      <p className="qa-clamp-2 mt-1.5 text-sm text-white/72 sm:mt-2">{subtitle}</p>
+      <div className="mt-3 space-y-2.5 sm:mt-5 sm:space-y-3" aria-hidden="true">
         <div className="qa-skeleton-card h-4 w-44 rounded-full" />
         <div className="qa-skeleton-card h-8 w-60 rounded-full" />
-        <div className="qa-skeleton-card h-3 w-full rounded-full" />
-        <div className="qa-skeleton-card h-3 w-5/6 rounded-full" />
+        <div className="qa-skeleton-card hidden h-3 w-full rounded-full sm:block" />
+        <div className="qa-skeleton-card hidden h-3 w-5/6 rounded-full sm:block" />
       </div>
     </div>
   );

@@ -9,10 +9,10 @@ export default function CityMapSection({
   return (
     <div
       ref={mapWrapperRef}
-      className="qa-city-section mb-8 mt-0 rounded-[30px] xl:mb-0 xl:mt-0 xl:h-full"
+      className="qa-city-section mb-5 mt-0 rounded-[24px] sm:mb-8 sm:rounded-[30px] xl:mb-0 xl:mt-0 xl:h-full"
     >
-      <div className="relative h-[460px] w-full rounded-[30px] bg-[linear-gradient(135deg,rgba(77,225,255,0.95),rgba(255,122,195,0.88),rgba(255,209,102,0.82))] p-[2px] shadow-[0_28px_82px_rgba(34,211,238,0.18),0_18px_62px_rgba(244,114,182,0.14)] xl:h-full">
-        <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/18 bg-[#101018]">
+      <div className="relative h-[300px] w-full rounded-[24px] bg-[linear-gradient(135deg,rgba(77,225,255,0.95),rgba(255,122,195,0.88),rgba(255,209,102,0.82))] p-[2px] shadow-[0_28px_82px_rgba(34,211,238,0.18),0_18px_62px_rgba(244,114,182,0.14)] sm:h-[460px] sm:rounded-[30px] xl:h-full">
+        <div className="relative h-full w-full overflow-hidden rounded-[22px] border border-white/18 bg-[#101018] sm:rounded-[28px]">
           <div
             ref={mapContainerRef}
             className="h-full w-full"

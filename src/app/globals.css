@@ -72,6 +72,10 @@ body > div:first-child {
 }
 
 @media (max-width: 767px) {
+  html {
+    font-size: 16px;
+  }
+
   html,
   body {
     background-color: #0a0a0a;
@@ -79,13 +83,13 @@ body > div:first-child {
   }
 
   body {
-    padding-bottom: calc(6.9rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
 @media (max-width: 390px) {
   body {
-    padding-bottom: calc(6.35rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -826,6 +830,13 @@ body > div:first-child {
 }
 
 @media (max-width: 640px) {
+  .qa-page :is(p, li, h1, h2, h3, h4, h5, h6),
+  .qa-city :is(p, li, h1, h2, h3, h4, h5, h6) {
+    text-align: left !important;
+    text-justify: auto !important;
+    hyphens: none;
+  }
+
   .qa-shell {
     padding-inline: clamp(0.78rem, 3.6vw, 1.1rem);
     padding-block: clamp(0.9rem, 3vw, 1.2rem);
@@ -851,6 +862,10 @@ body > div:first-child {
   }
 
   .qa-lead {
-    line-height: 1.62;
+    line-height: 1.5;
+  }
+
+  :where(button, [role="button"], a[href], input, select) {
+    min-height: 2.75rem;
   }
 }

@@ -29,14 +29,16 @@ export default function DeferredGlobalChrome() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  if (!isReady) return null;
-
   return (
     <>
       <FloatingHomeButton />
-      <MessageAlertGate />
-      <PwaInstallGate />
-      <TrafficHeartbeat />
+      {isReady ? (
+        <>
+          <MessageAlertGate />
+          <PwaInstallGate />
+          <TrafficHeartbeat />
+        </>
+      ) : null}
     </>
   );
 }

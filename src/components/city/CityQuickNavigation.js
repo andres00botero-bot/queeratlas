@@ -235,16 +235,16 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className="qa-city-panel-cq animate-cinematic-in sticky top-3 z-30 mb-8 rounded-[24px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-4 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur"
+      className="qa-city-panel-cq animate-cinematic-in sticky top-2 z-30 mb-4 rounded-[20px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-2.5 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur sm:top-3 sm:mb-8 sm:rounded-[24px] sm:p-4"
       style={{ animationDelay: "170ms" }}
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-white/72">Explore this city</p>
-        <p className="rounded-full border border-white/14 bg-white/[0.08] px-2 py-1 text-[11px] text-white/72">
+        <p className="text-[10px] uppercase tracking-[0.16em] text-white/72 sm:text-[11px] sm:tracking-[0.18em]">Explore this city</p>
+        <p className="hidden rounded-full border border-white/14 bg-white/[0.08] px-2 py-1 text-[11px] text-white/72 sm:block">
           Current: {activeSection || "overview"}
         </p>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-2 grid grid-cols-5 gap-1.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5">
         {items.map((item) => {
           const Icon = item.Icon;
           const isActive =
@@ -266,7 +266,7 @@ export default function CityQuickNavigation({
                   }
                 : undefined
             }
-            className={`qa-cinematic-hover min-h-[5.1rem] rounded-2xl border px-4 py-3 text-left text-sm transition ${item.className} ${
+            className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl border px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${item.className} ${
               isActive
                 ? "ring-1 ring-white/34"
                 : ""
@@ -274,10 +274,10 @@ export default function CityQuickNavigation({
           >
             <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] opacity-72">
               <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-              <span>{item.eyebrow}</span>
+              <span className="hidden sm:inline">{item.eyebrow}</span>
             </p>
-            <p className="mt-2 flex items-center justify-between gap-2 font-semibold">
-              <span className="text-white">{item.label}</span>
+            <p className="mt-1 flex max-w-full items-center justify-center gap-1 font-semibold sm:mt-2 sm:justify-between sm:gap-2">
+              <span className="truncate text-white">{item.label}</span>
               {item.key === "venues" ? (
                 <ChevronDown
                   className={`h-3.5 w-3.5 transition ${showVenuePicker ? "rotate-180" : "rotate-0"}`}

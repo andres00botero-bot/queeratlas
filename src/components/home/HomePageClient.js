@@ -822,7 +822,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/5 blur-3xl" />
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
-          <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-5 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 lg:z-[100] lg:overflow-visible xl:px-8 xl:py-8">
+          <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 lg:z-[100] lg:overflow-visible xl:px-8 xl:py-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
                 src="/home/home-hero-background-v4.webp"
@@ -842,8 +842,8 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-28 bg-gradient-to-l from-[#05060f]/86 to-transparent lg:block" />
 
             <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-4.5rem)] w-full max-w-[1720px] flex-col justify-between">
-          <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-            <div className="qa-eyebrow rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur">
+          <div className="mb-6 flex items-center justify-end gap-3 sm:mb-10 sm:justify-between sm:gap-4">
+            <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
               {heroIdentityLabel}
             </div>
 
@@ -904,15 +904,15 @@ export default function HomePageClient({ initialHomeData = null }) {
           </div>
 
           <div>
-            <section className="pt-4 xl:pt-14">
-              <div className="flex items-center gap-4 sm:gap-5">
+            <section className="pt-1 sm:pt-4 xl:pt-14">
+              <div className="flex items-center gap-3 sm:gap-5">
                 <Image
                   src="/queer-atlas-logo.png"
                   alt="Queer Atlas logo"
                   width={96}
                   height={96}
                   priority
-                  className="h-16 w-16 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
+                  className="h-14 w-14 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
                 />
                 <div>
                   <h1 className="qa-display qa-h1 max-w-5xl text-4xl font-bold leading-[0.95] tracking-[-0.028em] text-white sm:text-6xl xl:text-7xl">
@@ -927,9 +927,8 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               </div>
 
-              <p className="qa-lead mt-7 max-w-[52ch] text-[1.02rem] leading-[1.62] tracking-[0.002em] text-white/76 sm:text-[1.16rem]">
-                Discover places, events, and communities across 130+ cities with verified
-                local signal for nightlife, culture, and safe spaces.
+              <p className="qa-lead mt-5 max-w-[52ch] text-[0.96rem] tracking-[0.002em] text-white/76 sm:mt-7 sm:text-[1.16rem]">
+                Find queer places, events, and local signal across 130+ cities.
               </p>
               {isDataLoading && (
                 <p className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
@@ -947,7 +946,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className="relative z-20 mt-8 w-full max-w-[44rem] rounded-[30px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.035))] p-3.5 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:p-[18px]">
+              <div className="relative z-20 mt-6 w-full max-w-[44rem] rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:mt-8 sm:rounded-[30px] sm:p-[18px]">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
@@ -1022,16 +1021,16 @@ export default function HomePageClient({ initialHomeData = null }) {
                     </div>
                   )}
                 </div>
-              <div className="mt-5 grid w-full max-w-[44rem] grid-cols-3 gap-2.5">
-                <div className="qa-card flex h-[82px] flex-col items-center justify-center rounded-xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] px-3.5 py-2.5 text-center backdrop-blur">
+              <div className="mt-4 grid w-full max-w-[44rem] grid-cols-3 gap-2 sm:mt-5 sm:gap-2.5">
+                <div className="qa-card flex h-[68px] flex-col items-center justify-center rounded-xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] px-2 py-2 text-center backdrop-blur sm:h-[82px] sm:px-3.5 sm:py-2.5">
                   <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{cityCountDisplay}</p>
                   <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Cities</p>
                 </div>
-                <div className="qa-card flex h-[82px] flex-col items-center justify-center rounded-xl border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] px-3.5 py-2.5 text-center backdrop-blur">
+                <div className="qa-card flex h-[68px] flex-col items-center justify-center rounded-xl border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] px-2 py-2 text-center backdrop-blur sm:h-[82px] sm:px-3.5 sm:py-2.5">
                   <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{placeCountDisplay}</p>
                   <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Places</p>
                 </div>
-                <div className="qa-card flex h-[82px] flex-col items-center justify-center rounded-xl border border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(255,255,255,0.03))] px-3.5 py-2.5 text-center backdrop-blur">
+                <div className="qa-card flex h-[68px] flex-col items-center justify-center rounded-xl border border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(255,255,255,0.03))] px-2 py-2 text-center backdrop-blur sm:h-[82px] sm:px-3.5 sm:py-2.5">
                   <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{eventCountDisplay}</p>
                   <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Events</p>
                 </div>
@@ -1058,7 +1057,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               }
             />
           ) : (
-            <div className="mt-12 h-[460px] rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
+            <div className="mt-12 hidden h-[460px] rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] sm:block" />
           )}
 
         </div>

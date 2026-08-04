@@ -695,18 +695,18 @@ export default function SearchPage() {
       <div className="qa-shell">
         <section
           aria-labelledby="global-search-heading"
-          className="qa-panel mb-8 rounded-[32px] border border-white/10 bg-cover bg-center bg-no-repeat p-7"
+          className="qa-panel mb-5 rounded-[24px] border border-white/10 bg-cover bg-center bg-no-repeat p-4 sm:mb-8 sm:rounded-[32px] sm:p-7"
           style={{
             backgroundImage:
               "linear-gradient(160deg, rgba(6,6,8,0.38), rgba(6,6,8,0.56)), radial-gradient(circle at top left, rgba(244,114,182,0.1), transparent 26%), radial-gradient(circle at 80% 16%, rgba(59,130,246,0.1), transparent 24%), url('/images/explore-global-search.png')",
           }}
         >
           <p className="qa-eyebrow text-white/45">Global search</p>
-          <h1 id="global-search-heading" className="qa-display qa-h1 mt-3 text-4xl font-semibold">What are you looking for today?</h1>
-          <p className="qa-lead mt-3 max-w-3xl text-white/72">
-            Find trusted queer spaces and live city energy in seconds.
+          <h1 id="global-search-heading" className="qa-display qa-h1 mt-2 text-3xl font-semibold sm:mt-3 sm:text-4xl">Search the queer atlas</h1>
+          <p className="qa-lead mt-2 max-w-3xl text-sm text-white/72 sm:mt-3 sm:text-base">
+            Cities, venues, events, and vibes in one search.
           </p>
-          <form onSubmit={submitSearch} role="search" aria-label="Global search form" className="mt-5 flex gap-3">
+          <form onSubmit={submitSearch} role="search" aria-label="Global search form" className="mt-4 flex flex-col gap-2.5 sm:mt-5 sm:flex-row sm:gap-3">
             <div className="relative flex-1">
               <label htmlFor={SEARCH_INPUT_ID} className="sr-only">
                 Search for city, venue, event, or vibe
@@ -796,12 +796,12 @@ export default function SearchPage() {
                 </ul>
               )}
             </div>
-            <button type="submit" className="rounded-2xl bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black">
+            <button type="submit" className="w-full rounded-2xl bg-gradient-to-r from-fuchsia-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black sm:w-auto">
               Search
             </button>
           </form>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-4 sm:gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="col-span-2 rounded-2xl border border-white/10 bg-black/25 p-2.5 sm:p-3 xl:col-span-1">
               <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Type</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {TYPE_FILTERS.map((item) => (
@@ -822,7 +822,7 @@ export default function SearchPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-2.5 sm:p-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">City</p>
               <label htmlFor="search-city-filter" className="sr-only">
                 Filter by city
@@ -841,7 +841,7 @@ export default function SearchPage() {
               </select>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-2.5 sm:p-3">
               <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Vibe</p>
               <label htmlFor="search-vibe-filter" className="sr-only">
                 Filter by vibe
@@ -860,7 +860,7 @@ export default function SearchPage() {
               </select>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
+            <div className="col-span-2 rounded-2xl border border-white/10 bg-black/25 p-2.5 sm:p-3 md:col-span-1">
               <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Quality</p>
               <label htmlFor="search-quality-filter" className="sr-only">
                 Filter by quality
@@ -879,7 +879,7 @@ export default function SearchPage() {
               </select>
             </div>
           </div>
-          <p className="mt-3 text-xs text-white/70">
+          <p className="mt-3 hidden text-xs text-white/70 sm:block">
             Try: &ldquo;safe queer nightlife in Berlin&rdquo;, &ldquo;drag shows tonight&rdquo;, &ldquo;quiet queer places&rdquo;
           </p>
           <p id={SEARCH_SUMMARY_STATUS_ID} role="status" aria-live="polite" className="sr-only">
@@ -928,7 +928,7 @@ export default function SearchPage() {
           </section>
         )}
         {!activeQuery.trim() && (
-          <section className="qa-panel rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-8">
+          <section className="qa-panel rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-4 sm:rounded-[28px] sm:p-8">
             <EmptyState
               title="Start with a city, venue name, event title, or vibe keyword."
               description="Search across cities, places, and events in one move."

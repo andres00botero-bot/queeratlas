@@ -259,7 +259,7 @@ export default async function CityVenueDetailPage({ params }) {
   });
 
   return (
-    <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
+    <main className="min-h-screen bg-[#050505] px-3.5 py-4 text-white sm:px-6 sm:py-8">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(placeJsonLd) }}
@@ -272,11 +272,11 @@ export default async function CityVenueDetailPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
       />
-      <div className="mx-auto max-w-4xl space-y-6">
-        <header className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">
+      <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-6">
+        <header className="rounded-[22px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[28px] sm:p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Venue Detail</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{place.name}</h1>
-          <p className="mt-2 text-sm text-white/70">
+          <p className="mt-2 hidden text-sm text-white/70 sm:block">
             {cityName} venue intelligence with route context, hours, and trusted local signal.
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/65">
@@ -292,14 +292,14 @@ export default async function CityVenueDetailPage({ params }) {
           </div>
         </header>
 
-        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+        <section className="rounded-[20px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[24px] sm:p-6">
           <h2 className="text-lg font-semibold">About this venue</h2>
-          <p className="mt-3 text-sm leading-7 text-white/82">
+          <p className="qa-clamp-3 mt-2 text-sm leading-6 text-white/82 sm:mt-3 sm:line-clamp-none sm:leading-7">
             {String(place?.description || "").trim() || `${place.name} is part of ${cityName}'s live queer nightlife network.`}
           </p>
         </section>
 
-        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+        <section className="rounded-[20px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[24px] sm:p-6">
           <h2 className="text-lg font-semibold">Practical details</h2>
           <div className="mt-3 space-y-2 text-sm text-white/82">
             <p>
@@ -309,7 +309,7 @@ export default async function CityVenueDetailPage({ params }) {
               <span className="text-white/55">Hours:</span>{" "}
               {String(place?.hours || "").trim() || "Hours vary by night; verify before going."}
             </p>
-            <p>
+            <p className="hidden sm:block">
               <span className="text-white/55">Canonical:</span>{" "}
               <a href={canonicalUrl} className="text-cyan-100 underline decoration-cyan-200/45 underline-offset-2">
                 {canonicalUrl}
@@ -320,16 +320,16 @@ export default async function CityVenueDetailPage({ params }) {
             <OfficialExternalLink
               href={String(place.link)}
               kind="venue"
-              className="mt-6 sm:max-w-sm"
+              className="mt-4 sm:mt-6 sm:max-w-sm"
             />
           ) : null}
         </section>
 
         <VenuePracticalIntel place={place} />
 
-        <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
+        <section className="rounded-[20px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-4 sm:rounded-[24px] sm:p-6">
           <h2 className="text-lg font-semibold text-cyan-50">Related planning routes</h2>
-          <p className="mt-2 text-sm leading-7 text-cyan-50/84">
+          <p className="mt-2 hidden text-sm leading-7 text-cyan-50/84 sm:block">
             Keep decisions fast with route-based fallbacks built for same-night shifts, safer pivots, and better venue sequencing.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -358,7 +358,7 @@ export default async function CityVenueDetailPage({ params }) {
           >
             Open in city panel
           </Link>
-          <span className="rounded-full border border-white/12 bg-black/35 px-4 py-2 text-[11px] uppercase tracking-[0.12em] text-white/52">
+          <span className="hidden rounded-full border border-white/12 bg-black/35 px-4 py-2 text-[11px] uppercase tracking-[0.12em] text-white/52 sm:inline-flex">
             slug: {fallbackSlug}
           </span>
         </nav>

@@ -26,7 +26,7 @@ export default function CitySeoTopicLinks({ city = "", cityName = "" }) {
   return (
     <section
       aria-label={`Explore ${cityName} topic guides`}
-      className="qa-city-copy-left mb-8 rounded-[24px] border border-white/16 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(244,114,182,0.08),rgba(255,255,255,0.055))] p-5 shadow-[0_18px_48px_rgba(34,211,238,0.10)] backdrop-blur"
+      className="qa-city-copy-left mb-5 rounded-[20px] border border-white/16 bg-[linear-gradient(135deg,rgba(34,211,238,0.12),rgba(244,114,182,0.08),rgba(255,255,255,0.055))] p-4 shadow-[0_18px_48px_rgba(34,211,238,0.10)] backdrop-blur sm:mb-8 sm:rounded-[24px] sm:p-5"
     >
       <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/76">Explore City Topics</p>
       <h2 className="mt-2 text-base font-semibold tracking-[-0.01em] text-white">
@@ -43,7 +43,7 @@ export default function CitySeoTopicLinks({ city = "", cityName = "" }) {
           </Link>
         ))}
       </div>
-      <p className="mt-4 text-xs leading-6 text-white/70">
+      <p className="mt-4 hidden text-xs leading-6 text-white/70 sm:block">
         Start with{" "}
         <Link
           href={semanticAnchors[0]?.cityHref || `/${city}/discover/queer-techno-clubs`}

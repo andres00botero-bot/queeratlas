@@ -1088,10 +1088,10 @@ export default function EventsPage() {
           <section
             ref={overviewSectionRef}
             data-events-section-id="hero"
-            className="qa-panel qa-premium-card overflow-hidden rounded-[36px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-6 py-7 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:px-8"
+            className="qa-panel qa-premium-card overflow-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-4 py-4 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:rounded-[36px] sm:px-8 sm:py-7"
           >
             <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-              <div className="flex min-h-[380px] flex-col">
+              <div className="flex flex-col xl:min-h-[380px]">
                 <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-white/72 backdrop-blur">
                   <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.9)]" />
                   Live Discovery + Event Signal
@@ -1099,35 +1099,34 @@ export default function EventsPage() {
 
                 <div className="flex flex-1 items-center pt-3 sm:pt-4 xl:pt-0">
                   <div className="mx-auto w-full max-w-3xl text-center xl:mx-0 xl:max-w-none xl:text-left">
-                    <h1 className="qa-display qa-h1 inline-flex items-center justify-center gap-3 text-4xl font-semibold text-white sm:gap-4 sm:text-5xl xl:max-w-2xl xl:justify-start xl:text-6xl">
+                    <h1 className="qa-display qa-h1 inline-flex items-center justify-center gap-2.5 text-3xl font-semibold text-white sm:gap-4 sm:text-5xl xl:max-w-2xl xl:justify-start xl:text-6xl">
                       <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12 xl:h-14 xl:w-14" />
                       Events Radar
                     </h1>
 
-                    <p className="qa-lead mx-auto mt-5 max-w-2xl text-base text-white/68 sm:text-lg xl:mx-0">
-                      Follow the global queer calendar with precision: discover what is live,
-                      what is next, and where city energy is building right now.
+                    <p className="qa-lead mx-auto mt-3 max-w-2xl text-sm text-white/68 sm:mt-5 sm:text-lg xl:mx-0">
+                      Find queer events by date, city, or vibe.
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-auto grid gap-2.5 pt-6 sm:grid-cols-3">
-                  <div className="qa-card qa-premium-card rounded-2xl border border-cyan-300/24 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(255,255,255,0.03))] p-3.5 shadow-[0_14px_30px_rgba(6,182,212,0.16),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
+                <div className="mt-auto grid grid-cols-3 gap-2 pt-4 sm:gap-2.5 sm:pt-6">
+                  <div className="qa-card qa-premium-card rounded-xl border border-cyan-300/24 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(6,182,212,0.16),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/72">All events</p>
                     <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.allEvents}</p>
                   </div>
-                  <div className="qa-card qa-premium-card rounded-2xl border border-fuchsia-300/24 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.03))] p-3.5 shadow-[0_14px_30px_rgba(236,72,153,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
+                  <div className="qa-card qa-premium-card rounded-xl border border-fuchsia-300/24 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(236,72,153,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Active cities</p>
                     <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.activeCities}</p>
                   </div>
-                  <div className="qa-card qa-premium-card rounded-2xl border border-orange-300/22 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-3.5 shadow-[0_14px_30px_rgba(249,115,22,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
+                  <div className="qa-card qa-premium-card rounded-xl border border-orange-300/22 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(249,115,22,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
                     <p className="text-xs uppercase tracking-[0.18em] text-orange-100/75">This month</p>
                     <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.thisMonth}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="qa-premium-card rounded-[30px] border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(13,24,34,0.92),rgba(8,8,10,0.98))] p-5 shadow-[0_28px_84px_rgba(8,145,178,0.22),0_14px_36px_rgba(0,0,0,0.34)] backdrop-blur">
+              <div className="qa-premium-card rounded-[22px] border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(13,24,34,0.92),rgba(8,8,10,0.98))] p-4 shadow-[0_28px_84px_rgba(8,145,178,0.22),0_14px_36px_rgba(0,0,0,0.34)] backdrop-blur sm:rounded-[30px] sm:p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/70">
@@ -1150,7 +1149,7 @@ export default function EventsPage() {
                     <div className="space-y-3 rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.03] p-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/62">Loading upcoming signal</p>
                       <EventSkeletonCard tone="cyan" />
-                      <EventSkeletonCard tone="cyan" />
+                      <div className="hidden sm:block"><EventSkeletonCard tone="cyan" /></div>
                     </div>
                   )}
                   {upcomingEvents.map((event) => {
@@ -1399,17 +1398,17 @@ export default function EventsPage() {
                 )}
               </div>
 
-              <div className="mt-8 grid grid-cols-7 gap-2 text-[11px] uppercase tracking-[0.2em] text-white/35">
+              <div className="mt-5 grid grid-cols-7 gap-1 text-[9px] uppercase tracking-[0.08em] text-white/35 sm:mt-8 sm:gap-2 sm:text-[11px] sm:tracking-[0.2em]">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day} className="rounded-xl border border-white/6 bg-white/[0.03] px-2 py-2 text-center">
+                  <div key={day} className="rounded-lg border border-white/6 bg-white/[0.03] px-1 py-1.5 text-center sm:rounded-xl sm:px-2 sm:py-2">
                     {day}
                   </div>
                 ))}
               </div>
 
-              <div className="mt-2 grid grid-cols-7 gap-2">
+              <div className="mt-1.5 grid grid-cols-7 gap-1 sm:mt-2 sm:gap-2">
                 {[...Array(firstDay)].map((_, index) => (
-                  <div key={`empty-${index}`} className="h-20 rounded-2xl border border-transparent sm:h-24" />
+                  <div key={`empty-${index}`} className="h-12 rounded-xl border border-transparent sm:h-24 sm:rounded-2xl" />
                 ))}
 
                 {[...Array(daysInMonth)].map((_, index) => {
@@ -1422,7 +1421,7 @@ export default function EventsPage() {
                     <button
                       key={day}
                       onClick={() => selectCalendarDate(dateStr)}
-                      className={`h-20 rounded-2xl border p-2 text-left transition sm:h-24 sm:p-3 ${
+                      className={`h-12 rounded-xl border p-1.5 text-left transition sm:h-24 sm:rounded-2xl sm:p-3 ${
                         isSelected
                           ? "border-fuchsia-200/72 bg-[linear-gradient(180deg,rgba(232,121,249,0.20),rgba(76,29,149,0.34))] shadow-[0_0_0_1px_rgba(244,114,182,0.45),0_18px_44px_rgba(168,85,247,0.30)]"
                           : eventsCount > 0
