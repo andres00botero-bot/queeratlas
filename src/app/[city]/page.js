@@ -79,9 +79,8 @@ import {
   selectVisibleCityEvents,
 } from "@/features/city/cityEventGuards";
 import {
-  buildCityHeroText,
+  getCityHeroCopy,
   LIVE_VIBE_COOLDOWN_MS,
-  parseCityHeroText,
   polishEventDescription,
 } from "@/features/city/liveVibeFeature";
 import {
@@ -138,18 +137,13 @@ export default function CityPage() {
   }, [cityParam, pathname]);
 
   const cityName = cityNameFromConfig(config, city);
-  const cityHeroText = buildCityHeroText({ config, citySlug: city });
-  const cityHero = parseCityHeroText(cityHeroText);
+  const cityHero = getCityHeroCopy(city);
   const cityHeroIntro = useMemo(() => {
     const country = String(config?.country || "").trim();
     const vibe = String(config?.vibe || "").trim();
     const vibeTail = vibe ? ` with a ${vibe} vibe` : "";
-    const tagline = String(cityHero?.tagline || "").trim();
-    if (tagline) {
-      return `${cityName} in ${country}${vibeTail}: ${tagline}`;
-    }
     return `${cityName} in ${country}${vibeTail}: queer nightlife, trusted venues, and live community signal in one route-first guide.`;
-  }, [cityHero?.tagline, cityName, config?.country, config?.vibe]);
+  }, [cityName, config?.country, config?.vibe]);
   const placeId = searchParams?.get("placeId") || "";
   const eventId = searchParams?.get("eventId") || "";
   const serviceId = searchParams?.get("serviceId") || "";

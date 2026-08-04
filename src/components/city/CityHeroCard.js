@@ -98,17 +98,19 @@ export default function CityHeroCard({
         </div>
 
         {highlights.length > 0 ? (
-          <div className="grid gap-2.5 sm:grid-cols-3 sm:gap-5">
+          <div className="grid items-stretch gap-3 sm:grid-cols-3 sm:gap-5">
             {highlights.map((item, index) => (
               <div
                 key={item.label}
-                className={`rounded-[18px] border p-3 shadow-[0_20px_54px_rgba(0,0,0,0.16)] backdrop-blur sm:min-h-[10.5rem] sm:rounded-[24px] sm:p-5 ${item.tone}`}
+                className={`flex h-full min-h-[8.5rem] flex-col rounded-[20px] border p-4 shadow-[0_20px_54px_rgba(0,0,0,0.16)] backdrop-blur sm:min-h-[11rem] sm:rounded-[24px] sm:p-5 ${item.tone}`}
               >
                 <div className={`mb-2.5 h-1 w-10 rounded-full bg-gradient-to-r sm:mb-4 sm:h-1.5 sm:w-14 ${item.accent}`} />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/66">
                   {String(index + 1).padStart(2, "0")} / {item.label}
                 </p>
-                <p className="qa-clamp-2 mt-2 text-sm leading-5 text-white/92 sm:mt-3 sm:line-clamp-none sm:leading-7">{item.value}</p>
+                <p className="mt-2.5 text-pretty text-sm font-medium leading-[1.55] text-white/92 sm:mt-3 sm:text-[0.95rem] sm:leading-6">
+                  {item.value}
+                </p>
               </div>
             ))}
           </div>

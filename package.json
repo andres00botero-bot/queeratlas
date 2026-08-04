@@ -17,6 +17,7 @@
     "test:indexnow": "node scripts/test-indexnow.mjs",
     "test:seo-phase1": "node scripts/test-seo-phase1.mjs",
     "test:seo-phase2": "node scripts/test-seo-phase2.mjs",
+    "test:city-hero-copy": "node scripts/test-city-hero-copy.mjs",
     "seo:ba4-validate": "node scripts/seo-ba4-validate.mjs --csv docs/templates/seo-ba4-kpi-tracker.csv",
     "seo:ba4-priority": "npm run seo:ba4-validate && node scripts/seo-ba4-priority.mjs --csv docs/templates/seo-ba4-kpi-tracker.csv --top 10",
     "seo:ba4-weekly-report": "npm run seo:ba4-validate && node scripts/seo-ba4-priority.mjs --csv docs/templates/seo-ba4-kpi-tracker.csv --top 10 --out reports/seo-ba4-priority-latest.md --weekly-report-out reports/seo-ba4-weekly-report-latest.md",
