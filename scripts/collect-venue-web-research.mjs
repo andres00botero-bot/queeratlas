@@ -12,6 +12,9 @@ const startAt = Number(process.argv.find((arg) => arg.startsWith("--start="))?.s
 const endAt = Number(process.argv.find((arg) => arg.startsWith("--end="))?.split("=")[1] || Number.MAX_SAFE_INTEGER);
 const refresh = process.argv.includes("--refresh");
 const refreshWeak = process.argv.includes("--refresh-weak");
+const refreshStale = process.argv.includes("--refresh-stale");
+const topicPass = process.argv.includes("--topic-pass");
+const braveOnly = process.argv.includes("--brave-only");
 const workerCount = Number(process.argv.find((arg) => arg.startsWith("--workers="))?.split("=")[1] || 1);
 const delayMs = Number(process.argv.find((arg) => arg.startsWith("--delay="))?.split("=")[1] || 1400);
 
@@ -64,6 +67,31 @@ function parseDuckResults(html = "") {
   return results;
 }
 
+function parseBraveResults(html = "") {
+  const source = String(html);
+  const starts = [...source.matchAll(/<div[^>]+class="[^"]*\bsnippet\b[^"]*"[^>]+data-type="web"/gi)]
+    .map((match) => match.index);
+  const blocks = starts.map((start, index) => source.slice(start, starts[index + 1] || source.length));
+  const results = [];
+  for (const block of blocks) {
+    const anchor = block.match(/<a[^>]+href="(https?:\/\/[^"#]+)"[^>]*>[\s\S]*?<div[^>]+class="[^"]*\btitle\b[^"]*"[^>]*title="([^"]+)"/i)
+      || block.match(/<a[^>]+href="(https?:\/\/[^"#]+)"[^>]*>[\s\S]*?<div[^>]+class="[^"]*\btitle\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    if (!anchor) continue;
+    const genericSnippet = block.match(/<div[^>]+class="[^"]*\bgeneric-snippet\b[^"]*"[^>]*>[\s\S]*?<div[^>]+class="[^"]*\bcontent\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    const productSnippet = block.match(/<div[^>]+class="[^"]*\bproduct-review\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    const url = anchor[1].replaceAll("&amp;", "&");
+    const title = decodeHtml(anchor[2]);
+    const snippet = decodeHtml(genericSnippet?.[1] || productSnippet?.[1] || "");
+    if (!title) continue;
+    try {
+      if (/brave\.com/i.test(new URL(url).hostname)) continue;
+    } catch { continue; }
+    results.push({ url, title, snippet });
+    if (results.length >= 10) break;
+  }
+  return results;
+}
+
 function parseResults(html = "") {
   const source = String(html);
   const starts = [...source.matchAll(/<li class="b_algo"/gi)].map((match) => match.index);
@@ -83,6 +111,16 @@ function parseResults(html = "") {
     if (results.length >= 8) break;
   }
   return results;
+}
+
+function parseBingRss(xml = "") {
+  return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/gi)].map((match) => {
+    const block = match[1];
+    const title = decodeHtml(block.match(/<title>([\s\S]*?)<\/title>/i)?.[1] || "");
+    const url = decodeHtml(block.match(/<link>([\s\S]*?)<\/link>/i)?.[1] || "");
+    const snippet = decodeHtml(block.match(/<description>([\s\S]*?)<\/description>/i)?.[1] || "");
+    return { url, title, snippet };
+  }).filter((result) => /^https?:\/\//i.test(result.url) && result.title).slice(0, 10);
 }
 
 async function fetchAll(table, select, order = "id") {
@@ -130,6 +168,39 @@ function savedSourceMatches(url, place, sourceCache) {
 }
 
 async function searchQuery(query) {
+  const rssController = new AbortController();
+  const rssTimeout = setTimeout(() => rssController.abort(), 5000);
+  try {
+    const rssResponse = await fetch(`https://www.bing.com/search?format=rss&q=${encodeURIComponent(query)}&setlang=en-US`, {
+      redirect: "follow",
+      signal: rssController.signal,
+      headers: { "user-agent": "Mozilla/5.0" },
+    });
+    const rssXml = await rssResponse.text();
+    const rssResults = rssResponse.ok ? parseBingRss(rssXml) : [];
+    if (rssResults.length) return { status: rssResponse.status, results: rssResults };
+  } catch { /* Continue with the HTML search fallbacks. */ }
+  finally { clearTimeout(rssTimeout); }
+
+  const braveController = new AbortController();
+  const braveTimeout = setTimeout(() => braveController.abort(), 6000);
+  try {
+    const braveResponse = await fetch(`https://search.brave.com/search?q=${encodeURIComponent(query)}&source=web`, {
+      redirect: "follow",
+      signal: braveController.signal,
+      headers: {
+        "accept-language": "en-US,en;q=0.9",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36",
+      },
+    });
+    const braveHtml = await braveResponse.text();
+    const braveResults = braveResponse.ok ? parseBraveResults(braveHtml) : [];
+    if (braveResponse.ok) return { status: braveResponse.status, results: braveResults };
+  } catch { /* Continue with the public fallbacks below. */ }
+  finally { clearTimeout(braveTimeout); }
+
+  if (braveOnly) return { status: 0, error: "brave_unavailable", results: [] };
+
   const duckUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4500);
@@ -171,10 +242,22 @@ async function searchVenue(place) {
   const city = searchName(place.city.replaceAll("_", " "));
   const name = clean(place.name).replace(/["“”]/g, "");
   const queries = [
-    `"${name}" ${city} gay reviews queue dress code staff`,
+    `"${name}" ${city} reviews queue crowd dress code staff best night`,
   ];
-  const searches = await Promise.all(queries.map(searchQuery));
-  const results = [...new Map(searches.flatMap((item) => item.results || []).map((item) => [item.url, item])).values()].slice(0, 12);
+  const searches = [];
+  for (const query of queries) {
+    searches.push(await searchQuery(query));
+    await new Promise((resolve) => setTimeout(resolve, 180));
+  }
+  const balanced = [];
+  for (let position = 0; position < 8; position += 1) {
+    for (const search of searches) {
+      if (search.results?.[position]) balanced.push(search.results[position]);
+    }
+  }
+  const results = [...new Map(balanced.map((item) => [item.url, item])).values()]
+    .filter((result) => relevantResult(result, place))
+    .slice(0, 18);
   return {
     queries,
     fetched_at: new Date().toISOString(),
@@ -193,7 +276,11 @@ const hasSavedSource = (place) => [...new Set([place.link, ...(place.venue_intel
 const hasRelevantWeb = (place) => (cache[String(place.id)]?.results || []).some((result) => relevantResult(result, place));
 const pending = selected.filter((place) => refreshWeak
   ? !hasSavedSource(place) && !hasRelevantWeb(place) && !cache[String(place.id)]?.weak_attempted_at
-  : refresh || !cache[String(place.id)]);
+  : topicPass
+    ? cache[String(place.id)]?.research_version !== 2
+  : refreshStale
+    ? (cache[String(place.id)]?.queries || []).length < 1
+    : refresh || !cache[String(place.id)]);
 
 console.log(JSON.stringify({ total_places: places.length, selected: selected.length, cached: selected.length - pending.length, pending: pending.length }));
 if (process.argv.includes("--count-only")) process.exit(0);
@@ -204,11 +291,20 @@ async function worker() {
     const place = pending[cursor++];
     const research = await searchVenue(place);
     const weakAttempt = refreshWeak ? { weak_attempted_at: new Date().toISOString(), weak_status: research.status } : {};
-    cache[String(place.id)] = research.results.length || !cache[String(place.id)]
-      ? { ...research, ...weakAttempt }
-      : { ...cache[String(place.id)], ...weakAttempt };
+    const previous = cache[String(place.id)] || {};
+    const mergedResults = [...new Map([...(research.results || []), ...(previous.results || [])]
+      .map((item) => [item.url, item])).values()]
+      .filter((result) => relevantResult(result, place))
+      .slice(0, 18);
+    cache[String(place.id)] = {
+      ...previous,
+      ...research,
+      results: mergedResults,
+      ...(topicPass ? { research_version: 2 } : {}),
+      ...weakAttempt,
+    };
     completed += 1;
-    if (completed % 25 === 0 || completed === pending.length) {
+    if (completed % 10 === 0 || completed === pending.length) {
       console.log(`web research ${completed}/${pending.length}`);
       await saveCache(cache);
     }
