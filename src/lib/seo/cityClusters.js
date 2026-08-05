@@ -66,7 +66,7 @@ export const CITY_CLUSTER_TOPICS = {
     ],
   },
   "queer-clubs": {
-    title: "Queer Clubs Guide",
+    title: "Best Queer Clubs",
     intent: "nightlife",
     summary:
       "Late-night queer club mapping with peak-time flow, scene density context, and practical fallback choices.",

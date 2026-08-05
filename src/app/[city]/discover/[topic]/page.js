@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import CityDiscoveryResults from "@/components/city/CityDiscoveryResults";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
@@ -9,6 +10,7 @@ import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { getCityClusterTopic, listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { isTier1CityTopic } from "@/lib/seo/indexingTier";
+import { loadCityDiscoveryData } from "@/lib/seo/cityDiscoveryData";
 
 export const revalidate = 600;
 
@@ -108,6 +110,31 @@ function buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics = [] }
   };
 }
 
+function buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results = [] }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: `${topicConfig.title} in ${cityName}`,
+    itemListOrder: "https://schema.org/ItemListOrderDescending",
+    numberOfItems: results.length,
+    itemListElement: results.map((entry, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: toAbsoluteUrl(entry.href),
+      name: entry.name,
+      item: {
+        "@type": entry.kind === "event" ? "Event" : entry.kind === "service" ? "ProfessionalService" : "LocalBusiness",
+        name: entry.name,
+        url: toAbsoluteUrl(entry.href),
+        ...(entry.location ? { address: entry.location } : {}),
+        ...(entry.description ? { description: entry.description } : {}),
+        ...(entry.kind === "event" && entry.startDate ? { startDate: entry.startDate } : {}),
+        ...(entry.kind === "event" && entry.endDate ? { endDate: entry.endDate } : {}),
+      },
+    })),
+  };
+}
+
 function buildIntentBlueprint({ cityName, topicConfig }) {
   const intent = String(topicConfig?.intent || "").trim().toLowerCase();
   const defaults = {
@@ -192,82 +219,31 @@ function buildIntentBlueprint({ cityName, topicConfig }) {
   };
 }
 
-function buildFaqEntries({ cityName, topicConfig }) {
+function buildFaqEntries({ cityName, topicConfig, discovery, narrative }) {
   const questionBase = topicConfig?.title || "Queer city guide";
-  const blueprint = buildIntentBlueprint({ cityName, topicConfig });
-  const intent = String(topicConfig?.intent || "").trim().toLowerCase();
-  const intentFaqs = {
-    nightlife: [
-      {
-        question: `What is the best order for a queer nightlife route in ${cityName}?`,
-        answer: `Start with a low-friction social warm-up, move to one peak-energy stop, then keep one late fallback in the same zone so your movement stays smooth in ${cityName}.`,
-      },
-      {
-        question: `How many venues should I plan for one nightlife session in ${cityName}?`,
-        answer: `For most nights in ${cityName}, 2 to 3 core stops plus one backup option gives better outcomes than long venue lists with weak sequencing.`,
-      },
-    ],
-    safety: [
-      {
-        question: `How does this guide improve queer safety decisions in ${cityName}?`,
-        answer: `It prioritizes lower-friction movement, area confidence, and practical backup options when first choices feel wrong in real time.`,
-      },
-      {
-        question: `What should I check first for safer routing in ${cityName}?`,
-        answer: `Check area confidence, late transport reliability, and one same-neighborhood alternative before moving to your next stop in ${cityName}.`,
-      },
-    ],
-    events: [
-      {
-        question: `How do I use event intent with city routes in ${cityName}?`,
-        answer: `Choose one anchor event window, then attach a pre-event and post-event stop so your route avoids timing gaps and dead transitions.`,
-      },
-      {
-        question: `What is the fallback method if an event sells out in ${cityName}?`,
-        answer: `Keep one same-night alternative route ready in advance, ideally in the same zone, so you can preserve momentum without long detours.`,
-      },
-    ],
-    community: [
-      {
-        question: `Who is this community route useful for in ${cityName}?`,
-        answer: `It is built for people prioritizing social fit, including lesbian and sapphic nightlife discovery with lower guesswork and stronger comfort signals.`,
-      },
-      {
-        question: `How should I choose between community-led options in ${cityName}?`,
-        answer: `Pick spaces by identity fit first, then sequence by energy and distance instead of popularity alone when planning your night in ${cityName}.`,
-      },
-    ],
-    daylife: [
-      {
-        question: `Why does daytime planning matter for queer nightlife outcomes in ${cityName}?`,
-        answer: `Daytime anchors such as cafes and hotels improve transition quality, reduce stress, and strengthen evening route decisions in ${cityName}.`,
-      },
-      {
-        question: `How do I convert a daylife plan into a night route in ${cityName}?`,
-        answer: `Use your daytime zone to shortlist two evening options by vibe, then confirm opening times before moving into the night sequence.`,
-      },
-    ],
-  };
-  const extraFaqs = intentFaqs[intent] || [];
+  const names = (discovery?.results || []).slice(0, 3).map((entry) => entry.name);
+  const shortlist = names.length > 0 ? names.join(", ") : "No exact local listing is published yet";
+  const exactCount = Number(discovery?.exactCount || 0);
+  const districtAnswer = String(narrative?.districtRead || "").trim();
+  const safetyAnswer = String(narrative?.safetyRead || "").trim();
 
   return [
     {
-      question: `What does ${questionBase} in ${cityName} help with?`,
-      answer: `${questionBase} in ${cityName} helps you plan faster with practical route context, safer fallbacks, and clearer local signal.`,
+      question: `Which ${questionBase.toLowerCase()} are currently shortlisted in ${cityName}?`,
+      answer: `${shortlist}. The page currently contains ${exactCount} exact topic match${exactCount === 1 ? "" : "es"}; related alternatives are labelled separately.`,
     },
     {
-      question: `How is this ${cityName} guide different from a generic nightlife list?`,
-      answer: blueprint.faqDecisionText,
+      question: `Where should I start this route in ${cityName}?`,
+      answer: districtAnswer || `Start with the highest-ranked exact match, then keep the next listing in the same part of ${cityName} as a practical fallback.`,
     },
     {
-      question: `Can I use this guide for same-night planning in ${cityName}?`,
-      answer: blueprint.faqSameNightText,
+      question: `What should I check before using this ${cityName} list?`,
+      answer: safetyAnswer || `Confirm current opening times, official event information, entry policy, accessibility, and the route home before going.`,
     },
     {
-      question: `What should I do after opening this ${cityName} cluster page?`,
-      answer: `Open one related route, confirm same-night timing, and keep one fallback option before committing your movement plan in ${cityName}.`,
+      question: `How are the ${cityName} results ordered?`,
+      answer: `Exact category fit comes first. Queer Atlas then considers listing detail, official links, saved sources, community review signal, date relevance for events, and practical location information. A high position is an editorial shortlist, not a guarantee of safety or personal fit.`,
     },
-    ...extraFaqs,
   ];
 }
 
@@ -380,18 +356,32 @@ export default async function CityClusterTopicPage({ params }) {
   const cityName = cityNameFromConfig(config, city);
   const relatedTopics = listCityClusterTopics().filter((entry) => entry.key !== topic).slice(0, 4);
   const researchScope = `This route applies the ${topicConfig.intent} discovery framework to ${cityName} using Queer Atlas city configuration, topic taxonomy, and linked place and event routes. It is a planning framework, not a claim that every linked operation was independently checked on the same day.`;
-  const editorial = await getPublishedEditorialRecord(`city-discovery:${city}:${topic}`, {
-    ...GUIDE_EDITORIAL_META.cityDiscovery,
-    researchScope,
-    author: EDITORIAL_TEAM,
-  });
+  const [editorial, discovery] = await Promise.all([
+    getPublishedEditorialRecord(`city-discovery:${city}:${topic}`, {
+      ...GUIDE_EDITORIAL_META.cityDiscovery,
+      researchScope,
+      author: EDITORIAL_TEAM,
+    }),
+    loadCityDiscoveryData(city, topic),
+  ]);
+  const narrative = discovery.buildNarrative(cityName);
   const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig, editorial });
   const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig });
   const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics });
-  const faqEntries = buildFaqEntries({ cityName, topicConfig });
+  const discoveryResultsJsonLd = buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results: discovery.results });
+  const faqEntries = buildFaqEntries({ cityName, topicConfig, discovery, narrative });
   const faqJsonLd = buildFaqJsonLd({ faqEntries });
   const intentBlueprint = buildIntentBlueprint({ cityName, topicConfig });
-  const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, faqJsonLd];
+  const localProofPoints = [
+    `${discovery.exactCount} exact ${topicConfig.title.toLowerCase()} match${discovery.exactCount === 1 ? "" : "es"} currently published for ${cityName}.`,
+    `${discovery.counts.places} places, ${discovery.counts.events} upcoming events, and ${discovery.counts.services} services checked in the local Atlas dataset.`,
+    discovery.results.length === 0
+      ? "No specialist result is invented when the current local dataset has no verified match."
+      : discovery.fallbackUsed
+        ? "Related alternatives are visible but clearly separated from exact category matches."
+        : "Every displayed result matches the primary category used by this edit.",
+  ];
+  const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, discoveryResultsJsonLd, faqJsonLd];
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_92%_8%,rgba(244,114,182,0.10),transparent_30%),linear-gradient(180deg,#05070d_0%,#07070b_48%,#030305_100%)] px-4 py-8 text-white sm:px-6">
@@ -407,7 +397,7 @@ export default async function CityClusterTopicPage({ params }) {
             <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-100/78">Discover path</p>
             <h1 className="mt-2 max-w-3xl text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{topicConfig.title} in {cityName}</h1>
             <p className="mt-3 text-sm leading-7 text-white/82">
-              {topicConfig.summary} {intentBlueprint.headerLine}
+              {narrative.intro}
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Link
@@ -448,10 +438,17 @@ export default async function CityClusterTopicPage({ params }) {
           sources={editorial.sources}
         />
 
+        <CityDiscoveryResults
+          city={city}
+          cityName={cityName}
+          discovery={discovery}
+          narrative={narrative}
+        />
+
         <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-          <h2 className="text-lg font-semibold">What this cluster solves</h2>
+          <h2 className="text-lg font-semibold">What this local edit contains</h2>
           <ul className="mt-3 grid gap-3 text-sm leading-7 text-white/82 sm:grid-cols-3">
-            {intentBlueprint.solvingPoints.map((item) => (
+            {localProofPoints.map((item) => (
               <li key={item} className="rounded-2xl border border-white/10 bg-black/22 p-3">{item}</li>
             ))}
           </ul>
