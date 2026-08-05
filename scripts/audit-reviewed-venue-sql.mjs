@@ -13,9 +13,10 @@ let totalExpectedTopics = 0;
 
 for (const file of files) {
   const sql = await readFile(file, "utf8");
-  const topics = [...sql.matchAll(FIELD_PATTERN)].map((match) => ({
+  const topics = [...sql.matchAll(FIELD_PATTERN)].map((match, index) => ({
     field: match[1],
     text: match[2].replaceAll("''", "'"),
+    venue_ordinal: Math.floor(index / 5) + 1,
   }));
   const duplicates = topics.filter((topic, index) => topics.findIndex((other) => other.text === topic.text) !== index);
   const overLimit = topics.filter((topic) => topic.text.length > 320);
@@ -31,6 +32,7 @@ for (const file of files) {
     longest_topic: Math.max(0, ...topics.map((topic) => topic.text.length)),
     exact_duplicates: duplicates.length,
     over_320_characters: overLimit.length,
+    over_limit_topics: overLimit.map((topic) => ({ venue_ordinal: topic.venue_ordinal, field: topic.field, characters: topic.text.length })),
     source_names_in_reader_copy: namedSources.length,
     invalid_sql_apostrophe_escapes: invalidBackslashApostrophes.length,
   };
