@@ -1,3 +1,5 @@
+import { cityConfig } from "./cities.js";
+
 export const cityGuideConfig = {
   "berlin": [
     {
@@ -4374,3 +4376,27 @@ export const cityGuideConfig = {
     }
   ]
 };
+
+const researchedCityGuideOverrides = [
+  "austin",
+  "wellington",
+  "brisbane",
+  "atlanta",
+  "hong_kong",
+  "boston",
+  "auckland",
+  "denver",
+  "dallas",
+  "singapore",
+  "sao_paulo",
+  "la_paz",
+  "melbourne",
+  "seville",
+  "valencia",
+];
+
+for (const city of researchedCityGuideOverrides) {
+  if (Array.isArray(cityConfig[city]?.guide)) {
+    cityGuideConfig[city] = cityConfig[city].guide;
+  }
+}

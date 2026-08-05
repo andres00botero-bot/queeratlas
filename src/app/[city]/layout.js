@@ -1,5 +1,6 @@
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { cityGuideConfig } from "@/lib/cityGuides";
+import { getCityGuideResearch } from "@/lib/cityGuideResearch";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
 import CityEntityCrawlSection from "@/components/city/CityEntityCrawlSection";
@@ -61,6 +62,7 @@ export default async function CityLayout({ children, params }) {
   const routeConfig = {
     ...coreConfig,
     guide: cityGuide,
+    guideResearch: getCityGuideResearch(city),
   };
 
   return (

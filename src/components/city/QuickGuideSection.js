@@ -111,6 +111,26 @@ export default function QuickGuideSection({
           );
         })}
       </div>
+      {Array.isArray(config?.guideResearch?.sources) && config.guideResearch.sources.length > 0 && (
+        <details className="mt-5 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/64">
+          <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62 marker:hidden">
+            Editorial sources · checked {config.guideResearch.checkedAt}
+          </summary>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {config.guideResearch.sources.map((source) => (
+              <a
+                key={source.url}
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-cyan-100/18 bg-cyan-200/[0.06] px-3 py-1.5 text-xs leading-5 text-cyan-50/76 transition hover:border-cyan-100/38 hover:text-cyan-50"
+              >
+                {source.label}
+              </a>
+            ))}
+          </div>
+        </details>
+      )}
     </div>
   );
 }
