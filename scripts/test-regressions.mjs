@@ -325,6 +325,26 @@ function testPlacesAtlasNormalizesRatingFields() {
   );
 }
 
+function testHomeMetricsUseFullPayloadInsteadOfInitialSlices() {
+  const apiSource = readFileSync(new URL("../src/lib/homeDataApi.js", import.meta.url), "utf8");
+  const clientSource = readFileSync(new URL("../src/components/home/HomePageClient.js", import.meta.url), "utf8");
+
+  assert(
+    apiSource.includes("const metrics = {") &&
+      apiSource.includes("places: places.length") &&
+      apiSource.includes("events: events.length") &&
+      apiSource.includes("metrics,"),
+    "home metrics: full payload should expose authoritative totals before initial arrays are sliced"
+  );
+  assert(
+    clientSource.includes('const HOME_DATA_CACHE_KEY = "qa_home_data_v2";') &&
+      clientSource.includes("const [homeMetrics, setHomeMetrics] = useState(initialMetrics);") &&
+      clientSource.includes("setHomeMetrics(nextMetrics)") &&
+      !clientSource.includes("qa_home_metrics_daily_v1"),
+    "home metrics: client should use authoritative payload metrics and retire the limited daily snapshot cache"
+  );
+}
+
 function testPlacesFallbackRetriesWithWildcardOnColumnMismatch() {
   const source = readFileSync(new URL("../src/lib/placesDataApi.js", import.meta.url), "utf8");
   assert(
@@ -955,6 +975,7 @@ function run() {
   testNowNewsAdminControls();
   testNowRankingAdminControls();
   testPlacesAtlasNormalizesRatingFields();
+  testHomeMetricsUseFullPayloadInsteadOfInitialSlices();
   testPlacesFallbackRetriesWithWildcardOnColumnMismatch();
   testMapInitGuardFallbackContract();
   testMapPagesUseSharedReadinessGuard();

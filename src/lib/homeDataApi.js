@@ -116,6 +116,11 @@ export async function fetchHomeDataPayload() {
   const events = [...mergedEvents, ...globalEvents];
   const places = Array.isArray(placesRes?.data) ? placesRes.data : [];
   const worldNews = Array.isArray(newsRes?.data) ? newsRes.data : [];
+  const metrics = {
+    cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
+    places: places.length,
+    events: events.length,
+  };
   const partialData = Boolean(
     eventsRes?.error ||
       globalRes?.error ||
@@ -127,6 +132,7 @@ export async function fetchHomeDataPayload() {
     events,
     places,
     worldNews,
+    metrics,
     partialData,
   };
 }
@@ -142,6 +148,13 @@ function buildInitialHomeData(payload) {
   const events = Array.isArray(payload?.events) ? payload.events : [];
   const places = Array.isArray(payload?.places) ? payload.places : [];
   const worldNews = Array.isArray(payload?.worldNews) ? payload.worldNews : [];
+  const metrics = payload?.metrics && typeof payload.metrics === "object"
+    ? payload.metrics
+    : {
+        cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
+        places: places.length,
+        events: events.length,
+      };
 
   return {
     events: events.slice(0, INITIAL_EVENT_LIMIT).map((event) =>
@@ -174,11 +187,7 @@ function buildInitialHomeData(payload) {
       ])
     ),
     worldNews: [...worldNews].sort(compareNewsRecency).slice(0, 3),
-    metrics: {
-      cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
-      places: places.length,
-      events: events.length,
-    },
+    metrics,
     partialData: Boolean(payload?.partialData),
     complete: false,
   };

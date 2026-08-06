@@ -16,19 +16,10 @@ import { ArrowUpRight, Search } from "lucide-react";
 import HomeContactSection from "@/components/home/HomeContactSection";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
-const HOME_DATA_CACHE_KEY = "qa_home_data_v1";
+const HOME_DATA_CACHE_KEY = "qa_home_data_v2";
 const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
-const HOME_METRICS_DAILY_CACHE_KEY = "qa_home_metrics_daily_v1";
 const HomeDeferredSections = dynamic(() => import("@/components/home/HomeDeferredSections"));
 const HomeAuthModal = dynamic(() => import("@/components/home/HomeAuthModal"));
-function getLocalDateKey() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 function getResultMeta(result) {
   if (result.type === "city") return `City | ${result.country || "Global"}`;
   if (result.type === "place") return `${result.city || "City"} | Place`;
@@ -103,6 +94,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     initialEvents.length > 0 || initialPlaces.length > 0 || initialWorldNews.length > 0;
   const [events, setEvents] = useState(initialEvents);
   const [places, setPlaces] = useState(initialPlaces);
+  const [homeMetrics, setHomeMetrics] = useState(initialMetrics);
   const [query, setQuery] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
@@ -137,7 +129,6 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDeferredSections, setShowDeferredSections] = useState(false);
-  const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
   const [nowTick, setNowTick] = useState(0);
   const deferredQuery = useDeferredValue(query);
   const {
@@ -248,6 +239,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       events: Array.isArray(payload?.events) ? payload.events : [],
       places: Array.isArray(payload?.places) ? payload.places : [],
       worldNews: Array.isArray(payload?.worldNews) ? payload.worldNews : [],
+      metrics: payload?.metrics && typeof payload.metrics === "object" ? payload.metrics : null,
       partialData: Boolean(payload?.partialData),
     };
   }, []);
@@ -284,6 +276,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
       setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
       setWorldNews(Array.isArray(cached.data.worldNews) ? cached.data.worldNews : []);
+      if (cached.data.metrics && typeof cached.data.metrics === "object") {
+        setHomeMetrics(cached.data.metrics);
+      }
       setIsDataLoading(false);
       if (!cached.stale) return;
     }
@@ -300,14 +295,17 @@ export default function HomePageClient({ initialHomeData = null }) {
     const nextEvents = payload.events;
     const nextPlaces = payload.places;
     const nextWorldNews = payload.worldNews;
+    const nextMetrics = payload.metrics;
 
     setEvents(nextEvents);
     setPlaces(nextPlaces);
     setWorldNews(nextWorldNews);
+    if (nextMetrics) setHomeMetrics(nextMetrics);
     writeRuntimeCache(HOME_DATA_CACHE_KEY, {
       events: nextEvents,
       places: nextPlaces,
       worldNews: nextWorldNews,
+      metrics: nextMetrics,
     });
 
     if (payload.partialData) {
@@ -322,6 +320,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         events: initialEvents,
         places: initialPlaces,
         worldNews: initialWorldNews,
+        metrics: initialMetrics,
       });
       queueMicrotask(() => {
         setIsDataLoading(false);
@@ -344,6 +343,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     hasCompleteInitialHomeData,
     hasInitialHomeData,
     initialEvents,
+    initialMetrics,
     initialPlaces,
     initialWorldNews,
     loadHomeData,
@@ -569,79 +569,24 @@ export default function HomePageClient({ initialHomeData = null }) {
   const metricsForCards = useMemo(
     () => ({
       cities:
-        Number.isFinite(Number(dailyMetricsSnapshot?.cities))
-          ? Number(dailyMetricsSnapshot.cities)
-          : Number.isFinite(Number(initialMetrics?.cities))
-            ? Number(initialMetrics.cities)
+        Number.isFinite(Number(homeMetrics?.cities))
+          ? Number(homeMetrics.cities)
           : cityCount,
       places:
-        Number.isFinite(Number(dailyMetricsSnapshot?.places))
-          ? Number(dailyMetricsSnapshot.places)
-          : Number.isFinite(Number(initialMetrics?.places))
-            ? Number(initialMetrics.places)
+        Number.isFinite(Number(homeMetrics?.places))
+          ? Number(homeMetrics.places)
           : placeCount,
       events:
-        Number.isFinite(Number(dailyMetricsSnapshot?.events))
-          ? Number(dailyMetricsSnapshot.events)
-          : Number.isFinite(Number(initialMetrics?.events))
-            ? Number(initialMetrics.events)
+        Number.isFinite(Number(homeMetrics?.events))
+          ? Number(homeMetrics.events)
           : eventCount,
     }),
-    [cityCount, dailyMetricsSnapshot, eventCount, initialMetrics, placeCount]
+    [cityCount, eventCount, homeMetrics, placeCount]
   );
   const formatMetric = (value) => (value > 0 ? String(value) : "-");
-  const cityCountDisplay = isDataLoading && !dailyMetricsSnapshot ? "..." : formatMetric(metricsForCards.cities);
-  const placeCountDisplay = isDataLoading && !dailyMetricsSnapshot ? "..." : formatMetric(metricsForCards.places);
-  const eventCountDisplay = isDataLoading && !dailyMetricsSnapshot ? "..." : formatMetric(metricsForCards.events);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const raw = localStorage.getItem(HOME_METRICS_DAILY_CACHE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
-      queueMicrotask(() => {
-        setDailyMetricsSnapshot({
-          dateKey: String(parsed.dateKey),
-          cities: Number(parsed.cities) || 0,
-          places: Number(parsed.places) || 0,
-          events: Number(parsed.events) || 0,
-        });
-      });
-    } catch {
-      // Ignore local cache parse issues.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isDataLoading) return;
-
-    const dateKey = getLocalDateKey();
-    queueMicrotask(() => {
-      setDailyMetricsSnapshot((current) => {
-        if (String(current?.dateKey || "") === dateKey) {
-          return current;
-        }
-
-        const nextSnapshot = {
-          dateKey,
-          cities: Number(cityCount) || 0,
-          places: Number(placeCount) || 0,
-          events: Number(eventCount) || 0,
-        };
-
-        try {
-          localStorage.setItem(HOME_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
-        } catch {
-          // Ignore local cache write issues.
-        }
-
-        return nextSnapshot;
-      });
-    });
-  }, [cityCount, eventCount, isDataLoading, placeCount]);
+  const cityCountDisplay = isDataLoading && !homeMetrics ? "..." : formatMetric(metricsForCards.cities);
+  const placeCountDisplay = isDataLoading && !homeMetrics ? "..." : formatMetric(metricsForCards.places);
+  const eventCountDisplay = isDataLoading && !homeMetrics ? "..." : formatMetric(metricsForCards.events);
 
   useEffect(() => {
     queueMicrotask(() => {
