@@ -1,6 +1,7 @@
 import "./globals.css"; // 
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { buildPrimaryEntityGraph, QA_SITE_URL } from "@/lib/seo/entityAuthority";
 import DeferredGlobalChrome from "@/components/ui/DeferredGlobalChrome";
 import DevErrorProbe from "@/components/ui/DevErrorProbe";
@@ -109,6 +110,7 @@ export default function RootLayout({ children }) {
           <DeferredGlobalChrome />
         </AuthProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
