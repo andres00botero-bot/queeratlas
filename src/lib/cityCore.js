@@ -1441,6 +1441,15 @@ export const cityCoreConfig = {
     "country": "Sweden",
     "vibe": "harbour warmth and community-led queer culture"
   },
+  "leipzig": {
+    "center": [
+      12.3731,
+      51.3397
+    ],
+    "title": "Queer Leipzig",
+    "country": "Germany",
+    "vibe": "collective warmth and east-German creative resistance"
+  },
   "zagreb": {
     "center": [
       15.9819,

@@ -2091,6 +2091,19 @@ export const cityConfig = {
       cost: "Expect Nordic prices: central cocktails, club entry, cloakrooms and taxis can stack up quickly. Gothenburg is compact enough to keep the first half of a night on foot, and trams make Majorna, Hisingen and Kortedala manageable when planned before service thins out. Bee or Haket can be a gentler-value opener; Avalon and Rubinen are premium stays, while accommodation one tram line outside the centre can preserve the budget without isolating you from the scene.",
     }),
   },
+  leipzig: {
+    center: [12.3731, 51.3397],
+    title: "Queer Leipzig",
+    country: "Germany",
+    vibe: "collective warmth and east-German creative resistance",
+    guide: buildGuide({
+      about: "Leipzig's queer life is built less around one polished rainbow quarter than around small rooms with distinct purposes. Havanna and APART keep a visible city-centre bar tradition alive; Pixi brings collective, feminist neighbourhood energy to Altlindenau; RosaLinde, Frauenkultur, Aidshilfe and RAAinbow do the slower work of counselling, connection and care. Pride is large, but the city's character is clearest between festival dates: political, creative, locally led and unusually easy to enter when you follow the programme rather than hunt for a single strip.",
+      district: "Use the compact centre for Havanna, APART, QueerBLICK and the Otto-Schill-Straße sauna/cruise complex. Then give the west its own evening: Pixi, Café Ocka and RosaLinde sit around Altlindenau and the Georg-Schwarz-Straße corridor, with the Spinnerei farther south-west for major performance dates. Südvorstadt and Connewitz add Frauenkultur, LeLe*Tre and mixed alternative venues. These areas are tram-connected, but they are separate moods; Leipzig rewards two thoughtful routes more than one rushed bar crawl.",
+      safety: "Leipzig has one of eastern Germany's strongest visible queer communities, while the wider Saxon political climate remains more uneven. Central, western and southern scene routes are generally straightforward, yet ordinary late-night awareness still matters between districts and around quiet tram stops. Check the audience rules before Cocks, Stargayte or FLINTA*-centred events, respect protected counselling spaces, and use organisers' same-day posts when demonstrations or politically sensitive events alter routes or security plans.",
+      nightlife: "Start conversationally: Havanna is tiny, central and old-school; APART is roomier and cocktail-led; Pixi feels like a queer living room shaped by karaoke, bingo, drag and collective politics. KissKissBangBang turns the mainstream Twenty One into a broad rainbow dance floor on programmed nights. Cocks and Stargayte form the explicit men-focused end of the map. The strongest all-gender nights move between clubs, cinemas, collectives and performance spaces, so check Queer Agenda, venue calendars and the exact event before choosing shoes or dress code.",
+      cost: "Leipzig remains gentler on a queer weekend budget than Berlin, Hamburg or Munich, especially in neighbourhood cafés and collective bars. Centre cocktails, major club nights and taxis can still add up, but the tram network keeps most routes practical and Pixi or Ocka can anchor a low-pressure evening. Book early for CSD, Wave-Gotik-Treffen and the October Bear Weekend; those dates tighten rooms quickly even when everyday accommodation is reasonable.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

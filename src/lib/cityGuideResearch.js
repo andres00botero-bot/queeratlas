@@ -1,4 +1,16 @@
 export const cityGuideResearch = {
+  leipzig: {
+    checkedAt: "2026-08-10",
+    sources: [
+      { label: "CSD Leipzig — Pride programme, values and community organisation", url: "https://csd-leipzig.de/csd-2026/" },
+      { label: "RosaLinde Leipzig — counselling and community groups", url: "https://www.rosalinde-leipzig.de/" },
+      { label: "Aidshilfe Leipzig — counselling, HIV/STI tests and current events", url: "https://www.leipzig.aidshilfe.de/" },
+      { label: "Frauenkultur Leipzig — LeLe*Tre 2026", url: "https://www.frauenkultur-leipzig.de/angebote/aktuelle-projekte/leletre-leipziger-lesbentreffen/" },
+      { label: "Leipzig Bären — 2026 calendar and Bear Weekend", url: "https://www.leipzig-baeren.de/party/" },
+      { label: "Passage Kinos — QueerBLICK programme", url: "https://www.passage-kinos.de/queerblick" },
+      { label: "Leipzig Tourism — current visitor and event information", url: "https://www.leipzig.travel/en/" },
+    ],
+  },
   gothenburg: {
     checkedAt: "2026-08-10",
     sources: [
