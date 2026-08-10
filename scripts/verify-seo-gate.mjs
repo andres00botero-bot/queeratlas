@@ -57,17 +57,47 @@ const indexedRouteFiles = [
   "src/app/community-policy/page.js",
 ];
 
+const editorialTrustPath = "src/lib/editorialTrust.js";
+const editorialTrustSource = read(editorialTrustPath);
+ensureContains(
+  editorialTrustSource,
+  /export function buildTrustMetadata\s*\(/,
+  `${editorialTrustPath}: missing buildTrustMetadata export`,
+  failures
+);
+ensureContains(
+  editorialTrustSource,
+  /title:\s*page\.eyebrow/,
+  `${editorialTrustPath}: trust metadata is missing title`,
+  failures
+);
+ensureContains(
+  editorialTrustSource,
+  /description:\s*page\.description/,
+  `${editorialTrustPath}: trust metadata is missing description`,
+  failures
+);
+ensureContains(
+  editorialTrustSource,
+  /alternates:\s*{\s*canonical:\s*page\.href\s*}/,
+  `${editorialTrustPath}: trust metadata is missing canonical`,
+  failures
+);
+
 for (const filePath of indexedRouteFiles) {
   const source = read(filePath);
+  const usesTrustMetadata = /export const metadata\s*=\s*buildTrustMetadata\s*\(/.test(source);
   ensureContains(
     source,
-    /(export const metadata\s*=\s*{)|(generateMetadata\s*\()/,
+    /(export const metadata\s*=\s*{)|(generateMetadata\s*\()|(export const metadata\s*=\s*buildTrustMetadata\s*\()/,
     `${filePath}: missing metadata definition`,
     failures
   );
-  ensureContains(source, /title:/, `${filePath}: missing title`, failures);
-  ensureContains(source, /description:/, `${filePath}: missing description`, failures);
-  ensureContains(source, /alternates:\s*{[\s\S]*canonical:/, `${filePath}: missing canonical`, failures);
+  if (!usesTrustMetadata) {
+    ensureContains(source, /title:/, `${filePath}: missing title`, failures);
+    ensureContains(source, /description:/, `${filePath}: missing description`, failures);
+    ensureContains(source, /alternates:\s*{[\s\S]*canonical:/, `${filePath}: missing canonical`, failures);
+  }
 }
 
 const noindexRouteChecks = [

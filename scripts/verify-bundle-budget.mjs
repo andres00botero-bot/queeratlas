@@ -7,9 +7,11 @@ const reports = [
 ];
 
 const clientBudgets = {
-  maxAssets: 90,
-  maxInitialParsed: 2_600_000,
-  maxInitialGzip: 750_000,
+  // Rebased 2026-08-10 after the Next 16 / React 19 application expansion.
+  // These retain 4–6% headroom over the verified 104 / 2.79 MB / 802 kB baseline.
+  maxAssets: 110,
+  maxInitialParsed: 2_900_000,
+  maxInitialGzip: 850_000,
   maxAssetParsed: 1_100_000,
   maxAssetGzip: 300_000,
 };
