@@ -2104,6 +2104,19 @@ export const cityConfig = {
       cost: "Leipzig remains gentler on a queer weekend budget than Berlin, Hamburg or Munich, especially in neighbourhood cafés and collective bars. Centre cocktails, major club nights and taxis can still add up, but the tram network keeps most routes practical and Pixi or Ocka can anchor a low-pressure evening. Book early for CSD, Wave-Gotik-Treffen and the October Bear Weekend; those dates tighten rooms quickly even when everyday accommodation is reasonable.",
     }),
   },
+  toulouse: {
+    center: [1.4442, 43.6047],
+    title: "Queer Toulouse",
+    country: "France",
+    vibe: "terrace warmth and community-made queer culture",
+    guide: buildGuide({
+      about: "Toulouse has fewer permanent rainbow doors than its size suggests, yet the community behind them is unusually layered. Le Quinquina carries the old gay-bar memory; La Gougnotte gives queer and feminist Toulouse a younger cultural living room; Chez les Jumeaux adds fresh late energy, while Bear’s, KS and Kalinka cover distinct social, sauna and cabaret moods. The deeper map is held by Bagdam, CLAR-T, Jules & Julies, Pride Toulouse and the municipal Centre LGBT+: a scene built as much through care, cinema, workshops and feminist festivals as through Saturday night.",
+      district: "The centre route is compact: begin near Capitole at Le Quinquina, then walk east through Saint-Aubin for Chez les Jumeaux, KS and the Espace diversités laïcité; Bear’s sits a little farther along the canal. Cross the Garonne for La Gougnotte and Kalinka around Saint-Cyprien. Cartoucherie is a separate tram journey for La Cabane and Girls Don’t Cry, while Folles Saisons in Les Pradettes needs a planned metro, bus or taxi. Treat those outer rooms as destinations, not last-minute bar-crawl detours.",
+      safety: "Central Toulouse is generally straightforward for queer visitors, with a visible municipal LGBT+ network and late public transport, but friendliness is not uniform everywhere. Keep ordinary city awareness around the station, canal and quiet streets after closing; use direct transport for Les Pradettes or Ramonville late at night. Read audience rules carefully: some FLINTA or lesbian programmes are intentionally centred, KS is a gay sauna, and confidential support groups reveal their meeting address only after registration.",
+      nightlife: "Start according to mood, not a generic ranking. Le Quinquina is the small local aperitif; La Gougnotte is strongest when drag, karaoke or live work animates its little stage; Chez les Jumeaux is the newer, louder gay bar; Bear’s leans masculine and later. Kalinka is a booked cabaret evening rather than a casual drink. The broadest queer dance and culture moments arrive through La Gayguette, Girls Don’t Cry, Bagdam and one-off collectives, so Toulouse rewards a calendar check more than blind club hopping.",
+      cost: "Toulouse is gentler than Paris for drinks, food and rooms, but a dispersed night can lose that advantage through taxis. The centre and Saint-Cyprien venues connect well on foot or metro; Cartoucherie is tram-friendly, and Les Pradettes needs more deliberate routing. Community events often use solidarity pricing, while KS publishes reduced evening and under-26 rates. Book Kalinka and the major autumn festivals ahead, then use terrace bars and public transport to keep the rest of the weekend flexible.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

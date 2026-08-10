@@ -1,4 +1,16 @@
 export const cityGuideResearch = {
+  toulouse: {
+    checkedAt: "2026-08-10",
+    sources: [
+      { label: "Toulouse Métropole — Espace diversités laïcité and 2026 LGBTQI+ services", url: "https://metropole.toulouse.fr/annuaire/espace-diversites-laicite" },
+      { label: "Pride Toulouse — year-round organising and community programme", url: "https://pridetoulouse.com/" },
+      { label: "Festival Sans Pression — confirmed October 2026 FLINTA programme", url: "https://www.festivalsanspression.com/en/" },
+      { label: "La Petite — Girls Don’t Cry Festival 2026", url: "https://www.lapetite.fr/girlsdontcry/girls-dont-cry-festival-2026/" },
+      { label: "CLAR-T — trans mutual aid and November 2026 community-care days", url: "https://www.helloasso.com/associations/clar-t" },
+      { label: "Bagdam Espace Lesbien — Toulouse lesbian history and current programme", url: "https://www.bagdam.org/" },
+      { label: "CONTACT Occitanie — autumn 2026 listening groups", url: "https://www.asso-contact.org/asso/31/actualites/2026/07/09/groupes-decoute-parole-programme-automne-2026" },
+    ],
+  },
   leipzig: {
     checkedAt: "2026-08-10",
     sources: [

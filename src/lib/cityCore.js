@@ -1450,6 +1450,15 @@ export const cityCoreConfig = {
     "country": "Germany",
     "vibe": "collective warmth and east-German creative resistance"
   },
+  "toulouse": {
+    "center": [
+      1.4442,
+      43.6047
+    ],
+    "title": "Queer Toulouse",
+    "country": "France",
+    "vibe": "terrace warmth and community-made queer culture"
+  },
   "zagreb": {
     "center": [
       15.9819,
