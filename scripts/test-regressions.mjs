@@ -295,6 +295,7 @@ function testNowRankingAdminControls() {
 function testPlacesAtlasNormalizesRatingFields() {
   const source = readFileSync(new URL("../src/lib/placesDataApi.js", import.meta.url), "utf8");
   const usePlacesSource = readFileSync(new URL("../src/lib/usePlaces.js", import.meta.url), "utf8");
+  const citiesSource = readFileSync(new URL("../src/app/cities/page.js", import.meta.url), "utf8");
   assert(
     source.includes("reviewCount,"),
     "places atlas stats: data layer should expose reviewCount on place rows"
@@ -322,6 +323,23 @@ function testPlacesAtlasNormalizesRatingFields() {
       usePlacesSource.includes("fetchAllPlacePages") &&
       usePlacesSource.includes(".range(from, to)"),
     "usePlaces loader: global place search should paginate places beyond Supabase's default 1000-row response"
+  );
+  assert(
+    usePlacesSource.includes("const sourceRows = fallbackRows.map((row) =>") &&
+      usePlacesSource.includes("return statsRow ? { ...row, ...statsRow } : row;") &&
+      !usePlacesSource.includes("statsRows.length > 0 ? statsRows : fallbackRows"),
+    "usePlaces loader: an incomplete stats view must enrich the complete places table instead of replacing it"
+  );
+  assert(
+    source.includes('selectPlaceRows(client, "places_with_stats"') &&
+      source.includes("return fetchAllPages(() => selectPlaces(client, table, select, options, filters));"),
+    "places stats loader: places_with_stats should paginate instead of replacing the full place list with 1000 rows"
+  );
+  assert(
+    citiesSource.includes('import { normalizeCityKey } from "@/features/city/checkinFeature";') &&
+      citiesSource.includes("placesByCity.get(normalizeCityKey(key))") &&
+      !citiesSource.includes("CITIES_METRICS_DAILY_CACHE_KEY"),
+    "cities stats: cards should normalize city slugs and totals should not be frozen in a daily browser cache"
   );
 }
 
@@ -352,7 +370,7 @@ function testPlacesFallbackRetriesWithWildcardOnColumnMismatch() {
     "places fallback retry: places data API should define missing-column fallback guard"
   );
   assert(
-    source.includes('selectPlaces(client, "places", "*", options, filters)'),
+    source.includes('selectPlaceRows(client, "places", "*", options, filters)'),
     "places fallback retry: places data API should retry with wildcard select on places fallback"
   );
   assert(
@@ -361,7 +379,7 @@ function testPlacesFallbackRetriesWithWildcardOnColumnMismatch() {
     "places fallback retry: missing-column retry guard should be constrained to known projection error signals"
   );
   const skipGateIndex = source.indexOf("if (skipPlacesWithStatsView)");
-  const statsResIndex = source.indexOf('const statsRes = await selectPlaces(client, "places_with_stats", select, options, filters);');
+  const statsResIndex = source.indexOf('const statsRes = await selectPlaceRows(client, "places_with_stats", select, options, filters);');
   assert(
     skipGateIndex >= 0 && statsResIndex > skipGateIndex,
     "places fallback retry: skipPlacesWithStatsView gate should execute before places_with_stats query"

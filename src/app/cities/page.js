@@ -13,6 +13,7 @@ import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapIni
 import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
+import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
@@ -96,20 +97,11 @@ const MAP_RISK_TIER_OVERRIDES = {
 };
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";
-const CITIES_METRICS_DAILY_CACHE_KEY = "qa_cities_metrics_daily_v1";
 const CITIES_CANONICAL_URL = "https://www.queeratlas.app/cities";
 const CITY_NAME_COLLATOR = new Intl.Collator("en", {
   sensitivity: "base",
   numeric: true,
 });
-
-function getLocalDateKey() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 function subscribeLastExploredCity(callback) {
   if (typeof window === "undefined") return () => {};
@@ -269,7 +261,6 @@ export default function CitiesPage() {
   const [isSavingCountryProfile, setIsSavingCountryProfile] = useState(false);
   const [countryEditorError, setCountryEditorError] = useState("");
   const [countryEditorSuccess, setCountryEditorSuccess] = useState("");
-  const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
@@ -552,8 +543,16 @@ export default function CitiesPage() {
   }, [countryPickerOpen]);
 
   const allCities = useMemo(() => {
+    const placesByCity = places.reduce((acc, place) => {
+      const cityKey = normalizeCityKey(place?.city || "");
+      if (!cityKey) return acc;
+      if (!acc.has(cityKey)) acc.set(cityKey, []);
+      acc.get(cityKey).push(place);
+      return acc;
+    }, new Map());
+
     return Object.entries(cityConfig).map(([key, city]) => {
-      const cityPlaces = places.filter((place) => place.city?.toLowerCase() === key);
+      const cityPlaces = placesByCity.get(normalizeCityKey(key)) || [];
       const reviewCount = cityPlaces.reduce(
         (sum, place) => sum + (place.reviewCount || 0),
         0
@@ -712,72 +711,11 @@ export default function CitiesPage() {
   const visibleCityCount = filteredCities.length;
   const activeFilterLabel = selectedCountry === "All" ? "All countries" : selectedCountry;
   const filterModeLabel = query ? "Search + country filter" : "Country filter";
-  const metricsForCards = useMemo(
-    () => ({
-      cities:
-        Number.isFinite(Number(dailyMetricsSnapshot?.cities))
-          ? Number(dailyMetricsSnapshot.cities)
-          : totalCities,
-      countries:
-        Number.isFinite(Number(dailyMetricsSnapshot?.countries))
-          ? Number(dailyMetricsSnapshot.countries)
-          : totalCountries,
-      places:
-        Number.isFinite(Number(dailyMetricsSnapshot?.places))
-          ? Number(dailyMetricsSnapshot.places)
-          : totalPlaces,
-    }),
-    [dailyMetricsSnapshot, totalCities, totalCountries, totalPlaces]
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const raw = localStorage.getItem(CITIES_METRICS_DAILY_CACHE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
-      queueMicrotask(() => {
-        setDailyMetricsSnapshot({
-          dateKey: String(parsed.dateKey),
-          cities: Number(parsed.cities) || 0,
-          countries: Number(parsed.countries) || 0,
-          places: Number(parsed.places) || 0,
-        });
-      });
-    } catch {
-      // Ignore cache parse/storage issues.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    const dateKey = getLocalDateKey();
-    queueMicrotask(() => {
-      setDailyMetricsSnapshot((current) => {
-        if (String(current?.dateKey || "") === dateKey) {
-          return current;
-        }
-
-        const nextSnapshot = {
-          dateKey,
-          cities: Number(totalCities) || 0,
-          countries: Number(totalCountries) || 0,
-          places: Number(totalPlaces) || 0,
-        };
-
-        try {
-          localStorage.setItem(CITIES_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
-        } catch {
-          // Ignore storage write issues.
-        }
-
-        return nextSnapshot;
-      });
-    });
-  }, [isLoading, totalCities, totalCountries, totalPlaces]);
+  const metricsForCards = {
+    cities: totalCities,
+    countries: totalCountries,
+    places: totalPlaces,
+  };
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -1032,7 +970,7 @@ export default function CitiesPage() {
             </div>
             <div className="qa-card qa-premium-card rounded-2xl border border-cyan-200/10 bg-cyan-200/[0.05] p-4 shadow-[0_14px_30px_rgba(34,197,94,0.13),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Places</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.places}</p>
+              <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "—" : metricsForCards.places}</p>
             </div>
           </div>
 
@@ -1342,7 +1280,7 @@ export default function CitiesPage() {
                               Avg rating
                             </p>
                             <p className="mt-2 text-lg font-semibold text-white/96">
-                              {city.avgRating ? city.avgRating.toFixed(1) : "-"}
+                              {isLoading ? "—" : city.avgRating ? city.avgRating.toFixed(1) : "-"}
                             </p>
                           </div>
 
@@ -1351,7 +1289,7 @@ export default function CitiesPage() {
                               Places
                             </p>
                             <p className="mt-2 text-lg font-semibold text-white/96">
-                              {city.placeCount}
+                              {isLoading ? "—" : city.placeCount}
                             </p>
                           </div>
                         </div>

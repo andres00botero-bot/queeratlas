@@ -25,6 +25,18 @@ function selectPlaces(client, table, select, options, filters) {
   return applyPlacesFilters(selectedQuery, filters);
 }
 
+function shouldFetchAllPages(options) {
+  return !Boolean(options?.head);
+}
+
+async function selectPlaceRows(client, table, select, options, filters) {
+  if (!shouldFetchAllPages(options)) {
+    return selectPlaces(client, table, select, options, filters);
+  }
+
+  return fetchAllPages(() => selectPlaces(client, table, select, options, filters));
+}
+
 function normalizeRows(data) {
   return Array.isArray(data) ? data : [];
 }
@@ -146,9 +158,9 @@ export async function fetchPlacesQueryWithFallback({
   mergeSeed = false,
 } = {}) {
   if (skipPlacesWithStatsView) {
-    let placesRes = await selectPlaces(client, "places", select, options, filters);
+    let placesRes = await selectPlaceRows(client, "places", select, options, filters);
     if (placesRes?.error && select !== "*" && isMissingColumnSelectionError(placesRes.error)) {
-      placesRes = await selectPlaces(client, "places", "*", options, filters);
+      placesRes = await selectPlaceRows(client, "places", "*", options, filters);
     }
     const rows = normalizeRows(placesRes?.data);
     return {
@@ -159,7 +171,7 @@ export async function fetchPlacesQueryWithFallback({
     };
   }
 
-  const statsRes = await selectPlaces(client, "places_with_stats", select, options, filters);
+  const statsRes = await selectPlaceRows(client, "places_with_stats", select, options, filters);
   const statsError = statsRes?.error ?? null;
 
   if (!statsError) {
@@ -183,9 +195,9 @@ export async function fetchPlacesQueryWithFallback({
   }
 
   skipPlacesWithStatsView = true;
-  let placesRes = await selectPlaces(client, "places", select, options, filters);
+  let placesRes = await selectPlaceRows(client, "places", select, options, filters);
   if (placesRes?.error && select !== "*" && isMissingColumnSelectionError(placesRes.error)) {
-    placesRes = await selectPlaces(client, "places", "*", options, filters);
+    placesRes = await selectPlaceRows(client, "places", "*", options, filters);
   }
   const rows = normalizeRows(placesRes?.data);
   return {

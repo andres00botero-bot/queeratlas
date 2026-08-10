@@ -374,7 +374,24 @@ export function usePlaces(city) {
       };
     });
 
-    const sourceRows = Array.isArray(statsRows) && statsRows.length > 0 ? statsRows : fallbackRows;
+    const statsRowsById = new Map(
+      (Array.isArray(statsRows) ? statsRows : [])
+        .filter((row) => row?.id)
+        .map((row) => [String(row.id), row]),
+    );
+    const statsRowsByCityName = new Map(
+      (Array.isArray(statsRows) ? statsRows : [])
+        .filter((row) => row?.city && row?.name)
+        .map((row) => [
+          `${normalizeLookupToken(row.city)}::${normalizeLookupToken(row.name)}`,
+          row,
+        ]),
+    );
+    const sourceRows = fallbackRows.map((row) => {
+      const identityKey = `${normalizeLookupToken(row.city)}::${normalizeLookupToken(row.name)}`;
+      const statsRow = statsRowsById.get(String(row.id || "")) || statsRowsByCityName.get(identityKey);
+      return statsRow ? { ...row, ...statsRow } : row;
+    });
     const mergedRows = sourceRows.map((row) => {
       const identityKey = `${normalizeLookupToken(row.city)}::${normalizeLookupToken(row.name)}`;
       const statById = statsByPlaceId[String(row.id)] || { total: 0, count: 0 };
