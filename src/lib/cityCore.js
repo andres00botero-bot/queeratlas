@@ -1432,6 +1432,15 @@ export const cityCoreConfig = {
     "country": "Montenegro",
     "vibe": "coastal country route"
   },
+  "gothenburg": {
+    "center": [
+      11.9746,
+      57.7089
+    ],
+    "title": "Queer Gothenburg",
+    "country": "Sweden",
+    "vibe": "harbour warmth and community-led queer culture"
+  },
   "zagreb": {
     "center": [
       15.9819,

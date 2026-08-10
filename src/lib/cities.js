@@ -2078,6 +2078,19 @@ export const cityConfig = {
       cost: "Montenegro is usually better value than the highest-priced Adriatic destinations, but coastal summer pricing can climb fast in Budva, Kotor Bay and Tivat. Podgorica is cheaper and more practical for services; the coast is where atmosphere, hotels and late-night spending rise.",
     }),
   },
+  gothenburg: {
+    center: [11.9746, 57.7089],
+    title: "Queer Gothenburg",
+    country: "Sweden",
+    vibe: "harbour warmth and community-led queer culture",
+    guide: buildGuide({
+      about: "Gothenburg wears its queerness less like a single nightlife district and more like part of the city's everyday social fabric. Bee and Gretas give the centre two clear LGBTQ+ anchors, while West Pride, Regnbågshuset, RFSL, queer dance, literature and alternative culture keep the community visible beyond the weekend. The result feels intimate rather than small: easy to enter, distinctly local and strongest when you mix nightlife with the organisations and cultural rooms that actually sustain the scene.",
+      district: "Begin inside the old city around Kungstorget and Drottninggatan for Bee, Gretas and the most effortless first-night route. Avenyn adds Park Lane, Club Queer dates and polished hotel bars. West of the centre, Järntorget, Masthugget and Majorna carry the more alternative current through Haket, Pustervik, Oceanen and Crippas. Regnbågshuset sits close to the river at Stigberget, while Hisingen and Kortedala hold sex-positive and membership-led spaces that need a deliberate tram or taxi journey.",
+      safety: "Gothenburg has a strong Swedish legal baseline and unusually visible municipal LGBTQ+ infrastructure, but a good night still benefits from ordinary city awareness. Central venues and late trams are straightforward; the final trip to Hisingen or a private Kortedala address needs more planning. Check age limits, membership and dress-code rules before fetish or cruise venues, use the organiser's current directions for protected spaces, and never treat an undisclosed youth or community location as missing information.",
+      nightlife: "Bee works from lunch through late drinks and is the easiest all-day queer meeting point. Gretas is the dedicated late club, built around two dance floors and a broad pop-to-house crowd. Club Queer turns Park Lane queer on selected last Fridays, while independent collectives move between rooms. For something less mainstream, watch Oceanen, Pustervik, Haket and the local queer calendar; Gothenburg's most interesting night is often an event, not a permanent rainbow sign.",
+      cost: "Expect Nordic prices: central cocktails, club entry, cloakrooms and taxis can stack up quickly. Gothenburg is compact enough to keep the first half of a night on foot, and trams make Majorna, Hisingen and Kortedala manageable when planned before service thins out. Bee or Haket can be a gentler-value opener; Avalon and Rubinen are premium stays, while accommodation one tram line outside the centre can preserve the budget without isolating you from the scene.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

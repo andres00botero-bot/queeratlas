@@ -1,4 +1,14 @@
 export const cityGuideResearch = {
+  gothenburg: {
+    checkedAt: "2026-08-10",
+    sources: [
+      { label: "Gothenburg official visitor guide — LGBTQI Gothenburg", url: "https://www.goteborg.com/en/guides/lgbtqi-gothenburg" },
+      { label: "West Pride — 2026 programme and dates", url: "https://www.westpride.se/" },
+      { label: "City of Gothenburg — Regnbågshuset", url: "https://goteborg.se/wps/portal/enheter/regnbagshuset" },
+      { label: "RFSL Gothenburg — local support and community", url: "https://goteborg.rfsl.se/" },
+      { label: "Gothenburg Queer Lindy Festival — 2026 practical information", url: "https://www.gbgqueerlindy.com/" },
+    ],
+  },
   austin: {
     checkedAt: "2026-08-05",
     sources: [
