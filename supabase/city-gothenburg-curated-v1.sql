@@ -13,21 +13,30 @@
 
 begin;
 
-create temporary table qa_gothenburg_places (
-  name text primary key,
-  city text not null,
-  type text not null,
-  description text not null,
-  vibe text,
-  hours text,
-  link text,
-  location text,
-  lat double precision,
-  lng double precision,
-  seo_quality_status text not null
-) on commit drop;
+-- Some production databases still have the original services constraint,
+-- which predates the gay_store category. Keep this city package self-contained.
+alter table public.services
+  drop constraint if exists qa_services_type_allowed;
 
-insert into qa_gothenburg_places
+alter table public.services
+  add constraint qa_services_type_allowed
+  check (
+    type = any (
+      array[
+        'massage',
+        'tour',
+        'wellness',
+        'gay_store',
+        'escort',
+        'styling',
+        'concierge',
+        'transport',
+        'other'
+      ]::text[]
+    )
+  );
+
+with qa_gothenburg_places as (
 select * from jsonb_to_recordset($places$
 [
   {
@@ -155,9 +164,9 @@ select * from jsonb_to_recordset($places$
     "vibe": "private men-only leather and fetish community club",
     "hours": "Event-led and members-only. Consult the official calendar, membership rules and dress code for each night.",
     "link": "https://slmgbg.nu/wordpress/sv/",
-    "location": "Kortedala, Göteborg, Sweden — exact address supplied by the club after membership contact",
-    "lat": null,
-    "lng": null,
+    "location": "Kortedala, Göteborg, Sweden — map pin shows the district only; exact address is supplied by the club after membership contact",
+    "lat": 57.74911,
+    "lng": 12.03356,
     "seo_quality_status": "approved"
   },
   {
@@ -191,8 +200,8 @@ $places$) as p(
   name text, city text, type text, description text, vibe text, hours text,
   link text, location text, lat double precision, lng double precision,
   seo_quality_status text
-);
-
+)
+), updated_places as (
 update public.places p
 set
   type = s.type,
@@ -208,7 +217,9 @@ set
   updated_at = timezone('utc', now())
 from qa_gothenburg_places s
 where lower(trim(p.city)) = lower(trim(s.city))
-  and lower(trim(p.name)) = lower(trim(s.name));
+  and lower(trim(p.name)) = lower(trim(s.name))
+returning p.id
+)
 
 insert into public.places (
   name, city, type, description, vibe, vibe_tags, hours, link, location, lat, lng,
@@ -224,21 +235,7 @@ where not exists (
     and lower(trim(p.name)) = lower(trim(s.name))
 );
 
-create temporary table qa_gothenburg_events (
-  name text primary key,
-  city text not null,
-  description text not null,
-  link text,
-  date date,
-  start_date date,
-  end_date date,
-  location text,
-  lat double precision,
-  lng double precision,
-  vibe text
-) on commit drop;
-
-insert into qa_gothenburg_events
+with qa_gothenburg_events as (
 select * from jsonb_to_recordset($events$
 [
   {
@@ -298,8 +295,8 @@ $events$) as e(
   name text, city text, description text, link text, date date,
   start_date date, end_date date, location text, lat double precision,
   lng double precision, vibe text
-);
-
+)
+), updated_events as (
 update public.events e
 set
   description = s.description,
@@ -316,7 +313,9 @@ set
   updated_at = timezone('utc', now())
 from qa_gothenburg_events s
 where lower(trim(e.city)) = lower(trim(s.city))
-  and lower(trim(e.name)) = lower(trim(s.name));
+  and lower(trim(e.name)) = lower(trim(s.name))
+returning e.id
+)
 
 insert into public.events (
   name, city, description, link, date, start_date, end_date, location, lat, lng,
@@ -332,25 +331,7 @@ where not exists (
     and lower(trim(e.name)) = lower(trim(s.name))
 );
 
-create temporary table qa_gothenburg_services (
-  name text primary key,
-  city text not null,
-  type text not null,
-  provider_name text,
-  contact text,
-  booking_link text,
-  description text not null,
-  hours text,
-  link text,
-  location text,
-  lat double precision,
-  lng double precision,
-  price_tier text,
-  vibe text,
-  source text
-) on commit drop;
-
-insert into qa_gothenburg_services
+with qa_gothenburg_services as (
 select * from jsonb_to_recordset($services$
 [
   {
@@ -511,8 +492,8 @@ $services$) as s(
   name text, city text, type text, provider_name text, contact text,
   booking_link text, description text, hours text, link text, location text,
   lat double precision, lng double precision, price_tier text, vibe text, source text
-);
-
+)
+), updated_services as (
 update public.services s
 set
   type = q.type,
@@ -535,7 +516,9 @@ set
   updated_at = timezone('utc', now())
 from qa_gothenburg_services q
 where lower(trim(s.city)) = lower(trim(q.city))
-  and lower(trim(s.name)) = lower(trim(q.name));
+  and lower(trim(s.name)) = lower(trim(q.name))
+returning s.id
+)
 
 insert into public.services (
   name, city, type, provider_name, contact, booking_link, description, hours,
