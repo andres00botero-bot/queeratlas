@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { cache } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
+import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { cityNameFromConfig } from "@/features/city/checkinFeature";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { evaluateServiceSeoQuality } from "@/lib/seo/entityIndexing";
-import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
+import { supabase } from "@/lib/supabase";
 import {
   buildServicePath,
   normalizeCitySlug,
+  parseEntitySlug,
   serviceMatchesSlug,
 } from "@/lib/seo/entitySlug";
 
@@ -20,18 +23,28 @@ function toAbsoluteUrl(path = "") {
   return `${String(baseUrl).replace(/\/+$/, "")}${path}`;
 }
 
-async function findServiceByParams(cityParam = "", slugParam = "") {
+const findServiceByParams = cache(async (cityParam = "", slugParam = "") => {
   const city = normalizeCitySlug(cityParam);
   const slug = String(slugParam || "").trim();
   const coreConfig = cityCoreConfig[city] || null;
   if (!city || !slug || !coreConfig) return { city, service: null, coreConfig };
 
-  const { allServices } = await loadSeoEntityInventory();
-  const service = allServices.find(
+  const parsed = parseEntitySlug(slug);
+  let rows = [];
+  try {
+    let query = supabase.from("services").select("*").eq("city", city);
+    if (parsed.id) query = query.eq("id", parsed.id).limit(1);
+    const { data } = await query;
+    rows = Array.isArray(data) ? data : [];
+  } catch {
+    rows = [];
+  }
+
+  const service = rows.find(
     (row) => normalizeCitySlug(row?.city) === city && serviceMatchesSlug(row, slug),
   ) || null;
   return { city, service, coreConfig };
-}
+});
 
 export async function generateMetadata({ params }) {
   const resolved = await params;
@@ -73,6 +86,10 @@ export default async function CityServiceDetailPage({ params }) {
 
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildServicePath(city, service);
+  const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
+  if (canonicalSlug !== String(resolved?.slug || "").trim()) {
+    permanentRedirect(canonicalPath);
+  }
   const canonicalUrl = toAbsoluteUrl(canonicalPath);
   const officialUrl = String(service?.booking_link || service?.link || "").trim();
   const serviceJsonLd = {
@@ -146,9 +163,9 @@ export default async function CityServiceDetailPage({ params }) {
           <Link href={`/${city}`} className="rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/84">
             Back to {cityName}
           </Link>
-          <Link href={`/${city}?serviceId=${encodeURIComponent(String(service.id))}`} className="rounded-full border border-emerald-200/26 bg-emerald-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100">
+          <CityPanelButton city={city} entityKind="service" entityId={String(service.id)} className="rounded-full border border-emerald-200/26 bg-emerald-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100">
             Open in city panel
-          </Link>
+          </CityPanelButton>
         </nav>
       </div>
     </main>

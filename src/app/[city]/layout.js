@@ -5,6 +5,7 @@ import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
 import CityEntityCrawlSection from "@/components/city/CityEntityCrawlSection";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
+import { notFound } from "next/navigation";
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
@@ -44,6 +45,10 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical,
     },
+    robots: {
+      index: true,
+      follow: true,
+    },
     openGraph: {
       title: title,
       description: description,
@@ -56,9 +61,10 @@ export async function generateMetadata({ params }) {
 export default async function CityLayout({ children, params }) {
   const resolvedParams = await params;
   const city = normalizeCityKey(resolvedParams?.city);
-  const coreConfig = cityConfig[city] || cityConfig.berlin;
-  const fallbackGuide = Array.isArray(cityGuideConfig.berlin) ? cityGuideConfig.berlin : [];
-  const cityGuide = Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : fallbackGuide;
+  const coreConfig = cityConfig[city] || null;
+  if (!coreConfig) notFound();
+
+  const cityGuide = Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : [];
   const routeConfig = {
     ...coreConfig,
     guide: cityGuide,

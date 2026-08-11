@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { cache } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
-import { cityPath } from "@/lib/cityRouting";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import {
   buildEntitySlug,
@@ -14,6 +14,7 @@ import {
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
+import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
 export const revalidate = 300;
@@ -22,7 +23,18 @@ function resolveCityValue(input = "") {
   return normalizeCitySlug(input);
 }
 
-async function findVenueByParams(cityParam = "", slugParam = "") {
+function normalizedExternalIdentity(value = "") {
+  try {
+    const url = new URL(String(value || ""));
+    const hostname = url.hostname.replace(/^www\./, "").toLowerCase();
+    const pathname = url.pathname.replace(/\/+$/, "").toLowerCase();
+    return hostname ? `${hostname}${pathname}` : "";
+  } catch {
+    return "";
+  }
+}
+
+const findVenueByParams = cache(async (cityParam = "", slugParam = "") => {
   const city = resolveCityValue(cityParam);
   const slug = String(slugParam || "").trim();
   if (!city || !slug) return { city, place: null };
@@ -30,20 +42,32 @@ async function findVenueByParams(cityParam = "", slugParam = "") {
   const coreConfig = cityCoreConfig[city] || null;
   if (!coreConfig) return { city, place: null };
 
-  const { data: allPlaces } = await fetchPlacesForAtlas();
+  const parsed = parseEntitySlug(slug);
+  const isDatabaseId = Boolean(parsed.id && !parsed.id.startsWith("seed-"));
+  const { data: allPlaces } = await fetchPlacesForAtlas({
+    filters: isDatabaseId ? { city, id: parsed.id } : { city },
+    mergeSeed: !isDatabaseId,
+  });
   const cityPlaces = (Array.isArray(allPlaces) ? allPlaces : []).filter(
     (row) => normalizeCityKey(String(row?.city || "")) === city
   );
 
-  const parsed = parseEntitySlug(slug);
   const byId = parsed.id
     ? cityPlaces.find((row) => String(row?.id || "") === parsed.id) || null
     : null;
   const bySlug = cityPlaces.find((row) => placeMatchesSlug(row, slug)) || null;
-  const place = byId || bySlug;
+  const matchedPlace = byId || bySlug;
+  const matchedOfficialIdentity = normalizedExternalIdentity(matchedPlace?.link);
+  const databaseDuplicate = String(matchedPlace?.id || "").startsWith("seed-") && matchedOfficialIdentity
+    ? cityPlaces.find((row) =>
+        !String(row?.id || "").startsWith("seed-") &&
+        normalizedExternalIdentity(row?.link) === matchedOfficialIdentity
+      ) || null
+    : null;
+  const place = databaseDuplicate || matchedPlace;
 
   return { city, place, coreConfig };
-}
+});
 
 function toAbsoluteUrl(path = "") {
   const baseUrl =
@@ -51,17 +75,6 @@ function toAbsoluteUrl(path = "") {
     process.env.SITE_URL ||
     "https://www.queeratlas.app";
   return `${String(baseUrl).replace(/\/+$/, "")}${path}`;
-}
-
-function buildVenueFallbackPath(city = "", slug = "") {
-  const basePath = cityPath(city, "");
-  if (!basePath) return "/cities";
-  const parsed = parseEntitySlug(slug);
-  const placeId = String(parsed.id || "").trim();
-  if (placeId) {
-    return `${basePath}?placeId=${encodeURIComponent(placeId)}`;
-  }
-  return `${basePath}?section=venues`;
 }
 
 function buildVenueDiscoverLinks({ city, cityName, placeType }) {
@@ -237,12 +250,14 @@ export default async function CityVenueDetailPage({ params }) {
     notFound();
   }
 
-  if (!place) {
-    redirect(buildVenueFallbackPath(city, resolved?.slug));
-  }
+  if (!place) notFound();
 
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildVenuePath(city, place);
+  const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
+  if (canonicalSlug !== String(resolved?.slug || "").trim()) {
+    permanentRedirect(canonicalPath);
+  }
   const canonicalUrl = toAbsoluteUrl(canonicalPath);
   const placeJsonLd = buildPlaceJsonLd({ place, city, cityName });
   const breadcrumbJsonLd = buildVenueDetailBreadcrumbJsonLd({
@@ -357,12 +372,14 @@ export default async function CityVenueDetailPage({ params }) {
           >
             Back to {cityName}
           </Link>
-          <Link
-            href={`/${city}?placeId=${encodeURIComponent(String(place.id))}`}
+          <CityPanelButton
+            city={city}
+            entityKind="place"
+            entityId={String(place.id)}
             className="rounded-full border border-cyan-200/26 bg-cyan-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100"
           >
             Open in city panel
-          </Link>
+          </CityPanelButton>
           <span className="hidden rounded-full border border-white/12 bg-black/35 px-4 py-2 text-[11px] uppercase tracking-[0.12em] text-white/52 sm:inline-flex">
             slug: {fallbackSlug}
           </span>

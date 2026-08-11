@@ -30,6 +30,22 @@ function entryWithDate(entry, date) {
   return date ? { ...entry, lastModified: date } : entry;
 }
 
+function canonicalEntries(entries = []) {
+  const seen = new Set();
+  return entries.filter((entry) => {
+    try {
+      const url = new URL(String(entry?.url || ""));
+      const isCanonicalOrigin = url.origin === QA_SITE_URL;
+      const hasVariantSuffix = Boolean(url.search || url.hash);
+      if (!isCanonicalOrigin || hasVariantSuffix || seen.has(url.href)) return false;
+      seen.add(url.href);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
 export async function getPageSitemapEntries() {
   const inventory = await loadSeoEntityInventory();
   const allEntities = [...inventory.venues, ...inventory.events, ...inventory.services];
@@ -101,32 +117,38 @@ export async function getPageSitemapEntries() {
     priority: 0.83,
   }));
 
-  return [...staticEntries, ...cityEntries, ...cityClusterEntries, ...topicHubEntries, ...reportEntries];
+  return canonicalEntries([
+    ...staticEntries,
+    ...cityEntries,
+    ...cityClusterEntries,
+    ...topicHubEntries,
+    ...reportEntries,
+  ]);
 }
 
 export async function getVenueSitemapEntries() {
   const { venues } = await loadSeoEntityInventory();
-  return venues.map((venue) => entryWithDate({
+  return canonicalEntries(venues.map((venue) => entryWithDate({
     url: `${QA_SITE_URL}${buildVenuePath(venue.city, venue)}`,
     changeFrequency: "monthly",
     priority: 0.72,
-  }, resolveEntityLastModified(venue)));
+  }, resolveEntityLastModified(venue))));
 }
 
 export async function getEventSitemapEntries() {
   const { events } = await loadSeoEntityInventory();
-  return events.map((event) => entryWithDate({
+  return canonicalEntries(events.map((event) => entryWithDate({
     url: `${QA_SITE_URL}${buildEventPath(event.city, event)}`,
     changeFrequency: "daily",
     priority: 0.76,
-  }, resolveEntityLastModified(event)));
+  }, resolveEntityLastModified(event))));
 }
 
 export async function getServiceSitemapEntries() {
   const { services } = await loadSeoEntityInventory();
-  return services.map((service) => entryWithDate({
+  return canonicalEntries(services.map((service) => entryWithDate({
     url: `${QA_SITE_URL}${buildServicePath(service.city, service)}`,
     changeFrequency: "monthly",
     priority: 0.68,
-  }, resolveEntityLastModified(service)));
+  }, resolveEntityLastModified(service))));
 }

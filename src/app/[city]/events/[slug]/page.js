@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { cache } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -15,6 +16,7 @@ import {
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { evaluateEventSeoQuality } from "@/lib/seo/entityIndexing";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
+import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 
 export const revalidate = 300;
@@ -66,7 +68,7 @@ function buildEventDiscoverLinks({ city, cityName, vibeTags = [] }) {
   ];
 }
 
-async function findEventByParams(cityParam = "", slugParam = "") {
+const findEventByParams = cache(async (cityParam = "", slugParam = "") => {
   const city = normalizeCitySlug(cityParam);
   const slug = String(slugParam || "").trim();
   if (!city || !slug) return { city, event: null, coreConfig: null };
@@ -74,20 +76,23 @@ async function findEventByParams(cityParam = "", slugParam = "") {
   const coreConfig = cityCoreConfig[city] || null;
   if (!coreConfig) return { city, event: null, coreConfig: null };
 
+  const parsed = parseEntitySlug(slug);
+  const isDatabaseId = Boolean(parsed.id && !parsed.id.startsWith("seed-"));
   let dbEvents = [];
   try {
-    const { data } = await supabase.from("events").select("*");
+    let query = supabase.from("events").select("*").eq("city", city);
+    if (isDatabaseId) query = query.eq("id", parsed.id).limit(1);
+    const { data } = await query;
     dbEvents = Array.isArray(data) ? data : [];
   } catch {
     dbEvents = [];
   }
 
-  const merged = await mergeSeedEventsAsync(dbEvents);
+  const merged = isDatabaseId ? dbEvents : await mergeSeedEventsAsync(dbEvents);
   const cityEvents = merged
     .map((row) => normalizeEventRange(row || {}))
     .filter((row) => normalizeCityKey(String(row?.city || "")) === city);
 
-  const parsed = parseEntitySlug(slug);
   const byId = parsed.id
     ? cityEvents.find((row) => String(row?.id || "") === parsed.id) || null
     : null;
@@ -95,7 +100,7 @@ async function findEventByParams(cityParam = "", slugParam = "") {
   const event = byId || bySlug;
 
   return { city, event, coreConfig };
-}
+});
 
 function buildEventJsonLd({ event, city, cityName }) {
   const canonicalPath = buildEventPath(city, event);
@@ -247,6 +252,10 @@ export default async function CityEventDetailPage({ params }) {
   const cityName = cityNameFromConfig(coreConfig, city);
   const normalizedEvent = normalizeEventRange(event);
   const canonicalPath = buildEventPath(city, event);
+  const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
+  if (canonicalSlug !== String(resolved?.slug || "").trim()) {
+    permanentRedirect(canonicalPath);
+  }
   const canonicalUrl = toAbsoluteUrl(canonicalPath);
   const eventJsonLd = buildEventJsonLd({ event, city, cityName });
   const breadcrumbJsonLd = buildEventDetailBreadcrumbJsonLd({
@@ -263,8 +272,6 @@ export default async function CityEventDetailPage({ params }) {
   const vibeTags = normalizeTags(event?.vibe_tags).slice(0, 6);
   const fallbackSlug = buildEntitySlug(event.name, event.id);
   const discoverLinks = buildEventDiscoverLinks({ city, cityName, vibeTags });
-  const cityPanelHref = `/${city}?eventId=${encodeURIComponent(String(event.id))}`;
-
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
       <script
@@ -301,12 +308,14 @@ export default async function CityEventDetailPage({ params }) {
               Vibe: {String(event?.vibe || "community event")}
             </span>
           </div>
-          <Link
-            href={cityPanelHref}
+          <CityPanelButton
+            city={city}
+            entityKind="event"
+            entityId={String(event.id)}
             className="qa-event-panel-cta mt-5 flex w-full items-center justify-center rounded-2xl px-5 py-4 text-center text-sm font-black uppercase tracking-[0.16em] text-white sm:text-base"
           >
             Open in city panel
-          </Link>
+          </CityPanelButton>
         </header>
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
@@ -382,12 +391,14 @@ export default async function CityEventDetailPage({ params }) {
           >
             Back to {cityName}
           </Link>
-          <Link
-            href={cityPanelHref}
+          <CityPanelButton
+            city={city}
+            entityKind="event"
+            entityId={String(event.id)}
             className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-fuchsia-100"
           >
             Open in city panel
-          </Link>
+          </CityPanelButton>
           <span className="rounded-full border border-white/12 bg-black/35 px-4 py-2 text-[11px] uppercase tracking-[0.12em] text-white/52">
             slug: {fallbackSlug}
           </span>

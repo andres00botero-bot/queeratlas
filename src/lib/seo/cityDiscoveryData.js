@@ -228,7 +228,7 @@ function scoreCandidate(candidate, rule, todayIso) {
   const { entity, kind } = candidate;
   const type = normalizeType(entity, kind);
   const searchText = entitySearchText(entity);
-  const keywordHits = rule.keywords.filter((keyword) => searchText.includes(keyword));
+  const keywordHits = (rule.keywords || []).filter((keyword) => searchText.includes(keyword));
   const preferredType = rule.preferredTypes.includes(type);
   const fallbackType = rule.fallbackTypes.includes(type);
   const reviews = reviewSummary(entity);

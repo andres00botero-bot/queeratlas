@@ -10,5 +10,5 @@ export default async function CityEventsRedirectPage({ params }) {
     notFound();
   }
 
-  permanentRedirect(`/${city}?section=events`);
+  permanentRedirect(`/${city}`);
 }

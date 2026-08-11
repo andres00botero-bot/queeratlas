@@ -64,14 +64,6 @@ export function buildPrimaryEntityGraph() {
         },
         publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
         hasPart: QA_PRIMARY_HUB_PATHS.map((path) => toAbsoluteUrl(path)),
-        potentialAction: {
-          "@type": "SearchAction",
-          target: {
-            "@type": "EntryPoint",
-            urlTemplate: `${QA_SITE_URL}/search?q={search_term_string}`,
-          },
-          "query-input": "required name=search_term_string",
-        },
       },
     ],
   };

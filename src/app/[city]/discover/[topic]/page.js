@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CityPanelButton from "@/components/city/CityPanelButton";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import CityDiscoveryResults from "@/components/city/CityDiscoveryResults";
@@ -406,12 +407,13 @@ export default async function CityClusterTopicPage({ params }) {
               >
                 Open {cityName} guide
               </Link>
-              <Link
-                href={`/${city}?section=events`}
+              <CityPanelButton
+                city={city}
+                section="events"
                 className="rounded-2xl border border-fuchsia-100/34 bg-gradient-to-r from-fuchsia-400/22 via-rose-300/16 to-cyan-300/12 px-4 py-3 text-sm font-bold text-fuchsia-50 shadow-[0_0_28px_rgba(244,114,182,0.14)] transition hover:-translate-y-[1px] hover:border-fuchsia-100/54 hover:shadow-[0_0_36px_rgba(244,114,182,0.22)]"
               >
                 Open city events
-              </Link>
+              </CityPanelButton>
               <Link
                 href="/cities"
                 className="rounded-2xl border border-cyan-100/42 bg-gradient-to-r from-cyan-300/24 via-sky-300/18 to-fuchsia-300/18 px-4 py-3 text-sm font-bold text-cyan-50 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition hover:-translate-y-[1px] hover:border-cyan-100/62 hover:shadow-[0_0_38px_rgba(34,211,238,0.24)]"
@@ -497,12 +499,13 @@ export default async function CityClusterTopicPage({ params }) {
           >
             Back to {cityName}
           </Link>
-          <Link
-            href={`/${city}?section=events`}
+          <CityPanelButton
+            city={city}
+            section="events"
             className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-fuchsia-100"
           >
             Open Events in City
-          </Link>
+          </CityPanelButton>
         </nav>
       </div>
     </main>

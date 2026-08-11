@@ -31,6 +31,16 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "queeratlas.app" }],
+        destination: "https://www.queeratlas.app/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
