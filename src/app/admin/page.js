@@ -15,7 +15,7 @@ import {
   saveReports,
   syncModerationFromCloud,
 } from "@/lib/moderation";
-import { fetchTrafficSummary } from "@/lib/trafficAnalytics";
+import { EMPTY_TRAFFIC_SUMMARY, fetchTrafficSummary } from "@/lib/trafficAnalytics";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   listContentSubmissions,
@@ -25,6 +25,7 @@ import {
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
+import AdminTrafficPanel from "@/components/admin/AdminTrafficPanel";
 import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
 import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 
@@ -155,23 +156,9 @@ export default function AdminPage() {
   const [busyMap, setBusyMap] = useState({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState("");
-  const [trafficSummary, setTrafficSummary] = useState({
-    ok: false,
-    missingTable: false,
-    message: "",
-    days: 30,
-    totals: {
-      visits30: 0,
-      visitors30: 0,
-      visits7: 0,
-      visitors7: 0,
-      visitsToday: 0,
-      visitorsToday: 0,
-    },
-    topRoutes: [],
-    topCities: [],
-    daily: [],
-  });
+  const [trafficSummary, setTrafficSummary] = useState(EMPTY_TRAFFIC_SUMMARY);
+  const [trafficDays, setTrafficDays] = useState(30);
+  const [trafficLoading, setTrafficLoading] = useState(false);
   const [memberDirectory, setMemberDirectory] = useState([]);
   const [memberSearch, setMemberSearch] = useState("");
   const [memberDirectoryLoading, setMemberDirectoryLoading] = useState(false);
@@ -230,8 +217,6 @@ export default function AdminPage() {
         !isMissingRelationError(communityIdeasRes.error)
           ? `Improve Atlas inbox unavailable: ${formatDbError(communityIdeasRes.error)}`
           : "";
-      const trafficRes = await fetchTrafficSummary(30);
-
       setReports(reportsRows);
       setBlockedItems(blockedRows);
       setContactThreads(
@@ -271,11 +256,9 @@ export default function AdminPage() {
         openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,
         blockedItems: blockedRows.length,
       });
-      setTrafficSummary(trafficRes);
-
-      if (moderationRes?.warning || (!trafficRes.ok && trafficRes.message) || contactWarning || ideasWarning) {
+      if (moderationRes?.warning || contactWarning || ideasWarning) {
         setWarning(
-          [moderationRes?.warning, !trafficRes.ok ? trafficRes.message : "", contactWarning, ideasWarning]
+          [moderationRes?.warning, contactWarning, ideasWarning]
             .filter(Boolean)
             .join(" ")
         );
@@ -284,6 +267,18 @@ export default function AdminPage() {
       setLastSyncedAt(new Date().toISOString());
     } finally {
       setIsRefreshing(false);
+    }
+  }, []);
+
+  const loadTrafficData = useCallback(async (days = 30) => {
+    const safeDays = [7, 30, 90].includes(Number(days)) ? Number(days) : 30;
+    setTrafficLoading(true);
+    try {
+      const result = await fetchTrafficSummary(safeDays);
+      setTrafficSummary(result);
+      setTrafficDays(safeDays);
+    } finally {
+      setTrafficLoading(false);
     }
   }, []);
 
@@ -399,7 +394,7 @@ export default function AdminPage() {
 
         if (!adminAccess) return;
 
-        await Promise.all([loadAdminState(), loadMemberDirectory()]);
+        await Promise.all([loadAdminState(), loadMemberDirectory(), loadTrafficData(30)]);
       } catch (error) {
         if (!active) return;
         setWarning(`Admin data could not be loaded: ${formatDbError(error)}`);
@@ -414,7 +409,7 @@ export default function AdminPage() {
     return () => {
       active = false;
     };
-  }, [isAuthLoading, isMember, loadAdminState, loadMemberDirectory, router, user?.email]);
+  }, [isAuthLoading, isMember, loadAdminState, loadMemberDirectory, loadTrafficData, router, user?.email]);
 
   const openReports = useMemo(
     () => reports.filter((item) => String(item.status || "open") === "open"),
@@ -833,7 +828,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  await Promise.all([loadAdminState(), loadMemberDirectory(), refreshPendingSubmissions()]);
+                  await Promise.all([loadAdminState(), loadMemberDirectory(), loadTrafficData(trafficDays), refreshPendingSubmissions()]);
                 }}
                 disabled={isRefreshing}
                 className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
@@ -881,84 +876,12 @@ export default function AdminPage() {
           </article>
         </section>
 
-        <section className="mb-8 rounded-[30px] border border-sky-300/16 bg-[linear-gradient(180deg,rgba(10,32,56,0.82),rgba(10,10,10,0.98))] p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-sky-100/80">Traffic</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Visitor snapshot (30 days)</h2>
-              <p className="mt-1 text-xs text-white/60">
-                Approximate unique visitors and page visits from first-party route telemetry.
-              </p>
-            </div>
-            <span className="rounded-full border border-sky-200/22 bg-sky-200/10 px-3 py-1 text-xs text-sky-100">
-              {trafficSummary.ok ? `${trafficSummary.totals.visitors30} visitors` : "Not configured"}
-            </span>
-          </div>
-
-          {trafficSummary.ok ? (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">Today</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{trafficSummary.totals.visitorsToday}</p>
-                  <p className="mt-1 text-[11px] text-white/45">visits: {trafficSummary.totals.visitsToday}</p>
-                </article>
-                <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">7 days</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{trafficSummary.totals.visitors7}</p>
-                  <p className="mt-1 text-[11px] text-white/45">visits: {trafficSummary.totals.visits7}</p>
-                </article>
-                <article className="rounded-2xl border border-white/12 bg-white/6 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/50">30 days</p>
-                  <p className="mt-2 text-2xl font-semibold text-white">{trafficSummary.totals.visitors30}</p>
-                  <p className="mt-1 text-[11px] text-white/45">visits: {trafficSummary.totals.visits30}</p>
-                </article>
-              </div>
-
-              <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
-                  <p className="text-xs uppercase tracking-[0.14em] text-white/60">Top cities</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {trafficSummary.topCities.length > 0 ? (
-                      trafficSummary.topCities.map((entry) => (
-                        <span
-                          key={`traffic-city-${entry.city}`}
-                          className="rounded-full border border-sky-200/20 bg-sky-200/10 px-3 py-1 text-xs text-sky-100"
-                        >
-                          {entry.city}: {entry.visits}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-white/52">No city-level traffic yet.</span>
-                    )}
-                  </div>
-                </article>
-
-                <article className="rounded-2xl border border-white/12 bg-black/25 p-4">
-                  <p className="text-xs uppercase tracking-[0.14em] text-white/60">Top routes</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {trafficSummary.topRoutes.length > 0 ? (
-                      trafficSummary.topRoutes.map((entry) => (
-                        <span
-                          key={`traffic-route-${entry.route}`}
-                          className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/82"
-                        >
-                          {entry.route}: {entry.visits}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-white/52">No route traffic yet.</span>
-                    )}
-                  </div>
-                </article>
-              </div>
-            </>
-          ) : (
-            <div className="rounded-2xl border border-amber-200/20 bg-amber-200/10 px-4 py-3 text-sm text-amber-100/90">
-              Traffic data is not configured yet. Run <code>supabase/traffic-visitors-v1.sql</code> to enable visitor reporting in admin.
-            </div>
-          )}
-        </section>
+        <AdminTrafficPanel
+          summary={trafficSummary}
+          loading={trafficLoading}
+          days={trafficDays}
+          onDaysChange={loadTrafficData}
+        />
 
         <section className="mb-8 rounded-[30px] border border-indigo-300/16 bg-[linear-gradient(180deg,rgba(24,20,54,0.88),rgba(10,10,10,0.98))] p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
