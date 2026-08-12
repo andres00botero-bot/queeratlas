@@ -114,7 +114,7 @@ function mapEditorialRow(row, fallback = {}) {
     methodologyNote: String(row?.methodology_note || "").trim(),
     author: normalizePerson(row?.author, fallback.author || EDITORIAL_TEAM),
     reviewer: normalizePerson(row?.reviewer, fallback.reviewer || null),
-    sources,
+    sources: sources.length > 0 ? sources : fallback.sources || [],
     changeLog: revisions.length > 0 ? revisions : fallback.changeLog || [],
     databaseBacked: true,
   };

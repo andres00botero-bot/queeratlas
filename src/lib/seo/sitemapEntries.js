@@ -8,6 +8,7 @@ import { listSeoReports } from "@/lib/seo/reportsIndex";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_SITE_URL } from "@/lib/seo/sitemapXml";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
+import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
 
 const CLUSTER_INTENT_PRIORITY = {
   events: 0.88,
@@ -122,12 +123,20 @@ export async function getPageSitemapEntries() {
     priority: 0.83,
   }));
 
+  const collectionEntries = ATLAS_COLLECTIONS.map((collection) => ({
+    url: `${QA_SITE_URL}${collection.href}`,
+    ...(collection.updatedAt ? { lastModified: new Date(collection.updatedAt) } : {}),
+    changeFrequency: "monthly",
+    priority: 0.82,
+  }));
+
   return canonicalEntries([
     ...staticEntries,
     ...cityEntries,
     ...cityClusterEntries,
     ...topicHubEntries,
     ...reportEntries,
+    ...collectionEntries,
   ]);
 }
 

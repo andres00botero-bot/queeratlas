@@ -1,12 +1,24 @@
+import { EXPANDED_ATLAS_COLLECTIONS } from "@/lib/atlasCollectionsExpansion";
+import { MORE_ATLAS_COLLECTIONS } from "@/lib/atlasCollectionsExpansionMore";
+import { SEASONAL_ATLAS_COLLECTIONS } from "@/lib/atlasCollectionsExpansionSeasonal";
+import { ATLAS_COLLECTION_REVIEWER } from "@/lib/atlasCollectionsExpansion";
+import { EDITORIAL_TEAM } from "@/lib/editorialTrust";
+
 export const ATLAS_COLLECTION_FILTERS = [
   { id: "all", label: "All collections" },
   { id: "nightlife", label: "Nightlife" },
   { id: "beach", label: "Beaches" },
   { id: "women", label: "Women-led" },
   { id: "hidden", label: "Hidden gems" },
+  { id: "neighborhoods", label: "Neighborhoods" },
+  { id: "solo", label: "Solo travel" },
+  { id: "events", label: "Events" },
+  { id: "culture", label: "Culture" },
+  { id: "access", label: "Access & safety" },
+  { id: "stays", label: "Places to stay" },
 ];
 
-export const ATLAS_COLLECTIONS = [
+const CORE_ATLAS_COLLECTIONS = [
   {
     id: "best-queer-techno-clubs-world",
     slug: "best-queer-techno-clubs-world",
@@ -17,8 +29,21 @@ export const ATLAS_COLLECTIONS = [
     summary:
       "A sharp route through clubs and party cities known for queer dance floors, harder sound, door culture, and late-night energy.",
     methodology: "Chosen for queer relevance, city nightlife strength, programming depth, visitor usefulness, and current safety context.",
+    bestFor: "Sound-first travelers, late nights, and expressive dance floors",
+    mood: "Dark, kinetic, uncompromising",
+    price: "Mixed",
+    editorialNote: "This is not a velvet-rope fantasy list. It is a route through rooms where music, queer authorship, and the character of the crowd matter as much as scale.",
+    updated: "12 August 2026",
     cities: ["Berlin", "Amsterdam", "Ibiza", "London", "Paris", "New York"],
     items: ["Berghain / Panorama Bar", "Club RAUM", "Club Chinois", "FOLD", "Gibus Club", "Nowadays"],
+    itemNotes: [
+      "The Berlin reference point: serious sound, a long night, and a door that rewards reading the room rather than performing for it.",
+      "Amsterdam's community-rooted option for adventurous programming and a floor that feels intentional rather than generic.",
+      "An Ibiza counterpoint where production and spectacle meet a more polished late-night rhythm.",
+      "London intensity with a music-led identity, long-form sets, and a crowd prepared to stay with the room.",
+      "A central Paris option when the priority is unmistakably queer nightlife rather than an anonymous superclub.",
+      "A softer New York landing: open-air breathing room, strong selectors, and space to make an entire day-to-night arc.",
+    ],
     tags: ["Techno", "Nightlife", "Global"],
     href: "/now/collections/best-queer-techno-clubs-world",
     accent: "cyan",
@@ -33,8 +58,21 @@ export const ATLAS_COLLECTIONS = [
     summary:
       "Warm-weather beaches and beach towns where queer visibility, daytime social flow, and nearby nightlife create a real destination rhythm.",
     methodology: "Curated from Atlas city data, known beach routes, summer event gravity, access notes, and safety context.",
+    bestFor: "Sun-led trips that still need an easy queer social rhythm",
+    mood: "Open, bright, unhurried",
+    price: "Free to premium",
+    editorialNote: "A queer beach is rarely only a pin on the sand. These picks work because the surrounding town, transport, afternoon social flow, and after-dark options create a fuller trip.",
+    updated: "12 August 2026",
     cities: ["Sitges", "Torremolinos", "Mykonos", "Gran Canaria", "Barcelona", "Malta"],
     items: ["Platja de la Bassa Rodona", "Bajondillo / La Nogalera flow", "Super Paradise", "Maspalomas dunes", "Mar Bella", "St Julian's summer route"],
+    itemNotes: [
+      "The easiest all-round beach day here: visible, sociable, and naturally connected to Sitges after dark.",
+      "Less a single venue than a useful rhythm between the water and La Nogalera's compact evening scene.",
+      "For a louder, more produced beach experience where the day is designed to roll into nightlife.",
+      "A landscape-led Gran Canaria classic; plan for distance, heat, and a different pace from a serviced urban beach.",
+      "Barcelona's practical city-and-sea option when you want beach time without giving up the rest of the city.",
+      "A flexible Malta base for travelers who prefer an urban summer route over a single designated queer beach.",
+    ],
     tags: ["Beach", "Europe", "Summer"],
     href: "/now/collections/best-queer-beaches-europe",
     accent: "amber",
@@ -49,8 +87,21 @@ export const ATLAS_COLLECTIONS = [
     summary:
       "A growing editorial list for lesbian bars, women-led nights, sapphic-friendly rooms, and community spaces that deserve stronger discovery.",
     methodology: "Prioritizes dedicated lesbian venues where available, then recurring women-led nights, inclusive safety, and community consistency.",
+    bestFor: "Sapphic travelers seeking dedicated rooms and women-led programming",
+    mood: "Social, community-minded, varied",
+    price: "Mostly accessible",
+    editorialNote: "Permanent lesbian bars remain rare, so this collection distinguishes dedicated venues from recurring nights and broader sapphic-friendly routes instead of pretending they are the same thing.",
+    updated: "12 August 2026",
     cities: ["London", "Berlin", "Madrid", "Paris", "Barcelona", "Amsterdam"],
     items: ["She Soho", "SilverFuture", "Mujeres nightlife routes", "La Mutinerie", "Sapphic Barcelona nights", "Amsterdam women-led programming"],
+    itemNotes: [
+      "A dedicated central London address with the immediacy of a compact bar rather than a once-a-month event.",
+      "A warm Neukolln anchor known for conversation, community energy, and a less performative kind of night out.",
+      "Madrid works best as a route: check the current women-led calendar rather than expecting one room to carry the whole scene.",
+      "Paris with an activist and cultural edge; go for the community character, not polished cocktail-bar choreography.",
+      "A calendar-led choice where promoter, venue, and crowd can change—current event details matter more than a permanent pin.",
+      "Amsterdam's strongest sapphic experiences often live in programming, so choose the night before choosing the address.",
+    ],
     tags: ["Lesbian bars", "Women-led", "Europe"],
     href: "/now/collections/best-lesbian-bars-europe",
     accent: "fuchsia",
@@ -65,8 +116,21 @@ export const ATLAS_COLLECTIONS = [
     summary:
       "Cabaret rooms, drag bars, and performance-led venues where the show is not decoration but the reason the room has a pulse.",
     methodology: "Looks at programming consistency, local drag reputation, visitor usefulness, venue atmosphere, and city-event crossover.",
+    bestFor: "Travelers who want the show to be the main event",
+    mood: "Theatrical, loud, playful",
+    price: "Drinks to ticketed shows",
+    editorialNote: "The best drag room is not always the biggest one. This collection favors places where performers hold the room and the audience understands that drag is culture, work, and nightlife at once.",
+    updated: "12 August 2026",
     cities: ["London", "New York", "Bangkok", "Manchester", "Madrid", "Manila"],
     items: ["The Divine", "Pieces Bar", "House of Heals", "The Brewers", "LL Bar", "O Bar Philippines"],
+    itemNotes: [
+      "East London performance energy in a room built around queer work rather than treating drag as background entertainment.",
+      "A high-energy New York bar choice for close-up shows, crowd interaction, and a classic West Village night.",
+      "Bangkok spectacle with a polished production language and a cast that gives the room its identity.",
+      "A long-running Manchester staple where cabaret and an easy neighborhood-bar feeling can occupy the same night.",
+      "A Madrid reference when you want sharp hosting, Spanish-language performance, and a room that follows the stage.",
+      "A Manila institution-sized experience: extroverted, performance-forward, and best approached as a full evening.",
+    ],
     tags: ["Drag", "Performance", "Nightlife"],
     href: "/now/collections/best-drag-venues",
     accent: "rose",
@@ -81,8 +145,21 @@ export const ATLAS_COLLECTIONS = [
     summary:
       "Lower-pressure cafes, bookstores, terraces, and daytime rooms that help travelers enter queer city life without starting at midnight.",
     methodology: "Curated from city guide context, cafe-type Atlas places, member stories, and low-pressure social usefulness.",
+    bestFor: "Daytime connection, solo arrivals, and quieter queer discovery",
+    mood: "Soft, local, observant",
+    price: "Budget-friendly",
+    editorialNote: "These are intentionally low-pressure starting points. Some are dedicated queer spaces; others are neighborhood routes where queer life is visible without requiring a club ticket or midnight energy.",
+    updated: "12 August 2026",
     cities: ["Paris", "Amsterdam", "Lisbon", "Montreal", "Zagreb", "Buenos Aires"],
     items: ["Marais daytime route", "Canal-side queer-friendly cafes", "Intendente soft starts", "Village terrace culture", "KIC cafe lane", "Palermo cafe routes"],
+    itemNotes: [
+      "Best treated as a slow walk between bookstores, terraces, and familiar queer streets rather than a single must-visit counter.",
+      "Amsterdam away from the loudest visitor circuit, with room for coffee, conversation, and an unforced afternoon.",
+      "A Lisbon opening move for travelers who want creative neighborhood energy before deciding where the evening goes.",
+      "Montreal's Village is particularly readable by day, making it useful for orienting yourself without committing to a night out.",
+      "A Zagreb community lane where cultural context and local programming matter more than glossy hospitality.",
+      "Palermo rewards wandering: use the route as a bridge between cafe culture, design, dinner, and the city's later queer rhythm.",
+    ],
     tags: ["Cafes", "Hidden gems", "Daytime"],
     href: "/now/collections/hidden-queer-cafes",
     accent: "violet",
@@ -97,12 +174,83 @@ export const ATLAS_COLLECTIONS = [
     summary:
       "Approachable first stops where solo travelers can read the city, talk to people, and decide whether the night should stay soft or escalate.",
     methodology: "Weighted toward readable neighborhoods, social-first rooms, transit ease, safety context, and low-friction opening moves.",
+    bestFor: "Solo arrivals who want a readable first move, not a forced big night",
+    mood: "Welcoming, conversational, flexible",
+    price: "Mostly mid-range",
+    editorialNote: "A good first-night bar gives you options: stay for another drink, meet someone, or leave with a clearer sense of the city. These routes prioritize that freedom over hype.",
+    updated: "12 August 2026",
     cities: ["Berlin", "Copenhagen", "Toronto", "Brighton", "Lisbon", "Melbourne"],
     items: ["Schoneberg first stop", "Central Copenhagen bars", "Church-Wellesley opener", "Kemptown route", "Principe Real start", "Fitzroy social lane"],
+    itemNotes: [
+      "Berlin without beginning at the hardest door: established queer streets make it easier to read the night in real time.",
+      "Compact geography and an early-evening bar rhythm help a solo traveler test the mood without overplanning.",
+      "Toronto's familiar queer village gives a new arrival multiple nearby options and a straightforward exit if one room is not right.",
+      "Brighton's Kemptown route works through proximity: start small, walk, and let the crowd decide the next stop.",
+      "A Lisbon beginning with terraces and conversation before the night grows louder elsewhere.",
+      "Fitzroy suits travelers who prefer neighborhood texture and mixed social rooms to a single formal gay-district itinerary.",
+    ],
     tags: ["Solo travel", "Bars", "Safety"],
     href: "/now/collections/best-first-night-bars-solo",
     accent: "emerald",
   },
+];
+
+const CORE_COLLECTION_SOURCES = {
+  "best-queer-techno-clubs-world": [
+    { id: "techno-berghain", name: "Berghain", url: "https://www.berghain.berlin/", claimScope: "Official programme and visitor information.", type: "official" },
+    { id: "techno-raum", name: "Club RAUM", url: "https://www.clubraum.nl/", claimScope: "Official Amsterdam programme and community positioning.", type: "official" },
+    { id: "techno-fold", name: "FOLD", url: "https://www.fold.london/", claimScope: "Official London programme, membership, and event information.", type: "official" },
+    { id: "techno-nowadays", name: "Nowadays", url: "https://nowadays.nyc/", claimScope: "Official New York programme and safer-space policy.", type: "official" },
+  ],
+  "best-queer-beaches-europe": [
+    { id: "beaches-sitges", name: "Sitges Pride visitor guide", url: "https://sitgespride.com/", claimScope: "Sitges beaches, town layout, and seasonal context.", type: "official" },
+    { id: "beaches-torremolinos", name: "Torremolinos Tourism — LGTBI", url: "https://turismotorremolinos.es/en/what-to-do/lgtbi-gay-friendly-torremolinos/", claimScope: "Official beach-town and LGBTQ+ visitor context.", type: "official" },
+    { id: "beaches-maspalomas", name: "Maspalomas Pride", url: "https://www.maspalomaspride.com/maspalomas-gay/", claimScope: "Gay beach, dunes, and local visitor geography.", type: "official" },
+    { id: "beaches-spain", name: "El País — LGBTQ+ beaches in Spain", url: "https://elpais.com/elviajero/escapadas/espana/2025-07-04/11-playas-espanolas-para-hombres-gais.html", claimScope: "Independent beach access, atmosphere, and history reporting.", type: "independent" },
+  ],
+  "best-lesbian-bars-europe": [
+    { id: "lesbian-she", name: "She Soho", url: "https://www.sohotheatre.com/visit-us/she-soho/", claimScope: "Current venue identity and visitor information.", type: "official" },
+    { id: "lesbian-silverfuture", name: "SilverFuture", url: "https://silverfuture.net/", claimScope: "Official Berlin venue identity and programme.", type: "official" },
+    { id: "lesbian-mutinerie", name: "La Mutinerie", url: "https://www.lamutinerie.eu/", claimScope: "Official Paris collective, events, and inclusion context.", type: "official" },
+    { id: "lesbian-project", name: "The Lesbian Bar Project", url: "https://www.lesbianbarproject.com/", claimScope: "Independent context on dedicated lesbian venues and their scarcity.", type: "research" },
+  ],
+  "best-drag-venues": [
+    { id: "drag-divine", name: "The Divine", url: "https://thedivine.co.uk/", claimScope: "Official East London performance programme.", type: "official" },
+    { id: "drag-pieces", name: "Pieces Bar", url: "https://piecesbar.com/", claimScope: "Official New York shows and opening information.", type: "official" },
+    { id: "drag-heals", name: "House of Heals", url: "https://www.houseofhealsbkk.com/", claimScope: "Official Bangkok cast and show information.", type: "official" },
+    { id: "drag-obar", name: "O Bar Philippines", url: "https://www.obar.ph/", claimScope: "Official Manila performance and venue information.", type: "official" },
+  ],
+  "hidden-queer-cafes": [
+    { id: "cafes-london-centre", name: "London LGBTQ+ Community Centre", url: "https://londonlgbtqcentre.org/the-project/", claimScope: "Reference model for sober, low-pressure queer community space.", type: "official" },
+    { id: "cafes-cdmx", name: "Mexico City Tourism — Tourism in Colors", url: "https://mexicocity.cdmx.gob.mx/tourism-in-colors/?lang=en", claimScope: "Official model for culture-led LGBTQ+ city discovery.", type: "official" },
+    { id: "cafes-iglta", name: "IGLTA", url: "https://www.iglta.org/", claimScope: "LGBTQ+ destination and community-business discovery context.", type: "official" },
+  ],
+  "best-first-night-bars-solo": [
+    { id: "solo-google", name: "Google Travel Trends 2025", url: "https://trends.withgoogle.com/trends/us/travel-trends-2025/?hl=en-US", claimScope: "Solo-travel demand and planning context.", type: "research" },
+    { id: "solo-expedia", name: "Expedia Group — Inclusive Travel report", url: "https://partner.expediagroup.com/content/dam/unified/partner/documents/reports/2024-reports/2024-Expedia-Inclusive-Travel-report_en-us.pdf", claimScope: "LGBTQIA+ traveler trust, respect, and booking priorities.", type: "research" },
+    { id: "solo-toronto", name: "Destination Toronto — Church-Wellesley Village", url: "https://www.destinationtoronto.com/leisure-blog/post/church-wellesley-village-things-to-do/", claimScope: "Official Toronto neighborhood orientation.", type: "official" },
+    { id: "solo-berlin", name: "visitBerlin — Nollendorfplatz", url: "https://www.visitberlin.de/en/nollendorfplatz-winterfeldtplatz", claimScope: "Official Schöneberg visitor and queer-history context.", type: "official" },
+  ],
+};
+
+const EDITORIAL_CORE_ATLAS_COLLECTIONS = CORE_ATLAS_COLLECTIONS.map((collection) => ({
+  ...collection,
+  author: EDITORIAL_TEAM,
+  reviewer: ATLAS_COLLECTION_REVIEWER,
+  publishedAt: "2026-06-25",
+  updatedAt: "2026-08-12",
+  sources: (CORE_COLLECTION_SOURCES[collection.slug] || []).map((item) => ({ ...item, confidence: "high", checkedAt: "2026-08-12" })),
+  changeLog: [
+    { date: "2026-08-12", note: "Reworked with individual selection notes, an explicit method, source record, named editorial ownership, and fact-check review." },
+    { date: "2026-06-25", note: "Collection first published." },
+  ],
+}));
+
+export const ATLAS_COLLECTIONS = [
+  ...EDITORIAL_CORE_ATLAS_COLLECTIONS,
+  ...EXPANDED_ATLAS_COLLECTIONS,
+  ...MORE_ATLAS_COLLECTIONS,
+  ...SEASONAL_ATLAS_COLLECTIONS,
 ];
 
 export function getAtlasCollectionBySlug(slug = "") {
