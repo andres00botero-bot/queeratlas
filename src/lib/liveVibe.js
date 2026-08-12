@@ -6,7 +6,7 @@ export const LIVE_VIBE_OPTIONS = [
     key: "packed",
     label: "I love it",
     shortLabel: "High energy, busy, crowded",
-    iconSrc: "/live-vibe-icons/i-love-it.png",
+    iconSrc: "/live-vibe-icons/queer-venue-live-vibe-love-it.png",
     buttonClass:
       "border-rose-200/28 bg-rose-200/12 text-rose-100 hover:border-rose-200/48",
   },
@@ -14,7 +14,7 @@ export const LIVE_VIBE_OPTIONS = [
     key: "dancing",
     label: "Crowded",
     shortLabel: "People dancing, high energy",
-    iconSrc: "/live-vibe-icons/crowded.png",
+    iconSrc: "/live-vibe-icons/queer-venue-live-vibe-crowded.png",
     buttonClass:
       "border-fuchsia-200/28 bg-fuchsia-200/12 text-fuchsia-100 hover:border-fuchsia-200/48",
   },
@@ -22,7 +22,7 @@ export const LIVE_VIBE_OPTIONS = [
     key: "dead",
     label: "Quiet",
     shortLabel: "Calm vibe, low energy",
-    iconSrc: "/live-vibe-icons/quiet.png",
+    iconSrc: "/live-vibe-icons/queer-venue-live-vibe-quiet.png",
     buttonClass:
       "border-cyan-200/28 bg-cyan-200/12 text-cyan-100 hover:border-cyan-200/48",
   },
@@ -30,7 +30,7 @@ export const LIVE_VIBE_OPTIONS = [
     key: "off_vibe",
     label: "Off vibe",
     shortLabel: "Not feeling it, awkward vibe",
-    iconSrc: "/live-vibe-icons/off-vibe.png",
+    iconSrc: "/live-vibe-icons/queer-venue-live-vibe-off.png",
     buttonClass:
       "border-amber-200/28 bg-amber-200/12 text-amber-100 hover:border-amber-200/48",
   },

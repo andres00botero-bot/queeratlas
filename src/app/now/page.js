@@ -42,6 +42,7 @@ import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { createContentSubmission } from "@/lib/contentSubmissions";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
+import { slugifyEntityName } from "@/lib/seo/entitySlug";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import BrandMark from "@/components/ui/BrandMark";
 import EmptyState from "@/components/ui/EmptyState";
@@ -1258,7 +1259,7 @@ export default function NowPage({ initialSection = "mixed" }) {
     setRemoveAdminImage(false);
   }, []);
 
-  const uploadNowNewsImage = useCallback(async ({ newsId, file }) => {
+  const uploadNowNewsImage = useCallback(async ({ newsId, file, title }) => {
     if (!file) return { url: "" };
     if (!NOW_NEWS_IMAGE_MIME_TYPES.has(file.type)) {
       throw new Error("Unsupported image type. Use JPG, PNG, or WebP.");
@@ -1274,7 +1275,8 @@ export default function NowPage({ initialSection = "mixed" }) {
     const fallbackExt =
       file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
     const safeExt = extension && extension.length <= 5 ? extension : fallbackExt;
-    const path = `${String(newsId)}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+    const descriptiveName = slugifyEntityName(title || file.name || "queer-atlas-editorial-news").slice(0, 90) || "queer-atlas-editorial-news";
+    const path = `${String(newsId)}/${descriptiveName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
 
     const uploadRes = await supabase.storage.from(NOW_NEWS_IMAGE_BUCKET).upload(path, file, {
       cacheControl: "31536000",
@@ -1700,7 +1702,7 @@ export default function NowPage({ initialSection = "mixed" }) {
     }
     if (adminImageFile) {
       try {
-        const uploaded = await uploadNowNewsImage({ newsId: nextId, file: adminImageFile });
+        const uploaded = await uploadNowNewsImage({ newsId: nextId, file: adminImageFile, title: adminForm.title });
         imageUrl = uploaded.url;
       } catch (uploadError) {
         setSyncWarning(`Image upload failed. ${formatSupabaseError(uploadError)}`);
@@ -1719,7 +1721,7 @@ export default function NowPage({ initialSection = "mixed" }) {
       sourceName: "Atlas admin",
       createdAt: new Date().toISOString(),
       imageUrl,
-      imageAlt: String(adminForm.imageAlt || "").trim(),
+      imageAlt: String(adminForm.imageAlt || adminForm.title || "Queer Atlas editorial news image").trim(),
       imageCredit: String(adminForm.imageCredit || "").trim(),
     };
 
@@ -2080,7 +2082,7 @@ export default function NowPage({ initialSection = "mixed" }) {
         <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
             <Image
-              src="/now/now-hero-newsroom.png"
+              src="/now/queer-atlas-news-events-global-network-hero.png"
               alt=""
               fill
               priority
@@ -2285,7 +2287,8 @@ export default function NowPage({ initialSection = "mixed" }) {
                     <input
                       value={adminForm.imageAlt}
                       onChange={(event) => setAdminForm((current) => ({ ...current, imageAlt: event.target.value }))}
-                      placeholder="Image alt text (optional)"
+                      placeholder="Describe what is visible in the image"
+                      aria-label="Image alt text"
                       className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                     />
                     <input
@@ -2352,7 +2355,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                       <div className="relative h-32 w-full sm:h-36">
                         <Image
                           src={leadNewsItem.imageUrl}
-                          alt={leadNewsItem.imageAlt || leadNewsItem.title || "News image"}
+                          alt={leadNewsItem.imageAlt || leadNewsItem.title || "Queer Atlas editorial news image"}
                           fill
                           loading="eager"
                           fetchPriority="high"
@@ -2489,7 +2492,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                                 <div className="relative h-[120px] w-full">
                                   <Image
                                     src={item.imageUrl}
-                                    alt={item.imageAlt || item.title || "News image"}
+                                    alt={item.imageAlt || item.title || "Queer Atlas editorial news image"}
                                     fill
                                     loading={!leadNewsItem && itemIndex === 0 ? "eager" : "lazy"}
                                     fetchPriority={!leadNewsItem && itemIndex === 0 ? "high" : "auto"}
@@ -3477,7 +3480,8 @@ export default function NowPage({ initialSection = "mixed" }) {
                 <input
                   value={adminForm.imageAlt}
                   onChange={(event) => setAdminForm((current) => ({ ...current, imageAlt: event.target.value }))}
-                  placeholder="Image alt text (optional)"
+                  placeholder="Describe what is visible in the image"
+                  aria-label="Image alt text"
                   className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                 />
                 <input
@@ -4025,7 +4029,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                     <div className="relative h-56 w-full overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),rgba(10,10,10,0.98)_62%)] sm:h-80">
                       <Image
                         src={readingNewsItem.imageUrl}
-                        alt={readingNewsItem.imageAlt || readingNewsItem.title || "News image"}
+                        alt={readingNewsItem.imageAlt || readingNewsItem.title || "Queer Atlas editorial news image"}
                         fill
                         sizes="(max-width: 640px) 100vw, 75vw"
                         className="object-contain"

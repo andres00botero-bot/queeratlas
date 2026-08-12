@@ -1284,9 +1284,10 @@ export default function ContributePage() {
           : mimeType.includes("webp")
             ? "webp"
             : "jpg";
+        const serviceName = normalizeLooseSlug(serviceForm.name || "queer-service");
         const safeFileName = normalizeLooseSlug(file.name || "service-image");
         const uniquePart = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-        const objectPath = `${safeCity}/${safeUserId}/${safeFileName || "service-image"}-${uniquePart}.${extension}`;
+        const objectPath = `${safeCity}/${safeUserId}/${serviceName}-${safeFileName || "service-image"}-${uniquePart}.${extension}`;
 
         const { error: uploadError } = await supabase.storage
           .from(SERVICE_MEDIA_BUCKET)
@@ -1974,7 +1975,7 @@ export default function ContributePage() {
                         <div key={`service-form-image-${imageUrl}`} className="group relative overflow-hidden rounded-lg border border-white/12 bg-black/40">
                           <Image
                             src={imageUrl}
-                            alt="Service upload preview"
+                            alt={`${serviceForm.name || "Queer service"} upload preview`}
                             width={360}
                             height={240}
                             unoptimized

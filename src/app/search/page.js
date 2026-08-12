@@ -698,7 +698,7 @@ export default function SearchPage() {
           className="qa-panel mb-5 rounded-[24px] border border-white/10 bg-cover bg-center bg-no-repeat p-4 sm:mb-8 sm:rounded-[32px] sm:p-7"
           style={{
             backgroundImage:
-              "linear-gradient(160deg, rgba(6,6,8,0.38), rgba(6,6,8,0.56)), radial-gradient(circle at top left, rgba(244,114,182,0.1), transparent 26%), radial-gradient(circle at 80% 16%, rgba(59,130,246,0.1), transparent 24%), url('/images/explore-global-search.png')",
+              "linear-gradient(160deg, rgba(6,6,8,0.38), rgba(6,6,8,0.56)), radial-gradient(circle at top left, rgba(244,114,182,0.1), transparent 26%), radial-gradient(circle at 80% 16%, rgba(59,130,246,0.1), transparent 24%), url('/images/queer-atlas-global-city-search-hero.png')",
           }}
         >
           <p className="qa-eyebrow text-white/45">Global search</p>

@@ -19,6 +19,7 @@
     "test:seo-phase2": "node scripts/test-seo-phase2.mjs",
     "test:city-hero-copy": "node scripts/test-city-hero-copy.mjs",
     "test:gsc-indexing": "node scripts/test-gsc-indexing-regressions.mjs",
+    "test:image-seo": "node scripts/test-image-seo.mjs",
     "test:traffic-analytics": "node scripts/test-traffic-analytics.mjs",
     "test:nightlife-index": "node scripts/test-nightlife-index.mjs",
     "audit:nightlife-index": "node --use-system-ca --env-file=.env.local scripts/audit-nightlife-index.mjs",

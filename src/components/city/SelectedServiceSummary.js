@@ -43,7 +43,7 @@ export default function SelectedServiceSummary({
           <div className="overflow-hidden rounded-xl border border-white/12 bg-black/30">
             <Image
               src={selectedServiceImages[0]}
-              alt={`${selectedService.name} photo`}
+              alt={`${selectedService.name}${selectedService.city ? ` in ${selectedService.city}` : ""} — ${serviceTypeLabels[selectedService.type] || "queer service"}`}
               width={920}
               height={540}
               unoptimized
@@ -52,11 +52,11 @@ export default function SelectedServiceSummary({
           </div>
           {selectedServiceImages.length > 1 && (
             <div className="mt-2 grid grid-cols-4 gap-2">
-              {selectedServiceImages.slice(1, 5).map((imageUrl) => (
+              {selectedServiceImages.slice(1, 5).map((imageUrl, imageIndex) => (
                 <div key={`service-panel-image-${imageUrl}`} className="overflow-hidden rounded-lg border border-white/12 bg-black/35">
                   <Image
                     src={imageUrl}
-                    alt={`${selectedService.name} gallery`}
+                    alt={`${selectedService.name} in ${selectedService.city || cityLabel}, gallery image ${imageIndex + 2}`}
                     width={240}
                     height={160}
                     unoptimized

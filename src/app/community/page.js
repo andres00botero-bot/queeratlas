@@ -1622,7 +1622,7 @@ export default function CommunityPage() {
         <div className="qa-premium-card relative mb-7 overflow-hidden rounded-[30px] border border-white/10 bg-[#060910] p-5 shadow-[0_40px_120px_rgba(0,0,0,0.46)] sm:mb-8 sm:rounded-[34px] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
             <Image
-              src="/community/community-hero-neon-network.png"
+              src="/community/queer-atlas-community-global-network-hero.png"
               alt=""
               fill
               priority
@@ -1785,7 +1785,7 @@ export default function CommunityPage() {
                       <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-white/14 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(244,114,182,0.14))] text-sm font-semibold text-white shadow-[0_12px_34px_rgba(0,0,0,0.24)]">
                         {avatarUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatarUrl} alt={entry.display_name} className="h-full w-full object-cover" />
+                          <img src={avatarUrl} alt={`${entry.display_name || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
                         ) : initials}
                       </div>
                       <div className="min-w-0">

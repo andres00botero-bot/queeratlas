@@ -2120,7 +2120,14 @@ export default function FavoritesPage() {
       const file = uploadBatch[idx];
       const mime = String(file.type || "").toLowerCase();
       const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : mime.includes("gif") ? "gif" : "jpg";
-      const path = `${String(user.id)}/memories/${Date.now()}-${idx}.${ext}`;
+      const memoryOwner = String(effectiveDisplayName || "queer-atlas-member")
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "queer-atlas-member";
+      const path = `${String(user.id)}/memories/${memoryOwner}-travel-memory-${Date.now()}-${idx + 1}.${ext}`;
       const uploadRes = await supabase.storage
         .from(MEMBER_AVATAR_BUCKET)
         .upload(path, file, {
@@ -3191,7 +3198,7 @@ export default function FavoritesPage() {
         <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.44)] sm:rounded-[34px] sm:p-6 sm:shadow-[0_42px_132px_rgba(0,0,0,0.56)]">
           <div className="pointer-events-none absolute inset-0">
             <Image
-              src="/favorites/favorites-hero-wave-v2.png"
+              src="/favorites/queer-atlas-saved-places-neon-waves-hero.png"
               alt=""
               fill
               priority
@@ -3328,7 +3335,7 @@ export default function FavoritesPage() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={effectiveAvatarUrl}
-                          alt=""
+                          alt={`${displayName || "Queer Atlas member"} profile photo`}
                           className="relative h-[88%] w-[88%] rounded-[22px] object-cover"
                           onError={() => setProfileAvatarLoadFailed(true)}
                         />
@@ -3442,7 +3449,7 @@ export default function FavoritesPage() {
                                 <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/14 bg-black/25 text-xs font-semibold text-white">
                                   {friend.avatarUrl ? (
                                     // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={friend.avatarUrl} alt="" className="h-full w-full object-cover" />
+                                    <img src={friend.avatarUrl} alt={`${friend.displayName || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
                                   ) : (
                                     friendInitials
                                   )}
@@ -3659,7 +3666,7 @@ export default function FavoritesPage() {
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={String(memory.url || "")}
-                              alt=""
+                              alt={`${effectiveDisplayName || "Queer Atlas member"} travel memory ${index + 1}`}
                               className={`${index === 0 ? "h-44" : "h-32"} w-full object-cover object-center transition duration-500 group-hover:scale-[1.03]`}
                             />
                             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent_42%,rgba(0,0,0,0.46))]" />

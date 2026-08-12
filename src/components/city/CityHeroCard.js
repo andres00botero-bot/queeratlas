@@ -42,7 +42,7 @@ export default function CityHeroCard({
     <section className="animate-cinematic-in relative mb-4 overflow-hidden rounded-[24px] border border-white/18 bg-[#120b1d] p-4 shadow-[0_24px_72px_rgba(91,33,182,0.24)] sm:mb-8 sm:rounded-[32px] sm:p-7 xl:min-h-[calc(100vh-3rem)]">
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/bgc.png')" }}
+        style={{ backgroundImage: "url('/queer-city-guide-neon-orbit-background.png')" }}
       />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,92,178,0.40),rgba(255,207,64,0.22)_28%,rgba(31,211,255,0.32)_58%,rgba(123,92,255,0.44))]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(12,6,18,0.18),rgba(12,6,18,0.36)_48%,rgba(10,6,14,0.70))]" />

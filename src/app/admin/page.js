@@ -957,7 +957,7 @@ export default function AdminPage() {
                               <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/16 bg-white/8 text-[11px] font-semibold text-white/82">
                                 {row.avatar_url ? (
                                   // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={row.avatar_url} alt={row.display_name || "Member"} className="h-full w-full object-cover" />
+                                  <img src={row.avatar_url} alt={`${row.display_name || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
                                 ) : (
                                   (String(row.display_name || "Member")
                                     .split(/\s+/)

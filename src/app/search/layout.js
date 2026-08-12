@@ -31,10 +31,10 @@ export const metadata = {
     type: "website",
     images: [
       {
-        url: "/images/explore-global-search.png",
+        url: "/images/queer-atlas-global-city-search-hero.png",
         width: 1536,
         height: 1024,
-        alt: "Queer Atlas Global Search",
+        alt: "Queer Atlas global LGBTQ+ city, venue, and event search",
       },
     ],
   },
@@ -43,7 +43,7 @@ export const metadata = {
     title: "Queer Atlas Global Search",
     description:
       "Search queer cities, places, and events with trusted signal and live discovery.",
-    images: ["/images/explore-global-search.png"],
+    images: ["/images/queer-atlas-global-city-search-hero.png"],
   },
 };
 

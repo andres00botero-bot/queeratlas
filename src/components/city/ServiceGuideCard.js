@@ -49,7 +49,7 @@ export default function ServiceGuideCard({
         <div className="mb-4 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
           <Image
             src={coverImage}
-            alt={`${service.name} photo`}
+            alt={`${service.name}${service.city ? ` in ${service.city}` : ""} — ${serviceTypeLabels[service.type] || "queer service"}`}
             width={720}
             height={420}
             unoptimized

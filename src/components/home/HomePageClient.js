@@ -770,7 +770,7 @@ export default function HomePageClient({ initialHomeData = null }) {
           <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 lg:z-[100] lg:overflow-visible xl:px-8 xl:py-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
-                src="/home/home-hero-background-v4.webp"
+                src="/home/queer-atlas-global-queer-nightlife-discovery-hero.webp"
                 alt=""
                 fill
                 priority
