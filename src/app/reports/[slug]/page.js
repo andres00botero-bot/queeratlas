@@ -5,6 +5,10 @@ import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM } from "@/lib/editorialTrust";
 import { getSeoReport, listSeoReports } from "@/lib/seo/reportsIndex";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { NIGHTLIFE_INDEX_2026 } from "@/lib/seo/nightlifeIndex2026";
+import { SAFETY_INDEX_2026 } from "@/lib/seo/safetyIndex2026";
+import NightlifeIndexReport from "@/components/reports/NightlifeIndexReport";
+import SafetyIndexReport from "@/components/reports/SafetyIndexReport";
 
 function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
@@ -82,13 +86,24 @@ export default async function ReportDetailPage({ params }) {
 
   if (!report) notFound();
 
-  const editorial = await getPublishedEditorialRecord(`report:${report.slug}`, {
+  const isNightlifeIndex = report.slug === NIGHTLIFE_INDEX_2026.slug;
+  const isSafetyIndex = report.slug === SAFETY_INDEX_2026.slug;
+  const evidenceIndex = isNightlifeIndex ? NIGHTLIFE_INDEX_2026 : isSafetyIndex ? SAFETY_INDEX_2026 : null;
+  const storedEditorial = await getPublishedEditorialRecord(`report:${report.slug}`, {
     publishedAt: report.publishedAt,
     updatedAt: report.updatedAt,
     researchScope: report.researchScope,
     changeLog: report.changeLog,
     author: EDITORIAL_TEAM,
   });
+  const editorial = evidenceIndex
+    ? {
+        ...storedEditorial,
+        updatedAt: report.updatedAt,
+        researchScope: report.researchScope,
+        changeLog: report.changeLog,
+      }
+    : storedEditorial;
 
   const canonical = buildCanonical(report.slug);
   const canonicalUrl = toAbsoluteUrl(canonical);
@@ -119,7 +134,38 @@ export default async function ReportDetailPage({ params }) {
     ...(editorial.sources.length > 0 ? { citation: editorial.sources.map((source) => source.url) } : {}),
     publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
     about: report.keyphrases,
+    ...(evidenceIndex ? { mainEntity: { "@id": `${canonicalUrl}#dataset` } } : {}),
   };
+
+  const datasetJsonLd = evidenceIndex
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "@id": `${canonicalUrl}#dataset`,
+        name: report.title,
+        description: report.summary,
+        url: canonicalUrl,
+        creator: { "@id": QA_ORGANIZATION_ID },
+        publisher: { "@id": QA_ORGANIZATION_ID },
+        datePublished: editorial.publishedAt,
+        dateModified: editorial.updatedAt,
+        temporalCoverage: evidenceIndex.temporalCoverage,
+        measurementTechnique: evidenceIndex.methodologyVersion,
+        variableMeasured: evidenceIndex.components.map((component) => ({
+          "@type": "PropertyValue",
+          name: component.label,
+          description: component.definition,
+          maxValue: component.weight,
+        })),
+        distribution: {
+          "@type": "DataDownload",
+          encodingFormat: "text/csv",
+          contentUrl: `${QA_SITE_URL}${isNightlifeIndex ? "/api/reports/nightlife-index-2026" : "/api/reports/safety-index-2026"}`,
+        },
+        license: `${QA_SITE_URL}/terms`,
+        isAccessibleForFree: true,
+      }
+    : null;
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -147,9 +193,10 @@ export default async function ReportDetailPage({ params }) {
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
+      {datasetJsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetJsonLd) }} /> : null}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className={`mx-auto space-y-6 ${evidenceIndex ? "max-w-6xl" : "max-w-4xl"}`}>
         <header className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Citable Report</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{report.title}</h1>
@@ -169,14 +216,20 @@ export default async function ReportDetailPage({ params }) {
           sources={editorial.sources}
         />
 
-        <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
-          <h2 className="text-lg font-semibold">Methodology</h2>
-          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-7 text-white/82">
-            {report.methodology.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ol>
-        </section>
+        {isNightlifeIndex ? (
+          <NightlifeIndexReport />
+        ) : isSafetyIndex ? (
+          <SafetyIndexReport />
+        ) : (
+          <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
+            <h2 className="text-lg font-semibold">Methodology</h2>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-7 text-white/82">
+              {report.methodology.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ol>
+          </section>
+        )}
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
           <h2 className="text-lg font-semibold">FAQ</h2>

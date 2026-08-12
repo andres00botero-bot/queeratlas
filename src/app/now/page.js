@@ -21,6 +21,16 @@ import { QA_SOURCE_CONFIDENCE } from "@/lib/seo/entityConsistency";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import {
+  isEvidenceBackedRankingYear,
+  NIGHTLIFE_INDEX_2026,
+  NIGHTLIFE_INDEX_2026_ENTRIES,
+} from "@/lib/seo/nightlifeIndex2026";
+import {
+  isEvidenceBackedSafetyYear,
+  SAFETY_INDEX_2026,
+  SAFETY_INDEX_2026_ENTRIES,
+} from "@/lib/seo/safetyIndex2026";
+import {
   isIndexableTopicHub,
   TIER1_CITY_SLUGS,
   TIER1_TOPIC_KEYS,
@@ -279,23 +289,13 @@ function getCommunityStoryCategory(storyType = "") {
   return found?.mapToCategory || "culture_tip";
 }
 const ATLAS_DESTINATION_RANKINGS = {
-  2026: [
-    { city: "berlin", country: "Germany", signal: "Club ecosystem, radical diversity, 24/7 queer culture." },
-    { city: "new_york", country: "USA", signal: "Historic queer legacy + constant reinvention across boroughs." },
-    { city: "sao_paulo", country: "Brazil", signal: "Massive scene scale, iconic nightlife, bold community pulse." },
-    { city: "madrid", country: "Spain", signal: "Late-night social flow with one of Europe’s strongest queer cores." },
-    { city: "toronto", country: "Canada", signal: "Safe, inclusive, and packed with year-round queer programming." },
-    { city: "san_francisco", country: "USA", signal: "Foundational queer history with deeply rooted local community." },
-    { city: "paris", country: "France", signal: "Creative queer nightlife and culture-rich neighborhood discovery." },
-    { city: "copenhagen", country: "Denmark", signal: "Design-forward city with confident queer visibility and comfort." },
-    { city: "mexico_city", country: "Mexico", signal: "Huge creative energy, queer bars, parties, and culture mix." },
-    { city: "sydney", country: "Australia", signal: "World-class events, beach lifestyle, and high queer confidence." },
-    { city: "bangkok", country: "Thailand", signal: "Electric nightlife and strong trans visibility across the city." },
-    { city: "barcelona", country: "Spain", signal: "Mediterranean style, nightlife density, and Pride-season momentum." },
-    { city: "tokyo", country: "Japan", signal: "Unique district-based scenes and nonstop bar micro-cultures." },
-    { city: "amsterdam", country: "Netherlands", signal: "Open culture, canal-city charm, and reliable queer nightlife." },
-    { city: "lisbon", country: "Portugal", signal: "Warm, social, and growing scene with global queer crowd." },
-  ],
+  2026: NIGHTLIFE_INDEX_2026_ENTRIES.slice(0, NOW_RANKING_LIMIT).map((entry) => ({
+    city: entry.city,
+    country: entry.country,
+    signal: entry.signal,
+    score: entry.score,
+    evidence: { places: entry.places, events: entry.events, reviews: entry.reviews },
+  })),
   2025: [
     { city: "berlin", country: "Germany", signal: "Still the benchmark for nightlife freedom and subculture depth." },
     { city: "new_york", country: "USA", signal: "Global reference point for queer art, bars, and community power." },
@@ -316,18 +316,17 @@ const ATLAS_DESTINATION_RANKINGS = {
 };
 
 const ATLAS_SAFETY_RANKINGS = {
-  2026: [
-    { city: "copenhagen", country: "Denmark", signal: "Consistent late-night safety and high confidence local support." },
-    { city: "amsterdam", country: "Netherlands", signal: "Strong civic protections and stable queer nightlife navigation." },
-    { city: "sydney", country: "Australia", signal: "High trans visibility confidence and strong verified community signals." },
-    { city: "melbourne", country: "Australia", signal: "Reliable venue safety standards and low-friction night movement." },
-    { city: "berlin", country: "Germany", signal: "Dense queer ecosystem with resilient late-night safety infrastructure." },
-    { city: "barcelona", country: "Spain", signal: "High local sentiment and broad trusted venue coverage." },
-    { city: "madrid", country: "Spain", signal: "Strong community signal density and consistent night mobility comfort." },
-    { city: "lisbon", country: "Portugal", signal: "Growing safety confidence with stable social trust signals." },
-    { city: "stockholm", country: "Sweden", signal: "High late-night navigation confidence with strong queer community trust signals." },
-    { city: "bangkok", country: "Thailand", signal: "High nightlife activity with rising confidence in trusted routes." },
-  ],
+  2026: SAFETY_INDEX_2026_ENTRIES.slice(0, NOW_RANKING_LIMIT).map((entry) => ({
+    city: entry.city,
+    country: entry.country,
+    signal: entry.signal,
+    score: entry.score,
+    evidence: {
+      places: entry.places,
+      welcome: entry.welcomeEvidence,
+      routes: entry.routeReadyPlaces,
+    },
+  })),
   2025: [
     { city: "amsterdam", country: "Netherlands", signal: "Strong legal context and high community trust continuity." },
     { city: "copenhagen", country: "Denmark", signal: "Low-friction night navigation with strong structural safety signals." },
@@ -813,7 +812,9 @@ export default function NowPage() {
   const safetyRankingYears = Object.keys(ATLAS_SAFETY_RANKINGS).sort((a, b) => Number(b) - Number(a));
   const buildRankingDraftForYear = useCallback(
     (year) => {
-      const source = (rankingOverrides[year] || ATLAS_DESTINATION_RANKINGS[year] || [])
+      const source = (isEvidenceBackedRankingYear(year)
+        ? ATLAS_DESTINATION_RANKINGS[year] || []
+        : rankingOverrides[year] || ATLAS_DESTINATION_RANKINGS[year] || [])
         .slice(0, NOW_RANKING_LIMIT)
         .map((item) => ({ ...item }));
       return Array.from({ length: NOW_RANKING_LIMIT }, (_, index) => source[index] || { city: "", country: "", signal: "" });
@@ -822,7 +823,9 @@ export default function NowPage() {
   );
   const buildSafetyRankingDraftForYear = useCallback(
     (year) => {
-      const source = (safetyRankingOverrides[year] || ATLAS_SAFETY_RANKINGS[year] || [])
+      const source = (isEvidenceBackedSafetyYear(year)
+        ? ATLAS_SAFETY_RANKINGS[year] || []
+        : safetyRankingOverrides[year] || ATLAS_SAFETY_RANKINGS[year] || [])
         .slice(0, NOW_RANKING_LIMIT)
         .map((item) => ({ ...item }));
       return Array.from({ length: NOW_RANKING_LIMIT }, (_, index) => source[index] || { city: "", country: "", signal: "" });
@@ -837,9 +840,16 @@ export default function NowPage() {
     () => ATLAS_SAFETY_RANKINGS[selectedSafetyRankingYear] || [],
     [selectedSafetyRankingYear]
   );
-  const rankingItems = (rankingOverrides[selectedRankingYear] || baseRankingItems).slice(0, NOW_RANKING_LIMIT);
-  const safetyRankingItems =
-    (safetyRankingOverrides[selectedSafetyRankingYear] || baseSafetyRankingItems).slice(0, NOW_RANKING_LIMIT);
+  const rankingItems = (isEvidenceBackedRankingYear(selectedRankingYear)
+    ? baseRankingItems
+    : rankingOverrides[selectedRankingYear] || baseRankingItems
+  ).slice(0, NOW_RANKING_LIMIT);
+  const evidenceBackedRanking = isEvidenceBackedRankingYear(selectedRankingYear);
+  const evidenceBackedSafetyRanking = isEvidenceBackedSafetyYear(selectedSafetyRankingYear);
+  const safetyRankingItems = (evidenceBackedSafetyRanking
+    ? baseSafetyRankingItems
+    : safetyRankingOverrides[selectedSafetyRankingYear] || baseSafetyRankingItems
+  ).slice(0, NOW_RANKING_LIMIT);
   const filteredEvents = useMemo(
     () =>
       selectedCity === "all"
@@ -1463,6 +1473,10 @@ export default function NowPage() {
 
   const saveRankingDraft = async () => {
     if (!isAdmin) return;
+    if (isEvidenceBackedRankingYear(selectedRankingYear)) {
+      setSyncWarning("The published 2026 evidence snapshot is locked. Rebuild and review the dataset before publishing a new edition.");
+      return;
+    }
     const normalizedDraft = rankingDraft.map(normalizeRankingDraftItem);
     const emptyRows = normalizedDraft
       .map((item, index) => ({ index, city: item.city }))
@@ -1540,6 +1554,10 @@ export default function NowPage() {
 
   const saveSafetyRankingDraft = async () => {
     if (!isAdmin) return;
+    if (isEvidenceBackedSafetyYear(selectedSafetyRankingYear)) {
+      setSyncWarning("The published 2026 safety evidence snapshot is locked. Rebuild and review the dataset before publishing a new edition.");
+      return;
+    }
     const normalizedDraft = safetyRankingDraft.map(normalizeRankingDraftItem);
     const emptyRows = normalizedDraft
       .map((item, index) => ({ index, city: item.city }))
@@ -1656,8 +1674,8 @@ export default function NowPage() {
     mergeEditorialCacheSafetyRanking(next);
     setIsSafetyRankingEditorOpen(false);
   };
-  const rankingRenderItems = isRankingEditorOpen ? rankingDraft : rankingItems;
-  const safetyRankingRenderItems = isSafetyRankingEditorOpen ? safetyRankingDraft : safetyRankingItems;
+  const rankingRenderItems = isRankingEditorOpen && !evidenceBackedRanking ? rankingDraft : rankingItems;
+  const safetyRankingRenderItems = isSafetyRankingEditorOpen && !evidenceBackedSafetyRanking ? safetyRankingDraft : safetyRankingItems;
 
   const publishAdminNews = async (event) => {
     event.preventDefault();
@@ -2628,7 +2646,7 @@ export default function NowPage() {
                   <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/75">Ranking</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">Top 10 Queer Travel Destinations</h3>
                   <div className="mt-2 inline-flex items-center rounded-full border border-cyan-200/26 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/90">
-                    Atlas ranking editorial
+                    {evidenceBackedRanking ? `Evidence model ${NIGHTLIFE_INDEX_2026.methodologyVersion}` : "Atlas ranking editorial"}
                   </div>
                 </div>
                 <select
@@ -2636,6 +2654,11 @@ export default function NowPage() {
                   onChange={(event) => {
                     const year = event.target.value;
                     setSelectedRankingYear(year);
+                    if (isEvidenceBackedRankingYear(year)) {
+                      setIsRankingEditorOpen(false);
+                      setRankingDraft([]);
+                      return;
+                    }
                     if (isRankingEditorOpen) {
                       setRankingDraft(buildRankingDraftForYear(year));
                     }
@@ -2650,10 +2673,21 @@ export default function NowPage() {
                 </select>
               </div>
               <p className="text-xs text-cyan-100/70">
-                Editorial ranking by Queer Atlas. Updated yearly to become the reference list.
+                {evidenceBackedRanking
+                  ? `${NIGHTLIFE_INDEX_2026.eligibility.eligibleNightlifePlaces.toLocaleString("en")} nightlife places, ${NIGHTLIFE_INDEX_2026.eligibility.eligibleEvents.toLocaleString("en")} events and ${NIGHTLIFE_INDEX_2026.eligibility.eligibleCommunityReviews.toLocaleString("en")} community reviews. Snapshot ${NIGHTLIFE_INDEX_2026.snapshotAt}.`
+                  : "Editorial ranking by Queer Atlas. Updated yearly to become the reference list."}
               </p>
 
-              {isAdmin && (
+              {evidenceBackedRanking ? (
+                <Link
+                  href="/reports/queer-nightlife-index-2026"
+                  className="mt-3 inline-flex rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-200/20"
+                >
+                  Open scores + methodology
+                </Link>
+              ) : null}
+
+              {isAdmin && !evidenceBackedRanking && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2724,7 +2758,7 @@ export default function NowPage() {
                             #{index + 1}
                           </span>
                           <span className="text-[11px] uppercase tracking-[0.14em] text-white/75">
-                            {index === 0 ? "Global icon" : index === 1 ? "High signal" : "Rising elite"}
+                            {evidenceBackedRanking ? `${item.score.toFixed(1)} / 100` : index === 0 ? "Global icon" : index === 1 ? "High signal" : "Rising elite"}
                           </span>
                         </div>
                         <p className="truncate text-base font-semibold text-white">
@@ -2734,6 +2768,11 @@ export default function NowPage() {
                         <p className="mt-3 text-xs leading-5 text-white/70">
                           {item.signal || "Signal pending editorial update."}
                         </p>
+                        {evidenceBackedRanking ? (
+                          <p className="mt-2 text-[10px] uppercase tracking-[0.1em] text-cyan-100/60">
+                            {item.evidence.places} places · {item.evidence.events} events · {item.evidence.reviews} reviews
+                          </p>
+                        ) : null}
                       </button>
                     );
                   })}
@@ -2747,7 +2786,7 @@ export default function NowPage() {
                   const cityKey = String(item.city || "").toLowerCase();
                   const citySlug = cityKey.replaceAll(" ", "_").trim();
                   const cityExists = cityOptionSet.has(citySlug);
-                  const signalStrength = Math.max(22, 100 - index * 4);
+                  const signalStrength = evidenceBackedRanking ? Number(item.score || 0) : Math.max(22, 100 - index * 4);
                   return (
                     <div
                       key={`${selectedRankingYear}-${index + 1}`}
@@ -2788,6 +2827,11 @@ export default function NowPage() {
                           </p>
                           <p className="truncate text-[11px] text-white/55">{item.country || "Country TBA"}</p>
                           <p className="truncate text-[11px] text-white/62">{item.signal || "Signal pending editorial update."}</p>
+                          {evidenceBackedRanking ? (
+                            <p className="mt-1 text-[10px] tabular-nums text-cyan-100/58">
+                              {item.score.toFixed(1)} / 100 · {item.evidence.places} places · {item.evidence.events} events
+                            </p>
+                          ) : null}
                           <div className="mt-2 h-1.5 w-full rounded-full bg-white/10">
                             <span
                               className="block h-1.5 rounded-full bg-gradient-to-r from-cyan-200/85 via-sky-200/75 to-cyan-200/45"
@@ -2852,7 +2896,7 @@ export default function NowPage() {
                   <p className="text-xs uppercase tracking-[0.22em] text-emerald-100/80">Safety ranking</p>
                   <h3 className="mt-1 text-lg font-semibold text-white">Top 10 Queer Safety Destinations</h3>
                   <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200/26 bg-emerald-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/90">
-                    Atlas safety editorial
+                    {evidenceBackedSafetyRanking ? `Evidence model ${SAFETY_INDEX_2026.methodologyVersion}` : "Atlas safety editorial"}
                   </div>
                 </div>
                 <select
@@ -2860,6 +2904,10 @@ export default function NowPage() {
                   onChange={(event) => {
                     const year = event.target.value;
                     setSelectedSafetyRankingYear(year);
+                    if (isEvidenceBackedSafetyYear(year)) {
+                      setIsSafetyRankingEditorOpen(false);
+                      setSafetyRankingDraft([]);
+                    }
                     if (isSafetyRankingEditorOpen) {
                       setSafetyRankingDraft(buildSafetyRankingDraftForYear(year));
                     }
@@ -2874,10 +2922,18 @@ export default function NowPage() {
                 </select>
               </div>
               <p className="text-xs text-emerald-100/70">
-                Editorial safety ranking by Queer Atlas. Updated yearly to guide low-friction city movement.
+                {evidenceBackedSafetyRanking
+                  ? `${SAFETY_INDEX_2026.eligibility.cityCount} cities tested from ${SAFETY_INDEX_2026.eligibility.countryProfiles} rights profiles, ${SAFETY_INDEX_2026.eligibility.venueWelcomeEvidence} welcome records and ${SAFETY_INDEX_2026.eligibility.routeReadyPlaces} route-ready places.`
+                  : "Editorial safety ranking by Queer Atlas. Updated yearly to guide low-friction city movement."}
               </p>
 
-              {isAdmin && (
+              {evidenceBackedSafetyRanking ? (
+                <Link href="/reports/safest-queer-cities-2026" className="mt-3 inline-flex rounded-full border border-emerald-200/28 bg-emerald-200/12 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-200/20">
+                  Open scores + methodology
+                </Link>
+              ) : null}
+
+              {isAdmin && !evidenceBackedSafetyRanking && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -2948,7 +3004,7 @@ export default function NowPage() {
                             #{index + 1}
                           </span>
                           <span className="text-[11px] uppercase tracking-[0.14em] text-white/75">
-                            {index === 0 ? "Safety icon" : index === 1 ? "High confidence" : "Trusted route"}
+                            {evidenceBackedSafetyRanking ? `${item.score.toFixed(1)} / 100` : index === 0 ? "Safety icon" : index === 1 ? "High confidence" : "Trusted route"}
                           </span>
                         </div>
                         <p className="truncate text-base font-semibold text-white">
@@ -2958,6 +3014,11 @@ export default function NowPage() {
                         <p className="mt-3 text-xs leading-5 text-white/70">
                           {item.signal || "Signal pending editorial update."}
                         </p>
+                        {evidenceBackedSafetyRanking ? (
+                          <p className="mt-2 text-[10px] uppercase tracking-[0.1em] text-emerald-100/60">
+                            {item.evidence.places} places · {item.evidence.welcome} welcome records · {item.evidence.routes} route-ready
+                          </p>
+                        ) : null}
                       </button>
                     );
                   })}
@@ -2971,7 +3032,7 @@ export default function NowPage() {
                   const cityKey = String(item.city || "").toLowerCase();
                   const citySlug = cityKey.replaceAll(" ", "_").trim();
                   const cityExists = cityOptionSet.has(citySlug);
-                  const signalStrength = Math.max(22, 100 - index * 4);
+                  const signalStrength = evidenceBackedSafetyRanking ? Number(item.score || 0) : Math.max(22, 100 - index * 4);
                   return (
                     <div
                       key={`safety-${selectedSafetyRankingYear}-${index + 1}`}
@@ -3012,6 +3073,11 @@ export default function NowPage() {
                           </p>
                           <p className="truncate text-[11px] text-white/55">{item.country || "Country TBA"}</p>
                           <p className="truncate text-[11px] text-white/62">{item.signal || "Signal pending editorial update."}</p>
+                          {evidenceBackedSafetyRanking ? (
+                            <p className="mt-1 text-[10px] tabular-nums text-emerald-100/58">
+                              {item.score.toFixed(1)} / 100 · {item.evidence.places} places · {item.evidence.routes} routes
+                            </p>
+                          ) : null}
                           <div className="mt-2 h-1.5 w-full rounded-full bg-white/10">
                             <span
                               className="block h-1.5 rounded-full bg-gradient-to-r from-emerald-200/85 via-teal-200/75 to-emerald-200/45"

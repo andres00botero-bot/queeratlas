@@ -10,11 +10,15 @@ export const SEO_REPORTS = [
         "A methodology-first ranking of queer nightlife cities based on route continuity, social signal depth, and practical fallback strength.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-08-04",
+    updatedAt: "2026-08-11",
     authorId: "queer-atlas-editorial-team",
     researchScope:
-      "This edition reviews route-quality patterns across Queer Atlas city, venue, event, and topic coverage. It does not yet publish a city-level score table or raw source ledger, so comparative claims should be read as an editorial model rather than an independently audited index.",
+      "This edition scores 118 eligible cities from a frozen 2026-08-11 Queer Atlas snapshot containing 1,352 indexable nightlife places, 498 indexed 2026 events, and 1,465 valid community reviews attached to eligible nightlife places. It measures substantiated route-ready coverage, not every operating venue or the totality of queer life in a city.",
     changeLog: [
+      {
+        date: "2026-08-11",
+        note: "Replaced the manual editorial order with evidence model QA-NI-1.0; published the Top 25 score table, six component scores, evidence counts, limitations, and downloadable CSV.",
+      },
       {
         date: "2026-08-04",
         note: "Added editorial ownership, a specific research disclosure, and a public change history; ranking findings were not changed.",
@@ -31,35 +35,39 @@ export const SEO_REPORTS = [
       "best queer nightlife cities",
     ],
     methodology: [
-      "Weighted route quality across nightlife density, social-fit spread, and fallback continuity.",
-      "Signal blend from venue coverage, events cadence, and moderated community confidence.",
-      "Citations require route-level URL plus city context for reproducible claims.",
+      "A city needs at least five indexable bars, clubs, saunas, cruise clubs, or cruising areas to enter the comparison.",
+      "The 100-point model combines nightlife depth (30), scene diversity (15), 2026 event momentum (20), venue-intelligence completeness (15), route readiness (10), and community evidence (10).",
+      "The ranking is a frozen evidence snapshot. Scores are not manually reordered after calculation, and the report publishes limitations alongside every result.",
     ],
     creatorSnippets: {
       reddit:
-        "We just published the Queer Nightlife Index 2026 with a route-quality methodology (not just hype rankings). Useful if you want city-by-city nightlife comparisons backed by reproducible route logic.",
+        "Queer Atlas analysed 1,352 nightlife places, 498 events and 1,465 community reviews across 118 eligible cities. Berlin leads the evidence-based 2026 index on 91.9, followed by Madrid on 90.8.",
       tiktok:
-        "Queer Nightlife Index 2026 is live. This is route-quality data, not vibes-only rankings. Use it to plan where the night actually works end-to-end.",
+        "Berlin leads the Queer Nightlife Index 2026—but Madrid is only 1.1 points behind. Six published components, 118 cities tested, and no hidden editorial reorder.",
       instagram:
-        "Queer Nightlife Index 2026 is out. City-by-city, methodology-first, and built for real nightlife flow. Save this before your next trip.",
+        "The evidence is live: Berlin #1, Madrid #2, Amsterdam #3. Explore the full Top 25, all component scores, limitations and downloadable data.",
     },
   },
   {
     slug: "safest-queer-cities-2026",
     title: "Safest Queer Cities 2026",
     summary:
-      "Safety-first city model combining movement confidence, venue moderation signal, and practical fallback options.",
+      "Evidence-based queer safety-readiness ranking combining sourced rights context, venue welcome, route usability, and fallback depth.",
     socialMeta: {
       ogTitle: "Safest Queer Cities 2026: Safety-First Route Intelligence",
       ogDescription:
-        "Compare cities by movement confidence, moderation signal, and fallback route depth for safer queer nightlife decisions.",
+        "Compare 75 cities through seven published components spanning rights, sourced safety context, venue welcome, and route readiness.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-08-04",
+    updatedAt: "2026-08-11",
     authorId: "queer-atlas-editorial-team",
     researchScope:
-      "This edition reviews movement confidence, moderation signal, route continuity, and fallback depth represented in Queer Atlas city coverage. It is not a legal-risk index, and no city-level raw score table is published in the current edition.",
+      "This edition scores 75 eligible cities from a frozen 2026-08-11 snapshot covering 77 sourced country-rights profiles and 994 nightlife places. The model includes 670 source-backed venue-welcome records and 591 route-ready places. Only four community reviews contained a safety-specific rating, so those values were excluded rather than treated as representative evidence.",
     changeLog: [
+      {
+        date: "2026-08-11",
+        note: "Replaced the manual editorial order with evidence model QA-SR-1.0; published the Top 25, seven component scores, evidence counts, limitations, and downloadable CSV.",
+      },
       {
         date: "2026-08-04",
         note: "Added editorial ownership, research limitations, and a public change history; safety conclusions were not expanded.",
@@ -76,17 +84,17 @@ export const SEO_REPORTS = [
       "safe queer nightlife cities",
     ],
     methodology: [
-      "City confidence score built from route safety continuity, fallback depth, and moderation outcomes.",
-      "Priority on lower-friction movement and same-zone alternatives for night decisions.",
-      "No legal advice: this is operational travel-routing intelligence.",
+      "A city needs a sourced country-rights profile and at least eight indexable nightlife places to enter the comparison.",
+      "The 100-point model combines legal baseline (20), rights protection (25), sourced safety context (15), source confidence (10), venue welcome evidence (15), route readiness (10), and fallback depth (5).",
+      "The ranking measures queer safety readiness, not total crime or guaranteed personal safety. Scores are calculated without a manual editorial reorder.",
     ],
     creatorSnippets: {
       reddit:
-        "Safest Queer Cities 2026 is live. We focused on movement confidence and fallback depth, not generic safety cliches. Good starting point for safety-first trip planning.",
+        "Queer Atlas compared 75 cities through a published 100-point safety-readiness model. Lisbon leads on 94.6, followed by Buenos Aires and Antwerp. Every component and limitation is visible.",
       tiktok:
-        "Safest Queer Cities 2026 is out. We score city safety by route confidence and practical fallback options. Keep this for planning smarter nights.",
+        "Lisbon leads the Queer Safety Readiness Index 2026. Seven visible components, 75 cities tested, and no hidden editorial reorder.",
       instagram:
-        "Safest Queer Cities 2026 is live. Safety-first, route-aware, and built for actual queer travel decisions. Bookmark for your next city plan.",
+        "Lisbon #1, Buenos Aires #2, Antwerp #3. Explore the full Top 25, component scores, limitations and downloadable safety-readiness data.",
     },
   },
   {

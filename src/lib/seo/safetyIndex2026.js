@@ -1,0 +1,60 @@
+export const SAFETY_INDEX_2026 = {
+  slug: "safest-queer-cities-2026",
+  year: 2026,
+  methodologyVersion: "QA-SR-1.0",
+  snapshotAt: "2026-08-11",
+  temporalCoverage: "2025-01-01/2026-08-11",
+  observationWindow: "Current Queer Atlas rights profiles and venue evidence captured 2026-08-11",
+  eligibility: {
+    minimumNightlifePlaces: 8,
+    cityCount: 75,
+    countryProfiles: 77,
+    allPlacesReviewed: 1802,
+    eligibleNightlifePlaces: 994,
+    venueWelcomeEvidence: 670,
+    routeReadyPlaces: 591,
+    populatedSafetyReviewsExcluded: 4,
+  },
+  components: [
+    { key: "legal", label: "Legal baseline", weight: 20, definition: "Eight points from the published legal level and twelve from same-sex-relations status. Criminalisation receives zero; legal status receives the full component." },
+    { key: "rights", label: "Rights protection", weight: 25, definition: "Ten points for the overall rights level, six for union recognition, four for legal gender recognition and five for anti-discrimination coverage." },
+    { key: "safety", label: "Safety context", weight: 15, definition: "The sourced country-profile safety level contributes 15 for good, 7.5 for mixed and zero for risk." },
+    { key: "evidence", label: "Source confidence", weight: 10, definition: "Four points from the profile confidence grade and six from coverage across legal, rights and safety source URLs." },
+    { key: "welcome", label: "Venue welcome", weight: 15, definition: "Source-backed staff and inclusion evidence across eligible nightlife places. Supported positive signals receive full value; mixed or caution signals reduce the component." },
+    { key: "route", label: "Route readiness", weight: 10, definition: "Ten times the share of eligible nightlife places with coordinates, hours context and an official or booking link." },
+    { key: "fallback", label: "Fallback depth", weight: 5, definition: "Five times the square root of eligible nightlife places divided by 20, capped at five. This rewards practical alternatives without letting city size dominate." },
+  ],
+  entries: [
+    { rank: 1, city: "lisbon", country: "Portugal", score: 94.6, places: 17, welcomeEvidence: 16, routeReadyPlaces: 14, sourceCount: 3, confidence: "high", scores: { legal: 20, rights: 25, safety: 15, evidence: 10, welcome: 11.7, route: 8.2, fallback: 4.6 }, signal: "A maximum structural baseline meets strong source confidence and fourteen route-ready nightlife options." },
+    { rank: 2, city: "buenos_aires", country: "Argentina", score: 94.2, places: 12, welcomeEvidence: 12, routeReadyPlaces: 11, sourceCount: 3, confidence: "high", scores: { legal: 20, rights: 25, safety: 15, evidence: 10, welcome: 11.1, route: 9.2, fallback: 3.9 }, signal: "High-confidence rights coverage combines with sourced welcome evidence across the complete city sample." },
+    { rank: 3, city: "antwerp", country: "Belgium", score: 93.8, places: 10, welcomeEvidence: 10, routeReadyPlaces: 10, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 11.6, route: 10, fallback: 3.5 }, signal: "Every eligible nightlife place is both route-ready and covered by usable staff-welcome evidence." },
+    { rank: 4, city: "montreal", country: "Canada", score: 91.9, places: 23, welcomeEvidence: 21, routeReadyPlaces: 18, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 10.5, route: 7.8, fallback: 5 }, signal: "A full rights baseline is reinforced by broad fallback depth and twenty-one documented welcome signals." },
+    { rank: 5, city: "barcelona", country: "Spain", score: 90.8, places: 25, welcomeEvidence: 25, routeReadyPlaces: 18, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 10, route: 7.2, fallback: 5 }, signal: "Complete venue-welcome coverage and deep alternatives offset uneven route completeness." },
+    { rank: 6, city: "brussels", country: "Belgium", score: 88.9, places: 11, welcomeEvidence: 9, routeReadyPlaces: 10, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 7.5, route: 9.1, fallback: 3.7 }, signal: "Ten route-ready options support Belgium's maximum legal, rights and published safety components." },
+    { rank: 7, city: "madrid", country: "Spain", score: 88.7, places: 40, welcomeEvidence: 30, routeReadyPlaces: 28, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 8.1, route: 7, fallback: 5 }, signal: "The index's deepest fallback network carries thirty sourced welcome records and twenty-eight usable routes." },
+    { rank: 8, city: "copenhagen", country: "Denmark", score: 88.6, places: 16, welcomeEvidence: 15, routeReadyPlaces: 12, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 8.1, route: 7.5, fallback: 4.5 }, signal: "Strong structural conditions meet near-complete welcome documentation in a compact network." },
+    { rank: 9, city: "vancouver", country: "Canada", score: 88, places: 9, welcomeEvidence: 7, routeReadyPlaces: 8, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 7.2, route: 8.9, fallback: 3.4 }, signal: "A smaller scene performs through eight route-ready choices and Canada's strong structural baseline." },
+    { rank: 10, city: "marseille", country: "France", score: 87.3, places: 8, welcomeEvidence: 8, routeReadyPlaces: 8, sourceCount: 3, confidence: "high", scores: { legal: 20, rights: 25, safety: 7.5, evidence: 10, welcome: 11.6, route: 10, fallback: 3.2 }, signal: "Perfect route and welcome coverage lift Marseille despite a mixed published safety context." },
+    { rank: 11, city: "sydney", country: "Australia", score: 86.9, places: 14, welcomeEvidence: 12, routeReadyPlaces: 10, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 22.5, safety: 15, evidence: 8.6, welcome: 9.5, route: 7.1, fallback: 4.2 }, signal: "Strong structural protection is matched by sourced welcome evidence across most indexed venues." },
+    { rank: 12, city: "porto", country: "Portugal", score: 86.1, places: 9, welcomeEvidence: 7, routeReadyPlaces: 5, sourceCount: 3, confidence: "high", scores: { legal: 20, rights: 25, safety: 15, evidence: 10, welcome: 7.2, route: 5.6, fallback: 3.4 }, signal: "Portugal's high-confidence baseline leads; incomplete route data is the clearest practical limitation." },
+    { rank: 13, city: "bogota", country: "Colombia", score: 85.4, places: 23, welcomeEvidence: 20, routeReadyPlaces: 17, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 7.5, evidence: 8.6, welcome: 11.9, route: 7.4, fallback: 5 }, signal: "Deep fallback coverage and strong venue-welcome evidence balance a mixed national safety signal." },
+    { rank: 14, city: "helsinki", country: "Finland", score: 84.7, places: 8, welcomeEvidence: 4, routeReadyPlaces: 5, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 6.7, route: 6.3, fallback: 3.2 }, signal: "Maximum structural components lead, while the current venue-evidence sample remains comparatively thin." },
+    { rank: 15, city: "johannesburg", country: "South Africa", score: 84.6, places: 8, welcomeEvidence: 7, routeReadyPlaces: 8, sourceCount: 3, confidence: "high", scores: { legal: 20, rights: 25, safety: 7.5, evidence: 10, welcome: 8.9, route: 10, fallback: 3.2 }, signal: "All eight routes are operationally complete, but the country-profile safety level remains mixed." },
+    { rank: 16, city: "melbourne", country: "Australia", score: 84, places: 8, welcomeEvidence: 6, routeReadyPlaces: 7, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 22.5, safety: 15, evidence: 8.6, welcome: 6, route: 8.8, fallback: 3.2 }, signal: "Seven route-ready options support a strong baseline; welcome evidence is less complete than Sydney's." },
+    { rank: 17, city: "torremolinos", country: "Spain", score: 83.3, places: 23, welcomeEvidence: 8, routeReadyPlaces: 13, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 4, route: 5.7, fallback: 5 }, signal: "Substantial fallback depth contrasts with sparse source-backed welcome coverage." },
+    { rank: 18, city: "taipei", country: "Taiwan", score: 82.2, places: 24, welcomeEvidence: 15, routeReadyPlaces: 15, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 20.5, safety: 15, evidence: 8.6, welcome: 6.8, route: 6.3, fallback: 5 }, signal: "A broad city network and strong safety context meet more limited formal rights protection." },
+    { rank: 19, city: "gran_canaria", country: "Spain", score: 82.1, places: 15, welcomeEvidence: 7, routeReadyPlaces: 7, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 4.5, route: 4.7, fallback: 4.3 }, signal: "Strong national protection is clear; practical route and welcome documentation need more depth." },
+    { rank: 20, city: "cape_town", country: "South Africa", score: 81.8, places: 10, welcomeEvidence: 10, routeReadyPlaces: 3, sourceCount: 3, confidence: "high", scores: { legal: 20, rights: 25, safety: 7.5, evidence: 10, welcome: 12.8, route: 3, fallback: 3.5 }, signal: "Excellent sourced welcome evidence is held back by only three fully route-ready nightlife places." },
+    { rank: 21, city: "valencia", country: "Spain", score: 77.4, places: 8, welcomeEvidence: 1, routeReadyPlaces: 3, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 1.9, route: 3.8, fallback: 3.2 }, signal: "The structural baseline is strong, but city-level welcome and route evidence is still shallow." },
+    { rank: 22, city: "amsterdam", country: "Netherlands", score: 76.2, places: 24, welcomeEvidence: 24, routeReadyPlaces: 21, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 12.5, safety: 7.5, evidence: 8.6, welcome: 13.9, route: 8.8, fallback: 5 }, signal: "Outstanding city-level venue evidence is moderated by the current country-profile rights and safety grades." },
+    { rank: 23, city: "chicago", country: "United States", score: 76.1, places: 14, welcomeEvidence: 12, routeReadyPlaces: 14, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 15.5, safety: 7.5, evidence: 8.6, welcome: 10.3, route: 10, fallback: 4.2 }, signal: "Perfect route readiness and good welcome coverage meet a mixed national rights and safety context." },
+    { rank: 24, city: "guadalajara", country: "Mexico", score: 74.9, places: 9, welcomeEvidence: 7, routeReadyPlaces: 7, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 17.5, safety: 7.5, evidence: 8.6, welcome: 10.2, route: 7.8, fallback: 3.4 }, signal: "Useful city-level venue evidence offsets a more limited formal-protection profile." },
+    { rank: 25, city: "sitges", country: "Spain", score: 74.4, places: 12, welcomeEvidence: 2, routeReadyPlaces: 0, sourceCount: 3, confidence: "medium", scores: { legal: 20, rights: 25, safety: 15, evidence: 8.6, welcome: 1.9, route: 0, fallback: 3.9 }, signal: "Spain's maximum structural baseline cannot erase major gaps in current practical route evidence." },
+  ],
+};
+
+export const SAFETY_INDEX_2026_ENTRIES = SAFETY_INDEX_2026.entries;
+
+export function isEvidenceBackedSafetyYear(year) {
+  return Number(year) === SAFETY_INDEX_2026.year;
+}
