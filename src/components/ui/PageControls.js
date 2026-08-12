@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function PageControls({
   controlsRef,
   controlButtonsRef,
@@ -37,9 +39,14 @@ export default function PageControls({
     }
 
     event.preventDefault();
-    const nextId = buttons[nextIndex]?.id;
+    const nextButton = buttons[nextIndex];
+    const nextId = nextButton?.id;
     if (!nextId) return;
-    if (typeof onSelect === "function") onSelect(nextId);
+    if (nextButton.href) {
+      controlButtonsRef?.current?.[nextId]?.click();
+    } else if (typeof onSelect === "function") {
+      onSelect(nextId);
+    }
     focusButtonById(nextId);
   };
 
@@ -73,23 +80,40 @@ export default function PageControls({
           const activeBaseClass = useCustomActiveTheme
             ? "border-white/55 bg-white/14 text-white shadow-[0_10px_28px_rgba(0,0,0,0.26)]"
             : "border-cyan-100/70 bg-[linear-gradient(135deg,rgba(34,211,238,0.28),rgba(244,114,182,0.20),rgba(255,255,255,0.10))] text-white -translate-y-[1px] ring-1 ring-cyan-200/42 inset-ring-1 inset-ring-white/40 shadow-[0_12px_30px_rgba(34,211,238,0.16),0_8px_22px_rgba(244,114,182,0.12)]";
+          const controlProps = {
+            ref: (node) => {
+              controlButtonsRef.current[button.id] = node;
+            },
+            onKeyDown: (event) => handleArrowNavigation(event, index),
+            "aria-current": isActive ? "page" : undefined,
+            className: `shrink-0 rounded-full border px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] outline-none transition-[box-shadow,transform,background-color,border-color,color] duration-150 ease-out sm:px-4 sm:text-xs sm:tracking-[0.12em] ${
+              isActive
+                ? `${activeBaseClass} ${isFavoritesDesktopLuxe && !useCustomActiveTheme ? "sm:border-white/62 sm:bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(168,85,247,0.16))] sm:text-white sm:ring-1 sm:ring-white/42 sm:inset-ring-1 sm:inset-ring-white/46 sm:shadow-[0_8px_22px_rgba(168,85,247,0.16)]" : ""} ${activeClassName}`
+                : `border-white/18 bg-white/8 text-white/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:-translate-y-[1px] hover:border-cyan-100/36 hover:bg-white/12 hover:text-white hover:shadow-[0_10px_24px_rgba(34,211,238,0.08)] focus-visible:border-cyan-200/60 focus-visible:text-cyan-50 focus-visible:shadow-[0_0_0_1px_rgba(125,211,252,0.42)] ${isFavoritesDesktopLuxe ? "sm:border-white/16 sm:bg-white/[0.045] sm:text-white/78 sm:hover:border-white/30 sm:hover:bg-white/[0.08] sm:hover:text-white sm:focus-visible:border-white/42 sm:focus-visible:text-white sm:focus-visible:shadow-[0_0_0_1px_rgba(255,255,255,0.28)]" : ""}`
+            }`,
+            autoFocus: index === 0,
+          };
+
+          if (button.href) {
+            return (
+              <Link
+                key={button.id}
+                href={button.href}
+                {...controlProps}
+                onClick={() => onSelect?.(button.id)}
+              >
+                {button.label}
+              </Link>
+            );
+          }
+
           return (
             <button
               key={button.id}
-              ref={(node) => {
-                controlButtonsRef.current[button.id] = node;
-              }}
+              {...controlProps}
               type="button"
               onClick={() => onSelect(button.id)}
-              onKeyDown={(event) => handleArrowNavigation(event, index)}
               aria-pressed={isActive}
-              aria-current={isActive ? "page" : undefined}
-              className={`shrink-0 rounded-full border px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] outline-none transition-[box-shadow,transform,background-color,border-color,color] duration-150 ease-out sm:px-4 sm:text-xs sm:tracking-[0.12em] ${
-                isActive
-                  ? `${activeBaseClass} ${isFavoritesDesktopLuxe && !useCustomActiveTheme ? "sm:border-white/62 sm:bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(168,85,247,0.16))] sm:text-white sm:ring-1 sm:ring-white/42 sm:inset-ring-1 sm:inset-ring-white/46 sm:shadow-[0_8px_22px_rgba(168,85,247,0.16)]" : ""} ${activeClassName}`
-                  : `border-white/18 bg-white/8 text-white/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:-translate-y-[1px] hover:border-cyan-100/36 hover:bg-white/12 hover:text-white hover:shadow-[0_10px_24px_rgba(34,211,238,0.08)] focus-visible:border-cyan-200/60 focus-visible:text-cyan-50 focus-visible:shadow-[0_0_0_1px_rgba(125,211,252,0.42)] ${isFavoritesDesktopLuxe ? "sm:border-white/16 sm:bg-white/[0.045] sm:text-white/78 sm:hover:border-white/30 sm:hover:bg-white/[0.08] sm:hover:text-white sm:focus-visible:border-white/42 sm:focus-visible:text-white sm:focus-visible:shadow-[0_0_0_1px_rgba(255,255,255,0.28)]" : ""}`
-              }`}
-              autoFocus={index === 0}
             >
               {button.label}
             </button>

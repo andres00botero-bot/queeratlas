@@ -49,7 +49,7 @@ export default function AtlasCollectionsIndexPage() {
     <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(125,211,252,0.12),transparent_28%),radial-gradient(circle_at_88%_10%,rgba(216,180,254,0.10),transparent_28%),linear-gradient(180deg,#05070d_0%,#080912_52%,#040406_100%)] px-4 py-8 text-white sm:px-6">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-7xl">
-        <Link href="/now" className="text-xs uppercase tracking-[0.18em] text-amber-100/70 transition hover:text-amber-50">
+        <Link href="/now/news" className="text-xs uppercase tracking-[0.18em] text-amber-100/70 transition hover:text-amber-50">
           Back to Now
         </Link>
         <section className="mt-5 rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.14),transparent_32%),linear-gradient(180deg,rgba(13,18,29,0.96),rgba(8,10,15,0.98))] p-6 shadow-[0_34px_120px_rgba(2,6,23,0.42)] sm:p-8">

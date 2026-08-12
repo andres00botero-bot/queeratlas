@@ -14,8 +14,13 @@ const SAFE_ENTITY_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-zA-Z0-9-]+)?$
 const STATIC_PATHS = new Set([
   "/",
   "/cities",
-  "/events",
-  "/now",
+  "/events/calendar",
+  "/events/off-grid",
+  "/now/news",
+  "/now/rankings",
+  "/now/collections",
+  "/now/voices",
+  "/now/happening-soon",
   "/gay-guide",
   "/queer-guide",
   "/hbtq-guide",
@@ -139,8 +144,8 @@ export function buildPublishedEntityIndexNowUrls(entityType = "", entity = {}, s
   const cityPath = CITY_PATHS.has(city) ? `/${city}` : "";
   const urls = [];
 
-  if (type === "community_story") urls.push("/now");
-  if (type === "event") urls.push("/events");
+  if (type === "community_story") urls.push("/now/voices");
+  if (type === "event") urls.push("/events/calendar");
   if (cityPath) urls.push(cityPath);
 
   const entitySlug = buildEntitySlug(entity);

@@ -18,8 +18,8 @@ assert.equal(
   "https://www.queeratlas.app/259be8ea0ee343c1b2d47469936b2fd9.txt"
 );
 
-assert.equal(normalizeIndexNowUrl("/now"), "https://www.queeratlas.app/now");
-assert.equal(normalizeIndexNowUrl("https://www.queeratlas.app/now/"), "https://www.queeratlas.app/now");
+assert.equal(normalizeIndexNowUrl("/now/news"), "https://www.queeratlas.app/now/news");
+assert.equal(normalizeIndexNowUrl("https://www.queeratlas.app/now/news/"), "https://www.queeratlas.app/now/news");
 assert.equal(normalizeIndexNowUrl("https://queeratlas.app/now"), "");
 assert.equal(normalizeIndexNowUrl("/now?member=1"), "");
 
@@ -32,12 +32,12 @@ assert.equal(isAllowedIndexNowUrl("/admin"), false);
 assert.equal(isAllowedIndexNowUrl("/api/admin/indexnow"), false);
 
 const filtered = filterIndexNowUrls([
-  "/now",
-  "/now",
+  "/now/news",
+  "/now/news",
   "/admin",
   "https://example.com/now",
 ]);
-assert.deepEqual(filtered.accepted, ["https://www.queeratlas.app/now"]);
+assert.deepEqual(filtered.accepted, ["https://www.queeratlas.app/now/news"]);
 assert.equal(filtered.rejected.length, 2);
 
 const eventUrls = buildPublishedEntityIndexNowUrls(
@@ -46,7 +46,7 @@ const eventUrls = buildPublishedEntityIndexNowUrls(
   {}
 );
 assert.deepEqual(eventUrls, [
-  "https://www.queeratlas.app/events",
+  "https://www.queeratlas.app/events/calendar",
   "https://www.queeratlas.app/berlin",
   "https://www.queeratlas.app/berlin/events/pride-night--event-1",
 ]);

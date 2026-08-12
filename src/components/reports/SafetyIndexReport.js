@@ -34,7 +34,7 @@ export default function SafetyIndexReport() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Link href="/api/reports/safety-index-2026" download className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 py-2 text-xs font-semibold text-emerald-50 transition hover:bg-emerald-200/20">Download CSV</Link>
-            <Link href="/now?section=rankings" className="rounded-full border border-white/14 bg-white/[0.05] px-4 py-2 text-xs font-semibold text-white/78 transition hover:bg-white/[0.09]">Open live ranking view</Link>
+            <Link href="/now/rankings" className="rounded-full border border-white/14 bg-white/[0.05] px-4 py-2 text-xs font-semibold text-white/78 transition hover:bg-white/[0.09]">Open live ranking view</Link>
           </div>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">

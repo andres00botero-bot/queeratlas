@@ -34,6 +34,16 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: "/now",
+        destination: "/now/news",
+        permanent: true,
+      },
+      {
+        source: "/events",
+        destination: "/events/calendar",
+        permanent: true,
+      },
+      {
         source: "/:path*",
         has: [{ type: "host", value: "queeratlas.app" }],
         destination: "https://www.queeratlas.app/:path*",

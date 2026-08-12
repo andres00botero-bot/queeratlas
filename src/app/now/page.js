@@ -508,7 +508,7 @@ function PulseSkeletonCard({ tone = "orange" }) {
   );
 }
 
-export default function NowPage() {
+export default function NowPage({ initialSection = "mixed" }) {
   const router = useRouter();
   const { isMember, memberName, user, memberProfile } = useAuth();
   const [ready, setReady] = useState(false);
@@ -525,7 +525,7 @@ export default function NowPage() {
   const [selectedSafetyRankingYear, setSelectedSafetyRankingYear] = useState("2026");
   const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
-  const [activeNowSection, setActiveNowSection] = useState("mixed");
+  const [activeNowSection, setActiveNowSection] = useState(initialSection);
   const [activeCollectionFilter, setActiveCollectionFilter] = useState("all");
   const [showCollectionNominationForm, setShowCollectionNominationForm] = useState(false);
   const [collectionNominationForm, setCollectionNominationForm] = useState(() => createCollectionNominationDefault());
@@ -995,8 +995,8 @@ export default function NowPage() {
     return {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "@id": `${baseUrl}/now#collection`,
-      url: `${baseUrl}/now`,
+      "@id": `${baseUrl}/now/news#collection`,
+      url: `${baseUrl}/now/news`,
       name: "Queer News Feed",
       description:
         "Daily LGBTQ world news, queer travel safety updates, nightlife changes, and policy watch across major cities.",
@@ -1014,7 +1014,7 @@ export default function NowPage() {
         itemListElement: topItems.map((item, index) => ({
           "@type": "ListItem",
           position: index + 1,
-          url: `${baseUrl}/now#${String(item.id || `story-${index + 1}`)}`,
+          url: `${baseUrl}/now/news#${String(item.id || `story-${index + 1}`)}`,
           item: {
             "@type": "NewsArticle",
             headline: clampSeoText(item.title, 110),
@@ -1055,7 +1055,7 @@ export default function NowPage() {
     return {
       "@context": "https://schema.org",
       "@type": "ItemList",
-      "@id": `${baseUrl}/now#travel-ranking-${selectedRankingYear}`,
+      "@id": `${baseUrl}/now/rankings#travel-ranking-${selectedRankingYear}`,
       name: `Top 10 Queer Travel Destinations ${selectedRankingYear}`,
       itemListOrder: "https://schema.org/ItemListOrderAscending",
       numberOfItems: topItems.length,
@@ -1083,7 +1083,7 @@ export default function NowPage() {
     return {
       "@context": "https://schema.org",
       "@type": "ItemList",
-      "@id": `${baseUrl}/now#safety-ranking-${selectedSafetyRankingYear}`,
+      "@id": `${baseUrl}/now/rankings#safety-ranking-${selectedSafetyRankingYear}`,
       name: `Top 10 Queer Safety Destinations ${selectedSafetyRankingYear}`,
       itemListOrder: "https://schema.org/ItemListOrderAscending",
       numberOfItems: topItems.length,
@@ -1110,8 +1110,8 @@ export default function NowPage() {
     return {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "@id": `${baseUrl}/now#atlas-collections`,
-      url: `${baseUrl}/now#atlas-collections`,
+      "@id": `${baseUrl}/now/collections#atlas-collections`,
+      url: `${baseUrl}/now/collections`,
       name: "Atlas Collections",
       description:
         "Curated Queer Atlas collections for queer nightlife, beaches, lesbian bars, drag venues, hidden cafes, and solo traveler routes.",
@@ -1189,11 +1189,11 @@ export default function NowPage() {
   );
   const nowSections = useMemo(
     () => [
-      { id: "mixed", label: "News feed", tone: "cyan", count: displayedNewsItems.length },
-      { id: "rankings", label: "Rankings", tone: "emerald", count: rankingItems.length },
-      { id: "collections", label: "Atlas Collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
-      { id: "voices", label: "Voices", tone: "fuchsia", count: communityStories.length },
-      { id: "happening", label: "Happening soon", tone: "violet", count: happeningSoonEvents.length },
+      { id: "mixed", label: "News feed", href: "/now/news", tone: "cyan", count: displayedNewsItems.length },
+      { id: "rankings", label: "Rankings", href: "/now/rankings", tone: "emerald", count: rankingItems.length },
+      { id: "collections", label: "Atlas Collections", href: "/now/collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
+      { id: "voices", label: "Voices", href: "/now/voices", tone: "fuchsia", count: communityStories.length },
+      { id: "happening", label: "Happening soon", href: "/now/happening-soon", tone: "violet", count: happeningSoonEvents.length },
     ],
     [communityStories.length, displayedNewsItems.length, happeningSoonEvents.length, rankingItems.length]
   );
@@ -2032,9 +2032,9 @@ export default function NowPage() {
   return (
     <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
       <nav aria-label="Internal now crawl links" className="sr-only">
-        <Link href="/now">Now</Link>
+        <Link href="/now/news">Now</Link>
         <Link href="/cities">Cities</Link>
-        <Link href="/events">Events</Link>
+        <Link href="/events/calendar">Events</Link>
         <Link href="/topics">Topics</Link>
         {topicHubKeys.map((topicKey) => (
           <Link key={`now-topic-hub-${topicKey}`} href={`/topics/${topicKey}`}>
@@ -2053,7 +2053,7 @@ export default function NowPage() {
             Queer guide to {city.label}
           </Link>
         ))}
-        <Link href="/now#atlas-collections">Atlas Collections</Link>
+        <Link href="/now/collections">Atlas Collections</Link>
         {ATLAS_COLLECTIONS.map((collection) => (
           <Link key={`now-crawl-collection-${collection.id}`} href={collection.href}>
             {collection.title}
@@ -2123,13 +2123,9 @@ export default function NowPage() {
           className="mb-6 transition-all duration-300"
           controlsRef={nowControlsRef}
           controlButtonsRef={nowControlButtonsRef}
-          buttons={nowSections.map((section) => ({ id: section.id, label: section.label }))}
+          buttons={nowSections.map((section) => ({ id: section.id, label: section.label, href: section.href }))}
           activeId={activeNowSection}
           onSelect={(sectionId) => {
-            if (sectionId === "collections") {
-              router.push("/now/collections");
-              return;
-            }
             setActiveNowSection(sectionId);
           }}
         />

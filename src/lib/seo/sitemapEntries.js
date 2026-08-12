@@ -57,8 +57,13 @@ export async function getPageSitemapEntries() {
   const staticRoutes = [
     "",
     "/cities",
-    "/events",
-    "/now",
+    "/events/calendar",
+    "/events/off-grid",
+    "/now/news",
+    "/now/rankings",
+    "/now/collections",
+    "/now/voices",
+    "/now/happening-soon",
     "/gay-guide",
     "/queer-guide",
     "/hbtq-guide",
@@ -78,8 +83,8 @@ export async function getPageSitemapEntries() {
 
   const staticEntries = staticRoutes.map((route) => ({
     url: `${QA_SITE_URL}${route}`,
-    changeFrequency: route === "" || route === "/now" ? "daily" : "weekly",
-    priority: route === "" ? 1 : route === "/now" ? 0.95 : ["/cities", "/events"].includes(route) ? 0.9 : 0.75,
+    changeFrequency: route === "" || route === "/now/news" ? "daily" : "weekly",
+    priority: route === "" ? 1 : route === "/now/news" ? 0.95 : ["/cities", "/events/calendar"].includes(route) ? 0.9 : 0.75,
   }));
 
   const cityEntries = Object.keys(cityConfig).map((city) => entryWithDate({

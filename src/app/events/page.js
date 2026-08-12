@@ -118,7 +118,7 @@ function normalizeEventVibeKeys(event) {
   return Array.from(new Set(legacy));
 }
 
-export default function EventsPage() {
+export default function EventsPage({ initialSection = "calendar" }) {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
   const { toast, showToast } = useActionToast();
@@ -174,7 +174,7 @@ export default function EventsPage() {
   });
   const [favoriteIds, setFavoriteIds] = useState(() => readLocalJson(FAVORITES_STORAGE_KEY, []));
   const [addedEntries, setAddedEntries] = useState(() => readLocalJson(ADDED_STORAGE_KEY, []));
-  const [activeEventsSection, setActiveEventsSection] = useState("calendar");
+  const [activeEventsSection, setActiveEventsSection] = useState(initialSection);
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -1059,9 +1059,9 @@ export default function EventsPage() {
 
   const eventSectionButtons = useMemo(
     () => ([
-      { id: "calendar", label: "Calendar" },
-      { id: "offgrid", label: "Off-grid events" },
-      { id: "search", label: "Search" },
+      { id: "calendar", label: "Calendar", href: "/events/calendar" },
+      { id: "offgrid", label: "Off-grid events", href: "/events/off-grid" },
+      { id: "search", label: "Search", href: "/events/search" },
     ]),
     []
   );

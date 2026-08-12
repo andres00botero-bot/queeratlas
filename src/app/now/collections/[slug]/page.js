@@ -125,7 +125,7 @@ export default async function AtlasCollectionDetailPage({ params }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap gap-3 text-xs uppercase tracking-[0.16em] text-white/52">
-          <Link href="/now" className="transition hover:text-white">Now</Link>
+          <Link href="/now/news" className="transition hover:text-white">Now</Link>
           <span>/</span>
           <Link href="/now/collections" className="transition hover:text-white">Atlas Collections</Link>
         </div>
