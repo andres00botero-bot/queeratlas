@@ -988,7 +988,7 @@ export default function CitiesPage() {
         </section>
 
         <section className="qa-panel qa-premium-card relative mb-8 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-3.5 shadow-[0_24px_76px_rgba(0,0,0,0.30)] sm:rounded-[32px] sm:p-6 sm:shadow-[0_30px_104px_rgba(0,0,0,0.34)]">
-          <div className="mb-5 hidden overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))] sm:block">
+          <div className="mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))]">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">
                 Interactive country filter
