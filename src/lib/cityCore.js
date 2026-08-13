@@ -1459,6 +1459,15 @@ export const cityCoreConfig = {
     "country": "France",
     "vibe": "terrace warmth and community-made queer culture"
   },
+  "palermo": {
+    "center": [
+      13.3615,
+      38.1157
+    ],
+    "title": "Queer Palermo",
+    "country": "Italy",
+    "vibe": "Sicilian street life, radical culture and after-dark community"
+  },
   "zagreb": {
     "center": [
       15.9819,

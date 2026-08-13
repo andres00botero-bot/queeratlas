@@ -2117,6 +2117,19 @@ export const cityConfig = {
       cost: "Toulouse is gentler than Paris for drinks, food and rooms, but a dispersed night can lose that advantage through taxis. The centre and Saint-Cyprien venues connect well on foot or metro; Cartoucherie is tram-friendly, and Les Pradettes needs more deliberate routing. Community events often use solidarity pricing, while KS publishes reduced evening and under-26 rates. Book Kalinka and the major autumn festivals ahead, then use terrace bars and public transport to keep the rest of the weekend flexible.",
     }),
   },
+  palermo: {
+    center: [13.3615, 38.1157],
+    title: "Queer Palermo",
+    country: "Italy",
+    vibe: "Sicilian street life, radical culture and after-dark community",
+    guide: buildGuide({
+      about: "Palermo's queer life is small enough to feel personal and old enough to have real memory. Exit has held a visible community bar role since 1996, while Palermo is also where the organising story that became Arcigay began in 1980. Today the city moves between an established gay bar, men-focused sauna and cruise spaces, Saturday club editions, feminist and youth-led rooms, Palermo Pride and one of southern Italy's most serious queer film festivals. It is not a polished rainbow district; its strength is the way nightlife, migration support, sexual health, cinema and street politics still speak to one another.",
+      district: "Start around Teatro Massimo and the Capo: Exit, Maxximum Time and EPYC sit within a walkable central triangle, with Arcigay Palermo close by at Gioiamia. Continue downhill into Vucciria for Bunker and the compact Gay Street around Via Argenteria, or south-east toward Kalsa for independent cultural life. Cinema De Seta and Sicilia Queer sit uphill at the Cantieri Culturali alla Zisa; Fabric is a separate taxi journey north-west and only makes queer sense on an announced Exit10&Love night. Barcarello is a daytime coastal trip, not a casual extension of the old-town crawl.",
+      safety: "Same-sex relations are legal and Italy recognises civil unions, but national protection and everyday comfort are not identical to full equality. Palermo has joined the RE.A.DY anti-discrimination network and sustains visible Pride and community organisations, yet public affection may still read differently outside central or clearly welcoming rooms. Keep normal awareness in the crowded Vucciria lanes, arrange a direct ride to and from Fabric, use proper shoes and daylight at Barcarello's rocky path, and read men-only, naturist or audience-specific rules before arrival rather than negotiating them at the door.",
+      nightlife: "Exit is the easiest social first drink and the best place to ask what is actually happening that weekend. Bunker is explicit, men-only and theme-led; Maxximum Time is an afternoon-to-evening sauna rather than a late club. Exit10&Love brings the bigger Saturday dance-floor energy to Fabric, while EPYC, Prospero and the Cantieri carry queer culture without functioning as permanent gay clubs. Palermo rewards one verified event plus one dependable anchor far more than a blind bar crawl, especially outside Pride and festival weeks.",
+      cost: "Palermo remains good value by major Italian city standards, especially for food, aperitivo and central accommodation. The scene is compact enough to walk between Exit, EPYC, Maxximum Time and much of the historic centre; the budget rises when Fabric, Mondello or Barcarello require a taxi. Membership, cover and theme rules matter at adult venues, while community services and several Pride or cultural programmes are free. Summer and festival weekends tighten rooms, so book the bed early and keep the nightlife plan flexible.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

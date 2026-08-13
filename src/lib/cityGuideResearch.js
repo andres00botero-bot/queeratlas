@@ -1,4 +1,15 @@
 export const cityGuideResearch = {
+  palermo: {
+    checkedAt: "2026-08-13",
+    sources: [
+      { label: "City of Palermo — 2026 LGBTQIA+ community and welfare map", url: "https://palermoconcilia.it/welfare-di-prossimita" },
+      { label: "City of Palermo Tourism — Palermo Pride 2026 route and programme", url: "https://turismo.comune.palermo.it/palermo-welcome-new-dettaglio.php?id=43266" },
+      { label: "Sicilia Queer — official 2026 festival programme", url: "https://www.siciliaqueerfilmfest.it/edizioni/sicilia-queer-2026" },
+      { label: "Arcigay — Palermo committee and community services", url: "https://www.arcigay.it/palermo/" },
+      { label: "City of Palermo — RE.A.DY anti-discrimination participation", url: "https://www.comune.palermo.it/vivere-il-comune/eventi/giornata-nazionale-contro-lomolesbobitransafobia/" },
+      { label: "Italian Ministry of Foreign Affairs — civil partnerships", url: "https://www.esteri.it/en/servizi-opportunita/italiani-all-estero/stato-civile/unioni-civili/" },
+    ],
+  },
   toulouse: {
     checkedAt: "2026-08-10",
     sources: [
