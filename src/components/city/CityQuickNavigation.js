@@ -107,14 +107,6 @@ export default function CityQuickNavigation({
     return false;
   };
   const activeVenueGroup = venueGroups.find((group) => isVenueTypeActive(group.value));
-  const selectVenueTypeWithoutJump = (value) => {
-    const scrollPosition = typeof window !== "undefined" ? window.scrollY : 0;
-    onGoVenueType?.(value);
-    if (typeof window === "undefined") return;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => window.scrollTo({ top: scrollPosition, behavior: "auto" }));
-    });
-  };
 
   if (variant === "contribute") {
     return (
@@ -281,19 +273,11 @@ export default function CityQuickNavigation({
       className="qa-city-panel-cq animate-cinematic-in mb-4 rounded-[20px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.10),rgba(34,211,238,0.08),rgba(13,15,20,0.96))] p-3 shadow-[0_18px_52px_rgba(91,33,182,0.18)] sm:hidden"
       style={{ animationDelay: "170ms" }}
     >
-      <div className="flex min-h-11 items-center justify-between gap-3">
+      <div className="min-h-11">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Explore this city</p>
           <p className="mt-1 text-xs text-white/72">Choose what you want to find</p>
         </div>
-        <button
-          type="button"
-          onClick={onGoMap}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 text-xs font-semibold text-cyan-50"
-        >
-          <Map className="h-4 w-4" aria-hidden="true" />
-          Map
-        </button>
       </div>
 
       <div className="mt-3 space-y-2">
@@ -329,7 +313,7 @@ export default function CityQuickNavigation({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => selectVenueTypeWithoutJump("")}
+                  onClick={() => onGoVenueType?.("")}
                   className={`col-span-2 flex min-h-12 items-center justify-between rounded-xl border px-3 text-left text-sm font-semibold transition ${!activeVenueFilter && activeSection === "venues" ? "border-pink-200/48 bg-pink-200/16 text-white" : "border-white/14 bg-white/[0.055] text-white/82"}`}
                 >
                   <span>All venues</span>
@@ -341,7 +325,7 @@ export default function CityQuickNavigation({
                     <button
                       key={`mobile-venue-type-${group.value}`}
                       type="button"
-                      onClick={() => selectVenueTypeWithoutJump(group.value)}
+                      onClick={() => onGoVenueType?.(group.value)}
                       aria-pressed={isActive}
                       className={`flex min-h-[4.25rem] flex-col justify-between rounded-xl border p-3 text-left transition ${isActive ? "border-pink-200/52 bg-pink-200/18 text-white ring-1 ring-pink-100/24" : "border-white/13 bg-black/18 text-white/80"}`}
                     >

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { ArrowUpRight, Map } from "lucide-react";
 
 export default function CityHeroCard({
   cityName,
@@ -9,6 +10,7 @@ export default function CityHeroCard({
   eventsChipLabel,
   cityHero,
   heroIntro,
+  onOpenMap,
 }) {
   const [showCityContext, setShowCityContext] = useState(false);
   const introCopy =
@@ -86,7 +88,23 @@ export default function CityHeroCard({
             {introCopy}
           </p>
 
-          <div className="mt-3 grid grid-cols-3 gap-1.5 sm:mt-7 sm:gap-3">
+          <button
+            type="button"
+            onClick={onOpenMap}
+            className="relative mt-3 flex min-h-[5.25rem] w-full items-center gap-3 overflow-hidden rounded-2xl border border-cyan-100/32 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(59,130,246,0.13),rgba(244,114,182,0.14))] px-3.5 py-3 text-left shadow-[0_14px_36px_rgba(34,211,238,0.14)] sm:hidden"
+          >
+            <span className="pointer-events-none absolute inset-0 opacity-20 [background-image:linear-gradient(to_right,rgba(255,255,255,0.22)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.22)_1px,transparent_1px)] [background-size:22px_22px]" />
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-100/28 bg-cyan-200/14 text-cyan-50">
+              <Map className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span className="relative min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-white">Explore {cityName} on the map</span>
+              <span className="mt-1 block text-xs text-white/62">See venues, events and services by area</span>
+            </span>
+            <ArrowUpRight className="relative h-4 w-4 shrink-0 text-cyan-100/76" aria-hidden="true" />
+          </button>
+
+          <div className="mt-3 hidden grid-cols-3 gap-1.5 sm:mt-7 sm:grid sm:gap-3">
             {stats.map((stat) => (
               <div
                 key={stat.label}

@@ -11,6 +11,7 @@ export default function CityTopCluster({
   eventsChipLabel,
   cityHero,
   cityHeroIntro,
+  onOpenMap,
   addMode,
   addEventMode,
   addServiceMode,
@@ -34,6 +35,7 @@ export default function CityTopCluster({
             eventsChipLabel={eventsChipLabel}
             cityHero={cityHero}
             heroIntro={cityHeroIntro}
+            onOpenMap={onOpenMap}
           />
           <div className="hidden xl:block">
             <div className="mt-8">

@@ -4672,6 +4672,7 @@ export default function CityPage() {
                 eventsChipLabel={eventsChipLabel}
                 cityHero={cityHero}
                 cityHeroIntro={cityHeroIntro}
+                onOpenMap={() => goToMobileSection("map", mapWrapperRef)}
                 addMode={addMode}
                 addEventMode={addEventMode}
                 addServiceMode={addServiceMode}
@@ -4799,8 +4800,8 @@ export default function CityPage() {
                   onGoServices={() => goToMobileSection("services", servicesSectionRef)}
                   onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
                   onGoVenueType={(value) => {
-                    setActiveCitySection("venues");
                     handleGoVenueType(value);
+                    goToMobileSection("venues", placesSectionRef);
                   }}
                   venueJumpGroups={venueJumpGroups}
                   activeVenueFilter={activeVenueFilter}
