@@ -46,6 +46,8 @@ import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import { SERVICE_TYPES as CITY_SERVICE_TYPES } from "@/features/city/cityPageConstants";
 import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
 import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
+import { buildVenueIntelPayload, getVenueIntelLabels } from "@/lib/venueIntel";
+import MemberContributionWorkspace from "@/components/contribute/MemberContributionWorkspace";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -70,6 +72,24 @@ const PLACE_TYPES = [
   { value: "cafe", label: "Cafe" },
   { value: "hotel", label: "Hotel" },
 ];
+
+const PLACE_INTEL_FIELDS = [
+  ["queue_wait", "queueWait", "How long is the wait and when does it build?"],
+  ["best_nights", "bestNights", "Which night or time usually works best?"],
+  ["crowd_mix", "crowdMix", "Who actually comes here?"],
+  ["dress_code", "dressCode", "What do people really wear or bring?"],
+  ["staff_inclusivity", "staffInclusivity", "Share a factual inclusion or accessibility signal."],
+];
+
+function createEmptyVenueIntel() {
+  return {
+    queue_wait: "",
+    best_nights: "",
+    crowd_mix: "",
+    dress_code: "",
+    staff_inclusivity: "",
+  };
+}
 
 const SERVICE_PRICE_TIERS = [
   { value: "", label: "Price tier (optional)" },
@@ -115,22 +135,28 @@ function timeAgo(value) {
 function Field({ value, onChange, placeholder, area = false }) {
   if (area) {
     return (
-      <textarea
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="h-28 w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
-      />
+      <label className="block">
+        <span className="mb-2 block text-xs font-semibold text-white/78">{placeholder}</span>
+        <textarea
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className="h-28 w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+        />
+      </label>
     );
   }
 
   return (
-    <input
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
-    />
+    <label className="block">
+      <span className="mb-2 block text-xs font-semibold text-white/78">{placeholder}</span>
+      <input
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
+      />
+    </label>
   );
 }
 
@@ -206,6 +232,7 @@ export default function ContributePage() {
   const [isReady, setIsReady] = useState(false);
   const { isMember, isLoading: isAuthLoading, user, memberName, session } = useAuth();
   const [selectedCity, setSelectedCity] = useState("");
+  const [activeMemberTask, setActiveMemberTask] = useState("");
   const [addMode, setAddMode] = useState(false);
   const [addEventMode, setAddEventMode] = useState(false);
   const [addServiceMode, setAddServiceMode] = useState(false);
@@ -221,7 +248,7 @@ export default function ContributePage() {
   const [shouldScrollToServiceForm, setShouldScrollToServiceForm] = useState(false);
   const [editingServiceId, setEditingServiceId] = useState("");
   const [isLoadingServiceDraft, setIsLoadingServiceDraft] = useState(false);
-  const { addPlace } = usePlaces();
+  const { places, addPlace } = usePlaces();
   const [requests, setRequests] = useState(initialRequests);
   const [reports, setReports] = useState([]);
   const [blockedItems, setBlockedItems] = useState([]);
@@ -254,6 +281,7 @@ export default function ContributePage() {
     vibe_tags: [],
     source: "",
     lastChecked: "",
+    venue_intel: createEmptyVenueIntel(),
   });
   const [eventForm, setEventForm] = useState({
     name: "",
@@ -276,6 +304,8 @@ export default function ContributePage() {
     detail: "",
   });
   const canPublishDirect = isAdmin || isTrustedContributor;
+  const placeIntelLabels = getVenueIntelLabels(placeForm.type);
+  const completedPlaceIntelCount = PLACE_INTEL_FIELDS.filter(([key]) => String(placeForm.venue_intel?.[key] || "").trim()).length;
   const notifyPublishedEntity = useCallback(
     async (entityType, entity, submission = {}, source = "contribute-publish") => {
       const urls = buildPublishedEntityIndexNowUrls(entityType, entity, submission);
@@ -703,6 +733,90 @@ export default function ContributePage() {
     showToast("Request saved in quality control.", { tone: "ok", duration: 2400 });
   };
 
+  const openNewContribution = (entityType) => {
+    setAtlasNotice("");
+    setPlaceNotice("");
+    setEventNotice("");
+    setServiceNotice("");
+    setEditingServiceId("");
+    setAddMode(entityType === "place");
+    setAddEventMode(entityType === "event");
+    setAddServiceMode(entityType === "service");
+    requestAnimationFrame(() => {
+      document.getElementById("contribute-atlas-forms")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const submitMemberSignal = async (kind, values = {}) => {
+    if (!isMember || !user?.id) {
+      return { ok: false, message: "Sign in as a member before sending a contribution." };
+    }
+    const place = places.find((item) => String(item?.id || "") === String(values.placeId || ""));
+    if (!place) {
+      return { ok: false, message: "Choose a venue first." };
+    }
+
+    const cityName = String(place.city || "").trim();
+    let payload = { id: place.id, update_kind: kind };
+    let title = `${place.name} update`;
+
+    if (kind === "update") {
+      const field = String(values.field || "").trim();
+      const value = String(values.value || "").trim();
+      if (!field || !value) return { ok: false, message: "Add the correct information before sending." };
+      if (field === "status_report") {
+        payload.member_note = value;
+      } else {
+        payload[field] = value;
+      }
+      if (String(values.source || "").trim()) payload.source = String(values.source).trim();
+      payload.member_note = String(values.note || "").trim() || payload.member_note || null;
+      title = `${place.name}: ${field.replaceAll("_", " ")}`;
+    }
+
+    if (kind === "intel") {
+      const venueIntel = buildVenueIntelPayload({
+        queue_wait: values.queue_wait,
+        best_nights: values.best_nights,
+        crowd_mix: values.crowd_mix,
+        dress_code: values.dress_code,
+        staff_inclusivity: values.staff_inclusivity,
+        source_urls: values.source ? [values.source] : [],
+        research_status: "community_signal",
+      });
+      if (Object.keys(venueIntel).filter((key) => !["source_urls", "research_status"].includes(key)).length === 0) {
+        return { ok: false, message: "Share at least one practical venue detail." };
+      }
+      payload.venue_intel = { ...(place.venue_intel || {}), ...venueIntel };
+      payload.member_note = values.visitedAt ? `Member visit: ${values.visitedAt}` : null;
+      title = `${place.name}: practical queer intelligence`;
+    }
+
+    if (kind === "verify") {
+      payload.still_open = String(values.stillOpen || "");
+      payload.checked_method = String(values.checked || "");
+      payload.member_note = String(values.note || "").trim() || null;
+      if (String(values.source || "").trim()) payload.source = String(values.source).trim();
+      payload.lastChecked = new Date().toISOString().slice(0, 10);
+      if (values.stillOpen === "yes") payload.verified = true;
+      title = `${place.name}: verification`;
+    }
+
+    const submissionRes = await createContentSubmission({
+      entityType: "place",
+      actionType: "update",
+      city: cityName,
+      title,
+      payload,
+      user: { id: user.id, email: user.email, memberName },
+      isTrustedContributor: Boolean(isTrustedContributor),
+    });
+
+    if (submissionRes.tableMissing) return { ok: false, message: "The moderation queue is not configured yet." };
+    if (submissionRes.error) return { ok: false, message: submissionRes.error.message || "Could not send this contribution." };
+    return { ok: true, message: "Thank you. Your contribution is now in the editorial review queue." };
+  };
+
   const submitPlaceDirect = async () => {
     if (!isMember || !user?.id) {
       setPlaceNotice("Join as member to contribute places.");
@@ -710,9 +824,18 @@ export default function ContributePage() {
       return;
     }
 
-    if (!placeForm.name || !placeForm.address || !placeForm.description || !placeForm.hours || !(selectedCity || placeForm.city)) {
+    if (!placeForm.name || !placeForm.address || !placeForm.description || !placeForm.hours || !placeForm.city) {
       setPlaceNotice("Fill in city, place name, address, description and opening hours.");
       showToast("Place not saved. Required fields are missing.", { tone: "warn", duration: 2400 });
+      return;
+    }
+
+    if (completedPlaceIntelCount < PLACE_INTEL_FIELDS.length) {
+      const missingTopics = PLACE_INTEL_FIELDS
+        .filter(([key]) => !String(placeForm.venue_intel?.[key] || "").trim())
+        .map(([, labelKey]) => placeIntelLabels[labelKey]);
+      setPlaceNotice(`Complete the practical venue details: ${missingTopics.join(", ")}.`);
+      showToast("Venue not saved. Practical details are incomplete.", { tone: "warn", duration: 2800 });
       return;
     }
 
@@ -720,9 +843,7 @@ export default function ContributePage() {
     setPlaceNotice("");
 
     try {
-      const cityName =
-        (selectedCity ? cityConfig[selectedCity]?.title?.replace("Queer ", "") : "") ||
-        placeForm.city.trim();
+      const cityName = placeForm.city.trim();
       const coords = await geocodeAddress(placeForm.address, cityName);
 
       if (!coords) {
@@ -742,6 +863,11 @@ export default function ContributePage() {
         lng: coords.lng,
         city: cityName,
         location: placeForm.address,
+        venue_intel: buildVenueIntelPayload({
+          ...placeForm.venue_intel,
+          source_urls: placeForm.source ? [placeForm.source] : [],
+          research_status: "community_signal",
+        }),
         created_by: user.id,
       };
 
@@ -786,6 +912,7 @@ export default function ContributePage() {
           vibe_tags: [],
           source: "",
           lastChecked: "",
+          venue_intel: createEmptyVenueIntel(),
         });
         setAddMode(false);
         setAtlasNotice("Place submitted for admin review.");
@@ -820,6 +947,7 @@ export default function ContributePage() {
         vibe_tags: [],
         source: "",
         lastChecked: "",
+        venue_intel: createEmptyVenueIntel(),
       });
       setAddMode(false);
       setAtlasNotice("Place added to atlas.");
@@ -839,7 +967,7 @@ export default function ContributePage() {
       return;
     }
 
-    if (!eventForm.name || !eventForm.address || !eventForm.date || !(selectedCity || eventForm.city)) {
+    if (!eventForm.name || !eventForm.address || !eventForm.date || !eventForm.city) {
       setEventNotice("Fill in city, event name, address and date.");
       showToast("Event not saved. Required fields are missing.", { tone: "warn", duration: 2400 });
       return;
@@ -849,9 +977,7 @@ export default function ContributePage() {
     setEventNotice("");
 
     try {
-      const cityName =
-        (selectedCity ? cityConfig[selectedCity]?.title?.replace("Queer ", "") : "") ||
-        eventForm.city.trim();
+      const cityName = eventForm.city.trim();
       const coords = await geocodeAddress(eventForm.address, cityName);
 
       if (!coords) {
@@ -1044,7 +1170,7 @@ export default function ContributePage() {
       return;
     }
 
-    if (!serviceForm.name || !serviceForm.address || !serviceForm.description || !(selectedCity || serviceForm.city)) {
+    if (!serviceForm.name || !serviceForm.address || !serviceForm.description || !serviceForm.city) {
       setServiceNotice("Fill in city, service name, address and description.");
       showToast("Service not saved. Required fields are missing.", { tone: "warn", duration: 2400 });
       return;
@@ -1054,9 +1180,7 @@ export default function ContributePage() {
     setServiceNotice("");
 
     try {
-      const cityName =
-        (selectedCity ? cityConfig[selectedCity]?.title?.replace("Queer ", "") : "") ||
-        serviceForm.city.trim();
+      const cityName = serviceForm.city.trim();
       const coords = await geocodeAddress(serviceForm.address, cityName);
 
       if (!coords) {
@@ -1584,14 +1708,16 @@ export default function ContributePage() {
   })();
 
   return (
-    <main className="min-h-screen bg-black text-white px-6 py-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_12%_0%,rgba(217,70,239,0.08),transparent_24%),radial-gradient(circle_at_88%_8%,rgba(34,211,238,0.07),transparent_25%),#030305] px-3 py-5 text-white sm:px-6 sm:py-8">
       <ActionToast toast={toast} />
       <div className="mx-auto max-w-7xl">
-        <div className="mb-8 rounded-[32px] border border-fuchsia-300/15 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.12),transparent_28%),linear-gradient(135deg,rgba(57,18,47,0.96),rgba(10,10,10,0.98),rgba(30,41,59,0.88))] p-8 shadow-[0_30px_120px_rgba(217,70,239,0.08)]">
+        <div className="relative mb-5 overflow-hidden rounded-[26px] border border-fuchsia-200/24 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.28),transparent_29%),radial-gradient(circle_at_88%_8%,rgba(34,211,238,0.20),transparent_28%),radial-gradient(circle_at_60%_120%,rgba(139,92,246,0.20),transparent_35%),linear-gradient(135deg,rgba(65,18,52,0.97),rgba(8,9,16,0.99)_52%,rgba(18,40,53,0.94))] p-5 shadow-[0_30px_120px_rgba(217,70,239,0.14),0_0_0_1px_rgba(255,255,255,0.035)_inset] sm:rounded-[32px] sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full border border-cyan-200/10 bg-cyan-300/[0.04] blur-[1px]" />
+          <div className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-100/85 to-transparent" />
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs uppercase tracking-[0.35em] text-fuchsia-200/90">Member Contribution Hub</p>
-              <h1 className="mt-3 text-4xl font-bold tracking-tight text-white sm:text-5xl">Contribute</h1>
+              <p className="inline-flex rounded-full border border-fuchsia-100/20 bg-fuchsia-200/[0.08] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-fuchsia-100/90">Member Contribution Hub</p>
+              <h1 className="mt-4 bg-gradient-to-r from-white via-fuchsia-100 to-cyan-100 bg-clip-text text-3xl font-bold tracking-[-0.035em] text-transparent sm:text-5xl">Contribute</h1>
               <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-200">
                 Grow the atlas with places, events, stories, guides, and corrections.
                 This is where community turns signal into infrastructure.
@@ -1612,34 +1738,10 @@ export default function ContributePage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-4 backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Contribution city</p>
-              <select
-                value={selectedCity}
-                onChange={(event) => {
-                  setSelectedCity(event.target.value);
-                  setAtlasNotice("");
-                  setPlaceNotice("");
-                  setEventNotice("");
-                  setServiceNotice("");
-                  const mappedCity = cityConfig[event.target.value]?.title?.replace("Queer ", "") || "";
-                  setPlaceForm((current) => ({ ...current, city: mappedCity }));
-                  setEventForm((current) => ({ ...current, city: mappedCity }));
-                  setServiceForm((current) => ({ ...current, city: mappedCity }));
-                  setRequestForm((current) => ({
-                    ...current,
-                    city: mappedCity,
-                  }));
-                }}
-                className="mt-3 w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none focus:border-fuchsia-300"
-              >
-                <option value="">Choose city</option>
-                {Object.keys(cityConfig).map((city) => (
-                  <option key={city} value={city}>
-                    {cityConfig[city].title}
-                  </option>
-                ))}
-              </select>
+            <div className="relative max-w-sm overflow-hidden rounded-2xl border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(255,255,255,0.10),rgba(34,211,238,0.045))] p-4 shadow-[0_16px_45px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+              <div className="absolute inset-y-3 left-0 w-px bg-gradient-to-b from-fuchsia-200/20 via-cyan-200/80 to-amber-200/20" />
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-50/80">One contribution at a time</p>
+              <p className="mt-2 text-sm leading-6 text-white/75">Add something new, improve an existing listing or share lived experience. We guide you through the details, then send your contribution for editorial review.</p>
             </div>
           </div>
         </div>
@@ -1655,8 +1757,24 @@ export default function ContributePage() {
           </div>
         )}
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <section className="rounded-[28px] border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(8,39,32,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(16,185,129,0.08)]">
+        <MemberContributionWorkspace
+          activeTask={activeMemberTask}
+          onTaskChange={(taskId) => {
+            setActiveMemberTask(taskId);
+            setAddMode(false);
+            setAddEventMode(false);
+            setAddServiceMode(false);
+          }}
+          places={places}
+          onOpenAdd={openNewContribution}
+          onOpenCommunity={(mode) => router.push(`/community?panel=feed&compose=${mode}`)}
+          onSubmitSignal={submitMemberSignal}
+        />
+
+        {activeMemberTask === "add" ? (
+        <div id="contribute-atlas-forms" className="grid scroll-mt-20 gap-6">
+          <section className="relative overflow-hidden rounded-[28px] border border-emerald-200/24 bg-[radial-gradient(circle_at_8%_0%,rgba(52,211,153,0.19),transparent_28%),radial-gradient(circle_at_92%_8%,rgba(34,211,238,0.13),transparent_25%),linear-gradient(180deg,rgba(7,38,32,0.97),rgba(5,7,9,1))] p-4 shadow-[0_24px_80px_rgba(16,185,129,0.12),0_0_0_1px_rgba(255,255,255,0.025)_inset] sm:p-6">
+            <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-emerald-100/75 to-transparent" />
             <div className="mb-5">
               <p className="text-xs uppercase tracking-[0.25em] text-emerald-200">Add to Atlas</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">
@@ -1664,7 +1782,7 @@ export default function ContributePage() {
               </h2>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="hidden">
               <button
                 onClick={() => {
                   setAtlasNotice("");
@@ -1737,15 +1855,12 @@ export default function ContributePage() {
                 <p className="mt-3 text-sm leading-6 text-gray-400">Publish massage, tour, concierge, and private service signal.</p>
               </button>
             </div>
-            {!selectedCity && (
-              <p className="mt-4 text-xs text-emerald-200/80">Choose city once, then add places, events, and services directly here.</p>
-            )}
             {atlasNotice && (
               <p className="mt-2 text-xs text-amber-200">{atlasNotice}</p>
             )}
 
             {addMode && (
-              <div className="mt-4 space-y-3 rounded-2xl border border-emerald-300/20 bg-emerald-300/6 p-4">
+              <div className="mt-4 space-y-4 rounded-[22px] border border-emerald-200/24 bg-[linear-gradient(145deg,rgba(16,185,129,0.075),rgba(0,0,0,0.24)_48%,rgba(34,211,238,0.045))] p-4 shadow-[0_18px_56px_rgba(0,0,0,0.22)] sm:p-5">
                 <Field value={placeForm.name} onChange={(event) => setPlaceForm((current) => ({ ...current, name: event.target.value }))} placeholder="Place name" />
                 <Field value={placeForm.city} onChange={(event) => setPlaceForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
                   <div className="grid gap-3 md:grid-cols-2">
@@ -1786,11 +1901,42 @@ export default function ContributePage() {
                   />
                 </div>
                 <Field value={placeForm.description} onChange={(event) => setPlaceForm((current) => ({ ...current, description: event.target.value }))} placeholder="Description" area />
+                <div className="relative overflow-hidden rounded-[22px] border border-violet-200/28 bg-[radial-gradient(circle_at_top_left,rgba(192,132,252,0.23),transparent_38%),radial-gradient(circle_at_90%_20%,rgba(244,114,182,0.13),transparent_34%),linear-gradient(145deg,rgba(139,92,246,0.10),rgba(0,0,0,0.22))] p-4 shadow-[0_18px_48px_rgba(139,92,246,0.10)] sm:p-5">
+                  <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-violet-100/80 to-transparent" />
+                  <div className="max-w-2xl">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-100/72">Practical venue intelligence</p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">Help people know what it is actually like</h3>
+                    <p className="mt-1 text-xs leading-5 text-white/52">Complete these five practical topics as part of the same venue contribution. Only add information you genuinely know.</p>
+                    <div className="mt-3 flex items-center gap-3" aria-live="polite">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full border border-white/5 bg-black/35">
+                        <div className="h-full rounded-full bg-[linear-gradient(90deg,#a78bfa,#f0abfc,#67e8f9)] shadow-[0_0_16px_rgba(240,171,252,0.55)] transition-all" style={{ width: `${(completedPlaceIntelCount / PLACE_INTEL_FIELDS.length) * 100}%` }} />
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold text-violet-50/80">{completedPlaceIntelCount}/5 complete</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {PLACE_INTEL_FIELDS.map(([key, labelKey, hint]) => (
+                      <label key={`new-place-intel-${key}`} className={key === "staff_inclusivity" ? "md:col-span-2" : ""}>
+                        <span className="block text-xs font-semibold text-violet-50/90">{placeIntelLabels[labelKey]} <span className="text-fuchsia-200">*</span></span>
+                        <span className="mt-1 block text-[11px] leading-4 text-white/42">{hint}</span>
+                        <textarea
+                          required
+                          value={placeForm.venue_intel?.[key] || ""}
+                          onChange={(event) => setPlaceForm((current) => ({
+                            ...current,
+                            venue_intel: { ...(current.venue_intel || {}), [key]: event.target.value },
+                          }))}
+                          className="mt-2 min-h-24 w-full rounded-xl border border-violet-200/22 bg-black/40 px-3.5 py-3 text-sm text-white shadow-[0_8px_24px_rgba(0,0,0,0.12)_inset] outline-none transition hover:border-violet-100/30 focus:border-fuchsia-100/58 focus:ring-2 focus:ring-fuchsia-200/14"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={submitPlaceDirect}
                   disabled={isSavingPlace}
-                  className="w-full rounded-xl bg-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 px-4 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95"
+                  className="w-full rounded-xl border border-white/40 bg-[linear-gradient(100deg,#a7f3d0_0%,#67e8f9_52%,#c4b5fd_100%)] px-4 py-3.5 text-sm font-bold text-black shadow-[0_14px_38px_rgba(34,211,238,0.14)] transition hover:-translate-y-0.5 hover:brightness-110"
                 >
                   {isSavingPlace ? "Saving..." : "Save place"}
                 </button>
@@ -2059,7 +2205,7 @@ export default function ContributePage() {
             )}
           </section>
 
-          <section className="rounded-[28px] border border-violet-300/15 bg-[linear-gradient(180deg,rgba(27,19,52,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(139,92,246,0.08)]">
+          <section className="hidden rounded-[28px] border border-violet-300/15 bg-[linear-gradient(180deg,rgba(27,19,52,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(139,92,246,0.08)]">
             <div className="mb-5">
               <p className="text-xs uppercase tracking-[0.25em] text-violet-200">Community Contributions</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">Add lived experience</h2>
@@ -2086,8 +2232,9 @@ export default function ContributePage() {
             </div>
           </section>
         </div>
+        ) : null}
 
-        <section className="mt-6 rounded-[28px] border border-amber-300/15 bg-[linear-gradient(180deg,rgba(45,31,10,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(251,191,36,0.08)]">
+        <section className="mt-6 hidden rounded-[28px] border border-amber-300/15 bg-[linear-gradient(180deg,rgba(45,31,10,0.94),rgba(10,10,10,1))] p-6 shadow-[0_24px_80px_rgba(251,191,36,0.08)]">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-amber-200">Quality Control</p>

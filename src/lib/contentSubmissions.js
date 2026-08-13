@@ -243,6 +243,54 @@ export async function publishContentSubmission({
     payload = buildCommunityStoryNewsRow(submission);
   }
 
+  if (submission?.action_type === "update" && ["places", "events", "services"].includes(targetTable)) {
+    const targetId = normalizeText(payload.id || payload.target_id);
+    if (!targetId) {
+      return { data: null, error: new Error("Update submission is missing its target."), tableMissing: false };
+    }
+
+    delete payload.id;
+    delete payload.target_id;
+    delete payload.update_kind;
+    delete payload.member_note;
+    delete payload.checked_method;
+    delete payload.still_open;
+
+    if (Object.keys(payload).length === 0) {
+      return updateContentSubmissionStatus({
+        submissionId: submission?.id,
+        status: "approved",
+        reviewer,
+        adminNote: "Reviewed signal; no direct entity fields changed.",
+        client,
+      });
+    }
+
+    const { data, error } = await client
+      .from(targetTable)
+      .update(payload)
+      .eq("id", targetId)
+      .select("*")
+      .single();
+
+    if (error) {
+      return { data: null, error, tableMissing: isMissingTableError(error) };
+    }
+
+    const statusResult = await updateContentSubmissionStatus({
+      submissionId: submission?.id,
+      status: "approved",
+      reviewer,
+      adminNote: "",
+      client,
+    });
+    if (statusResult.error) {
+      return { data, error: statusResult.error, tableMissing: statusResult.tableMissing };
+    }
+
+    return { data, error: null, tableMissing: false };
+  }
+
   const insertResult = await insertWithFallback(targetTable, payload, client);
   if (insertResult.error) {
     return insertResult;

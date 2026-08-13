@@ -493,6 +493,29 @@ export default function CommunityPage() {
   const communityControlButtonsRef = useRef({});
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const panel = String(params.get("panel") || "").trim();
+    const compose = String(params.get("compose") || "").trim();
+    const city = String(params.get("city") || "").trim();
+    queueMicrotask(() => {
+      if (panel === "feed" || compose === "story" || compose === "guide") {
+        setActiveCommunityPanel("feed");
+      }
+      if (compose === "story") {
+        setShowStoryForm(true);
+        setShowGuideForm(false);
+        if (city) setStoryForm((current) => ({ ...current, city }));
+      }
+      if (compose === "guide") {
+        setShowGuideForm(true);
+        setShowStoryForm(false);
+        if (city) setGuideForm((current) => ({ ...current, city }));
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     const button = communityControlButtonsRef.current[activeCommunityPanel];
     if (!button || typeof button.scrollIntoView !== "function") return;
     button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
@@ -1161,13 +1184,14 @@ export default function CommunityPage() {
 
   const publishStory = async (event) => {
     event.preventDefault();
-    if (!storyForm.title || !storyForm.city || !storyForm.body) {
+    if (!storyForm.title || !storyForm.body) {
       showToast("Story not published. Fill all required fields.", { tone: "warn", duration: 2400 });
       return;
     }
     const fallbackItem = {
       id: createClientId("s"),
       ...storyForm,
+      city: storyForm.city || "Global",
       author: memberName || "Member",
       authorUserId: String(user?.id || ""),
       authorEmail: String(user?.email || ""),
@@ -1176,7 +1200,7 @@ export default function CommunityPage() {
     };
     const { data, error } = await insertCommunityRowWithIdentity("community_stories", {
         title: storyForm.title,
-        city: storyForm.city,
+        city: storyForm.city || "Global",
         author: memberName || "Member",
         user_id: user?.id || null,
         created_by_email: user?.email || null,
@@ -1917,7 +1941,7 @@ export default function CommunityPage() {
                 <form id="community-story-form-feed-premium" onSubmit={publishStory} className="mb-4 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4">
                   <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                    <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or venue (optional)" />
                     <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
                     </div>
                   <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
@@ -2288,7 +2312,7 @@ export default function CommunityPage() {
             <form id="community-story-form-feed" onSubmit={publishStory} className="mb-4 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4">
               <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
               <div className="grid gap-3 md:grid-cols-2">
-                <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or venue (optional)" />
                 <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
               </div>
               <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
