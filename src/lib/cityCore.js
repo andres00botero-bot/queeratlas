@@ -1468,6 +1468,15 @@ export const cityCoreConfig = {
     "country": "Italy",
     "vibe": "Sicilian street life, radical culture and after-dark community"
   },
+  "thessaloniki": {
+    "center": [
+      22.9444,
+      40.6401
+    ],
+    "title": "Queer Thessaloniki",
+    "country": "Greece",
+    "vibe": "port-city nights, student energy and Balkan queer resilience"
+  },
   "zagreb": {
     "center": [
       15.9819,

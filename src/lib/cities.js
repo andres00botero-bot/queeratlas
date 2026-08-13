@@ -2130,6 +2130,19 @@ export const cityConfig = {
       cost: "Palermo remains good value by major Italian city standards, especially for food, aperitivo and central accommodation. The scene is compact enough to walk between Exit, EPYC, Maxximum Time and much of the historic centre; the budget rises when Fabric, Mondello or Barcarello require a taxi. Membership, cover and theme rules matter at adult venues, while community services and several Pride or cultural programmes are free. Summer and festival weekends tighten rooms, so book the bed early and keep the nightlife plan flexible.",
     }),
   },
+  thessaloniki: {
+    center: [22.9444, 40.6401],
+    title: "Queer Thessaloniki",
+    country: "Greece",
+    vibe: "port-city nights, student energy and Balkan queer resilience",
+    guide: buildGuide({
+      about: "Thessaloniki carries more queer depth than its short venue list first suggests. Enola has anchored the visible club scene since 2008 and helped incubate the meeting that became Thessaloniki Pride; XPOSE adds a younger weekend dance floor, while Pride, community testing, independent culture and the city's long film tradition widen the map. The mood is local, late and social rather than resort-polished: coffee can stretch into drinks, dinner starts slowly, and the room often only declares itself after midnight.",
+      district: "Valaoritou, Frangomahala and the upper Ladadika lanes form the easiest first route: Enola, Ypsilon and Pride-week rooftops sit within a compact walk of the port. XPOSE is slightly south-west on Politechniou, while the Vardaris side around Odisseos and Tantalou holds PLAY, Splash and several sexual-health services; plan that part deliberately rather than drifting there after closing. Navarinou and the university-facing east offer the softer daytime queer signal through Iliotropio, alternative cafes and student life. The waterfront connects the centre, but it is a promenade, not a gay district.",
+      safety: "Greece introduced marriage equality in 2024 and Thessaloniki sustains visible Pride and community infrastructure, yet legal progress and everyday comfort do not always move at the same speed. Central nightlife is usually straightforward, but recent local accounts still describe homophobic or transphobic hostility and the March 2024 attack around Aristotelous remains part of the city's living context. Read the room with public affection, use a direct ride around quiet Vardaris streets late at night, keep emergency number 112 available and follow Pride or trusted local organisers when demonstrations affect routes.",
+      nightlife: "Enola is the dependable all-week anchor: Wednesday turns Greek, while Friday and Saturday bring dancing and drag. XPOSE is the bigger-feeling weekend alternative, usually strongest after 01:00. PLAY is a men-focused cruise club and Splash a separate gay sauna, so neither should be sold as a conventional bar. For lesbians, trans and non-binary visitors, Thessaloniki works best through Pride, collectives and programmed mixed rooms such as Ypsilon or Iliotropio rather than a permanent lesbian club. Check the exact event before choosing a venue; the promoter often matters more than the address.",
+      cost: "Thessaloniki remains relatively manageable for a European city break: coffee, food and local drinks are strong value, and the central queer route is mostly walkable. Covers, adult-venue admission and late taxis are the main additions. Metro access now helps the centre, but service does not replace a safe final ride after the clubs empty. Book early around Pride, the film festivals and trade-fair weekends; accommodation prices rise faster than everyday bar costs.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

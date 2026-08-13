@@ -1,4 +1,16 @@
 export const cityGuideResearch = {
+  thessaloniki: {
+    checkedAt: "2026-08-13",
+    sources: [
+      { label: "Thessaloniki Pride — official 2026 programme, route and community work", url: "https://thessalonikipride.com/program-of-the-festival/?lang=en" },
+      { label: "Thessaloniki official visitor guide — Pride 2026 programme", url: "https://thessaloniki.travel/event/14th-thessaloniki-pride/" },
+      { label: "Enola — current venue schedule, access and community history", url: "https://enola.gr/" },
+      { label: "British Council Greece — Love Unbound 2026", url: "https://www.britishcouncil.gr/en/events/love-unbound-five-films-for-freedom" },
+      { label: "Greek National Public Health Organization — HIV testing structures", url: "https://eody.gov.gr/wp-content/uploads/2020/07/domes-eksetasis_HIV_22-01-2024.pdf" },
+      { label: "Thessaloniki Fringe — confirmed October 2026 programme", url: "https://thessfringe.com/" },
+      { label: "Current local and traveller review consensus", url: "https://wanderlog.com/place/details/6857847/enola-bar-club" },
+    ],
+  },
   palermo: {
     checkedAt: "2026-08-13",
     sources: [

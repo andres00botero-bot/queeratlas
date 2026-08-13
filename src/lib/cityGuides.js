@@ -4378,6 +4378,7 @@ export const cityGuideConfig = {
 };
 
 const researchedCityGuideOverrides = [
+  "thessaloniki",
   "palermo",
   "toulouse",
   "leipzig",
