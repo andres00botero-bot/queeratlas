@@ -1032,7 +1032,6 @@ export default function CityPage() {
       showDesktopSection("venues");
     }
 
-    if (!rawKey && !isDesktop) return;
     if (!rawKey) {
       scrollToSection(placesSectionRef);
       return;
@@ -1050,7 +1049,11 @@ export default function CityPage() {
       }
     };
 
-    if (isDesktop) window.setTimeout(scrollToTargetVenue, 90);
+    if (isDesktop) {
+      window.setTimeout(scrollToTargetVenue, 90);
+    } else {
+      scrollToTargetVenue();
+    }
 
     const targetGroup = visiblePlaceGroups.find((group) =>
       venueKeys.includes(String(group?.value || ""))
@@ -4672,7 +4675,6 @@ export default function CityPage() {
                 eventsChipLabel={eventsChipLabel}
                 cityHero={cityHero}
                 cityHeroIntro={cityHeroIntro}
-                onOpenMap={() => goToMobileSection("map", mapWrapperRef)}
                 addMode={addMode}
                 addEventMode={addEventMode}
                 addServiceMode={addServiceMode}
@@ -4800,13 +4802,13 @@ export default function CityPage() {
                   onGoServices={() => goToMobileSection("services", servicesSectionRef)}
                   onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
                   onGoVenueType={(value) => {
-                    handleGoVenueType(value);
                     goToMobileSection("venues", placesSectionRef);
+                    handleGoVenueType(value);
                   }}
                   venueJumpGroups={venueJumpGroups}
                   activeVenueFilter={activeVenueFilter}
                 />
-                {activeCitySection === "guide" ? <CitySeoTopicLinks city={city} cityName={cityName} /> : null}
+                <CitySeoTopicLinks city={city} cityName={cityName} />
               </div>
 
               <div className={`${activeCitySection === "guide" ? "block" : "hidden"} ${effectiveDesktopContentSection === "guide" && !isAddComposerActive ? "xl:block" : "xl:hidden"}`}>
