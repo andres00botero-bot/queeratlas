@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Compass, Home, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
+import { CalendarDays, Home, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { supabase } from "@/lib/supabase";
@@ -150,13 +150,12 @@ export default function FloatingHomeButton() {
 
   const navItems = [
     {
-      href: "/now",
-      label: "Explore",
-      icon: Compass,
+      href: "/",
+      label: "Home",
+      icon: Home,
       accent: "fuchsia",
       mobile: true,
-      desktop: false,
-      isActive: (route) => route === "/" || route === "/now" || route.startsWith("/now/"),
+      isActive: (route) => route === "/",
     },
     {
       href: "/search",
@@ -201,13 +200,6 @@ export default function FloatingHomeButton() {
       accent: "amber",
       mobile: true,
       isActive: (route) => route === "/favorites" || route.startsWith("/favorites/"),
-    },
-    {
-      href: "/",
-      label: "Home",
-      icon: Home,
-      accent: "fuchsia",
-      desktopOnly: true,
     },
     {
       href: "/now",

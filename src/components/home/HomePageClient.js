@@ -980,6 +980,22 @@ export default function HomePageClient({ initialHomeData = null }) {
                   <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Events</p>
                 </div>
               </div>
+              <nav aria-label="Explore Queer Atlas now" className="mt-3 grid w-full max-w-[44rem] grid-cols-3 gap-2 sm:mt-4">
+                {[
+                  { href: "/now/news", label: "News" },
+                  { href: "/now/rankings", label: "Rankings" },
+                  { href: "/now/collections", label: "Collections" },
+                ].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="inline-flex min-h-11 items-center justify-center gap-1 rounded-xl border border-white/14 bg-white/[0.055] px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/78 transition hover:border-cyan-200/30 hover:bg-white/[0.09] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
+                  >
+                    {item.label}
+                    <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                ))}
+              </nav>
             </section>
           </div>
             </div>
