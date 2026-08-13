@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Home, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
+import { CalendarDays, Compass, Home, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { supabase } from "@/lib/supabase";
@@ -150,11 +150,13 @@ export default function FloatingHomeButton() {
 
   const navItems = [
     {
-      href: "/",
-      label: "Home",
-      icon: Home,
+      href: "/now",
+      label: "Explore",
+      icon: Compass,
       accent: "fuchsia",
       mobile: true,
+      desktop: false,
+      isActive: (route) => route === "/" || route === "/now" || route.startsWith("/now/"),
     },
     {
       href: "/search",
@@ -162,6 +164,7 @@ export default function FloatingHomeButton() {
       icon: Search,
       accent: "violet",
       mobile: true,
+      isActive: (route) => route === "/search" || route.startsWith("/search/"),
     },
     {
       href: "/events",
@@ -169,6 +172,7 @@ export default function FloatingHomeButton() {
       icon: CalendarDays,
       accent: "cyan",
       mobile: true,
+      isActive: (route) => route === "/events" || route.startsWith("/events/"),
     },
     {
       href: "/cities",
@@ -176,6 +180,19 @@ export default function FloatingHomeButton() {
       icon: MapPinned,
       accent: "emerald",
       mobile: true,
+      isActive: (route) => {
+        if (route === "/cities" || route.startsWith("/cities/")) return true;
+        const reservedRoots = new Set([
+          "about", "admin", "api", "cities", "community", "community-policy", "contact",
+          "contribute", "contributors", "corrections", "editorial-policy", "events", "favorites",
+          "gay-guide", "hbtq-guide", "join", "manifest.webmanifest", "messages", "moderation",
+          "now", "offline.html", "press", "privacy", "queer-guide", "reports", "robots.txt",
+          "search", "sitemap.xml", "sources", "sources-and-reviews", "terms", "topics", "updates",
+          "verification",
+        ]);
+        const root = route.split("/").filter(Boolean)[0] || "";
+        return Boolean(root) && !reservedRoots.has(root);
+      },
     },
     {
       href: "/favorites",
@@ -183,6 +200,14 @@ export default function FloatingHomeButton() {
       icon: Star,
       accent: "amber",
       mobile: true,
+      isActive: (route) => route === "/favorites" || route.startsWith("/favorites/"),
+    },
+    {
+      href: "/",
+      label: "Home",
+      icon: Home,
+      accent: "fuchsia",
+      desktopOnly: true,
     },
     {
       href: "/now",
@@ -226,7 +251,7 @@ export default function FloatingHomeButton() {
         />
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          const isActive = typeof item.isActive === "function" ? item.isActive(pathname) : pathname === item.href;
           const inactiveToneClass =
             item.accent === "fuchsia"
               ? "border-fuchsia-300/28 bg-fuchsia-300/[0.1] hover:border-fuchsia-200/55 hover:bg-fuchsia-300/[0.18]"
@@ -248,7 +273,7 @@ export default function FloatingHomeButton() {
               aria-label={item.label}
               aria-current={isActive ? "page" : undefined}
               title={item.label}
-              className={`group relative flex h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[16px] border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:inline-flex md:h-11 md:w-11 md:flex-none md:flex-row md:rounded-full ${item.mobile ? "" : "hidden md:inline-flex"} ${
+              className={`group relative h-12 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[16px] border transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/65 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:h-11 md:w-11 md:flex-none md:flex-row md:rounded-full ${item.desktopOnly ? "hidden md:inline-flex" : item.mobile ? `flex ${item.desktop === false ? "md:hidden" : "md:inline-flex"}` : "hidden md:inline-flex"} ${
                 isActive
                   ? "border-white/55 bg-[linear-gradient(135deg,rgba(255,255,255,0.26),rgba(255,255,255,0.1),rgba(10,10,10,0.86))] text-white shadow-[0_12px_34px_rgba(0,0,0,0.44)]"
                   : `${inactiveToneClass} text-white/90 hover:-translate-y-[1px]`

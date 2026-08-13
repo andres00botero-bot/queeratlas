@@ -911,7 +911,7 @@ export default function CitiesPage() {
         <div className="pointer-events-none absolute -left-14 top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-10 top-20 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-        <section className="qa-panel qa-premium-card relative mb-8 overflow-hidden rounded-[36px] border border-amber-300/10 bg-[#0f0618] p-8 shadow-[0_36px_126px_rgba(0,0,0,0.42)]">
+        <section className="qa-panel qa-premium-card relative mb-4 overflow-hidden rounded-[24px] border border-amber-300/10 bg-[#0f0618] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.38)] sm:mb-8 sm:rounded-[36px] sm:p-8 sm:shadow-[0_36px_126px_rgba(0,0,0,0.42)]">
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/city-assets/queer-atlas-global-city-network-hero.png"
@@ -929,15 +929,15 @@ export default function CitiesPage() {
             <p className="qa-eyebrow text-white/45">
               Live Discovery + Atlas Signal
             </p>
-            <h1 className="qa-display qa-h1 mt-4 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-5xl font-bold text-transparent sm:gap-4 sm:text-6xl">
-              <BrandMark iconOnly className="h-10 w-10 sm:h-14 sm:w-14" />
+            <h1 className="qa-display qa-h1 mt-2 inline-flex items-center gap-2.5 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-[2rem] font-bold text-transparent sm:mt-4 sm:gap-4 sm:text-6xl">
+              <BrandMark iconOnly className="h-8 w-8 sm:h-14 sm:w-14" />
               Cities Atlas
             </h1>
-            <p className="qa-lead mt-5 max-w-2xl text-base text-white/62">
+            <p className="qa-lead qa-clamp-2 mt-2.5 max-w-2xl text-sm leading-5 text-white/62 sm:mt-5 sm:text-base sm:leading-6 sm:[display:block]">
               Browse queer cities by country, scan signal quickly, and jump straight
               into the local atlas. Built to scale globally without turning into chaos.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2 sm:mt-5">
               <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/85">
                 {filterModeLabel}
               </span>
@@ -959,7 +959,7 @@ export default function CitiesPage() {
             </div>
           </div>
 
-          <div className="relative z-10 mt-7 grid gap-3 sm:grid-cols-3">
+          <div className="relative z-10 mt-7 hidden gap-3 sm:grid sm:grid-cols-3">
             <div className="qa-card qa-premium-card rounded-2xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-4 shadow-[0_14px_30px_rgba(236,72,153,0.14),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
               <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
               <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.cities}</p>
@@ -976,8 +976,19 @@ export default function CitiesPage() {
 
         </section>
 
-        <section className="qa-panel qa-premium-card relative mb-8 rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_30px_104px_rgba(0,0,0,0.34)]">
-          <div className="mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))]">
+        <section className="qa-panel relative mb-4 sm:hidden">
+          <label htmlFor="mobile-city-search" className="sr-only">Search city, country, or vibe</label>
+          <input
+            id="mobile-city-search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search city, country, or vibe"
+            className="min-h-12 w-full rounded-2xl border border-cyan-200/20 bg-white/[0.07] px-4 text-base text-white outline-none placeholder:text-white/42 focus:border-cyan-200/48 focus:ring-2 focus:ring-cyan-200/16"
+          />
+        </section>
+
+        <section className="qa-panel qa-premium-card relative mb-8 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-3.5 shadow-[0_24px_76px_rgba(0,0,0,0.30)] sm:rounded-[32px] sm:p-6 sm:shadow-[0_30px_104px_rgba(0,0,0,0.34)]">
+          <div className="mb-5 hidden overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))] sm:block">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
               <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">
                 Interactive country filter
@@ -1015,7 +1026,7 @@ export default function CitiesPage() {
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
-            <div>
+            <div className="hidden sm:block">
               <p className="text-xs uppercase tracking-[0.26em] text-white/38">
                 Search atlas
               </p>

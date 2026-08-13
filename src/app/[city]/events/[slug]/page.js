@@ -18,6 +18,7 @@ import { evaluateEventSeoQuality } from "@/lib/seo/entityIndexing";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
+import { ArrowLeft, MapPin } from "lucide-react";
 
 export const revalidate = 300;
 
@@ -286,7 +287,17 @@ export default async function CityEventDetailPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
       />
-      <div className="mx-auto max-w-4xl space-y-6">
+      <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-6">
+        <nav className="sticky top-2 z-40 flex min-h-12 items-center justify-between gap-2 rounded-2xl border border-white/14 bg-[#090a0ee8] px-2.5 shadow-[0_14px_38px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:static sm:hidden">
+          <Link href={`/${city}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2.5 text-sm font-semibold text-white/88">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            {cityName}
+          </Link>
+          <CityPanelButton city={city} entityKind="event" entityId={String(event.id)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 text-xs font-semibold text-fuchsia-50">
+            <MapPin className="h-4 w-4" aria-hidden="true" />
+            City panel
+          </CityPanelButton>
+        </nav>
         <header className="rounded-[28px] border border-white/12 bg-white/[0.03] p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/78">
             Event Detail

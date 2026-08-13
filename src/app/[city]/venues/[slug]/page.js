@@ -16,6 +16,7 @@ import { evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
+import { ArrowLeft, MapPin } from "lucide-react";
 
 export const revalidate = 300;
 
@@ -293,6 +294,16 @@ export default async function CityVenueDetailPage({ params }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
       />
       <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-6">
+        <nav className="sticky top-2 z-40 -mx-0.5 flex min-h-12 items-center justify-between gap-2 rounded-2xl border border-white/14 bg-[#090a0ee8] px-2.5 shadow-[0_14px_38px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:static sm:hidden">
+          <Link href={`/${city}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2.5 text-sm font-semibold text-white/88">
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            {cityName}
+          </Link>
+          <CityPanelButton city={city} entityKind="place" entityId={String(place.id)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 text-xs font-semibold text-cyan-50">
+            <MapPin className="h-4 w-4" aria-hidden="true" />
+            City panel
+          </CityPanelButton>
+        </nav>
         <header className="rounded-[22px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[28px] sm:p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Venue Detail</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{place.name}</h1>
@@ -309,6 +320,23 @@ export default async function CityVenueDetailPage({ params }) {
             <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">
               Reviews: {Number(place?.reviewCount || 0)}
             </span>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:hidden">
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(String(place?.location || `${place.name}, ${cityName}`))}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-cyan-200/28 bg-cyan-200/12 px-3 text-sm font-semibold text-cyan-50"
+            >
+              Directions
+            </a>
+            {place?.link ? (
+              <OfficialExternalLink href={String(place.link)} kind="venue" className="min-h-12" />
+            ) : (
+              <CityPanelButton city={city} entityKind="place" entityId={String(place.id)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 text-sm font-semibold text-fuchsia-50">
+                Open panel
+              </CityPanelButton>
+            )}
           </div>
         </header>
 
@@ -340,7 +368,7 @@ export default async function CityVenueDetailPage({ params }) {
             <OfficialExternalLink
               href={String(place.link)}
               kind="venue"
-              className="mt-4 sm:mt-6 sm:max-w-sm"
+              className="mt-4 hidden sm:mt-6 sm:flex sm:max-w-sm"
             />
           ) : null}
         </section>

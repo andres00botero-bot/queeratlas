@@ -1085,12 +1085,22 @@ export default function EventsPage({ initialSection = "calendar" }) {
         <div className="pointer-events-none absolute inset-x-0 top-[23rem] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
         <div className="qa-shell relative">
+          <section className="mb-3 sm:mb-6">
+            <PageControls
+              controlsRef={eventsControlsRef}
+              controlButtonsRef={eventsControlButtonsRef}
+              buttons={eventSectionButtons}
+              activeId={activeEventsSection}
+              onSelect={scrollToEventsSection}
+              className="qa-panel"
+            />
+          </section>
           <section
             ref={overviewSectionRef}
             data-events-section-id="hero"
-            className="qa-panel qa-premium-card overflow-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-4 py-4 shadow-[0_35px_120px_rgba(0,0,0,0.42)] sm:rounded-[36px] sm:px-8 sm:py-7"
+            className="qa-panel qa-premium-card overflow-hidden rounded-[22px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-4 py-4 shadow-[0_24px_76px_rgba(0,0,0,0.36)] sm:rounded-[36px] sm:px-8 sm:py-7 sm:shadow-[0_35px_120px_rgba(0,0,0,0.42)]"
           >
-            <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="grid gap-4 sm:gap-8 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="flex flex-col xl:min-h-[380px]">
                 <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-white/72 backdrop-blur">
                   <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.9)]" />
@@ -1099,8 +1109,8 @@ export default function EventsPage({ initialSection = "calendar" }) {
 
                 <div className="flex flex-1 items-center pt-3 sm:pt-4 xl:pt-0">
                   <div className="mx-auto w-full max-w-3xl text-center xl:mx-0 xl:max-w-none xl:text-left">
-                    <h1 className="qa-display qa-h1 inline-flex items-center justify-center gap-2.5 text-3xl font-semibold text-white sm:gap-4 sm:text-5xl xl:max-w-2xl xl:justify-start xl:text-6xl">
-                      <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12 xl:h-14 xl:w-14" />
+                    <h1 className="qa-display qa-h1 inline-flex items-center justify-center gap-2.5 text-[2rem] font-semibold text-white sm:gap-4 sm:text-5xl xl:max-w-2xl xl:justify-start xl:text-6xl">
+                      <BrandMark iconOnly className="h-8 w-8 sm:h-12 sm:w-12 xl:h-14 xl:w-14" />
                       Events Radar
                     </h1>
 
@@ -1110,23 +1120,23 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   </div>
                 </div>
 
-                <div className="mt-auto grid grid-cols-3 gap-2 pt-4 sm:gap-2.5 sm:pt-6">
+                <div className="mt-auto hidden grid-cols-3 gap-2 pt-4 sm:grid sm:gap-2.5 sm:pt-6">
                   <div className="qa-card qa-premium-card rounded-xl border border-cyan-300/24 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(6,182,212,0.16),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/72">All events</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.allEvents}</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{isLoading && !dailyMetricsSnapshot ? "—" : metricsForCards.allEvents}</p>
                   </div>
                   <div className="qa-card qa-premium-card rounded-xl border border-fuchsia-300/24 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(236,72,153,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Active cities</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.activeCities}</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{isLoading && !dailyMetricsSnapshot ? "—" : metricsForCards.activeCities}</p>
                   </div>
                   <div className="qa-card qa-premium-card rounded-xl border border-orange-300/22 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(249,115,22,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
                     <p className="text-xs uppercase tracking-[0.18em] text-orange-100/75">This month</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.thisMonth}</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{isLoading && !dailyMetricsSnapshot ? "—" : metricsForCards.thisMonth}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="qa-premium-card rounded-[22px] border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(13,24,34,0.92),rgba(8,8,10,0.98))] p-4 shadow-[0_28px_84px_rgba(8,145,178,0.22),0_14px_36px_rgba(0,0,0,0.34)] backdrop-blur sm:rounded-[30px] sm:p-5">
+              <div className="qa-premium-card hidden rounded-[22px] border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(13,24,34,0.92),rgba(8,8,10,0.98))] p-4 shadow-[0_28px_84px_rgba(8,145,178,0.22),0_14px_36px_rgba(0,0,0,0.34)] backdrop-blur sm:block sm:rounded-[30px] sm:p-5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/70">
@@ -1219,17 +1229,6 @@ export default function EventsPage({ initialSection = "calendar" }) {
                 </div>
               </div>
             </div>
-          </section>
-
-          <section className="mb-6 mt-8">
-            <PageControls
-              controlsRef={eventsControlsRef}
-              controlButtonsRef={eventsControlButtonsRef}
-              buttons={eventSectionButtons}
-              activeId={activeEventsSection}
-              onSelect={scrollToEventsSection}
-              className="qa-panel"
-            />
           </section>
 
           {showSearchSection ? (
