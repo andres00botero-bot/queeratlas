@@ -36,6 +36,9 @@ export default function CityNavigationCluster({
   if (variant === "rail") {
     return (
       <CityQuickNavigation
+        cityPlacesCount={cityPlacesCount}
+        cityEventCount={cityEventCount}
+        cityServiceCount={cityServiceCount}
         onGoHome={onGoHome}
         onGoMap={onGoMap}
         onGoEvents={onGoEvents}

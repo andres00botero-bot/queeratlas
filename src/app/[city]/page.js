@@ -1032,6 +1032,7 @@ export default function CityPage() {
       showDesktopSection("venues");
     }
 
+    if (!rawKey && !isDesktop) return;
     if (!rawKey) {
       scrollToSection(placesSectionRef);
       return;
@@ -1049,11 +1050,7 @@ export default function CityPage() {
       }
     };
 
-    if (isDesktop) {
-      window.setTimeout(scrollToTargetVenue, 90);
-    } else {
-      scrollToTargetVenue();
-    }
+    if (isDesktop) window.setTimeout(scrollToTargetVenue, 90);
 
     const targetGroup = visiblePlaceGroups.find((group) =>
       venueKeys.includes(String(group?.value || ""))
@@ -4802,13 +4799,13 @@ export default function CityPage() {
                   onGoServices={() => goToMobileSection("services", servicesSectionRef)}
                   onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
                   onGoVenueType={(value) => {
-                    goToMobileSection("venues", placesSectionRef);
+                    setActiveCitySection("venues");
                     handleGoVenueType(value);
                   }}
                   venueJumpGroups={venueJumpGroups}
                   activeVenueFilter={activeVenueFilter}
                 />
-                <CitySeoTopicLinks city={city} cityName={cityName} />
+                {activeCitySection === "guide" ? <CitySeoTopicLinks city={city} cityName={cityName} /> : null}
               </div>
 
               <div className={`${activeCitySection === "guide" ? "block" : "hidden"} ${effectiveDesktopContentSection === "guide" && !isAddComposerActive ? "xl:block" : "xl:hidden"}`}>

@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import { BookOpen, CalendarDays, ChevronDown, HeartHandshake, Map, MapPin } from "lucide-react";
 
 export default function CityQuickNavigation({
+  cityPlacesCount = 0,
+  cityEventCount = 0,
+  cityServiceCount = 0,
   onGoHome,
   onGoMap,
   onGoEvents,
@@ -102,6 +105,15 @@ export default function CityQuickNavigation({
       return current === "cafe" || current === "restaurant";
     }
     return false;
+  };
+  const activeVenueGroup = venueGroups.find((group) => isVenueTypeActive(group.value));
+  const selectVenueTypeWithoutJump = (value) => {
+    const scrollPosition = typeof window !== "undefined" ? window.scrollY : 0;
+    onGoVenueType?.(value);
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.scrollTo({ top: scrollPosition, behavior: "auto" }));
+    });
   };
 
   if (variant === "contribute") {
@@ -233,9 +245,145 @@ export default function CityQuickNavigation({
     );
   }
 
+  const mobileSectionCards = [
+    {
+      key: "events",
+      label: "Events",
+      description: "Tonight, parties and events coming soon",
+      count: cityEventCount,
+      Icon: CalendarDays,
+      onClick: onGoEvents,
+      tone: "border-fuchsia-200/24 bg-fuchsia-300/[0.09] text-fuchsia-50",
+    },
+    {
+      key: "services",
+      label: "Services",
+      description: "Health, community, shops and local support",
+      count: cityServiceCount,
+      Icon: HeartHandshake,
+      onClick: onGoServices,
+      tone: "border-emerald-200/24 bg-emerald-300/[0.09] text-emerald-50",
+    },
+    {
+      key: "guide",
+      label: "City guide",
+      description: "Local context, safety and neighbourhoods",
+      count: null,
+      Icon: BookOpen,
+      onClick: onGoGuide,
+      tone: "border-amber-200/24 bg-amber-300/[0.09] text-amber-50",
+    },
+  ];
+
   return (
+    <>
     <div
-      className="qa-city-panel-cq animate-cinematic-in sticky top-2 z-30 mb-4 rounded-[20px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-2.5 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur sm:top-3 sm:mb-8 sm:rounded-[24px] sm:p-4"
+      className="qa-city-panel-cq animate-cinematic-in mb-4 rounded-[20px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.10),rgba(34,211,238,0.08),rgba(13,15,20,0.96))] p-3 shadow-[0_18px_52px_rgba(91,33,182,0.18)] sm:hidden"
+      style={{ animationDelay: "170ms" }}
+    >
+      <div className="flex min-h-11 items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Explore this city</p>
+          <p className="mt-1 text-xs text-white/72">Choose what you want to find</p>
+        </div>
+        <button
+          type="button"
+          onClick={onGoMap}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 text-xs font-semibold text-cyan-50"
+        >
+          <Map className="h-4 w-4" aria-hidden="true" />
+          Map
+        </button>
+      </div>
+
+      <div className="mt-3 space-y-2">
+        <div className={`overflow-hidden rounded-2xl border transition ${activeSection === "venues" ? "border-pink-200/45 bg-pink-300/[0.12]" : "border-pink-200/24 bg-pink-300/[0.08]"}`}>
+          <button
+            type="button"
+            onClick={() => setShowVenuePicker((current) => !current)}
+            aria-expanded={showVenuePicker}
+            aria-controls="mobile-venue-type-picker"
+            className="flex min-h-[4.75rem] w-full items-center gap-3 px-3.5 py-3 text-left"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-pink-100/24 bg-pink-200/12 text-pink-50">
+              <MapPin className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2">
+                <span className="text-base font-semibold text-white">Venues</span>
+                {cityPlacesCount > 0 ? <span className="rounded-full border border-white/14 bg-white/[0.07] px-2 py-0.5 text-[10px] text-white/70">{cityPlacesCount}</span> : null}
+              </span>
+              <span className="mt-1 block text-xs leading-4 text-white/58">
+                {activeVenueGroup ? `${activeVenueGroup.label} selected` : "Bars, clubs, saunas and more"}
+              </span>
+            </span>
+            <ChevronDown className={`h-5 w-5 shrink-0 text-white/62 transition ${showVenuePicker ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
+
+          {showVenuePicker ? (
+            <div id="mobile-venue-type-picker" className="border-t border-white/12 p-3">
+              <div className="mb-2.5 flex items-center justify-between gap-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/52">Choose venue type</p>
+                {activeVenueGroup ? <span className="text-[11px] text-pink-100/78">Current: {activeVenueGroup.label}</span> : null}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectVenueTypeWithoutJump("")}
+                  className={`col-span-2 flex min-h-12 items-center justify-between rounded-xl border px-3 text-left text-sm font-semibold transition ${!activeVenueFilter && activeSection === "venues" ? "border-pink-200/48 bg-pink-200/16 text-white" : "border-white/14 bg-white/[0.055] text-white/82"}`}
+                >
+                  <span>All venues</span>
+                  {cityPlacesCount > 0 ? <span className="text-xs text-white/55">{cityPlacesCount}</span> : null}
+                </button>
+                {venueGroups.map((group) => {
+                  const isActive = isVenueTypeActive(group.value);
+                  return (
+                    <button
+                      key={`mobile-venue-type-${group.value}`}
+                      type="button"
+                      onClick={() => selectVenueTypeWithoutJump(group.value)}
+                      aria-pressed={isActive}
+                      className={`flex min-h-[4.25rem] flex-col justify-between rounded-xl border p-3 text-left transition ${isActive ? "border-pink-200/52 bg-pink-200/18 text-white ring-1 ring-pink-100/24" : "border-white/13 bg-black/18 text-white/80"}`}
+                    >
+                      <span className="text-sm font-semibold leading-4">{group.label}</span>
+                      <span className="mt-2 text-[11px] text-white/52">{group.count} places</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {mobileSectionCards.map((item) => {
+          const Icon = item.Icon;
+          const isActive = activeSection === item.key;
+          return (
+            <button
+              key={`mobile-city-section-${item.key}`}
+              type="button"
+              onClick={item.onClick}
+              className={`flex min-h-[4.5rem] w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition ${item.tone} ${isActive ? "ring-1 ring-white/28" : ""}`}
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/14 bg-white/[0.07]">
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-white">{item.label}</span>
+                  {Number(item.count) > 0 ? <span className="text-[11px] text-white/48">{item.count}</span> : null}
+                </span>
+                <span className="mt-1 block text-xs leading-4 text-white/55">{item.description}</span>
+              </span>
+              <ChevronDown className="h-4 w-4 -rotate-90 text-white/46" aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+
+    <div
+      className="qa-city-panel-cq animate-cinematic-in sticky top-3 z-30 mb-8 hidden rounded-[24px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-4 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur sm:block"
       style={{ animationDelay: "170ms" }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -330,6 +478,7 @@ export default function CityQuickNavigation({
         </div>
       ) : null}
     </div>
+    </>
   );
 }
 
