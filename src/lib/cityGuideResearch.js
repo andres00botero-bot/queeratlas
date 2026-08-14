@@ -1,4 +1,18 @@
 export const cityGuideResearch = {
+  turin: {
+    checkedAt: "2026-08-14",
+    sources: [
+      { label: "Turismo Torino - official LGBTQIA+ history and visitor context", url: "https://turismotorino.org/en/visit/things-to-do-and-things-to-see/torino-lgbtqia" },
+      { label: "City of Turin - municipal LGBTQIA+ service and current policy", url: "https://www.comune.torino.it/argomenti/integrazione-sociale/tematiche-lgbt" },
+      { label: "Torino Pride - official 2026 route, access and community programme", url: "https://www.torinopride.it/pride/pride-2026/" },
+      { label: "Lovers Film Festival - official 2026 festival and archive", url: "https://www.loversff.com/" },
+      { label: "EuroPride Torino - official 2027 dates and planning", url: "https://www.europride2027.eu/en/" },
+      { label: "CasArcobaleno - current spaces, services and participation rules", url: "https://casarcobaleno.it/gli-spazi/" },
+      { label: "Maurice GLBTQ - current community and peer-support services", url: "https://www.mauriceglbtq.org/" },
+      { label: "Quore - TO Housing access and LGBTQI+ housing support", url: "https://www.quore.org/to-housing-accoglienza-lgbtqi/" },
+      { label: "Current venue and traveller review consensus", url: "https://wanderlog.com/place/details/5882765/nora-book--coffee" },
+    ],
+  },
   bordeaux: {
     checkedAt: "2026-08-14",
     sources: [

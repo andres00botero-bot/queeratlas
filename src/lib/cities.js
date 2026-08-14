@@ -2169,6 +2169,19 @@ export const cityConfig = {
       cost: "Bordeaux can become expensive around wine events and summer weekends, but the queer route itself is manageable. Several bars publish free entry or happy-hour windows; club, sauna and cruise admission add more than the first drink. The centre is walkable and tram-friendly, while Bastide, Chartrons and the station cluster may justify a late ride. Book rooms early for Pride and Vinexpo-scale dates, then leave one evening open for a collective event announced close to the weekend.",
     }),
   },
+  turin: {
+    center: [7.6869, 45.0703],
+    title: "Queer Turin",
+    country: "Italy",
+    vibe: "arcaded elegance, radical queer memory and programme-led nights",
+    guide: buildGuide({
+      about: "Turin's queer identity is much bigger than its short nightlife list. FUORI!, Italy's first gay-rights movement, began here in 1971; Maurice followed in 1985, Lovers became Europe's longest-running LGBTQI+ film festival, and the city opened Italy's first municipal LGBT office in 2001. CasArcobaleno, TO Housing and a dense network of peer support keep that history practical. EuroPride arrives in 2027. The result is a city where a bookstore breakfast, a film premiere or a community table can carry as much queer weight as a club night.",
+      district: "Begin in the Quadrilatero Romano: Nora, Maurice and Quore's operational office sit among old lanes west of Piazza Castello. Cross Porta Palazzo for CasArcobaleno, then continue east toward Vanchiglia for 011 Sauna. Centralino is south-east of the palace near Via Po; San Salvario and Parco del Valentino hold La Boulandrola and Nasty. Garage sits separately near Porta Nuova and Crocetta. These are compact clusters, but not one continuous gay village, so let the event calendar decide which direction the evening takes.",
+      safety: "Turin has unusually visible municipal LGBTQIA+ infrastructure, but Italy recognises civil unions rather than equal marriage and legal progress does not remove everyday bias. Central streets are generally straightforward; use ordinary late-night awareness around parks and quieter station approaches. Read membership, age and dress rules before adult venues, and keep consent explicit. Current reviews report inconsistent treatment of tourists at some doors, while Nasty received a serious 2026 overcrowding sanction, so a branded queer night is not a substitute for checking conditions. Use 112 for immediate emergencies.",
+      nightlife: "Match the date to the room. Bananamia brings Turin's long-running Friday LGBTQ+ party to Nasty; Centralino hosts selected queer club nights and the official Pride party. 011 and Garage are men-only membership clubs with very different weekly rhythms. Nora and CasArcobaleno are better for conversation, books, groups and low-pressure connection; La Boulandrola is a politically engaged daytime stop rather than a gay bar. Queer women, trans and non-binary visitors will usually find the city through organisers, cinema and community programmes rather than one permanent dedicated club.",
+      cost: "Coffee, aperitivo and public transport are reasonable compared with Milan, while club drinks, admission and required association cards can change the budget quickly. Much of the central route is walkable and trams cover the longer links; a direct late ride is sensible from Parco del Valentino or after an adult venue closes. Lovers, Pride and many community events offer free or low-cost access, but EuroPride 2027 will tighten accommodation sharply. Book the bed early for major dates and verify the party before paying for a distant room.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

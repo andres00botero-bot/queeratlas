@@ -1495,6 +1495,15 @@ export const cityCoreConfig = {
     "country": "France",
     "vibe": "river-city elegance, small-scene intimacy and queer cultural nerve"
   },
+  "turin": {
+    "center": [
+      7.6869,
+      45.0703
+    ],
+    "title": "Queer Turin",
+    "country": "Italy",
+    "vibe": "arcaded elegance, radical queer memory and programme-led nights"
+  },
   "zagreb": {
     "center": [
       15.9819,
