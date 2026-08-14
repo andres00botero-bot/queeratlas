@@ -2169,6 +2169,19 @@ export const cityConfig = {
       cost: "Bordeaux can become expensive around wine events and summer weekends, but the queer route itself is manageable. Several bars publish free entry or happy-hour windows; club, sauna and cruise admission add more than the first drink. The centre is walkable and tram-friendly, while Bastide, Chartrons and the station cluster may justify a late ride. Book rooms early for Pride and Vinexpo-scale dates, then leave one evening open for a collective event announced close to the weekend.",
     }),
   },
+  bristol: {
+    center: [-2.5879, 51.4545],
+    title: "Queer Bristol",
+    country: "United Kingdom",
+    vibe: "street-art nerve, warm pub culture and community-made queer energy",
+    guide: buildGuide({
+      about: "Bristol's queer identity is older and broader than its present bar map. The city hosted a Gay Festival in the 1970s, Freedom Youth began in 1995, Old Market grew into a visible queer cluster around the same period and the modern Pride returned in 2010. Today that history lives through Bristol Pride, Trans Pride, QPOC organisers, queer theatre, film, workshops and mutual support. The permanent venues matter, but the city's real authority comes from people repeatedly turning mixed rooms into their own.",
+      district: "There are two useful starting points, not one continuous strip. Old Market gathers Bristol Bear Bar, Old Castle Green, Old Market Tavern, Old Market Assembly, To The Moon and The Phoenix east of the centre. Frogmore Street and nearby Frog Lane hold Queenshilling plus OMG Bar and Club in the West End. Filthy XIII sits farther north on Cheltenham Road, while queer programmes also move through the Harbourside, Stokes Croft and community venues. Walk between the two central clusters in about twenty minutes; check the organiser before travelling beyond them.",
+      safety: "England and Wales recognise same-sex marriage and legal protections cover sexual orientation and gender reassignment, but law does not make every late-night room equally comfortable. Bristol is visibly queer-friendly, yet current community accounts still report drink-safety, door and straight-crowd concerns at parts of the Frogmore circuit. Keep your drink with you, agree a route home and use the named promoter's welfare team at events. Call 999 in an emergency or 101 for non-emergency police help; SARI and OTR Freedom can support people targeted by hate or discrimination without requiring a police report.",
+      nightlife: "Choose by atmosphere rather than assuming every rainbow pin offers the same night. Queenshilling is the classic pop-and-karaoke club; OMG skews younger and more student-heavy; Bristol Bear Bar is smaller and conversational. Old Market works best as a pub-and-culture crawl, with cabaret and theatre at the Assembly, DJs at To The Moon and community events at Old Castle Green. Queer women, trans, non-binary and QPOC visitors will often find the strongest fit through Headfirst, Queer Space, Bristol QPOC Socials and named promoters. No current dedicated gay sauna was verified; Bristol Community Sauna runs bookable queer and trans-only nonsexual sessions.",
+      cost: "Bristol is an expensive UK city, especially for accommodation, but a good queer evening need not begin with club admission. Old Market offers pubs, free-entry DJs and low-cost community events before ticketed nightlife. Frogmore club prices and late transport add up quickly, while Pride and major weekends tighten rooms across the centre. Stay near Old Market or the harbour for walking access, budget a direct ride after late closing and book small-capacity workshops, sauna sessions and table-only cocktail bars before they sell out.",
+    }),
+  },
   turin: {
     center: [7.6869, 45.0703],
     title: "Queer Turin",

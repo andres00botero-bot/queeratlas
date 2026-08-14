@@ -1,4 +1,18 @@
 export const cityGuideResearch = {
+  bristol: {
+    checkedAt: "2026-08-14",
+    sources: [
+      { label: "Visit Bristol - current LGBTQIA+ neighbourhoods, venues and event routes", url: "https://visitbristol.co.uk/discover/ideas-inspiration/lgbtq-bristol/" },
+      { label: "Bristol Pride - official 2026 fortnight, parade, Pride Day and access", url: "https://bristolpride.co.uk/pride-day/" },
+      { label: "Trans Pride Bristol - official 2026 march and community programme", url: "https://www.transpridebristol.org.uk/events/trans-pride-bristol-march-26" },
+      { label: "OutStories Bristol - documented local LGBTQ+ history and scene timeline", url: "https://outstoriesbristol.org.uk/timeline/timeline-1967-to-present/" },
+      { label: "OTR Freedom - LGBTQIA+ youth, family and hate-crime support", url: "https://www.otrbristol.org.uk/what-we-do/freedom/" },
+      { label: "Yuno - current Bristol sexual-health clinics and LGBTQ+ testing", url: "https://yunosexualhealth.co.uk/find-a-clinic-or-pharmacy" },
+      { label: "Queer Space Bristol - current arts, wellbeing and access model", url: "https://queerspacebristol.com/" },
+      { label: "Bristol QPOC Socials - current recurring community programme", url: "https://www.bristolqpoc.co.uk/" },
+      { label: "Current local and visitor review consensus", url: "https://www.reddit.com/r/bristol/comments/1sn90d4/queenshilling_or_omg_club_bar_on_a_night_out_alone/" },
+    ],
+  },
   turin: {
     checkedAt: "2026-08-14",
     sources: [

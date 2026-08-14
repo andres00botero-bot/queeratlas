@@ -4379,6 +4379,7 @@ export const cityGuideConfig = {
 
 const researchedCityGuideOverrides = [
   "turin",
+  "bristol",
   "bordeaux",
   "calgary",
   "thessaloniki",

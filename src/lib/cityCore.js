@@ -1495,6 +1495,15 @@ export const cityCoreConfig = {
     "country": "France",
     "vibe": "river-city elegance, small-scene intimacy and queer cultural nerve"
   },
+  "bristol": {
+    "center": [
+      -2.5879,
+      51.4545
+    ],
+    "title": "Queer Bristol",
+    "country": "United Kingdom",
+    "vibe": "street-art nerve, warm pub culture and community-made queer energy"
+  },
   "turin": {
     "center": [
       7.6869,
