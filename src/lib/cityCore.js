@@ -1486,6 +1486,15 @@ export const cityCoreConfig = {
     "country": "Canada",
     "vibe": "prairie confidence, drag-led nights and community-built belonging"
   },
+  "bordeaux": {
+    "center": [
+      -0.5792,
+      44.8378
+    ],
+    "title": "Queer Bordeaux",
+    "country": "France",
+    "vibe": "river-city elegance, small-scene intimacy and queer cultural nerve"
+  },
   "zagreb": {
     "center": [
       15.9819,

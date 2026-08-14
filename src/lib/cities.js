@@ -2156,6 +2156,19 @@ export const cityConfig = {
       cost: "Calgary is not a cheap Canadian city, but the central scene can be managed without constant taxis. Beltline venues are walkable from one another, happy hours soften the opening round and several community events are free. Ticketed drag, coat check, club cover and late rides are the main additions. Pride and Stampede weeks tighten hotel supply and push rates sharply upward; book those dates early, then keep one flexible night for a pop-up announced close to the weekend.",
     }),
   },
+  bordeaux: {
+    center: [-0.5792, 44.8378],
+    title: "Queer Bordeaux",
+    country: "France",
+    vibe: "river-city elegance, small-scene intimacy and queer cultural nerve",
+    guide: buildGuide({
+      about: "Bordeaux wears its queer life lightly, but the roots are substantial. A handful of dedicated bars and adult venues share the map with Le Girofard, trans-led mutual aid, Cinémarges, La Bordelle's queer balls and a municipally supported Pride Month. The city marked 30 years of Pride in 2026. This is not Paris scaled down: it is a close, mobile scene where a new bar, a film night or a temporary dance floor can matter as much as the permanent club.",
+      district: "There is no single gay village. The easiest centre route joins Philippe near Saint-Paul, Coco Loko by the cathedral, Buster south of Pey-Berland and Traxx near Rue Sainte-Catherine. Ultra sits by Place André Meunier toward Saint-Michel, while Le Plumeau and Le Saint pull north into Chartrons. Bien Public is across the river in La Bastide and JOST sits behind Gare Saint-Jean. The tram handles most links, but these are distinct clusters rather than one continuous strip.",
+      safety: "France recognises same-sex marriage and prohibits discrimination based on sexual orientation and gender identity. Central Bordeaux is usually comfortable for queer visitors, though ordinary late-night awareness still matters around the station, empty quays and the walk between scattered venues. Read audience rules before entering men-only cruise spaces, keep consent explicit and use 112 for emergencies. Le Girofard offers violence support and legal or psychological orientation; FLAG! and SOS homophobie provide specialist reporting routes.",
+      nightlife: "Start with the room you actually want. Philippe is a young all-community bar with pop, electro and drag; Coco Loko is the established party bar; Le Plumeau gives Chartrons a drag-pop pulse. Ultra is the large late club, while Buster is smaller and more male-focused. Crunch and Le Saint offer very different sauna formats, and Traxx is explicitly a men-only cruise club. La Bordelle, Médusyne, Cinémarges and rotating producers are essential for queer women, trans and non-binary crowds, so check the organiser as closely as the address.",
+      cost: "Bordeaux can become expensive around wine events and summer weekends, but the queer route itself is manageable. Several bars publish free entry or happy-hour windows; club, sauna and cruise admission add more than the first drink. The centre is walkable and tram-friendly, while Bastide, Chartrons and the station cluster may justify a late ride. Book rooms early for Pride and Vinexpo-scale dates, then leave one evening open for a collective event announced close to the weekend.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

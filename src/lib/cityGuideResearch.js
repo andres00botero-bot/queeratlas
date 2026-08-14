@@ -1,4 +1,17 @@
 export const cityGuideResearch = {
+  bordeaux: {
+    checkedAt: "2026-08-14",
+    sources: [
+      { label: "Bordeaux Metropole - official 2026 Pride Month and 30th Pride programme", url: "https://www.bordeaux-metropole.fr/agenda/14994330_mois-des-fiertes-2026-6eme-edition" },
+      { label: "Bordeaux Tourism - verified queer bars, clubs and local collectives", url: "https://www.bordeaux-tourisme.com/sortir/bars/queer-lgbt" },
+      { label: "Le Girofard - Bordeaux LGBTQIAP+ centre, Pride and support services", url: "https://www.le-girofard.org/" },
+      { label: "Gironde - current CeGIDD testing, PrEP and chemsex access", url: "https://www.gironde.fr/lieu/centre-gratuit-dinformation-de-depistage-et-de-diagnostic-cegidd" },
+      { label: "ANCRES - trans-led support, practical help and peer connection", url: "https://ancresassociation.org/" },
+      { label: "Cinemarges - official 2026 queer film festival programme", url: "https://festival.cinemarges.fr/grille-2026" },
+      { label: "Bien Public - current venue access, programme and opening hours", url: "https://www.bienpublic-bordeaux.com/infos-pratiques/" },
+      { label: "Current venue and traveller review consensus", url: "https://wanderlog.com/place/details/15190395/philippe-bar-queer" },
+    ],
+  },
   calgary: {
     checkedAt: "2026-08-14",
     sources: [
