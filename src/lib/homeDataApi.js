@@ -4,10 +4,62 @@ import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { unstable_cache } from "next/cache";
 import { buildEventIntelFallback } from "@/lib/intelFallbacks";
+import { normalizeVenueIntel } from "@/lib/venueIntel";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
 const INITIAL_PLACE_LIMIT = 120;
+
+const FEATURED_VENUE_INTEL_KEYS = [
+  "queueWait",
+  "bestNights",
+  "crowdMix",
+  "dressCode",
+  "staffInclusivity",
+];
+
+function pickFeaturedVenue(places = []) {
+  const candidates = (Array.isArray(places) ? places : [])
+    .map((place) => {
+      const intel = normalizeVenueIntel(place);
+      const knownTopics = FEATURED_VENUE_INTEL_KEYS.filter((key) => intel[key]?.length >= 24);
+      const sourceCount = intel.sourceUrls.length;
+      const reviewCount = Number(place?.reviewCount ?? place?.review_count ?? 0) || 0;
+      const rating = Number(place?.avgRating ?? place?.avg_rating ?? 0) || 0;
+      const textDepth = knownTopics.reduce((total, key) => total + intel[key].length, 0);
+
+      return {
+        place,
+        knownTopics: knownTopics.length,
+        score:
+          knownTopics.length * 10000 +
+          Math.min(sourceCount, 12) * 500 +
+          Math.min(reviewCount, 100) * 20 +
+          Math.round(rating * 10) +
+          Math.min(textDepth, 1600),
+      };
+    })
+    .filter((candidate) => candidate.knownTopics >= 3)
+    .sort((a, b) => b.score - a.score || String(a.place?.name || "").localeCompare(String(b.place?.name || "")));
+
+  const featured = candidates[0]?.place;
+  if (!featured) return null;
+
+  return pickFields(featured, [
+    "id",
+    "name",
+    "city",
+    "type",
+    "vibe",
+    "description",
+    "location",
+    "venue_intel",
+    "reviewCount",
+    "review_count",
+    "avgRating",
+    "avg_rating",
+  ]);
+}
 
 function splitLegacyVibe(description = "") {
   const raw = String(description || "");
@@ -116,6 +168,7 @@ export async function fetchHomeDataPayload() {
   const events = [...mergedEvents, ...globalEvents];
   const places = Array.isArray(placesRes?.data) ? placesRes.data : [];
   const worldNews = Array.isArray(newsRes?.data) ? newsRes.data : [];
+  const featuredVenue = pickFeaturedVenue(places);
   const metrics = {
     cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
     places: places.length,
@@ -131,6 +184,7 @@ export async function fetchHomeDataPayload() {
   return {
     events,
     places,
+    featuredVenue,
     worldNews,
     metrics,
     partialData,
@@ -148,6 +202,7 @@ function buildInitialHomeData(payload) {
   const events = Array.isArray(payload?.events) ? payload.events : [];
   const places = Array.isArray(payload?.places) ? payload.places : [];
   const worldNews = Array.isArray(payload?.worldNews) ? payload.worldNews : [];
+  const featuredVenue = payload?.featuredVenue || pickFeaturedVenue(places);
   const metrics = payload?.metrics && typeof payload.metrics === "object"
     ? payload.metrics
     : {
@@ -186,6 +241,7 @@ function buildInitialHomeData(payload) {
         "avg_rating",
       ])
     ),
+    featuredVenue,
     worldNews: [...worldNews].sort(compareNewsRecency).slice(0, 3),
     metrics,
     partialData: Boolean(payload?.partialData),

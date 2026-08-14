@@ -14,6 +14,7 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
 import { Search } from "lucide-react";
 import HomeContactSection from "@/components/home/HomeContactSection";
+import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v2";
@@ -88,6 +89,10 @@ export default function HomePageClient({ initialHomeData = null }) {
     () => (Array.isArray(initialHomeData?.worldNews) ? initialHomeData.worldNews : []),
     [initialHomeData]
   );
+  const initialFeaturedVenue = useMemo(
+    () => (initialHomeData?.featuredVenue && typeof initialHomeData.featuredVenue === "object" ? initialHomeData.featuredVenue : null),
+    [initialHomeData]
+  );
   const initialMetrics = initialHomeData?.metrics || null;
   const hasCompleteInitialHomeData = initialHomeData?.complete !== false;
   const hasInitialHomeData =
@@ -103,6 +108,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [worldNews, setWorldNews] = useState(initialWorldNews);
+  const [featuredVenue, setFeaturedVenue] = useState(initialFeaturedVenue);
   const [favorites, setFavorites] = useState([]);
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
@@ -239,6 +245,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       events: Array.isArray(payload?.events) ? payload.events : [],
       places: Array.isArray(payload?.places) ? payload.places : [],
       worldNews: Array.isArray(payload?.worldNews) ? payload.worldNews : [],
+      featuredVenue: payload?.featuredVenue && typeof payload.featuredVenue === "object" ? payload.featuredVenue : null,
       metrics: payload?.metrics && typeof payload.metrics === "object" ? payload.metrics : null,
       partialData: Boolean(payload?.partialData),
     };
@@ -276,6 +283,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
       setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
       setWorldNews(Array.isArray(cached.data.worldNews) ? cached.data.worldNews : []);
+      if (cached.data.featuredVenue && typeof cached.data.featuredVenue === "object") {
+        setFeaturedVenue(cached.data.featuredVenue);
+      }
       if (cached.data.metrics && typeof cached.data.metrics === "object") {
         setHomeMetrics(cached.data.metrics);
       }
@@ -295,16 +305,19 @@ export default function HomePageClient({ initialHomeData = null }) {
     const nextEvents = payload.events;
     const nextPlaces = payload.places;
     const nextWorldNews = payload.worldNews;
+    const nextFeaturedVenue = payload.featuredVenue;
     const nextMetrics = payload.metrics;
 
     setEvents(nextEvents);
     setPlaces(nextPlaces);
     setWorldNews(nextWorldNews);
+    if (nextFeaturedVenue) setFeaturedVenue(nextFeaturedVenue);
     if (nextMetrics) setHomeMetrics(nextMetrics);
     writeRuntimeCache(HOME_DATA_CACHE_KEY, {
       events: nextEvents,
       places: nextPlaces,
       worldNews: nextWorldNews,
+      featuredVenue: nextFeaturedVenue,
       metrics: nextMetrics,
     });
 
@@ -320,6 +333,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         events: initialEvents,
         places: initialPlaces,
         worldNews: initialWorldNews,
+        featuredVenue: initialFeaturedVenue,
         metrics: initialMetrics,
       });
       queueMicrotask(() => {
@@ -343,6 +357,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     hasCompleteInitialHomeData,
     hasInitialHomeData,
     initialEvents,
+    initialFeaturedVenue,
     initialMetrics,
     initialPlaces,
     initialWorldNews,
@@ -757,7 +772,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   ];
   const heroIdentityLabel = isMember
     ? `${memberName || "Alias"} | ${memberProfile?.pronouns || "Pronomen"}`
-    : "Alias | Pronomen";
+    : "";
 
   return (
     <main className="qa-page min-h-screen overflow-x-hidden bg-[#01010C] text-white">
@@ -767,7 +782,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/5 blur-3xl" />
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
-          <section className="relative left-1/2 w-screen min-h-[100dvh] -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 py-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:py-6 lg:z-[100] lg:overflow-visible xl:px-8 xl:py-8">
+          <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[calc(100svh-1rem)] lg:overflow-visible xl:px-8 xl:pb-4 xl:pt-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
                 src="/home/queer-atlas-global-queer-nightlife-discovery-hero.webp"
@@ -777,7 +792,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 quality={75}
                 sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
                 className="object-cover object-center opacity-96"
-                style={{ objectPosition: "center calc(50% - 1.5cm)" }}
+                style={{ objectPosition: "center calc(50% - 4.5cm)" }}
               />
             </div>
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(104deg,rgba(3,6,18,0.9)_0%,rgba(5,7,16,0.74)_38%,rgba(7,7,12,0.22)_68%,rgba(7,7,12,0.5)_100%)]" />
@@ -785,18 +800,22 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070912]/55 to-[#01010C]" />
             <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-28 bg-gradient-to-r from-[#05060f]/86 to-transparent lg:block" />
             <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-28 bg-gradient-to-l from-[#05060f]/86 to-transparent lg:block" />
+            <div className="pointer-events-none absolute -left-24 top-36 h-56 w-56 rounded-full bg-fuchsia-500/12 blur-[90px] lg:hidden" />
+            <div className="pointer-events-none absolute -right-24 top-10 h-64 w-64 rounded-full bg-cyan-400/12 blur-[100px] lg:hidden" />
 
-            <div className="relative z-10 mx-auto flex min-h-[calc(100dvh-4.5rem)] w-full max-w-[1720px] flex-col justify-between">
-          <div className="mb-6 flex items-center justify-end gap-3 sm:mb-10 sm:justify-between sm:gap-4">
-            <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
-              {heroIdentityLabel}
-            </div>
+            <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[calc(100svh-5rem)]">
+          <div className={`mb-10 flex items-center gap-3 sm:mb-14 sm:gap-4 lg:mb-0 ${isMember ? "justify-between" : "justify-end"}`}>
+            {isMember && (
+              <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
+                {heroIdentityLabel}
+              </div>
+            )}
 
             <div className="flex items-center gap-2.5 sm:gap-3">
               {!isMember ? (
                 <button
                   onClick={() => openSignup()}
-                  className="qa-action qa-action-strong inline-flex h-10 items-center justify-center rounded-full border border-white/55 bg-gradient-to-r from-rose-300 via-fuchsia-300 to-orange-200 px-5 text-sm font-semibold text-black shadow-[0_18px_50px_rgba(244,114,182,0.2)] transition hover:scale-[1.01] hover:opacity-95"
+                  className="qa-action inline-flex h-10 items-center justify-center rounded-full border border-white/22 bg-white/[0.07] px-5 text-sm font-medium text-white/88 backdrop-blur transition hover:border-white/38 hover:bg-white/[0.11] hover:text-white"
                 >
                   Join Queer Atlas
                 </button>
@@ -848,32 +867,33 @@ export default function HomePageClient({ initialHomeData = null }) {
             </div>
           </div>
 
-          <div>
-            <section className="pt-1 sm:pt-4 xl:pt-14">
-              <div className="flex items-center gap-3 sm:gap-5">
+          <div className="lg:flex lg:flex-1 lg:items-center">
+            <section className="w-full pb-1 lg:pb-10 lg:pt-8 xl:pt-12">
+              <div className="flex items-center gap-2.5 sm:gap-3">
                 <Image
                   src="/queer-atlas-logo.png"
                   alt="Queer Atlas logo"
-                  width={96}
-                  height={96}
+                  width={56}
+                  height={56}
                   priority
-                  className="h-14 w-14 shrink-0 sm:h-20 sm:w-20 xl:h-24 xl:w-24"
+                  className="h-10 w-10 shrink-0 sm:h-12 sm:w-12"
                 />
-                <div>
-                  <h1 className="qa-display qa-h1 max-w-5xl text-4xl font-bold leading-[0.95] tracking-[-0.028em] text-white sm:text-6xl xl:text-7xl">
+                <div className="qa-display !text-left text-xl font-semibold tracking-[-0.025em] sm:text-2xl">
                     <span className="text-white">Queer</span>{" "}
                     <span className="bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 bg-clip-text text-transparent">
                       Atlas
                     </span>
-                  </h1>
-                  <p className="mt-3.5 text-[1.08rem] font-medium leading-[1.35] tracking-[-0.01em] text-white/84 sm:text-[1.42rem]">
-                    Explore the queer world.
-                  </p>
                 </div>
               </div>
 
-              <p className="qa-lead mt-5 max-w-[52ch] text-[0.96rem] tracking-[0.002em] text-white/76 sm:mt-7 sm:text-[1.16rem]">
-                Find queer places, events, and local signal across 130+ cities.
+              <p className="qa-eyebrow mt-8 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
+                Wherever you are
+              </p>
+              <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[3.15rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
+                Find your queer world.
+              </h1>
+              <p className="qa-lead mt-5 max-w-[48ch] !text-left text-[1rem] leading-[1.55] tracking-[-0.005em] text-white/76 [hyphens:none] sm:mt-6 sm:text-[1.18rem]">
+                Know where to go, what&apos;s happening, how it feels, and what locals actually say — wherever you land.
               </p>
               {isDataLoading && (
                 <p className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
@@ -891,7 +911,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className="relative z-20 mt-6 w-full max-w-[44rem] rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.1),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:mt-8 sm:rounded-[30px] sm:p-[18px]">
+              <div className="relative z-20 mt-6 w-full max-w-[44rem] rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:mt-8 sm:rounded-[30px] sm:p-[18px]">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
@@ -902,19 +922,25 @@ export default function HomePageClient({ initialHomeData = null }) {
                     <input
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") return;
+                        event.preventDefault();
+                        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+                      }}
                       onFocus={() => setShowResults(true)}
-                      placeholder="Search cities, places, events"
+                      placeholder="Search a city, venue or event"
                       className="h-12 w-full rounded-[21px] border border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] py-0 pl-11 pr-4 text-[15px] leading-none text-white outline-none backdrop-blur placeholder:text-white/42 focus:border-cyan-300/48 focus:ring-2 focus:ring-cyan-300/22 sm:h-[52px] sm:text-base"
                     />
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => {
                       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
                     }}
                     className="qa-action qa-action-strong h-12 w-full shrink-0 rounded-full border border-cyan-100/72 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 text-sm font-semibold text-black transition hover:scale-[1.01] sm:h-[52px] sm:w-auto sm:px-5"
                   >
-                    Explore
+                    Explore the atlas
                   </button>
                 </div>
 
@@ -942,6 +968,7 @@ export default function HomePageClient({ initialHomeData = null }) {
 
                             {result.type !== "city" && (
                               <button
+                                type="button"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   saveResult(result);
@@ -965,25 +992,42 @@ export default function HomePageClient({ initialHomeData = null }) {
                       No instant matches yet. Press Explore for full search.
                     </div>
                   )}
+
+                <div className="mt-3 flex items-center divide-x divide-white/10 border-t border-white/10 px-1 pt-3">
+                  <div className="min-w-0 flex-1 px-2.5 text-center sm:px-4">
+                    <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{cityCountDisplay}</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Cities</p>
+                  </div>
+                  <div className="min-w-0 flex-1 px-2.5 text-center sm:px-4">
+                    <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{placeCountDisplay}</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Places</p>
+                  </div>
+                  <div className="min-w-0 flex-1 px-2.5 text-center sm:px-4">
+                    <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{eventCountDisplay}</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Events</p>
+                  </div>
                 </div>
-              <div className="mt-4 grid w-full max-w-[44rem] grid-cols-3 gap-2 sm:mt-5 sm:gap-2.5">
-                <div className="qa-card flex h-[68px] flex-col items-center justify-center rounded-xl border border-violet-200/16 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] px-2 py-2 text-center backdrop-blur sm:h-[82px] sm:px-3.5 sm:py-2.5">
-                  <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{cityCountDisplay}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Cities</p>
                 </div>
-                <div className="qa-card flex h-[68px] flex-col items-center justify-center rounded-xl border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.03))] px-2 py-2 text-center backdrop-blur sm:h-[82px] sm:px-3.5 sm:py-2.5">
-                  <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{placeCountDisplay}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Places</p>
-                </div>
-                <div className="qa-card flex h-[68px] flex-col items-center justify-center rounded-xl border border-fuchsia-200/16 bg-[linear-gradient(180deg,rgba(232,121,249,0.12),rgba(255,255,255,0.03))] px-2 py-2 text-center backdrop-blur sm:h-[82px] sm:px-3.5 sm:py-2.5">
-                  <p className="tabular-nums text-[1.16rem] font-semibold leading-none text-white sm:text-[1.24rem]">{eventCountDisplay}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-white/45">Events</p>
-                </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => router.push("/events/calendar")}
+                  className="qa-action inline-flex items-center gap-2 font-medium text-white/74 transition hover:text-cyan-100"
+                >
+                  What&apos;s happening now
+                  <span aria-hidden="true" className="text-cyan-200">→</span>
+                </button>
+                <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
+                <span className="text-white/46">Local context before you go</span>
               </div>
+
             </section>
           </div>
             </div>
           </section>
+
+          <HomeVenueIntelligence venue={featuredVenue} />
 
           {showDeferredSections ? (
             <HomeDeferredSections
