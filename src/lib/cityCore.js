@@ -1477,6 +1477,15 @@ export const cityCoreConfig = {
     "country": "Greece",
     "vibe": "port-city nights, student energy and Balkan queer resilience"
   },
+  "calgary": {
+    "center": [
+      -114.0719,
+      51.0447
+    ],
+    "title": "Queer Calgary",
+    "country": "Canada",
+    "vibe": "prairie confidence, drag-led nights and community-built belonging"
+  },
   "zagreb": {
     "center": [
       15.9819,

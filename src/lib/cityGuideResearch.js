@@ -1,4 +1,18 @@
 export const cityGuideResearch = {
+  calgary: {
+    checkedAt: "2026-08-14",
+    sources: [
+      { label: "Calgary Pride - official 2026 citywide programme, parade and market", url: "https://calgarypride.ca/pride-2026/" },
+      { label: "Tourism Calgary - current Beltline guide and queer nightlife", url: "https://www.visitcalgary.com/plan-and-stay/itineraries-and-travel-inspiration/beltline-neighbourhood-guide" },
+      { label: "Calgary Queer Arts Society - Fairy Tales festival and year-round arts", url: "https://www.calgaryqueerartssociety.com/" },
+      { label: "Twisted Element - access, dress, safety and venue policy", url: "https://twistedelement.club/faq/" },
+      { label: "Skipping Stone - trans and gender-diverse support", url: "https://www.skippingstone.ca/" },
+      { label: "Centre for Sexuality - counselling, education and sexual health", url: "https://www.centreforsexuality.ca/" },
+      { label: "SafeLink Alberta - testing, harm reduction and current Calgary access", url: "https://safelinkalberta.ca/contact-us/" },
+      { label: "Government of Canada - current LGBTI legal protections", url: "https://www.canada.ca/en/canadian-heritage/services/rights-lgbti-persons.html" },
+      { label: "Current local event calendar and community recommendations", url: "https://yyc.gay/calendar" },
+    ],
+  },
   thessaloniki: {
     checkedAt: "2026-08-13",
     sources: [

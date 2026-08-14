@@ -2143,6 +2143,19 @@ export const cityConfig = {
       cost: "Thessaloniki remains relatively manageable for a European city break: coffee, food and local drinks are strong value, and the central queer route is mostly walkable. Covers, adult-venue admission and late taxis are the main additions. Metro access now helps the centre, but service does not replace a safe final ride after the clubs empty. Book early around Pride, the film festivals and trade-fair weekends; accommodation prices rise faster than everyday bar costs.",
     }),
   },
+  calgary: {
+    center: [-114.0719, 51.0447],
+    title: "Queer Calgary",
+    country: "Canada",
+    vibe: "prairie confidence, drag-led nights and community-built belonging",
+    guide: buildGuide({
+      about: "Calgary's queer scene makes more sense as a network than as a strip. Twisted Element remains the large dedicated dance-and-drag anchor; Texas Lounge and Goliaths carry decades of gay social history; Infinity offers a smaller underground stage. Around them, Dickens, The Attic, Ship & Anchor and Congress Coffee let drag, burlesque, queer art and sober-friendly gathering move through rooms that are not exclusively LGBTQ+. Pride, Fairy Tales and strong trans, newcomer and sexual-health organisations give the city much more depth than its short list of permanent bars suggests.",
+      district: "Base the first night in the Beltline: Twisted sits on 11 Avenue, while Texas Lounge, Goliaths and Ship & Anchor line up around 17 Avenue. Downtown adds Infinity and the Pride parade route; Dickens is just west of the core. Inglewood is a separate evening for The Attic and Cold Garden, and Congress Coffee sits north-east of downtown for daytime community events. Calgary is spread out and its best queer programme often changes address, so pair one dependable anchor with one verified event instead of forcing a long bar crawl.",
+      safety: "Canada provides marriage equality and federal anti-discrimination protections, and central Calgary is generally straightforward for LGBTQ+ visitors. The provincial climate is more contested, especially for trans youth: Alberta restrictions on gender-affirming care for minors took effect in January 2026. Read the room outside explicitly welcoming spaces, use the CTrain or a direct ride after late events, and report immediate danger to 911. Calgary Police lists 403-266-1234 for non-emergency hate incidents, while Transit Watch accepts texts at 74100.",
+      nightlife: "Choose by format. Twisted is the full queer club, strongest after its drag show on Friday or Saturday. Texas Lounge is a tiny, older-skewing gay dive where conversation matters more than production; Goliaths is the connected men-only bathhouse. Infinity works when its live programme is active. Dickens and The Attic are essential calendar venues, while Pansy Club, Generic Lesbian Party, WERK, Queer Calgary and other producers turn mixed rooms into temporary queer worlds. Calgary rewards checking the promoter as carefully as the address.",
+      cost: "Calgary is not a cheap Canadian city, but the central scene can be managed without constant taxis. Beltline venues are walkable from one another, happy hours soften the opening round and several community events are free. Ticketed drag, coat check, club cover and late rides are the main additions. Pride and Stampede weeks tighten hotel supply and push rates sharply upward; book those dates early, then keep one flexible night for a pop-up announced close to the weekend.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",
