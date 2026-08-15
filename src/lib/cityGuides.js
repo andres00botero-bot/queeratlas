@@ -4382,6 +4382,7 @@ const researchedCityGuideOverrides = [
   "bristol",
   "bordeaux",
   "calgary",
+  "windhoek",
   "thessaloniki",
   "palermo",
   "toulouse",

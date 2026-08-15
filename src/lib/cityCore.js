@@ -1513,6 +1513,15 @@ export const cityCoreConfig = {
     "country": "Italy",
     "vibe": "arcaded elegance, radical queer memory and programme-led nights"
   },
+  "windhoek": {
+    "center": [
+      17.0836,
+      -22.5609
+    ],
+    "title": "Queer Windhoek",
+    "country": "Namibia",
+    "vibe": "desert-city warmth, organiser-led Pride and quietly fearless community"
+  },
   "zagreb": {
     "center": [
       15.9819,

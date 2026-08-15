@@ -2195,6 +2195,19 @@ export const cityConfig = {
       cost: "Coffee, aperitivo and public transport are reasonable compared with Milan, while club drinks, admission and required association cards can change the budget quickly. Much of the central route is walkable and trams cover the longer links; a direct late ride is sensible from Parco del Valentino or after an adult venue closes. Lovers, Pride and many community events offer free or low-cost access, but EuroPride 2027 will tighten accommodation sharply. Book the bed early for major dates and verify the party before paying for a distant room.",
     }),
   },
+  windhoek: {
+    center: [17.0836, -22.5609],
+    title: "Queer Windhoek",
+    country: "Namibia",
+    vibe: "desert-city warmth, organiser-led Pride and quietly fearless community",
+    guide: buildGuide({
+      about: "Windhoek does not offer a conventional gay village, and pretending otherwise would miss what makes its queer life remarkable. The scene is built by organisers: Drag Night Namibia, Pride Pop-Up, Equal Namibia, Out-Right Namibia, Sister Namibia and a circle of artists who repeatedly turn cultural rooms into places of visibility and joy. Piccolo and The Village have received explicit safe-space recognition; FNCC, Le Roof and the Old Breweries complex matter when the programme is queer. Follow the host as carefully as the address.",
+      district: "The useful map is a loose central triangle. Windhoek Central holds Brewers Market on Tal Street, FNCC and Le Roof on Robert Mugabe Avenue, and The Project Room nearby on Crohn Street. Eros adds The Village and Zest around Liliencron Street; Maerua Mall, farther south, holds Piccolo. Windhoek West is the practical community-services lane, with Out-Right Namibia, Positive Vibes and other organisations. These points are not one walkable strip. Plan one cluster at a time and use a direct ride after late events.",
+      safety: "Consensual same-sex intimacy was decriminalised by Namibia's High Court in June 2024, but the legal and social picture remains uneven. Namibia does not perform same-sex marriages, the Marriage Act 2024 defines marriage and spouse in opposite-sex terms, and comprehensive orientation- and gender-identity protections remain limited. Windhoek is more connected and visible than much of the country, yet local organisations still document hostility. Keep public affection measured when the room is unclear, meet app contacts in public, share the ride home and use 10111 for police emergencies.",
+      nightlife: "Think calendar, not bar crawl. Piccolo is the clearest everyday ally address, with Tuesday trivia giving an easy social entry. Brewers Market becomes genuinely queer when Pride Pop-Up, Kings of Namibia or another named organiser takes over its industrial rooms. Le Roof at FNCC has hosted ballroom and LGBTQIA+ cinema around a wider cultural programme. The Village is best by day or at its Sunday market. Drag Night Namibia and Pride Pop-Up are the scene's essential signals; if neither has announced a date, do not assume a generic club will reproduce that crowd.",
+      cost: "Windhoek can be manageable for food, markets and local events, but transport changes the calculation because the scene is dispersed. Piccolo and The Village can be entered without a club cover; produced Pride and drag events usually publish affordable advance and door prices in Namibian dollars. Budget for a direct ride after dark and confirm payment methods before leaving. Accommodation and airport transfers cost more than the social programme, while Sunday markets, gallery visits and community events offer lower-cost ways into the city.",
+    }),
+  },
   zagreb: {
     center: [15.9819, 45.815],
     title: "Queer Zagreb",

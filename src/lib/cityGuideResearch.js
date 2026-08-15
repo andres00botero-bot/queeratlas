@@ -1,4 +1,18 @@
 export const cityGuideResearch = {
+  windhoek: {
+    checkedAt: "2026-08-15",
+    sources: [
+      { label: "Out-Right Namibia - current LGBTQI+ services, contact and community work", url: "https://outrightnam.com/" },
+      { label: "Legal Assistance Centre - current Namibian LGBTQI+ law and free public-interest advice", url: "https://www.lac.org.na/index.php/projects/gender-research-advocacy-grap/lgbti/" },
+      { label: "The Namibian - local reporting on Windhoek Pride Month and the Pride Kiki Ball", url: "https://www.namibian.com.na/kiki-ball-kicks-of-lgbtqi-pride-month/" },
+      { label: "FNCC - official 2026 LGBTQIA+ film programme and venue information", url: "https://www.fncc.org.na/events" },
+      { label: "Equal Namibia safe-space network - independently reported venue verification", url: "https://www.namibian.com.na/piccolo-declared-lgbtqi-safe-space/" },
+      { label: "Positive Vibes - queer rights, health and regional community support", url: "https://africa.ippf.org/about-us/member-associations/positive-vibes-trust" },
+      { label: "NamibLII - Marriage Act 2024, including the current statutory definitions", url: "https://namiblii.org/akn/na/act/2024/14/eng@2024-12-30" },
+      { label: "Human Dignity Trust - Dausab judgment decriminalising consensual same-sex intimacy", url: "https://www.humandignitytrust.org/resources/dausab-v-the-minister-of-justice/" },
+      { label: "Current local safe-space and nightlife recommendations", url: "https://www.reddit.com/r/Namibia/comments/1rinzmj/hi_does_anyone_know_any_safe_spaces_for_lgbtq/" },
+    ],
+  },
   bristol: {
     checkedAt: "2026-08-14",
     sources: [
