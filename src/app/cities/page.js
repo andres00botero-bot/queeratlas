@@ -94,6 +94,7 @@ const MAP_RISK_PALETTE = {
 };
 const MAP_RISK_TIER_OVERRIDES = {
   Honduras: "restricted",
+  Namibia: "caution",
 };
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const BACK_RESTORE_CITY_KEY = "qa_back_restore_city";

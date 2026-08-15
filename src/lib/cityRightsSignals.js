@@ -542,6 +542,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Strong constitutional baseline with practical safety comfort varying by district and time.",
   },
+  Namibia: {
+    legal: "good",
+    rights: "risk",
+    safety: "risk",
+    whatThisMeans:
+      "Consensual same-sex intimacy is legal after the High Court struck down Namibia's colonial-era offences in June 2024. Same-sex marriages are not recognized under the Marriage Act 2024, legal gender recognition is restricted, and explicit nationwide LGBTQI+ anti-discrimination protection remains limited. Windhoek has visible organisers and verified welcoming spaces, but public comfort varies: follow trusted local hosts, keep affection measured when the setting is unclear, meet app contacts in public, and arrange a direct ride after late events.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Restricted",
+      antiDiscrimination: "Limited / none",
+    },
+    sources: {
+      legal: "https://www.humandignitytrust.org/resources/dausab-v-the-minister-of-justice/",
+      rights: "https://namiblii.org/akn/na/act/2024/14/eng@2024-12-30",
+      safety: "https://travel.state.gov/en/international-travel/travel-advisories/namibia.html",
+    },
+    confidence: "high",
+    updatedAt: "2026-08-15",
+  },
 };
 
 const CITY_RIGHTS_OVERRIDES = {
