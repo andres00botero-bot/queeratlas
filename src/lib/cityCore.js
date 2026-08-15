@@ -1513,6 +1513,15 @@ export const cityCoreConfig = {
     "country": "Italy",
     "vibe": "arcaded elegance, radical queer memory and programme-led nights"
   },
+  "cairo": {
+    "center": [
+      31.2357,
+      30.0444
+    ],
+    "title": "Queer Cairo",
+    "country": "Egypt",
+    "vibe": "Nile-city intensity, creative refuge and fiercely discreet queer resilience"
+  },
   "windhoek": {
     "center": [
       17.0836,

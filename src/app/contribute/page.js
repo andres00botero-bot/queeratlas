@@ -71,6 +71,8 @@ const PLACE_TYPES = [
   { value: "cruising_area", label: "Cruising Area" },
   { value: "cafe", label: "Cafe" },
   { value: "hotel", label: "Hotel" },
+  { value: "cinema", label: "Cinema" },
+  { value: "gallery", label: "Art & Gallery" },
 ];
 
 const PLACE_INTEL_FIELDS = [

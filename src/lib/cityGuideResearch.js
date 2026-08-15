@@ -1,4 +1,19 @@
 export const cityGuideResearch = {
+  cairo: {
+    checkedAt: "2026-08-15",
+    sources: [
+      { label: "UK travel advice - current Egyptian law, public acceptance and digital-safety warnings", url: "https://www.gov.uk/foreign-travel-advice/egypt/safety-and-security" },
+      { label: "US travel information - documented dating-app entrapment and arrest risk", url: "https://travel.state.gov/en/international-travel/travel-advisories/destination.egy.html" },
+      { label: "Bedayaa - LGBTQI+ legal, health, psychosocial and refugee support in Egypt", url: "https://bedayaa.org/" },
+      { label: "Cairo 52 - current pro-bono legal aid and practical rights guidance", url: "https://cairo52.com/contact/" },
+      { label: "Cairo Jazz Club - official programme, addresses and current house rules", url: "https://www.cairojazzclub.com/" },
+      { label: "ROOM Art Space - official venue and live programme", url: "https://www.roomart.space/events" },
+      { label: "Zawya Cinema - official Downtown venue and current film calendar", url: "https://zawyacinema.com/" },
+      { label: "Cairo International Film Festival - official 2026 dates", url: "https://ciff.org.eg/en/media/news/ciff-announces-the-opening-of-submissions-for-its-47th-edition" },
+      { label: "Starlight Festival - official 2026 dates and Giza venue", url: "https://starlight-festival.org/" },
+      { label: "Current local and visitor review consensus on public mixed venues", url: "https://www.reddit.com/r/LGBTEgypt/comments/1hvgkia/queer_friendly_spaces_in_cairo/" },
+    ],
+  },
   windhoek: {
     checkedAt: "2026-08-15",
     sources: [

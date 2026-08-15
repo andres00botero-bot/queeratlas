@@ -542,6 +542,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     whatThisMeans:
       "Strong constitutional baseline with practical safety comfort varying by district and time.",
   },
+  Egypt: {
+    legal: "risk",
+    rights: "risk",
+    safety: "risk",
+    whatThisMeans:
+      "Consensual same-sex activity is not explicitly named as a crime, but debauchery, public-morality and cybercrime provisions are used to arrest and prosecute LGBTQ+ people. Same-sex relationships have no legal recognition, broad LGBTQ+ anti-discrimination protection is absent, and authorities have used dating apps and social media for entrapment. Keep public affection and rainbow symbols private, avoid sexual exchanges online, meet no stranger in a private place, and use Bedayaa or Cairo 52 for confidential legal support.",
+    details: {
+      sameSexRelations: "Restricted",
+      unions: "No legal recognition",
+      genderRecognition: "Restricted",
+      antiDiscrimination: "Limited / none",
+    },
+    sources: {
+      legal: "https://www.gov.uk/foreign-travel-advice/egypt/safety-and-security",
+      rights: "https://www.hrw.org/news/2020/10/01/egypt-security-forces-abuse-torture-lgbt-people",
+      safety: "https://travel.state.gov/en/international-travel/travel-advisories/destination.egy.html",
+    },
+    confidence: "high",
+    updatedAt: "2026-08-15",
+  },
   Namibia: {
     legal: "good",
     rights: "risk",

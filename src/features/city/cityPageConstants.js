@@ -7,6 +7,8 @@ export const TYPES = [
   { value: "cruising_area", label: "Cruising Areas", color: "#f97316" },
   { value: "cafe", label: "Cafes", color: "#22c55e" },
   { value: "hotel", label: "Hotels", color: "#eab308" },
+  { value: "cinema", label: "Cinemas", color: "#fb7185" },
+  { value: "gallery", label: "Art & Galleries", color: "#22d3ee" },
 ];
 
 export const TYPE_LABELS = {
@@ -18,6 +20,8 @@ export const TYPE_LABELS = {
   cruising_area: "Cruising Area",
   cafe: "Cafe",
   hotel: "Hotel",
+  cinema: "Cinema",
+  gallery: "Art & Gallery",
 };
 
 export const TYPE_STYLES = {
@@ -68,6 +72,18 @@ export const TYPE_STYLES = {
     selected: "border-yellow-100/30 bg-[linear-gradient(180deg,rgba(202,138,4,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(234,179,8,0.12)]",
     label: "text-yellow-100",
     line: "from-yellow-200/75 via-amber-200/45 to-transparent",
+  },
+  cinema: {
+    card: "border-rose-300/12 bg-[linear-gradient(180deg,rgba(82,25,46,0.34),rgba(15,15,15,0.96))]",
+    selected: "border-rose-200/30 bg-[linear-gradient(180deg,rgba(225,29,72,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(251,113,133,0.12)]",
+    label: "text-rose-100",
+    line: "from-rose-300/75 via-orange-200/45 to-transparent",
+  },
+  gallery: {
+    card: "border-cyan-300/12 bg-[linear-gradient(180deg,rgba(8,54,68,0.34),rgba(15,15,15,0.96))]",
+    selected: "border-cyan-200/30 bg-[linear-gradient(180deg,rgba(8,145,178,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(34,211,238,0.12)]",
+    label: "text-cyan-100",
+    line: "from-cyan-300/75 via-blue-300/45 to-transparent",
   },
 };
 

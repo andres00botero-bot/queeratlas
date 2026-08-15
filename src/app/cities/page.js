@@ -93,6 +93,7 @@ const MAP_RISK_PALETTE = {
   unknown: { label: "Unknown", color: "#64748b" },
 };
 const MAP_RISK_TIER_OVERRIDES = {
+  Egypt: "restricted",
   Honduras: "restricted",
   Namibia: "caution",
 };
