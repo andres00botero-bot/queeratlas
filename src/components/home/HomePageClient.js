@@ -1,25 +1,30 @@
 "use client";
 
-import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
+import { cityCoreConfig } from "@/lib/cityCore";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
 import { Search } from "lucide-react";
-import HomeContactSection from "@/components/home/HomeContactSection";
 import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v2";
+const HOME_FOCUS_CITY_KEY = "qa_home_focus_city";
+const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
+const HOME_CITY_OPTIONS = Object.keys(cityCoreConfig).sort((a, b) =>
+  formatCityLabel(a).localeCompare(formatCityLabel(b))
+);
 const HomeDeferredSections = dynamic(() => import("@/components/home/HomeDeferredSections"));
+const HomeContactSection = dynamic(() => import("@/components/home/HomeContactSection"));
 const HomeAuthModal = dynamic(() => import("@/components/home/HomeAuthModal"));
 function getResultMeta(result) {
   if (result.type === "city") return `City | ${result.country || "Global"}`;
@@ -37,20 +42,54 @@ function parseEventTimestamp(value) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
-function getFreshnessSignal(value) {
-  const timestamp = Date.parse(String(value || ""));
-  if (Number.isNaN(timestamp)) return { label: "PENDING", tone: "neutral" };
-  const diffMinutes = Math.max(0, (Date.now() - timestamp) / 60000);
-  if (diffMinutes <= 15) return { label: "JUST UPDATED", tone: "live" };
-  if (diffMinutes <= 24 * 60) return { label: "UPDATED TODAY", tone: "today" };
-  if (diffMinutes <= 7 * 24 * 60) return { label: "UPDATED THIS WEEK", tone: "week" };
-  return { label: "EARLIER UPDATE", tone: "neutral" };
+function getDayStartTimestamp(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+  const date = new Date(numeric);
+  if (Number.isNaN(date.getTime())) return 0;
+  date.setHours(0, 0, 0, 0);
+  return date.getTime();
+}
+
+function getUpcomingEventSignal(value, nowTimestamp) {
+  const eventTimestamp = parseEventTimestamp(value);
+  const todayTimestamp = getDayStartTimestamp(nowTimestamp);
+  if (!eventTimestamp || !todayTimestamp) return { label: "UPCOMING", tone: "neutral" };
+
+  const daysAway = Math.round((eventTimestamp - todayTimestamp) / (24 * 60 * 60 * 1000));
+  if (daysAway <= 0) return { label: "TODAY", tone: "live" };
+  if (daysAway === 1) return { label: "TOMORROW", tone: "today" };
+  if (daysAway <= 7) return { label: "THIS WEEK", tone: "week" };
+  return { label: "UPCOMING", tone: "neutral" };
 }
 
 function formatCityLabel(value) {
   return String(value || "Global")
     .replaceAll("_", " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function normalizeCityValue(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/^queer\s+/i, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function resolveCityOption(value, options = []) {
+  const normalized = normalizeCityValue(value);
+  if (!normalized) return "";
+  return options.find((city) => normalizeCityValue(city) === normalized) || "";
+}
+
+function getPlaceSignalScore(place = {}) {
+  const reviews = Number(place.reviewCount ?? place.review_count ?? 0) || 0;
+  const rating = Number(place.avgRating ?? place.avg_rating ?? 0) || 0;
+  return reviews * 100 + Math.round(rating * 10);
 }
 
 function compareNewsRecency(a, b) {
@@ -102,6 +141,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [homeMetrics, setHomeMetrics] = useState(initialMetrics);
   const [query, setQuery] = useState("");
   const [showSignup, setShowSignup] = useState(false);
+  const [authReturnTarget, setAuthReturnTarget] = useState("/");
   const [showSaved, setShowSaved] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(!hasInitialHomeData);
   const [dataError, setDataError] = useState("");
@@ -136,6 +176,9 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showDeferredSections, setShowDeferredSections] = useState(false);
   const [nowTick, setNowTick] = useState(0);
+  const [homeFocusCity, setHomeFocusCity] = useState("");
+  const [homeFocusSource, setHomeFocusSource] = useState("");
+  const viewedHomeSectionsRef = useRef(new Set());
   const deferredQuery = useDeferredValue(query);
   const {
     isMember,
@@ -160,9 +203,9 @@ export default function HomePageClient({ initialHomeData = null }) {
 
   const isSavedResult = (item) => favorites.includes(getResultKey(item));
 
-  const openSignup = useCallback(() => {
+  const openSignup = useCallback((target = "/", mode = "signup", source = "home") => {
     setAuthMessage("");
-    setAuthMode("signin");
+    setAuthMode(mode === "signin" ? "signin" : "signup");
     setPasswordInput("");
     setPendingEmailConfirmation("");
     setResetPasswordInput("");
@@ -170,7 +213,12 @@ export default function HomePageClient({ initialHomeData = null }) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("qa_redirect");
     }
-    writeLocalValue("qa_post_login_target", "/");
+    const safeTarget = String(target || "/").startsWith("/") ? String(target || "/") : "/";
+    setAuthReturnTarget(safeTarget);
+    writeLocalValue("qa_post_login_target", safeTarget);
+    trackKpiEvent("home_member_prompt_opened", {
+      meta: { source, mode: mode === "signin" ? "signin" : "signup", destination: safeTarget },
+    });
     setShowSignup(true);
   }, []);
 
@@ -208,7 +256,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     }
 
     if (!isMember) {
-      openSignup();
+      openSignup("/", "signup", "search_save");
       return;
     }
 
@@ -376,12 +424,51 @@ export default function HomePageClient({ initialHomeData = null }) {
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined" || isAuthLoading) return;
+    const sessionKey = "qa_home_view_tracked_v1";
+    try {
+      if (sessionStorage.getItem(sessionKey)) return;
+      sessionStorage.setItem(sessionKey, "1");
+    } catch {
+      // Continue with best-effort measurement when session storage is unavailable.
+    }
+    trackKpiEvent("home_viewed", {
+      meta: { member_status: isMember ? "member" : "visitor" },
+    });
+  }, [isAuthLoading, isMember]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof IntersectionObserver === "undefined") return undefined;
+    const sections = [...document.querySelectorAll("[data-home-section]")];
+    if (sections.length === 0) return undefined;
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting || entry.intersectionRatio < 0.3) continue;
+        const section = String(entry.target.getAttribute("data-home-section") || "").trim();
+        if (!section || viewedHomeSectionsRef.current.has(section)) continue;
+        viewedHomeSectionsRef.current.add(section);
+        trackKpiEvent("home_section_viewed", {
+          meta: { section, member_status: isMember ? "member" : "visitor" },
+        });
+        observer.unobserve(entry.target);
+      }
+    }, { threshold: [0.3] });
+
+    sections.forEach((section) => {
+      const sectionName = String(section.getAttribute("data-home-section") || "").trim();
+      if (!viewedHomeSectionsRef.current.has(sectionName)) observer.observe(section);
+    });
+    return () => observer.disconnect();
+  }, [isMember, showDeferredSections]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("join") !== "true") return;
 
     queueMicrotask(() => {
-      openSignup();
+      openSignup("/", "signup", "join_link");
       window.history.replaceState({}, "", "/");
     });
   }, [openSignup]);
@@ -556,24 +643,99 @@ export default function HomePageClient({ initialHomeData = null }) {
     [places]
   );
   const strongestCitySignal = topCities[0] || null;
-  const nextUpcomingEvent = useMemo(() => {
+  const upcomingEvents = useMemo(() => {
     const nowTimestamp = Number(nowTick || 0);
-    const upcoming = [...events]
-      .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
-      .filter((event) => event.__ts > 0 && event.__ts >= nowTimestamp)
-      .sort((a, b) => a.__ts - b.__ts);
-
-    if (upcoming.length > 0) return upcoming[0];
-
+    const todayTimestamp = getDayStartTimestamp(nowTimestamp);
     return [...events]
       .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
-      .filter((event) => event.__ts > 0)
-      .sort((a, b) => b.__ts - a.__ts)[0] || null;
+      .filter((event) => event.__ts > 0 && event.__ts >= todayTimestamp)
+      .sort((a, b) => a.__ts - b.__ts);
   }, [events, nowTick]);
-  const nextEventFreshness = useMemo(
-    () => getFreshnessSignal(nextUpcomingEvent?.date),
-    [nextUpcomingEvent]
+
+  const cityOptions = HOME_CITY_OPTIONS;
+
+  useEffect(() => {
+    if (typeof window === "undefined" || cityOptions.length === 0 || homeFocusSource === "manual") return;
+
+    let storedCity = "";
+    let lastExploredCity = "";
+    try {
+      storedCity = localStorage.getItem(HOME_FOCUS_CITY_KEY) || "";
+      lastExploredCity = localStorage.getItem(LAST_EXPLORED_CITY_KEY) || "";
+    } catch {
+      // Continue with profile and atlas signals when storage is restricted.
+    }
+
+    const candidates = [
+      { value: storedCity, source: "manual" },
+      { value: memberProfile?.homeCity, source: "home" },
+      { value: lastExploredCity, source: "recent" },
+      { value: strongestCitySignal?.city, source: "popular" },
+    ];
+    const match = candidates
+      .map((candidate) => ({ ...candidate, city: resolveCityOption(candidate.value, cityOptions) }))
+      .find((candidate) => candidate.city);
+
+    if (!match) return;
+    queueMicrotask(() => {
+      setHomeFocusCity(match.city);
+      setHomeFocusSource(match.source);
+    });
+  }, [cityOptions, homeFocusSource, memberProfile?.homeCity, strongestCitySignal?.city]);
+
+  const focusedCity = resolveCityOption(homeFocusCity, cityOptions) || strongestCitySignal?.city || cityOptions[0] || "";
+  const focusedCityPlaces = useMemo(
+    () => places.filter((place) => normalizeCityValue(place?.city) === normalizeCityValue(focusedCity)),
+    [focusedCity, places]
   );
+  const focusedCityEvents = useMemo(
+    () => events.filter((event) => normalizeCityValue(event?.city) === normalizeCityValue(focusedCity)),
+    [events, focusedCity]
+  );
+  const focusedUpcomingEvent = useMemo(
+    () => upcomingEvents.find((event) => normalizeCityValue(event?.city) === normalizeCityValue(focusedCity)) || null,
+    [focusedCity, upcomingEvents]
+  );
+  const nextUpcomingEvent = focusedUpcomingEvent || upcomingEvents[0] || null;
+  const focusedVenue = useMemo(
+    () => [...focusedCityPlaces].sort((a, b) => getPlaceSignalScore(b) - getPlaceSignalScore(a))[0] || null,
+    [focusedCityPlaces]
+  );
+  const handleHomeFocusCityChange = useCallback((nextCity) => {
+    const resolved = resolveCityOption(nextCity, cityOptions);
+    if (!resolved) return;
+    setHomeFocusCity(resolved);
+    setHomeFocusSource("manual");
+    try {
+      localStorage.setItem(HOME_FOCUS_CITY_KEY, resolved);
+    } catch {
+      // The selected city remains active for this session when storage is restricted.
+    }
+    trackKpiEvent("home_city_focus_changed", { city: resolved });
+  }, [cityOptions]);
+
+  const nextEventFreshness = useMemo(
+    () => getUpcomingEventSignal(nextUpcomingEvent?.date, nowTick),
+    [nextUpcomingEvent, nowTick]
+  );
+
+  const trackHomeAction = (action, destination, meta = {}) => {
+    trackKpiEvent("home_action_selected", {
+      meta: { action, destination, ...meta },
+    });
+  };
+
+  const submitHomeSearch = (source) => {
+    const normalizedQuery = query.trim();
+    trackKpiEvent("home_search_submitted", {
+      meta: {
+        source,
+        query_length: normalizedQuery.length,
+        result_count: results.length,
+      },
+    });
+    router.push(`/search?q=${encodeURIComponent(normalizedQuery)}`);
+  };
 
   const cityCount = useMemo(
     () => new Set(places.map((place) => place.city).filter(Boolean)).size,
@@ -615,96 +777,119 @@ export default function HomePageClient({ initialHomeData = null }) {
     };
   }, []);
 
-  const topLaneCards = [
+  const discoveryCards = [
     {
       title: "Cities",
-      subtitle: "Explore destinations",
-      description: "Navigate queer geography city by city.",
+      description: "Places, safety and local queer life.",
+      shortDescription: "Places, safety and queer life.",
       icon: "Cities",
       metric: `${cityCountDisplay} cities`,
-      signal: `${placeCountDisplay} places mapped across the atlas`,
-      preview: ["Safety map", "Venues", "City guides"],
-      accent: "from-violet-400 via-blue-400 to-sky-300",
-      glow: "shadow-[0_24px_80px_rgba(96,165,250,0.16)]",
-      onClick: () => router.push("/cities"),
+      surface: "border-sky-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(56,189,248,0.18),transparent_40%),linear-gradient(150deg,rgba(18,39,75,0.92),rgba(12,24,52,0.95))] hover:border-sky-200/34",
+      glow: "bg-sky-300/20",
+      accentLine: "from-transparent via-sky-200/70 to-transparent",
+      iconSurface: "border-sky-100/20 bg-[linear-gradient(145deg,rgba(125,211,252,0.24),rgba(37,99,235,0.24))] text-sky-50",
+      metricClass: "text-sky-100/56",
+      onClick: () => {
+        trackHomeAction("cities", "/cities");
+        router.push("/cities");
+      },
     },
     {
       title: "Events",
-      subtitle: "Parties & festivals",
-      description: "Track time-based queer culture and movement.",
+      description: "What’s happening tonight and later.",
+      shortDescription: "What’s on tonight and later.",
       icon: "Events",
       metric: `${eventCountDisplay} events`,
-      signal: nextUpcomingEvent
-        ? `Next: ${formatCityLabel(nextUpcomingEvent.city)} · ${formatDateShort(nextUpcomingEvent.date)}`
-        : "Calendar, off-grid listings, and live event flow",
-      preview: ["Calendar", "Tickets", "Off-grid"],
-      accent: "from-rose-400 via-orange-300 to-amber-200",
-      glow: "shadow-[0_24px_80px_rgba(251,146,60,0.16)]",
-      onClick: () => router.push("/events"),
+      surface: "border-rose-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(251,113,133,0.18),transparent_40%),linear-gradient(150deg,rgba(71,27,57,0.94),rgba(42,20,46,0.96))] hover:border-rose-200/34",
+      glow: "bg-rose-300/20",
+      accentLine: "from-transparent via-amber-200/70 to-transparent",
+      iconSurface: "border-rose-100/20 bg-[linear-gradient(145deg,rgba(253,164,175,0.22),rgba(251,146,60,0.2))] text-rose-50",
+      metricClass: "text-rose-100/58",
+      onClick: () => {
+        trackHomeAction("events", "/events");
+        router.push("/events");
+      },
     },
-  ];
-
-  const bottomLaneCards = [
     {
-      title: "Queer World News",
-      subtitle: "Live + editorial signal",
-      description: "Now, rising spots, rights & safety, nightlife changes, major events, and culture tips in one flow.",
+      title: "News",
+      description: "Queer news from around the world.",
+      shortDescription: "Queer news from around the world.",
       icon: "News",
       metric: `${homeNewsItems.length || 0} fresh stories`,
-      signal: latestPulseNews?.title ? `Latest: ${latestPulseNews.title}` : "Live queer travel and culture updates",
-      preview: ["Travel", "Safety", "Culture"],
-      accent: "from-cyan-300 via-sky-300 to-amber-300",
-      glow: "shadow-[0_24px_80px_rgba(56,189,248,0.16)]",
-      onClick: () => router.push("/now"),
+      surface: "border-emerald-200/15 bg-[radial-gradient(circle_at_95%_0%,rgba(45,212,191,0.16),transparent_40%),linear-gradient(150deg,rgba(13,55,62,0.94),rgba(12,31,48,0.96))] hover:border-emerald-200/32",
+      glow: "bg-teal-300/18",
+      accentLine: "from-transparent via-emerald-200/65 to-transparent",
+      iconSurface: "border-emerald-100/18 bg-[linear-gradient(145deg,rgba(110,231,183,0.2),rgba(34,211,238,0.17))] text-emerald-50",
+      metricClass: "text-emerald-100/56",
+      onClick: () => {
+        trackHomeAction("news", "/now");
+        router.push("/now");
+      },
     },
     {
-      title: "Community",
-      subtitle: "Stories & guides",
-      description: "Lived experience, practical wisdom, and member signal.",
-      icon: "Community",
-      metric: isMember ? "Member space" : "Join to unlock",
-      signal: "Follow members, open profiles, and read local stories",
-      preview: ["Stories", "Profiles", "Threads"],
-      accent: "from-emerald-300 via-teal-200 to-cyan-200",
-      glow: "shadow-[0_24px_80px_rgba(45,212,191,0.14)]",
+      title: "Collections",
+      description: "Handpicked places, trips and experiences.",
+      shortDescription: "Handpicked places and trips.",
+      icon: "Collections",
+      metric: "Editorial picks",
+      surface: "border-violet-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(192,132,252,0.18),transparent_40%),linear-gradient(150deg,rgba(59,30,81,0.94),rgba(31,22,59,0.96))] hover:border-violet-200/34",
+      glow: "bg-violet-300/20",
+      accentLine: "from-transparent via-fuchsia-200/66 to-transparent",
+      iconSurface: "border-violet-100/20 bg-[linear-gradient(145deg,rgba(216,180,254,0.22),rgba(244,114,182,0.18))] text-violet-50",
+      metricClass: "text-violet-100/58",
       onClick: () => {
-        if (!isMember) {
-          openSignup("/community");
+        trackHomeAction("collections", "/now/collections");
+        router.push("/now/collections");
+      },
+    },
+  ];
+  const participationActions = [
+    {
+      title: "Community",
+      label: isMember ? "Stories, guides and conversations" : "Join stories, guides and conversations",
+      shortLabel: isMember ? "Open the network" : "Join & explore",
+      icon: "Community",
+      cardClass: "border-teal-100/17 bg-[radial-gradient(circle_at_100%_0%,rgba(45,212,191,0.14),transparent_42%),linear-gradient(145deg,rgba(19,52,58,0.86),rgba(14,34,45,0.92))] hover:border-teal-100/34",
+      glowClass: "bg-teal-300/20",
+      lineClass: "from-transparent via-teal-200/64 to-transparent",
+      iconClass: "border-teal-100/20 bg-[linear-gradient(145deg,rgba(94,234,212,0.2),rgba(34,211,238,0.14))] text-teal-50",
+      onClick: () => {
+        trackHomeAction("community", "/community", { member_status: isMember ? "member" : "visitor" });
+        if (isMember) {
+          router.push("/community");
           return;
         }
-
-        router.push("/community");
+        openSignup("/community", "signup", "community");
       },
     },
     {
       title: "Contribute",
-      subtitle: "Grow the atlas",
-      description: "Add places, events, stories, and corrections.",
+      label: isMember ? "Add places, events and services" : "Join to add what you know",
+      shortLabel: isMember ? "Add what you know" : "Join & add",
       icon: "Contribute",
-      metric: "Community powered",
-      signal: `${placeCountDisplay} places and ${eventCountDisplay} events need fresh local signal`,
-      preview: ["Add venues", "Fix details", "Share tips"],
-      accent: "from-fuchsia-300 via-pink-300 to-violet-300",
-      glow: "shadow-[0_24px_80px_rgba(217,70,239,0.14)]",
+      cardClass: "border-rose-100/17 bg-[radial-gradient(circle_at_100%_0%,rgba(251,113,133,0.15),transparent_42%),linear-gradient(145deg,rgba(73,30,58,0.88),rgba(47,24,51,0.93))] hover:border-rose-100/34",
+      glowClass: "bg-rose-300/20",
+      lineClass: "from-transparent via-rose-200/64 to-transparent",
+      iconClass: "border-rose-100/20 bg-[linear-gradient(145deg,rgba(253,164,175,0.2),rgba(232,121,249,0.14))] text-rose-50",
       onClick: () => {
-        if (!isMember) {
-          openSignup("/contribute");
+        trackHomeAction("contribute", "/contribute", { member_status: isMember ? "member" : "visitor" });
+        if (isMember) {
+          router.push("/contribute");
           return;
         }
-
-        router.push("/contribute");
+        openSignup("/contribute", "signup", "contribute");
       },
     },
   ];
   const livePulseCards = [
     {
       key: "next-event",
-      subtitle: "Next event",
+      subtitle: focusedUpcomingEvent ? `Next in ${formatCityLabel(focusedCity)}` : "Next event",
       title: nextUpcomingEvent?.name || "No upcoming event signal yet",
       description: `${formatCityLabel(nextUpcomingEvent?.city)} - ${
         nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : "No date available"
       }.`,
-      meta: nextUpcomingEvent ? "Next calendar signal" : "Calendar warming up",
+      meta: focusedUpcomingEvent ? "Your local calendar" : "Next global calendar signal",
       signalLabel: "Event route",
       signalValue: nextUpcomingEvent
         ? `${formatCityLabel(nextUpcomingEvent.city)} · ${formatDateShort(nextUpcomingEvent.date)}`
@@ -722,6 +907,9 @@ export default function HomePageClient({ initialHomeData = null }) {
         "border-amber-200/26 bg-[linear-gradient(180deg,rgba(44,28,14,0.78),rgba(16,12,8,0.94))] hover:border-amber-200/46",
       ctaLabel: "Open event",
       onClick: () => {
+        trackHomeAction("next_event", nextUpcomingEvent?.id ? "event_detail" : "/events", {
+          city: String(nextUpcomingEvent?.city || ""),
+        });
         if (nextUpcomingEvent?.city && nextUpcomingEvent?.id) {
           router.push(citySelectionPath(nextUpcomingEvent.city, { eventId: nextUpcomingEvent.id }));
           return;
@@ -742,28 +930,36 @@ export default function HomePageClient({ initialHomeData = null }) {
       cardClass:
         "border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] hover:border-cyan-200/44",
       ctaLabel: "Open story",
-      onClick: () => router.push("/now"),
+      onClick: () => {
+        trackHomeAction("latest_news", "/now");
+        router.push("/now");
+      },
     },
     {
-      key: "top-city",
-      subtitle: "Top city right now",
-      title: strongestCitySignal?.city
-        ? formatCityLabel(strongestCitySignal.city)
-        : "Signal is still warming up",
-      description: "Highest current community pull in the atlas feed.",
-      meta: strongestCitySignal ? `${strongestCitySignal.count || 0} mapped places` : "Community signal",
-      signalLabel: "City pull",
-      signalValue: strongestCitySignal
-        ? `${strongestCitySignal.reviews || 0} reviews right now`
-        : "Explore city rankings",
-      badge: strongestCitySignal ? `${strongestCitySignal.reviews || 0} reviews` : "Pending",
+      key: "local-pick",
+      subtitle: focusedCity ? `Local pick · ${formatCityLabel(focusedCity)}` : "Local pick",
+      title: focusedVenue?.name || (focusedCity ? `Explore ${formatCityLabel(focusedCity)}` : "Choose a city to begin"),
+      description: focusedVenue
+        ? `${focusedCityPlaces.length} places and ${focusedCityEvents.length} events mapped in ${formatCityLabel(focusedCity)}.`
+        : "Open the city guide for venues, events, safety, and local context.",
+      meta: focusedVenue?.type ? String(focusedVenue.type).replaceAll("_", " ") : "City guide",
+      signalLabel: "Local atlas",
+      signalValue: `${focusedCityPlaces.length} places · ${focusedCityEvents.length} events`,
+      badge: homeFocusSource === "home" ? "Home city" : homeFocusSource === "recent" ? "Recent" : "For you",
       badgeClass: "border-fuchsia-200/24 bg-fuchsia-200/12 text-fuchsia-100/90",
       cardClass:
         "border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(42,16,36,0.72),rgba(14,10,16,0.92))] hover:border-fuchsia-200/44",
-      ctaLabel: "Open city",
+      ctaLabel: focusedVenue ? "Open place" : "Open city",
       onClick: () => {
-        if (strongestCitySignal?.city) {
-          router.push(cityPath(strongestCitySignal.city));
+        trackHomeAction("local_pick", focusedVenue?.id ? "place_detail" : "city_guide", {
+          city: String(focusedCity || ""),
+        });
+        if (focusedVenue?.id && focusedCity) {
+          router.push(citySelectionPath(focusedCity, { placeId: focusedVenue.id }));
+          return;
+        }
+        if (focusedCity) {
+          router.push(cityPath(focusedCity));
           return;
         }
         router.push("/cities");
@@ -782,13 +978,14 @@ export default function HomePageClient({ initialHomeData = null }) {
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/5 blur-3xl" />
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
-          <section className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[calc(100svh-1rem)] lg:overflow-visible xl:px-8 xl:pb-4 xl:pt-8">
+          <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:overflow-visible xl:px-8 xl:pb-4 xl:pt-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
                 src="/home/queer-atlas-global-queer-nightlife-discovery-hero.webp"
                 alt=""
                 fill
-                priority
+                loading="lazy"
+                fetchPriority="low"
                 quality={75}
                 sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
                 className="object-cover object-center opacity-96"
@@ -803,7 +1000,7 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="pointer-events-none absolute -left-24 top-36 h-56 w-56 rounded-full bg-fuchsia-500/12 blur-[90px] lg:hidden" />
             <div className="pointer-events-none absolute -right-24 top-10 h-64 w-64 rounded-full bg-cyan-400/12 blur-[100px] lg:hidden" />
 
-            <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[calc(100svh-5rem)]">
+            <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col">
           <div className={`mb-10 flex items-center gap-3 sm:mb-14 sm:gap-4 lg:mb-0 ${isMember ? "justify-between" : "justify-end"}`}>
             {isMember && (
               <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
@@ -814,10 +1011,11 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="flex items-center gap-2.5 sm:gap-3">
               {!isMember ? (
                 <button
-                  onClick={() => openSignup()}
+                  aria-label="Join Queer Atlas for free"
+                  onClick={() => openSignup("/", "signup", "hero_join")}
                   className="qa-action inline-flex h-10 items-center justify-center rounded-full border border-white/22 bg-white/[0.07] px-5 text-sm font-medium text-white/88 backdrop-blur transition hover:border-white/38 hover:bg-white/[0.11] hover:text-white"
                 >
-                  Join Queer Atlas
+                  Join free
                 </button>
               ) : (
                 <>
@@ -896,10 +1094,10 @@ export default function HomePageClient({ initialHomeData = null }) {
                 Know where to go, what&apos;s happening, how it feels, and what locals actually say — wherever you land.
               </p>
               {isDataLoading && (
-                <p className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
+                <p role="status" aria-live="polite" className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
               )}
               {dataError && (
-                <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
+                <div role="alert" className="mt-3 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
                   <span>{dataError}</span>
                   <button
                     type="button"
@@ -917,15 +1115,22 @@ export default function HomePageClient({ initialHomeData = null }) {
                     <Search
                       className="absolute left-4 top-1/2 -translate-y-1/2 text-white/38"
                       size={17}
+                      aria-hidden="true"
                     />
 
                     <input
+                      type="search"
+                      aria-label="Search cities, venues, and events"
+                      autoComplete="off"
                       value={query}
-                      onChange={(event) => setQuery(event.target.value)}
+                      onChange={(event) => {
+                        setQuery(event.target.value);
+                        setShowResults(false);
+                      }}
                       onKeyDown={(event) => {
                         if (event.key !== "Enter") return;
                         event.preventDefault();
-                        router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+                        submitHomeSearch("keyboard");
                       }}
                       onFocus={() => setShowResults(true)}
                       placeholder="Search a city, venue or event"
@@ -935,9 +1140,7 @@ export default function HomePageClient({ initialHomeData = null }) {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
-                    }}
+                    onClick={() => submitHomeSearch("button")}
                     className="qa-action qa-action-strong h-12 w-full shrink-0 rounded-full border border-cyan-100/72 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 text-sm font-semibold text-black transition hover:scale-[1.01] sm:h-[52px] sm:w-auto sm:px-5"
                   >
                     Explore the atlas
@@ -945,18 +1148,28 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
 
                   {showResults && results.length > 0 && (
-                    <div className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl lg:max-h-[560px]">
+                    <div aria-label="Instant search results" className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl lg:max-h-[560px]">
                       {results.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}
-                          onClick={() => {
-                            setShowResults(false);
-                            openResult(result);
-                          }}
-                          className="cursor-pointer border-b border-white/6 px-5 py-4 transition last:border-b-0 hover:bg-white/6"
+                          className="border-b border-white/6 transition last:border-b-0 hover:bg-white/6"
                         >
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
+                          <div className="flex items-stretch justify-between gap-2">
+                            <button
+                              type="button"
+                              aria-label={`Open ${result.name}`}
+                              onClick={() => {
+                                setShowResults(false);
+                                trackKpiEvent("home_search_result_opened", {
+                                  city: String(result?.city || result?.name || ""),
+                                  targetType: result.type,
+                                  targetId: String(result.id || ""),
+                                  meta: { position: results.indexOf(result) + 1 },
+                                });
+                                openResult(result);
+                              }}
+                              className="min-w-0 flex-1 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/45"
+                            >
                               <span className="rounded-full border border-white/12 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.14em] text-white/55">
                                 {result.type}
                               </span>
@@ -964,16 +1177,14 @@ export default function HomePageClient({ initialHomeData = null }) {
                               <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/45">
                                 {getResultMeta(result)}
                               </p>
-                            </div>
+                            </button>
 
                             {result.type !== "city" && (
                               <button
                                 type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  saveResult(result);
-                                }}
-                                className={`qa-action rounded-full border px-3 py-1 text-xs transition ${
+                                aria-label={`${isSavedResult(result) ? "Remove" : "Save"} ${result.name}`}
+                                onClick={() => saveResult(result)}
+                                className={`qa-action my-auto mr-4 shrink-0 rounded-full border px-3 py-1 text-xs transition ${
                                   isSavedResult(result)
                                     ? "border-rose-300/25 bg-rose-300/10 text-rose-100"
                                     : "border-white/10 bg-white/5 text-white/65 hover:border-rose-300/25 hover:text-rose-100"
@@ -988,7 +1199,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                     </div>
                   )}
                   {showResults && query.trim().length > 0 && results.length === 0 && (
-                    <div className="absolute top-full z-50 mt-3 w-full rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl">
+                    <div role="status" aria-live="polite" className="absolute top-full z-50 mt-3 w-full rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl">
                       No instant matches yet. Press Explore for full search.
                     </div>
                   )}
@@ -1009,39 +1220,37 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
                 </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                <button
-                  type="button"
-                  onClick={() => router.push("/events/calendar")}
-                  className="qa-action inline-flex items-center gap-2 font-medium text-white/74 transition hover:text-cyan-100"
-                >
-                  What&apos;s happening now
-                  <span aria-hidden="true" className="text-cyan-200">→</span>
-                </button>
-                <span className="hidden h-1 w-1 rounded-full bg-white/30 sm:block" />
-                <span className="text-white/46">Local context before you go</span>
-              </div>
-
             </section>
           </div>
             </div>
           </section>
 
-          <HomeVenueIntelligence venue={featuredVenue} />
+          <HomeVenueIntelligence
+            venue={featuredVenue}
+            onOpen={() => trackHomeAction("venue_intelligence", "place_detail", {
+              city: String(featuredVenue?.city || ""),
+            })}
+          />
 
           {showDeferredSections ? (
             <HomeDeferredSections
-              topLaneCards={topLaneCards}
-              bottomLaneCards={bottomLaneCards}
+              discoveryCards={discoveryCards}
               livePulseCards={livePulseCards}
-              topCities={topCities}
-              onOpenCities={() => router.push("/cities")}
+              localContext={{
+                city: focusedCity,
+                cityOptions,
+                source: homeFocusSource,
+              }}
+              onLocalCityChange={handleHomeFocusCityChange}
+              participationActions={participationActions}
+              onEditorialAction={(destination) => trackHomeAction("editorial_trust", destination)}
               contactSlot={
                 <HomeContactSection
                   className="mt-8"
                   isMember={isMember}
                   userId={String(user?.id || "")}
                   defaultName={String(memberProfile?.displayName || memberName || "")}
+                  onAnalyticsEvent={(action, meta) => trackKpiEvent(`home_${action}`, { meta })}
                 />
               }
             />
@@ -1052,7 +1261,8 @@ export default function HomePageClient({ initialHomeData = null }) {
         </div>
       </div>
 
-            <HomeAuthModal
+            {showSignup ? (
+              <HomeAuthModal
         showSignup={showSignup}
         setShowSignup={setShowSignup}
         authMode={authMode}
@@ -1092,8 +1302,10 @@ export default function HomePageClient({ initialHomeData = null }) {
         updateMemberProfile={updateMemberProfile}
         trackKpiEvent={trackKpiEvent}
         writeLocalValue={writeLocalValue}
+        postLoginTarget={authReturnTarget}
         pendingSignupProfileKey={PENDING_SIGNUP_PROFILE_KEY}
       />
+            ) : null}
       {showSaved && (
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
           <div className="rounded-full border border-white/10 bg-white px-4 py-2 text-sm font-medium text-black shadow-[0_18px_50px_rgba(255,255,255,0.18)]">

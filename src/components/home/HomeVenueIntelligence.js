@@ -17,7 +17,7 @@ function firstUsefulSentence(value = "", limit = 165) {
   return `${shortened}…`;
 }
 
-export default function HomeVenueIntelligence({ venue }) {
+export default function HomeVenueIntelligence({ venue, onOpen }) {
   const intelligence = normalizeVenueIntel(venue);
   const venueHref = citySelectionPath(venue?.city, { placeId: venue?.id });
   const proof = firstUsefulSentence(intelligence.queueWait || intelligence.bestNights || intelligence.crowdMix);
@@ -25,7 +25,7 @@ export default function HomeVenueIntelligence({ venue }) {
   if (!venue?.name || !proof) return null;
 
   return (
-    <section className="mt-1">
+    <section id="venue-intelligence" data-home-section="venue_intelligence" className="mt-1 scroll-mt-5">
       <div className="qa-atlas-section relative overflow-hidden rounded-[24px] border border-white/11 bg-[radial-gradient(circle_at_3%_25%,rgba(244,114,182,0.16),transparent_29%),radial-gradient(circle_at_94%_12%,rgba(34,211,238,0.14),transparent_27%),linear-gradient(135deg,rgba(17,13,29,0.98),rgba(6,11,21,0.99)_58%,rgba(7,9,16,0.99))] p-4 shadow-[0_24px_68px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-inset ring-fuchsia-100/[0.04] sm:p-5">
         <div className="relative z-10 grid gap-4 lg:grid-cols-[0.72fr_1.3fr_auto] lg:items-center lg:gap-7">
           <div>
@@ -34,10 +34,10 @@ export default function HomeVenueIntelligence({ venue }) {
               Venue intelligence
             </p>
             <h2 className="qa-display mt-1.5 !text-left text-[1.65rem] font-semibold leading-none tracking-[-0.035em] text-white [hyphens:none] sm:text-[1.9rem]">
-              Know before you go.
+              Know what a place is really like.
             </h2>
-            <p className="mt-2 !text-left text-xs leading-5 text-white/56">
-              Queue · best night · crowd · dress · inclusion
+            <p className="mt-2 max-w-md !text-left text-[11px] leading-4 text-white/58">
+              Open any venue for queue patterns, best nights, crowd, practical dress code and inclusion — distilled from reviews, trusted sources and local insight.
             </p>
           </div>
 
@@ -50,7 +50,7 @@ export default function HomeVenueIntelligence({ venue }) {
               </p>
               <span className="hidden text-white/20 sm:inline">|</span>
               <p className="flex items-center gap-1 !text-left text-[9px] uppercase tracking-[0.13em] text-fuchsia-100/46">
-                <Sparkles size={10} aria-hidden="true" /> Real example
+                <Sparkles size={10} aria-hidden="true" /> Inside a venue profile
               </p>
             </div>
             <p className="mt-1.5 line-clamp-2 !text-left text-[13px] leading-5 text-white/86 [hyphens:none] sm:line-clamp-none">
@@ -64,9 +64,10 @@ export default function HomeVenueIntelligence({ venue }) {
             </p>
             <Link
               href={venueHref}
+              onClick={onOpen}
               className="qa-action inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-100/32 bg-[linear-gradient(135deg,rgba(34,211,238,0.16),rgba(217,70,239,0.12))] px-4 py-2 text-xs font-medium text-cyan-50/90 shadow-[0_10px_28px_rgba(34,211,238,0.08),inset_0_1px_0_rgba(255,255,255,0.1)] transition hover:-translate-y-px hover:border-cyan-100/48 hover:text-white"
             >
-              Explore intelligence
+              See it on {venue.name}
               <ArrowUpRight size={13} aria-hidden="true" />
             </Link>
           </div>

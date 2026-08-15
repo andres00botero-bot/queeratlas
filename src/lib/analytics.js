@@ -1,5 +1,8 @@
+import { track as trackVercelEvent } from "@vercel/analytics";
+
 const KPI_EVENTS_KEY = "qa_kpi_events";
 const MAX_KPI_EVENTS = 4000;
+const MAX_ANALYTICS_VALUE_LENGTH = 180;
 
 function safeParse(raw, fallback) {
   if (!raw) return fallback;
@@ -12,12 +15,42 @@ function safeParse(raw, fallback) {
 
 function readEvents() {
   if (typeof window === "undefined") return [];
-  return safeParse(window.localStorage.getItem(KPI_EVENTS_KEY), []);
+  try {
+    return safeParse(window.localStorage.getItem(KPI_EVENTS_KEY), []);
+  } catch {
+    return [];
+  }
 }
 
 function writeEvents(rows) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(KPI_EVENTS_KEY, JSON.stringify(rows));
+  try {
+    window.localStorage.setItem(KPI_EVENTS_KEY, JSON.stringify(rows));
+  } catch {
+    // Analytics must never interrupt the visitor's primary action.
+  }
+}
+
+function normalizeAnalyticsValue(value) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") return value.slice(0, MAX_ANALYTICS_VALUE_LENGTH);
+  return undefined;
+}
+
+function buildVercelProperties(payload = {}) {
+  const properties = {};
+  const baseProperties = {
+    city: payload.city,
+    target_type: payload.targetType,
+    target_id: payload.targetId,
+  };
+
+  for (const [key, value] of Object.entries({ ...baseProperties, ...(payload.meta || {}) })) {
+    const normalized = normalizeAnalyticsValue(value);
+    if (normalized !== undefined && normalized !== "") properties[String(key).slice(0, 64)] = normalized;
+  }
+  return properties;
 }
 
 export function trackKpiEvent(name, payload = {}) {
@@ -40,6 +73,13 @@ export function trackKpiEvent(name, payload = {}) {
   const existing = readEvents();
   const merged = [...existing, next].slice(-MAX_KPI_EVENTS);
   writeEvents(merged);
+
+  try {
+    // Deliberately exclude memberKey and free-form text from centralized analytics.
+    trackVercelEvent(String(name).slice(0, 80), buildVercelProperties(payload));
+  } catch {
+    // Tracking is best-effort and must never block navigation or forms.
+  }
 }
 
 export function getKpiSummary(days = 7) {
@@ -87,6 +127,15 @@ export function getKpiSummary(days = 7) {
       serviceAdded: Number(counts.service_added || 0),
       reportSubmitted: Number(counts.report_submitted || 0),
       searchOpened: Number(counts.search_opened || 0),
+      homeViewed: Number(counts.home_viewed || 0),
+      homeSectionViewed: Number(counts.home_section_viewed || 0),
+      homeActionSelected: Number(counts.home_action_selected || 0),
+      homeSearchSubmitted: Number(counts.home_search_submitted || 0),
+      homeSearchResultOpened: Number(counts.home_search_result_opened || 0),
+      homeMemberPromptOpened: Number(counts.home_member_prompt_opened || 0),
+      homeMemberPromptClosed: Number(counts.home_member_prompt_closed || 0),
+      homeContactStarted: Number(counts.home_contact_started || 0),
+      homeContactSubmitted: Number(counts.home_contact_submitted || 0),
     },
     topCities,
     lastEventAt: events.length > 0 ? events[events.length - 1].createdAt : "",
