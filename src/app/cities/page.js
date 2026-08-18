@@ -15,6 +15,7 @@ import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
+import { useQariProfiles } from "@/lib/useQariProfiles";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import {
@@ -85,12 +86,12 @@ const MAPBOX_COUNTRY_CLICK_OVERRIDES = [
   },
 ];
 const MAP_RISK_PALETTE = {
-  open: { label: "Very safe", color: "#3b82f6" },
-  steady: { label: "Generally safe", color: "#22c55e" },
-  watch: { label: "Be aware", color: "#facc15" },
-  caution: { label: "Use caution", color: "#f472b6" },
-  restricted: { label: "High risk", color: "#dc2626" },
-  unknown: { label: "Unknown", color: "#64748b" },
+  open: { label: "Lower risk", color: "#3b82f6" },
+  steady: { label: "Lower context", color: "#22c55e" },
+  watch: { label: "Moderate", color: "#facc15" },
+  caution: { label: "High", color: "#fb923c" },
+  restricted: { label: "Extreme", color: "#ef4444" },
+  unknown: { label: "Pending", color: "#64748b" },
 };
 const MAP_RISK_TIER_OVERRIDES = {
   Egypt: "restricted",
@@ -263,6 +264,7 @@ export default function CitiesPage() {
   const [isSavingCountryProfile, setIsSavingCountryProfile] = useState(false);
   const [countryEditorError, setCountryEditorError] = useState("");
   const [countryEditorSuccess, setCountryEditorSuccess] = useState("");
+  const [expandedSafetyCountry, setExpandedSafetyCountry] = useState("");
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
@@ -278,6 +280,7 @@ export default function CitiesPage() {
     loadError: countryRightsLoadError,
     refresh: refreshCountryRightsProfiles,
   } = useCountryRightsProfiles();
+  const { byCountry: qariProfilesByCountry } = useQariProfiles();
   const lastExploredCity = useSyncExternalStore(
     subscribeLastExploredCity,
     getLastExploredCitySnapshot,
@@ -342,7 +345,8 @@ export default function CitiesPage() {
       const fromDb = buildRightsSnapshotFromProfile(dbByCountry.get(normalizeCountry(country)));
       const snapshot = fromDb || getCityRightsSignals({ country });
       const profile = dbByCountry.get(normalizeCountry(country));
-      const tier = getMapRiskTier(country, profile, snapshot);
+      const qariProfile = qariProfilesByCountry[normalizeCountry(country)] || null;
+      const tier = getMapRiskTier(country, profile, snapshot, qariProfile);
       const aliases = getCountryMapboxNames(country);
       if (tier === "open") {
         openNames.push(...aliases);
@@ -392,7 +396,7 @@ export default function CitiesPage() {
       0.27,
       0.08,
     ]);
-  }, [availableCountries, countryRightsProfiles]);
+  }, [availableCountries, countryRightsProfiles, qariProfilesByCountry]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -1205,12 +1209,16 @@ export default function CitiesPage() {
                   <div className="mb-5">
                     <CityRightsSignals
                       snapshot={countryRightsSnapshots[country]}
+                      qariProfile={qariProfilesByCountry[normalizeCountry(country)] || null}
                       country={country}
                       riskTier={getMapRiskTier(
                         country,
                         countryRightsProfilesByCountry[normalizeCountry(country)],
                         countryRightsSnapshots[country],
+                        qariProfilesByCountry[normalizeCountry(country)] || null,
                       )}
+                      expanded={expandedSafetyCountry === country}
+                      onToggle={() => setExpandedSafetyCountry((current) => current === country ? "" : country)}
                     />
                     {countryRightsLoadError ? (
                       <p className="mt-2 text-[11px] text-rose-200/85">
@@ -1347,7 +1355,8 @@ export default function CitiesPage() {
   );
 }
 
-function getMapRiskTier(country, profile, snapshot) {
+function getMapRiskTier(country, profile, snapshot, qariProfile = null) {
+  if (qariProfile?.tier?.mapTier) return qariProfile.tier.mapTier;
   return MAP_RISK_TIER_OVERRIDES[country] || deriveMapRiskTier(profile, snapshot);
 }
 

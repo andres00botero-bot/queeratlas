@@ -24,6 +24,7 @@
     "test:nightlife-index": "node scripts/test-nightlife-index.mjs",
     "audit:nightlife-index": "node --use-system-ca --env-file=.env.local scripts/audit-nightlife-index.mjs",
     "test:safety-index": "node scripts/test-safety-index.mjs",
+    "test:qari-phase1": "node scripts/test-qari-phase1.mjs",
     "audit:safety-index": "node --use-system-ca --env-file=.env.local scripts/audit-safety-index.mjs",
     "seo:ba4-validate": "node scripts/seo-ba4-validate.mjs --csv docs/templates/seo-ba4-kpi-tracker.csv",
     "seo:ba4-priority": "npm run seo:ba4-validate && node scripts/seo-ba4-priority.mjs --csv docs/templates/seo-ba4-kpi-tracker.csv --top 10",

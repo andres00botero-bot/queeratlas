@@ -1,439 +1,218 @@
 "use client";
 
-const SIGNAL_LABELS = {
-  legal: "Legal",
-  rights: "Rights",
-  safety: "Safety",
-};
+import { ChevronDown, ExternalLink, ShieldCheck } from "lucide-react";
+import { getQariTier } from "@/lib/qari";
 
-const LEVEL_THEME = {
-  good: {
-    label: "Safer",
-    eyebrow: "Strong baseline",
-    mapColor: "#22c55e",
-    rgb: "34,197,94",
-    dot: "bg-emerald-300",
-    text: "text-emerald-100",
-    softText: "text-emerald-100/78",
-    border: "border-emerald-200/24",
-    chip: "border-emerald-200/28 bg-emerald-300/13 text-emerald-50",
-    glow: "from-emerald-300/24 via-cyan-300/10 to-transparent",
-    progress: "bg-emerald-300",
-    track: "bg-emerald-50/10",
-    summary: "A stronger legal and social baseline, with normal local awareness still useful.",
-  },
-  mixed: {
-    label: "Watch",
-    eyebrow: "Context matters",
-    mapColor: "#facc15",
-    rgb: "250,204,21",
-    dot: "bg-amber-300",
-    text: "text-amber-100",
-    softText: "text-amber-100/78",
-    border: "border-amber-200/26",
-    chip: "border-amber-200/30 bg-amber-300/14 text-amber-50",
-    glow: "from-amber-300/24 via-fuchsia-300/8 to-transparent",
-    progress: "bg-amber-300",
-    track: "bg-amber-50/10",
-    summary: "Generally workable, but rights, social comfort, or night safety can shift by context.",
-  },
-  risk: {
-    label: "Caution",
-    eyebrow: "Plan carefully",
-    mapColor: "#f472b6",
-    rgb: "244,114,182",
-    dot: "bg-rose-300",
-    text: "text-rose-100",
-    softText: "text-rose-100/78",
-    border: "border-rose-200/28",
-    chip: "border-rose-200/30 bg-rose-300/14 text-rose-50",
-    glow: "from-rose-300/24 via-orange-300/8 to-transparent",
-    progress: "bg-rose-300",
-    track: "bg-rose-50/10",
-    summary: "Extra discretion and route planning matter because legal or public-safety context is limited.",
-  },
-  unknown: {
-    label: "Unknown",
-    eyebrow: "Being verified",
-    mapColor: "#ffffff",
-    rgb: "255,255,255",
-    dot: "bg-white/50",
-    text: "text-white/84",
-    softText: "text-white/62",
-    border: "border-white/18",
-    chip: "border-white/16 bg-white/8 text-white/78",
-    glow: "from-white/14 via-cyan-300/5 to-transparent",
-    progress: "bg-white/50",
-    track: "bg-white/10",
-    summary: "Rights context is still being verified, so use local sources before planning.",
-  },
-};
-
-const MAP_TIER_THEME = {
-  open: {
-    label: "Very safe",
-    eyebrow: "Top map tier",
-    labelClass: "text-[1.65rem] sm:text-base",
-    mapColor: "#3b82f6",
-    rgb: "59,130,246",
-    dot: "bg-blue-300",
-    text: "text-blue-100",
-    softText: "text-blue-100/78",
-    chip: "border-blue-200/30 bg-blue-300/14 text-blue-50",
-    glow: "from-blue-300/24 via-cyan-300/10 to-transparent",
-    summary: "This matches the map's Very safe tier: a strong legal baseline and broadly stable public context.",
-  },
-  steady: {
-    label: "Generally safe",
-    eyebrow: "Stable map tier",
-    labelClass: "text-[1.35rem] sm:text-[0.88rem]",
-    mapColor: "#22c55e",
-    rgb: "34,197,94",
-    dot: "bg-emerald-300",
-    text: "text-emerald-100",
-    softText: "text-emerald-100/78",
-    chip: "border-emerald-200/28 bg-emerald-300/13 text-emerald-50",
-    glow: "from-emerald-300/24 via-cyan-300/10 to-transparent",
-    summary: "This matches the map's Generally safe tier: generally workable, with normal local awareness still useful.",
-  },
-  watch: {
-    label: "Be aware",
-    eyebrow: "Context matters",
-    labelClass: "text-[1.65rem] sm:text-base",
-    mapColor: "#facc15",
-    rgb: "250,204,21",
-    dot: "bg-amber-300",
-    text: "text-amber-100",
-    softText: "text-amber-100/78",
-    chip: "border-amber-200/30 bg-amber-300/14 text-amber-50",
-    glow: "from-amber-300/24 via-fuchsia-300/8 to-transparent",
-    summary: "This matches the map's Be aware tier: conditions can shift by law, public comfort, or local safety context.",
-  },
-  caution: {
-    label: "Use caution",
-    eyebrow: "Plan carefully",
-    labelClass: "text-[1.45rem] sm:text-[0.95rem]",
-    mapColor: "#f472b6",
-    rgb: "244,114,182",
-    dot: "bg-pink-300",
-    text: "text-pink-100",
-    softText: "text-pink-100/78",
-    chip: "border-pink-200/30 bg-pink-300/14 text-pink-50",
-    glow: "from-pink-300/24 via-orange-300/8 to-transparent",
-    summary: "This matches the map's Use caution tier: extra discretion and route planning are part of safer travel.",
-  },
-  restricted: {
-    label: "High risk",
-    eyebrow: "High caution",
-    labelClass: "text-[1.65rem] sm:text-base",
-    mapColor: "#dc2626",
-    rgb: "220,38,38",
-    dot: "bg-red-400",
-    text: "text-red-100",
-    softText: "text-red-100/78",
-    chip: "border-red-200/30 bg-red-400/14 text-red-50",
-    glow: "from-red-400/24 via-rose-300/10 to-transparent",
-    summary: "This matches the map's High risk tier: legal or public-safety conditions require strong caution.",
-  },
-  unknown: {
-    label: "Unknown",
-    eyebrow: "Being verified",
-    labelClass: "text-[1.65rem] sm:text-base",
-    mapColor: "#64748b",
-    rgb: "100,116,139",
-    dot: "bg-slate-300",
-    text: "text-slate-100",
-    softText: "text-slate-100/70",
-    chip: "border-slate-200/22 bg-slate-300/12 text-slate-50",
-    glow: "from-slate-300/18 via-cyan-300/5 to-transparent",
-    summary: "This matches the map's Unknown tier: rights context is still being verified.",
-  },
+const FALLBACK_TIERS = {
+  open: { label: "Lower-risk context", color: "#3b82f6" },
+  steady: { label: "Generally lower risk", color: "#22c55e" },
+  watch: { label: "Context matters", color: "#facc15" },
+  caution: { label: "Use caution", color: "#fb923c" },
+  restricted: { label: "High caution", color: "#ef4444" },
+  unknown: { label: "Not yet verified", color: "#64748b" },
 };
 
 const DETAIL_ROWS = [
   { key: "sameSexRelations", label: "Same-sex relations" },
   { key: "unions", label: "Marriage / partnership" },
   { key: "genderRecognition", label: "Legal gender recognition" },
-  { key: "antiDiscrimination", label: "Anti-discrimination laws" },
+  { key: "antiDiscrimination", label: "Anti-discrimination law" },
 ];
 
-const LEFT_ALIGNED_TEXT = {
-  textAlign: "left",
-  textJustify: "auto",
-};
+const AXES = [
+  {
+    key: "legalRisk",
+    label: "Legal",
+    detail: "Laws, rights and restrictions",
+    weight: "35%",
+  },
+  {
+    key: "socialRisk",
+    label: "Social reality",
+    detail: "Public climate and reported harm",
+    weight: "40%",
+  },
+  {
+    key: "digitalRisk",
+    label: "Digital & enforcement",
+    detail: "Apps, devices, police and censorship",
+    weight: "25%",
+  },
+];
 
-const JUSTIFIED_TEXT = {
-  textAlign: "justify",
-  textJustify: "inter-word",
-};
-
-function resolveLegalSignalFromDetails(signal, details = {}) {
-  const sameSex = String(details?.sameSexRelations || "").toLowerCase();
-
-  if (sameSex.includes("criminalized")) {
-    return {
-      ...signal,
-      level: "risk",
-      label: "Criminalized",
-      className: "border-rose-200/30 bg-rose-300/14 text-rose-100/95",
-    };
-  }
-
-  if (sameSex.includes("restricted")) {
-    return {
-      ...signal,
-      level: "risk",
-      label: "Restricted",
-      className: "border-rose-200/30 bg-rose-300/14 text-rose-100/95",
-    };
-  }
-
-  if (sameSex.includes("unknown")) {
-    return {
-      ...signal,
-      level: "unknown",
-      label: "Unknown",
-      className: "border-white/18 bg-white/10 text-white/78",
-    };
-  }
-
-  if (sameSex.includes("legal")) {
-    return {
-      ...signal,
-      level: signal.level || "good",
-      label: signal.label || "Strong",
-    };
-  }
-
-  return signal;
-}
-
-function resolveOverallLevel(signals = []) {
-  const severity = {
-    unknown: 0,
-    good: 1,
-    mixed: 2,
-    risk: 3,
-  };
-
-  return signals.reduce((current, signal) => {
-    const level = String(signal?.level || "unknown");
-    if ((severity[level] || 0) > (severity[current] || 0)) return level;
-    return current;
-  }, "unknown");
-}
-
-function getSignalStrength(level = "unknown") {
-  if (level === "good") return "w-[86%]";
-  if (level === "mixed") return "w-[58%]";
-  if (level === "risk") return "w-[32%]";
-  return "w-[44%]";
-}
-
-function getDetailTone(value = "") {
+function confidenceLabel(value = "") {
   const normalized = String(value || "").toLowerCase();
-
-  if (
-    normalized.includes("criminal") ||
-    normalized.includes("not legal") ||
-    normalized.includes("not available") ||
-    normalized.includes("no legal") ||
-    normalized.includes("limited / none") ||
-    normalized.includes("no broad")
-  ) {
-    return "risk";
-  }
-
-  if (
-    normalized.includes("restricted") ||
-    normalized.includes("limited") ||
-    normalized.includes("partial") ||
-    normalized.includes("civil union")
-  ) {
-    return "mixed";
-  }
-
-  if (
-    normalized.includes("legal") ||
-    normalized.includes("available") ||
-    normalized.includes("marriage") ||
-    normalized.includes("full coverage")
-  ) {
-    return "good";
-  }
-
-  return "unknown";
+  if (normalized === "high") return "High confidence";
+  if (normalized === "low") return "Limited confidence";
+  return "Medium confidence";
 }
 
-function resolveFallbackRiskTier(overallLevel = "unknown") {
-  if (overallLevel === "good") return "steady";
-  if (overallLevel === "mixed") return "watch";
-  if (overallLevel === "risk") return "caution";
-  return "unknown";
+function reviewedLabel(value) {
+  if (!value) return "Review date pending";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Review date pending";
+  return `Reviewed ${new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(date)}`;
 }
 
-function StatusChip({ value }) {
-  const tone = getDetailTone(value);
-  const theme = LEVEL_THEME[tone] || LEVEL_THEME.unknown;
-
+function AxisRow({ axis, value, color }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${theme.chip}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${theme.dot}`} />
-      {value || "Unknown"}
-    </span>
-  );
-}
-
-function SignalMeter({ signal }) {
-  const theme = LEVEL_THEME[signal.level] || LEVEL_THEME.unknown;
-
-  return (
-    <div className={`rounded-2xl border ${theme.border} bg-white/[0.045] p-3`}>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-white/42">{SIGNAL_LABELS[signal.id]}</p>
-          <p className={`mt-1 text-sm font-semibold ${theme.text}`}>{signal.label}</p>
+    <div className="grid gap-2 border-b border-white/8 py-3 last:border-0 sm:grid-cols-[1fr_auto] sm:items-center">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-white/88">{axis.label}</p>
+          <span className="text-[10px] uppercase tracking-[0.14em] text-white/35">{axis.weight}</span>
         </div>
-        <span className={`h-2.5 w-2.5 rounded-full ${theme.dot} shadow-[0_0_18px_currentColor]`} />
+        <p className="mt-0.5 text-xs leading-5 text-white/48">{axis.detail}</p>
       </div>
-      <div className={`mt-3 h-1.5 overflow-hidden rounded-full ${theme.track}`}>
-        <div className={`h-full rounded-full ${theme.progress} ${getSignalStrength(signal.level)}`} />
+      <div className="flex items-center gap-3 sm:min-w-36">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10 sm:w-20">
+          <div className="h-full rounded-full" style={{ width: `${value}%`, backgroundColor: color }} />
+        </div>
+        <span className="w-12 text-right text-sm font-semibold tabular-nums text-white">{value}/100</span>
       </div>
     </div>
   );
 }
 
-function SourceLink({ href, label }) {
-  if (!href) return <span className="text-white/38">{label}</span>;
-
+function SourceLink({ source }) {
+  const href = String(source?.url || "").trim();
+  if (!href) return null;
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="underline decoration-white/30 underline-offset-4 transition hover:text-white hover:decoration-white/60"
+      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-xs text-white/60 transition hover:border-white/22 hover:text-white"
     >
-      {label}
+      {source.label || source.axis || "Source"}
+      <ExternalLink size={12} aria-hidden="true" />
     </a>
   );
 }
 
-export default function CityRightsSignals({ snapshot, country = "", riskTier = "" }) {
-  if (!snapshot) return null;
+export default function CityRightsSignals({
+  snapshot,
+  qariProfile = null,
+  country = "",
+  riskTier = "",
+  expanded = false,
+  onToggle,
+}) {
+  if (!snapshot && !qariProfile) return null;
 
-  const legalSignal = resolveLegalSignalFromDetails(snapshot.legal, snapshot.details);
-  const signals = [legalSignal, snapshot.rights, snapshot.safety].filter(Boolean);
-  if (signals.length === 0) return null;
-
-  const overallLevel = resolveOverallLevel(signals);
-  const normalizedRiskTier = String(riskTier || resolveFallbackRiskTier(overallLevel)).trim().toLowerCase();
-  const overallTheme = MAP_TIER_THEME[normalizedRiskTier] || MAP_TIER_THEME.unknown;
-  const confidence = String(snapshot.confidence || "medium").trim();
-  const updatedAt = snapshot.updatedAt ? new Date(snapshot.updatedAt).getFullYear() : null;
-  const overallColor = overallTheme.mapColor || "#ffffff";
-  const overallRgb = overallTheme.rgb || "255,255,255";
+  const score = Number.isFinite(qariProfile?.score) ? qariProfile.score : null;
+  const qariTier = getQariTier(score);
+  const fallbackTier = FALLBACK_TIERS[riskTier] || FALLBACK_TIERS.unknown;
+  const tone = score === null ? fallbackTier : qariTier;
+  const summary = qariProfile?.summary || snapshot?.whatThisMeans || "This destination is awaiting a full QARI review.";
+  const panelId = `qari-details-${String(country || "destination").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
   return (
     <div
-      className="relative overflow-hidden rounded-[28px] border bg-[linear-gradient(145deg,rgba(255,255,255,0.08),rgba(255,255,255,0.025))] p-4 text-left shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-5"
-      style={{ borderColor: `rgba(${overallRgb},0.24)`, ...LEFT_ALIGNED_TEXT }}
+      className="relative overflow-hidden rounded-[22px] border bg-[linear-gradient(145deg,rgba(255,255,255,0.065),rgba(255,255,255,0.022))] shadow-[0_18px_58px_rgba(0,0,0,0.24)]"
+      style={{ borderColor: `${tone.color}42` }}
     >
-      <div className={`pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full bg-gradient-to-br ${overallTheme.glow} blur-3xl`} />
-      <div className="relative grid gap-4 xl:grid-cols-[0.95fr_1.25fr]">
-        <div className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <div
-              className="relative grid h-20 w-full shrink-0 place-items-center overflow-hidden rounded-[24px] border bg-black/34 sm:h-24 sm:w-24 sm:rounded-[28px]"
-              style={{
-                borderColor: overallColor,
-                background:
-                  `radial-gradient(circle at 35% 20%, rgba(${overallRgb},0.30), transparent 42%), ` +
-                  `linear-gradient(145deg, rgba(${overallRgb},0.18), rgba(0,0,0,0.42) 58%, rgba(${overallRgb},0.08))`,
-                boxShadow:
-                  `0 0 0 1px rgba(${overallRgb},0.20), ` +
-                  `0 18px 42px rgba(${overallRgb},0.18), ` +
-                  "inset 0 1px 0 rgba(255,255,255,0.18)",
-              }}
-            >
-              <div className="pointer-events-none absolute -right-5 -top-5 h-14 w-14 rounded-full bg-white/14 blur-xl" />
-              <div className="text-center">
-                <p className={`${overallTheme.labelClass || "text-[1.65rem] sm:text-base"} mx-auto flex max-w-[9rem] items-center justify-center px-2 text-center font-semibold leading-[1.08] tracking-normal text-white drop-shadow-[0_8px_24px_rgba(0,0,0,0.34)]`}>
-                  {overallTheme.label}
-                </p>
-              </div>
-            </div>
+      <div
+        className="pointer-events-none absolute -right-14 -top-20 h-40 w-40 rounded-full blur-3xl"
+        style={{ backgroundColor: `${tone.color}20` }}
+      />
 
-            <div className="min-w-0 flex-1">
-              <p className={`text-[11px] uppercase tracking-[0.22em] ${overallTheme.softText}`}>{overallTheme.eyebrow}</p>
-              <h3 className="mt-1 text-[1.75rem] font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-2xl">Queer safety</h3>
-              <p className="mt-2 max-w-[34rem] text-left text-sm leading-6 text-white/62" style={LEFT_ALIGNED_TEXT}>
-                Legal rights and practical context{country ? ` for ${country}` : ""}.
+      <div className="relative flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:gap-3 sm:px-5 sm:py-3.5">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border bg-black/25"
+            style={{ color: tone.color, borderColor: `${tone.color}55` }}
+          >
+            <ShieldCheck size={20} aria-hidden="true" />
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">Queer Atlas Risk Index</p>
+              <p className="text-sm font-semibold text-white">
+                {score === null ? "QARI pending" : `QARI ${score}/100`}
               </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-black/18 p-3.5">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-white/42">What this means</p>
-            <p className="mt-2 break-words text-sm leading-7 text-white/76" style={JUSTIFIED_TEXT}>{snapshot.whatThisMeans}</p>
-            <p className="mt-3 text-xs leading-5 text-white/45" style={LEFT_ALIGNED_TEXT}>{overallTheme.summary}</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 text-[11px] text-white/52">
-            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
-              Confidence: <span className="text-white/76">{confidence || "medium"}</span>
-            </span>
-            {updatedAt ? (
-              <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
-                Updated: <span className="text-white/76">{updatedAt}</span>
+              <span
+                className="rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
+                style={{ color: tone.color, borderColor: `${tone.color}50`, backgroundColor: `${tone.color}16` }}
+              >
+                {tone.label}
               </span>
-            ) : null}
+            </div>
+            <p className="mt-1 line-clamp-1 max-w-4xl text-xs leading-5 text-white/58">{summary}</p>
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div className="grid gap-2.5 sm:grid-cols-3">
-            {signals.map((signal) => (
-              <SignalMeter key={signal.id} signal={signal} />
-            ))}
+        <div className="ml-12 flex shrink-0 items-center justify-between gap-3 sm:ml-0 sm:border-l sm:border-white/8 sm:pl-4">
+          <div className="text-[10px] leading-4 text-white/38">
+            <p>{confidenceLabel(qariProfile?.confidence || snapshot?.confidence)}</p>
+            <p className="hidden sm:block">{reviewedLabel(qariProfile?.reviewedAt || snapshot?.updatedAt)}</p>
           </div>
-
-          <div className="overflow-hidden rounded-[24px] border border-white/12 bg-black/20">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-white/46">Legal breakdown</p>
-                <p className="mt-0.5 text-sm text-white/72">Visible at a glance, no extra tap needed.</p>
-              </div>
-              <span className={`hidden rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.15em] sm:inline-flex ${overallTheme.chip}`}>
-                {overallTheme.label}
-              </span>
-            </div>
-
-            <div className="divide-y divide-white/8">
-              {DETAIL_ROWS.map((row) => {
-                const value = snapshot.details?.[row.key] || "Unknown";
-
-                return (
-                  <div key={row.key} className="grid gap-2 px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center">
-                    <p className="text-sm font-medium text-white/84">{row.label}</p>
-                    <div className="sm:justify-self-end">
-                      <StatusChip value={value} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="text-[12px] text-white/48">
-            <span className="text-white/62">Sources: </span>
-            <SourceLink href={snapshot.sources?.legal} label="legal" />
-            <span> / </span>
-            <SourceLink href={snapshot.sources?.rights} label="rights" />
-            <span> / </span>
-            <SourceLink href={snapshot.sources?.safety} label="safety" />
-          </div>
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={panelId}
+            onClick={onToggle}
+            className="qa-action inline-flex min-h-9 items-center gap-2 rounded-full border border-white/14 bg-white/[0.065] px-3.5 text-xs font-semibold text-white/78 transition hover:border-white/28 hover:bg-white/10 hover:text-white sm:min-h-10"
+          >
+            {expanded ? "Close" : "Safety details"}
+            <ChevronDown size={15} className={`transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+          </button>
         </div>
       </div>
+
+      {expanded ? (
+        <div id={panelId} className="relative border-t border-white/10 bg-black/18 px-4 py-4 sm:px-5">
+          <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/38">How this score is built</p>
+                  <p className="mt-1 text-sm leading-6 text-white/64">Higher numbers mean greater traveller exposure.</p>
+                </div>
+                <p className="text-[10px] text-white/34">Method v{qariProfile?.methodologyVersion || "1.0"}</p>
+              </div>
+
+              {qariProfile ? (
+                <div className="mt-2">
+                  {AXES.map((axis) => (
+                    <AxisRow key={axis.key} axis={axis} value={qariProfile[axis.key]} color={tone.color} />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3 rounded-2xl border border-amber-200/16 bg-amber-200/[0.06] p-3 text-sm leading-6 text-amber-50/72">
+                  A numerical QARI score has not been source-verified for {country || "this destination"} yet. The existing legal context remains visible below without inventing a number.
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[18px] border border-white/10 bg-white/[0.035] p-4">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-white/38">Legal snapshot</p>
+              <div className="mt-2 divide-y divide-white/8">
+                {DETAIL_ROWS.map((row) => (
+                  <div key={row.key} className="flex items-start justify-between gap-4 py-2.5">
+                    <p className="text-xs text-white/52">{row.label}</p>
+                    <p className="max-w-[55%] text-right text-xs font-medium leading-5 text-white/82">
+                      {snapshot?.details?.[row.key] || "Unknown"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 border-t border-white/8 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-2xl text-[11px] leading-5 text-white/40">
+              QARI is a planning signal, not a promise of safety. Risk can change by neighbourhood, identity, time and current events.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(qariProfile?.sources || []).map((source, index) => (
+                <SourceLink key={`${source.url}-${index}`} source={source} />
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
