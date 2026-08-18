@@ -15,6 +15,9 @@ assert.equal(getQariTier(null).key, "unknown");
 
 assert.equal(QARI_PILOT_PROFILES.length, 8);
 assert.equal(new Set(QARI_PILOT_PROFILES.map((profile) => profile.destinationKey)).size, 8);
+const germany = QARI_PILOT_PROFILES.find((profile) => profile.country === "Germany");
+assert.equal(germany?.score, 16);
+assert.equal(germany?.tier.key, "lower");
 
 for (const profile of QARI_PILOT_PROFILES) {
   assert.equal(profile.score, calculateQari(profile), `${profile.country}: score must match the published formula`);

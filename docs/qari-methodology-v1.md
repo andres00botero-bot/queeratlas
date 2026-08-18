@@ -64,7 +64,7 @@ Confidence is independent of the score:
 | --- | ---: | ---: | ---: | ---: | --- | --- |
 | Spain | 12 | 18 | 8 | 13 | Lower risk | High |
 | Canada | 9 | 23 | 8 | 14 | Lower risk | High |
-| Germany | 20 | 31 | 12 | 22 | Moderate risk | High |
+| Germany | 12 | 24 | 8 | 16 | Lower risk | High |
 | Brazil | 16 | 48 | 34 | 33 | Moderate risk | Medium |
 | Namibia | 52 | 55 | 30 | 48 | High risk | Medium |
 | Turkey | 68 | 64 | 70 | 67 | High risk | Medium |
