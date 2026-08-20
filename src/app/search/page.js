@@ -206,6 +206,27 @@ function resolveCityCenter(cityName = "") {
   return { lng, lat };
 }
 
+function syncSearchMapResults(map, mapboxgl, featureCollection, points = []) {
+  if (!map || !mapboxgl) return;
+  const source = map.getSource(SEARCH_MAP_SOURCE_ID);
+  if (!source) return;
+
+  source.setData(featureCollection || EMPTY_FEATURE_COLLECTION);
+  if (!Array.isArray(points) || points.length === 0) return;
+
+  if (points.length === 1) {
+    const point = points[0];
+    map.easeTo({ center: [point.lng, point.lat], zoom: 10, duration: 700 });
+    return;
+  }
+
+  const bounds = new mapboxgl.LngLatBounds();
+  points.forEach((point) => {
+    bounds.extend([point.lng, point.lat]);
+  });
+  map.fitBounds(bounds, { padding: 48, maxZoom: 11.8, duration: 750 });
+}
+
 function SearchResultSkeleton({ tone = "rose" }) {
   const toneClass =
     tone === "violet"
@@ -259,6 +280,8 @@ export default function SearchPage() {
   const searchMapRef = useRef(null);
   const searchMapboxRef = useRef(null);
   const searchMapLoadedRef = useRef(false);
+  const searchMapFeatureCollectionRef = useRef(EMPTY_FEATURE_COLLECTION);
+  const searchMapPointsRef = useRef([]);
   const resultsSectionRef = useRef(null);
   const pendingResultsScrollRef = useRef(false);
   const lastTrackedSearchRef = useRef("");
@@ -633,6 +656,10 @@ export default function SearchPage() {
     }),
     [searchMapPoints]
   );
+  useEffect(() => {
+    searchMapFeatureCollectionRef.current = searchMapFeatureCollection;
+    searchMapPointsRef.current = searchMapPoints;
+  }, [searchMapFeatureCollection, searchMapPoints]);
   const sectionOrder = useMemo(() => {
     const sections = [
       { key: "city", label: "Cities", tone: "cyan", items: filteredResults.cities },
@@ -911,6 +938,13 @@ export default function SearchPage() {
             });
           }
 
+          syncSearchMapResults(
+            map,
+            mapboxgl,
+            searchMapFeatureCollectionRef.current,
+            searchMapPointsRef.current
+          );
+
           map.on("click", SEARCH_MAP_CLUSTER_LAYER_ID, (event) => {
             const feature = event?.features?.[0];
             const clusterId = feature?.properties?.cluster_id;
@@ -952,20 +986,7 @@ export default function SearchPage() {
     const map = searchMapRef.current;
     const mapboxgl = searchMapboxRef.current;
     if (!map || !mapboxgl || !searchMapLoadedRef.current) return;
-    const source = map.getSource(SEARCH_MAP_SOURCE_ID);
-    if (!source) return;
-    source.setData(searchMapFeatureCollection);
-    if (searchMapPoints.length === 0) return;
-    if (searchMapPoints.length === 1) {
-      const point = searchMapPoints[0];
-      map.easeTo({ center: [point.lng, point.lat], zoom: 10, duration: 700 });
-      return;
-    }
-    const bounds = new mapboxgl.LngLatBounds();
-    searchMapPoints.forEach((point) => {
-      bounds.extend([point.lng, point.lat]);
-    });
-    map.fitBounds(bounds, { padding: 48, maxZoom: 11.8, duration: 750 });
+    syncSearchMapResults(map, mapboxgl, searchMapFeatureCollection, searchMapPoints);
   }, [searchMapFeatureCollection, searchMapPoints]);
 
   useEffect(
