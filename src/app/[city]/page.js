@@ -139,11 +139,13 @@ export default function CityPage() {
   const cityName = cityNameFromConfig(config, city);
   const cityHero = getCityHeroCopy(city);
   const cityHeroIntro = useMemo(() => {
+    const editorialIntro = String(cityHero?.intro || "").trim();
+    if (editorialIntro) return editorialIntro;
     const country = String(config?.country || "").trim();
     const vibe = String(config?.vibe || "").trim();
     const vibeTail = vibe ? ` with a ${vibe} vibe` : "";
     return `${cityName} in ${country}${vibeTail}: queer nightlife, trusted venues, and live community signal in one route-first guide.`;
-  }, [cityName, config?.country, config?.vibe]);
+  }, [cityHero?.intro, cityName, config?.country, config?.vibe]);
   const placeId = searchParams?.get("placeId") || "";
   const eventId = searchParams?.get("eventId") || "";
   const serviceId = searchParams?.get("serviceId") || "";
