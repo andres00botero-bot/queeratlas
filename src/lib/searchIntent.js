@@ -45,6 +45,46 @@ function buildCityAliases() {
 
 const CITY_ALIASES = buildCityAliases();
 
+function editDistance(left = "", right = "") {
+  const a = normalizeText(left);
+  const b = normalizeText(right);
+  if (a === b) return 0;
+  if (!a) return b.length;
+  if (!b) return a.length;
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= a.length; row += 1) {
+    const current = [row];
+    for (let column = 1; column <= b.length; column += 1) {
+      current[column] = Math.min(
+        current[column - 1] + 1,
+        previous[column] + 1,
+        previous[column - 1] + (a[row - 1] === b[column - 1] ? 0 : 1)
+      );
+    }
+    previous.splice(0, previous.length, ...current);
+  }
+  return previous[b.length];
+}
+
+function detectFuzzyCity(tokens = []) {
+  let best = null;
+  CITY_ALIASES.forEach((candidate) => {
+    const aliasTokens = candidate.alias.split(" ");
+    if (candidate.alias.length < 4 || tokens.length < aliasTokens.length) return;
+    for (let index = 0; index <= tokens.length - aliasTokens.length; index += 1) {
+      const phrase = tokens.slice(index, index + aliasTokens.length).join(" ");
+      if (phrase.length < 4) continue;
+      const maxDistance = candidate.alias.length >= 9 ? 2 : 1;
+      const distance = editDistance(phrase, candidate.alias);
+      if (distance > maxDistance) continue;
+      if (!best || distance < best.distance || (distance === best.distance && candidate.alias.length > best.alias.length)) {
+        best = { ...candidate, distance };
+      }
+    }
+  });
+  return best;
+}
+
 const PLACE_TYPE_INTENTS = Object.freeze([
   {
     label: "sauna",
@@ -64,7 +104,7 @@ const PLACE_TYPE_INTENTS = Object.freeze([
   {
     label: "club",
     types: ["club"],
-    aliases: ["club", "clubs", "nightclub", "nightclubs", "dance club", "dance clubs"],
+    aliases: ["club", "clubs", "nightclub", "nightclubs", "dance club", "dance clubs", "discotheque", "discotheques", "disco"],
   },
   {
     label: "cafe",
@@ -102,6 +142,7 @@ export function inferSearchIntent(query = "") {
   const placeTypeLabels = [...new Set(matchedPlaceTypes.map((item) => item.label))];
 
   const flags = {
+    nearby: includesAny(normalized, ["near me", "nearby", "close to me", "closest to me"]),
     nightlife: includesAny(normalized, ["nightlife", "bar", "bars", "club", "clubs", "party", "dance floor"]),
     cafes: includesAny(normalized, ["cafe", "cafes", "coffee", "coffee shop"]),
     safe: includesAny(normalized, ["safe", "safety", "secure", "trusted"]),
@@ -110,43 +151,86 @@ export function inferSearchIntent(query = "") {
     quiet: includesAny(normalized, ["quiet", "calm", "chill", "low key", "low-key"]),
     transFriendly: includesAny(normalized, ["trans-friendly", "trans friendly", "trans", "transgender", "nonbinary"]),
     lesbianFriendly: includesAny(normalized, ["lesbian-friendly", "lesbian friendly", "lesbian"]),
+    nonbinaryFriendly: includesAny(normalized, ["nonbinary", "non-binary", "genderqueer", "gender diverse"]),
+    gayFriendly: includesAny(normalized, ["gay", "gay-friendly", "gay friendly"]),
+    bisexualFriendly: includesAny(normalized, ["bisexual", "bi-friendly", "bi friendly"]),
+    sapphicFriendly: includesAny(normalized, ["sapphic", "flinta", "wlw"]),
     travel: includesAny(normalized, ["travel", "trip", "guide", "destination", "destinations"]),
     community: includesAny(normalized, ["community", "meetup", "meetups", "social group", "group"]),
     events: includesAny(normalized, ["event", "events", "festival", "show", "shows", "pride"]),
+    services: includesAny(normalized, [
+      "service",
+      "services",
+      "support",
+      "clinic",
+      "healthcare",
+      "health care",
+      "legal help",
+      "helpline",
+      "organization",
+      "organisation",
+    ]),
+    guides: includesAny(normalized, ["report", "reports", "ranking", "rankings", "index", "methodology"]),
   };
 
   let detectedCity = "";
+  let cityMatch = "none";
   if (hasQuery) {
     for (const candidate of CITY_ALIASES) {
       const escaped = candidate.alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const matcher = new RegExp(`(^|\\s)${escaped}(\\s|$)`);
       if (matcher.test(normalized)) {
         detectedCity = candidate.city;
+        cityMatch = "exact";
         break;
       }
     }
   }
+  if (!detectedCity && hasQuery) {
+    const fuzzyCity = detectFuzzyCity(tokens);
+    if (fuzzyCity) {
+      detectedCity = fuzzyCity.city;
+      cityMatch = "corrected";
+    }
+  }
 
   let suggestedTypeFilter = "all";
-  if (flags.travel) {
+  if (flags.nearby) {
+    suggestedTypeFilter = "all";
+  } else if (flags.guides) {
+    suggestedTypeFilter = "guide";
+  } else if (flags.services) {
+    suggestedTypeFilter = "service";
+  } else if (flags.travel) {
     suggestedTypeFilter = "city";
   } else if (flags.events || flags.drag || flags.tonight || flags.community) {
     suggestedTypeFilter = "event";
   } else if (
+    flags.safe ||
+    flags.transFriendly ||
+    flags.lesbianFriendly ||
+    flags.nonbinaryFriendly ||
+    flags.gayFriendly ||
+    flags.bisexualFriendly ||
+    flags.sapphicFriendly
+  ) {
+    suggestedTypeFilter = "all";
+  } else if (
     placeTypes.length > 0 ||
     flags.nightlife ||
     flags.cafes ||
-    flags.safe ||
     flags.quiet ||
-    flags.transFriendly ||
-    flags.lesbianFriendly
+    flags.transFriendly
   ) {
     suggestedTypeFilter = "place";
   }
 
-  const suggestedQualityFilter = flags.safe || flags.transFriendly ? "verified" : "all";
+  // Editorial verification confirms that information was checked; it is not a
+  // safety rating. Keep safety and identity intent separate from quality state.
+  const suggestedQualityFilter = "all";
 
   const tags = [];
+  if (flags.nearby) tags.push("nearby");
   if (flags.nightlife) tags.push("nightlife");
   if (flags.cafes) tags.push("cafes");
   if (flags.safe) tags.push("safe");
@@ -155,9 +239,15 @@ export function inferSearchIntent(query = "") {
   if (flags.quiet) tags.push("quiet");
   if (flags.transFriendly) tags.push("trans-friendly");
   if (flags.lesbianFriendly) tags.push("lesbian-friendly");
+  if (flags.nonbinaryFriendly) tags.push("nonbinary-friendly");
+  if (flags.gayFriendly) tags.push("gay-friendly");
+  if (flags.bisexualFriendly) tags.push("bisexual-friendly");
+  if (flags.sapphicFriendly) tags.push("sapphic-friendly");
   if (flags.travel) tags.push("travel");
   if (flags.community) tags.push("community");
   if (flags.events) tags.push("events");
+  if (flags.services) tags.push("services");
+  if (flags.guides) tags.push("guides");
   placeTypeLabels.forEach((label) => {
     if (!tags.includes(label)) tags.push(label);
   });
@@ -171,6 +261,7 @@ export function inferSearchIntent(query = "") {
     placeTypes,
     placeTypeLabels,
     detectedCity,
+    cityMatch,
     suggestedTypeFilter,
     suggestedQualityFilter,
     hasIntent: tags.length > 0 || Boolean(detectedCity),
@@ -183,10 +274,16 @@ export function getIntentSignalBoost({ targetType = "", entity = {}, intent = nu
   const text = normalizeText(
     `${entity?.name || ""} ${entity?.title || ""} ${entity?.type || ""} ${entity?.description || ""} ${
       entity?.vibe || ""
-    } ${entity?.city || ""} ${entity?.country || ""}`
+    } ${entity?.city || ""} ${entity?.country || ""} ${JSON.stringify(
+      entity?.venue_intel || entity?.service_intel || entity?.event_intel || {}
+    )}`
   );
 
   let score = 0;
+
+  if (intent.flags.nearby) {
+    score += type === "place" || type === "service" ? 72 : -120;
+  }
 
   if (intent.suggestedTypeFilter !== "all") {
     score += type === intent.suggestedTypeFilter ? 22 : -6;
@@ -225,9 +322,28 @@ export function getIntentSignalBoost({ targetType = "", entity = {}, intent = nu
     if (includesAny(text, ["community", "meetup", "collective", "workshop"])) score += 12;
   }
 
-  if (intent.flags.safe || intent.flags.transFriendly || intent.flags.lesbianFriendly) {
-    if (type === "place") score += 8;
-    if (includesAny(text, ["safe", "safer", "trusted", "inclusive", "friendly", "trans", "lesbian"])) score += 14;
+  if (intent.flags.services) {
+    if (type === "service") score += 38;
+    if (includesAny(text, ["service", "support", "clinic", "health", "legal", "helpline"])) score += 16;
+  }
+
+  if (intent.flags.guides) {
+    if (type === "guide") score += 38;
+    if (includesAny(text, ["guide", "report", "ranking", "index", "methodology"])) score += 16;
+  }
+
+  if (
+    intent.flags.safe ||
+    intent.flags.transFriendly ||
+    intent.flags.lesbianFriendly ||
+    intent.flags.nonbinaryFriendly ||
+    intent.flags.gayFriendly ||
+    intent.flags.bisexualFriendly ||
+    intent.flags.sapphicFriendly
+  ) {
+    if (type === "place" || type === "service") score += 8;
+    if (intent.flags.safe && type === "guide") score += 24;
+    if (includesAny(text, ["safe", "safer", "trusted", "inclusive", "friendly", "trans", "lesbian", "sapphic", "nonbinary", "non-binary", "bisexual", "flinta"])) score += 18;
   }
 
   if (intent.flags.quiet) {

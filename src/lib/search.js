@@ -6,8 +6,34 @@ import {
   normalizeVibeTags,
 } from "./vibeTaxonomy.js";
 import { getIntentSignalBoost, inferSearchIntent } from "./searchIntent.js";
+import { normalizeIsoDate } from "../features/events/eventFormatUtils.js";
 
 const QUERY_CONNECTORS = new Set(["a", "an", "at", "for", "in", "me", "near", "of", "the", "to"]);
+const SEARCH_BLOCKED_QUALITY_STATUSES = new Set([
+  "archived",
+  "closed",
+  "draft",
+  "needs_review",
+  "pending",
+  "rejected",
+]);
+const SEARCH_BLOCKED_EVENT_STATUSES = new Set([
+  "archived",
+  "cancelled",
+  "canceled",
+  "closed",
+  "draft",
+  "postponed",
+  "rejected",
+]);
+const SEARCH_CONTAMINATION_PATTERNS = [
+  /\bdu\s+sa\s*:/i,
+  /\bchatgpt\b/i,
+  /\bai[ -]svar\s+kan\s+inneh[aå]lla\s+fel\b/i,
+  /\bi\s+will\s+give\s+you\s+the\s+name\s+of\s+a\s+venue\b/i,
+  /\bas\s+an\s+ai\s+language\s+model\b/i,
+  /\b(?:user|assistant)\s*:\s*(?:user|assistant)\s*:/i,
+];
 
 function normalizeSearchText(value = "") {
   return String(value || "")
@@ -64,6 +90,113 @@ function aggregateTokenScore(parts, tokens = []) {
 
 function normalizeValue(value = "") {
   return normalizeSearchText(value);
+}
+
+function localDateKey(nowTs = Date.now(), timeZone = "UTC") {
+  const date = new Date(nowTs);
+  if (!Number.isFinite(date.getTime())) return "";
+  try {
+    const parts = new Intl.DateTimeFormat("en", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+function eventDateRange(event = {}) {
+  const startDate = normalizeIsoDate(event.startDate || event.start_date || event.date);
+  const rawEndDate = normalizeIsoDate(event.endDate || event.end_date || event.date);
+  const endDate = rawEndDate && rawEndDate >= startDate ? rawEndDate : startDate;
+  return { startDate, endDate };
+}
+
+function entitySearchText(entity = {}) {
+  const vibeTags = Array.isArray(entity?.vibe_tags) ? entity.vibe_tags.join(" ") : "";
+  return [
+    entity?.name,
+    entity?.title,
+    entity?.type,
+    entity?.description,
+    entity?.vibe,
+    entity?.location,
+    entity?.address,
+    vibeTags,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function hasSearchContentContamination(entity = {}) {
+  const content = entitySearchText(entity);
+  return SEARCH_CONTAMINATION_PATTERNS.some((pattern) => pattern.test(content));
+}
+
+export function isPublishedForSearch(entity = {}, targetType = "") {
+  if (entity?.seo_indexable === false) return false;
+
+  const qualityStatus = normalizeValue(entity?.seo_quality_status || entity?.quality_status || "").replace(
+    /\s+/g,
+    "_"
+  );
+  if (qualityStatus && SEARCH_BLOCKED_QUALITY_STATUSES.has(qualityStatus)) return false;
+
+  if (targetType === "event") {
+    const eventStatus = normalizeValue(
+      entity?.event_status || entity?.moderation_status || entity?.approval_status || entity?.status || ""
+    ).replace(/\s+/g, "_");
+    if (eventStatus && SEARCH_BLOCKED_EVENT_STATUSES.has(eventStatus)) return false;
+  }
+
+  return !hasSearchContentContamination(entity);
+}
+
+export function isEventCurrentOrUpcoming(event = {}, nowTs = Date.now(), timeZone = "UTC") {
+  const today = localDateKey(nowTs, timeZone);
+  const { startDate, endDate } = eventDateRange(event);
+  if (!today || !startDate || !endDate) return false;
+  return endDate >= today;
+}
+
+export function isEventOnLocalDate(event = {}, nowTs = Date.now(), timeZone = "UTC") {
+  const today = localDateKey(nowTs, timeZone);
+  const { startDate, endDate } = eventDateRange(event);
+  if (!today || !startDate || !endDate) return false;
+  return startDate <= today && endDate >= today;
+}
+
+function matchesRequiredIntent(targetType, entity, intent, nowTs, timeZone) {
+  if (targetType === "event" && !isEventCurrentOrUpcoming(entity, nowTs, timeZone)) return false;
+  if (!intent?.hasIntent) return true;
+
+  if (intent.flags?.nearby) {
+    if (targetType !== "place" && targetType !== "service") return false;
+    if (!Number.isFinite(Number(entity?.lat)) || !Number.isFinite(Number(entity?.lng))) return false;
+  }
+
+  if (
+    intent.detectedCity &&
+    (targetType === "place" || targetType === "event" || targetType === "service") &&
+    normalizeValue(entity?.city) !== normalizeValue(intent.detectedCity)
+  ) {
+    return false;
+  }
+
+  if (intent.flags?.tonight) {
+    if (targetType !== "event" || !isEventOnLocalDate(entity, nowTs, timeZone)) return false;
+  }
+
+  if (intent.flags?.drag && targetType === "event") {
+    const text = normalizeValue(entitySearchText(entity));
+    if (!/(^|\s)(drag|cabaret)(?=\s|$)/.test(text)) return false;
+  }
+
+  return true;
 }
 
 function resolveEntityVibeTags(entity = {}, fallbackText = "") {
@@ -143,19 +276,24 @@ export function buildAtlasSearchResults({
   query,
   places,
   events,
+  services = [],
+  guides = [],
   cityLimit = 5,
   placeLimit = 6,
   eventLimit = 6,
+  serviceLimit = 6,
+  guideLimit = 6,
   favoriteIds = [],
   qualityMap = {},
   preferredCity = "",
   nowTs = Date.now(),
+  timeZone = "UTC",
   intentProfile = null,
 }) {
   const normalized = normalizeSearchText(query);
 
   if (!normalized) {
-    return { cities: [], places: [], events: [], all: [] };
+    return { cities: [], places: [], events: [], services: [], guides: [], all: [] };
   }
 
   const favoriteSet = new Set((favoriteIds || []).map((item) => String(item)));
@@ -174,6 +312,7 @@ export function buildAtlasSearchResults({
       const cityName = city.title.replace("Queer ", "");
       const cityKey = normalizeValue(cityName);
       const cityAffinity = preferredCityKey && cityKey === preferredCityKey ? 18 : 0;
+      const exactCityQueryBoost = cityKey === normalized ? 520 : 0;
       const nameBoost = namePriorityBoost(cityName, normalized);
       const intentBoost = getIntentSignalBoost({
         targetType: "city",
@@ -189,7 +328,7 @@ export function buildAtlasSearchResults({
         vibe: city.vibe || "",
         vibe_tags: cityVibeTags,
         type: "city",
-        score: baseScore + cityAffinity + nameBoost + intentBoost,
+        score: baseScore + cityAffinity + exactCityQueryBoost + nameBoost + intentBoost,
         searchSignals: {
           matchedCity: Boolean(
             resolvedIntent.detectedCity &&
@@ -205,6 +344,8 @@ export function buildAtlasSearchResults({
     .slice(0, cityLimit);
 
   const placeResults = places
+    .filter((place) => isPublishedForSearch(place, "place"))
+    .filter((place) => matchesRequiredIntent("place", place, resolvedIntent, nowTs, timeZone))
     .map((place) => {
       const placeVibeTags = resolveEntityVibeTags(place, place.vibe);
       const placeVibeTerms = buildVibeSearchTerms(placeVibeTags, place.vibe);
@@ -269,6 +410,8 @@ export function buildAtlasSearchResults({
     .slice(0, placeLimit);
 
   const eventResults = events
+    .filter((event) => isPublishedForSearch(event, "event"))
+    .filter((event) => matchesRequiredIntent("event", event, resolvedIntent, nowTs, timeZone))
     .map((event) => {
       const eventVibeTags = resolveEntityVibeTags(event, event.vibe);
       const eventVibeTerms = buildVibeSearchTerms(eventVibeTags, event.vibe);
@@ -324,10 +467,97 @@ export function buildAtlasSearchResults({
     .sort((a, b) => b.score - a.score)
     .slice(0, eventLimit);
 
+  const serviceResults = services
+    .filter((service) => isPublishedForSearch(service, "service"))
+    .filter((service) => matchesRequiredIntent("service", service, resolvedIntent, nowTs, timeZone))
+    .map((service) => {
+      const serviceVibeTags = resolveEntityVibeTags(service, service.vibe);
+      const serviceVibeTerms = buildVibeSearchTerms(serviceVibeTags, service.vibe);
+      const searchParts = [
+        service.name,
+        service.provider_name,
+        service.city,
+        service.type,
+        service.description,
+        service.location,
+        service.source,
+        ...serviceVibeTerms,
+      ];
+      const baseScore =
+        aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
+      const cityAffinity =
+        preferredCityKey && normalizeValue(service.city) === preferredCityKey ? 20 : 0;
+      const verifiedBoost = service.verified ? 12 : 0;
+      const qualityScore = qualityBoost("service", service.id, qualityMap);
+      const nameBoost = namePriorityBoost(service.name, normalized);
+      const semanticBoost = getIntentSignalBoost({
+        targetType: "service",
+        entity: service,
+        intent: resolvedIntent,
+      });
+      return {
+        ...service,
+        type: "service",
+        serviceType: service.type,
+        vibe_tags: serviceVibeTags,
+        score: Math.round(baseScore + cityAffinity + verifiedBoost + qualityScore + nameBoost + semanticBoost),
+        searchSignals: {
+          matchedCity: Boolean(
+            resolvedIntent.detectedCity &&
+              normalizeValue(service.city) === normalizeValue(resolvedIntent.detectedCity)
+          ),
+          matchedPlaceType: false,
+          matchedPlaceTypeLabel: "",
+        },
+      };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, serviceLimit);
+
+  const guideResults = guides
+    .filter((guide) => isPublishedForSearch(guide, "guide"))
+    .map((guide) => {
+      const searchParts = [
+        guide.title,
+        guide.summary,
+        guide.intent,
+        guide.kind,
+        ...(Array.isArray(guide.keyphrases) ? guide.keyphrases : []),
+      ];
+      const baseScore =
+        aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
+      const nameBoost = namePriorityBoost(guide.title, normalized);
+      const semanticBoost = getIntentSignalBoost({
+        targetType: "guide",
+        entity: { ...guide, name: guide.title, type: "guide" },
+        intent: resolvedIntent,
+      });
+      return {
+        ...guide,
+        id: guide.id || guide.slug || guide.href,
+        name: guide.title,
+        type: "guide",
+        score: Math.round(baseScore + nameBoost + semanticBoost),
+        searchSignals: {
+          matchedCity: false,
+          matchedPlaceType: false,
+          matchedPlaceTypeLabel: "",
+        },
+      };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, guideLimit);
+
   return {
     cities: cityResults,
     places: placeResults,
     events: eventResults,
-    all: [...cityResults, ...placeResults, ...eventResults].sort((a, b) => b.score - a.score),
+    services: serviceResults,
+    guides: guideResults,
+    all: [...cityResults, ...placeResults, ...eventResults, ...serviceResults, ...guideResults].sort(
+      (a, b) => b.score - a.score
+    ),
   };
 }
