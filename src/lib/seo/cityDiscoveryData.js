@@ -1,12 +1,20 @@
 import "server-only";
 
-import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
+import { cache } from "react";
+import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { fetchEventsData } from "@/features/events/eventDataApi";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { cityGuideConfig } from "@/lib/cityGuides";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { buildEventPath, buildServicePath, buildVenuePath } from "@/lib/seo/entitySlug";
+import {
+  evaluateEventSeoQuality,
+  evaluateServiceSeoQuality,
+  evaluateVenueSeoQuality,
+  excludeDuplicateEntityCopy,
+} from "@/lib/seo/entityIndexing";
+export { evaluateCityDiscoveryIndexability } from "@/lib/seo/cityDiscoveryQuality";
 
 const TOPIC_RULES = {
   "queer-techno-clubs": {
@@ -24,6 +32,7 @@ const TOPIC_RULES = {
     preferredTypes: ["bar"],
     fallbackTypes: ["bar", "cafe", "hotel"],
     keywords: ["inclusive", "welcoming", "community", "safe"],
+    keywordRequired: true,
     safetyFocus: true,
     listTitle: "Safety-led bar shortlist",
     exactLabel: "Bar with stronger trust signals",
@@ -98,6 +107,7 @@ const TOPIC_RULES = {
     preferredTypes: ["bar", "cafe", "hotel"],
     fallbackTypes: ["bar", "cafe", "hotel", "club"],
     keywords: ["inclusive", "welcoming", "community", "central"],
+    keywordRequired: true,
     safetyFocus: true,
     listTitle: "Useful anchors for lower-friction routes",
     exactLabel: "Stronger route anchor",
@@ -147,6 +157,7 @@ const TOPIC_RULES = {
     preferredTypes: ["hotel", "cafe", "bar", "community_center"],
     fallbackTypes: ["hotel", "cafe", "bar", "service", "other"],
     keywords: ["community", "inclusive", "support", "welcoming", "verified"],
+    keywordRequired: true,
     safetyFocus: true,
     listTitle: "Practical trust and support anchors",
     exactLabel: "Stronger trust signal",
@@ -243,6 +254,13 @@ function scoreCandidate(candidate, rule, todayIso) {
   if (rule.dateMode === "tonight-preferred" && kind === "event") {
     exact = keywordHits.length > 0 && Boolean(dateState?.activeToday);
   }
+  if (rule.dateMode === "tonight-preferred" && kind !== "event") {
+    exact = false;
+  }
+  if (rule.safetyFocus) {
+    const hasSafetyEvidence = sources > 0 || reviews.count >= 3;
+    exact = exact && keywordHits.length > 0 && hasSafetyEvidence;
+  }
 
   let score = preferredType ? 70 : fallbackType ? 28 : 0;
   score += Math.min(keywordHits.length * 16, 48);
@@ -303,14 +321,32 @@ function candidateHref(city, candidate) {
   return buildVenuePath(city, candidate.entity);
 }
 
-function selectResults({ city, topic, places, events, services, todayIso }) {
+function isEntityIndexable(entity, kind) {
+  if (kind === "event") return evaluateEventSeoQuality(entity).indexable;
+  if (kind === "service") return evaluateServiceSeoQuality(entity).indexable;
+  return evaluateVenueSeoQuality(entity).indexable;
+}
+
+export function selectCityDiscoveryResults({ city, topic, places = [], events = [], services = [], todayIso }) {
   const rule = TOPIC_RULES[topic];
   if (!rule) return { rule: null, results: [], exactCount: 0, fallbackUsed: false };
 
   const pool = [
-    ...(rule.entityKinds.includes("place") ? places.map((entity) => ({ entity, kind: "place" })) : []),
-    ...(rule.entityKinds.includes("event") ? events.map((entity) => ({ entity, kind: "event" })) : []),
-    ...(rule.entityKinds.includes("service") ? services.map((entity) => ({ entity, kind: "service" })) : []),
+    ...(rule.entityKinds.includes("place")
+      ? excludeDuplicateEntityCopy(places)
+          .filter((entity) => isEntityIndexable(entity, "place"))
+          .map((entity) => ({ entity, kind: "place" }))
+      : []),
+    ...(rule.entityKinds.includes("event")
+      ? excludeDuplicateEntityCopy(events)
+          .filter((entity) => isEntityIndexable(entity, "event"))
+          .map((entity) => ({ entity, kind: "event" }))
+      : []),
+    ...(rule.entityKinds.includes("service")
+      ? excludeDuplicateEntityCopy(services)
+          .filter((entity) => isEntityIndexable(entity, "service"))
+          .map((entity) => ({ entity, kind: "service" }))
+      : []),
   ];
 
   const scored = pool
@@ -340,6 +376,7 @@ function selectResults({ city, topic, places, events, services, todayIso }) {
       exact: candidate.exact,
       rating: candidate.reviews.rating,
       reviewCount: candidate.reviews.count,
+      sourceCount: candidate.sources,
       startDate: candidate.dateState?.start || "",
       endDate: candidate.dateState?.end || "",
     })),
@@ -393,11 +430,11 @@ function buildNarrative({ city, cityName, topic, results, exactCount }) {
   };
 }
 
-export async function loadCityDiscoveryData(city = "", topic = "") {
+export const loadCityDiscoveryData = cache(async (city = "", topic = "") => {
   const cityKey = normalizeCityKey(city);
   const todayIso = new Date().toISOString().slice(0, 10);
   const [placesResponse, eventsResponse, servicesResponse] = await Promise.all([
-    fetchPlacesQueryWithFallback({ filters: { city: cityKey }, mergeSeed: true }),
+    fetchPlacesForAtlas({ filters: { city: cityKey }, mergeSeed: true }),
     fetchEventsData(),
     fetchServicesQuery(),
   ]);
@@ -406,7 +443,7 @@ export async function loadCityDiscoveryData(city = "", topic = "") {
   const places = (Array.isArray(placesResponse?.data) ? placesResponse.data : []).filter(belongsToCity);
   const events = (Array.isArray(eventsResponse?.data) ? eventsResponse.data : []).filter(belongsToCity);
   const services = (Array.isArray(servicesResponse?.data) ? servicesResponse.data : []).filter(belongsToCity);
-  const selection = selectResults({ city: cityKey, topic, places, events, services, todayIso });
+  const selection = selectCityDiscoveryResults({ city: cityKey, topic, places, events, services, todayIso });
 
   return {
     ...selection,
@@ -424,4 +461,4 @@ export async function loadCityDiscoveryData(city = "", topic = "") {
       exactCount: selection.exactCount,
     }),
   };
-}
+});

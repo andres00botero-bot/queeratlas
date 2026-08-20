@@ -3,7 +3,7 @@ import { mergeSeedPlacesAsync } from "./seedMerge";
 import { shouldFallbackFromPlacesWithStats } from "./supabaseErrorGuards";
 
 const PLACES_FALLBACK_SELECT_WITH_INTEL =
-  "id, name, type, city, lat, lng, description, vibe, hours, link, location, venue_intel";
+  "id, name, type, city, lat, lng, description, vibe, hours, link, location, venue_intel, vibe_tags, updated_at, seo_indexable, seo_quality_status";
 const PLACES_FALLBACK_SELECT =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
 const SUPABASE_PAGE_SIZE = 1000;

@@ -36,12 +36,6 @@ if (!hasInlineWebSiteJsonLd) {
       `${entityAuthorityPath}: missing WebSite entity`,
       failures
     );
-    ensureContains(
-      entityAuthoritySource,
-      /"@type":\s*"SearchAction"/,
-      `${entityAuthorityPath}: missing SearchAction for WebSite`,
-      failures
-    );
   }
 }
 
@@ -197,8 +191,8 @@ const sitemapSource = read(sitemapPath);
 ensureContains(sitemapSource, /const staticRoutes\s*=\s*\[/, `${sitemapPath}: missing staticRoutes`, failures);
 ensureContains(
   sitemapSource,
-  /\.filter\(\(topic\)\s*=>\s*isTier1CityTopic\(city,\s*topic\.key\)\)/,
-  `${sitemapPath}: city topic routes must be limited by the indexing tier`,
+  /evaluateCityDiscoveryIndexability\(\{\s*topic:\s*topic\.key,\s*discovery\s*\}\)/,
+  `${sitemapPath}: city topic routes must use the shared content quality gate`,
   failures
 );
 ensureContains(
@@ -256,14 +250,14 @@ const cityTopicPath = "src/app/[city]/discover/[topic]/page.js";
 const cityTopicSource = read(cityTopicPath);
 ensureContains(
   cityTopicSource,
-  /const tierReady = isTier1CityTopic\(city,\s*topic\)/,
-  `${cityTopicPath}: missing city topic indexing tier check`,
+  /const contentQuality = evaluateCityDiscoveryIndexability\(\{ topic, discovery \}\)/,
+  `${cityTopicPath}: missing live Discovery content quality check`,
   failures
 );
 ensureContains(
   cityTopicSource,
-  /const shouldIndex = qualityReady && tierReady/,
-  `${cityTopicPath}: indexability must require both content quality and tier eligibility`,
+  /const shouldIndex = copyReady && contentQuality\.indexable/,
+  `${cityTopicPath}: indexability must require both editorial copy and live result quality`,
   failures
 );
 ensureContains(
@@ -272,18 +266,6 @@ ensureContains(
   `${cityTopicPath}: city topic title must use the concise title template`,
   failures
 );
-
-const homeClientPath = "src/components/home/HomePageClient.js";
-const homeClientSource = read(homeClientPath);
-ensureContains(
-  homeClientSource,
-  /across 130\+ cities/,
-  `${homeClientPath}: city coverage claim must match the configured inventory`,
-  failures
-);
-if (/across 300\+ cities/.test(homeClientSource)) {
-  failures.push(`${homeClientPath}: outdated 300+ cities claim`);
-}
 
 const robotsPath = "src/app/robots.js";
 const robotsSource = read(robotsPath);

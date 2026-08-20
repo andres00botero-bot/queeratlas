@@ -249,6 +249,16 @@ function normalizeSeedKey(value = "") {
     .trim();
 }
 
+function normalizeSeedDescription(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9 ]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const CURATED_VENUE_OVERRIDES = {
   "copenhagen::centralhjornet": {
     hours: "Mon-Thu 12:00-02:00, Fri-Sat 12:00-04:00, Sun 12:00-02:00.",
@@ -9573,15 +9583,31 @@ export function mergeSeedPlaces(databasePlaces = []) {
       `${normalizeSeedKey(place.city)}::${normalizeSeedKey(place.name)}`,
     ),
   );
+  const seenDescriptions = new Set(
+    normalizedDatabasePlaces
+      .map((place) => ({
+        city: normalizeSeedKey(place.city),
+        description: normalizeSeedDescription(place.description),
+      }))
+      .filter(({ description }) => description.length >= 80)
+      .map(({ city, description }) => `${city}::${description}`),
+  );
   const uniqueSeedPlaces = [];
 
   effectiveSeedPlaces.forEach((place) => {
     const id = String(place.id);
     const venueKey = `${normalizeSeedKey(place.city)}::${normalizeSeedKey(place.name)}`;
-    if (seenIds.has(id) || seenVenueKeys.has(venueKey)) return;
+    const descriptionKey = normalizeSeedDescription(place.description);
+    const cityDescriptionKey = `${normalizeSeedKey(place.city)}::${descriptionKey}`;
+    if (
+      seenIds.has(id) ||
+      seenVenueKeys.has(venueKey) ||
+      (descriptionKey.length >= 80 && seenDescriptions.has(cityDescriptionKey))
+    ) return;
 
     seenIds.add(id);
     seenVenueKeys.add(venueKey);
+    if (descriptionKey.length >= 80) seenDescriptions.add(cityDescriptionKey);
     uniqueSeedPlaces.push(applyVenueOverride(place));
   });
 

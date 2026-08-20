@@ -3,9 +3,16 @@ import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { buildEventPath, buildServicePath, buildVenuePath } from "@/lib/seo/entitySlug";
 import { resolveEntityLastModified } from "@/lib/seo/entityIndexing";
 import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
-import { isIndexableTopicHub, isTier1CityTopic } from "@/lib/seo/indexingTier";
+import {
+  selectCityDiscoveryResults,
+} from "@/lib/seo/cityDiscoveryData";
+import { evaluateCityDiscoveryIndexability } from "@/lib/seo/cityDiscoveryQuality";
 import { listSeoReports } from "@/lib/seo/reportsIndex";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
+import {
+  evaluateTopicHubIndexability,
+  loadIndexableTopicHubRoutes,
+} from "@/lib/seo/topicHubRoutes";
 import { QA_SITE_URL } from "@/lib/seo/sitemapXml";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
@@ -58,8 +65,10 @@ export async function getPageSitemapEntries() {
   const staticRoutes = [
     "",
     "/cities",
+    "/events",
     "/events/calendar",
     "/events/off-grid",
+    "/now",
     "/now/news",
     "/now/rankings",
     "/now/collections",
@@ -98,23 +107,41 @@ export async function getPageSitemapEntries() {
     key: topic.key,
     intent: String(topic.intent || "").trim().toLowerCase(),
   }));
-  const cityClusterEntries = Object.keys(cityConfig).flatMap((city) =>
-    clusterTopics
-      .filter((topic) => isTier1CityTopic(city, topic.key))
-      .map((topic) => entryWithDate({
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const cityClusterEntries = Object.keys(cityConfig).flatMap((city) => {
+    const places = inventory.venues.filter((row) => normalizeCitySlug(row?.city) === city);
+    const events = inventory.events.filter((row) => normalizeCitySlug(row?.city) === city);
+    const services = inventory.services.filter((row) => normalizeCitySlug(row?.city) === city);
+
+    return clusterTopics.flatMap((topic) => {
+      const discovery = selectCityDiscoveryResults({
+        city,
+        topic: topic.key,
+        places,
+        events,
+        services,
+        todayIso,
+      });
+      const quality = evaluateCityDiscoveryIndexability({ topic: topic.key, discovery });
+      if (!quality.indexable) return [];
+      return [entryWithDate({
         url: `${QA_SITE_URL}/${city}/discover/${topic.key}`,
         changeFrequency: "weekly",
         priority: CLUSTER_INTENT_PRIORITY[topic.intent] || 0.8,
-      }, cityDates.get(city))),
-  );
+      }, cityDates.get(city))];
+    });
+  });
 
-  const topicHubEntries = listTopicHubs()
-    .filter((hub) => isIndexableTopicHub(hub.key))
-    .map((hub) => ({
+  const topicHubEntries = (await Promise.all(listTopicHubs().map(async (hub) => {
+    const routes = await loadIndexableTopicHubRoutes(hub.key);
+    const quality = evaluateTopicHubIndexability({ hub, routes });
+    if (!quality.indexable) return null;
+    return {
       url: `${QA_SITE_URL}/topics/${hub.key}`,
       changeFrequency: "weekly",
       priority: 0.86,
-    }));
+    };
+  }))).filter(Boolean);
 
   const reportEntries = listSeoReports().map((report) => ({
     url: `${QA_SITE_URL}/reports/${report.slug}`,

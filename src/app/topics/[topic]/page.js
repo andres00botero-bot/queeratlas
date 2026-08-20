@@ -1,14 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cityCoreConfig } from "@/lib/cityCore";
 import { getTopicHub, listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
-import { humanizeCityKey, humanizeTopicKey } from "@/lib/seo/entityConsistency";
 import {
-  isIndexableTopicHub,
-  isTier1CityTopic,
-  TIER1_CITY_SLUGS,
-} from "@/lib/seo/indexingTier";
+  evaluateTopicHubIndexability,
+  loadIndexableTopicHubRoutes,
+} from "@/lib/seo/topicHubRoutes";
 
 function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
@@ -18,35 +15,8 @@ function buildTopicPath(topic = "") {
   return `/topics/${topic}`;
 }
 
-function getHubClusterKeys(hub) {
-  if (Array.isArray(hub?.clusterKeys) && hub.clusterKeys.length > 0) {
-    return hub.clusterKeys;
-  }
-  return hub?.clusterKey ? [hub.clusterKey] : [];
-}
-
-function buildIndexableHubRoutes(hub) {
-  const clusterKeys = getHubClusterKeys(hub);
-  return TIER1_CITY_SLUGS.flatMap((city) => {
-    if (!cityCoreConfig[city]) return [];
-    return clusterKeys
-      .filter((clusterKey) => isTier1CityTopic(city, clusterKey))
-      .map((clusterKey) => ({
-        city,
-        clusterKey,
-        href: `/${city}/discover/${clusterKey}`,
-        label: `${humanizeCityKey(city)} - ${humanizeTopicKey(clusterKey)}`,
-      }));
-  });
-}
-
 export function generateStaticParams() {
   return listTopicHubs().map((hub) => ({ topic: hub.key }));
-}
-
-function shouldIndexTopicHub({ hub, selectedCitiesCount, routeCount }) {
-  const descriptionLength = String(hub?.description || "").trim().length;
-  return descriptionLength >= 90 && selectedCitiesCount >= 3 && routeCount >= 6;
 }
 
 export async function generateMetadata({ params }) {
@@ -62,15 +32,8 @@ export async function generateMetadata({ params }) {
   }
 
   const canonical = buildTopicPath(hub.key);
-  const cityClusterRoutes = buildIndexableHubRoutes(hub);
-  const selectedCitiesCount = new Set(cityClusterRoutes.map((route) => route.city)).size;
-  const qualityReady = shouldIndexTopicHub({
-    hub,
-    selectedCitiesCount,
-    routeCount: cityClusterRoutes.length,
-  });
-  const tierReady = isIndexableTopicHub(hub.key);
-  const shouldIndex = qualityReady && tierReady;
+  const cityClusterRoutes = await loadIndexableTopicHubRoutes(hub.key);
+  const quality = evaluateTopicHubIndexability({ hub, routes: cityClusterRoutes });
   const title = `${hub.title} 2026`;
   const description = `${hub.description} Compare city-by-city discover routes, safety context, and social signal in one topical hub.`;
 
@@ -90,7 +53,7 @@ export async function generateMetadata({ params }) {
       title,
       description,
     },
-    robots: shouldIndex
+    robots: quality.indexable
       ? { index: true, follow: true }
       : { index: false, follow: true },
   };
@@ -148,7 +111,7 @@ export default async function TopicHubPage({ params }) {
   if (!hub) notFound();
 
   const canonical = buildTopicPath(hub.key);
-  const cityClusterRoutes = buildIndexableHubRoutes(hub);
+  const cityClusterRoutes = await loadIndexableTopicHubRoutes(hub.key);
   const selectedCitiesCount = new Set(cityClusterRoutes.map((route) => route.city)).size;
 
   const itemListJsonLd = {
@@ -172,7 +135,7 @@ export default async function TopicHubPage({ params }) {
         "@type": "ListItem",
         position: index + 1,
         url: toAbsoluteUrl(route.href),
-        name: `${hub.title} in ${humanizeCityKey(route.city)} - ${humanizeTopicKey(route.clusterKey)}`,
+        name: route.label,
       })),
     },
   };
@@ -234,7 +197,7 @@ export default async function TopicHubPage({ params }) {
                 href={route.href}
                 className="rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/84 transition hover:border-cyan-200/34 hover:text-white"
               >
-                {hub.title} in {humanizeCityKey(route.city)} - {humanizeTopicKey(route.clusterKey)}
+                {route.label}
               </Link>
             ))}
           </div>
