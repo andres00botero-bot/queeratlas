@@ -75,6 +75,54 @@ const results = buildAtlasSearchResults({
 
 assert.deepEqual(results.events.map((event) => event.id), ["drag-current"]);
 
+const strictVenueTypes = [
+  { query: "Berlin sauna", expectedType: "sauna", wrongType: "cruise_club" },
+  { query: "Berlin queer cafes", expectedType: "cafe", wrongType: "bar" },
+  { query: "Berlin hotels", expectedType: "hotel", wrongType: "bar" },
+  { query: "Berlin bars", expectedType: "bar", wrongType: "club" },
+  { query: "Berlin clubs", expectedType: "club", wrongType: "bar" },
+  { query: "Berlin restaurants", expectedType: "restaurant", wrongType: "cafe" },
+  { query: "Berlin cinemas", expectedType: "cinema", wrongType: "gallery" },
+  { query: "Berlin galleries", expectedType: "gallery", wrongType: "cinema" },
+  { query: "Berlin cruise clubs", expectedType: "cruise_club", wrongType: "sauna" },
+];
+
+strictVenueTypes.forEach(({ query, expectedType, wrongType }) => {
+  const strictResults = buildAtlasSearchResults({
+    query,
+    places: [
+      {
+        id: `correct-${expectedType}`,
+        name: `Berlin ${expectedType}`,
+        city: "Berlin",
+        type: expectedType,
+        description: `A dedicated ${expectedType} venue.`,
+      },
+      {
+        id: `wrong-${wrongType}`,
+        name: `${query} premium destination`,
+        city: "Berlin",
+        type: wrongType,
+        description: `${query} ${query} ${query}`,
+      },
+    ],
+    events: [],
+    nowTs,
+  });
+  assert.deepEqual(strictResults.places.map((place) => place.id), [`correct-${expectedType}`]);
+});
+
+const broadNightlifeResults = buildAtlasSearchResults({
+  query: "Berlin nightlife",
+  places: [
+    { id: "nightlife-bar", name: "Berlin Bar", city: "Berlin", type: "bar", description: "Nightlife bar." },
+    { id: "nightlife-club", name: "Berlin Club", city: "Berlin", type: "club", description: "Nightlife club." },
+  ],
+  events: [],
+  nowTs,
+});
+assert.deepEqual(new Set(broadNightlifeResults.places.map((place) => place.placeType)), new Set(["bar", "club"]));
+
 const expandedResults = buildAtlasSearchResults({
   query: "queer support Berlin",
   places: [],

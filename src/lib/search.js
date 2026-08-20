@@ -174,6 +174,11 @@ function matchesRequiredIntent(targetType, entity, intent, nowTs, timeZone) {
   if (targetType === "event" && !isEventCurrentOrUpcoming(entity, nowTs, timeZone)) return false;
   if (!intent?.hasIntent) return true;
 
+  if (targetType === "place" && intent.placeTypes?.length > 0) {
+    const entityPlaceType = normalizeValue(entity?.type).replace(/\s+/g, "_");
+    if (!intent.placeTypes.includes(entityPlaceType)) return false;
+  }
+
   if (intent.flags?.nearby) {
     if (targetType !== "place" && targetType !== "service") return false;
     if (!Number.isFinite(Number(entity?.lat)) || !Number.isFinite(Number(entity?.lng))) return false;
