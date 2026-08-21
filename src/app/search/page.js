@@ -58,7 +58,13 @@ const TYPE_FILTER_TONES = Object.freeze({
 });
 const EMPTY_FEATURE_COLLECTION = { type: "FeatureCollection", features: [] };
 function normalizeValue(value) {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function resolveItemVibeTags(item = {}) {

@@ -137,7 +137,10 @@ export function inferSearchIntent(query = "") {
   const normalized = normalizeText(query);
   const tokens = tokenize(query);
   const hasQuery = normalized.length > 0;
-  const matchedPlaceTypes = PLACE_TYPE_INTENTS.filter((item) => includesAny(normalized, item.aliases));
+  const rawMatchedPlaceTypes = PLACE_TYPE_INTENTS.filter((item) => includesAny(normalized, item.aliases));
+  const matchedPlaceTypes = rawMatchedPlaceTypes.some((item) => item.label === "cruise")
+    ? rawMatchedPlaceTypes.filter((item) => item.label === "cruise")
+    : rawMatchedPlaceTypes;
   const placeTypes = [...new Set(matchedPlaceTypes.flatMap((item) => item.types))];
   const placeTypeLabels = [...new Set(matchedPlaceTypes.map((item) => item.label))];
 

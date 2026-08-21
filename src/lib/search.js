@@ -17,6 +17,7 @@ const SEARCH_BLOCKED_QUALITY_STATUSES = new Set([
   "pending",
   "rejected",
 ]);
+const CATALOG_BLOCKED_LIFECYCLE_STATUSES = new Set(["archived", "closed", "rejected"]);
 const SEARCH_BLOCKED_EVENT_STATUSES = new Set([
   "archived",
   "cancelled",
@@ -92,6 +93,17 @@ function normalizeValue(value = "") {
   return normalizeSearchText(value);
 }
 
+function normalizeCityValue(value = "") {
+  const normalized = normalizeValue(value);
+  if (!normalized) return "";
+  const cityEntry = Object.entries(cityConfig).find(([key, city]) => {
+    const keyValue = normalizeValue(key);
+    const titleValue = normalizeValue(String(city?.title || "").replace(/^Queer\s+/i, ""));
+    return normalized === keyValue || normalized === titleValue;
+  });
+  return cityEntry ? normalizeValue(cityEntry[0]) : normalized;
+}
+
 function localDateKey(nowTs = Date.now(), timeZone = "UTC") {
   const date = new Date(nowTs);
   if (!Number.isFinite(date.getTime())) return "";
@@ -156,6 +168,31 @@ export function isPublishedForSearch(entity = {}, targetType = "") {
   return !hasSearchContentContamination(entity);
 }
 
+// Internal catalog discovery is separate from search-engine indexing. A valid
+// noindex/needs-review entry can already be public in the product and must remain
+// findable. Only terminal lifecycle states are removed from internal search.
+export function isVisibleInCatalogSearch(entity = {}, targetType = "") {
+  const lifecycleStatus = normalizeValue(
+    entity?.lifecycle_status || entity?.moderation_status || entity?.approval_status || entity?.status || ""
+  ).replace(/\s+/g, "_");
+  const qualityStatus = normalizeValue(entity?.seo_quality_status || entity?.quality_status || "").replace(
+    /\s+/g,
+    "_"
+  );
+
+  if (CATALOG_BLOCKED_LIFECYCLE_STATUSES.has(lifecycleStatus)) return false;
+  if (CATALOG_BLOCKED_LIFECYCLE_STATUSES.has(qualityStatus)) return false;
+
+  if (targetType === "event") {
+    const eventStatus = normalizeValue(
+      entity?.event_status || entity?.moderation_status || entity?.approval_status || entity?.status || ""
+    ).replace(/\s+/g, "_");
+    if (eventStatus && SEARCH_BLOCKED_EVENT_STATUSES.has(eventStatus)) return false;
+  }
+
+  return !hasSearchContentContamination(entity);
+}
+
 export function isEventCurrentOrUpcoming(event = {}, nowTs = Date.now(), timeZone = "UTC") {
   const today = localDateKey(nowTs, timeZone);
   const { startDate, endDate } = eventDateRange(event);
@@ -172,6 +209,17 @@ export function isEventOnLocalDate(event = {}, nowTs = Date.now(), timeZone = "U
 
 function matchesRequiredIntent(targetType, entity, intent, nowTs, timeZone) {
   if (targetType === "event" && !isEventCurrentOrUpcoming(entity, nowTs, timeZone)) return false;
+
+  // A detected city is always a hard scope for catalog entities, including when
+  // another query token is unknown or misspelled.
+  if (
+    intent?.detectedCity &&
+    (targetType === "place" || targetType === "event" || targetType === "service") &&
+    normalizeCityValue(entity?.city) !== normalizeCityValue(intent.detectedCity)
+  ) {
+    return false;
+  }
+
   if (!intent?.hasIntent) return true;
 
   if (targetType === "place" && intent.placeTypes?.length > 0) {
@@ -182,14 +230,6 @@ function matchesRequiredIntent(targetType, entity, intent, nowTs, timeZone) {
   if (intent.flags?.nearby) {
     if (targetType !== "place" && targetType !== "service") return false;
     if (!Number.isFinite(Number(entity?.lat)) || !Number.isFinite(Number(entity?.lng))) return false;
-  }
-
-  if (
-    intent.detectedCity &&
-    (targetType === "place" || targetType === "event" || targetType === "service") &&
-    normalizeValue(entity?.city) !== normalizeValue(intent.detectedCity)
-  ) {
-    return false;
   }
 
   if (intent.flags?.tonight) {
@@ -302,7 +342,7 @@ export function buildAtlasSearchResults({
   }
 
   const favoriteSet = new Set((favoriteIds || []).map((item) => String(item)));
-  const preferredCityKey = normalizeValue(preferredCity);
+  const preferredCityKey = normalizeCityValue(preferredCity);
   const resolvedIntent = intentProfile || inferSearchIntent(normalized || "");
   const queryTokens = buildQueryTokens(normalized);
 
@@ -315,7 +355,7 @@ export function buildAtlasSearchResults({
       const baseScore =
         aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
       const cityName = city.title.replace("Queer ", "");
-      const cityKey = normalizeValue(cityName);
+      const cityKey = normalizeCityValue(cityName);
       const cityAffinity = preferredCityKey && cityKey === preferredCityKey ? 18 : 0;
       const exactCityQueryBoost = cityKey === normalized ? 520 : 0;
       const nameBoost = namePriorityBoost(cityName, normalized);
@@ -337,19 +377,24 @@ export function buildAtlasSearchResults({
         searchSignals: {
           matchedCity: Boolean(
             resolvedIntent.detectedCity &&
-              cityKey === normalizeValue(resolvedIntent.detectedCity)
+              cityKey === normalizeCityValue(resolvedIntent.detectedCity)
           ),
           matchedPlaceType: false,
           matchedPlaceTypeLabel: "",
         },
       };
     })
+    .filter(
+      (item) =>
+        !resolvedIntent.detectedCity ||
+        normalizeCityValue(item.name) === normalizeCityValue(resolvedIntent.detectedCity)
+    )
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, cityLimit);
 
   const placeResults = places
-    .filter((place) => isPublishedForSearch(place, "place"))
+    .filter((place) => isVisibleInCatalogSearch(place, "place"))
     .filter((place) => matchesRequiredIntent("place", place, resolvedIntent, nowTs, timeZone))
     .map((place) => {
       const placeVibeTags = resolveEntityVibeTags(place, place.vibe);
@@ -366,7 +411,7 @@ export function buildAtlasSearchResults({
       const baseScore =
         aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
       const cityAffinity =
-        preferredCityKey && normalizeValue(place.city) === preferredCityKey ? 20 : 0;
+        preferredCityKey && normalizeCityValue(place.city) === preferredCityKey ? 20 : 0;
       const socialProof = Math.min(Number(place.reviewCount || 0), 40) * 0.55;
       const ratingBoost = Math.max(0, Number(place.avgRating || 0) - 3) * 7;
       const qualityScore = qualityBoost("place", place.id, qualityMap);
@@ -393,7 +438,7 @@ export function buildAtlasSearchResults({
       const matchedPlaceType = Boolean(resolvedIntent.placeTypes?.includes(normalizedPlaceType));
       const matchedCity = Boolean(
         resolvedIntent.detectedCity &&
-          normalizeValue(place.city) === normalizeValue(resolvedIntent.detectedCity)
+          normalizeCityValue(place.city) === normalizeCityValue(resolvedIntent.detectedCity)
       );
       return {
         ...place,
@@ -415,7 +460,7 @@ export function buildAtlasSearchResults({
     .slice(0, placeLimit);
 
   const eventResults = events
-    .filter((event) => isPublishedForSearch(event, "event"))
+    .filter((event) => isVisibleInCatalogSearch(event, "event"))
     .filter((event) => matchesRequiredIntent("event", event, resolvedIntent, nowTs, timeZone))
     .map((event) => {
       const eventVibeTags = resolveEntityVibeTags(event, event.vibe);
@@ -431,7 +476,7 @@ export function buildAtlasSearchResults({
       const baseScore =
         aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
       const cityAffinity =
-        preferredCityKey && normalizeValue(event.city) === preferredCityKey ? 18 : 0;
+        preferredCityKey && normalizeCityValue(event.city) === preferredCityKey ? 18 : 0;
       const freshness = eventFreshnessBoost(event.start_date || event.startDate || event.date, nowTs);
       const qualityScore = qualityBoost("event", event.id, qualityMap);
       const noveltyPenalty = favoriteSet.has(`event-${event.id}`) ? -15 : 0;
@@ -461,7 +506,7 @@ export function buildAtlasSearchResults({
         searchSignals: {
           matchedCity: Boolean(
             resolvedIntent.detectedCity &&
-              normalizeValue(event.city) === normalizeValue(resolvedIntent.detectedCity)
+              normalizeCityValue(event.city) === normalizeCityValue(resolvedIntent.detectedCity)
           ),
           matchedPlaceType: false,
           matchedPlaceTypeLabel: "",
@@ -473,7 +518,7 @@ export function buildAtlasSearchResults({
     .slice(0, eventLimit);
 
   const serviceResults = services
-    .filter((service) => isPublishedForSearch(service, "service"))
+    .filter((service) => isVisibleInCatalogSearch(service, "service"))
     .filter((service) => matchesRequiredIntent("service", service, resolvedIntent, nowTs, timeZone))
     .map((service) => {
       const serviceVibeTags = resolveEntityVibeTags(service, service.vibe);
@@ -491,7 +536,7 @@ export function buildAtlasSearchResults({
       const baseScore =
         aggregateScore(searchParts, normalized) + aggregateTokenScore(searchParts, queryTokens);
       const cityAffinity =
-        preferredCityKey && normalizeValue(service.city) === preferredCityKey ? 20 : 0;
+        preferredCityKey && normalizeCityValue(service.city) === preferredCityKey ? 20 : 0;
       const verifiedBoost = service.verified ? 12 : 0;
       const qualityScore = qualityBoost("service", service.id, qualityMap);
       const nameBoost = namePriorityBoost(service.name, normalized);
@@ -509,7 +554,7 @@ export function buildAtlasSearchResults({
         searchSignals: {
           matchedCity: Boolean(
             resolvedIntent.detectedCity &&
-              normalizeValue(service.city) === normalizeValue(resolvedIntent.detectedCity)
+              normalizeCityValue(service.city) === normalizeCityValue(resolvedIntent.detectedCity)
           ),
           matchedPlaceType: false,
           matchedPlaceTypeLabel: "",
@@ -521,7 +566,7 @@ export function buildAtlasSearchResults({
     .slice(0, serviceLimit);
 
   const guideResults = guides
-    .filter((guide) => isPublishedForSearch(guide, "guide"))
+    .filter((guide) => isVisibleInCatalogSearch(guide, "guide"))
     .map((guide) => {
       const searchParts = [
         guide.title,

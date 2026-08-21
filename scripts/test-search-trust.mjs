@@ -5,10 +5,14 @@ import {
   isEventCurrentOrUpcoming,
   isEventOnLocalDate,
   isPublishedForSearch,
+  isVisibleInCatalogSearch,
 } from "../src/lib/search.js";
 import { inferSearchIntent } from "../src/lib/searchIntent.js";
 import { buildLiveSearchSuggestions } from "../src/lib/searchSuggestions.js";
 import { resolveSearchTimeZone } from "../src/lib/searchTimeZones.js";
+import { mergeSeedPlaces } from "../src/lib/seedPlacesContent.js";
+import { mergeSeedEvents } from "../src/lib/seedEventsContent.js";
+import { cityCoreConfig } from "../src/lib/cityCore.js";
 
 const nowTs = new Date("2026-08-20T12:00:00Z").getTime();
 
@@ -49,6 +53,15 @@ assert.equal(isEventCurrentOrUpcoming({ ...currentDrag, date: "" }, nowTs), fals
 assert.equal(hasSearchContentContamination(contaminated), true);
 assert.equal(isPublishedForSearch(contaminated, "event"), false);
 assert.equal(isPublishedForSearch({ ...currentDrag, seo_indexable: false }, "event"), false);
+assert.equal(isVisibleInCatalogSearch({ ...currentDrag, seo_indexable: false }, "event"), true);
+assert.equal(
+  isVisibleInCatalogSearch({ ...currentDrag, seo_quality_status: "needs_review" }, "event"),
+  true
+);
+assert.equal(
+  isPublishedForSearch({ ...currentDrag, seo_quality_status: "needs_review" }, "event"),
+  false
+);
 assert.equal(
   isPublishedForSearch({ ...currentDrag, seo_quality_status: "rejected" }, "event"),
   false
@@ -176,6 +189,27 @@ const cityScopedResults = buildAtlasSearchResults({
 });
 assert.deepEqual(cityScopedResults.services.map((service) => service.id), ["support-1"]);
 
+const noisyCityScopedResults = buildAtlasSearchResults({
+  query: "Berlin q",
+  places: [
+    { id: "berlin-noindex", name: "Der Boiler", city: "Berlin", type: "sauna", seo_indexable: false },
+    { id: "stockholm-place", name: "Queer Q", city: "Stockholm", type: "bar" },
+  ],
+  events: [],
+  nowTs,
+});
+assert.deepEqual(noisyCityScopedResults.places.map((place) => place.id), ["berlin-noindex"]);
+
+const noindexCatalogResult = buildAtlasSearchResults({
+  query: "Berlin sauna",
+  places: [
+    { id: "berlin-noindex", name: "Der Boiler", city: "Berlin", type: "sauna", seo_indexable: false },
+  ],
+  events: [],
+  nowTs,
+});
+assert.deepEqual(noindexCatalogResult.places.map((place) => place.id), ["berlin-noindex"]);
+
 const exactCityResults = buildAtlasSearchResults({
   query: "Berlin",
   places: [
@@ -233,4 +267,67 @@ assert.deepEqual(nearbyResults.places.map((place) => place.id), ["near-1"]);
 assert.deepEqual(nearbyResults.services.map((service) => service.id), ["near-service"]);
 assert.equal(nearbyResults.events.length, 0);
 
-console.log("Search trust tests passed.");
+const databaseCatalogFixtures = [
+  { id: 900001, name: "Database Berlin Bar", city: "berlin", type: "bar", description: "Existing database venue." },
+  { id: 900002, name: "Database Berlin Cafe", city: "berlin", type: "cafe", description: "Existing database venue." },
+  { id: 900003, name: "Database Berlin Club", city: "berlin", type: "club", description: "Existing database venue." },
+  { id: 900004, name: "Database Berlin Cinema", city: "berlin", type: "cinema", description: "Existing database venue." },
+  { id: 900005, name: "Database Berlin Cruise Club", city: "berlin", type: "cruise_club", description: "Existing database venue." },
+  { id: 900006, name: "Database Berlin Gallery", city: "berlin", type: "gallery", description: "Existing database venue." },
+  { id: 900007, name: "Database Berlin Hotel", city: "berlin", type: "hotel", description: "Existing database venue." },
+  { id: 900008, name: "Database Berlin Restaurant", city: "berlin", type: "restaurant", description: "Existing database venue." },
+  { id: 900009, name: "Database Berlin Sauna", city: "berlin", type: "sauna", description: "Existing database venue." },
+];
+const fullSeedPlaces = mergeSeedPlaces(databaseCatalogFixtures).filter((place) => isPublishedForSearch(place, "place"));
+const fullSeedEvents = mergeSeedEvents([]);
+assert.equal(fullSeedPlaces.some((place) => place.name === "Der Boiler" && place.type === "sauna"), true);
+assert.equal(fullSeedEvents.length > 0, true);
+
+const venueSearchGroups = [
+  { query: "bars", types: ["bar"] },
+  { query: "cafes", types: ["cafe"] },
+  { query: "clubs", types: ["club"] },
+  { query: "cinemas", types: ["cinema"] },
+  { query: "cruise clubs", types: ["cruise_club", "cruising_area"] },
+  { query: "galleries", types: ["gallery"] },
+  { query: "hotels", types: ["hotel"] },
+  { query: "restaurants", types: ["restaurant"] },
+  { query: "saunas", types: ["sauna"] },
+];
+
+let auditedCityCategorySearches = 0;
+Object.entries(cityCoreConfig).forEach(([cityKey, city]) => {
+  const cityPlaces = fullSeedPlaces.filter(
+    (place) => String(place.city || "").replace(/[_-]+/g, " ").toLowerCase() === cityKey.replace(/[_-]+/g, " ").toLowerCase()
+  );
+  const cityName = String(city?.title || cityKey).replace(/^Queer\s+/i, "").trim();
+
+  venueSearchGroups.forEach(({ query, types }) => {
+    const expectedIds = new Set(
+      cityPlaces.filter((place) => types.includes(String(place.type || ""))).map((place) => String(place.id))
+    );
+    if (expectedIds.size === 0) return;
+
+    auditedCityCategorySearches += 1;
+    const categoryResults = buildAtlasSearchResults({
+      query: `${cityName} ${query}`,
+      places: fullSeedPlaces,
+      events: [],
+      nowTs,
+      placeLimit: fullSeedPlaces.length,
+    });
+    assert.equal(categoryResults.places.length > 0, true, `${cityName} ${query} should return exact venues`);
+    categoryResults.places.forEach((place) => {
+      assert.equal(types.includes(place.placeType), true, `${cityName} ${query} returned ${place.placeType}`);
+      assert.equal(expectedIds.has(String(place.id)), true, `${cityName} ${query} returned a venue from the wrong city`);
+    });
+    assert.deepEqual(
+      new Set(categoryResults.places.map((place) => String(place.id))),
+      expectedIds,
+      `${cityName} ${query} did not return the complete category`,
+    );
+  });
+});
+assert.equal(auditedCityCategorySearches > 250, true);
+
+console.log(`Search trust tests passed (${auditedCityCategorySearches} city/category corpus searches audited).`);

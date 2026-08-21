@@ -1,43 +1,131 @@
 import "server-only";
 
-import { unstable_cache } from "next/cache";
 import { supabase } from "../supabase.js";
 import { fetchPlacesForAtlas } from "../placesDataApi.js";
 import { fetchServicesQuery } from "../servicesDataApi.js";
-import { mergeSeedEventsAsync } from "../seedMerge.js";
+import { mergeSeedPlaces } from "../seedPlacesContent.js";
+import { mergeSeedEvents } from "../seedEventsContent.js";
 import { buildAtlasSearchResults } from "../search.js";
 import { inferSearchIntent } from "../searchIntent.js";
 import { getSearchGuides } from "../searchGuides.js";
 import { resolveSearchTimeZone } from "../searchTimeZones.js";
+import { cityCoreConfig } from "../cityCore.js";
 
-const SEARCH_CORPUS_REVALIDATE_SECONDS = 120;
-
-const loadSearchCorpus = unstable_cache(
-  async () => {
-    const [placesResponse, eventsResponse, servicesResponse] = await Promise.all([
-      fetchPlacesForAtlas({ mergeSeed: true }),
-      supabase.from("events").select("*").order("date", { ascending: true }),
-      fetchServicesQuery(),
-    ]);
-
-    return {
-      places: Array.isArray(placesResponse?.data) ? placesResponse.data : [],
-      events: await mergeSeedEventsAsync(eventsResponse?.data || []),
-      services: Array.isArray(servicesResponse?.data) ? servicesResponse.data : [],
-      guides: getSearchGuides(),
-      partialData: Boolean(placesResponse?.error || eventsResponse?.error || servicesResponse?.error),
-    };
-  },
-  ["qa-server-search-corpus-v1"],
-  { revalidate: SEARCH_CORPUS_REVALIDATE_SECONDS }
-);
+const EMPTY_RESPONSE = Object.freeze({ data: [], error: null });
 
 function cleanQuery(value = "") {
   return String(value || "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
 }
 
 function normalizeScope(value = "") {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function resolveCityScope(value = "") {
+  const normalized = normalizeScope(value);
+  if (!normalized) return "";
+  const match = Object.entries(cityCoreConfig).find(([key, city]) => {
+    const title = String(city?.title || "").replace(/^Queer\s+/i, "");
+    return normalizeScope(key) === normalized || normalizeScope(title) === normalized;
+  });
+  return match ? String(match[0]) : String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function filterCity(rows = [], cityScope = "") {
+  if (!cityScope) return Array.isArray(rows) ? rows : [];
+  const normalizedCity = normalizeScope(cityScope);
+  return (Array.isArray(rows) ? rows : []).filter(
+    (row) => normalizeScope(row?.city) === normalizedCity
+  );
+}
+
+function buildCorpusFromRpcRows(rows = [], cityScope = "") {
+  const places = [];
+  const events = [];
+  const services = [];
+  (Array.isArray(rows) ? rows : []).forEach((row) => {
+    const entity = row?.entity && typeof row.entity === "object" ? row.entity : null;
+    if (!entity) return;
+    const rankedEntity = { ...entity, database_search_rank: Number(row?.search_rank || 0) };
+    if (row?.entity_type === "place") places.push(rankedEntity);
+    if (row?.entity_type === "event") events.push(rankedEntity);
+    if (row?.entity_type === "service") services.push(rankedEntity);
+  });
+
+  return {
+    places: filterCity(mergeSeedPlaces(places), cityScope),
+    events: filterCity(mergeSeedEvents(events), cityScope),
+    services: filterCity(services, cityScope),
+    guides: getSearchGuides(),
+    partialData: false,
+    source: "postgres-search-v2",
+  };
+}
+
+async function loadRpcSearchCorpus({ query, cityScope, typeScope, placeTypes, compactMode }) {
+  if (typeScope === "city" || typeScope === "guide") return null;
+  const { data, error } = await supabase.rpc("qa_search_catalog_v2", {
+    search_text: query,
+    city_filter: cityScope || null,
+    entity_filter: typeScope === "all" ? null : typeScope,
+    place_types: Array.isArray(placeTypes) && placeTypes.length > 0 ? placeTypes : null,
+    result_limit: compactMode ? 24 : cityScope && placeTypes?.length > 0 ? 5000 : 500,
+    result_offset: 0,
+  });
+  if (error) return null;
+  return buildCorpusFromRpcRows(data, cityScope);
+}
+
+async function loadSearchCorpus({ cityScope = "", typeScope = "all" } = {}) {
+  const needsPlaces = typeScope === "all" || typeScope === "place";
+  const needsEvents = typeScope === "all" || typeScope === "event";
+  const needsServices = typeScope === "all" || typeScope === "service";
+  const databaseCity = resolveCityScope(cityScope);
+
+  const placesPromise = needsPlaces
+    ? fetchPlacesForAtlas({
+        filters: databaseCity ? { city: databaseCity } : undefined,
+        mergeSeed: false,
+      })
+    : Promise.resolve(EMPTY_RESPONSE);
+
+  const eventsPromise = needsEvents
+    ? (() => {
+        let request = supabase.from("events").select("*").order("date", { ascending: true });
+        if (databaseCity) request = request.eq("city", databaseCity);
+        return request;
+      })()
+    : Promise.resolve(EMPTY_RESPONSE);
+
+  const servicesPromise = needsServices ? fetchServicesQuery() : Promise.resolve(EMPTY_RESPONSE);
+  const [placesResponse, eventsResponse, servicesResponse] = await Promise.all([
+    placesPromise,
+    eventsPromise,
+    servicesPromise,
+  ]);
+
+  return {
+    places: filterCity(
+      mergeSeedPlaces(Array.isArray(placesResponse?.data) ? placesResponse.data : []),
+      databaseCity
+    ),
+    events: filterCity(mergeSeedEvents(eventsResponse?.data || []), databaseCity),
+    services: filterCity(
+      Array.isArray(servicesResponse?.data) ? servicesResponse.data : [],
+      databaseCity
+    ),
+    guides: getSearchGuides(),
+    partialData: Boolean(
+      placesResponse?.error || eventsResponse?.error || servicesResponse?.error
+    ),
+    source: "direct-catalog-v2",
+  };
 }
 
 function buildEditorialSuggestions(results = {}, intent = {}) {
@@ -88,19 +176,36 @@ export async function runServerSearch({
   const safeQuery = cleanQuery(query);
   const intent = inferSearchIntent(safeQuery);
   const timeZone = resolveSearchTimeZone({ detectedCity: requestedCity || intent.detectedCity, clientTimeZone });
-  const corpus = await loadSearchCorpus();
   const compactMode = mode === "suggestions";
-  const cityScope = normalizeScope(requestedCity);
-  const typeScope = ["city", "place", "event", "service", "guide"].includes(requestedType) ? requestedType : "all";
-  const inRequestedCity = (entity) => !cityScope || normalizeScope(entity?.city) === cityScope;
+  const explicitTypeScope = ["city", "place", "event", "service", "guide"].includes(requestedType)
+    ? requestedType
+    : "all";
+  const typeScope =
+    explicitTypeScope === "all" && intent.suggestedTypeFilter !== "all"
+      ? intent.suggestedTypeFilter
+      : explicitTypeScope;
+  const cityScope = resolveCityScope(requestedCity || intent.detectedCity);
+  const rpcCorpus = await loadRpcSearchCorpus({
+    query: safeQuery,
+    cityScope,
+    typeScope,
+    placeTypes: intent.placeTypes,
+    compactMode,
+  });
+  const corpus = rpcCorpus || (await loadSearchCorpus({ cityScope, typeScope }));
+  const exhaustivePlaceCategory = Boolean(
+    !compactMode &&
+      intent.placeTypes?.length > 0 &&
+      (requestedCity || intent.detectedCity)
+  );
   const results = buildAtlasSearchResults({
     query: safeQuery,
-    places: typeScope === "all" || typeScope === "place" ? corpus.places.filter(inRequestedCity) : [],
-    events: typeScope === "all" || typeScope === "event" ? corpus.events.filter(inRequestedCity) : [],
-    services: typeScope === "all" || typeScope === "service" ? corpus.services.filter(inRequestedCity) : [],
+    places: typeScope === "all" || typeScope === "place" ? corpus.places : [],
+    events: typeScope === "all" || typeScope === "event" ? corpus.events : [],
+    services: typeScope === "all" || typeScope === "service" ? corpus.services : [],
     guides: typeScope === "all" || typeScope === "guide" ? corpus.guides : [],
     cityLimit: typeScope === "all" || typeScope === "city" ? (compactMode ? 4 : 24) : 0,
-    placeLimit: compactMode ? 6 : 80,
+    placeLimit: compactMode ? 6 : exhaustivePlaceCategory ? corpus.places.length : 80,
     eventLimit: compactMode ? 6 : 80,
     serviceLimit: compactMode ? 6 : 60,
     guideLimit: compactMode ? 4 : 24,
@@ -113,7 +218,7 @@ export async function runServerSearch({
     results,
     suggestions: buildEditorialSuggestions(results, intent),
     meta: {
-      engine: "server-v1",
+      engine: corpus.source || "catalog-v2",
       timeZone,
       city: intent.detectedCity || "",
       cityMatch: intent.cityMatch || "none",
@@ -122,6 +227,7 @@ export async function runServerSearch({
       partialData: corpus.partialData,
       requestedCity: requestedCity || "",
       requestedType: typeScope,
+      exhaustiveCategory: exhaustivePlaceCategory,
     },
   };
 }
