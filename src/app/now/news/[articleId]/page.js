@@ -2,6 +2,7 @@ import { cache } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import NewsComments from "@/components/news/NewsComments";
 import { supabase } from "@/lib/supabase";
 import { QA_LOGO_URL, QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
@@ -12,7 +13,15 @@ const getNewsArticle = cache(async (articleId) => {
     .select("*")
     .eq("id", String(articleId))
     .maybeSingle();
-  if (error || !data) return null;
+  if (error) {
+    console.error("[news-article] Supabase lookup failed", {
+      articleId: String(articleId),
+      errorCode: String(error.code || ""),
+      errorMessage: String(error.message || ""),
+    });
+    throw new Error("News article lookup failed.", { cause: error });
+  }
+  if (!data) return null;
   return data;
 });
 
@@ -76,7 +85,16 @@ export default async function NewsArticlePage({ params }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <article className="mx-auto max-w-4xl overflow-hidden rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(18,18,22,0.98),rgba(8,8,10,1))] shadow-[0_32px_110px_rgba(0,0,0,0.48)]">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3 sm:px-7">
-          <Link href="/now/news" className="text-xs uppercase tracking-[0.14em] text-cyan-100/75 transition hover:text-cyan-100">← Queer World News</Link>
+          <Link
+            href="/now/news"
+            aria-label="Back to Queer World News"
+            className="group inline-flex min-h-11 items-center gap-2.5 rounded-full border border-cyan-200/30 bg-[linear-gradient(135deg,rgba(34,211,238,0.14),rgba(255,255,255,0.06))] px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-50 shadow-[0_10px_30px_rgba(34,211,238,0.10)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-cyan-100/55 hover:bg-cyan-200/16 hover:shadow-[0_14px_36px_rgba(34,211,238,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-full border border-cyan-100/25 bg-black/25 transition duration-200 group-hover:border-cyan-100/45 group-hover:bg-cyan-100/10">
+              <ArrowLeft size={15} strokeWidth={2.2} aria-hidden="true" className="transition-transform duration-200 group-hover:-translate-x-0.5" />
+            </span>
+            <span>Back to Queer World News</span>
+          </Link>
           <p className="text-[11px] uppercase tracking-[0.14em] text-white/42">{article.city || "Global"} · {article.date || ""}</p>
         </header>
 
