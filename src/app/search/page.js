@@ -3,7 +3,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, List, LocateFixed, Map, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, List, LocateFixed, Map, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { inferSearchIntent } from "@/lib/searchIntent";
 import { buildLiveSearchSuggestions } from "@/lib/searchSuggestions";
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
@@ -37,8 +37,6 @@ const EMPTY_SEARCH_RESULTS = Object.freeze({
 });
 const QUICK_SEARCHES = [
   { label: "Tonight", query: "events tonight", type: "event" },
-  { label: "Support", query: "queer support services", type: "service" },
-  { label: "Safety context", query: "queer travel safety", type: "all" },
   { label: "Guides", query: "queer travel guides and reports", type: "guide" },
 ];
 const SEARCH_INPUT_ID = "global-search-input";
@@ -56,6 +54,21 @@ const TYPE_FILTER_TONES = Object.freeze({
   service: "border-emerald-200/38 bg-emerald-200/14 text-emerald-50",
   guide: "border-amber-200/38 bg-amber-200/14 text-amber-50",
 });
+const TYPE_FILTER_IDLE_TONES = Object.freeze({
+  all: "border-fuchsia-200/16 bg-fuchsia-200/[0.055] hover:border-fuchsia-200/34 hover:bg-fuchsia-200/10",
+  city: "border-cyan-200/16 bg-cyan-200/[0.05] hover:border-cyan-200/34 hover:bg-cyan-200/10",
+  place: "border-rose-200/16 bg-rose-200/[0.05] hover:border-rose-200/34 hover:bg-rose-200/10",
+  event: "border-violet-200/16 bg-violet-200/[0.05] hover:border-violet-200/34 hover:bg-violet-200/10",
+  service: "border-emerald-200/16 bg-emerald-200/[0.05] hover:border-emerald-200/34 hover:bg-emerald-200/10",
+  guide: "border-amber-200/16 bg-amber-200/[0.05] hover:border-amber-200/34 hover:bg-amber-200/10",
+});
+const CARD_ACCENT_TONES = [
+  "from-pink-200 via-fuchsia-200 to-transparent",
+  "from-cyan-200 via-violet-200 to-transparent",
+  "from-amber-200 via-rose-200 to-transparent",
+  "from-violet-200 via-cyan-200 to-transparent",
+];
+const CARD_GLOW_TONES = ["bg-pink-300/16", "bg-cyan-300/14", "bg-amber-200/12", "bg-violet-300/14"];
 const EMPTY_FEATURE_COLLECTION = { type: "FeatureCollection", features: [] };
 function normalizeValue(value) {
   return String(value || "")
@@ -1006,15 +1019,22 @@ export default function SearchPage() {
   );
 
   return (
-    <main className="qa-page min-h-screen bg-[#050505] text-white">
-      <div className="qa-shell">
+    <main className="qa-page relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_8%_5%,rgba(236,72,153,0.10),transparent_24%),radial-gradient(circle_at_94%_22%,rgba(34,211,238,0.08),transparent_28%),linear-gradient(180deg,#070508_0%,#040506_48%,#050505_100%)] text-white">
+      <div aria-hidden="true" className="pointer-events-none absolute left-[-7rem] top-[30rem] h-72 w-72 rounded-full bg-fuchsia-500/[0.055] blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute right-[-8rem] top-[52rem] h-80 w-80 rounded-full bg-cyan-400/[0.05] blur-3xl" />
+      <div className="qa-shell relative z-10">
         <section
           aria-labelledby="global-search-heading"
-          className="qa-panel relative mb-5 overflow-visible rounded-[24px] border border-fuchsia-200/16 bg-[radial-gradient(circle_at_8%_-8%,rgba(244,114,182,0.28),transparent_32%),radial-gradient(circle_at_58%_-22%,rgba(139,92,246,0.20),transparent_34%),radial-gradient(circle_at_96%_8%,rgba(34,211,238,0.20),transparent_34%),linear-gradient(145deg,rgba(25,13,32,0.99),rgba(7,10,20,0.99)_58%,rgba(5,17,24,0.99))] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.06)] sm:mb-6 sm:rounded-[30px] sm:p-6"
+          className="qa-panel relative mb-5 overflow-visible rounded-[24px] border border-fuchsia-100/24 bg-[radial-gradient(circle_at_5%_-8%,rgba(251,113,133,0.34),transparent_29%),radial-gradient(circle_at_54%_-25%,rgba(192,132,252,0.30),transparent_36%),radial-gradient(circle_at_100%_2%,rgba(34,211,238,0.25),transparent_35%),linear-gradient(145deg,rgba(35,15,40,0.99),rgba(8,10,24,0.99)_56%,rgba(4,24,31,0.99))] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.46),0_12px_50px_rgba(217,70,239,0.08),inset_0_1px_0_rgba(255,255,255,0.09)] sm:mb-6 sm:rounded-[30px] sm:p-6"
         >
-          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-pink-200/80 to-cyan-200/55" />
-          <p className="qa-eyebrow bg-gradient-to-r from-pink-100 via-fuchsia-100 to-cyan-100 bg-clip-text text-transparent">Search Queer Atlas</p>
-          <h1 id="global-search-heading" className="qa-display mt-2 max-w-3xl text-[1.8rem] font-semibold leading-[1.04] sm:text-[2.7rem]">
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-pink-100 to-cyan-100/70" />
+          <div aria-hidden="true" className="pointer-events-none absolute right-5 top-5 hidden items-center gap-1.5 text-white/55 sm:flex">
+            <span className="h-2 w-2 rounded-full bg-pink-300 shadow-[0_0_16px_rgba(249,168,212,0.75)]" />
+            <span className="h-2 w-2 rounded-full bg-violet-300 shadow-[0_0_16px_rgba(196,181,253,0.7)]" />
+            <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.7)]" />
+          </div>
+          <p className="qa-eyebrow inline-flex items-center gap-2 bg-gradient-to-r from-pink-100 via-fuchsia-100 to-cyan-100 bg-clip-text text-transparent"><Sparkles size={12} className="text-pink-200" /> Search Queer Atlas</p>
+          <h1 id="global-search-heading" className="qa-display mt-2 max-w-3xl bg-gradient-to-r from-white via-pink-50 to-cyan-100 bg-clip-text text-[1.8rem] font-semibold leading-[1.04] text-transparent sm:text-[2.7rem]">
             Find your way into queer life.
           </h1>
           <p className="qa-lead mt-2 max-w-3xl text-sm leading-6 text-white/72 sm:text-base">
@@ -1079,7 +1099,7 @@ export default function SearchPage() {
                   }
                 }}
                 placeholder="Try “drag tonight in Berlin” or a venue name"
-                className="w-full rounded-2xl border border-fuchsia-100/18 bg-black/50 py-3.5 pl-12 pr-4 text-[15px] shadow-[0_14px_40px_rgba(0,0,0,0.26),inset_0_1px_0_rgba(255,255,255,0.035)] outline-none transition placeholder:text-white/38 focus:border-fuchsia-200/62 focus:bg-black/66 focus:shadow-[0_0_0_3px_rgba(232,121,249,0.10),0_16px_45px_rgba(0,0,0,0.32)]"
+                className="w-full rounded-2xl border border-fuchsia-100/24 bg-[linear-gradient(135deg,rgba(11,7,16,0.88),rgba(3,14,20,0.84))] py-3.5 pl-12 pr-4 text-[15px] shadow-[0_14px_40px_rgba(0,0,0,0.26),inset_0_1px_0_rgba(255,255,255,0.055)] outline-none transition placeholder:text-white/38 focus:border-pink-200/68 focus:bg-black/72 focus:shadow-[0_0_0_3px_rgba(244,114,182,0.11),0_16px_45px_rgba(0,0,0,0.34)]"
               />
               {isSuggestionsOpen && (
                 <ul
@@ -1122,7 +1142,7 @@ export default function SearchPage() {
                 </ul>
               )}
             </div>
-            <button type="submit" className="w-full rounded-2xl border border-white/30 bg-[linear-gradient(110deg,#e9a8ff_0%,#ff9fc8_48%,#ffd0a0_100%)] px-6 py-3.5 text-sm font-semibold text-[#190d1d] shadow-[0_14px_38px_rgba(232,121,249,0.24),inset_0_1px_0_rgba(255,255,255,0.72)] transition hover:brightness-105 hover:shadow-[0_16px_44px_rgba(244,114,182,0.32)] sm:w-auto">
+            <button type="submit" className="w-full rounded-2xl border border-white/42 bg-[linear-gradient(110deg,#d8b4fe_0%,#f9a8d4_38%,#fda4af_68%,#fed7aa_100%)] px-7 py-3.5 text-sm font-semibold text-[#210d22] shadow-[0_15px_42px_rgba(244,114,182,0.30),0_7px_24px_rgba(34,211,238,0.08),inset_0_1px_0_rgba(255,255,255,0.82)] transition hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_18px_48px_rgba(244,114,182,0.38)] sm:w-auto">
               Search
             </button>
           </form>
@@ -1169,7 +1189,7 @@ export default function SearchPage() {
                     className={`rounded-full border px-3 py-1 text-xs transition ${
                       typeFilter === item
                         ? TYPE_FILTER_TONES[item]
-                        : "border-white/12 bg-white/[0.045] text-white/62 hover:border-fuchsia-200/24 hover:bg-fuchsia-200/[0.07] hover:text-white"
+                        : `${TYPE_FILTER_IDLE_TONES[item]} text-white/68 hover:text-white`
                     }`}
                   >
                     {item === "all" ? "All" : getTypeLabel(item, { plural: true })}
@@ -1313,7 +1333,7 @@ export default function SearchPage() {
         ) : null}
 
         {activeQuery.trim() && showSearchMap ? (
-          <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-violet-200/14 bg-[linear-gradient(135deg,rgba(91,33,182,0.11),rgba(8,145,178,0.08))] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] xl:hidden">
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-violet-200/20 bg-[linear-gradient(120deg,rgba(236,72,153,0.10),rgba(139,92,246,0.11),rgba(6,182,212,0.10))] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.055)] xl:hidden">
             <p className="pl-2 text-xs text-white/56">View results</p>
             <div className="grid grid-cols-2 rounded-xl border border-white/10 bg-black/35 p-1" aria-label="Result view">
               <button
@@ -1359,8 +1379,9 @@ export default function SearchPage() {
         >
           <div className={mobileView === "map" && showSearchMap ? "hidden xl:block" : ""}>
         {activeQuery.trim() && (
-          <section aria-labelledby="search-results-heading" className="mb-4 rounded-[20px] border border-violet-200/14 bg-[radial-gradient(circle_at_0%_0%,rgba(217,70,239,0.12),transparent_34%),linear-gradient(145deg,rgba(20,15,29,0.94),rgba(6,13,20,0.98))] px-4 py-3 shadow-[0_16px_50px_rgba(0,0,0,0.24),inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/62">Your search</p>
+          <section aria-labelledby="search-results-heading" className="relative mb-4 overflow-hidden rounded-[20px] border border-violet-200/22 bg-[radial-gradient(circle_at_0%_0%,rgba(244,114,182,0.18),transparent_34%),radial-gradient(circle_at_100%_100%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(145deg,rgba(24,15,34,0.96),rgba(5,15,22,0.98))] px-4 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.27),inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <div aria-hidden="true" className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-pink-300/55 via-violet-300/38 to-cyan-300/55" />
+            <p className="text-[11px] uppercase tracking-[0.16em] text-pink-100/72">Your search</p>
             <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
               <h2 id="search-results-heading" className="text-lg font-semibold text-white">
                 Results for &ldquo;{activeQuery.trim()}&rdquo;
@@ -1374,8 +1395,8 @@ export default function SearchPage() {
         {!activeQuery.trim() && (
           <section className="qa-panel rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-4 sm:rounded-[28px] sm:p-6">
             <EmptyState
-              title="A city, a night out, support, or somewhere that feels right."
-              description="Type what you need above, or start with one of the quick searches."
+              title="Start with a city, venue or plan."
+              description="Search by name, choose what you’re looking for, or use Near me to explore queer places around you."
               primaryActionLabel="Browse cities"
               onPrimaryAction={() => router.push("/cities")}
             />
@@ -1451,7 +1472,7 @@ export default function SearchPage() {
         )}
 
         {activeQuery.trim() && !isLoading && topMatches.length > 0 && (
-          <section aria-labelledby="search-top-matches-heading" className="mb-6 rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_100%_0%,rgba(34,211,238,0.12),transparent_34%),radial-gradient(circle_at_0%_15%,rgba(139,92,246,0.10),transparent_30%),linear-gradient(160deg,rgba(11,31,42,0.78),rgba(8,8,13,0.98))] p-4 shadow-[0_22px_70px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-5">
+          <section aria-labelledby="search-top-matches-heading" className="mb-6 rounded-[28px] border border-cyan-100/22 bg-[radial-gradient(circle_at_100%_0%,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_0%_15%,rgba(244,114,182,0.14),transparent_31%),radial-gradient(circle_at_56%_100%,rgba(139,92,246,0.10),transparent_34%),linear-gradient(160deg,rgba(10,33,43,0.84),rgba(10,7,16,0.99))] p-4 shadow-[0_24px_74px_rgba(0,0,0,0.32),0_12px_42px_rgba(34,211,238,0.05),inset_0_1px_0_rgba(255,255,255,0.065)] sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-100/70">A quick place to start</p>
@@ -1460,16 +1481,17 @@ export default function SearchPage() {
               <p className="hidden text-[11px] text-cyan-100/72 sm:block">Closest to what you searched for</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {topMatches.map((item) => {
+              {topMatches.map((item, index) => {
                 const isCity = item.type === "city";
                 const tone = getTypeTheme(item.type);
 
                 return (
                   <article
                     key={`top-${item.type}-${item.id}`}
-                    className={`rounded-2xl border p-4 text-left shadow-[0_16px_38px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.035)] transition hover:-translate-y-0.5 ${tone.shell}`}
+                    className={`relative overflow-hidden rounded-2xl border p-4 text-left shadow-[0_16px_38px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.055)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_46px_rgba(0,0,0,0.30)] ${tone.shell}`}
                   >
-                    <div className={`mb-3 h-1.5 w-20 rounded-full ${tone.accent}`} />
+                    <div aria-hidden="true" className={`pointer-events-none absolute -right-9 -top-9 h-28 w-28 rounded-full blur-3xl ${CARD_GLOW_TONES[index % CARD_GLOW_TONES.length]}`} />
+                    <div className={`relative mb-3 h-1.5 w-20 rounded-full bg-gradient-to-r ${CARD_ACCENT_TONES[index % CARD_ACCENT_TONES.length]}`} />
                     <div className="flex items-center justify-between gap-3">
                       <span className={`rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] ${tone.label}`}>
                         {getTypeLabel(item.type)}
@@ -1552,7 +1574,7 @@ export default function SearchPage() {
                 ))}
 
               {section.key === "place" &&
-                section.items.map((place) => {
+                section.items.map((place, index) => {
                 const qualityStatus = getQualityStatus(
                   getEntityQuality({
                     targetType: "place",
@@ -1564,9 +1586,10 @@ export default function SearchPage() {
                 return (
                   <article
                     key={place.id}
-                    className="rounded-2xl border border-rose-300/18 bg-[radial-gradient(circle_at_100%_0%,rgba(244,114,182,0.10),transparent_38%),linear-gradient(160deg,rgba(70,20,48,0.38),rgba(8,8,11,0.98))] p-3 text-left shadow-[0_14px_34px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 hover:border-rose-200/40 sm:p-4"
+                    className="relative overflow-hidden rounded-2xl border border-rose-300/22 bg-[radial-gradient(circle_at_100%_0%,rgba(244,114,182,0.13),transparent_38%),linear-gradient(160deg,rgba(76,21,53,0.42),rgba(8,8,13,0.98))] p-3 text-left shadow-[0_15px_36px_rgba(0,0,0,0.20),inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:-translate-y-0.5 hover:border-rose-200/46 hover:shadow-[0_20px_44px_rgba(0,0,0,0.28)] sm:p-4"
                   >
-                    <div className="mb-2 h-1.5 w-16 rounded-full bg-gradient-to-r from-rose-200 via-fuchsia-200 to-transparent" />
+                    <div aria-hidden="true" className={`pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-3xl ${CARD_GLOW_TONES[index % CARD_GLOW_TONES.length]}`} />
+                    <div className={`relative mb-2 h-1.5 w-16 rounded-full bg-gradient-to-r ${CARD_ACCENT_TONES[index % CARD_ACCENT_TONES.length]}`} />
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold">{place.name}</p>
                     </div>
