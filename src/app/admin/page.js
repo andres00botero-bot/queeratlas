@@ -148,6 +148,7 @@ export default function AdminPage() {
     globalEvents: 0,
     openReports: 0,
     blockedItems: 0,
+    unreadComments: 0,
   });
   const [reports, setReports] = useState([]);
   const [blockedItems, setBlockedItems] = useState([]);
@@ -170,6 +171,8 @@ export default function AdminPage() {
   const [contactThreads, setContactThreads] = useState([]);
   const [communityIdeas, setCommunityIdeas] = useState([]);
   const [communityIdeasNotice, setCommunityIdeasNotice] = useState("");
+  const [newsComments, setNewsComments] = useState([]);
+  const [newsCommentsNotice, setNewsCommentsNotice] = useState("");
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
@@ -184,6 +187,7 @@ export default function AdminPage() {
         moderationRes,
         contactThreadsRes,
         communityIdeasRes,
+        newsCommentsRes,
       ] =
         await Promise.all([
           fetchPlacesQueryWithFallback({ select: "*", options: { count: "exact", head: true } }),
@@ -201,6 +205,11 @@ export default function AdminPage() {
             .select("*")
             .order("created_at", { ascending: false })
             .limit(160),
+          supabase
+            .from("qa_news_comments")
+            .select("id,article_id,author_id,author_display_name,author_avatar_url,body,status,created_at,admin_seen_at,qa_world_news(title)")
+            .order("created_at", { ascending: false })
+            .limit(150),
         ]);
 
       const reportsRows = moderationRes?.reports || getReports();
@@ -216,6 +225,11 @@ export default function AdminPage() {
         communityIdeasRes?.error &&
         !isMissingRelationError(communityIdeasRes.error)
           ? `Improve Atlas inbox unavailable: ${formatDbError(communityIdeasRes.error)}`
+          : "";
+      const commentRows = Array.isArray(newsCommentsRes?.data) ? newsCommentsRes.data : [];
+      const commentsWarning =
+        newsCommentsRes?.error && !isMissingRelationError(newsCommentsRes.error)
+          ? `News comments unavailable: ${formatDbError(newsCommentsRes.error)}`
           : "";
       setReports(reportsRows);
       setBlockedItems(blockedRows);
@@ -238,6 +252,27 @@ export default function AdminPage() {
         }))
       );
       setCommunityIdeas(ideaRows.map(mapCommunityIdeaRow));
+      setNewsComments(
+        commentRows.map((row) => ({
+          id: String(row.id || ""),
+          articleId: String(row.article_id || ""),
+          articleTitle: String(row.qa_world_news?.title || "News article"),
+          authorId: String(row.author_id || ""),
+          authorName: String(row.author_display_name || "Member").trim() || "Member",
+          authorAvatarUrl: String(row.author_avatar_url || ""),
+          body: String(row.body || ""),
+          status: String(row.status || "published"),
+          createdAt: row.created_at || "",
+          adminSeenAt: row.admin_seen_at || "",
+        }))
+      );
+      setNewsCommentsNotice(
+        newsCommentsRes?.error
+          ? isMissingRelationError(newsCommentsRes.error)
+            ? "News comments are not configured yet. Run supabase/news-comments-v1.sql."
+            : "Could not load news comments right now."
+          : ""
+      );
       if (communityIdeasRes?.error) {
         setCommunityIdeasNotice(
           isMissingRelationError(communityIdeasRes.error)
@@ -255,10 +290,11 @@ export default function AdminPage() {
         globalEvents: Number(globalEventsRes.count || 0),
         openReports: reportsRows.filter((item) => String(item.status || "open") === "open").length,
         blockedItems: blockedRows.length,
+        unreadComments: commentRows.filter((item) => !item.admin_seen_at).length,
       });
-      if (moderationRes?.warning || contactWarning || ideasWarning) {
+      if (moderationRes?.warning || contactWarning || ideasWarning || commentsWarning) {
         setWarning(
-          [moderationRes?.warning, contactWarning, ideasWarning]
+          [moderationRes?.warning, contactWarning, ideasWarning, commentsWarning]
             .filter(Boolean)
             .join(" ")
         );
@@ -317,6 +353,55 @@ export default function AdminPage() {
     },
     [showToast]
   );
+
+  const markNewsCommentRead = useCallback(async (commentId) => {
+    const id = String(commentId || "").trim();
+    if (!id || !user?.id) return;
+    const busyKey = `news-comment:${id}`;
+    setBusyMap((current) => ({ ...current, [busyKey]: true }));
+    const seenAt = new Date().toISOString();
+    const { error } = await supabase
+      .from("qa_news_comments")
+      .update({ admin_seen_at: seenAt, admin_seen_by: user.id })
+      .eq("id", id);
+    if (error) {
+      showToast(error.message || "Could not mark comment as read.", { tone: "warn", duration: 2400 });
+    } else {
+      setNewsComments((current) => current.map((comment) => comment.id === id ? { ...comment, adminSeenAt: seenAt } : comment));
+      setStats((current) => ({ ...current, unreadComments: Math.max(0, Number(current.unreadComments || 0) - 1) }));
+    }
+    setBusyMap((current) => ({ ...current, [busyKey]: false }));
+  }, [showToast, user]);
+
+  const removeNewsComment = useCallback(async (comment) => {
+    const id = String(comment?.id || "").trim();
+    if (!id || !user?.id || comment?.status === "removed") return;
+    const busyKey = `news-comment:${id}`;
+    setBusyMap((current) => ({ ...current, [busyKey]: true }));
+    const nowIso = new Date().toISOString();
+    const wasUnread = !comment.adminSeenAt;
+    const { error } = await supabase
+      .from("qa_news_comments")
+      .update({
+        body: "Comment removed by Queer Atlas",
+        status: "removed",
+        removed_at: nowIso,
+        removed_by: user.id,
+        admin_seen_at: nowIso,
+        admin_seen_by: user.id,
+      })
+      .eq("id", id);
+    if (error) {
+      showToast(error.message || "Could not remove comment.", { tone: "warn", duration: 2400 });
+    } else {
+      setNewsComments((current) => current.map((item) => item.id === id ? { ...item, body: "Comment removed by Queer Atlas", status: "removed", adminSeenAt: nowIso } : item));
+      if (wasUnread) {
+        setStats((current) => ({ ...current, unreadComments: Math.max(0, Number(current.unreadComments || 0) - 1) }));
+      }
+      showToast("Comment removed from the article.", { tone: "ok", duration: 1900 });
+    }
+    setBusyMap((current) => ({ ...current, [busyKey]: false }));
+  }, [showToast, user]);
 
   const loadMemberDirectory = useCallback(async () => {
     setMemberDirectoryLoading(true);
@@ -849,7 +934,7 @@ export default function AdminPage() {
           )}
         </section>
 
-        <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+        <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
           <article className="rounded-3xl border border-cyan-200/18 bg-cyan-200/10 p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/75">Places</p>
             <p className="mt-2 text-3xl font-semibold text-white">{stats.places}</p>
@@ -874,6 +959,59 @@ export default function AdminPage() {
             <p className="text-xs uppercase tracking-[0.18em] text-rose-100/75">Blocked items</p>
             <p className="mt-2 text-3xl font-semibold text-white">{stats.blockedItems}</p>
           </article>
+          <article className="rounded-3xl border border-fuchsia-200/18 bg-fuchsia-200/10 p-5">
+            <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-100/75">New comments</p>
+            <p className="mt-2 text-3xl font-semibold text-white">{stats.unreadComments}</p>
+          </article>
+        </section>
+
+        <section className="mb-8 rounded-[30px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(217,70,239,0.12),transparent_28%),linear-gradient(180deg,rgba(37,14,43,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_24px_80px_rgba(217,70,239,0.07)]">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/80">News discussion</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">New member comments</h2>
+              <p className="mt-2 text-sm text-white/62">Comments are already public. This inbox simply lets you review new activity when needed.</p>
+            </div>
+            <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
+              {stats.unreadComments} unread
+            </span>
+          </div>
+
+          {newsCommentsNotice ? (
+            <div className="mb-3 rounded-xl border border-amber-200/22 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">{newsCommentsNotice}</div>
+          ) : null}
+
+          <div className="space-y-3">
+            {newsComments.length > 0 ? newsComments.map((comment) => {
+              const unread = !comment.adminSeenAt;
+              const removed = comment.status === "removed";
+              const busyKey = `news-comment:${comment.id}`;
+              return (
+                <article key={comment.id} className={`rounded-2xl border p-4 ${unread ? "border-fuchsia-200/30 bg-fuchsia-200/[0.08]" : "border-white/10 bg-black/25"}`}>
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {unread ? <span className="rounded-full border border-fuchsia-200/25 bg-fuchsia-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100">New</span> : null}
+                        <span className="text-sm font-semibold text-white">{comment.authorName}</span>
+                        <span className="text-xs text-white/42">{timeAgo(comment.createdAt)}</span>
+                      </div>
+                      <p className="mt-2 text-xs uppercase tracking-[0.12em] text-cyan-100/68">On: {comment.articleTitle}</p>
+                      <p className={`mt-3 whitespace-pre-line break-words text-sm leading-6 ${removed ? "italic text-white/42" : "text-white/78"}`}>
+                        {removed ? "Comment removed by Queer Atlas" : comment.body}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => router.push(`/now/news/${encodeURIComponent(comment.articleId)}`)} className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42">Open article</button>
+                      {unread ? <button type="button" disabled={Boolean(busyMap[busyKey])} onClick={() => markNewsCommentRead(comment.id)} className="rounded-full border border-white/16 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/76 transition hover:border-white/30 disabled:opacity-55">Mark as read</button> : null}
+                      {!removed ? <button type="button" disabled={Boolean(busyMap[busyKey])} onClick={() => removeNewsComment(comment)} className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/42 disabled:opacity-55">Remove</button> : null}
+                    </div>
+                  </div>
+                </article>
+              );
+            }) : (
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/52">No news comments yet.</div>
+            )}
+          </div>
         </section>
 
         <AdminTrafficPanel

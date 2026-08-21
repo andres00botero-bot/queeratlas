@@ -16,6 +16,7 @@ import {
 import { QA_SITE_URL } from "@/lib/seo/sitemapXml";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
+import { supabase } from "@/lib/supabase";
 
 const CLUSTER_INTENT_PRIORITY = {
   events: 0.88,
@@ -55,7 +56,13 @@ function canonicalEntries(entries = []) {
 }
 
 export async function getPageSitemapEntries() {
-  const inventory = await loadSeoEntityInventory();
+  const [inventory, newsResponse] = await Promise.all([
+    loadSeoEntityInventory(),
+    supabase
+      .from("qa_world_news")
+      .select("id,date,created_at")
+      .order("created_at", { ascending: false }),
+  ]);
   const allEntities = [...inventory.venues, ...inventory.events, ...inventory.services];
   const cityDates = new Map();
   for (const city of Object.keys(cityConfig)) {
@@ -157,6 +164,17 @@ export async function getPageSitemapEntries() {
     priority: 0.82,
   }));
 
+  const newsArticleEntries = (newsResponse?.error ? [] : newsResponse?.data || []).map((article) =>
+    entryWithDate(
+      {
+        url: `${QA_SITE_URL}/now/news/${encodeURIComponent(String(article.id))}`,
+        changeFrequency: "monthly",
+        priority: 0.8,
+      },
+      article.created_at || article.date ? new Date(article.created_at || article.date) : null
+    )
+  );
+
   return canonicalEntries([
     ...staticEntries,
     ...cityEntries,
@@ -164,6 +182,7 @@ export async function getPageSitemapEntries() {
     ...topicHubEntries,
     ...reportEntries,
     ...collectionEntries,
+    ...newsArticleEntries,
   ]);
 }
 

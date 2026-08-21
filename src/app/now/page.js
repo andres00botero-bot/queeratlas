@@ -1236,6 +1236,15 @@ export default function NowPage({ initialSection = "mixed" }) {
   const closeNewsReader = useCallback(() => {
     setReadingNewsItem(null);
   }, []);
+  const openNewsArticle = useCallback((item) => {
+    if (!item) return;
+    const itemId = String(item.id || "");
+    if (adminNewsIdSet.has(itemId)) {
+      router.push(`/now/news/${encodeURIComponent(itemId)}`);
+      return;
+    }
+    setReadingNewsItem(item);
+  }, [adminNewsIdSet, router]);
 
   const openEditNewsComposer = useCallback((item) => {
     if (!item) return;
@@ -2341,11 +2350,11 @@ export default function NowPage({ initialSection = "mixed" }) {
                 <article
                   role="button"
                   tabIndex={0}
-                  onClick={() => setReadingNewsItem(leadNewsItem)}
+                  onClick={() => openNewsArticle(leadNewsItem)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      setReadingNewsItem(leadNewsItem);
+                      openNewsArticle(leadNewsItem);
                     }
                   }}
                   className="qa-premium-card relative z-10 mb-4 min-w-0 w-full max-w-full overflow-hidden rounded-[22px] border border-cyan-200/26 bg-[linear-gradient(180deg,rgba(18,24,32,0.96),rgba(10,10,10,1))] p-3.5 shadow-[0_18px_50px_rgba(34,211,238,0.12)] transition hover:-translate-y-[1px] hover:border-cyan-200/44 sm:mb-5 sm:rounded-[22px] sm:p-3.5 sm:shadow-[0_14px_38px_rgba(34,211,238,0.1)]"
@@ -2419,7 +2428,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          setReadingNewsItem(leadNewsItem);
+                          openNewsArticle(leadNewsItem);
                         }}
                         className="rounded-full border border-fuchsia-100/70 bg-[linear-gradient(135deg,rgba(244,114,182,0.95),rgba(236,72,153,0.92),rgba(168,85,247,0.9))] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_12px_30px_rgba(217,70,239,0.35)] transition hover:-translate-y-[1px] hover:brightness-110 hover:shadow-[0_18px_40px_rgba(217,70,239,0.45)]"
                       >
@@ -2556,7 +2565,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                                   type="button"
                                   onClick={(clickEvent) => {
                                     clickEvent.stopPropagation();
-                                    setReadingNewsItem(item);
+                                    openNewsArticle(item);
                                   }}
                                   className="rounded-full border border-fuchsia-100/65 bg-[linear-gradient(135deg,rgba(244,114,182,0.94),rgba(217,70,239,0.9))] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] transition hover:-translate-y-[1px] hover:brightness-110"
                                 >
