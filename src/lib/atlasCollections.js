@@ -1,6 +1,7 @@
 import { EXPANDED_ATLAS_COLLECTIONS } from "@/lib/atlasCollectionsExpansion";
 import { MORE_ATLAS_COLLECTIONS } from "@/lib/atlasCollectionsExpansionMore";
 import { SEASONAL_ATLAS_COLLECTIONS } from "@/lib/atlasCollectionsExpansionSeasonal";
+import { GROWTH_ATLAS_COLLECTIONS } from "@/lib/atlasCollectionsGrowth";
 import { ATLAS_COLLECTION_REVIEWER } from "@/lib/atlasCollectionsExpansion";
 import { EDITORIAL_TEAM } from "@/lib/editorialTrust";
 
@@ -251,6 +252,7 @@ export const ATLAS_COLLECTIONS = [
   ...EXPANDED_ATLAS_COLLECTIONS,
   ...MORE_ATLAS_COLLECTIONS,
   ...SEASONAL_ATLAS_COLLECTIONS,
+  ...GROWTH_ATLAS_COLLECTIONS,
 ];
 
 export function getAtlasCollectionBySlug(slug = "") {

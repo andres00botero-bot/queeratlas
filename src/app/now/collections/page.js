@@ -3,14 +3,14 @@ import { ATLAS_COLLECTIONS, ATLAS_COLLECTION_FILTERS } from "@/lib/atlasCollecti
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 
 export const metadata = {
-  title: "Atlas Collections | Curated Queer Travel, Nightlife & Culture",
-  description: "Explore editorially curated queer travel collections for LGBTQ nightlife, beaches, lesbian spaces, drag, cafes, and solo-friendly city routes.",
-  keywords: ["queer travel collections", "best LGBTQ nightlife", "queer city recommendations", "lesbian bars Europe", "queer beaches Europe", "solo queer travel"],
+  title: "Atlas Collections | Best Queer Travel, Stays, Events & Culture",
+  description: "Explore researched LGBTQ+ travel collections for queer-owned stays, honeymoons, affordable city breaks, sapphic travel, events, wellness, food, nightlife, and beaches.",
+  keywords: ["queer travel collections", "best LGBTQ honeymoon destinations", "queer owned hotels", "affordable LGBTQ city breaks", "sapphic travel destinations", "gay bear weeks", "queer wellness retreats", "LGBTQ owned restaurants"],
   alternates: { canonical: "/now/collections" },
   robots: { index: true, follow: true },
   openGraph: {
     title: "Atlas Collections | Queer Atlas",
-    description: "Queer places, moods, and nights selected for how they actually feel.",
+    description: "Queer places, stays, events, and city routes selected for how they actually work as a trip.",
     url: "/now/collections",
     type: "website",
   },
@@ -89,7 +89,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
         "@id": `${QA_SITE_URL}/now/collections`,
         url: `${QA_SITE_URL}/now/collections`,
         name: "Atlas Collections",
-        description: "Editorially curated queer travel collections for nightlife, beaches, lesbian spaces, drag, cafes, and solo travel.",
+        description: "Editorially researched queer travel collections for stays, honeymoons, affordable city breaks, sapphic travel, events, wellness, food, nightlife, beaches, and solo travel.",
         isPartOf: { "@id": QA_WEBSITE_ID },
         publisher: { "@id": QA_ORGANIZATION_ID },
         mainEntity: {
@@ -157,25 +157,35 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
           </div>
         </section>
 
-        <section id="discover-collections" className="scroll-mt-5 pt-10">
+        <section id="discover-collections" className="scroll-mt-24 pt-8 sm:scroll-mt-8 sm:pt-10">
           <div className="max-w-2xl">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-100/58">Find your way in</p>
-            <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white sm:text-4xl">What kind of trip are you planning?</h2>
+            <h2 className="mt-2 text-[1.75rem] font-black leading-[1.05] tracking-[-0.04em] text-white sm:text-4xl">What kind of trip are you planning?</h2>
             <p className="mt-3 text-sm leading-6 text-white/52">Choose one theme or search by city, mood, venue, or kind of night.</p>
           </div>
 
-          <div className="mt-6 rounded-[24px] border border-cyan-100/10 bg-[linear-gradient(145deg,rgba(14,20,29,0.98),rgba(11,12,18,0.99))] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.20)] sm:p-4">
-            <form action="/now/collections" className="flex flex-col gap-2 sm:flex-row">
+          <div className="mt-5 rounded-[20px] border border-cyan-100/10 bg-[linear-gradient(145deg,rgba(14,20,29,0.98),rgba(11,12,18,0.99))] p-2.5 shadow-[0_18px_55px_rgba(0,0,0,0.20)] sm:mt-6 sm:rounded-[24px] sm:p-4">
+            <form action="/now/collections" className="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
               {validFilter !== "all" && <input type="hidden" name="type" value={validFilter} />}
               <label htmlFor="collection-search" className="sr-only">Search Atlas Collections</label>
-              <input id="collection-search" name="q" type="search" defaultValue={query} placeholder="Try Berlin, beaches, solo travel, drag..." className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-200/32" />
-              <button type="submit" className="min-h-12 rounded-2xl border border-cyan-100/60 bg-cyan-100 px-6 text-xs font-bold uppercase tracking-[0.1em] text-slate-950 transition hover:border-white hover:bg-white">Search collections</button>
+              <input id="collection-search" name="q" type="search" defaultValue={query} placeholder="Try Berlin, beaches, solo travel..." className="col-span-2 min-h-12 min-w-0 w-full flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-base text-white outline-none placeholder:text-white/30 focus:border-cyan-200/32 sm:col-span-1 sm:text-sm" />
+              <button type="submit" className={`${hasActiveDiscovery ? "" : "col-span-2"} min-h-12 rounded-2xl border border-cyan-100/60 bg-cyan-100 px-4 text-xs font-bold uppercase tracking-[0.1em] text-slate-950 transition hover:border-white hover:bg-white sm:col-span-1 sm:px-6`}>
+                <span className="sm:hidden">Search</span>
+                <span className="hidden sm:inline">Search collections</span>
+              </button>
+              {hasActiveDiscovery && (
+                <Link href="/now/collections#discover-collections" className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-white/14 px-4 text-xs font-bold uppercase tracking-[0.1em] text-white/68 transition hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:px-5">
+                  Reset
+                </Link>
+              )}
             </form>
-            <div aria-label="Collection filters" className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div aria-label="Collection filters" className="mt-3 flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain pb-1 pr-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {ATLAS_COLLECTION_FILTERS.map((filter) => {
-                const isActive = validFilter === filter.id;
+                const isActive =
+                  validFilter === filter.id &&
+                  (filter.id !== "all" || !query);
                 return (
-                  <Link key={filter.id} href={buildFilterHref(filter.id, query)} aria-current={isActive ? "page" : undefined} className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${isActive ? "border-white/34 bg-white/12 text-white" : "border-white/9 text-white/48 hover:border-white/20 hover:text-white/76"}`}>
+                  <Link key={filter.id} href={filter.id === "all" ? "/now/collections#discover-collections" : buildFilterHref(filter.id, query)} aria-current={isActive ? "page" : undefined} className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${isActive ? "border-white/34 bg-white/12 text-white" : "border-white/9 text-white/48 hover:border-white/20 hover:text-white/76"}`}>
                     {filter.label}
                   </Link>
                 );
@@ -183,8 +193,8 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
             </div>
           </div>
 
-          <div className="mt-6 flex min-h-8 flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-white/48">
+          <div className="mt-5 flex min-h-8 flex-wrap items-center justify-between gap-2 sm:mt-6 sm:gap-3">
+            <p aria-live="polite" className="text-[13px] text-white/48 sm:text-sm">
               {visibleCollections.length} {visibleCollections.length === 1 ? "collection" : "collections"}
               {validFilter !== "all" ? ` in ${activeFilterLabel}` : ""}
               {query ? ` matching “${query}”` : ""}
