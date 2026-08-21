@@ -17,12 +17,12 @@ export const metadata = {
 };
 
 const COLLECTION_STYLES = {
-  cyan: { art: "from-cyan-300/20 via-sky-400/8 to-transparent", line: "bg-cyan-200/60", dot: "bg-cyan-200", text: "text-cyan-100", button: "group-hover:text-cyan-100" },
-  amber: { art: "from-amber-300/20 via-orange-400/8 to-transparent", line: "bg-amber-200/60", dot: "bg-amber-200", text: "text-amber-100", button: "group-hover:text-amber-100" },
-  fuchsia: { art: "from-fuchsia-300/18 via-pink-400/8 to-transparent", line: "bg-fuchsia-200/60", dot: "bg-fuchsia-200", text: "text-fuchsia-100", button: "group-hover:text-fuchsia-100" },
-  rose: { art: "from-rose-300/18 via-orange-400/8 to-transparent", line: "bg-rose-200/60", dot: "bg-rose-200", text: "text-rose-100", button: "group-hover:text-rose-100" },
-  violet: { art: "from-violet-300/20 via-fuchsia-400/8 to-transparent", line: "bg-violet-200/60", dot: "bg-violet-200", text: "text-violet-100", button: "group-hover:text-violet-100" },
-  emerald: { art: "from-emerald-300/18 via-cyan-400/8 to-transparent", line: "bg-emerald-200/60", dot: "bg-emerald-200", text: "text-emerald-100", button: "group-hover:text-emerald-100" },
+  cyan: { art: "from-cyan-300/28 via-sky-400/10 to-transparent", line: "bg-cyan-200/75", dot: "bg-cyan-200", text: "text-cyan-100", card: "border-cyan-200/14 bg-[linear-gradient(180deg,rgba(10,24,31,0.98),rgba(8,10,15,0.99))] hover:border-cyan-200/30", link: "text-cyan-50 decoration-cyan-200/40" },
+  amber: { art: "from-amber-300/26 via-orange-400/10 to-transparent", line: "bg-amber-200/75", dot: "bg-amber-200", text: "text-amber-100", card: "border-amber-200/14 bg-[linear-gradient(180deg,rgba(28,21,12,0.98),rgba(10,10,13,0.99))] hover:border-amber-200/30", link: "text-amber-50 decoration-amber-200/40" },
+  fuchsia: { art: "from-fuchsia-300/25 via-pink-400/10 to-transparent", line: "bg-fuchsia-200/75", dot: "bg-fuchsia-200", text: "text-fuchsia-100", card: "border-fuchsia-200/14 bg-[linear-gradient(180deg,rgba(28,13,29,0.98),rgba(10,9,14,0.99))] hover:border-fuchsia-200/30", link: "text-fuchsia-50 decoration-fuchsia-200/40" },
+  rose: { art: "from-rose-300/25 via-orange-400/10 to-transparent", line: "bg-rose-200/75", dot: "bg-rose-200", text: "text-rose-100", card: "border-rose-200/14 bg-[linear-gradient(180deg,rgba(29,14,20,0.98),rgba(11,9,12,0.99))] hover:border-rose-200/30", link: "text-rose-50 decoration-rose-200/40" },
+  violet: { art: "from-violet-300/27 via-fuchsia-400/10 to-transparent", line: "bg-violet-200/75", dot: "bg-violet-200", text: "text-violet-100", card: "border-violet-200/14 bg-[linear-gradient(180deg,rgba(22,16,34,0.98),rgba(9,9,14,0.99))] hover:border-violet-200/30", link: "text-violet-50 decoration-violet-200/40" },
+  emerald: { art: "from-emerald-300/25 via-cyan-400/10 to-transparent", line: "bg-emerald-200/75", dot: "bg-emerald-200", text: "text-emerald-100", card: "border-emerald-200/14 bg-[linear-gradient(180deg,rgba(10,27,24,0.98),rgba(8,11,13,0.99))] hover:border-emerald-200/30", link: "text-emerald-50 decoration-emerald-200/40" },
 };
 
 function buildFilterHref(filter, query) {
@@ -36,7 +36,7 @@ function buildFilterHref(filter, query) {
 function CollectionArtwork({ collection, index, compact = false }) {
   const style = COLLECTION_STYLES[collection.accent] || COLLECTION_STYLES.cyan;
   return (
-    <div className={`relative overflow-hidden bg-[linear-gradient(145deg,#12151d,#08090d)] ${compact ? "h-44" : "min-h-72"}`} aria-hidden="true">
+    <div className={`relative overflow-hidden bg-[linear-gradient(145deg,#1b2a3f,#0e1520)] ${compact ? "h-28" : "min-h-72"}`} aria-hidden="true">
       <div className={`absolute inset-0 bg-gradient-to-br ${style.art}`} />
       <div className="absolute -right-12 -top-16 h-52 w-52 rounded-full border border-white/10" />
       <div className="absolute -right-2 -top-6 h-36 w-36 rounded-full border border-white/10" />
@@ -45,11 +45,11 @@ function CollectionArtwork({ collection, index, compact = false }) {
           <span key={itemIndex} className="aspect-square border-r border-t border-white/8" />
         ))}
       </div>
-      <div className="absolute inset-x-5 top-5 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.2em] text-white/48">
+      <div className="absolute inset-x-4 top-3 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.2em] text-white/52">
         <span>Queer Atlas / Edit {String(index + 1).padStart(2, "0")}</span>
         <span>{collection.cities.length} cities</span>
       </div>
-      <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
+      <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-4">
         <div>
           <span className={`block h-1.5 w-1.5 rounded-full ${style.dot}`} />
           <span className={`mt-3 block h-px w-16 ${style.line}`} />
@@ -110,7 +110,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
   };
 
   return (
-    <main className="qa-page min-h-screen bg-[#06070a] px-4 py-6 text-white sm:px-6 sm:py-9">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_0%,rgba(56,189,248,0.10),transparent_28%),radial-gradient(circle_at_88%_4%,rgba(192,132,252,0.08),transparent_25%),linear-gradient(180deg,#05070b_0%,#080a10_48%,#050609_100%)] px-4 py-6 text-white sm:px-6 sm:py-9">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-7xl">
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42 sm:text-xs">
@@ -119,18 +119,18 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
           <span className="text-white/68">Atlas Collections</span>
         </nav>
 
-        <section className="mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(145deg,#11141c,#090a0e)] shadow-[0_30px_90px_rgba(0,0,0,0.34)] sm:rounded-[34px]">
+        <section className="mt-5 overflow-hidden rounded-[28px] border border-cyan-100/22 bg-[radial-gradient(circle_at_12%_18%,rgba(103,232,249,0.22),transparent_40%),radial-gradient(circle_at_88%_14%,rgba(192,132,252,0.17),transparent_38%),linear-gradient(145deg,#1d334a,#17263a_56%,#291a34)] shadow-[0_30px_90px_rgba(0,0,0,0.30),0_0_0_1px_rgba(255,255,255,0.035)] sm:rounded-[34px]">
           <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
             <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-11">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-100/66">Queer Atlas editorial</p>
               <h1 className="mt-4 max-w-2xl text-4xl font-black leading-[1.02] tracking-[-0.045em] text-white sm:text-5xl lg:text-[3.6rem]">
                 Atlas Collections
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-white/64 sm:text-lg">
+              <p className="mt-5 max-w-xl text-base leading-7 text-white/72 sm:text-lg">
                 Curated ways into a city: the right dance floor, a softer first night, a beach with a real social rhythm, or a room built around performance.
               </p>
               <div className="mt-7 flex flex-wrap items-center gap-3">
-                <a href="#discover-collections" className="inline-flex min-h-11 items-center rounded-full bg-white px-5 text-xs font-bold uppercase tracking-[0.11em] text-black transition hover:bg-cyan-50">
+                <a href="#discover-collections" className="inline-flex min-h-11 items-center rounded-full border border-cyan-100/70 bg-cyan-100 px-5 text-xs font-bold uppercase tracking-[0.11em] text-slate-950 shadow-[0_10px_28px_rgba(103,232,249,0.16)] transition hover:border-white hover:bg-white">
                   Explore the edits
                 </a>
                 <Link href="/sources-and-reviews" className="inline-flex min-h-11 items-center px-2 text-xs font-semibold text-white/58 transition hover:text-white">
@@ -142,13 +142,13 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
               </p>
             </div>
 
-            <div className="relative hidden min-h-[25rem] border-l border-white/8 bg-[radial-gradient(circle_at_70%_20%,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_25%_75%,rgba(232,121,249,0.10),transparent_28%),#0a0c11] lg:block" aria-hidden="true">
-              <div className="absolute left-[16%] top-[16%] w-[58%] rotate-[-7deg] rounded-2xl border border-white/12 bg-[#11141b] p-4 shadow-[0_28px_70px_rgba(0,0,0,0.48)]">
-                <div className="h-24 rounded-xl bg-[linear-gradient(135deg,rgba(34,211,238,0.16),rgba(255,255,255,0.02))]" />
+            <div className="relative hidden min-h-[25rem] border-l border-cyan-100/18 bg-[radial-gradient(circle_at_72%_18%,rgba(103,232,249,0.38),transparent_33%),radial-gradient(circle_at_24%_78%,rgba(216,180,254,0.30),transparent_35%),linear-gradient(145deg,#1b3a55,#352043_58%,#172432)] lg:block" aria-hidden="true">
+              <div className="absolute left-[16%] top-[16%] w-[58%] rotate-[-7deg] rounded-2xl border border-cyan-100/28 bg-[linear-gradient(145deg,#203a52,#17283b)] p-4 shadow-[0_28px_70px_rgba(0,0,0,0.38),0_0_44px_rgba(34,211,238,0.14)]">
+                <div className="h-24 rounded-xl bg-[linear-gradient(135deg,rgba(103,232,249,0.34),rgba(129,140,248,0.14),rgba(255,255,255,0.04))]" />
                 <div className="mt-4 h-2 w-20 rounded-full bg-white/18" />
                 <div className="mt-2 h-2 w-36 rounded-full bg-white/8" />
               </div>
-              <div className="absolute bottom-[13%] right-[12%] w-[58%] rotate-[5deg] rounded-2xl border border-white/12 bg-[#15121a] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+              <div className="absolute bottom-[13%] right-[12%] w-[58%] rotate-[5deg] rounded-2xl border border-fuchsia-100/28 bg-[linear-gradient(145deg,#3a2546,#241a31)] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.42),0_0_46px_rgba(217,70,239,0.14)]">
                 <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.18em] text-white/42"><span>Field note</span><span>06 / 26</span></div>
                 <div className="mt-5 h-px bg-gradient-to-r from-fuchsia-200/60 to-transparent" />
                 <p className="mt-5 text-xl font-semibold leading-tight tracking-[-0.03em] text-white/86">Chosen for how the place fits the night.</p>
@@ -164,12 +164,12 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
             <p className="mt-3 text-sm leading-6 text-white/52">Choose one theme or search by city, mood, venue, or kind of night.</p>
           </div>
 
-          <div className="mt-6 rounded-[24px] border border-white/10 bg-[#0d0f14] p-3 sm:p-4">
+          <div className="mt-6 rounded-[24px] border border-cyan-100/10 bg-[linear-gradient(145deg,rgba(14,20,29,0.98),rgba(11,12,18,0.99))] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.20)] sm:p-4">
             <form action="/now/collections" className="flex flex-col gap-2 sm:flex-row">
               {validFilter !== "all" && <input type="hidden" name="type" value={validFilter} />}
               <label htmlFor="collection-search" className="sr-only">Search Atlas Collections</label>
               <input id="collection-search" name="q" type="search" defaultValue={query} placeholder="Try Berlin, beaches, solo travel, drag..." className="min-h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-cyan-200/32" />
-              <button type="submit" className="min-h-12 rounded-2xl bg-white px-6 text-xs font-bold uppercase tracking-[0.1em] text-black transition hover:bg-cyan-50">Search collections</button>
+              <button type="submit" className="min-h-12 rounded-2xl border border-cyan-100/60 bg-cyan-100 px-6 text-xs font-bold uppercase tracking-[0.1em] text-slate-950 transition hover:border-white hover:bg-white">Search collections</button>
             </form>
             <div aria-label="Collection filters" className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {ATLAS_COLLECTION_FILTERS.map((filter) => {
@@ -199,26 +199,20 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
                 const style = COLLECTION_STYLES[collection.accent] || COLLECTION_STYLES.cyan;
                 return (
                   <li key={collection.id}>
-                    <article className="group h-full overflow-hidden rounded-[26px] border border-white/10 bg-[#0d0f14] transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_28px_80px_rgba(0,0,0,0.30)]">
+                    <article className={`group h-full overflow-hidden rounded-[26px] border transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_80px_rgba(0,0,0,0.34)] ${style.card}`}>
                       <CollectionArtwork collection={collection} index={originalIndex} compact />
-                      <div className="flex min-h-[20rem] flex-col p-5 sm:p-6">
+                      <div className="flex flex-col p-4">
                         <p className={`text-[10px] font-bold uppercase tracking-[0.18em] ${style.text}`}>{collection.eyebrow}</p>
-                        <h3 className="mt-3 text-2xl font-bold leading-tight tracking-[-0.035em] text-white">{collection.title}</h3>
-                        <p className="mt-3 text-sm leading-6 text-white/58">{collection.summary}</p>
-                        <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-white/8 pt-4">
-                          <div>
-                            <dt className="text-[9px] uppercase tracking-[0.12em] text-white/32">Best for</dt>
-                            <dd className="mt-1 text-xs leading-5 text-white/70">{collection.bestFor}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-[9px] uppercase tracking-[0.12em] text-white/32">Inside</dt>
-                            <dd className="mt-1 text-xs leading-5 text-white/70">{collection.items.length} picks · {collection.cities.length} cities</dd>
-                          </div>
-                        </dl>
-                        <div className="mt-auto flex items-end justify-between gap-4 pt-6">
-                          <p className="text-[10px] uppercase tracking-[0.1em] text-white/30">Updated {collection.updated}</p>
-                          <Link href={collection.href} className={`shrink-0 text-xs font-bold text-white/74 transition ${style.button}`} aria-label={`Open ${collection.title}`}>
-                            View edit <span className="ml-1" aria-hidden="true">→</span>
+                        <h3 className="mt-2 text-xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-[1.35rem]">{collection.title}</h3>
+                        <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-white/62">{collection.summary}</p>
+                        <p className="mt-3 border-t border-white/9 pt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/48">
+                          {collection.items.length} picks <span className="mx-1.5 text-white/22">·</span> {collection.cities.length} cities
+                        </p>
+                        <div className="mt-auto flex items-end justify-between gap-4 pt-3">
+                          <p className="text-[10px] uppercase tracking-[0.1em] text-white/36">Updated {collection.updated}</p>
+                          <Link href={collection.href} className={`group/edit inline-flex shrink-0 items-center gap-2 border-b pb-1 text-sm font-bold underline-offset-4 transition hover:border-white/70 hover:text-white ${style.link}`} aria-label={`Open ${collection.title}`}>
+                            <span>View edit</span>
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-current/30 text-[11px] transition-transform duration-200 group-hover/edit:translate-x-0.5" aria-hidden="true">→</span>
                           </Link>
                         </div>
                       </div>
