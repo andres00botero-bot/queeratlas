@@ -2,6 +2,7 @@
 
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
+import VenueLocationPicker from "@/components/location/VenueLocationPicker";
 import { getVenueIntelLabels } from "@/lib/venueIntel";
 
 export default function AddPlaceInlineForm({
@@ -19,6 +20,9 @@ export default function AddPlaceInlineForm({
   setPlaceLink,
   address,
   setAddress,
+  city,
+  placeLocation,
+  setPlaceLocation,
   type,
   setType,
   types,
@@ -55,7 +59,13 @@ export default function AddPlaceInlineForm({
       />
       <input value={placeHours} onChange={(event) => setPlaceHours(event.target.value)} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
       <input value={placeLink} onChange={(event) => setPlaceLink(event.target.value)} placeholder="Official link (website, Instagram, Facebook) - optional" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
-      <input value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+      <VenueLocationPicker
+        address={address}
+        city={city}
+        location={placeLocation}
+        onAddressChange={setAddress}
+        onLocationChange={setPlaceLocation}
+      />
       <select value={type} onChange={(event) => setType(event.target.value)} className="w-full rounded-2xl border border-white/10 bg-black/40 p-3 outline-none">
         {types.map((item) => (
           <option key={item.value} value={item.value}>
@@ -74,7 +84,7 @@ export default function AddPlaceInlineForm({
           { key: "inclusion", label: intelLabels.staffInclusivity, value: placeStaffInclusivity, onChange: setPlaceStaffInclusivity, placeholder: "Share a factual inclusion signal", wide: true },
         ]}
       />
-      <button onClick={onSave} className="w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-teal-200 py-3 font-semibold text-black">
+      <button disabled={!placeLocation} onClick={onSave} className="w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-teal-200 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45">
         Save
       </button>
     </div>

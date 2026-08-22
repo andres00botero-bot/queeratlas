@@ -26,6 +26,12 @@ for (const relativePath of targets) {
   }
 }
 
+const cityMapSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+const anchoredCustomMarkers = cityMapSource.match(/new mapboxgl\.Marker\(\{\s*element[^}]*anchor:\s*["']bottom["']/g) || [];
+if (anchoredCustomMarkers.length < 3) {
+  failures.push("../src/app/[city]/page.js: all custom city markers must use a bottom anchor");
+}
+
 if (failures.length > 0) {
   console.error("Map guard smoke test failed:");
   failures.forEach((item) => console.error(`- ${item}`));

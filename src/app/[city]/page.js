@@ -211,6 +211,8 @@ export default function CityPage() {
     setType,
     address,
     setAddress,
+    placeLocation,
+    setPlaceLocation,
     description,
     setDescription,
     vibe,
@@ -2019,11 +2021,7 @@ export default function CityPage() {
     }
 
     const data = await res.json();
-
-    if (!data.features?.length) {
-      return null;
-    }
-
+    if (!data.features?.length) return null;
     const [lng, lat] = data.features[0].center;
     return { lat, lng };
   }, [city]);
@@ -2336,12 +2334,11 @@ export default function CityPage() {
       const wrapper = document.createElement("div");
       wrapper.dataset.neonColor = baseColor;
       wrapper.style.width = "22px";
-      wrapper.style.height = "30px";
+      wrapper.style.height = "24px";
       wrapper.style.display = "flex";
       wrapper.style.alignItems = "flex-start";
       wrapper.style.justifyContent = "center";
       wrapper.style.filter = "saturate(1.9) brightness(1.16)";
-      wrapper.style.transform = "translateY(-3px)";
 
       const pin = document.createElement("div");
       pin.className = "qa-neon-pin";
@@ -2379,7 +2376,10 @@ export default function CityPage() {
         ? typeConfig?.color || "#36e5ff"
         : typeConfig?.color || "#9ca3af";
       const marker = useNeonMarkers
-        ? new mapboxgl.Marker(createNeonPinElement(neonColor))
+        ? new mapboxgl.Marker({
+            element: createNeonPinElement(neonColor),
+            anchor: "bottom",
+          })
         : new mapboxgl.Marker({ color: neonColor });
       marker
         .setLngLat([place.lng, place.lat])
@@ -2419,7 +2419,7 @@ export default function CityPage() {
         element.style.border = "2px solid white";
       }
 
-      const marker = new mapboxgl.Marker(element)
+      const marker = new mapboxgl.Marker({ element, anchor: "bottom" })
         .setLngLat([event.lng, event.lat])
         .addTo(mapRef.current);
 
@@ -2460,7 +2460,7 @@ export default function CityPage() {
         element.style.border = "2px solid rgba(255,255,255,0.95)";
       }
 
-      const marker = new mapboxgl.Marker(element)
+      const marker = new mapboxgl.Marker({ element, anchor: "bottom" })
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
 
@@ -2808,10 +2808,9 @@ export default function CityPage() {
     }
 
     try {
-      const coords = await geocodeAddress(address);
-
-      if (!coords) {
-        showToast("Address not found. Try a more specific address.", { tone: "warn", duration: 2400 });
+      const coords = placeLocation;
+      if (!Number.isFinite(Number(coords?.lat)) || !Number.isFinite(Number(coords?.lng))) {
+        showToast("Choose an address suggestion or confirm the pin on the map before saving.", { tone: "warn", duration: 2800 });
         return;
       }
 
@@ -4710,6 +4709,9 @@ export default function CityPage() {
                   setPlaceStaffInclusivity,
                   address,
                   setAddress,
+                  city,
+                  placeLocation,
+                  setPlaceLocation,
                   type,
                   setType,
                   types: TYPES,

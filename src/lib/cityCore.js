@@ -1189,6 +1189,15 @@ export const cityCoreConfig = {
     "country": "Cambodia",
     "vibe": "mekong neon"
   },
+  "siem_reap": {
+    "center": [
+      103.8552,
+      13.355
+    ],
+    "title": "Queer Siem Reap",
+    "country": "Cambodia",
+    "vibe": "temple-town warmth and intimate queer nights"
+  },
   "ho_chi_minh": {
     "center": [
       106.6297,

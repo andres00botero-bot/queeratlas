@@ -1,0 +1,1885 @@
+{
+  "bogota": [
+    {
+      "id": 587,
+      "name": "El Mozo",
+      "previous": { "location": "Video Club at Calle 64 #13-09, Chapinero", "lat": 4.65112, "lng": -74.0641 },
+      "next": { "location": "Carrera 13 #64-79, Chapinero, Bogotá, Colombia", "lat": 4.651702, "lng": -74.063494 },
+      "evidence": ["https://asobares.org/red-afiliados-asobares-colombia/", "https://www.eltiempo.com/bogota/esta-es-la-programacion-oficial-de-misterio-halloween-2025-un-festival-lgbtiq-internacional-que-se-realiza-este-puente-festivo-en-bogota-3505349"]
+    },
+    {
+      "id": 2223,
+      "name": "Polo.El",
+      "previous": { "location": "Calle 16 #7-71, Centro, Bogotá, Colombia", "lat": 5.52846, "lng": -73.3609 },
+      "next": { "location": "Calle 16 #7-71, Centro, Bogotá, Colombia", "lat": 4.602903, "lng": -74.073406 },
+      "evidence": ["https://www.misterbandb.com/gay-guide/colombia/bogota/50-bars-clubs/20219-polo-el", "https://sisbic.idpc.gov.co/Fichas_CH/FV_003109015007.pdf"]
+    },
+    {
+      "id": 2224,
+      "name": "El Recreo de Adán",
+      "previous": { "location": "Cra. 12a #79 - 45, El Retiro, Bogotá, Colombia.", "lat": 5.57128, "lng": -73.3474 },
+      "next": { "location": "Carrera 12A #79-45, El Retiro, Bogotá, Colombia", "lat": 4.665048, "lng": -74.055598 },
+      "evidence": ["https://www.waze.com/live-map/directions/co/bogota/bogota/el-recreo-de-adan?to=place.ChIJHy0RrvSaP44R5FC-xWYVmE0"]
+    },
+    {
+      "id": 1674,
+      "name": "Capri Club",
+      "previous": { "location": "Cl. 83 #12A - 36, Piso 3, Localidad de Chapinero, Zona T, Bogotá, Cundinamarca, Colombia", "lat": 4.96525, "lng": -73.9161 },
+      "next": { "location": "Calle 83 #12A-36, Piso 3, Zona T, Bogotá, Colombia", "lat": 4.667732, "lng": -74.054301 },
+      "evidence": ["https://bindtickets.com/producto/waff/"]
+    },
+    {
+      "id": 588,
+      "name": "Village Cafe",
+      "previous": { "location": null, "lat": 4.6485, "lng": -74.0614 },
+      "next": { "location": "Carrera 8 #64-29, Chapinero, Bogotá, Colombia", "lat": 4.649427, "lng": -74.060447 },
+      "evidence": ["https://www.thegayagenda.fyi/bogota/gay-bars/"]
+    },
+    {
+      "id": 1193,
+      "name": "HAB Hotel",
+      "previous": { "location": "Cra. 5 #58-07, Chapinero, Bogota, Colombia", "lat": 4.6454, "lng": -74.0635 },
+      "next": { "location": "Carrera 5 #58-07, Chapinero, Bogotá, Colombia", "lat": 4.643033, "lng": -74.060919 },
+      "evidence": ["https://habhotel.co/"]
+    },
+    {
+      "id": 590,
+      "name": "Vintrash",
+      "previous": { "location": null, "lat": 4.6681, "lng": -74.0495 },
+      "next": { "location": "Avenida Calle 85 #11-53, Chapinero, Bogotá, Colombia", "lat": 4.66788205, "lng": -74.0521187 },
+      "evidence": ["https://www.thegayagenda.fyi/bogota/gay-bars/"]
+    },
+    {
+      "id": 591,
+      "name": "Boogaloop Club",
+      "previous": { "location": null, "lat": 4.6495, "lng": -74.0601 },
+      "next": { "location": "Carrera 13 #65-42, Chapinero, Bogotá, Colombia", "lat": 4.651921, "lng": -74.062973 },
+      "evidence": ["https://files.visitbogota.co/drpl/sites/default/files/2022-12/Gu%C3%ADa%20LGBTI%20Digital%20ok.pdf", "https://es.restaurantguru.com/boogaloop-Bogota"]
+    },
+    {
+      "id": 1202,
+      "name": "Brokeback Mountain LGBT Bar",
+      "previous": { "location": "Cl. 59 #9-34, Chapinero, Bogota, Colombia", "lat": 4.6485, "lng": -74.0619 },
+      "next": { "location": "Calle 59 #9-34, Chapinero, Bogotá, Colombia", "lat": 4.645436, "lng": -74.062936 },
+      "evidence": ["https://visitbogota.co/es/que-hacer-en-bogota/cultura/brokeback-mountain", "https://www.travelgay.com/venue/brokeback-mountain-disco-bar"]
+    },
+    {
+      "id": 592,
+      "name": "Dagoas Sauna & Hostel",
+      "previous": { "location": null, "lat": 4.6484, "lng": -74.0618 },
+      "next": { "location": "Calle 59 #9-34, Chapinero, Bogotá, Colombia", "lat": 4.64533754, "lng": -74.06309388 },
+      "evidence": ["https://www.waze.com/live-map/directions/co/bogota/bogota/dagoas-sauna-hostel-gay?to=place.ChIJR2K2LGSaP44RqCgUdjmDiIs", "https://x.com/DagoasS"]
+    },
+    {
+      "id": 1670,
+      "name": "Octava",
+      "previous": { "location": "Cra. 8 #63-41, Chapinero, Bogotá, Cundinamarca, Colombia", "lat": 4.91357, "lng": -73.9386 },
+      "next": { "location": "Carrera 8 #63-41, Chapinero, Bogotá, Colombia", "lat": 4.648801, "lng": -74.060799 },
+      "evidence": ["https://maps.apple.com/place?place-id=I657F678A33171F90"]
+    },
+    {
+      "id": 1196,
+      "name": "El Perro y La Calandria",
+      "previous": { "location": "Cra. 9 #59-16, Chapinero, Bogota, Colombia", "lat": 4.6487, "lng": -74.062 },
+      "next": { "location": "Carrera 9 #59-16, Chapinero, Bogotá, Colombia", "lat": 4.645221, "lng": -74.062593 },
+      "evidence": ["https://www.thegayagenda.fyi/bogota/gay-bars/"]
+    },
+    {
+      "id": 1198,
+      "name": "Sofitel Bogota Victoria Regia",
+      "previous": { "location": "Carrera 13 #85-80, Bogota, Colombia", "lat": 4.6692, "lng": -74.0524 },
+      "next": { "location": "Carrera 13 #85-80, Bogotá, Colombia", "lat": 4.670084, "lng": -74.053133 },
+      "evidence": ["https://all.accor.com/hotel/0561/index.en.shtml"]
+    },
+    {
+      "id": 1194,
+      "name": "Disco Jaguar",
+      "previous": { "location": "Ak 7 #59-30, Chapinero, Bogota, Colombia", "lat": 4.6489, "lng": -74.0628 },
+      "next": { "location": "Carrera 7 #59-30, Chapinero, Bogotá, Colombia", "lat": 4.64451, "lng": -74.061356 },
+      "evidence": ["https://www.waze.com/es/live-map/directions/co/bogota/bogota/disco-jaguar?to=place.ChIJCfVz5TiaP44RPc2on-jab5U", "https://files.visitbogota.co/drpl/sites/default/files/2022-12/Gu%C3%ADa%20LGBTI%20Digital%20ok.pdf"]
+    },
+    {
+      "id": 1195,
+      "name": "Bar Chiquita Bogota",
+      "previous": { "location": "Carrera 12a #79-25, Chapinero, Bogota, Colombia", "lat": 4.6661, "lng": -74.0582 },
+      "next": { "location": "Carrera 12A #79-25, Chapinero, Bogotá, Colombia", "lat": 4.664845, "lng": -74.055621 },
+      "evidence": ["https://www.travelgay.com/bogota-gay-bars", "https://www.gaycities.com/articles/96612/what-are-the-best-gay-bars-in-bogota/"]
+    },
+    {
+      "id": 1197,
+      "name": "Sauna Saint Moritz",
+      "previous": { "location": "Cl. 65 #13-30 piso 2, Chapinero, Bogota, Colombia", "lat": 4.6558, "lng": -74.0608 },
+      "next": { "location": "Calle 65 #13-30, Piso 2, Chapinero, Bogotá, Colombia", "lat": 4.652049, "lng": -74.063501 },
+      "evidence": ["https://saunasaintmoritz.com/"]
+    },
+    {
+      "id": 1192,
+      "name": "Leos Bar Mistica",
+      "previous": { "location": "Cl. 59 #9-36, Chapinero, Bogota, Colombia", "lat": 4.6485, "lng": -74.0617 },
+      "next": { "location": "Calle 59 #9-36, Chapinero, Bogotá, Colombia", "lat": 4.645356, "lng": -74.063085 },
+      "evidence": ["https://www.thegayagenda.fyi/bogota/gay-bars/"]
+    },
+    {
+      "id": 1201,
+      "name": "La Estacion Cafe Chapinero",
+      "previous": { "location": "Cl. 62 #7-13, Chapinero, Bogota, Colombia", "lat": 4.6519, "lng": -74.061 },
+      "next": { "location": "Calle 62 #7-13, Chapinero, Bogotá, Colombia", "lat": 4.646965, "lng": -74.060442 },
+      "evidence": ["https://www.estacioncafecolombia.com/chapinero.html", "https://www.waze.com/es-419/live-map/directions/co/cundinamarca/bogota/la-estacion-cafe-chapinero?to=place.ChIJv6OURkaaP44Ry7X0gipicG0"]
+    },
+    {
+      "id": 1200,
+      "name": "Complices SPA",
+      "previous": { "location": "Cra. 13a #38-60, Santa Fe, Bogota, Colombia", "lat": 4.6286, "lng": -74.0704 },
+      "next": { "location": "Carrera 13A #38-60, Santa Fe, Bogotá, Colombia", "lat": 4.626775, "lng": -74.067849 },
+      "evidence": ["https://passportmagazine.com/whats-new-in-bogota/"]
+    },
+    {
+      "id": 1199,
+      "name": "Video Club",
+      "previous": { "location": "Cl. 64 #13-09, Chapinero, Bogota, Colombia", "lat": 4.6551, "lng": -74.0621 },
+      "next": { "location": "Calle 64 #13-09, Chapinero, Bogotá, Colombia", "lat": 4.650801, "lng": -74.063491 },
+      "evidence": ["https://www.travelgay.com/venue/video-club-bogota", "https://files.visitbogota.co/drpl/sites/default/files/2022-12/Gu%C3%ADa%20LGBTI%20Digital%20ok.pdf"]
+    },
+    {
+      "id": 589,
+      "name": "Coyote Crazy",
+      "previous": { "location": null, "lat": 4.6487, "lng": -74.0626 },
+      "next": { "location": "Carrera 9 #59-09, Chapinero, Bogotá, Colombia", "lat": 4.645256, "lng": -74.062802 },
+      "evidence": ["https://www.thegayagenda.fyi/bogota/gay-bars/", "https://www.travelgay.com/bogota-gay-bars"]
+    },
+    {
+      "id": 1683,
+      "name": "A Seis Manos",
+      "previous": { "location": "Calle 22 # 8-60, Santa Fé, Centro, Bogotá, 110311, Colombia", "lat": 4.61256, "lng": -74.0705 },
+      "next": { "location": "Calle 22 #8-60, Santa Fé, Bogotá, Colombia", "lat": 4.608519, "lng": -74.071351 },
+      "evidence": ["https://aseismanos.com/"]
+    },
+    {
+      "id": 1682,
+      "name": "La Estación Café Chapinero",
+      "previous": { "location": "Calle 62 #7-19, Localidad de Chapinero, Bogotá, 110231, Colombia", "lat": 4.64668, "lng": -74.0595 },
+      "next": { "location": "Calle 62 #7-13/19, Chapinero, Bogotá, Colombia", "lat": 4.646998, "lng": -74.060468 },
+      "evidence": ["https://www.estacioncafecolombia.com/chapinero.html"]
+    },
+    {
+      "id": 2221,
+      "name": "Marino Submarino",
+      "previous": { "location": "Cl. 59 #13-34, Chapinero, Bogotá, Colombia.", "lat": 4.64479, "lng": -74.0647 },
+      "next": { "location": "Calle 59 #13-34, Chapinero, Bogotá, Colombia", "lat": 4.645929, "lng": -74.064631 },
+      "evidence": ["https://bogota.gov.co/mi-ciudad/cultura-recreacion-y-deporte/cuatro-planes-para-celebrar-amor-y-amistad-en-bogota", "https://wanderlog.com/place/details/2110754/marino-submarino"]
+    }
+  ],
+  "buenos_aires": [
+    {
+      "id": 1129,
+      "name": "Fiesta y Bar Jolie",
+      "previous": { "location": "Av. Juan B. Justo 1658, Palermo, C1414 Buenos Aires, Argentina", "lat": -33.9041, "lng": -60.579 },
+      "next": { "location": "Aráoz 2424, Palermo, Buenos Aires, Argentina", "lat": -34.586327, "lng": -58.416433 },
+      "evidence": ["https://fiestajolie.com/", "https://www.fiestajolie.com/terminos"]
+    },
+    {
+      "id": 417,
+      "name": "Pride Café",
+      "previous": { "location": "Buenos Aires 899, Lobos, Buenos Aires Province, B7240ACQ, Argentina", "lat": -35.1777305603027, "lng": -59.0974884033203 },
+      "next": { "location": "Avenida de Mayo 714, Monserrat, C1084 Buenos Aires, Argentina", "lat": -34.608709, "lng": -58.376547 },
+      "evidence": ["https://holasantelmo.ar/pride-cafe/", "https://www.tripadvisor.com.ar/Restaurant_Review-g312741-d6368343-Reviews-Pride_Cafe-Buenos_Aires_Capital_Federal_District.html", "https://buenosaires.gob.ar/gcaba_historico/pride-cafe"]
+    },
+    {
+      "id": 422,
+      "name": "Homosapiens",
+      "previous": { "location": "Buenos Aires 955, Lobos, Buenos Aires Province, B7240, Argentina", "lat": -35.1769943237305, "lng": -59.0973854064941 },
+      "next": { "location": "Gascón 956, Almagro, C1181 Buenos Aires, Argentina", "lat": -34.599687, "lng": -58.423659 },
+      "evidence": ["https://restaurantguru.com/Homo-Sapiens-Buenos-Aires"]
+    },
+    {
+      "id": 419,
+      "name": "Zoom",
+      "previous": { "location": "José Evaristo Uriburu 1000, Quilmes, Buenos Aires Province, B1878, Argentina", "lat": -34.7231750488281, "lng": -58.2433471679688 },
+      "next": { "location": "Presidente José Evaristo Uriburu 1018, Recoleta, C1114 Buenos Aires, Argentina", "lat": -34.596802, "lng": -58.398826 },
+      "evidence": ["https://es.travelgay.com/venue/zoom-buenos-aires", "https://maps.apple.com/place?place-id=I854D8EE6840864D0", "https://www.bars10.com/AR/Buenos-Aires/180073532031552/ZOOM-buenos-aires"]
+    }
+  ],
+  "ho_chi_minh": [
+    {
+      "id": 2051,
+      "name": "The Observatory",
+      "previous": { "location": "10th Floor, Twins Tower, 85 Cách Mạng Tháng Tám, Phường Bến Thành, District 1, Ho Chi Minh City", "lat": 10.4934, "lng": 107.178 },
+      "next": { "location": "85 Cách Mạng Tháng Tám, Bến Thành, District 1, Ho Chi Minh City, Vietnam", "lat": 10.772545, "lng": 106.691141 },
+      "evidence": ["https://wanderlog.com/place/details/1083060/the-observatory", "https://www.findlatitudeandlongitude.com/l/The%2BObservatory%2B%28adress%2Bchecked%29%2C%2B85%2BC%C3%A1ch%2BM%E1%BA%A1ng%2BTh%C3%A1ng%2B8%2C%2BQu%E1%BA%ADn%2B1%2C%2BHo%2BChi%2BMinh%2BCity%2C%2BQuan%2B8%2C%2BHo%2BChi%2BMinh%2C%2BVietnam/9215727/gps-coordinates-converter/"]
+    }
+  ],
+  "la_paz": [
+    {
+      "id": 2190,
+      "name": "Punto G",
+      "previous": { "location": "Calle Boquerón #1352, San Pedro, La Paz, Bolivia.", "lat": -18.9658, "lng": -57.8036 },
+      "next": { "location": "Calle Demetrio Moscoso 75, Villa Dolores, El Alto, La Paz, Bolivia", "lat": -16.513543, "lng": -68.15778 },
+      "evidence": ["https://mapcarta.com/N5880271785", "https://wanderlog.com/place/details/12912988/sauna-punto-g"]
+    }
+  ],
+  "berlin": [
+    {
+      "id": 1993,
+      "name": "Tresor & Ohm",
+      "previous": { "location": "Köpenicker Str. 70,  Mitte, berlin", "lat": 52.5001, "lng": 13.5617 },
+      "next": { "location": "Köpenicker Straße 70, 10179 Berlin, Germany", "lat": 52.510545, "lng": 13.418777 },
+      "evidence": ["https://tresorberlin.com/info/location/", "https://www.berlin.de/clubs-und-party/clubguide/8872188-2857960-tresor.html"]
+    },
+    {
+      "id": 966,
+      "name": "Ficken 3000",
+      "previous": { "location": null, "lat": 52.4911994934082, "lng": 13.4215002059937 },
+      "next": { "location": "Urbanstraße 70, 10967 Berlin, Germany", "lat": 52.48854421, "lng": 13.42277482 },
+      "evidence": ["https://www.clubcommission.de/members/ficken-3000/", "https://www.mann-o-meter.de/datenbank/sex-fetisch/bars-kneipen-parties/ficken-3000-cruising-bar", "https://www.berlinbear.de/en/locations/603/ficken-3000"]
+    }
+  ],
+  "provincetown": [
+    {
+      "id": 787,
+      "name": "The Red Room",
+      "previous": { "location": null, "lat": 42.0501, "lng": -70.1858 },
+      "next": { "location": "258 Commercial Street, Provincetown, MA 02657, United States", "lat": 42.051066245, "lng": -70.187621713 },
+      "evidence": ["https://redroom.club/", "https://nextdoor.com/pages/mama-matcha-provincetown-ma/"]
+    },
+    {
+      "id": 782,
+      "name": "Crown & Anchor",
+      "previous": { "location": null, "lat": 42.0499000549316, "lng": -70.1862030029297 },
+      "next": { "location": "247 Commercial St, Provincetown, MA 02657, United States", "lat": 42.050213, "lng": -70.187615 },
+      "evidence": ["https://onlyatthecrown.com/crown-anchor/", "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf"]
+    },
+    {
+      "id": 783,
+      "name": "A-House",
+      "previous": { "location": "6 Masonic Pl #4, Provincetown, Massachusetts 02657, United States", "lat": 42.0501136779785, "lng": -70.1887969970703 },
+      "next": { "location": "4-6 Masonic Pl, Provincetown, MA 02657, United States", "lat": 42.050399, "lng": -70.189142 },
+      "evidence": ["https://www.ahouse.com/", "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf"]
+    },
+    {
+      "id": 784,
+      "name": "The Boatslip",
+      "previous": { "location": null, "lat": 42.048900604248, "lng": -70.1912994384766 },
+      "next": { "location": "161 Commercial St, Provincetown, MA 02657, United States", "lat": 42.047011, "lng": -70.190196 },
+      "evidence": ["https://theboatslip.com/", "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf"]
+    },
+    {
+      "id": 786,
+      "name": "Wave Bar",
+      "previous": { "location": null, "lat": 42.0488014221191, "lng": -70.1911010742188 },
+      "next": { "location": "247 Commercial St, Provincetown, MA 02657, United States", "lat": 42.050213, "lng": -70.187615 },
+      "evidence": ["https://www.onlyatthecrown.com/the-wave-bar", "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf"]
+    },
+    {
+      "id": 863,
+      "name": "Macho Bar at A-House",
+      "previous": { "location": "6 Masonic Pl, Provincetown, MA 02657, United States", "lat": 42.0508003234863, "lng": -70.186897277832 },
+      "next": { "location": "4-6 Masonic Pl, Provincetown, MA 02657, United States", "lat": 42.050399, "lng": -70.189142 },
+      "evidence": ["https://www.ahouse.com/", "https://ptown.org/wp-content/uploads/2026/05/2026-PBG-GUIDE-REV_smaller.pdf"]
+    },
+    {
+      "id": 865,
+      "name": "The Yoga Joint Sauna & Cold Plunge",
+      "previous": { "location": "333R Commercial Street Unit 1, Provincetown, MA 02657, United States", "lat": 42.0481986999512, "lng": -70.1921997070312 },
+      "next": { "location": "333R Commercial St, Unit 1, Provincetown, MA 02657, United States", "lat": 42.052262, "lng": -70.184756 },
+      "evidence": ["https://www.yogajointptown.com/sauna-provincetown", "https://ptown.org/events/beach-sauna-plunge/"]
+    }
+  ],
+  "bangkok": [
+    {
+      "id": 538,
+      "name": "DJ Station",
+      "previous": { "location": null, "lat": 13.7287998199463, "lng": 100.531097412109 },
+      "next": { "location": "8/7 Silom Soi 2/1, Suriya Wong, Bang Rak, Bangkok 10500, Thailand", "lat": 13.72935, "lng": 100.53535 },
+      "evidence": ["https://mapcarta.com/N3083236042"]
+    },
+    {
+      "id": 1950,
+      "name": "The Standard, Bangkok Mahanakhon",
+      "previous": { "location": "114 Narathiwas Road, Silom, Bangrak, Bangkok 10500, Thailand", "lat": 13.7885942459106, "lng": 100.503067016602 },
+      "next": { "location": "114 Narathiwas Road, Silom, Bang Rak, Bangkok 10500, Thailand", "lat": 13.723243, "lng": 100.528075 },
+      "evidence": ["https://www.standardhotels.com/bangkok/properties/bangkok", "https://www.thailandtravel.or.jp/the-standard-bangkok-mahanakhon/"]
+    },
+    {
+      "id": 1953,
+      "name": "BRB Hostel Bangkok Silom",
+      "previous": { "location": "5/8-9 Soi Pipat, Silom Rd, Si Lom, Bang Rak, Bangkok 10500, Thailand", "lat": 13.7258243560791, "lng": 100.526542663574 },
+      "next": { "location": "5/8-9 Soi Pipat, Silom Road, Si Lom, Bang Rak, Bangkok 10500, Thailand", "lat": 13.72667027, "lng": 100.53092957 },
+      "evidence": ["https://hotels.cloudbeds.com/th/reservation/vhyeOS?rid=367771", "https://www.google.co.th/travel/hotels/entity/ChoI9IC9o4LFkrP5ARoNL2cvMTFjNzBjMzR4eRAB"]
+    },
+    {
+      "id": 1947,
+      "name": "The Stranger Bar",
+      "previous": { "location": "102, 98,100, 104 Silom 4 Alley, Bang Rak, Bangkok 10500, Thailand", "lat": 13.7393742, "lng": 100.5535278 },
+      "next": { "location": "98, 100, 102, 104 Silom Soi 4, Suriya Wong, Bang Rak, Bangkok 10500, Thailand", "lat": 13.7290689, "lng": 100.5327531 },
+      "evidence": ["https://thestrangerbar.com/contact-us/", "https://maps.app.goo.gl/EMfF1JCm3t1uA3EF9"]
+    },
+    {
+      "id": 540,
+      "name": "White Rabbit",
+      "previous": { "location": null, "lat": 13.7296, "lng": 100.532 },
+      "next": { "location": "12/3 Si Lom Road, Suriya Wong, Bang Rak, Bangkok 10500, Thailand", "lat": 13.72911, "lng": 100.53516 },
+      "evidence": ["https://www.gaymap.live/white-rabbit", "https://bangkok.worldplaces.me/review/35002484-white-rabbit-lounge-bar.html"]
+    }
+  ],
+  "santorini": [
+    {
+      "id": 2200,
+      "name": "Theros Wave Bar",
+      "previous": { "location": "Mesa Pigadia Beach, Akrotiri, Santorini, 847 00, Greece", "lat": 36.4184, "lng": 25.4334 },
+      "next": { "location": "Paralia Mesa Pigadia, Akrotiri, Santorini 847 00, Greece", "lat": 36.3531714, "lng": 25.3775762 },
+      "evidence": ["https://www.theroswavebar.gr/", "https://greekislandbuses.com/attractions/santorini/beach-bars/theros-wave-bar-santorini?lang=en"]
+    }
+  ],
+  "tbilisi": [
+    {
+      "id": 1942,
+      "name": "TES",
+      "previous": { "location": "10 Dodo Abashidze St, Chugureti, Tbilisi, Georgia", "lat": 41.8214, "lng": 44.7994 },
+      "next": { "location": "10 Dodo Abashidze Street, Chugureti, Tbilisi, Georgia", "lat": 41.705764, "lng": 44.795905 },
+      "evidence": ["https://ccc.gov.ge/uploads/files/travel%20guide%202026.pdf"]
+    }
+  ],
+  "lima": [
+    {
+      "id": 708,
+      "name": "La Cueva",
+      "previous": { "location": null, "lat": -12.1212, "lng": -77.0288 },
+      "next": { "location": "Avenida Aviación 2514, San Borja, Lima 15036, Peru", "lat": -12.0911429, "lng": -77.0033405 },
+      "evidence": ["https://canaproducciones.wixsite.com/lacuevadiscobar", "https://www.waze.com/live-map/directions/la-cueva-av.-aviacion-2514-san-borja?to=place.w.185468559.1854685591.11166096"]
+    }
+  ],
+  "tokyo": [
+    {
+      "id": 2053,
+      "name": "Vent",
+      "previous": { "location": "3-18-19 Minami-Aoyama, Minato-ku, Tokyo 107-0062, Japan", "lat": 35.6677742004395, "lng": 139.717742919922 },
+      "next": { "location": "Festae Omotesando B1F, 3-18-19 Minami-Aoyama, Minato-ku, Tokyo 107-0062, Japan", "lat": 35.6652611, "lng": 139.7129972 },
+      "evidence": ["https://vent-tokyo.net/"]
+    }
+  ],
+  "busan": [
+    {
+      "id": 1765,
+      "name": "Hotel Angel",
+      "previous": { "location": "46-7, Jungang-daero 692beon-gil, Busanjin-gu, Busan, South Korea", "lat": 35.1543006896973, "lng": 129.060302734375 },
+      "next": { "location": "46-7 Jungang-daero 692beon-gil, Busanjin-gu, Busan, South Korea", "lat": 35.154156, "lng": 129.061897 },
+      "evidence": ["https://bizno.net/article/6050588709"]
+    }
+  ],
+  "chiang_mai": [
+    {
+      "id": 1506,
+      "name": "Warm Up Cafe",
+      "previous": { "location": "40 Nimmanhaemin Road, Suthep, Chiang Mai 50200, Thailand", "lat": 18.7986889, "lng": 98.9680328 },
+      "next": { "location": "40 Nimmanahaeminda Road, Suthep, Chiang Mai 50200, Thailand", "lat": 18.795112, "lng": 98.965225 },
+      "evidence": ["https://www.chiangmai.net/business-directory/warmup-cafe-4262", "https://www.cmhy.city/en/place/215-Warm-Up-Cafe"]
+    },
+    {
+      "id": 1509,
+      "name": "New Circle Club Chiangmai",
+      "previous": { "location": "161/7-8 Soi Erawan, Chang Phueak Road, Chiang Mai 50300, Thailand", "lat": 18.8088379, "lng": 98.9828033 },
+      "next": { "location": "161/7-8 Soi Arawan, Chang Phueak, Chiang Mai 50300, Thailand", "lat": 18.801207, "lng": 98.985344 },
+      "evidence": ["https://www.gay-in-chiangmai.com/taxi/circle-pub/"]
+    },
+    {
+      "id": 1511,
+      "name": "Adam's Apple Club",
+      "previous": { "location": "1/21-22 Wiengbua Road, Chang Phueak, Chiang Mai 50300, Thailand", "lat": 18.8066273, "lng": 98.9784393 },
+      "next": { "location": "1/21-22 Viangbua Road, Chang Phueak, Chiang Mai 50300, Thailand", "lat": 18.80537003198919, "lng": 98.98429155092974 },
+      "evidence": ["https://www.chiangmailocator.com/chiang-mai-hangouts-7231%3Aadam-s-apple-club", "https://www.gay-in-chiangmai.com/taxi/adams-apple/"]
+    },
+    {
+      "id": 1507,
+      "name": "Chiang Mai 19 Bar",
+      "previous": { "location": "QXPX+3R8, Chang Moi, Chiang Mai 50300, Thailand", "lat": 18.7868919372559, "lng": 99.0015106201172 },
+      "next": { "location": "Night Bazaar building, Thapae Soi 1, Chang Moi, Chiang Mai 50100, Thailand", "lat": 18.785188, "lng": 98.999584 },
+      "evidence": ["https://www.gay-in-chiangmai.com/news/tag/nu-bar/", "https://www.travelgay.com/venue/chiang-mai-19-bar"]
+    },
+    {
+      "id": 1510,
+      "name": "Orion Bar",
+      "previous": { "location": "Night Bazaar, Charoen Prathet Soi 6, Chang Khlan, Chiang Mai 50100, Thailand", "lat": 18.7855434417725, "lng": 98.9984741210938 },
+      "next": { "location": "Kalare Night Bazaar, Charoen Prathet Soi 6, Chang Khlan, Chiang Mai 50100, Thailand", "lat": 18.784869, "lng": 99.001343 },
+      "evidence": ["https://www.chiangmailocator.com/chiang-mai-hangouts-6077%3Aorion-kalare-night-bazaar", "https://mapcarta.com/N7061277586"]
+    }
+  ],
+  "beirut": [
+    {
+      "id": 1783,
+      "name": "Hotel Albergo Relais & Chateaux",
+      "previous": { "location": "Abdel Wahab El Inglizi Street, 137, Achrafieh, Beirut, Lebanon", "lat": 33.8879013061523, "lng": 35.5155982971191 },
+      "next": { "location": "137 Abdel Wahab El Inglizi Street, Achrafieh, Beirut, Lebanon", "lat": 33.8880005, "lng": 35.510205 },
+      "evidence": ["https://www.albergobeirut.com/", "https://maps.app.goo.gl/MBrYWZFQyLmMjzE18"]
+    }
+  ],
+  "new_delhi": [
+    {
+      "id": 1011,
+      "name": "Depot48",
+      "previous": { "location": "M9, M Block Market, Greater Kailash II, New Delhi, India", "lat": 28.5568008422852, "lng": 77.2329025268555 },
+      "next": { "location": "M9, M Block Market, Greater Kailash II, New Delhi 110048, India", "lat": 28.5341308, "lng": 77.24300515 },
+      "evidence": ["https://www.zomato.com/ncr/depot48-greater-kailash-gk-2-new-delhi", "https://www.findlatitudeandlongitude.com/l/M%2BBlock%2BMarket%2C%2BGreater%2BKailash%2B2%2C%2BDelhi%2C%2BSouth%2BWest%2C%2BDelhi%2C%2BIndia/10537222/", "https://www.gk2wa.com/markets-gk-ii.html"]
+    }
+  ],
+  "tel_aviv": [
+    {
+      "id": 634,
+      "name": "Hilton Beach",
+      "previous": { "location": null, "lat": 32.0931015014648, "lng": 34.7696990966797 },
+      "next": { "location": "Hilton Beach, Tel Aviv-Yafo, Israel", "lat": 32.090461, "lng": 34.76925 },
+      "evidence": ["https://www.wikidata.org/wiki/Q56376795", "https://mapcarta.com/W37573238"]
+    }
+  ],
+  "hanoi": [
+    {
+      "id": 1396,
+      "name": "Eclipse Legend Hotel",
+      "previous": { "location": "36 Hang Voi, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0311870574951, "lng": 105.852714538574 },
+      "next": { "location": "36 Hang Voi Street, Hoan Kiem, Hanoi 10000, Vietnam", "lat": 21.030605, "lng": 105.85614 },
+      "evidence": ["https://www.google.com.vn/travel/hotels/entity/ChkI2OWF2-2008wZGg0vZy8xMWI2ZDFxdzZnEAE", "https://www.hotels.com/ho479044/eclipse-legend-hotel-hanoi-vietnam/"]
+    },
+    {
+      "id": 1385,
+      "name": "1900 Club Hanoi",
+      "previous": { "location": "8B Ta Hien, Hang Buom, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0359039306641, "lng": 105.852020263672 },
+      "next": { "location": "8B Ta Hien, Hang Buom, Hoan Kiem, Hanoi, Vietnam", "lat": 21.03505, "lng": 105.85188 },
+      "evidence": ["https://1900club.vn/", "https://mapcarta.com/W700840697"]
+    },
+    {
+      "id": 1399,
+      "name": "Pan Pacific Hanoi",
+      "previous": { "location": "1 Thanh Nien Road, Ba Dinh, Hanoi, Vietnam", "lat": 21.0441570281982, "lng": 105.840553283691 },
+      "next": { "location": "1 Thanh Nien Road, Ba Dinh Ward, Hanoi 100000, Vietnam", "lat": 21.04965, "lng": 105.83995 },
+      "evidence": ["https://www.panpacific.com/en/hotels-and-resorts/pp-hanoi.html", "https://findit.city/en/vietnam/hanoi/places/hotels/pan-pacific-hanoi-1497610110"]
+    },
+    {
+      "id": 1398,
+      "name": "Somerset Grand Hanoi",
+      "previous": { "location": "49 Hai Ba Trung, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0266857147217, "lng": 105.845344543457 },
+      "next": { "location": "49 Hai Ba Trung, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0258293, "lng": 105.846344 },
+      "evidence": ["https://mapcarta.com/N442033049", "https://sotayvang.com/somerset-grand-hanoi-tran-hung-dao/"]
+    },
+    {
+      "id": 1393,
+      "name": "Hanoi Harmonia Hotel & Spa",
+      "previous": { "location": "98 Hang Gai, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0304565429688, "lng": 105.854034423828 },
+      "next": { "location": "98 Hang Gai Street, Hoan Kiem Ward, Hanoi, Vietnam", "lat": 21.0316273, "lng": 105.8494042 },
+      "evidence": ["https://hanoiharmoniahotel.com/", "https://hanoiharmoniahotel.com/spa"]
+    },
+    {
+      "id": 1394,
+      "name": "La Palm Hotel",
+      "previous": { "location": "45 Hang Bo, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0315227508545, "lng": 105.85311126709 },
+      "next": { "location": "45 Hang Bo, Hoan Kiem, Hanoi, Vietnam", "lat": 21.033807, "lng": 105.849487 },
+      "evidence": ["https://www.google.com.vn/travel/hotels/entity/ChkIv760x5zt_6svGg0vZy8xMXN5bDdkODBqEAE", "https://www.booking.com/hotel/vn/spring-flower.html"]
+    },
+    {
+      "id": 1388,
+      "name": "Bespoke Trendy Hotel Hanoi",
+      "previous": { "location": "12 Nguyen Quang Bich, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0341320037842, "lng": 105.84838104248 },
+      "next": { "location": "12-14 Nguyen Quang Bich, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0322086, "lng": 105.8456116 },
+      "evidence": ["https://bespokehotels.vn/trendyhn/location-map", "https://bespoketrendyhotelhanoi.com/contact-us/"]
+    },
+    {
+      "id": 1390,
+      "name": "Hotel de l'Opera Hanoi",
+      "previous": { "location": "29 Trang Tien, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0248355865479, "lng": 105.854667663574 },
+      "next": { "location": "29 Trang Tien Street, Hoan Kiem District, Hanoi 10000, Vietnam", "lat": 21.024762, "lng": 105.855616 },
+      "evidence": ["https://all.accor.com/hotel/7832/index.en.shtml", "https://hoteldelopera.com/location/"]
+    },
+    {
+      "id": 1389,
+      "name": "Apricot Hotel",
+      "previous": { "location": "136 Hang Trong, Hoan Kiem, Hanoi, Vietnam", "lat": 21.0291938781738, "lng": 105.852485656738 },
+      "next": { "location": "136 Hang Trong, Hoan Kiem, Hanoi, Vietnam", "lat": 21.028076, "lng": 105.85098 },
+      "evidence": ["https://apricothotels.com/", "https://www.booking.com/hotel/vn/apricot.en-gb.html", "https://www.hotelplanner.com/Hotels/254362/Reservations-Apricot-Hotel-Hanoi-136-Hang-Trong-St-10000"]
+    }
+  ],
+  "koh_samui": [
+    {
+      "id": 1537,
+      "name": "Socialtel Koh Samui",
+      "previous": { "location": "168 Chaweng Beach Rd, Chaweng, Tambon Bo Put, Koh Samui, Surat Thani 84320, Thailand", "lat": 9.5224628, "lng": 100.0574265 },
+      "next": { "location": "168/62 Moo 2, Bo Phut, Koh Samui, Surat Thani 84320, Thailand", "lat": 9.53205013, "lng": 100.06292725 },
+      "evidence": ["https://www.socialtel.com/Koh-Samui.html", "https://hotels.cloudbeds.com/reservation/aDKKdr"]
+    },
+    {
+      "id": 1533,
+      "name": "ARKbar Beach Club & Resort",
+      "previous": { "location": "159/89 Moo 2, Chaweng Beach, Bophut, Koh Samui, Surat Thani 84320, Thailand", "lat": 9.53219985961914, "lng": 100.065101623535 },
+      "next": { "location": "4/1 Moo 2, Chaweng Beach, Bo Phut, Koh Samui, Surat Thani 84320, Thailand", "lat": 9.530268, "lng": 100.064635 },
+      "evidence": ["https://www.ark-bar.com/about-us/location-map/", "https://www.ehotelsreviews.com/arkbar-beach-club-176638-en", "https://maps.apple.com/place?place-id=I78AC86D478791B05"]
+    },
+    {
+      "id": 1538,
+      "name": "SALA Samui Chaweng Beach Resort",
+      "previous": { "location": "99/10 Moo 2, Chaweng Beach, Ko Samui District, Surat Thani 84320, Thailand", "lat": 9.53235626220703, "lng": 100.064933776855 },
+      "next": { "location": "99/10 Moo 2, Chaweng Beach, Ko Samui District, Surat Thani 84320, Thailand", "lat": 9.5378, "lng": 100.06978 },
+      "evidence": ["https://www.salahospitality.com/samui-chaweng/services/", "https://www.gites.fr/gites_sala-samui-chaweng-beach-resort_chaweng-beach_h2284610_en.htm"]
+    }
+  ],
+  "bali": [
+    {
+      "id": 1151,
+      "name": "BaliJoe Bar",
+      "previous": { "location": "Jl. Camplung Tanduk No.8, Seminyak, Kec. Kuta, Kabupaten Badung, Bali 80361, Indonesia", "lat": -8.69110012054443, "lng": 115.166999816895 },
+      "next": { "location": "Jl. Camplung Tanduk No. 8, Seminyak, Kuta, Badung, Bali 80361, Indonesia", "lat": -8.691294, "lng": 115.164653 },
+      "evidence": ["https://commons.wikimedia.org/wiki/File:BaliJoe_Bar.jpg"]
+    },
+    {
+      "id": 1155,
+      "name": "Stonewall Bali",
+      "previous": { "location": "Jl. Raya Seminyak No.504, Seminyak, Kec. Kuta, Kabupaten Badung, Bali 80361, Indonesia", "lat": -8.69279956817627, "lng": 115.168601989746 },
+      "next": { "location": "Jl. Raya Seminyak No. 504, Seminyak, Kuta, Badung, Bali 80361, Indonesia", "lat": -8.696311, "lng": 115.168616 },
+      "evidence": ["https://stonewallbali.com/", "https://wanderlog.com/place/details/12553922/stonewall-bali"]
+    }
+  ],
+  "mumbai": [
+    {
+      "id": 1834,
+      "name": "Kitty Su Mumbai",
+      "previous": { "location": "The LaLiT Mumbai, Sahar Airport Road, Andheri East, Mumbai, Maharashtra 400059, India", "lat": 19.1075992584229, "lng": 72.8741989135742 },
+      "next": { "location": "Ground Floor, The LaLiT Mumbai, Sahar Airport Road, Andheri East, Mumbai, Maharashtra 400059, India", "lat": 19.105277, "lng": 72.875733 },
+      "evidence": ["https://www.thelalit.com/the-lalit-mumbai/eat-and-drink/kitty-su/", "https://in.near-place.com/kitty-su-mumbai-the-lalit-mumbai-ground-floor-airport-road-andheri-east-mumbai"]
+    },
+    {
+      "id": 1842,
+      "name": "Sofitel Mumbai BKC",
+      "previous": { "location": "C-57, Bandra Kurla Complex, Bandra East, Mumbai, Maharashtra 400051, India", "lat": 19.0674991607666, "lng": 72.8696975708008 },
+      "next": { "location": "C-57, Bandra Kurla Complex, Bandra East, Mumbai, Maharashtra 400051, India", "lat": 19.0675, "lng": 72.868611 },
+      "evidence": ["https://all.accor.com/hotel/6451/index.en.shtml"]
+    },
+    {
+      "id": 1838,
+      "name": "The Gordon House Hotel",
+      "previous": { "location": "5 Battery Street, Apollo Bandar, Colaba, Mumbai, Maharashtra 400039, India", "lat": 18.9221000671387, "lng": 72.8327026367188 },
+      "next": { "location": "5 Battery Street, Apollo Bandar, Colaba, Mumbai, Maharashtra 400039, India", "lat": 18.92398, "lng": 72.83287 },
+      "evidence": ["https://www.gordonhousehotel.net/faq", "https://www.businesshotels.com/ai-hotel-finder.php?city=Mumbai&hotel=Gordon+House+Hotel&hotelid=700467800"]
+    },
+    {
+      "id": 1839,
+      "name": "The LaLiT Mumbai",
+      "previous": { "location": "Sahar Airport Road, Andheri East, Mumbai, Maharashtra 400059, India", "lat": 19.1075992584229, "lng": 72.8741989135742 },
+      "next": { "location": "Sahar Airport Road, Andheri East, Mumbai, Maharashtra 400059, India", "lat": 19.1053, "lng": 72.8759 },
+      "evidence": ["https://www.thelalit.com/the-lalit-mumbai/location/"]
+    },
+    {
+      "id": 1835,
+      "name": "Le Sutra Hotel",
+      "previous": { "location": "14, Nargis Dutt Road, Union Park, Khar West, Mumbai, Maharashtra 400052, India", "lat": 19.0706996917725, "lng": 72.8259963989258 },
+      "next": { "location": "14 Union Park, Nargis Dutt Road, Khar West, Mumbai, Maharashtra 400052, India", "lat": 19.071842, "lng": 72.825216 },
+      "evidence": ["https://lesutra.in/hospitality/hotel-le-sutra/"]
+    },
+    {
+      "id": 1832,
+      "name": "Abode Bombay",
+      "previous": { "location": "18 Lansdowne House, M.B. Marg, Apollo Bandar, Colaba, Mumbai, Maharashtra 400001, India", "lat": 18.9230995178223, "lng": 72.8315963745117 },
+      "next": { "location": "18 Lansdowne House, M.B. Marg, Apollo Bandar, Colaba, Mumbai, Maharashtra 400001, India", "lat": 18.923778, "lng": 72.832763 },
+      "evidence": ["https://guide.michelin.com/us/en/hotels-stays/mumbai/abode-bombay-11313"]
+    },
+    {
+      "id": 1831,
+      "name": "Olive Bar and Kitchen Bandra",
+      "previous": { "location": "14, Nargis Dutt Road, Union Park, Khar West, Mumbai, Maharashtra 400052, India", "lat": 19.0706996917725, "lng": 72.8259963989258 },
+      "next": { "location": "Le Sutra Hotel, 14 Union Park, Khar West, Mumbai, Maharashtra 400052, India", "lat": 19.071842, "lng": 72.825216 },
+      "evidence": ["https://olivebarandkitchen.com/obkmumbai.html", "https://olivebarandkitchen.com/contact_us.html"]
+    }
+  ],
+  "jakarta": [
+    {
+      "id": 1152,
+      "name": "Rhythm Lounge & Bar",
+      "previous": { "location": "Poins Mall, Jl. R.A. Kartini No.1, Lebak Bulus, Jakarta Selatan, Indonesia", "lat": -6.28900003433228, "lng": 106.773803710938 },
+      "next": { "location": "Poins Mall, Jl. R.A. Kartini No. 1, Lebak Bulus, South Jakarta 12440, Indonesia", "lat": -6.28949326, "lng": 106.77791457 },
+      "evidence": ["https://grandwhiz.intiwhiz.com/poinssimatupang/openingoffersrhythm.php"]
+    }
+  ],
+  "taipei": [
+    {
+      "id": 1701,
+      "name": "WAY Bar",
+      "previous": { "location": "No. 60, Lane 85, Linsen North Road, Zhongshan District, Taipei City, Taiwan", "lat": 25.0502490997314, "lng": 121.525947570801 },
+      "next": { "location": "No. 60, Lane 85, Linsen North Road, Zhongshan District, Taipei City 104, Taiwan", "lat": 25.049995, "lng": 121.527057 },
+      "evidence": ["https://gayandasia.com/en/v/waybar"]
+    },
+    {
+      "id": 1703,
+      "name": "G.Star",
+      "previous": { "location": "B1F, No. 23, Longjiang Road, Zhongshan District, Taipei City, Taiwan", "lat": 25.0478992462158, "lng": 121.540298461914 },
+      "next": { "location": "B1F, No. 23, Longjiang Road, Zhongshan District, Taipei City 104, Taiwan", "lat": 25.061918, "lng": 121.539389 },
+      "evidence": ["https://www.travelgay.com/venue/g-star", "https://hotline.org.tw/you-shan-kong-jian/2689"]
+    },
+    {
+      "id": 1714,
+      "name": "Al Reves",
+      "previous": { "location": "No. 131, Kunming Street, Wanhua District, Taipei City, Taiwan", "lat": 25.0422992706299, "lng": 121.503898620605 },
+      "next": { "location": "No. 131, Kunming Street, Wanhua District, Taipei City 108, Taiwan", "lat": 25.041349, "lng": 121.504577 },
+      "evidence": ["https://ifoodie.tw/restaurant/594ab6d42756dd702d935c18-AL-REV-S-%E9%A4%90%E5%BB%B3-%E9%A1%9B%E5%80%92restau"]
+    },
+    {
+      "id": 1695,
+      "name": "Inhouse Hotel",
+      "previous": { "location": "No. 107, Xining South Road, Wanhua District, Taipei City, Taiwan", "lat": 25.0438995361328, "lng": 121.506851196289 },
+      "next": { "location": "No. 107, Xining South Road, Wanhua District, Taipei City 108, Taiwan", "lat": 25.041227, "lng": 121.506023 },
+      "evidence": ["https://taipei.inhousehotel.com/en/contact-us/", "https://www.taiwanstay.net.tw/TSA/web_page/TSA020200.jsp?hohi_id=18976"]
+    },
+    {
+      "id": 1699,
+      "name": "Chez Nous Bar",
+      "previous": { "location": "No. 18, Lane 147, Section 3, Xinyi Road, Daan District, Taipei City, Taiwan", "lat": 25.0334491729736, "lng": 121.54264831543 },
+      "next": { "location": "No. 18, Lane 147, Section 3, Xinyi Road, Daan District, Taipei City 106, Taiwan", "lat": 25.036122, "lng": 121.541877 },
+      "evidence": ["https://cheznoushotel.com/bar.php"]
+    },
+    {
+      "id": 1715,
+      "name": "WESTGATE Hotel",
+      "previous": { "location": "No. 150, Section 1, Zhonghua Road, Wanhua District, Taipei City, Taiwan", "lat": 25.0426998138428, "lng": 121.508850097656 },
+      "next": { "location": "No. 150, Section 1, Zhonghua Road, Wanhua District, Taipei City 108, Taiwan", "lat": 25.042882, "lng": 121.508073 },
+      "evidence": ["https://www.westgatehotel.com.tw/en/contact/"]
+    }
+  ],
+  "manila": [
+    {
+      "id": 1016,
+      "name": "The One 690 Entertainment Bar",
+      "previous": { "location": "39 Don A Roces Ave, Quezon City, Manila, Philippines", "lat": 14.6322889328003, "lng": 121.021339416504 },
+      "next": { "location": "39 Don A. Roces Avenue, Quezon City 1103, Metro Manila, Philippines", "lat": 14.63087484, "lng": 121.02443394 },
+      "evidence": ["https://www.waze.com/live-map/directions/ph/ncr/quezon-city/the-one-690-entertainment-bar?to=place.ChIJyff0JU-2lzMRC7Li0cAkcN8", "https://restaurantguru.com/One-690-Entertainment-Bar-Quezon-City", "https://thegaypassport.com/venue/the-one-690-entertainment-bar-manila/"]
+    },
+    {
+      "id": 1018,
+      "name": "Fred's Revolucion - Escolta",
+      "previous": { "location": "First United Building, 413 Escolta St, Santa Cruz, Manila, Philippines", "lat": 14.5991678237915, "lng": 120.980117797852 },
+      "next": { "location": "First United Building, 413 Escolta Street, Santa Cruz, Manila 1000, Philippines", "lat": 14.598942, "lng": 120.979339 },
+      "evidence": ["https://www.waze.com/en-GB/live-map/directions/ph/ncr/manila/freds-revolucion-escolta?to=place.ChIJpV-3GxvKlzMRnQQr6gTazMk", "https://mapcarta.com/N4255666043"]
+    }
+  ],
+  "beijing": [
+    {
+      "id": 1032,
+      "name": "Spa de Feng for Men Only",
+      "previous": { "location": "Rm. 204 Binduyuan, 15 Zaoying Beili, Nongzhanguan Beilu, Chaoyang District, Beijing", "lat": 39.9210891723633, "lng": 116.436393737793 },
+      "next": { "location": "Binduyuan A204, 15 Zaoying Beili, Nongzhanguan North Road, Chaoyang District, Beijing, China", "lat": 39.944678, "lng": 116.46978 },
+      "evidence": ["https://bj.spadefeng.com/eng/contactE.php", "https://www.amap.com/place/B0L30RKRPP"]
+    },
+    {
+      "id": 1033,
+      "name": "Beijing Power Spa",
+      "previous": { "location": "2-808 Qingheying E Rd, Chaoyang, Beijing, Kina, 100012", "lat": 39.9210891723633, "lng": 116.436393737793 },
+      "next": { "location": "Beside China Construction Bank, Hujialou Metro Exit D, East 3rd Ring Road, Chaoyang District, Beijing, China", "lat": 39.922132, "lng": 116.459771 },
+      "evidence": ["https://www.bjpowerspa.com/contact.asp", "https://ditu.amap.com/place/B000A7GVGR"]
+    }
+  ],
+  "shanghai": [
+    {
+      "id": 1035,
+      "name": "Medusa Realness",
+      "previous": { "location": "23 Donghu St, Qingpu District, Shanghai, Kina, 201713", "lat": 31.1511154174805, "lng": 121.118118286133 },
+      "next": { "location": "Elevator, 4F, 218 Xinle Road, near Donghu Road, Xuhui District, Shanghai 200031, China", "lat": 31.216656, "lng": 121.4533 },
+      "evidence": ["https://www.utopia-asia.com/shanbars.htm", "https://www.smartshanghai.com/venue/13166/map"]
+    }
+  ],
+  "phnom_penh": [
+    {
+      "id": 1040,
+      "name": "Heart of Darkness",
+      "previous": { "location": "#26, Street 51, Phnom Penh, Cambodia.", "lat": 11.5682706832886, "lng": 104.922439575195 },
+      "next": { "location": "26 Street 51, Phnom Penh, Cambodia", "lat": 11.56648, "lng": 104.92354 },
+      "evidence": ["https://mapcarta.com/N1196899596"]
+    },
+    {
+      "id": 1044,
+      "name": "Arthur & Paul hotel",
+      "previous": { "location": "#27 Street 71 (Sangkat Boeng Keng Kang I), Phnom Penh, Cambodia.", "lat": 11.5682706832886, "lng": 104.922439575195 },
+      "next": { "location": "27 Street 71, Boeung Keng Kang I, Phnom Penh, Cambodia", "lat": 11.5452102, "lng": 104.9229477 },
+      "evidence": ["https://arthurandpaul.com/our-rooms/", "https://kh.near-place.com/arthur-and-paul-spa-boutique-hotel-restaurant-bar-27-street-71-phnom-penh"]
+    },
+    {
+      "id": 1042,
+      "name": "POC Bar",
+      "previous": { "location": "129 Preah Ang Yukanthor Street (19), Phnom Penh, Cambodia.", "lat": 11.5682706832886, "lng": 104.922439575195 },
+      "next": { "location": "129 Street 19, Phnom Penh, Cambodia", "lat": 11.569932, "lng": 104.9270935 },
+      "evidence": ["https://untappd.com/v/pride-of-cambodia-poc-bar/9274192/photos"]
+    },
+    {
+      "id": 1041,
+      "name": "Rendezvous Bar",
+      "previous": { "location": "Street 07 (tucked down an alley behind Khmer Relief Spa), Phnom Penh, Cambodia.", "lat": 11.5682706832886, "lng": 104.922439575195 },
+      "next": { "city": "siem_reap", "location": "Street 07, behind Khmer Relief Spa, Krong Siem Reap 17252, Cambodia", "lat": 13.35581, "lng": 103.85436 },
+      "evidence": ["https://whereis.gay/rendezvous-bar", "https://mapcarta.com/N12462428102", "https://thegaypassport.com/venue/rendezvous-bar/"]
+    },
+    {
+      "id": 1043,
+      "name": "MEN’s Sauna & Spa",
+      "previous": { "location": "Wat Bo Street, Wat Po Lanka district, Siem Reap, Cambodia", "lat": 13.3545026779175, "lng": 103.854858398438 },
+      "next": { "city": "siem_reap", "location": "MEN's Road, Wat Bo Street, Wat Po Lanka, Krong Siem Reap, Cambodia", "lat": 13.3545026779175, "lng": 103.854858398438 },
+      "evidence": ["https://www.mens-resort.com/gay-sauna-spa/index.php", "https://whereis.gay/mens-resort-spa-siem-reap", "https://www.booking.com/hotel/kh/men-s-resort.html"]
+    }
+  ],
+  "seoul": [
+    {
+      "id": 673,
+      "name": "A/V Take C",
+      "previous": { "location": null, "lat": 37.5347, "lng": 126.993 },
+      "next": { "location": "3F, 236-1 Nagwon-dong, Jongno District, Seoul, South Korea", "lat": 37.57239862, "lng": 126.98852622 },
+      "evidence": ["https://www.gaymap.live/a-v-take-c", "https://wanderlog.com/place/details/3833905/av-take-c"]
+    },
+    {
+      "id": 672,
+      "name": "Why Not",
+      "previous": { "location": null, "lat": 37.5348, "lng": 126.993 },
+      "next": { "location": "17 Daesagwan-ro 31-gil, Yongsan District, Seoul 04401, South Korea", "lat": 37.53404653, "lng": 127.00579939 },
+      "evidence": ["https://restaurantguru.com/Why-Not-Seoul-3/menu"]
+    },
+    {
+      "id": 680,
+      "name": "Equus",
+      "previous": { "location": null, "lat": 37.483699798584, "lng": 127.014099121094 },
+      "next": { "location": "B1F Seongeun Building, 706-2 Banpo-dong, Seocho District, Seoul 06535, South Korea", "lat": 37.51025597, "lng": 127.02034773 },
+      "evidence": ["https://www.gaymap.live/equus"]
+    }
+  ],
+  "palm_springs": [
+    {
+      "id": 661,
+      "name": "Toucans Tiki Lounge",
+      "previous": { "location": null, "lat": 33.8306, "lng": -116.544 },
+      "next": { "location": "2100 N Palm Canyon Drive, Palm Springs, CA 92262, United States", "lat": 33.848663, "lng": -116.547881 },
+      "evidence": ["https://toucanstikilounge.com/"]
+    },
+    {
+      "id": 664,
+      "name": "Tool Shed",
+      "previous": { "location": null, "lat": 33.8124, "lng": -116.53 },
+      "next": { "location": "600 E Sunny Dunes Road, Palm Springs, CA 92264, United States", "lat": 33.81249, "lng": -116.54223 },
+      "evidence": ["https://pstoolshed.com/contact.html"]
+    },
+    {
+      "id": 665,
+      "name": "CCBC Resort Hotel",
+      "previous": { "location": null, "lat": 33.8198013305664, "lng": -116.529899597168 },
+      "next": { "location": "68300 Gay Resort Dr, Cathedral City, CA 92234, United States", "lat": 33.779695, "lng": -116.469339 },
+      "evidence": ["https://www.ccbcresorthotel.com/"]
+    },
+    {
+      "id": 702,
+      "name": "Chill Bar Palm Springs",
+      "previous": { "location": null, "lat": 33.8236999511719, "lng": -116.545700073242 },
+      "next": { "location": "217 E Arenas Rd, Palm Springs, CA 92262, United States", "lat": 33.82093, "lng": -116.5444 },
+      "evidence": ["https://www.chillbarpalmsprings.com/about-us"]
+    },
+    {
+      "id": 703,
+      "name": "QUADZ Palm Springs",
+      "previous": { "location": null, "lat": 33.8224983215332, "lng": -116.544998168945 },
+      "next": { "location": "200 S Indian Canyon Dr, Palm Springs, CA 92262, United States", "lat": 33.820976, "lng": -116.54487 },
+      "evidence": ["https://www.quadz.bar/"]
+    },
+    {
+      "id": 704,
+      "name": "OneEleven Bar",
+      "previous": { "location": null, "lat": 33.8011016845703, "lng": -116.466903686523 },
+      "next": { "location": "67555 E Palm Canyon Dr, Suite A102, Cathedral City, CA 92234, United States", "lat": 33.787976, "lng": -116.482618 },
+      "evidence": ["https://oneelevenbar.com/"]
+    }
+  ],
+  "new_york": [
+    {
+      "id": 569,
+      "name": "3 Dollar Bill",
+      "previous": { "location": null, "lat": 40.7083, "lng": -73.9238 },
+      "next": { "location": "260 Meserole Street, Brooklyn, NY 11206, United States", "lat": 40.708464, "lng": -73.938172 },
+      "evidence": ["https://www.3dollarbillbk.com/contact-us"]
+    },
+    {
+      "id": 949,
+      "name": "Adonis Lounge",
+      "previous": { "location": "East 58th Street, new york", "lat": 40.6332, "lng": -73.9207 },
+      "next": { "location": "151 E 57th Street, New York, NY 10022, United States", "lat": 40.760794, "lng": -73.968314 },
+      "evidence": ["https://adonislounge.com/nyc/location/"]
+    },
+    {
+      "id": 573,
+      "name": "Atlas Social Club",
+      "previous": { "location": null, "lat": 40.7646, "lng": -73.9891 },
+      "next": { "location": "753 9th Avenue, New York, NY 10019, United States", "lat": 40.764055, "lng": -73.988848 },
+      "evidence": ["https://x.com/atlassocialclub", "https://www.timeout.com/newyork/clubs/atlas-social-club"]
+    },
+    {
+      "id": 570,
+      "name": "Hardware",
+      "previous": { "location": null, "lat": 40.7645, "lng": -73.9929 },
+      "next": { "location": "697 10th Avenue, New York, NY 10036, United States", "lat": 40.763245, "lng": -73.993127 },
+      "evidence": ["https://hardware-bar.com/"]
+    },
+    {
+      "id": 576,
+      "name": "REBAR Chelsea",
+      "previous": { "location": null, "lat": 40.7424, "lng": -73.9956 },
+      "next": { "location": "225 W 19th Street, New York, NY 10011, United States", "lat": 40.742245, "lng": -73.998477 },
+      "evidence": ["https://sideways.nyc/discover/2NVjjyC7vlMCIa1avcX49R/rebar-nyc"]
+    },
+    {
+      "id": 578,
+      "name": "The Eagle NYC",
+      "previous": { "location": null, "lat": 40.7426, "lng": -74.0069 },
+      "next": { "location": "554 W 28th Street, New York, NY 10001, United States", "lat": 40.751697, "lng": -74.004296 },
+      "evidence": ["https://eagle-ny.com/location/"]
+    },
+    {
+      "id": 577,
+      "name": "Industry",
+      "previous": { "location": null, "lat": 40.7633, "lng": -73.9918 },
+      "next": { "location": "355 W 52nd Street, New York, NY 10019, United States", "lat": 40.764441, "lng": -73.986906 },
+      "evidence": ["https://en.wikipedia.org/wiki/Industry_Bar"]
+    },
+    {
+      "id": 575,
+      "name": "BOXERS - Chelsea",
+      "previous": { "location": null, "lat": 40.7401, "lng": -73.9927 },
+      "next": { "location": "37 W 20th Street, New York, NY 10011, United States", "lat": 40.74075, "lng": -73.993179 },
+      "evidence": ["https://boxersnyc.com/chelsea/splash-page/"]
+    },
+    {
+      "id": 568,
+      "name": "Julius'",
+      "previous": { "location": null, "lat": 40.7306, "lng": -74.0022 },
+      "next": { "location": "159 W 10th Street, New York, NY 10014, United States", "lat": 40.734542, "lng": -74.001595 },
+      "evidence": ["https://www.nps.gov/articles/julius-bar.htm?fullweb=1"]
+    },
+    {
+      "id": 571,
+      "name": "The Stonewall Inn",
+      "previous": { "location": null, "lat": 40.7338, "lng": -74.0021 },
+      "next": { "location": "53 Christopher Street, New York, NY 10014, United States", "lat": 40.73381, "lng": -74.00216 },
+      "evidence": ["https://staffportal.parks.ny.gov/historic-sites/stonewallinn/details.aspx", "https://thestonewallinn.nyc/about"]
+    }
+  ],
+  "salvador_bahia": [
+    {
+      "id": 1795,
+      "name": "Boteco do Paulista",
+      "previous": { "location": "Salvador - BA, Brazil", "lat": -12.9820003509521, "lng": -38.515998840332 },
+      "next": { "location": "Rua da Paciência 263, Rio Vermelho, Salvador - BA, 41950-010, Brazil", "lat": -13.01096236, "lng": -38.49449542 },
+      "evidence": ["https://comidadibuteco.com.br/buteco/boteco-do-paulista/", "https://restaurantguru.com.br/Boteco-do-Paulista-Salvador-Salvador", "https://grupogaydabahia.com.br/roteiro-orgulho-em-salvador/"]
+    },
+    {
+      "id": 1792,
+      "name": "Blue Beach Bar",
+      "previous": { "location": "Salvador - BA, Brazil", "lat": -13.0109996795654, "lng": -38.4879989624023 },
+      "next": { "location": "Rua do Barro Vermelho 310, Rio Vermelho, Salvador - BA, 41940-340, Brazil", "lat": -13.014485, "lng": -38.482617 },
+      "evidence": ["https://circuitobr.com.br/ba/salvador/bares-e-pubs/blue-beach-bar-salvador", "https://br.todosnegocios.com/pt/blue-beach-bar-71-99655-4703", "https://www.tripadvisor.com/Restaurant_Review-g303272-d7274416-Reviews-Blue_Praia-Salvador_State_of_Bahia.html"]
+    },
+    {
+      "id": 1796,
+      "name": "Casa di Vina Boutique Hotel",
+      "previous": { "location": "Rua Flamengo, 44 - Itapua, Salvador - BA, Brazil", "lat": -12.9523000717163, "lng": -38.3650016784668 },
+      "next": { "location": "Rua Flamengo 44, Farol de Itapuã, Salvador - BA, 41635-480, Brazil", "lat": -12.9541667, "lng": -38.3527778 },
+      "evidence": ["https://book.omnibees.com/hotel/1104/contacts?currencyId=16&lang=pt-BR", "https://www.casadivinabahia.com.br/en/localizacao"]
+    },
+    {
+      "id": 1806,
+      "name": "Mercure Salvador Rio Vermelho",
+      "previous": { "location": "Rua Fonte do Boi, 215 - Rio Vermelho, Salvador - BA, Brazil", "lat": -13.0149002075195, "lng": -38.4888000488281 },
+      "next": { "location": "Rua Fonte do Boi 215, Rio Vermelho, Salvador - BA, 41940-360, Brazil", "lat": -13.01486, "lng": -38.48493 },
+      "evidence": ["https://all.accor.com/hotel/5182/index.pt.shtml"]
+    },
+    {
+      "id": 1798,
+      "name": "Hotel Bahia do Sol",
+      "previous": { "location": "Av. Sete de Setembro, 2009 - Vitoria, Salvador - BA, Brazil", "lat": -12.9916000366211, "lng": -38.5259017944336 },
+      "next": { "location": "Avenida Sete de Setembro 2009, Vitória, Salvador - BA, 40080-002, Brazil", "lat": -12.9911111, "lng": -38.5272222 },
+      "evidence": ["https://book.omnibees.com/hotel/1651/contacts?currencyId=16&lang=pt-BR", "https://www.bahiadosol.com.br/en/contatos"]
+    },
+    {
+      "id": 1802,
+      "name": "Novotel Salvador Rio Vermelho",
+      "previous": { "location": "R. Monte Conselho, 505 - Rio Vermelho, Salvador - BA, Brazil", "lat": -13.0138998031616, "lng": -38.4933013916016 },
+      "next": { "location": "Rua Monte Conselho 505, Rio Vermelho, Salvador - BA, 41940-370, Brazil", "lat": -13.01497, "lng": -38.48765 },
+      "evidence": ["https://all.accor.com/hotel/B275/index.pt-br.shtml"]
+    },
+    {
+      "id": 1805,
+      "name": "Clube 11",
+      "previous": { "location": "R. Jose Duarte, 11 - Tororo, Salvador - BA, Brazil", "lat": -12.9788999557495, "lng": -38.5083999633789 },
+      "next": { "location": "Rua José Duarte 11, Tororó, Salvador - BA, 40050-050, Brazil", "lat": -12.9822, "lng": -38.5086 },
+      "evidence": ["https://eguias.net/empresa/sauna-planetario-11/salvador/ba/3293441", "https://www.guiagaysalvador.com.br/roteiro/saunas-sex-clubs/sauna-planetario-11"]
+    },
+    {
+      "id": 1803,
+      "name": "Amsterdam Pop Club",
+      "previous": { "location": "R. Joao Gomes, 249 - Rio Vermelho, Salvador - BA, Brazil", "lat": -13.0104999542236, "lng": -38.4896011352539 },
+      "next": { "location": "Rua João Gomes 249, Rio Vermelho, Salvador - BA, 41950-640, Brazil", "lat": -13.012616, "lng": -38.490088 },
+      "evidence": ["https://www.waze.com/live-map/directions/br/ba/amsterdam-pop-club?to=place.ChIJfUaeXowEFgcRWrWUg12ThW0", "https://sousalvador.com/local/113/360/amsterdam-pop-club"]
+    },
+    {
+      "id": 1797,
+      "name": "Bar Ancora do Marujo",
+      "previous": { "location": "R. Carlos Gomes, 809 - Dois de Julho, Salvador - BA, Brazil", "lat": -12.9819002151489, "lng": -38.5162010192871 },
+      "next": { "location": "Rua Carlos Gomes 809, Dois de Julho, Salvador - BA, 40060-330, Brazil", "lat": -12.983637, "lng": -38.5177854 },
+      "evidence": ["https://www.salvadordabahia.com/experiencias/bar-ancora-do-marujo/", "https://acharei.com.br/poi/bar_ancora_do_marujo_rua_carlos_gomes-29158.html"]
+    },
+    {
+      "id": 1799,
+      "name": "Clube Rios",
+      "previous": { "location": "R. Almeida Sande, 8 - Barris, Salvador - BA, Brazil", "lat": -12.9783000946045, "lng": -38.5136985778809 },
+      "next": { "location": "Rua Almeida Sande 8, Barris, Salvador - BA, 40070-370, Brazil", "lat": -12.9873, "lng": -38.5134 },
+      "evidence": ["https://eguias.net/empresa/sauna-rios/salvador/ba/868787"]
+    },
+    {
+      "id": 1801,
+      "name": "San Sebastian Salvador",
+      "previous": { "location": "Rua Conselheiro Pedro Luiz, 488 - Rio Vermelho, Salvador - BA, 41950-610, Brazil", "lat": -13.0095996856689, "lng": -38.4887008666992 },
+      "next": { "location": "Rua Conselheiro Pedro Luiz 488, Rio Vermelho, Salvador - BA, 41950-610, Brazil", "lat": -13.01253, "lng": -38.490009 },
+      "evidence": ["https://www.ibahia.com/diversao/bora-ali/bora-ali-conhecca-lugares-da-cena-lgbtqiapn-em-salvador-321372?_=amp", "https://grupogaydabahia.com.br/roteiro-orgulho-em-salvador/", "https://www.travelgay.com/venue/san-sebastian"]
+    },
+    {
+      "id": 1790,
+      "name": "Hotel Fasano Salvador",
+      "previous": { "location": "Praca Castro Alves, 5 - Centro, Salvador - BA, 40020-160, Brazil", "lat": -12.9744997024536, "lng": -38.5153007507324 },
+      "next": { "location": "Praça Castro Alves 5, Centro Histórico, Salvador - BA, 40020-160, Brazil", "lat": -12.97694, "lng": -38.514183 },
+      "evidence": ["https://fasano.com.br/hotel/fasano-salvador/", "https://www.waze.com/live-map/directions/br/ba/hotel-fasano-salvador?to=place.ChIJxbXbfO4EFgcRpnJallBM_NQ"]
+    },
+    {
+      "id": 1793,
+      "name": "Carmen Lounge Bar",
+      "previous": { "location": "R. Carlos Gomes, 860 - Centro, Salvador - BA, Brazil", "lat": -12.9813995361328, "lng": -38.515998840332 },
+      "next": { "location": "Rua Carlos Gomes 860, Centro, Salvador - BA, 40060-325, Brazil", "lat": -12.984295, "lng": -38.518596 },
+      "evidence": ["https://www.travelgay.com/venue/carmen-lounge-bar", "https://restaurantguru.com.br/Carmen-Lounge-Bar-Salvador"]
+    }
+  ],
+  "florianopolis": [
+    {
+      "id": 1226,
+      "name": "Jivago Social Club",
+      "previous": { "location": "R. Dep. Leoberto Leal, 116 - Centro, Florianopolis - SC, 88015-080, Brazil", "lat": -27.5969009399414, "lng": -48.5488014221191 },
+      "next": { "location": "Rua Deputado Leoberto Leal 116, Centro, Florianópolis - SC, 88015-080, Brazil", "lat": -27.5939011, "lng": -48.5506958 },
+      "evidence": ["https://br.near-place.com/jivago-social-club-rua-deputado-leoberto-leal-116-centro-florianopolis/en"]
+    },
+    {
+      "id": 1228,
+      "name": "LK Design Hotel",
+      "previous": { "location": "R. Bocaiuva, 1755 - Centro, Florianopolis - SC, 88015-530, Brazil", "lat": -27.589599609375, "lng": -48.5485000610352 },
+      "next": { "location": "Rua Bocaiúva 1755, Centro, Florianópolis - SC, 88015-530, Brazil", "lat": -27.5869444, "lng": -48.5511111 },
+      "evidence": ["https://lkdesignhotel.com.br/lk-shop/", "https://book.omnibees.com/chain/7242/contacts?currencyId=16&lang=pt-BR&q=12469"]
+    }
+  ],
+  "cartagena": [
+    {
+      "id": 1236,
+      "name": "Avatar Disco Bar",
+      "previous": { "location": "La Heroica, Centro Historico, Cartagena, Colombia", "lat": 10.4231996536255, "lng": -75.5485992431641 },
+      "next": { "location": "Barrio Las Gaviotas, Cartagena de Indias, Bolívar 130005, Colombia", "lat": 10.39739831, "lng": -75.49239094 },
+      "evidence": ["https://es.cybo.com/CO-biz/avatar-disco-bar", "https://shangay.com/2025/02/06/cartagena-de-indias-la-esencia-de-colombia/"]
+    },
+    {
+      "id": 1237,
+      "name": "Patio Bonito Cartagena",
+      "previous": { "location": "Cl. 31A, diagonal a KR 47-21, Cartagena, Colombia", "lat": 10.410400390625, "lng": -75.5121994018555 },
+      "next": { "location": "Surtigas, al lado de la Universidad Lyon Yireth, Calle 31A diagonal a Carrera 47-21, Cartagena de Indias, Bolívar 130004, Colombia", "lat": 10.40783705, "lng": -75.50878944 },
+      "evidence": ["https://gaytravelr.com/colombia/cartagena/bars-and-clubs/patio-bonito-cartagena", "https://www.gayout.com/he/south-america/colombia/cartagena/bars/patio-bonito-cartagena"]
+    },
+    {
+      "id": 1230,
+      "name": "Gabanna Bar Club Cartagena",
+      "previous": { "location": "Cl. 32 #18B-108 Local 1A, Pie del Cerro, Cartagena, Colombia", "lat": 10.4145002365112, "lng": -75.5285034179688 },
+      "next": { "location": "Calle 32 #18B-108, Local 1A, Pie del Cerro, Cartagena de Indias, Bolívar 130001, Colombia", "lat": 10.42249112, "lng": -75.53630717 },
+      "evidence": ["https://www.waze.com/es/live-map/directions/co/bolivar/cartagena-de-indias/gabanna-bar-club-cartagena?to=place.ChIJpRbomYUv9o4RNX6O6eU1XGE", "https://www.findglocal.com/CO/Cartagena/572653913252835/Gabanna-Bar-Club-Cartagena"]
+    }
+  ],
+  "havana": [
+    {
+      "id": 1027,
+      "name": "Café Fortuna Joe",
+      "previous": { "location": "cnr Calle 24 & Ave 1ra, Miramar, Playa, Havana, Cuba.", "lat": 23.1353054046631, "lng": -82.3589630126953 },
+      "next": { "location": "Calle 24 esquina Avenida 1ra, Miramar, Playa, La Habana, Cuba", "lat": 23.12468, "lng": -82.4255 },
+      "evidence": ["https://www.cubatravel.cu/en/destinations/la-havana-cuba/restaurants-in-havana", "https://mapcarta.com/N964711438", "https://www.arrivalguides.com/en/Travelguide/HAVANA/cafes/cafe-fortuna-joe-125363"]
+    },
+    {
+      "id": 1030,
+      "name": "La Gruta",
+      "previous": { "location": "Calle 23 (La Rampa), corner of Calle M, Vedado, Havana, Cuba", "lat": 23.1412696838379, "lng": -82.3812637329102 },
+      "next": { "location": "Calle 23 No. 111, La Rampa, Vedado, La Habana, Cuba", "lat": 23.14163, "lng": -82.38052 },
+      "evidence": ["https://mapcarta.com/N3581780593", "https://mapcarta.com/es/N3581780593"]
+    }
+  ],
+  "guatemala_city": [
+    {
+      "id": 1809,
+      "name": "G Wet Sauna",
+      "previous": { "location": "Guatemala City 01009, Guatemala", "lat": 14.6017999649048, "lng": -90.5168991088867 },
+      "next": { "location": "Avenida Reforma 11-20, Zona 9, Ciudad de Guatemala 01009, Guatemala", "lat": 14.6017999649048, "lng": -90.5168991088867 },
+      "evidence": ["https://guiagaycolombia.com/latinoamerica/guatemala/", "https://www.gayout.com/es/usa-canada/guatemala/guatemala-city/saunas"]
+    },
+    {
+      "id": 1821,
+      "name": "Good Hotel Guatemala City",
+      "previous": { "location": "Ruta 4 6-32, Zona 4, Guatemala City, Guatemala", "lat": 14.622200012207, "lng": -90.5137023925781 },
+      "next": { "location": "Ruta 4 6-32, Zona 4, Ciudad de Guatemala 01004, Guatemala", "lat": 14.6189, "lng": -90.51484 },
+      "evidence": ["https://goodhotel.co/guatemala-city/contact", "https://registro.inguat.gob.gt/download/listado-establecimientos-de-hospedaje-pdf/?masterkey=SDA2tg83QqtCLW3DggIMKum2SXpbUOO1qDpzgghKF5LE2c1EQLTcF8UtWVhKNlSZIVZJez3MtwMFWExVXlf5FtxLBi7xC0ZUwiDgVGUq3vA&wpdmdl=3136"]
+    },
+    {
+      "id": 1817,
+      "name": "Hotel San Carlos",
+      "previous": { "location": "Avenida La Reforma 7-89, Zona 10, Guatemala City, Guatemala", "lat": 14.6082000732422, "lng": -90.5140991210938 },
+      "next": { "location": "Avenida La Reforma 7-89, Zona 10, Ciudad de Guatemala 01010, Guatemala", "lat": 14.605821, "lng": -90.515076 },
+      "evidence": ["https://www.hsancarlos.com/es"]
+    },
+    {
+      "id": 1820,
+      "name": "Hotel Casa Veranda",
+      "previous": { "location": "12 Calle 1-24, Zona 10, Guatemala City, Guatemala", "lat": 14.5980997085571, "lng": -90.5130004882812 },
+      "next": { "location": "12 Calle 1-24, Zona 10, Ciudad de Guatemala 01010, Guatemala", "lat": 14.6007, "lng": -90.515076 },
+      "evidence": ["https://www.hotelcasaveranda.com/en/contact-and-location", "https://guatemalacvb.com/member/hotel-casa-veranda/"]
+    }
+  ],
+  "tegucigalpa": [
+    {
+      "id": 1963,
+      "name": "Indie Lounge",
+      "previous": { "location": "Blvd. Morazán, antiguo local de Friday's, Tegucigalpa, Honduras.", "lat": 14.1059427261353, "lng": -87.2053451538086 },
+      "next": { "location": "Centro Morazán, Boulevard Morazán, Nivel C4, Tegucigalpa 11101, Honduras", "lat": 14.10098, "lng": -87.18258 },
+      "evidence": ["https://honduras.worldplaces.me/view-place/26657857-indie-lounge.html", "https://www.todosbiz.com/HN/indie-lounge-2231-1111"]
+    },
+    {
+      "id": 1965,
+      "name": "Dicker Sauna",
+      "previous": { "location": "3RV4+V5V, Tegucigalpa, Francisco Morazán, Honduras.", "lat": 14.1059427261353, "lng": -87.2053451538086 },
+      "next": { "location": "3RV4+V5V, Tegucigalpa, Francisco Morazán, Honduras", "lat": 14.0947375, "lng": -87.194578125 },
+      "evidence": ["https://www.fastbase.com/countryindex/Honduras/S/Sauna", "https://github.com/google/open-location-code/blob/main/docs/Specification/olc_definition.adoc"]
+    }
+  ],
+  "quito": [
+    {
+      "id": 742,
+      "name": "Black & White",
+      "previous": { "location": "General Leonidas Plaza Gutierrez N21-22, 170136, Quito, Ecuador", "lat": -0.206288993358612, "lng": -78.4913101196289 },
+      "next": { "location": "Mariscal Foch E4-283 y Avenida Río Amazonas, Centro Mariscal, Quito, Ecuador", "lat": -0.2014449, "lng": -78.4920922 },
+      "evidence": ["https://www.ubica.ec/explore/cerca_de/quito/categoria_653/p4311604428", "https://www.openstreetmap.org/?mlat=-0.2014449&mlon=-78.4920922#map=19/-0.2014449/-78.4920922"]
+    },
+    {
+      "id": 891,
+      "name": "Club Azul",
+      "previous": { "location": "Mariscal Foch E9-36 y Av. 6 de Diciembre, Quito, Ecuador", "lat": -0.206300005316734, "lng": -78.4913024902344 },
+      "next": { "location": "Mariscal Foch E9-36 y Avenida 6 de Diciembre, Quito 170143, Ecuador", "lat": -0.20439765, "lng": -78.48996685 },
+      "evidence": ["https://www.waze.com/es/live-map/directions/ec/pichincha/quito/club-azul?to=place.ChIJdYIsrhOa1ZERrAx50djUZvs", "https://www.openstreetmap.org/?mlat=-0.20439765&mlon=-78.48996685#map=19/-0.20439765/-78.48996685"]
+    }
+  ],
+  "mexico_city": [
+    {
+      "id": 1686,
+      "name": "Yu Yu / YuYu Cine Club",
+      "previous": { "location": "Calle Dr. Carmona y Valle 129, Doctores, Cuauhtémoc, 06720 Ciudad de México, CDMX, Mexico", "lat": 19.4205341339111, "lng": -99.153190612793 },
+      "next": { "location": "Calle Doctor Carmona y Valle 129, Doctores, Cuauhtémoc, 06720 Ciudad de México, CDMX, Mexico", "lat": 19.42086402, "lng": -99.15326895 },
+      "evidence": ["https://www.hoteldama.mx/events/doctores/yu-yu-cine-club-dj-seinfeld-11436957", "https://www.bars10.com/MX/Mexico-City/220788911795884/Yu-Yu", "https://www.corner.inc/place/pL5CbYbdkhwh"]
+    },
+    {
+      "id": 878,
+      "name": "Sexto Piso",
+      "previous": { "location": "Eje Central Lazaro Cardenas 123, sexto piso, Centro, Cuauhtemoc, 06000 Ciudad de Mexico, CDMX, Mexico", "lat": 19.4328002929688, "lng": -99.1396026611328 },
+      "next": { "location": "Eje Central Lázaro Cárdenas 123, sexto piso, Centro, Cuauhtémoc, 06070 Ciudad de México, CDMX, Mexico", "lat": 19.42752077, "lng": -99.14197201 },
+      "evidence": ["https://maps.apple.com/place?place-id=IEFE927C134FA22EC", "https://www.timeoutmexico.mx/ciudad-de-mexico/gay-y-lesbico/sexto-piso", "https://es.travelgay.com/venue/sexto-piso"]
+    }
+  ],
+  "sao_paulo": [
+    {
+      "id": 2062,
+      "name": "D-Edge",
+      "previous": { "location": "Av. Chaves, 58 - Barra Funda, São Paulo - SP, 01132-000, Brazil", "lat": -23.5333919525146, "lng": -46.6526641845703 },
+      "next": { "location": "Avenida Mário de Andrade 141, Barra Funda, São Paulo - SP, 01156-001, Brazil", "lat": -23.52812291, "lng": -46.66206386 },
+      "evidence": ["https://www.d-edge.com.br/contato", "https://www.d-edge.com.br/dedge"]
+    }
+  ],
+  "puerto_vallarta": [
+    {
+      "id": 585,
+      "name": "One Six One PV",
+      "previous": { "location": null, "lat": 20.6040992736816, "lng": -105.23380279541 },
+      "next": { "location": "Calle Rodolfo Gómez 161, Zona Romántica, Emiliano Zapata, Puerto Vallarta, Jalisco 48380, Mexico", "lat": 20.600418, "lng": -105.236923 },
+      "evidence": ["https://gaypv.com/places/bars/one-six-one-pv/", "https://www.waze.com/live-map/directions/mx/jal./puerto-vallarta/one-six-one-pv?to=place.ChIJY45y5dlFIYQRoGOq_UJmcZQ", "https://es.outandaboutpv.com/one-six-one-celebra-cinco-anos-el-miercoles-13-de-mayo/"]
+    },
+    {
+      "id": 899,
+      "name": "Cafe San Angel",
+      "previous": { "location": "Olas Altas 449, Col. Emiliano Zapata, 48380 Puerto Vallarta, Jalisco, Mexico", "lat": 20.6035003662109, "lng": -105.235397338867 },
+      "next": { "location": "Olas Altas 449, Colonia Emiliano Zapata, Puerto Vallarta, Jalisco 48380, Mexico", "lat": 20.6009299, "lng": -105.23760657 },
+      "evidence": ["https://transparencia.puertovallarta.gob.mx/transparencia/art8/art8/6/g/2013/DIC2013/LICENCIAS%20RENOVADAS%20DICIEMBRE%202013%20-%20GIROS%20BLANCOS.pdf"]
+    }
+  ],
+  "san_jose": [
+    {
+      "id": 1333,
+      "name": "Balmoral Hotel",
+      "previous": { "location": "Avenida Central, Calle 7, San Jose, Costa Rica", "lat": 9.93369579315186, "lng": -84.0751647949219 },
+      "next": { "location": "Avenida Central, entre Calles 7 y 9, San José 10101, Costa Rica", "lat": 9.9326, "lng": -84.0753 },
+      "evidence": ["https://www.balmoral.co.cr/es/contacto/", "https://mapcarta.com/25323810"]
+    }
+  ],
+  "san_salvador": [
+    {
+      "id": 1969,
+      "name": "Nico Urban Hotel",
+      "previous": { "location": "Bulevar del Hipodromo 605, San Salvador, El Salvador", "lat": 13.6926002502441, "lng": -89.2414016723633 },
+      "next": { "location": "Bulevar del Hipódromo 665, Colonia San Benito, San Salvador, El Salvador", "lat": 13.694415, "lng": -89.243623 },
+      "evidence": ["https://www.yellowpages.net/af/phone-503-25284242-lughawehotel-San-Salvador-SVEN22028.html"]
+    }
+  ],
+  "mendoza": [
+    {
+      "id": 1238,
+      "name": "Queen Disco",
+      "previous": { "location": "25 de Mayo 318, Mendoza, Argentina", "lat": -32.8866004943848, "lng": -68.8432998657227 },
+      "next": { "location": "25 de Mayo 318, M5519 Dorrego, Guaymallén, Mendoza, Argentina", "lat": -32.89767, "lng": -68.83061 },
+      "evidence": ["https://argentina.worldplaces.me/view-place/41956521-queen-disco-mendoza.html", "https://www.findglocal.com/AR/Mendoza/111053928915270/Queen-Disco-Mendoza"]
+    }
+  ],
+  "san_juan": [
+    {
+      "id": 770,
+      "name": "El Bar Bero",
+      "previous": { "location": null, "lat": 18.4513, "lng": -66.0496 },
+      "next": { "location": "1507 Calle Loíza, San Juan, PR 00911", "lat": 18.451953, "lng": -66.062936 },
+      "evidence": ["https://www.discoverpuertorico.com/es/profile/el-bar-bero/6242", "https://mapcarta.com/es/N2949512477"]
+    },
+    {
+      "id": 769,
+      "name": "Toxic Nightclub",
+      "previous": { "location": "613 C. Condado, San Juan, Puerto Rico", "lat": 18.4554996490479, "lng": -66.0708999633789 },
+      "next": { "location": "613 Calle Condado, San Juan, PR 00907", "lat": 18.450151, "lng": -66.0757145 },
+      "evidence": ["https://maps.apple.com/place?place-id=ID628427AB140F8AE", "https://pr.near-place.com/toxic-night-club-613-calle-condado-san-juan"]
+    }
+  ],
+  "las_vegas": [
+    {
+      "id": 441,
+      "name": "Entourage Vegas",
+      "previous": { "location": "State Street, Las Vegas, Nevada 89104, United States", "lat": 36.1427993774414, "lng": -115.143798828125 },
+      "next": { "location": "953 E Sahara Ave, Suite A19, Las Vegas, NV 89104, United States", "lat": 36.142532, "lng": -115.142399 },
+      "evidence": ["https://vegasgayspa.com/", "https://www.tripadvisor.com/Attraction_Review-g45963-d11965529-Reviews-Entourage_Vegas-Las_Vegas_Nevada.html"]
+    }
+  ],
+  "miami": [
+    {
+      "id": 646,
+      "name": "Gaythering Sauna",
+      "previous": { "location": "1409 Lincoln Rd #1, Suite 1", "lat": 25.7906017303467, "lng": -80.143928527832 },
+      "next": { "location": "1409 Lincoln Rd, Miami Beach, FL 33139, United States", "lat": 25.790602, "lng": -80.143925 },
+      "evidence": ["https://www.gaythering.com/contact"]
+    },
+    {
+      "id": 647,
+      "name": "Haulover Park",
+      "previous": { "location": null, "lat": 25.9006004333496, "lng": -80.121696472168 },
+      "next": { "location": "10800 Collins Ave, Bal Harbour, FL 33154, United States", "lat": 25.9191424, "lng": -80.12121909 },
+      "evidence": ["https://www.miamidade.gov/global/recreation/park/haulover-park.page", "https://www.haulovernudebeach.com/location-map-directions/"]
+    }
+  ],
+  "san_francisco": [
+    {
+      "id": 567,
+      "name": "Buena Vista Park",
+      "previous": { "location": "Buena Vista &, San Francisco, California 94117, United States", "lat": 37.7703742980957, "lng": -122.443176269531 },
+      "next": { "location": "Buena Vista Avenue East & Haight Street, San Francisco, CA 94117, United States", "lat": 37.770855, "lng": -122.440359 },
+      "evidence": ["https://www.sfrecpark.org/facilities/facility/details/Buena-Vista-Park-155"]
+    },
+    {
+      "id": 558,
+      "name": "Twin Peaks Tavern",
+      "previous": { "location": null, "lat": 37.7629, "lng": -122.435 },
+      "next": { "location": "401 Castro Street, San Francisco, CA 94114, United States", "lat": 37.762272, "lng": -122.434958 },
+      "evidence": ["https://www.sfheritage.org/legacy-business/twin-peaks-tavern/"]
+    },
+    {
+      "id": 559,
+      "name": "SF Eagle",
+      "previous": { "location": null, "lat": 37.7701988220215, "lng": -122.412399291992 },
+      "next": { "location": "398 12th Street, San Francisco, CA 94103, United States", "lat": 37.769986, "lng": -122.413415 },
+      "evidence": ["https://sf-eagle.com/the-bar/"]
+    },
+    {
+      "id": 557,
+      "name": "The Stud",
+      "previous": { "location": null, "lat": 37.780200958252, "lng": -122.410598754883 },
+      "next": { "location": "1123 Folsom Street, San Francisco, CA 94103, United States", "lat": 37.776135, "lng": -122.408299 },
+      "evidence": ["https://www.studsf.com/contact-us"]
+    },
+    {
+      "id": 564,
+      "name": "The Lone Star Saloon",
+      "previous": { "location": null, "lat": 37.7701, "lng": -122.411 },
+      "next": { "location": "1354 Harrison Street, San Francisco, CA 94103, United States", "lat": 37.772153, "lng": -122.410878 },
+      "evidence": ["https://www.lonestarsf.com/"]
+    }
+  ],
+  "london": [
+    {
+      "id": 1994,
+      "name": "Colour Factory",
+      "previous": { "location": "8 Queen's Yard, Hackney Wick, london", "lat": 51.5330200195312, "lng": 0.0294199995696545 },
+      "next": { "location": "Unit 8A, Queen's Yard, White Post Lane, Hackney Wick, London E9 5EN, United Kingdom", "lat": 51.5432097, "lng": -0.0228502 },
+      "evidence": ["https://www.colourfactory.com/faqs", "https://find-and-update.company-information.service.gov.uk/company/13445579/filing-history", "https://maps.apple.com/place?_provider=9902&address=Unit+8a%2C+Queens+Yard%2C+London%2C+E9+5EN%2C+England&coordinate=51.5432097%2C-0.0228502&name=Colour+Factory"]
+    }
+  ],
+  "leipzig": [
+    {
+      "id": 2101,
+      "name": "WUEST at Pittlerwerke",
+      "previous": { "location": "Pittlerwerke, Polyphonstraße 8, 04159 Leipzig, Germany", "lat": 51.3783531188965, "lng": 12.316948890686 },
+      "next": { "location": "Pittlerwerke, Polyphonstraße 8, 04159 Leipzig, Germany", "lat": 51.378128, "lng": 12.315545 },
+      "evidence": ["https://www.pittlerwerke.org/de"]
+    }
+  ],
+  "toulouse": [
+    {
+      "id": 2111,
+      "name": "La Cabane",
+      "previous": { "location": "16 ter Avenue Raymond Badiou, 31300 Toulouse, France", "lat": 43.5996742248535, "lng": 1.40731537342072 },
+      "next": { "location": "16 ter Avenue Raymond Badiou, 31300 Toulouse, France", "lat": 43.599482, "lng": 1.408575 },
+      "evidence": ["https://halles-cartoucherie.fr/cabane-infos-pratiques/", "https://www.toulouse-tourisme.com/en/activite/la-cabane/"]
+    }
+  ],
+  "amsterdam": [
+    {
+      "id": 1125,
+      "name": "Pamela",
+      "previous": { "location": "an Hanzenstraat 190, 1053 SK Amsterdam, Netherlands", "lat": 52.3680801391602, "lng": 4.86609315872192 },
+      "next": { "location": "Jacob van Lennepstraat 86H, 1053 HM Amsterdam, Netherlands", "lat": 52.366005150875296, "lng": 4.871919108547087 },
+      "evidence": ["https://www.iamsterdam.com/zien-en-doen/eten-en-drinken/lhbtiq-bars-en-cafes", "https://www.oozo.nl/bedrijven/amsterdam/van-lennepbuurt/da-costabuurt-zuid/1775543/pamela", "https://nextdoor.nl/pages/pamela-amsterdam-amsterdam-noord-holland/"]
+    }
+  ],
+  "frankfurt": [
+    {
+      "id": 875,
+      "name": "Avani Frankfurt City Hotel",
+      "previous": { "location": "Vilbelerstrasse 2, 60313 Frankfurt am Main, Germany", "lat": 50.1156005859375, "lng": 8.68529987335205 },
+      "next": { "location": "Vilbeler Straße 2, 60313 Frankfurt am Main, Germany", "lat": 50.117479, "lng": 8.687249 },
+      "evidence": ["https://www.avanihotels.com/en/frankfurt-city"]
+    },
+    {
+      "id": 435,
+      "name": "Metropol Sauna",
+      "previous": { "location": "Sachsenhäuser Ufer, 60594 Frankfurt, Germany", "lat": 50.1078987121582, "lng": 8.68379974365234 },
+      "next": { "location": "Konrad-Adenauer-Straße 15 (access via Schwedenkronenplatz), 60313 Frankfurt am Main, Germany", "lat": 50.116635, "lng": 8.687194 },
+      "evidence": ["https://www.metropol-sauna.de/airport", "https://adresse.dastelefonbuch.de/Frankfurt%20am%20Main/1-Saunab%C3%A4der-PL-Saunabetriebs-GmbH-Frankfurt-am-Main-Konrad-Adenauer-Str.html"]
+    }
+  ],
+  "malmo": [
+    {
+      "id": 1727,
+      "name": "Moriska Paviljongen",
+      "previous": { "location": "Norra Parkgatan 2, 214 22 Malmö, Sweden", "lat": 55.5950202941895, "lng": 13.0131921768188 },
+      "next": { "location": "Norra Parkgatan 2, 214 22 Malmö, Sweden", "lat": 55.593867, "lng": 13.013551 },
+      "evidence": ["https://maps.apple.com/place?place-id=I572CDC579C79F4BC", "https://se.near-place.com/moriska-paviljongen-norra-parkgatan-2-malmo/de"]
+    }
+  ],
+  "manchester": [
+    {
+      "id": 411,
+      "name": "Hidden Club",
+      "previous": { "location": "6 Piccadilly Plaza, Manchester, M1 4AH, United Kingdom", "lat": 53.4809989929199, "lng": -2.23799991607666 },
+      "next": { "location": "16–18 Mary Street, Manchester M3 1NH, United Kingdom", "lat": 53.490121, "lng": -2.249171 },
+      "evidence": ["https://drumandbassuk.com/venue/hidden-manchester-334"]
+    }
+  ],
+  "oslo": [
+    {
+      "id": 286,
+      "name": "Jaeger",
+      "previous": { "location": "Skråninga, 0179 Oslo, Norway", "lat": 59.9140014648438, "lng": 10.7469997406006 },
+      "next": { "location": "Grensen 9, 0159 Oslo, Norway", "lat": 59.913899, "lng": 10.743438 },
+      "evidence": ["https://jaegeroslo.no/"]
+    }
+  ],
+  "copenhagen": [
+    {
+      "id": 1983,
+      "name": "25hours Hotel Indre By",
+      "previous": { "location": "Pilestraede 65, 1112 Copenhagen, Denmark", "lat": 55.6823997497559, "lng": 12.5766000747681 },
+      "next": { "location": "Pilestræde 65, 1112 Copenhagen, Denmark", "lat": 55.681665, "lng": 12.577096 },
+      "evidence": ["https://www.25hours-hotels.com/fr/contact?set_language=1578194332"]
+    },
+    {
+      "id": 1980,
+      "name": "Manon Les Suites",
+      "previous": { "location": "Gyldenlovesgade 19, 1600 Copenhagen, Denmark", "lat": 55.6814994812012, "lng": 12.5626001358032 },
+      "next": { "location": "Gyldenløvesgade 19, 1600 Copenhagen, Denmark", "lat": 55.680427, "lng": 12.561215 },
+      "evidence": ["https://guldsmedenhotels.com/da/manon-les-suites", "https://guldsmedenhotels.com/faq-manon-les-suites/"]
+    },
+    {
+      "id": 1982,
+      "name": "Villa Copenhagen",
+      "previous": { "location": "Tietgensgade 35-39, 1704 Copenhagen, Denmark", "lat": 55.6726989746094, "lng": 12.5684995651245 },
+      "next": { "location": "Tietgensgade 35-39, 1704 Copenhagen, Denmark", "lat": 55.671269, "lng": 12.567289 },
+      "evidence": ["https://villacopenhagen.com/contact", "https://www.wikidata.org/wiki/Q111873518", "https://www.visitcopenhagen.com/copenhagen/planning/villa-copenhagen-gdk1119084"]
+    }
+  ],
+  "rome": [
+    {
+      "id": 1996,
+      "name": "Spazio Novecento",
+      "previous": { "location": "Piazza Guglielmo Marconi 26b, EUR business district, rome", "lat": 41.8345031738281, "lng": 12.469799041748 },
+      "next": { "location": "Piazza Guglielmo Marconi 26/B, 00144 Rome, Italy", "lat": 41.834006, "lng": 12.470459 },
+      "evidence": ["https://www.turismoroma.it/it/luoghi/spazio-novecento", "https://www.spazionovecento.it/wp-content/uploads/2023/01/PLANIMETRIA-SPAZIO-NOVECENTO-base.pdf"]
+    },
+    {
+      "id": 119,
+      "name": "Coming Out",
+      "previous": { "location": "Colosseum, 00184 Rome Rome, Italy", "lat": 41.8899993896484, "lng": 12.4919996261597 },
+      "next": { "location": "Via di San Giovanni in Laterano 8, 00184 Rome, Italy", "lat": 41.89001, "lng": 12.49441 },
+      "evidence": ["https://www.comingout.it/contact/", "https://www.turismoroma.it/it/accoglienza/coming-out", "https://findit.city/en/italy/rome/places/restaurants/coming-out-4817311427"]
+    }
+  ],
+  "palermo": [
+    {
+      "id": 2125,
+      "name": "Fabric — Exit10&Love",
+      "previous": { "location": "Fabric, Via Ugo La Malfa 91, 90146 Palermo, Italy", "lat": 38.1678428649902, "lng": 13.3036575317383 },
+      "next": { "location": "Fabric, Via Ugo La Malfa 91/95, 90146 Palermo, Italy", "lat": 38.16114, "lng": 13.31524 },
+      "evidence": ["https://fabricdiscoclub.wordpress.com/", "https://www.gay.it/locali-gay-a-palermo", "https://www.ciaotickets.com/it/location/fabric-palermo"]
+    },
+    {
+      "id": 2120,
+      "name": "Cinema De Seta — Cantieri Culturali alla Zisa",
+      "previous": { "location": "Cantieri Culturali alla Zisa, Via Paolo Gili 4, 90138 Palermo, Italy", "lat": 38.1181030273438, "lng": 13.3385162353516 },
+      "next": { "location": "Cantieri Culturali alla Zisa, Via Paolo Gili 4, 90135 Palermo, Italy", "lat": 38.1185527, "lng": 13.337462 },
+      "evidence": ["https://turismo.comune.palermo.it/palermo-welcome-cantieri-culturali-alla-zisa-dettaglio.php?det=198&id=387&tp=198", "https://it.near-place.com/cinema-vittorio-de-seta-via-paolo-gili-4-palermo"]
+    }
+  ],
+  "montenegro": [
+    {
+      "id": 1629,
+      "name": "Top Hill Budva",
+      "previous": { "location": "Topliski put, Budva 85310, Montenegro", "lat": 42.2925987243652, "lng": 18.8297004699707 },
+      "next": { "location": "Topliški put bb, 85312 Budva, Montenegro", "lat": 42.29376, "lng": 18.82225 },
+      "evidence": ["https://www.visitbudva.com/tophill.html", "https://mapcarta.com/N2273511482", "https://www.google.com/maps/search/Night%2BOut%2Bat%2BTop%2BHill%2BClub%2C%2BBudva%2C%2BMontenegro"]
+    },
+    {
+      "id": 1626,
+      "name": "Casper Bar Budva",
+      "previous": { "location": "Old Town, Budva 85310, Montenegro", "lat": 42.2789001464844, "lng": 18.8376007080078 },
+      "next": { "location": "Cara Dušana 10, Stari Grad, 85310 Budva, Montenegro", "lat": 42.27819, "lng": 18.83857 },
+      "evidence": ["https://www.budva.com/eng/city-guide/place/1368886344/casper-budva", "https://montenegro.worldplaces.me/bars-in-budva/23682566-casper-bar.html"]
+    },
+    {
+      "id": 1631,
+      "name": "Regent Porto Montenegro",
+      "previous": { "location": "Obala bb, Porto Montenegro Village, Tivat 85320, Montenegro", "lat": 42.4341011047363, "lng": 18.6945991516113 },
+      "next": { "location": "Obala bb, Porto Montenegro Village, 85320 Tivat, Montenegro", "lat": 42.433695, "lng": 18.693506 },
+      "evidence": ["https://www.ihg.com/regent/hotels/us/en/porto-montenegro/tivpm/hoteldetail", "https://www.seemice.com/objects/regent-porto-montenegro-tivat/pdf"]
+    }
+  ],
+  "sarajevo": [
+    {
+      "id": 1620,
+      "name": "Barhana",
+      "previous": { "location": "Dulagina cikma 8, Sarajevo 71000, Bosnia and Herzegovina", "lat": 43.8605995178223, "lng": 18.4305992126465 },
+      "next": { "location": "Đulagina Čikma 8, 71000 Sarajevo, Bosnia and Herzegovina", "lat": 43.8596542, "lng": 18.4296469 },
+      "evidence": ["https://barhana.ba/", "https://ba.near-place.com/barhana-djulagina-cikma-8-sarajevo/es"]
+    },
+    {
+      "id": 1615,
+      "name": "The Bar Sarajevo",
+      "previous": { "location": "Hamdije Kresevljakovica, Sarajevo 71000, Bosnia and Herzegovina", "lat": 43.8567008972168, "lng": 18.4235000610352 },
+      "next": { "location": "Hamdije Kreševljakovića 13, 71000 Sarajevo, Bosnia and Herzegovina", "lat": 43.8558006, "lng": 18.4196606 },
+      "evidence": ["https://inandaroundsarajevo.com/drink-centric-in-sarajevo.html", "https://untappd.com/v/the-bar/7668120/photos"]
+    },
+    {
+      "id": 1617,
+      "name": "Pink Houdini",
+      "previous": { "location": "Branilaca Sarajeva, Sarajevo 71000, Bosnia and Herzegovina", "lat": 43.8585014343262, "lng": 18.4216003417969 },
+      "next": { "location": "Branilaca Sarajeva 31, 71000 Sarajevo, Bosnia and Herzegovina", "lat": 43.857644, "lng": 18.4215121 },
+      "evidence": ["https://www.tripadvisor.com/Attraction_Review-g294450-d8858426-Reviews-Pink_Houdini-Sarajevo_Sarajevo_Canton_Federation_of_Bosnia_and_Herzegovina.html", "https://ba.near-place.com/pink-hudini-branilaca-sarajeva-31-sarajevo/de"]
+    },
+    {
+      "id": 1612,
+      "name": "City Pub Sarajevo",
+      "previous": { "location": "Hadziristica, Sarajevo 71000, Bosnia and Herzegovina", "lat": 43.8592987060547, "lng": 18.429500579834 },
+      "next": { "location": "Hadžiristića bb / Despićeva 6, 71000 Sarajevo, Bosnia and Herzegovina", "lat": 43.857779, "lng": 18.42755 },
+      "evidence": ["https://www.waze.com/live-map/directions/ba/federacija-bosne-i-hercegovine/sarajevo/city-pub?to=place.ChIJC44K98oSX0cRXM2fYEqmrgg", "https://maps.apple.com/place?place-id=I2E36AE6C18F07FED"]
+    }
+  ],
+  "cyprus": [
+    {
+      "id": 1484,
+      "name": "Melissi Beach Hotel & Spa",
+      "previous": { "location": "30 Kryou Nerou, Ayia Napa 5330, Cyprus", "lat": 34.9855537414551, "lng": 34.0095024108887 },
+      "next": { "location": "30 Kryou Nerou Avenue, 5330 Ayia Napa, Cyprus", "lat": 34.98555, "lng": 34.00938 },
+      "evidence": ["https://melissi.com/contact/", "https://mapcarta.com/32601802"]
+    },
+    {
+      "id": 1481,
+      "name": "Diamonds Showbar",
+      "previous": { "location": "342 Leoforos Protara-Cavo Greco, Protaras 5296, Cyprus", "lat": 35.0183868408203, "lng": 34.0446739196777 },
+      "next": { "location": "342 Protaras–Cape Greco Avenue, 5296 Protaras, Cyprus", "lat": 35.01758, "lng": 34.046216 },
+      "evidence": ["https://diamondsshowbar.com/", "https://develop.cyprusalive.com/en/town/diamonds-show-bar"]
+    },
+    {
+      "id": 1477,
+      "name": "Zester Bar",
+      "previous": { "location": "Eleftherias 108, Limassol, Cyprus", "lat": 34.673999786377, "lng": 33.0401992797852 },
+      "next": { "location": "Eleftherias 108, 3042 Limassol, Cyprus", "lat": 34.67453, "lng": 33.03891 },
+      "evidence": ["https://cyprus.worldplaces.me/review/85007064-zester.html", "https://www.top-rated.online/cities/Limassol%2BMunicipality/place/p/10537811/Zester."]
+    }
+  ],
+  "thessaloniki": [
+    {
+      "id": 2132,
+      "name": "PLAY Thessaloniki",
+      "previous": { "location": "Odisseos 13, 546 29 Thessaloniki, Greece", "lat": 40.6440582275391, "lng": 22.9328899383545 },
+      "next": { "location": "Odisseos 13, 546 29 Thessaloniki, Greece", "lat": 40.641918, "lng": 22.934307 },
+      "evidence": ["https://www.playthessaloniki.gr/epikoinonia/"]
+    },
+    {
+      "id": 2134,
+      "name": "Rediviva Cucina Povera",
+      "previous": { "location": "Alexandras Papadopoulou 70, 546 33 Thessaloniki, Greece", "lat": 40.6428718566895, "lng": 22.9536304473877 },
+      "next": { "location": "Alexandras Papadopoulou 70, 546 33 Thessaloniki, Greece", "lat": 40.642925, "lng": 22.947748 },
+      "evidence": ["https://www.rediviva.gr/el/contact-us/", "https://www.waze.com/live-map/directions/gr/thessaloniki/rediviva-cucina-povera?to=place.ChIJ-wip4q05qBQRjfJF1nYUJxk"]
+    }
+  ],
+  "prague": [
+    {
+      "id": 219,
+      "name": "Cross Club",
+      "previous": { "location": "Liebener Brücke, 180 00 Prague, Prague, Czech Republic", "lat": 50.1030006408691, "lng": 14.4700002670288 },
+      "next": { "location": "Plynární 1096/23, 170 00 Prague 7–Holešovice, Czech Republic", "lat": 50.1081669, "lng": 14.4431722 },
+      "evidence": ["https://www.crossclub.cz/en/contact/?secured=1", "https://prague.eu/en/objevujte/cross-club/", "https://mapy.com/sl/?id=13410776&source=firm"]
+    }
+  ],
+  "vienna": [
+    {
+      "id": 943,
+      "name": "Schweizer Garten",
+      "previous": { "location": "Landgutgasse 1, 1030 Vienna, Austria", "lat": 48.1812858581543, "lng": 16.3789806365967 },
+      "next": { "location": "Schweizergarten, 1030 Vienna, Austria", "lat": 48.18613, "lng": 16.38621 },
+      "evidence": ["https://www.wien.gv.at/en/leisure/schweizer-garten", "https://mapcarta.com/W8092215"]
+    }
+  ],
+  "tallinn": [
+    {
+      "id": 975,
+      "name": "X-Baar",
+      "previous": { "location": "Harju 6, 10130 Tallinn, Estonia", "lat": 59.4369010925293, "lng": 24.744800567627 },
+      "next": { "location": "Komandandi tee 2, 10130 Tallinn, Estonia", "lat": 59.434258, "lng": 24.742273 },
+      "evidence": ["https://www.waze.com/live-map/directions/ee/harju-maakond/tallinn/x-baar?to=place.ChIJY1OcxjuVkkYR4g6VkAROhCQ", "https://www.volinik.ee/volinik-live-web-prd/s3fs-public/2026-07/the-history-of-equality-and-inequality-in-estonia-walking-tour-guide_mobiil.pdf", "https://m.puhkuseestis.ee/?action=vaatamisvaarsused&sightseeing_id=1179"]
+    },
+    {
+      "id": 979,
+      "name": "HUNGR",
+      "previous": { "location": "Tallinn rotating venues (check event post), Estonia", "lat": 59.4370002746582, "lng": 24.7535991668701 },
+      "next": { "location": "Peetri 6, 10414 Tallinn, Estonia", "lat": 59.4506916, "lng": 24.7294368 },
+      "evidence": ["https://starving.me/", "https://starving.me/about", "https://huvi.tallinn.ee/sundmus/hungr-birthday-3-club-night-queer-showcase-live-gig"]
+    }
+  ],
+  "sofia": [
+    {
+      "id": 890,
+      "name": "From Barista Coffee and more",
+      "previous": { "location": "ul. Bacho Kiro 26, Sofia Center, 1000 Sofia, Bulgaria", "lat": 42.6991996765137, "lng": 23.3267993927002 },
+      "next": { "location": "Bacho Kiro 26–30, 1000 Sofia, Bulgaria", "lat": 42.700534, "lng": 23.326646 },
+      "evidence": ["https://baristacoffeesofia.bg/contact-information.html", "https://coffeepals.io/cafe/from-barista-coffee-and-more"]
+    }
+  ],
+  "ibiza": [
+    {
+      "id": 720,
+      "name": "The Purple Hotel",
+      "previous": { "location": "Carrer d'Antoni Riquer, 07820 Sant Antoni de Portmany, Spain", "lat": 38.9813842773438, "lng": 1.30086016654968 },
+      "next": { "location": "Carrer d'Antoni Riquer 23, 07820 Sant Antoni de Portmany, Ibiza, Spain", "lat": 38.98136, "lng": 1.30089 },
+      "evidence": ["https://www.ibizafeeling.com/hotels/the-purple-hotel/a-pinch-of-purple/", "https://mapcarta.com/31494596"]
+    }
+  ],
+  "algarve": [
+    {
+      "id": 1760,
+      "name": "Hotel Sol e Mar Albufeira - Adults Only",
+      "previous": { "location": "Rua Jose Bernardino de Sousa, 8200-146 Albufeira, Algarve, Portugal", "lat": 37.0878982543945, "lng": -8.25329971313477 },
+      "next": { "location": "Rua José Bernardino de Sousa, 8200-146 Albufeira, Portugal", "lat": 37.08694, "lng": -8.2526 },
+      "evidence": ["https://www.visitportugal.com/en/content/sol-e-mar-beach-hotel", "https://albufeira.com/solemar/pt", "https://mapcarta.com/pt/25330804"]
+    },
+    {
+      "id": 1753,
+      "name": "Praia do Submarino",
+      "previous": { "location": "Praia do Submarino, Alvor, Faro 8500-451, Algarve, Portugal", "lat": 37.1192016601562, "lng": -8.58119964599609 },
+      "next": { "location": "Praia do Submarino, Alvor, Portimão, Portugal", "lat": 37.11639, "lng": -8.57174 },
+      "evidence": ["https://www.portugalnummapa.com/praia-do-submarino/", "https://mapcarta.com/pt/W1245711160"]
+    },
+    {
+      "id": 1759,
+      "name": "Praia Joao de Arens",
+      "previous": { "location": "Praia Joao de Arens, Alvor, Faro 8500-046, Algarve, Portugal", "lat": 37.1194000244141, "lng": -8.57470035552979 },
+      "next": { "location": "Praia de João de Arens, Alvor, Portimão, Portugal", "lat": 37.116119, "lng": -8.567904 },
+      "evidence": ["https://www.playocean.net/portugal/portimao/praias/praia-de-joao-de-arens", "https://mapcarta.com/pt/33030302"]
+    },
+    {
+      "id": 1757,
+      "name": "Dunas Douradas Beach Club",
+      "previous": { "location": "Sitio do Garrao, Vale do Lobo, Algarve, Portugal", "lat": 37.0535011291504, "lng": -8.05780029296875 },
+      "next": { "location": "Sítio do Garrão, 8135-170 Almancil, Portugal", "lat": 37.04475, "lng": -8.05364 },
+      "evidence": ["https://www.ddbc.pt/en/accommodation-features/", "https://greenkey.abaae.pt/empreendimento/dunas-douradas-beach-club/", "https://mapcarta.com/W49415668"]
+    },
+    {
+      "id": 1751,
+      "name": "Vilamoura Garden Hotel",
+      "previous": { "location": "Rua de Franca, Lote 3.5.11, Vilamoura, Algarve, Portugal", "lat": 37.092700958252, "lng": -8.11670017242432 },
+      "next": { "location": "Rua de França, Lote 3.5.11, 8125-615 Vilamoura, Portugal", "lat": 37.092039, "lng": -8.115761 },
+      "evidence": ["https://www.vilamouragardenhotel.com/en/contact", "https://greenkey.abaae.pt/empreendimento/vilamoura-garden-hotel/", "https://rnt.turismodeportugal.pt/RNT/RNET.aspx?nr=7214"]
+    }
+  ],
+  "porto": [
+    {
+      "id": 1263,
+      "name": "The Yeatman",
+      "previous": { "location": "Rua do Choupelo, 4400-088 Vila Nova de Gaia, Portugal", "lat": 41.1344985961914, "lng": -8.61489963531494 },
+      "next": { "location": "Rua do Choupelo, Santa Marinha, 4400-088 Vila Nova de Gaia, Portugal", "lat": 41.13305, "lng": -8.6136 },
+      "evidence": ["https://www.the-yeatman-hotel.com/fr/contact/"]
+    },
+    {
+      "id": 2033,
+      "name": "Gare Porto",
+      "previous": { "location": "R. da Madeira 182, 4000-330 Porto", "lat": 41.1459274291992, "lng": -8.60982227325439 },
+      "next": { "location": "Rua de José Falcão 198, 4050-315 Porto, Portugal", "lat": 41.14969621, "lng": -8.61405533 },
+      "evidence": ["https://www.waze.com/es/live-map/directions/pt/porto/porto/gare-porto?to=place.ChIJdZTOOv1kJA0RqIPUyz9Ajdc"]
+    },
+    {
+      "id": 1254,
+      "name": "Sauna Camoes",
+      "previous": { "location": "R. de Camoes 681, 4000-147 Porto, Portugal", "lat": 41.1595001220703, "lng": -8.61100006103516 },
+      "next": { "location": "Rua do Bonjardim 689, 4000-128 Porto, Portugal", "lat": 41.153598, "lng": -8.607908 },
+      "evidence": ["https://saunacamoes.com/sobre/", "https://www.waze.com/live-map/directions/pt/porto/porto/sauna-camoes-porto?to=place.ChIJQe6USflkJA0RfIUKEAHdUeU", "https://www.deuxmecs.com/gay-guide-porto"]
+    },
+    {
+      "id": 1257,
+      "name": "PortoBay Flores",
+      "previous": { "location": "Rua das Flores 27, 4050-416 Porto, Portugal", "lat": 41.1432991027832, "lng": -8.61209964752197 },
+      "next": { "location": "Rua das Flores 27, 4050-416 Porto, Portugal", "lat": 41.143675, "lng": -8.614244 },
+      "evidence": ["https://www.portobay.com/es/hotels/porto-hotels/portobay-flores/location", "https://www.esvd-ecvdcongress.com/resources/media/Hotels/PortoBay_Flores_Factsheet.pdf", "https://www.visitportugal.com/pt-pt/content/portobay-flores"]
+    }
+  ],
+  "kyiv": [
+    {
+      "id": 1266,
+      "name": "InterContinental Kyiv",
+      "previous": { "location": "2A Velyka Zhytomyrska St, Kyiv, Ukraine", "lat": 50.4578018188477, "lng": 30.521900177002 },
+      "next": { "location": "2A Velyka Zhytomyrska Street, 01001 Kyiv, Ukraine", "lat": 50.455568, "lng": 30.519417 },
+      "evidence": ["https://www.ihg.com/intercontinental/hotels/us/en/kiev/kbpha/hoteldetail", "https://yandex.com/maps/143/kyiv/house/velyka_zhytomyrska_vulytsia_2a/"]
+    },
+    {
+      "id": 1277,
+      "name": "Hyatt Regency Kyiv",
+      "previous": { "location": "5 Taras Shevchenko Blvd, Kyiv, Ukraine", "lat": 50.4487991333008, "lng": 30.5146999359131 },
+      "next": { "location": "5 Alla Tarasova Street, 01001 Kyiv, Ukraine", "lat": 50.453148, "lng": 30.518357 },
+      "evidence": ["https://www.hyatt.com/hyatt-regency/en-US/kievh-hyatt-regency-kyiv/hotel-info", "https://guide.kyivcity.gov.ua/en/places/hotel-hyatt-regency-kyiv", "https://yandex.com/maps/143/kyiv/house/vulytsia_ally_tarasovoi_5/"]
+    },
+    {
+      "id": 1258,
+      "name": "Sky Loft Hotel Kyiv",
+      "previous": { "location": "Esplanadna St, 17, Kyiv, Ukraine", "lat": 50.4387016296387, "lng": 30.5224990844727 },
+      "next": { "location": "17 Esplanadna Street, 01023 Kyiv, Ukraine", "lat": 50.43855, "lng": 30.524376 },
+      "evidence": ["https://www.rixwell.com/ua/hotels/rixwell-skyloft-kiev-hotel", "https://yandex.com/maps/143/kyiv/house/esplanadna_vulytsia_17/"]
+    },
+    {
+      "id": 1273,
+      "name": "Closer",
+      "previous": { "location": "Nyzhnoiurkivska St, 31, Kyiv, Ukraine", "lat": 50.4709014892578, "lng": 30.5104999542236 },
+      "next": { "location": "31 Nyzhnoiurkivska Street, 04080 Kyiv, Ukraine", "lat": 50.467505, "lng": 30.500415 },
+      "evidence": ["https://visitkyiv.com/activities-and-leisure/closer/", "https://maps.visicom.ua/c/30.49934%2C50.46774%2C17/f/ADR3K0MXUAOIM5XMVN", "https://adresy.locator.in.ua/kyiv/nyzhnoyurkivska/31/b/34082/"]
+    }
+  ],
+  "mallorca": [
+    {
+      "id": 1221,
+      "name": "Ben Amics Community Hub",
+      "previous": { "location": "Carrer General Riera, 3, 07003 Palma, Illes Balears, Spain", "lat": 39.5764999389648, "lng": 2.65059995651245 },
+      "next": { "location": "Carrer de Guillem Galmés 2, Entresuelo 1 y 2, 07004 Palma, Spain", "lat": 39.578268, "lng": 2.655632 },
+      "evidence": ["https://benamics.com/contacto/", "https://www.caib.es/webgoib/documents/81190/1579133/Mapa%2Bde%2Brecursos%2BLGTBIQ%2B_actualitzat_16-01-2025%2B%281%29.pdf/24ee5480-39cf-98a9-242a-0a006acbe9bb"]
+    },
+    {
+      "id": 1216,
+      "name": "Dark Cruising Bar",
+      "previous": { "location": "Carrer de Ticia, 22, 07003 Palma, Illes Balears, Spain", "lat": 39.5723991394043, "lng": 2.64759993553162 },
+      "next": { "location": "Carrer de Ticià 22, 07003 Palma, Spain", "lat": 39.5817871, "lng": 2.65013 },
+      "evidence": ["https://www.darkcruisingmallorca.com/aviso-legal.html", "https://untappd.com/v/dark-cruising-bar/7082228/photos"]
+    },
+    {
+      "id": 1217,
+      "name": "Bar Flexas",
+      "previous": { "location": "Carrer de la Llotgeta, 12, 07002 Palma, Illes Balears, Spain", "lat": 39.5696983337402, "lng": 2.64939999580383 },
+      "next": { "location": "Carrer de la Llotgeta 12, 07002 Palma, Spain", "lat": 39.5707189, "lng": 2.6537755 },
+      "evidence": ["https://barflexas.com/", "https://rocanegra.es/bar-flexas-bar-en-palma-islas-baleares/", "https://web.palmaactiva.com/wp-content/uploads/2021/05/08-Bar-Flexas.pdf"]
+    }
+  ],
+  "mykonos": [
+    {
+      "id": 314,
+      "name": "Paradise Club",
+      "previous": { "location": "Βρύση - Πλατύς Γιαλός, 846 00 Mykonos, Greece", "lat": 37.4220008850098, "lng": 25.3400001525879 },
+      "next": { "location": "Paradise Beach, 846 00 Mykonos, Greece", "lat": 37.41062195, "lng": 25.35581796 },
+      "evidence": ["https://www.paradiseclubmykonos.com/contact-paradise/", "https://www.mykonosvillas.com/magazine/events/2020/7/12/dj-set-paradise", "https://greece.worldplaces.me/view-place/81402335-paradise-beach-club.html"]
+    },
+    {
+      "id": 129,
+      "name": "JackieO’ Beach Club",
+      "previous": { "location": "Nikolaou Kalogera, 846 00 Mykonos, Greece", "lat": 37.4459991455078, "lng": 25.3279991149902 },
+      "next": { "location": "Super Paradise Beach, 846 00 Mykonos, Greece", "lat": 37.41402, "lng": 25.367737 },
+      "evidence": ["https://www.jackieomykonos.com/location", "https://www.mykonosvillas.com/magazine/places/bars-and-clubs/jackieo", "https://mykonos.travelfind.gr/en/jackie-o-bar-super-paradise"]
+    },
+    {
+      "id": 318,
+      "name": "JackieO Drag Shows",
+      "previous": { "location": "Nikolaou Kalogera, 846 00 Mykonos, Greece", "lat": 37.4459991455078, "lng": 25.3279991149902 },
+      "next": { "location": "Plateia Karaoli Dimitriou, Kastro, 846 00 Mykonos, Greece", "lat": 37.4476761, "lng": 25.3260461 },
+      "evidence": ["https://www.jackieomykonos.com/location", "https://tripomatic.com/en/poi/jackie-o-poi%3A43515"]
+    },
+    {
+      "id": 310,
+      "name": "JackieO Town",
+      "previous": { "location": "Ενόπλων Δυνάμεων, 846 00 Mykonos, Greece", "lat": 37.4449996948242, "lng": 25.3279991149902 },
+      "next": { "location": "Plateia Karaoli Dimitriou, Kastro, 846 00 Mykonos, Greece", "lat": 37.4476761, "lng": 25.3260461 },
+      "evidence": ["https://www.jackieomykonos.com/location", "https://tripomatic.com/en/poi/jackie-o-poi%3A43515"]
+    },
+    {
+      "id": 130,
+      "name": "Cavo Paradiso",
+      "previous": { "location": "Agios Ioannis - Mykonos - Agios Stefanos, 846 00 Mykonos, Greece", "lat": 37.4410018920898, "lng": 25.3339996337891 },
+      "next": { "location": "Paradise Beach, 846 00 Mykonos, Greece", "lat": 37.4081141, "lng": 25.3602245 },
+      "evidence": ["https://www.cavoparadiso.gr/default.asp?AID=184", "https://www.google.com/maps/search/Cavo%20Paradiso%20Paradise%20beach/"]
+    },
+    {
+      "id": 312,
+      "name": "Scorpios",
+      "previous": { "location": "Βρύση - Πλατύς Γιαλός, 846 00 Mykonos, Greece", "lat": 37.4199981689453, "lng": 25.3500003814697 },
+      "next": { "location": "Paraga Beach, 846 00 Mykonos, Greece", "lat": 37.40698694, "lng": 25.3476059 },
+      "evidence": ["https://scorpios.com/contact", "https://scorpios.com/assets/ScorpiosMykonosPressKitJune2026.pdf", "https://steller.co/p/scorpios-32tSAd9AJyykF9E922CzNsm"]
+    },
+    {
+      "id": 309,
+      "name": "Porta Bar",
+      "previous": { "location": "Zanni Pittaraki, Mykonos, Greece", "lat": 37.4459991455078, "lng": 25.326000213623 },
+      "next": { "location": "Svoronou 7 / V. Voinovits 5, 846 00 Mykonos, Greece", "lat": 37.44702873, "lng": 25.32700175 },
+      "evidence": ["https://www.patroc.com/gay/mykonos/d/porta-bar.html", "https://wanderlog.com/place/details/1534045/porta-bar"]
+    }
+  ],
+  "athens": [
+    {
+      "id": 1881,
+      "name": "Limanakia Beach",
+      "previous": { "location": "Limanakia Nudist Beach, EO91, Vari Vouliagmeni 166 72, Greece", "lat": 37.8556289672852, "lng": 23.7657356262207 },
+      "next": { "location": "Limanakia B Coves, EO91, Vouliagmeni 166 71, Greece", "lat": 37.8004691506235, "lng": 23.79395275849926 },
+      "evidence": ["https://develop.thisisathens.org/pdf/LGBTQ_Athens_8.pdf", "https://pulse-gallery.com/limanakia-b-gay-beach-in-athens", "https://www.travelgay.com/venue/limanakia-beach"]
+    },
+    {
+      "id": 1882,
+      "name": "Zappeion Gardens",
+      "previous": { "location": "Leof. Vasilissis Amalias, 105 57 Athina, Greece", "lat": 37.9710235595703, "lng": 23.7329273223877 },
+      "next": { "location": "Zappeion Garden, Leoforos Vasilissis Olgas, 105 57 Athens, Greece", "lat": 37.9713, "lng": 23.73553 },
+      "evidence": ["https://www.zappeion.gr/el/epikoinonia.html", "https://mapcarta.com/de/W10973127", "https://www.religiousgreece.gr/en/attractions/zappeion-hall"]
+    }
+  ],
+  "valencia": [
+    {
+      "id": 840,
+      "name": "Jardines del Turia (Viveros)",
+      "previous": { "location": "Passeig De l'Albereda, 46010 València, Valencia, Spain", "lat": 39.4778175354004, "lng": -0.362026989459991 },
+      "next": { "location": "Jardín del Turia, under Pont del Real by Viveros, 46010 València, Spain", "lat": 39.47637, "lng": -0.36883 },
+      "evidence": ["https://www.cruisinggays.com/valencia/areas/5074-jardines-del-turia-viveros/", "https://mapcarta.com/W738683717", "https://www.visitvalencia.com/en/what-to-do-valencia/nature-in-valencia/parks-and-gardens-valencia/turia-gardens"]
+    }
+  ],
+  "naples": [
+    {
+      "id": 1082,
+      "name": "MenXtreme",
+      "previous": { "location": "City Under The Wall, Centro Direzionale Isola E1, 80143 Napoli NA.", "lat": 40.8460311889648, "lng": 14.2532691955566 },
+      "next": { "location": "City Under The Wall, Via Giovanni Porzio 4, Centro Direzionale Isola E1, 80143 Napoli, Italy", "lat": 40.85797, "lng": 14.27679 },
+      "evidence": ["https://www.patroc.com/guiagay/napoles/d/men-xtreme-party.html", "https://www.findglocal.com/IT/Naples/107453213961840/The-Wall", "https://uniscientia.it/contatti/", "https://maps.apple.com/place?place-id=I75E2821058A75D72"]
+    }
+  ],
+  "bologna": [
+    {
+      "id": 2214,
+      "name": "Savhotel Fiera Bologna",
+      "previous": { "location": "Via Francesco Zanardi, 2, 40128 Bologna BO, Italy.", "lat": 44.5030517578125, "lng": 11.332727432251 },
+      "next": { "location": "Via Ferruccio Parri 9, 40128 Bologna BO, Italy", "lat": 44.51273, "lng": 11.35398 },
+      "evidence": ["https://www.savhotel.com/fiera/come-raggiungerci/", "https://www.bolognawelcome.com/it/strutture-ricettive/alberghi/savhotel", "https://mapcarta.com/25334404"]
+    }
+  ],
+  "sitges": [
+    {
+      "id": 839,
+      "name": "Montroig Cafe",
+      "previous": { "location": "Carrer Marquès De Montroig 11, 08870 Sitges, Barcelona, Spain", "lat": 41.2369003295898, "lng": 1.80529999732971 },
+      "next": { "location": "Carrer Marquès de Montroig 11–13, 08870 Sitges, Barcelona, Spain", "lat": 41.23611, "lng": 1.80667 },
+      "evidence": ["https://montroigcafe.com/", "https://www.sitgesanytime.com/ca/que-fer/gastronomia/restaurants-de-sitges/pln407-2/montroig-cafe", "https://commons.wikimedia.org/wiki/File:Restaurant_al_carrer_Marqu%C3%A8s_de_Montroig_-_Sitges_-_20220904_172449.jpg"]
+    }
+  ],
+  "albania": [
+    {
+      "id": 1641,
+      "name": "Hemingway Bar Tirana",
+      "previous": { "location": "Rruga Kont Urani, Tirana 1001, Albania", "lat": 41.3264999389648, "lng": 19.8178005218506 },
+      "next": { "location": "Rruga Kont Urani, 1001 Tirana, Albania", "lat": 41.32956, "lng": 19.8123 },
+      "evidence": ["https://tirana.al/pika-interesi/hemingway-bar", "https://mapcarta.com/N4527236989"]
+    },
+    {
+      "id": 1645,
+      "name": "Tulla Culture Center",
+      "previous": { "location": "Tirana 1001, Albania", "lat": 41.326000213623, "lng": 19.8118000030518 },
+      "next": { "location": "Rruga Hiqmet Delvina, Nd. 4, Hyrja 2, 1000 Tirana, Albania", "lat": 41.31861, "lng": 19.80709 },
+      "evidence": ["https://tulla.tv/music/", "https://www.qkk.filmmakers.systems/en/public/locations/tulla-culture-center", "https://mapcarta.com/es/W320979761"]
+    },
+    {
+      "id": 1642,
+      "name": "Maritim Hotel Plaza Tirana",
+      "previous": { "location": "Rruga 28 Nentori, Tirana 1001, Albania", "lat": 41.328498840332, "lng": 19.8197002410889 },
+      "next": { "location": "Rruga Abdi Toptani 18, 1001 Tirana, Albania", "lat": 41.327547, "lng": 19.821639 },
+      "evidence": ["https://www.plazatirana.com/contact-us/", "https://commons.wikimedia.org/wiki/Category:Maritim_Hotel_Plaza_Tirana"]
+    },
+    {
+      "id": 1639,
+      "name": "Rogner Hotel Tirana",
+      "previous": { "location": "Bulevardi Deshmoret e Kombit, Tirana 1001, Albania", "lat": 41.3203010559082, "lng": 19.8194999694824 },
+      "next": { "location": "Bulevardi Dëshmorët e Kombit, 1001 Tirana, Albania", "lat": 41.320985, "lng": 19.821042 },
+      "evidence": ["https://commons.wikimedia.org/wiki/Category:Rogner_Hotel_Tirana", "https://al.near-place.com/rogner-bulevardi-deshmoret-e-kombit-tirane"]
+    }
+  ],
+  "torremolinos": [
+    {
+      "id": 344,
+      "name": "Aqua Club",
+      "previous": { "location": "Urbanización La Nogalera, Local 710, Calle Danza Invisible, 3, 29620 Torremolinos", "lat": 36.6217727661133, "lng": -4.4994649887085 },
+      "next": { "location": "Urbanización La Nogalera 710, Calle Danza Invisible 3, 29620 Torremolinos, Málaga, Spain", "lat": 36.6218349, "lng": -4.4983197 },
+      "evidence": ["https://rocanegra.es/aqua-club-torremolinos-bar-gay-en-torremolinos-malaga/", "https://www.waze.com/live-map/directions/es/an/torremolinos/aqua-club?to=place.ChIJJ95kgvL7cg0RDobKJetay4Y"]
+    }
+  ],
+  "calgary": [
+    {
+      "id": 2143,
+      "name": "Congress Coffee Company",
+      "previous": { "location": "Bay 8, #1A 215 36 Avenue NE, Calgary, AB T2E 2L4, Canada", "lat": 51.0836982727051, "lng": -114.059700012207 },
+      "next": { "location": "Bay 8, #1A 215 36 Avenue NE, Calgary, AB T2E 2L4, Canada", "lat": 51.084863, "lng": -114.058435 },
+      "evidence": ["https://www.congresscoffeeshop.com/uploads/b/1159b960-dc94-11ee-99c1-23f16e9bbc84/Congress_RentalPackage_catering.pdf", "https://www.visitcalgary.com/plan-and-stay/itineraries-and-travel-inspiration/best-coffee-shops-in-calgary"]
+    }
+  ],
+  "toronto": [
+    {
+      "id": 527,
+      "name": "Crews & Tangos",
+      "previous": { "location": null, "lat": 43.6651000976562, "lng": -79.3809967041016 },
+      "next": { "location": "508 Church Street, Toronto, ON M4Y 2C8, Canada", "lat": 43.664217, "lng": -79.38057 },
+      "evidence": ["https://www.acotoronto.ca/building.php?ID=13072", "https://www.wikidata.org/wiki/Q124332237"]
+    },
+    {
+      "id": 529,
+      "name": "Black Eagle Toronto",
+      "previous": { "location": null, "lat": 43.6643981933594, "lng": -79.3807983398438 },
+      "next": { "location": "457 Church Street, Toronto, ON M4Y 2C5, Canada", "lat": 43.664137, "lng": -79.380085 },
+      "evidence": ["https://www.blackeagletoronto.com/", "https://www.acotoronto.ca/building.php?ID=13434"]
+    },
+    {
+      "id": 526,
+      "name": "Woody's",
+      "previous": { "location": null, "lat": 43.6646995544434, "lng": -79.3813018798828 },
+      "next": { "location": "467 Church Street, Toronto, ON M4Y 2C5, Canada", "lat": 43.6644, "lng": -79.380157 },
+      "evidence": ["https://mapcarta.com/N3888608280", "https://www.toronto.ca/legdocs/2002/minutes/committees/to/to020507.pdf"]
+    },
+    {
+      "id": 531,
+      "name": "Queen's Park",
+      "previous": { "location": null, "lat": 43.6627006530762, "lng": -79.3927001953125 },
+      "next": { "location": "Queen's Park, Toronto, ON, Canada", "lat": 43.664722, "lng": -79.3925 },
+      "evidence": ["https://www.wikidata.org/wiki/Q1419018", "https://www.toronto.ca/data/parks/prd/facilities/complex/2674/index.html"]
+    },
+    {
+      "id": 530,
+      "name": "Steamworks Toronto",
+      "previous": { "location": null, "lat": 43.6652984619141, "lng": -79.3815002441406 },
+      "next": { "location": "540 Church Street, Toronto, ON M4Y 2E1, Canada", "lat": 43.66531, "lng": -79.380933 },
+      "evidence": ["https://www.wikidata.org/wiki/Q109520027", "https://mapcarta.com/N2300084883"]
+    },
+    {
+      "id": 528,
+      "name": "Pegasus Bar Toronto",
+      "previous": { "location": null, "lat": 43.6654014587402, "lng": -79.3805999755859 },
+      "next": { "location": "489B Church Street, Toronto, ON M4Y 2C6, Canada", "lat": 43.66515, "lng": -79.380376 },
+      "evidence": ["https://pegasusonchurch.com/", "https://maps.apple.com/place?place-id=I30D87FB1E607420C"]
+    }
+  ],
+  "montreal": [
+    {
+      "id": 1062,
+      "name": "Stud Bar",
+      "previous": { "location": null, "lat": 45.5192985534668, "lng": -73.5541000366211 },
+      "next": { "location": "1812 Rue Sainte-Catherine E, Montreal QC H2K 2H3", "lat": 45.522654, "lng": -73.552091 },
+      "evidence": ["https://www.lestudmontreal.ca/", "https://mapcarta.com/N2424892853"]
+    }
+  ],
+  "cape_town": [
+    {
+      "id": 1310,
+      "name": "Gat Party",
+      "previous": { "location": "Bothasig Community Hall, 3 Link Road, Bothasig, Cape Town 7441, South Africa", "lat": -33.878384, "lng": 18.493367 },
+      "next": { "location": "Bothasig Community Hall, Link Road, Bothasig, Cape Town 7441, South Africa", "lat": -33.87158, "lng": 18.532545 },
+      "evidence": ["https://gatparty.com/", "https://www.elections.org.za/content/uploadedFiles/Voting%20stations%20-%20Western%20Cape.pdf", "https://resource.capetown.gov.za/documentcentre/Documents/Forms%2C%20notices%2C%20tariffs%20and%20lists/Rec_and_Parks_Facility_Contact_List.pdf"]
+    },
+    {
+      "id": 666,
+      "name": "Beefcakes",
+      "previous": { "location": null, "lat": -33.9146995544434, "lng": 18.4153003692627 },
+      "next": { "location": "Sovereign Quay, 40 Somerset Road, Green Point, Cape Town 8001, South Africa", "lat": -33.913538, "lng": 18.417704 },
+      "evidence": ["https://www.mambaonline.com/2010/01/28/eat-beefcakes/", "https://www.travelgay.com/venue/beefcakes-cape-town"]
+    },
+    {
+      "id": 667,
+      "name": "Crew Bar",
+      "previous": { "location": null, "lat": -33.9145011901855, "lng": 18.4148998260498 },
+      "next": { "location": "10 Cobern Street, De Waterkant, Cape Town 8001, South Africa", "lat": -33.91454, "lng": 18.418511 },
+      "evidence": ["https://app.wanderlog.com/place/details/9264147/crew-bar", "https://infogaytion.com/south-africa/cape-town/venues/crew-bar"]
+    },
+    {
+      "id": 668,
+      "name": "The Pink Candy Nightclub",
+      "previous": { "location": null, "lat": -33.9149017333984, "lng": 18.4151000976562 },
+      "next": { "location": "1st Floor, 120 Strand Street, Cape Town 8001, South Africa", "lat": -33.918301, "lng": 18.418493 },
+      "evidence": ["https://www.capetown.gov.za/family%20and%20home/meet-the-city/city-council/meeting-calendar/subcouncil-meeting-detail/subcouncil-resolution?MeetingItemId=158904", "https://www.waze.com/en-GB/live-map/directions/za/wc/cape-town/the-pink-candy-night-club?to=place.ChIJaYwUqGdnzB0R7OPYmrsdI40"]
+    },
+    {
+      "id": 1317,
+      "name": "Cafe Manhattan",
+      "previous": { "location": "74 Waterkant St, De Waterkant, Cape Town, South Africa, 8051", "lat": -33.917366027832, "lng": 18.4192886352539 },
+      "next": { "location": "74 Waterkant Street, De Waterkant, Cape Town 8001, South Africa", "lat": -33.9163265, "lng": 18.4172471 },
+      "evidence": ["https://cafemanhattan.co.za/contact.html", "https://za.near-place.com/cafe-manhattan-74-waterkant-street-de-waterkant-cape-town"]
+    }
+  ],
+  "johannesburg": [
+    {
+      "id": 1598,
+      "name": "The Rec Room",
+      "previous": { "location": "Shop 1, Phoenix Centre, Malibongwe Drive and Tungsten Drive, Ferndale, Randburg, Gauteng 2194, South Africa", "lat": -26.0987053, "lng": 27.9867573 },
+      "next": { "location": "Shop 1, Phoenix Centre, 613 Malibongwe Drive, Ferndale, Randburg, Gauteng 2194, South Africa", "lat": -26.0778667, "lng": 27.97635 },
+      "evidence": ["https://recroom.co.za/contact-us/", "https://www.waze.com/live-map/directions/the-rec-room-malibongwe-dr-%28r512-s%29-613-strijdom-park%2C-randburg?to=place.w.18351619.183385120.12863192"]
+    },
+    {
+      "id": 1604,
+      "name": "The Factory",
+      "previous": { "location": "6 6th Street, New Doornfontein, Johannesburg, Gauteng, South Africa", "lat": -26.1931743621826, "lng": 28.0613117218018 },
+      "next": { "location": "6 6th Street, New Doornfontein, Johannesburg 2094, South Africa", "lat": -26.198959, "lng": 28.062806 },
+      "evidence": ["https://nomadicboys.com/gay-johannesburg/"]
+    },
+    {
+      "id": 1597,
+      "name": "Pablo Dos Manos",
+      "previous": { "location": "3 4th Avenue, Melville, Johannesburg, Gauteng 2109, South Africa", "lat": -26.1436100006104, "lng": 28.0164184570312 },
+      "next": { "location": "3 4th Avenue, Melville, Johannesburg 2109, South Africa", "lat": -26.175702, "lng": 28.004924 },
+      "evidence": ["https://pablohouse.co.za/restuarant/", "https://pablohouse.co.za/contact/"]
+    }
+  ],
+  "zurich": [
+    {
+      "id": 617,
+      "name": "Paragonya Wellness Club",
+      "previous": { "location": null, "lat": 47.3741989135742, "lng": 8.53899955749512 },
+      "next": { "location": "Mühlegasse 11, 8001 Zürich, Switzerland", "lat": 47.37432383, "lng": 8.54408269 },
+      "evidence": ["https://www.paragonya.ch/kontakt", "https://paragonya.ch/en/preise"]
+    }
+  ]
+}

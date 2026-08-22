@@ -48,6 +48,7 @@ import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
 import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 import { buildVenueIntelPayload, getVenueIntelLabels } from "@/lib/venueIntel";
 import MemberContributionWorkspace from "@/components/contribute/MemberContributionWorkspace";
+import VenueLocationPicker from "@/components/location/VenueLocationPicker";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -116,6 +117,9 @@ function createEmptyServiceForm() {
     booking_link: "",
     image_urls: [],
     address: "",
+    lat: null,
+    lng: null,
+    location_source: "",
     description: "",
     hours: "",
     link: "",
@@ -685,25 +689,14 @@ export default function ContributePage() {
 
   const geocodeAddress = async (address, cityName) => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) {
-      throw new Error("Map token is missing.");
-    }
-
+    if (!token) throw new Error("Map token is missing.");
     const query = `${address} ${cityName}`.trim();
     const res = await fetch(
       `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&limit=1`
     );
-
-    if (!res.ok) {
-      throw new Error("Could not reach geocoding service.");
-    }
-
+    if (!res.ok) throw new Error("Could not reach geocoding service.");
     const data = await res.json();
-
-    if (!data.features?.length) {
-      return null;
-    }
-
+    if (!data.features?.length) return null;
     const [lng, lat] = data.features[0].center;
     return { lat, lng };
   };
@@ -846,10 +839,10 @@ export default function ContributePage() {
 
     try {
       const cityName = placeForm.city.trim();
-      const coords = await geocodeAddress(placeForm.address, cityName);
-
-      if (!coords) {
-        setPlaceNotice("Address not found. Try a more specific address.");
+      const coords = { lat: Number(placeForm.lat), lng: Number(placeForm.lng) };
+      if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) {
+        setPlaceNotice("Choose an address suggestion or confirm the pin on the map before saving.");
+        showToast("Venue not saved. Confirm its map position first.", { tone: "warn", duration: 2800 });
         return;
       }
 
@@ -907,6 +900,9 @@ export default function ContributePage() {
           city: "",
           type: "club",
           address: "",
+          lat: null,
+          lng: null,
+          location_source: "",
           description: "",
           hours: "",
           link: "",
@@ -942,6 +938,9 @@ export default function ContributePage() {
         city: "",
         type: "club",
         address: "",
+        lat: null,
+        lng: null,
+        location_source: "",
         description: "",
         hours: "",
         link: "",
@@ -1864,7 +1863,7 @@ export default function ContributePage() {
             {addMode && (
               <div className="mt-4 space-y-4 rounded-[22px] border border-emerald-200/24 bg-[linear-gradient(145deg,rgba(16,185,129,0.075),rgba(0,0,0,0.24)_48%,rgba(34,211,238,0.045))] p-4 shadow-[0_18px_56px_rgba(0,0,0,0.22)] sm:p-5">
                 <Field value={placeForm.name} onChange={(event) => setPlaceForm((current) => ({ ...current, name: event.target.value }))} placeholder="Place name" />
-                <Field value={placeForm.city} onChange={(event) => setPlaceForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                <Field value={placeForm.city} onChange={(event) => setPlaceForm((current) => ({ ...current, city: event.target.value, lat: null, lng: null, location_source: "" }))} placeholder="City" />
                   <div className="grid gap-3 md:grid-cols-2">
                     <select
                       value={placeForm.type}
@@ -1890,7 +1889,22 @@ export default function ContributePage() {
                     hint="Pick up to 3 standardized tags."
                     tone="emerald"
                   />
-                  <Field value={placeForm.address} onChange={(event) => setPlaceForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
+                  <VenueLocationPicker
+                    address={placeForm.address}
+                    city={placeForm.city}
+                    location={Number.isFinite(Number(placeForm.lat)) && Number.isFinite(Number(placeForm.lng)) ? {
+                      lat: Number(placeForm.lat),
+                      lng: Number(placeForm.lng),
+                      source: placeForm.location_source,
+                    } : null}
+                    onAddressChange={(nextAddress) => setPlaceForm((current) => ({ ...current, address: nextAddress }))}
+                    onLocationChange={(nextLocation) => setPlaceForm((current) => ({
+                      ...current,
+                      lat: nextLocation?.lat ?? null,
+                      lng: nextLocation?.lng ?? null,
+                      location_source: nextLocation?.source || "",
+                    }))}
+                  />
                   <Field value={placeForm.hours} onChange={(event) => setPlaceForm((current) => ({ ...current, hours: event.target.value }))} placeholder="Opening hours (for example Thu-Sat 22:00-05:00)" />
                   <Field value={placeForm.link} onChange={(event) => setPlaceForm((current) => ({ ...current, link: event.target.value }))} placeholder="Official link (website, Instagram, Facebook) - optional" />
                 <div className="grid gap-3 md:grid-cols-2">

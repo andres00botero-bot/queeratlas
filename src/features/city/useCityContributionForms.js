@@ -8,6 +8,7 @@ export function useCityContributionForms() {
   const [name, setName] = useState("");
   const [type, setType] = useState(DEFAULT_PLACE_TYPE);
   const [address, setAddress] = useState("");
+  const [placeLocation, setPlaceLocation] = useState(null);
   const [description, setDescription] = useState("");
   const [vibe, setVibe] = useState("");
   const [vibeTags, setVibeTags] = useState([]);
@@ -38,6 +39,7 @@ export function useCityContributionForms() {
     setName("");
     setType(DEFAULT_PLACE_TYPE);
     setAddress("");
+    setPlaceLocation(null);
     setDescription("");
     setVibe("");
     setVibeTags([]);
@@ -74,6 +76,8 @@ export function useCityContributionForms() {
     setType,
     address,
     setAddress,
+    placeLocation,
+    setPlaceLocation,
     description,
     setDescription,
     vibe,

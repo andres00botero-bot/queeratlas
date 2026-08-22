@@ -43,6 +43,9 @@
     "push:safe": "npm run verify:release && git push",
     "setup:githooks": "git config core.hooksPath .githooks",
     "backfill:place-locations": "node scripts/backfill-place-locations.mjs",
+    "audit:place-coordinates": "node --use-system-ca --env-file=.env.local scripts/audit-place-coordinates.mjs",
+    "fix:reviewed-place-coordinates": "node --use-system-ca --env-file=.env.local scripts/apply-reviewed-place-coordinate-fixes.mjs",
+    "fix:safe-place-coordinate-audit": "node --use-system-ca --env-file=.env.local scripts/apply-safe-place-coordinate-audit.mjs",
     "seed:city-reviews": "node scripts/seed-city-reviews.mjs"
   },
   "dependencies": {
