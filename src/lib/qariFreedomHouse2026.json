@@ -1,0 +1,576 @@
+{
+  "source": "Freedom House country scores",
+  "sourceUrl": "https://freedomhouse.org/country/scores?type=fotn",
+  "freedomWorldEdition": 2026,
+  "freedomNetEdition": 2025,
+  "retrievedAt": "2026-08-22T15:12:33.923Z",
+  "records": [
+    {
+      "country": "Albania",
+      "sourceCountry": "Albania",
+      "countryUrl": "https://freedomhouse.org/country/albania",
+      "freedomWorld2026": 69,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Argentina",
+      "sourceCountry": "Argentina",
+      "countryUrl": "https://freedomhouse.org/country/argentina",
+      "freedomWorld2026": 85,
+      "freedomNet2025": 71
+    },
+    {
+      "country": "Australia",
+      "sourceCountry": "Australia",
+      "countryUrl": "https://freedomhouse.org/country/australia",
+      "freedomWorld2026": 94,
+      "freedomNet2025": 75
+    },
+    {
+      "country": "Austria",
+      "sourceCountry": "Austria",
+      "countryUrl": "https://freedomhouse.org/country/austria",
+      "freedomWorld2026": 94,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Belgium",
+      "sourceCountry": "Belgium",
+      "countryUrl": "https://freedomhouse.org/country/belgium",
+      "freedomWorld2026": 95,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Bolivia",
+      "sourceCountry": "Bolivia",
+      "countryUrl": "https://freedomhouse.org/country/bolivia",
+      "freedomWorld2026": 69,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Bosnia and Herzegovina",
+      "sourceCountry": "Bosnia and Herzegovina",
+      "countryUrl": "https://freedomhouse.org/country/bosnia-and-herzegovina",
+      "freedomWorld2026": 54,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Brazil",
+      "sourceCountry": "Brazil",
+      "countryUrl": "https://freedomhouse.org/country/brazil",
+      "freedomWorld2026": 73,
+      "freedomNet2025": 65
+    },
+    {
+      "country": "Bulgaria",
+      "sourceCountry": "Bulgaria",
+      "countryUrl": "https://freedomhouse.org/country/bulgaria",
+      "freedomWorld2026": 74,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Cambodia",
+      "sourceCountry": "Cambodia",
+      "countryUrl": "https://freedomhouse.org/country/cambodia",
+      "freedomWorld2026": 22,
+      "freedomNet2025": 42
+    },
+    {
+      "country": "Canada",
+      "sourceCountry": "Canada",
+      "countryUrl": "https://freedomhouse.org/country/canada",
+      "freedomWorld2026": 97,
+      "freedomNet2025": 85
+    },
+    {
+      "country": "Chile",
+      "sourceCountry": "Chile",
+      "countryUrl": "https://freedomhouse.org/country/chile",
+      "freedomWorld2026": 95,
+      "freedomNet2025": 87
+    },
+    {
+      "country": "China",
+      "sourceCountry": "China",
+      "countryUrl": "https://freedomhouse.org/country/china",
+      "freedomWorld2026": 9,
+      "freedomNet2025": 9
+    },
+    {
+      "country": "Colombia",
+      "sourceCountry": "Colombia",
+      "countryUrl": "https://freedomhouse.org/country/colombia",
+      "freedomWorld2026": 69,
+      "freedomNet2025": 64
+    },
+    {
+      "country": "Costa Rica",
+      "sourceCountry": "Costa Rica",
+      "countryUrl": "https://freedomhouse.org/country/costa-rica",
+      "freedomWorld2026": 91,
+      "freedomNet2025": 86
+    },
+    {
+      "country": "Croatia",
+      "sourceCountry": "Croatia",
+      "countryUrl": "https://freedomhouse.org/country/croatia",
+      "freedomWorld2026": 82,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Cuba",
+      "sourceCountry": "Cuba",
+      "countryUrl": "https://freedomhouse.org/country/cuba",
+      "freedomWorld2026": 9,
+      "freedomNet2025": 21
+    },
+    {
+      "country": "Cyprus",
+      "sourceCountry": "Cyprus",
+      "countryUrl": "https://freedomhouse.org/country/cyprus",
+      "freedomWorld2026": 90,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Czech Republic",
+      "sourceCountry": "Czechia",
+      "countryUrl": "https://freedomhouse.org/country/czechia",
+      "freedomWorld2026": 95,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Denmark",
+      "sourceCountry": "Denmark",
+      "countryUrl": "https://freedomhouse.org/country/denmark",
+      "freedomWorld2026": 97,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Dominican Republic",
+      "sourceCountry": "Dominican Republic",
+      "countryUrl": "https://freedomhouse.org/country/dominican-republic",
+      "freedomWorld2026": 67,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Ecuador",
+      "sourceCountry": "Ecuador",
+      "countryUrl": "https://freedomhouse.org/country/ecuador",
+      "freedomWorld2026": 64,
+      "freedomNet2025": 63
+    },
+    {
+      "country": "Egypt",
+      "sourceCountry": "Egypt",
+      "countryUrl": "https://freedomhouse.org/country/egypt",
+      "freedomWorld2026": 18,
+      "freedomNet2025": 28
+    },
+    {
+      "country": "El Salvador",
+      "sourceCountry": "El Salvador",
+      "countryUrl": "https://freedomhouse.org/country/el-salvador",
+      "freedomWorld2026": 42,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Estonia",
+      "sourceCountry": "Estonia",
+      "countryUrl": "https://freedomhouse.org/country/estonia",
+      "freedomWorld2026": 96,
+      "freedomNet2025": 91
+    },
+    {
+      "country": "Finland",
+      "sourceCountry": "Finland",
+      "countryUrl": "https://freedomhouse.org/country/finland",
+      "freedomWorld2026": 100,
+      "freedomNet2025": null
+    },
+    {
+      "country": "France",
+      "sourceCountry": "France",
+      "countryUrl": "https://freedomhouse.org/country/france",
+      "freedomWorld2026": 89,
+      "freedomNet2025": 76
+    },
+    {
+      "country": "Georgia",
+      "sourceCountry": "Georgia",
+      "countryUrl": "https://freedomhouse.org/country/georgia",
+      "freedomWorld2026": 51,
+      "freedomNet2025": 70
+    },
+    {
+      "country": "Germany",
+      "sourceCountry": "Germany",
+      "countryUrl": "https://freedomhouse.org/country/germany",
+      "freedomWorld2026": 95,
+      "freedomNet2025": 74
+    },
+    {
+      "country": "Greece",
+      "sourceCountry": "Greece",
+      "countryUrl": "https://freedomhouse.org/country/greece",
+      "freedomWorld2026": 85,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Guatemala",
+      "sourceCountry": "Guatemala",
+      "countryUrl": "https://freedomhouse.org/country/guatemala",
+      "freedomWorld2026": 48,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Honduras",
+      "sourceCountry": "Honduras",
+      "countryUrl": "https://freedomhouse.org/country/honduras",
+      "freedomWorld2026": 47,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Hong Kong",
+      "sourceCountry": "Hong Kong*",
+      "countryUrl": "https://freedomhouse.org/country/hong-kong",
+      "freedomWorld2026": 41,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Hungary",
+      "sourceCountry": "Hungary",
+      "countryUrl": "https://freedomhouse.org/country/hungary",
+      "freedomWorld2026": 65,
+      "freedomNet2025": 69
+    },
+    {
+      "country": "Iceland",
+      "sourceCountry": "Iceland",
+      "countryUrl": "https://freedomhouse.org/country/iceland",
+      "freedomWorld2026": 95,
+      "freedomNet2025": 94
+    },
+    {
+      "country": "India",
+      "sourceCountry": "India",
+      "countryUrl": "https://freedomhouse.org/country/india",
+      "freedomWorld2026": 62,
+      "freedomNet2025": 51
+    },
+    {
+      "country": "Indonesia",
+      "sourceCountry": "Indonesia",
+      "countryUrl": "https://freedomhouse.org/country/indonesia",
+      "freedomWorld2026": 56,
+      "freedomNet2025": 48
+    },
+    {
+      "country": "Ireland",
+      "sourceCountry": "Ireland",
+      "countryUrl": "https://freedomhouse.org/country/ireland",
+      "freedomWorld2026": 98,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Israel",
+      "sourceCountry": "Israel",
+      "countryUrl": "https://freedomhouse.org/country/israel",
+      "freedomWorld2026": 73,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Italy",
+      "sourceCountry": "Italy",
+      "countryUrl": "https://freedomhouse.org/country/italy",
+      "freedomWorld2026": 87,
+      "freedomNet2025": 74
+    },
+    {
+      "country": "Japan",
+      "sourceCountry": "Japan",
+      "countryUrl": "https://freedomhouse.org/country/japan",
+      "freedomWorld2026": 96,
+      "freedomNet2025": 78
+    },
+    {
+      "country": "Latvia",
+      "sourceCountry": "Latvia",
+      "countryUrl": "https://freedomhouse.org/country/latvia",
+      "freedomWorld2026": 89,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Lebanon",
+      "sourceCountry": "Lebanon",
+      "countryUrl": "https://freedomhouse.org/country/lebanon",
+      "freedomWorld2026": 41,
+      "freedomNet2025": 50
+    },
+    {
+      "country": "Lithuania",
+      "sourceCountry": "Lithuania",
+      "countryUrl": "https://freedomhouse.org/country/lithuania",
+      "freedomWorld2026": 90,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Malaysia",
+      "sourceCountry": "Malaysia",
+      "countryUrl": "https://freedomhouse.org/country/malaysia",
+      "freedomWorld2026": 53,
+      "freedomNet2025": 60
+    },
+    {
+      "country": "Malta",
+      "sourceCountry": "Malta",
+      "countryUrl": "https://freedomhouse.org/country/malta",
+      "freedomWorld2026": 88,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Mexico",
+      "sourceCountry": "Mexico",
+      "countryUrl": "https://freedomhouse.org/country/mexico",
+      "freedomWorld2026": 58,
+      "freedomNet2025": 61
+    },
+    {
+      "country": "Montenegro",
+      "sourceCountry": "Montenegro",
+      "countryUrl": "https://freedomhouse.org/country/montenegro",
+      "freedomWorld2026": 68,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Morocco",
+      "sourceCountry": "Morocco",
+      "countryUrl": "https://freedomhouse.org/country/morocco",
+      "freedomWorld2026": 37,
+      "freedomNet2025": 54
+    },
+    {
+      "country": "Namibia",
+      "sourceCountry": "Namibia",
+      "countryUrl": "https://freedomhouse.org/country/namibia",
+      "freedomWorld2026": 73,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Netherlands",
+      "sourceCountry": "Netherlands",
+      "countryUrl": "https://freedomhouse.org/country/netherlands",
+      "freedomWorld2026": 97,
+      "freedomNet2025": 84
+    },
+    {
+      "country": "New Zealand",
+      "sourceCountry": "New Zealand",
+      "countryUrl": "https://freedomhouse.org/country/new-zealand",
+      "freedomWorld2026": 99,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Nicaragua",
+      "sourceCountry": "Nicaragua",
+      "countryUrl": "https://freedomhouse.org/country/nicaragua",
+      "freedomWorld2026": 14,
+      "freedomNet2025": 38
+    },
+    {
+      "country": "Norway",
+      "sourceCountry": "Norway",
+      "countryUrl": "https://freedomhouse.org/country/norway",
+      "freedomWorld2026": 99,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Panama",
+      "sourceCountry": "Panama",
+      "countryUrl": "https://freedomhouse.org/country/panama",
+      "freedomWorld2026": 82,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Paraguay",
+      "sourceCountry": "Paraguay",
+      "countryUrl": "https://freedomhouse.org/country/paraguay",
+      "freedomWorld2026": 63,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Peru",
+      "sourceCountry": "Peru",
+      "countryUrl": "https://freedomhouse.org/country/peru",
+      "freedomWorld2026": 66,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Philippines",
+      "sourceCountry": "Philippines",
+      "countryUrl": "https://freedomhouse.org/country/philippines",
+      "freedomWorld2026": 58,
+      "freedomNet2025": 61
+    },
+    {
+      "country": "Poland",
+      "sourceCountry": "Poland",
+      "countryUrl": "https://freedomhouse.org/country/poland",
+      "freedomWorld2026": 82,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Portugal",
+      "sourceCountry": "Portugal",
+      "countryUrl": "https://freedomhouse.org/country/portugal",
+      "freedomWorld2026": 96,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Puerto Rico",
+      "sourceCountry": "United States",
+      "countryUrl": "https://freedomhouse.org/country/united-states",
+      "freedomWorld2026": 81,
+      "freedomNet2025": 73
+    },
+    {
+      "country": "Romania",
+      "sourceCountry": "Romania",
+      "countryUrl": "https://freedomhouse.org/country/romania",
+      "freedomWorld2026": 83,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Russia",
+      "sourceCountry": "Russia",
+      "countryUrl": "https://freedomhouse.org/country/russia",
+      "freedomWorld2026": 12,
+      "freedomNet2025": 17
+    },
+    {
+      "country": "Serbia",
+      "sourceCountry": "Serbia",
+      "countryUrl": "https://freedomhouse.org/country/serbia",
+      "freedomWorld2026": 53,
+      "freedomNet2025": 67
+    },
+    {
+      "country": "Singapore",
+      "sourceCountry": "Singapore",
+      "countryUrl": "https://freedomhouse.org/country/singapore",
+      "freedomWorld2026": 48,
+      "freedomNet2025": 53
+    },
+    {
+      "country": "Slovakia",
+      "sourceCountry": "Slovakia",
+      "countryUrl": "https://freedomhouse.org/country/slovakia",
+      "freedomWorld2026": 88,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Slovenia",
+      "sourceCountry": "Slovenia",
+      "countryUrl": "https://freedomhouse.org/country/slovenia",
+      "freedomWorld2026": 97,
+      "freedomNet2025": null
+    },
+    {
+      "country": "South Africa",
+      "sourceCountry": "South Africa",
+      "countryUrl": "https://freedomhouse.org/country/south-africa",
+      "freedomWorld2026": 81,
+      "freedomNet2025": 73
+    },
+    {
+      "country": "South Korea",
+      "sourceCountry": "South Korea",
+      "countryUrl": "https://freedomhouse.org/country/south-korea",
+      "freedomWorld2026": 83,
+      "freedomNet2025": 65
+    },
+    {
+      "country": "Spain",
+      "sourceCountry": "Spain",
+      "countryUrl": "https://freedomhouse.org/country/spain",
+      "freedomWorld2026": 91,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Sweden",
+      "sourceCountry": "Sweden",
+      "countryUrl": "https://freedomhouse.org/country/sweden",
+      "freedomWorld2026": 99,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Switzerland",
+      "sourceCountry": "Switzerland",
+      "countryUrl": "https://freedomhouse.org/country/switzerland",
+      "freedomWorld2026": 96,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Taiwan",
+      "sourceCountry": "Taiwan",
+      "countryUrl": "https://freedomhouse.org/country/taiwan",
+      "freedomWorld2026": 93,
+      "freedomNet2025": 79
+    },
+    {
+      "country": "Thailand",
+      "sourceCountry": "Thailand",
+      "countryUrl": "https://freedomhouse.org/country/thailand",
+      "freedomWorld2026": 33,
+      "freedomNet2025": 39
+    },
+    {
+      "country": "Turkey",
+      "sourceCountry": "Turkey",
+      "countryUrl": "https://freedomhouse.org/country/turkey",
+      "freedomWorld2026": 32,
+      "freedomNet2025": 31
+    },
+    {
+      "country": "Ukraine",
+      "sourceCountry": "Ukraine",
+      "countryUrl": "https://freedomhouse.org/country/ukraine",
+      "freedomWorld2026": 51,
+      "freedomNet2025": 62
+    },
+    {
+      "country": "United Kingdom",
+      "sourceCountry": "United Kingdom",
+      "countryUrl": "https://freedomhouse.org/country/united-kingdom",
+      "freedomWorld2026": 92,
+      "freedomNet2025": 76
+    },
+    {
+      "country": "United States",
+      "sourceCountry": "United States",
+      "countryUrl": "https://freedomhouse.org/country/united-states",
+      "freedomWorld2026": 81,
+      "freedomNet2025": 73
+    },
+    {
+      "country": "Uruguay",
+      "sourceCountry": "Uruguay",
+      "countryUrl": "https://freedomhouse.org/country/uruguay",
+      "freedomWorld2026": 97,
+      "freedomNet2025": null
+    },
+    {
+      "country": "Venezuela",
+      "sourceCountry": "Venezuela",
+      "countryUrl": "https://freedomhouse.org/country/venezuela",
+      "freedomWorld2026": 13,
+      "freedomNet2025": 26
+    },
+    {
+      "country": "Vietnam",
+      "sourceCountry": "Vietnam",
+      "countryUrl": "https://freedomhouse.org/country/vietnam",
+      "freedomWorld2026": 20,
+      "freedomNet2025": 22
+    }
+  ]
+}

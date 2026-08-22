@@ -6,46 +6,57 @@ export const QARI_WEIGHTS = Object.freeze({
   digital: 0.25,
 });
 
+export const QARI_MAP_PALETTE = Object.freeze({
+  open: { label: "Lower risk", color: "#3b82f6", showInLegend: true },
+  steady: { label: "Lower context", color: "#22c55e", showInLegend: true },
+  watch: { label: "Moderate", color: "#facc15", showInLegend: true },
+  caution: { label: "High risk", color: "#fb923c", showInLegend: true },
+  restricted: { label: "Extreme high risk", color: "#ef4444", showInLegend: true },
+  unknown: { label: "Pending", color: "#64748b", showInLegend: false },
+});
+
 export const QARI_TIERS = Object.freeze({
   lower: {
-    label: "Lower risk",
+    ...QARI_MAP_PALETTE.open,
     shortLabel: "Lower",
     min: 0,
     max: 20,
     mapTier: "open",
-    color: "#3b82f6",
+  },
+  lowerContext: {
+    ...QARI_MAP_PALETTE.steady,
+    shortLabel: "Lower context",
+    min: 21,
+    max: 40,
+    mapTier: "steady",
   },
   moderate: {
-    label: "Moderate risk",
+    ...QARI_MAP_PALETTE.watch,
     shortLabel: "Moderate",
-    min: 21,
-    max: 45,
+    min: 41,
+    max: 60,
     mapTier: "watch",
-    color: "#facc15",
   },
   high: {
-    label: "High risk",
+    ...QARI_MAP_PALETTE.caution,
     shortLabel: "High",
-    min: 46,
-    max: 70,
+    min: 61,
+    max: 80,
     mapTier: "caution",
-    color: "#fb923c",
   },
   extreme: {
-    label: "Extreme risk",
+    ...QARI_MAP_PALETTE.restricted,
     shortLabel: "Extreme",
-    min: 71,
+    min: 81,
     max: 100,
     mapTier: "restricted",
-    color: "#ef4444",
   },
   unknown: {
-    label: "Not yet verified",
+    ...QARI_MAP_PALETTE.unknown,
     shortLabel: "Pending",
     min: null,
     max: null,
     mapTier: "unknown",
-    color: "#64748b",
   },
 });
 
@@ -83,8 +94,9 @@ export function getQariTier(score) {
   const normalized = clampQariAxis(score);
   if (normalized === null) return { key: "unknown", ...QARI_TIERS.unknown };
   if (normalized <= 20) return { key: "lower", ...QARI_TIERS.lower };
-  if (normalized <= 45) return { key: "moderate", ...QARI_TIERS.moderate };
-  if (normalized <= 70) return { key: "high", ...QARI_TIERS.high };
+  if (normalized <= 40) return { key: "lowerContext", ...QARI_TIERS.lowerContext };
+  if (normalized <= 60) return { key: "moderate", ...QARI_TIERS.moderate };
+  if (normalized <= 80) return { key: "high", ...QARI_TIERS.high };
   return { key: "extreme", ...QARI_TIERS.extreme };
 }
 

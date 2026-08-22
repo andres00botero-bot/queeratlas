@@ -34,10 +34,11 @@ Risk floors require a source-level editorial finding. Missing information never 
 
 ## Bands
 
-- **0–20 · Lower risk**: strong baseline, while normal situational awareness remains relevant.
-- **21–45 · Moderate risk**: meaningful variation in social reality, protection or practical exposure.
-- **46–70 · High risk**: legal, social or enforcement conditions require deliberate planning.
-- **71–100 · Extreme risk**: severe legal or enforcement exposure; identity and digital traces may carry material risk.
+- **0–20 · Lower risk**: strongest documented baseline, while normal situational awareness remains relevant.
+- **21–40 · Lower context**: generally lower exposure with meaningful contextual variation.
+- **41–60 · Moderate**: material variation in social reality, protection or practical exposure.
+- **61–80 · High risk**: legal, social or enforcement conditions require deliberate planning.
+- **81–100 · Extreme high risk**: severe legal or enforcement exposure; identity and digital traces may carry material risk.
 - **Not yet verified**: no numerical score is shown.
 
 ## Confidence

@@ -16,6 +16,7 @@ import { usePlaces } from "@/lib/usePlaces";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import { useQariProfiles } from "@/lib/useQariProfiles";
+import { QARI_MAP_PALETTE } from "@/lib/qari";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import {
@@ -85,14 +86,7 @@ const MAPBOX_COUNTRY_CLICK_OVERRIDES = [
     },
   },
 ];
-const MAP_RISK_PALETTE = {
-  open: { label: "Lower risk", color: "#3b82f6" },
-  steady: { label: "Lower context", color: "#22c55e" },
-  watch: { label: "Moderate", color: "#facc15" },
-  caution: { label: "High", color: "#fb923c" },
-  restricted: { label: "Extreme", color: "#ef4444" },
-  unknown: { label: "Pending", color: "#64748b" },
-};
+const MAP_RISK_PALETTE = QARI_MAP_PALETTE;
 const MAP_RISK_TIER_OVERRIDES = {
   Egypt: "restricted",
   Honduras: "restricted",
@@ -1000,7 +994,9 @@ export default function CitiesPage() {
                 Interactive country filter
               </p>
               <div className="flex flex-wrap items-center gap-2">
-                {Object.entries(MAP_RISK_PALETTE).map(([key, item]) => (
+                {Object.entries(MAP_RISK_PALETTE)
+                  .filter(([, item]) => item.showInLegend)
+                  .map(([key, item]) => (
                   <span
                     key={`map-safety-${key}`}
                     className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/75"
@@ -1008,7 +1004,7 @@ export default function CitiesPage() {
                     <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
                     {item.label}
                   </span>
-                ))}
+                  ))}
               </div>
               <button
                 onClick={() => {

@@ -8,9 +8,13 @@ assert.equal(
   72,
 );
 assert.equal(getQariTier(20).key, "lower");
-assert.equal(getQariTier(21).key, "moderate");
-assert.equal(getQariTier(46).key, "high");
-assert.equal(getQariTier(71).key, "extreme");
+assert.equal(getQariTier(21).key, "lowerContext");
+assert.equal(getQariTier(40).key, "lowerContext");
+assert.equal(getQariTier(41).key, "moderate");
+assert.equal(getQariTier(60).key, "moderate");
+assert.equal(getQariTier(61).key, "high");
+assert.equal(getQariTier(80).key, "high");
+assert.equal(getQariTier(81).key, "extreme");
 assert.equal(getQariTier(null).key, "unknown");
 
 assert.equal(QARI_PILOT_PROFILES.length, 8);

@@ -28,6 +28,8 @@
     "test:global-queer-index": "node scripts/test-global-queer-index.mjs",
     "test:report-lists": "node scripts/test-report-lists.mjs",
     "test:qari-phase1": "node scripts/test-qari-phase1.mjs",
+    "test:qari-countries": "node scripts/test-qari-country-profiles.mjs",
+    "generate:qari-countries": "node scripts/generate-qari-country-profiles-2026.mjs",
     "test:search-trust": "node scripts/test-search-trust.mjs",
     "audit:safety-index": "node --use-system-ca --env-file=.env.local scripts/audit-safety-index.mjs",
     "seo:ba4-validate": "node scripts/seo-ba4-validate.mjs --csv docs/templates/seo-ba4-kpi-tracker.csv",

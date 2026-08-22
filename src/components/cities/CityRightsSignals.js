@@ -1,16 +1,9 @@
 "use client";
 
 import { ChevronDown, ExternalLink, ShieldCheck } from "lucide-react";
-import { getQariTier } from "@/lib/qari";
+import { getQariTier, QARI_MAP_PALETTE } from "@/lib/qari";
 
-const FALLBACK_TIERS = {
-  open: { label: "Lower-risk context", color: "#3b82f6" },
-  steady: { label: "Generally lower risk", color: "#22c55e" },
-  watch: { label: "Context matters", color: "#facc15" },
-  caution: { label: "Use caution", color: "#fb923c" },
-  restricted: { label: "High caution", color: "#ef4444" },
-  unknown: { label: "Not yet verified", color: "#64748b" },
-};
+const FALLBACK_TIERS = QARI_MAP_PALETTE;
 
 const DETAIL_ROWS = [
   { key: "sameSexRelations", label: "Same-sex relations" },

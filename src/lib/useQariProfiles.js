@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabase";
 import { logDevError } from "./devLogger";
 import { normalizeQariProfile } from "./qari";
-import { QARI_PILOT_PROFILES } from "./qariPilotProfiles";
+import { QARI_COUNTRY_PROFILES } from "./qariCountryProfiles2026";
 
 export function useQariProfiles() {
   const [databaseProfiles, setDatabaseProfiles] = useState([]);
@@ -69,7 +69,7 @@ export function useQariProfiles() {
   }, []);
 
   const profiles = useMemo(() => {
-    const merged = new Map(QARI_PILOT_PROFILES.map((profile) => [profile.destinationKey, profile]));
+    const merged = new Map(QARI_COUNTRY_PROFILES.map((profile) => [profile.destinationKey, profile]));
     databaseProfiles.forEach((profile) => merged.set(profile.destinationKey, profile));
     return Array.from(merged.values());
   }, [databaseProfiles]);
