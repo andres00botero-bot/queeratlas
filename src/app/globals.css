@@ -869,3 +869,12 @@ body > div:first-child {
     min-height: 2.75rem;
   }
 }
+/* Compact mobile trust rail: keep swipe behavior without a utilitarian scrollbar. */
+.qa-trust-rail {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.qa-trust-rail::-webkit-scrollbar {
+  display: none;
+}

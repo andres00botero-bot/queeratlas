@@ -50,26 +50,25 @@ function DiscoveryCard({ item }) {
     <button
       type="button"
       onClick={item.onClick}
-      className={`qa-premium-card group relative min-h-[8rem] overflow-hidden rounded-[22px] border p-4 text-left shadow-[0_18px_50px_rgba(0,0,0,0.3)] transition duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 ${item.surface}`}
+      className={`qa-premium-card group relative min-h-[6.75rem] overflow-hidden rounded-[22px] border p-3.5 text-left shadow-[0_18px_50px_rgba(0,0,0,0.3)] transition duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[8rem] sm:p-4 ${item.surface}`}
     >
       <div className={`pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full blur-2xl transition duration-500 group-hover:scale-125 ${item.glow}`} />
       <div className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r ${item.accentLine}`} />
-      <div className="relative flex h-full min-h-[6rem] flex-col">
+      <div className="relative flex h-full min-h-[4.75rem] flex-col sm:min-h-[6rem]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="!text-left text-lg font-semibold leading-none tracking-[-0.025em] text-white sm:text-xl">{item.title}</h3>
-            <p className="mt-2 max-w-[13rem] !text-left text-[10px] leading-[1.45] text-white/62 sm:text-xs">
-              <span className="sm:hidden">{item.shortDescription}</span>
-              <span className="hidden sm:inline">{item.description}</span>
+            <p className="mt-2 hidden max-w-[13rem] !text-left text-[10px] leading-[1.45] text-white/62 sm:block sm:text-xs">
+              <span>{item.description}</span>
             </p>
           </div>
-          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border shadow-[0_12px_30px_rgba(0,0,0,0.25)] ${item.iconSurface}`}>
+          <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border shadow-[0_12px_30px_rgba(0,0,0,0.25)] sm:h-9 sm:w-9 ${item.iconSurface}`}>
           <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
           </span>
         </div>
         <div className="mt-auto flex items-end justify-between gap-2 pt-3">
           <span className={`truncate text-[9px] font-semibold uppercase tracking-[0.13em] ${item.metricClass}`}>{item.metric}</span>
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/10 text-white/46 transition duration-300 group-hover:border-white/24 group-hover:bg-white/10 group-hover:text-white">
+          <span className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/10 text-white/46 transition duration-300 group-hover:border-white/24 group-hover:bg-white/10 group-hover:text-white sm:flex">
             <ArrowUpRight size={12} aria-hidden="true" />
           </span>
         </div>
@@ -145,7 +144,7 @@ function ParticipationStrip({ actions = [] }) {
               <h2 className="qa-display mt-2 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">
                 Make the atlas feel more like us.
               </h2>
-              <p className="mt-2 max-w-2xl !text-left text-[13px] leading-5 text-white/58 sm:text-sm">
+              <p className="mt-2 hidden max-w-2xl !text-left text-[13px] leading-5 text-white/58 sm:block sm:text-sm">
                 Share a story, add a place, or update what changed. Local knowledge is what keeps Queer Atlas useful.
               </p>
             </div>
@@ -185,45 +184,49 @@ function ParticipationStrip({ actions = [] }) {
   );
 }
 
-function EditorialTrustStrip({ onAction }) {
+function TrustSupportStrip({ onAction, contactSlot }) {
   return (
-    <section id="home-editorial-trust" data-home-section="editorial_trust" className="qa-defer-render mt-8 scroll-mt-20" aria-labelledby="home-editorial-trust-heading">
-      <div className="qa-atlas-section relative overflow-hidden !border-cyan-100/11 !bg-[radial-gradient(circle_at_8%_0%,rgba(34,211,238,0.10),transparent_34%),radial-gradient(circle_at_92%_100%,rgba(167,139,250,0.10),transparent_32%),linear-gradient(145deg,rgba(10,18,24,0.97),rgba(11,9,18,0.98))] !p-4 sm:!p-5">
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/24 to-transparent" />
+    <section id="home-editorial-trust" data-home-section="editorial_trust" className="qa-defer-render mt-8 scroll-mt-20" aria-label="Queer Atlas trust and support">
+      <div className="qa-premium-card relative overflow-hidden rounded-[28px] border border-cyan-100/12 bg-[radial-gradient(circle_at_4%_5%,rgba(34,211,238,0.13),transparent_30%),radial-gradient(circle_at_96%_92%,rgba(232,121,249,0.12),transparent_31%),linear-gradient(145deg,rgba(9,19,25,0.98),rgba(14,10,22,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.3)] sm:p-5">
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/34 to-transparent" />
+        <div className="pointer-events-none absolute left-1/2 top-8 hidden h-[calc(100%-4rem)] w-px bg-gradient-to-b from-transparent via-white/10 to-transparent lg:block" />
 
-        <div className="relative grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(36rem,1.18fr)] lg:items-end lg:gap-10">
-          <div className="min-w-0">
+        <div className="relative grid gap-5 lg:grid-cols-2 lg:gap-10">
+          <div className="min-w-0 lg:pr-2">
             <p className="flex items-center gap-2 !text-left text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-100/60">
               <ClipboardCheck size={13} strokeWidth={1.8} aria-hidden="true" />
               Editorial standards
             </p>
-            <h2 id="home-editorial-trust-heading" className="qa-display mt-2 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">
+            <h2 className="qa-display mt-2 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[1.75rem]">
               How we verify what you see.
             </h2>
-            <p className="mt-2 max-w-xl !text-left text-[13px] leading-5 text-white/54 sm:text-sm">
+            <p className="mt-2 hidden max-w-xl !text-left text-[13px] leading-5 text-white/54 sm:block sm:text-sm">
               See how we check places, use reviews, credit contributors and record corrections.
             </p>
+            <nav aria-label="Queer Atlas editorial standards" className="mt-3 grid grid-cols-2 overflow-hidden rounded-[20px] border border-cyan-100/14 bg-black/10 sm:mt-4">
+              {EDITORIAL_PATHS.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => onAction?.(item.href)}
+                    className="group relative flex min-h-[3.75rem] items-center gap-2 border-b border-r border-white/8 px-2.5 py-2.5 text-left transition duration-300 even:border-r-0 hover:bg-cyan-100/[0.06] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/45 sm:min-h-[4.5rem] sm:gap-2.5 sm:px-3 sm:py-3 [&:nth-last-child(-n+2)]:border-b-0"
+                  >
+                    <Icon size={14} strokeWidth={1.8} className="shrink-0 text-cyan-100/48 transition group-hover:text-cyan-100" aria-hidden="true" />
+                    <span className="min-w-0 flex-1 text-[10px] font-medium leading-4 text-white/66 transition group-hover:text-cyan-50 sm:text-[11px]">
+                      {item.label}
+                    </span>
+                    <ArrowUpRight size={11} className="shrink-0 text-white/26 transition group-hover:text-white/68" aria-hidden="true" />
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
-          <nav aria-label="Queer Atlas editorial standards" className="grid grid-cols-2 overflow-hidden rounded-[18px] border border-white/10 bg-black/10 lg:grid-cols-4">
-            {EDITORIAL_PATHS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => onAction?.(item.href)}
-                  className="group relative flex min-h-[4rem] items-center gap-2.5 border-b border-r border-white/8 px-3 py-3 text-left transition duration-300 even:border-r-0 hover:bg-cyan-100/[0.055] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/45 lg:border-b-0 lg:border-r lg:even:border-r lg:last:border-r-0 [&:nth-last-child(-n+2)]:border-b-0"
-                >
-                  <Icon size={14} strokeWidth={1.8} className="shrink-0 text-cyan-100/48 transition group-hover:text-cyan-100" aria-hidden="true" />
-                  <span className="min-w-0 flex-1 text-[10px] font-medium leading-4 text-white/66 transition group-hover:text-cyan-50 sm:text-[11px]">
-                    {item.label}
-                  </span>
-                  <ArrowUpRight size={11} className="shrink-0 text-white/26 transition group-hover:text-white/68" aria-hidden="true" />
-                </Link>
-              );
-            })}
-          </nav>
+          <div className="min-w-0 border-t border-white/9 pt-5 lg:border-l-0 lg:border-t-0 lg:pl-2 lg:pt-0">
+            {contactSlot}
+          </div>
         </div>
       </div>
     </section>
@@ -301,12 +304,10 @@ export default function HomeDeferredSections({
 
       <ParticipationStrip actions={participationActions} />
 
-      <EditorialTrustStrip onAction={onEditorialAction} />
+      <TrustSupportStrip onAction={onEditorialAction} contactSlot={contactSlot} />
 
-      {contactSlot}
-
-      <section className="qa-defer-render mt-10 pb-4">
-        <div className="rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3.5 opacity-75">
+      <section className="qa-defer-render mt-7 pb-24 sm:mt-10 sm:pb-4">
+        <div className="hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3.5 opacity-75 sm:block">
           <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
             <span className="mr-1 uppercase tracking-[0.18em] text-white/32">Discover paths</span>
             <Link href="/gay-guide" className="rounded-full border border-fuchsia-200/14 bg-fuchsia-200/[0.05] px-2.5 py-1 text-fuchsia-100/70 transition hover:border-fuchsia-200/30 hover:text-fuchsia-100">Gay Guide</Link>

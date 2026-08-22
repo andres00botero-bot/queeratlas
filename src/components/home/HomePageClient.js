@@ -1001,7 +1001,7 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="pointer-events-none absolute -right-24 top-10 h-64 w-64 rounded-full bg-cyan-400/12 blur-[100px] lg:hidden" />
 
             <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col">
-          <div className={`mb-10 flex items-center gap-3 sm:mb-14 sm:gap-4 lg:mb-0 ${isMember ? "justify-between" : "justify-end"}`}>
+          <div className={`mb-7 flex items-center gap-3 sm:mb-14 sm:gap-4 lg:mb-0 ${isMember ? "justify-between" : "justify-end"}`}>
             {isMember && (
               <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
                 {heroIdentityLabel}
@@ -1084,14 +1084,15 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               </div>
 
-              <p className="qa-eyebrow mt-8 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
+              <p className="qa-eyebrow mt-6 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
                 Wherever you are
               </p>
-              <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[3.15rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
+              <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[2.85rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
                 Find your queer world.
               </h1>
-              <p className="qa-lead mt-5 max-w-[48ch] !text-left text-[1rem] leading-[1.55] tracking-[-0.005em] text-white/76 [hyphens:none] sm:mt-6 sm:text-[1.18rem]">
-                Know where to go, what&apos;s happening, how it feels, and what locals actually say — wherever you land.
+              <p className="qa-lead mt-4 max-w-[48ch] !text-left text-[0.95rem] leading-[1.5] tracking-[-0.005em] text-white/76 [hyphens:none] sm:mt-6 sm:text-[1.18rem]">
+                <span className="sm:hidden">Places, events, safety and local queer knowledge — wherever you land.</span>
+                <span className="hidden sm:inline">Know where to go, what&apos;s happening, how it feels, and what locals actually say — wherever you land.</span>
               </p>
               {isDataLoading && (
                 <p role="status" aria-live="polite" className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
@@ -1109,7 +1110,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className="relative z-20 mt-6 w-full max-w-[44rem] rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:mt-8 sm:rounded-[30px] sm:p-[18px]">
+              <div className="relative z-20 mt-5 w-full max-w-[44rem] rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:mt-8 sm:rounded-[30px] sm:p-[18px]">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
@@ -1230,6 +1231,7 @@ export default function HomePageClient({ initialHomeData = null }) {
             onOpen={() => trackHomeAction("venue_intelligence", "place_detail", {
               city: String(featuredVenue?.city || ""),
             })}
+            onContextOpen={(href) => trackHomeAction("global_context", href)}
           />
 
           {showDeferredSections ? (
@@ -1246,7 +1248,8 @@ export default function HomePageClient({ initialHomeData = null }) {
               onEditorialAction={(destination) => trackHomeAction("editorial_trust", destination)}
               contactSlot={
                 <HomeContactSection
-                  className="mt-8"
+                  className=""
+                  embedded
                   isMember={isMember}
                   userId={String(user?.id || "")}
                   defaultName={String(memberProfile?.displayName || memberName || "")}

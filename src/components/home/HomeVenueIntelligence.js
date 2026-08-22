@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, MapPin, Sparkles } from "lucide-react";
+import { ArrowUpRight, ChartNoAxesCombined, MapPin, ShieldCheck, Sparkles } from "lucide-react";
 import { citySelectionPath } from "@/lib/cityRouting";
 import { normalizeVenueIntel } from "@/lib/venueIntel";
 
@@ -17,60 +17,162 @@ function firstUsefulSentence(value = "", limit = 165) {
   return `${shortened}…`;
 }
 
-export default function HomeVenueIntelligence({ venue, onOpen }) {
+const QARI_COLORS = ["#3b82f6", "#22c55e", "#facc15", "#fb923c", "#ef4444"];
+
+const INDEX_LINKS = [
+  { href: "/reports/queer-nightlife-index-2026", label: "Nightlife" },
+  { href: "/reports/global-queer-event-report-2026", label: "Events" },
+  { href: "/reports/safest-queer-cities-2026", label: "Safety" },
+];
+
+export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) {
   const intelligence = normalizeVenueIntel(venue);
   const venueHref = citySelectionPath(venue?.city, { placeId: venue?.id });
   const proof = firstUsefulSentence(intelligence.queueWait || intelligence.bestNights || intelligence.crowdMix);
-
-  if (!venue?.name || !proof) return null;
+  const hasVenueExample = Boolean(venue?.name && proof);
 
   return (
     <section id="venue-intelligence" data-home-section="venue_intelligence" className="mt-1 scroll-mt-5">
-      <div className="qa-atlas-section relative overflow-hidden rounded-[24px] border border-white/11 bg-[radial-gradient(circle_at_3%_25%,rgba(244,114,182,0.16),transparent_29%),radial-gradient(circle_at_94%_12%,rgba(34,211,238,0.14),transparent_27%),linear-gradient(135deg,rgba(17,13,29,0.98),rgba(6,11,21,0.99)_58%,rgba(7,9,16,0.99))] p-4 shadow-[0_24px_68px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-inset ring-fuchsia-100/[0.04] sm:p-5">
-        <div className="relative z-10 grid gap-4 lg:grid-cols-[0.72fr_1.3fr_auto] lg:items-center lg:gap-7">
-          <div>
-            <p className="qa-eyebrow flex items-center gap-2 !text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-fuchsia-100/74">
-              <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-fuchsia-300 to-cyan-200 shadow-[0_0_12px_rgba(244,114,182,0.75)]" />
-              Venue intelligence
-            </p>
-            <h2 className="qa-display mt-1.5 !text-left text-[1.65rem] font-semibold leading-none tracking-[-0.035em] text-white [hyphens:none] sm:text-[1.9rem]">
-              Know what a place is really like.
-            </h2>
-            <p className="mt-2 max-w-md !text-left text-[11px] leading-4 text-white/58">
-              Open any venue for queue patterns, best nights, crowd, practical dress code and inclusion — distilled from reviews, trusted sources and local insight.
-            </p>
-          </div>
+      <div className="qa-atlas-section relative overflow-hidden rounded-[26px] border border-white/12 bg-[radial-gradient(circle_at_0%_0%,rgba(244,114,182,0.15),transparent_26%),radial-gradient(circle_at_100%_4%,rgba(34,211,238,0.13),transparent_27%),radial-gradient(circle_at_52%_100%,rgba(139,92,246,0.12),transparent_34%),linear-gradient(145deg,rgba(18,13,29,0.99),rgba(7,13,22,0.99)_52%,rgba(9,8,18,0.99))] p-3.5 shadow-[0_26px_76px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-inset ring-fuchsia-100/[0.045] sm:p-5">
+        <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/28 to-transparent" />
 
-          <div className="relative min-w-0 overflow-hidden rounded-2xl border border-white/12 bg-[linear-gradient(145deg,rgba(255,255,255,0.075),rgba(255,255,255,0.035))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_14px_36px_rgba(0,0,0,0.16)]">
-            <div className="pointer-events-none absolute inset-y-3 left-0 w-px bg-gradient-to-b from-fuchsia-200/15 via-cyan-200/55 to-transparent" />
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="flex items-center gap-1.5 !text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-50/72">
-                <MapPin size={11} aria-hidden="true" />
-                {venue.name} · {formatLabel(venue.city)}
+        <header className="relative z-10 flex flex-col gap-2 border-b border-white/9 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-4">
+          <div>
+            <p className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.22em] text-fuchsia-100/68">
+              <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-fuchsia-300 via-violet-300 to-cyan-200 shadow-[0_0_13px_rgba(244,114,182,0.72)]" />
+              How Queer Atlas builds trust
+            </p>
+            <h2 className="qa-display mt-1.5 text-[1.55rem] font-semibold leading-none tracking-[-0.035em] text-white sm:text-[1.85rem]">
+              Evidence at every scale.
+            </h2>
+          </div>
+          <div className="flex items-center justify-between gap-3 sm:block">
+            <p className="hidden max-w-xl text-[10px] leading-4 text-white/45 sm:block sm:text-right sm:text-[11px]">
+              From what happens at the door to the wider context surrounding a destination.
+            </p>
+            <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.035] px-2 py-1 text-[7px] font-semibold uppercase tracking-[0.13em] text-white/38 sm:hidden">
+              Swipe 3 layers →
+            </span>
+          </div>
+        </header>
+
+        <div className="qa-trust-rail relative z-10 mt-3 grid snap-x snap-mandatory grid-flow-col auto-cols-[86%] gap-2.5 overflow-x-auto overscroll-x-contain pb-1 lg:grid-flow-row lg:auto-cols-auto lg:grid-cols-3 lg:gap-0 lg:overflow-visible lg:pb-0">
+          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-fuchsia-100/15 bg-[radial-gradient(circle_at_0%_0%,rgba(244,114,182,0.12),transparent_32%),linear-gradient(155deg,rgba(255,255,255,0.065),rgba(255,255,255,0.022))] p-3.5 lg:rounded-r-none lg:border-r-0 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-fuchsia-100/50">01 · Venue level</p>
+              <MapPin size={14} className="text-fuchsia-100/44" aria-hidden="true" />
+            </div>
+            <h3 className="mt-2 text-lg font-semibold tracking-[-0.02em] text-white">Venue Intelligence</h3>
+            <p className="mt-1 hidden text-[10px] leading-4 text-white/48 sm:block sm:text-[11px]">
+              Queue patterns, best nights, crowd, practical dress code and inclusion—distilled from trusted sources, reviews and local knowledge.
+            </p>
+
+            <div className="mt-2.5 rounded-[15px] border border-white/10 bg-black/18 p-2.5 sm:mt-3">
+              <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-cyan-50/65">
+                <Sparkles size={10} aria-hidden="true" />
+                {hasVenueExample ? `${venue.name} · ${formatLabel(venue.city)}` : "Inside a venue profile"}
               </p>
-              <span className="hidden text-white/20 sm:inline">|</span>
-              <p className="flex items-center gap-1 !text-left text-[9px] uppercase tracking-[0.13em] text-fuchsia-100/46">
-                <Sparkles size={10} aria-hidden="true" /> Inside a venue profile
+              <p className="mt-1.5 line-clamp-2 text-[11px] leading-[1.05rem] text-white/74">
+                {hasVenueExample ? proof : "See practical, source-backed context before choosing where to go."}
               </p>
             </div>
-            <p className="mt-1.5 line-clamp-2 !text-left text-[13px] leading-5 text-white/86 [hyphens:none] sm:line-clamp-none">
-              {proof}
-            </p>
-          </div>
 
-          <div className="flex items-center justify-between gap-3 lg:flex-col lg:items-end">
-            <p className="rounded-full border border-white/8 bg-white/[0.035] px-2.5 py-1 !text-left text-[9px] uppercase tracking-[0.13em] text-white/42">
-              {intelligence.sourceUrls.length > 0 ? `${intelligence.sourceUrls.length} sources checked` : "Evidence checked"}
+            <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+              <span className="text-[8px] uppercase tracking-[0.13em] text-white/34">
+                {intelligence.sourceUrls.length > 0 ? `${intelligence.sourceUrls.length} sources checked` : "Evidence checked"}
+              </span>
+              <Link
+                href={hasVenueExample ? venueHref : "/cities"}
+                onClick={onOpen}
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-50/72 transition hover:text-white"
+              >
+                {hasVenueExample ? "Open venue" : "Explore venues"} <ArrowUpRight size={11} aria-hidden="true" />
+              </Link>
+            </div>
+          </article>
+
+          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-cyan-100/15 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.10),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-3.5 lg:rounded-none lg:border-r-0 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-cyan-100/50">02 · Country context</p>
+              <ShieldCheck size={14} className="text-cyan-100/44" aria-hidden="true" />
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <h3 className="text-lg font-semibold tracking-[-0.02em] text-white">What is QARI?</h3>
+              <span className="flex items-center gap-1" aria-hidden="true">
+                {QARI_COLORS.map((color) => (
+                  <span key={color} className="h-2 w-2 rounded-full shadow-[0_0_9px_currentColor]" style={{ backgroundColor: color, color }} />
+                ))}
+              </span>
+            </div>
+            <p className="mt-1 hidden text-[10px] leading-4 text-white/50 sm:block sm:text-[11px]">
+              QARI, the Queer Atlas Risk Index, combines legal risk, social reality, and digital and enforcement risk into a transparent country-level travel signal.
             </p>
+
+            <div className="mt-3 grid grid-cols-3 gap-1.5" aria-label="QARI score weights">
+              {[
+                ["Legal", "35%", "border-blue-200/16 bg-blue-300/[0.07] text-blue-100/70"],
+                ["Social", "40%", "border-emerald-200/16 bg-emerald-300/[0.07] text-emerald-100/70"],
+                ["Digital", "25%", "border-amber-200/16 bg-amber-300/[0.07] text-amber-100/70"],
+              ].map(([label, value, tone]) => (
+                <div key={label} className={`rounded-[13px] border px-2 py-2 ${tone}`}>
+                  <p className="text-[7px] uppercase tracking-[0.14em] opacity-70">{label}</p>
+                  <p className="mt-0.5 text-sm font-semibold tabular-nums">{value}</p>
+                </div>
+              ))}
+            </div>
+
             <Link
-              href={venueHref}
-              onClick={onOpen}
-              className="qa-action inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-100/32 bg-[linear-gradient(135deg,rgba(34,211,238,0.16),rgba(217,70,239,0.12))] px-4 py-2 text-xs font-medium text-cyan-50/90 shadow-[0_10px_28px_rgba(34,211,238,0.08),inset_0_1px_0_rgba(255,255,255,0.1)] transition hover:-translate-y-px hover:border-cyan-100/48 hover:text-white"
+              href="/cities"
+              onClick={() => onContextOpen?.("/cities")}
+              className="mt-auto flex items-center justify-between gap-2 pt-3 text-[10px] font-semibold text-cyan-50/72 transition hover:text-white"
             >
-              See it on {venue.name}
-              <ArrowUpRight size={13} aria-hidden="true" />
+              Explore the QARI world map <ArrowUpRight size={11} aria-hidden="true" />
             </Link>
-          </div>
+          </article>
+
+          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-violet-100/15 bg-[radial-gradient(circle_at_100%_0%,rgba(167,139,250,0.13),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 lg:rounded-l-none sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-violet-100/50">03 · Global research</p>
+              <ChartNoAxesCombined size={14} className="text-violet-100/44" aria-hidden="true" />
+            </div>
+            <h3 className="mt-2 text-lg font-semibold tracking-[-0.02em] text-white">Queer Atlas Indexes</h3>
+            <p className="mt-1 hidden text-[10px] leading-4 text-white/48 sm:block sm:text-[11px]">
+              Compare cities and destinations through transparent, source-backed global research.
+            </p>
+
+            <Link
+              href="/reports/global-queer-safety-culture-index-methodology"
+              onClick={() => onContextOpen?.("/reports/global-queer-safety-culture-index-methodology")}
+              className="mt-3 rounded-[15px] border border-violet-100/16 bg-violet-100/[0.07] p-2.5 transition hover:border-violet-100/30 hover:bg-violet-100/[0.10]"
+            >
+              <span className="flex items-start justify-between gap-2">
+                <span className="text-[11px] font-semibold leading-4 text-violet-50/86">Global Queer Safety &amp; Culture Index 2026</span>
+                <ArrowUpRight size={11} className="mt-0.5 shrink-0 text-violet-100/44" aria-hidden="true" />
+              </span>
+              <span className="mt-1 block text-[8px] uppercase tracking-[0.13em] text-violet-100/44">Legal protection 50% · Lived acceptance 50%</span>
+            </Link>
+
+            <nav aria-label="More Queer Atlas indexes" className="mt-2 flex flex-wrap gap-1">
+              {INDEX_LINKS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => onContextOpen?.(item.href)}
+                  className="rounded-full border border-white/9 bg-white/[0.03] px-2 py-1 text-[8px] text-white/45 transition hover:border-white/20 hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <Link
+              href="/now/data"
+              onClick={() => onContextOpen?.("/now/data")}
+              className="mt-auto flex items-center justify-between gap-2 pt-3 text-[10px] font-semibold text-violet-50/70 transition hover:text-white"
+            >
+              View all indexes &amp; reports <ArrowUpRight size={11} aria-hidden="true" />
+            </Link>
+          </article>
         </div>
       </div>
     </section>

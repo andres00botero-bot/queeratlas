@@ -78,6 +78,7 @@ export default function HomeContactSection({
   defaultName = "",
   pageContext = "/home",
   className = "mt-12",
+  embedded = false,
   onAnalyticsEvent,
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -387,22 +388,33 @@ export default function HomeContactSection({
     <section
       id="home-contact"
       data-home-section="contact"
-      className={`${className} qa-premium-card relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_5%_0%,rgba(34,211,238,0.11),transparent_31%),radial-gradient(circle_at_96%_100%,rgba(244,114,182,0.1),transparent_31%),linear-gradient(145deg,rgba(10,17,24,0.97),rgba(13,9,19,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.28)] sm:p-5`}
+      className={
+        embedded
+          ? `${className} relative min-w-0`
+          : `${className} qa-premium-card relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_5%_0%,rgba(34,211,238,0.11),transparent_31%),radial-gradient(circle_at_96%_100%,rgba(244,114,182,0.1),transparent_31%),linear-gradient(145deg,rgba(10,17,24,0.97),rgba(13,9,19,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.28)] sm:p-5`
+      }
     >
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/24 to-transparent" />
+      {!embedded ? <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/24 to-transparent" /> : null}
 
       {!isExpanded || !isStandalone ? (
-        <div className="relative grid gap-4 lg:grid-cols-[minmax(0,0.72fr)_minmax(36rem,1.28fr)] lg:items-center lg:gap-8">
+        <div className={`relative grid gap-4 ${embedded ? "" : "lg:grid-cols-[minmax(0,0.72fr)_minmax(36rem,1.28fr)] lg:items-center lg:gap-8"}`}>
           <div className="min-w-0">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-100/56">Contact</p>
-            <h2 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">How can we help?</h2>
-            <p className="mt-2 max-w-lg text-[13px] leading-5 text-white/55 sm:text-sm">
+            <p className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-fuchsia-100/62">
+              <MessageCircleMore size={13} strokeWidth={1.8} aria-hidden="true" />
+              Human support
+            </p>
+            {embedded ? (
+              <h3 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[1.75rem]">How can we help?</h3>
+            ) : (
+              <h2 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">How can we help?</h2>
+            )}
+            <p className="mt-2 hidden max-w-lg text-[13px] leading-5 text-white/55 sm:block sm:text-sm">
               Report something, suggest a correction or talk to us about working together.
             </p>
-            <p className="mt-3 text-[10px] text-white/36">Messages are reviewed by the Queer Atlas team.</p>
+            <p className="mt-3 hidden text-[10px] text-white/36 sm:block">Messages are reviewed by the Queer Atlas team.</p>
           </div>
 
-          <div className="grid grid-cols-2 overflow-hidden rounded-[20px] border border-white/10 bg-black/10">
+          <div className={`grid grid-cols-2 overflow-hidden rounded-[20px] border bg-black/10 ${embedded ? "border-fuchsia-100/14" : "border-white/10"}`}>
             {CONTACT_PATHS.map((path) => {
               const Icon = path.icon;
               return (
@@ -410,13 +422,13 @@ export default function HomeContactSection({
                   key={path.key}
                   type="button"
                   onClick={() => openPath(path)}
-                  className={`group min-h-[4.5rem] border-b border-r border-white/8 p-3 text-left transition duration-300 even:border-r-0 [&:nth-last-child(-n+2)]:border-b-0 ${path.cardClass}`}
+                  className={`group min-h-[3.75rem] border-b border-r border-white/8 p-2.5 text-left transition duration-300 even:border-r-0 sm:min-h-[4.5rem] sm:p-3 [&:nth-last-child(-n+2)]:border-b-0 ${path.cardClass}`}
                 >
                   <span className="flex items-start gap-2.5">
                     <Icon size={15} strokeWidth={1.8} className={`mt-0.5 shrink-0 ${path.iconClass}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block text-[11px] font-semibold text-white/82 sm:text-xs">{path.title}</span>
-                      <span className="mt-1 block text-[9px] leading-4 text-white/43 sm:text-[10px]">{path.description}</span>
+                      <span className="mt-1 hidden text-[9px] leading-4 text-white/43 sm:block sm:text-[10px]">{path.description}</span>
                     </span>
                     <ArrowUpRight size={11} className="mt-0.5 shrink-0 text-white/24 transition group-hover:text-white/66" aria-hidden="true" />
                   </span>
