@@ -2162,6 +2162,18 @@ export default function NowPage({ initialSection = "mixed" }) {
           controlsRef={nowControlsRef}
           controlButtonsRef={nowControlButtonsRef}
           buttons={nowSections.map((section) => ({ id: section.id, label: section.label, href: section.href }))}
+          ariaLabel="Queer World News sections"
+          mobileCompact
+          mobileLayout="fit"
+          mobilePrimaryIds={["mixed", "rankings", "data"]}
+          mobileLabelsById={{
+            mixed: "News",
+            rankings: "Rankings",
+            data: "Data",
+            collections: "Collections",
+            voices: "Voices",
+            happening: "Soon",
+          }}
           activeId={activeNowSection}
           onSelect={(sectionId) => {
             setActiveNowSection(sectionId);

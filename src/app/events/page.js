@@ -1085,20 +1085,11 @@ export default function EventsPage({ initialSection = "calendar" }) {
         <div className="pointer-events-none absolute inset-x-0 top-[23rem] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
         <div className="qa-shell relative">
-          <section className="mb-3 sm:mb-6">
-            <PageControls
-              controlsRef={eventsControlsRef}
-              controlButtonsRef={eventsControlButtonsRef}
-              buttons={eventSectionButtons}
-              activeId={activeEventsSection}
-              onSelect={scrollToEventsSection}
-              className="qa-panel"
-            />
-          </section>
+          <div className="flex flex-col">
           <section
             ref={overviewSectionRef}
             data-events-section-id="hero"
-            className="qa-panel qa-premium-card overflow-hidden rounded-[22px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-4 py-4 shadow-[0_24px_76px_rgba(0,0,0,0.36)] sm:rounded-[36px] sm:px-8 sm:py-7 sm:shadow-[0_35px_120px_rgba(0,0,0,0.42)]"
+            className="qa-panel qa-premium-card order-1 overflow-hidden rounded-[22px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-4 py-4 shadow-[0_24px_76px_rgba(0,0,0,0.36)] sm:order-2 sm:rounded-[36px] sm:px-8 sm:py-7 sm:shadow-[0_35px_120px_rgba(0,0,0,0.42)]"
           >
             <div className="grid gap-4 sm:gap-8 xl:grid-cols-[1.1fr_0.9fr]">
               <div className="flex flex-col xl:min-h-[380px]">
@@ -1230,6 +1221,22 @@ export default function EventsPage({ initialSection = "calendar" }) {
               </div>
             </div>
           </section>
+
+          <section className="order-2 mb-3 mt-3 sm:order-1 sm:mb-6 sm:mt-0">
+            <PageControls
+              controlsRef={eventsControlsRef}
+              controlButtonsRef={eventsControlButtonsRef}
+              buttons={eventSectionButtons}
+              activeId={activeEventsSection}
+              onSelect={scrollToEventsSection}
+              ariaLabel="Event sections"
+              mobileCompact
+              mobileLayout="fit"
+              mobileLabelsById={{ offgrid: "Off-grid" }}
+              className="qa-panel"
+            />
+          </section>
+          </div>
 
           {showSearchSection ? (
           <section

@@ -3253,6 +3253,15 @@ export default function FavoritesPage() {
                 controlsRef={favoritesControlsRef}
                 controlButtonsRef={favoritesControlButtonsRef}
                 buttons={profileTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+                ariaLabel="My Atlas sections"
+                mobileCompact
+                mobileLayout="fit"
+                mobileLabelsById={{
+                  about: "Home",
+                  map: "Map",
+                  trips: "Trips",
+                  calendar: "Calendar",
+                }}
                 activeButtonThemeById={{
                   about: {
                     className:
