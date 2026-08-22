@@ -98,7 +98,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             </div>
             <div className="mt-2 flex items-center justify-between gap-3">
               <h3 className="text-lg font-semibold tracking-[-0.02em] text-white">
-                <span className="sm:hidden">QARI</span>
+                <span className="text-sky-200 sm:hidden">QARI</span>
                 <span className="hidden sm:inline">What is QARI?</span>
               </h3>
               <span className="flex items-center gap-1" aria-hidden="true">
@@ -125,10 +125,10 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             </div>
 
             <p className="mt-2.5 rounded-xl border border-white/12 bg-white/[0.045] px-2.5 py-2 text-center text-[13px] font-semibold leading-5 tracking-[0.02em] text-white/84 sm:hidden" aria-label="Queer Atlas Risk Index">
-              <span className="text-[13px] font-bold text-cyan-200">Q</span>ueer{" "}
-              <span className="text-[13px] font-bold text-emerald-200">A</span>tlas{" "}
-              <span className="text-[13px] font-bold text-amber-200">R</span>isk{" "}
-              <span className="text-[13px] font-bold text-rose-200">I</span>ndex
+              <span className="text-[13px] font-bold text-sky-200">Q</span>ueer{" "}
+              <span className="text-[13px] font-bold text-sky-200">A</span>tlas{" "}
+              <span className="text-[13px] font-bold text-sky-200">R</span>isk{" "}
+              <span className="text-[13px] font-bold text-sky-200">I</span>ndex
             </p>
 
             <Link
