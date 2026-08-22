@@ -15,6 +15,12 @@ const NOW_SECTIONS = {
     name: "Queer Atlas Rankings",
     description: "Explore evidence-based queer city rankings, including the Queer Safety Index and Nightlife Index, with transparent methods and sources.",
   },
+  data: {
+    sectionId: "data",
+    title: "Global Queer Safety & Culture Index 2026 | Queer Atlas",
+    name: "Global Queer Safety & Culture Index",
+    description: "Explore the Global Queer Safety & Culture Index 2026: a transparent city comparison of LGBTQ safety, inclusion, community infrastructure, nightlife, and culture.",
+  },
   voices: {
     sectionId: "voices",
     title: "Queer Voices | Community Stories & Local Perspectives",

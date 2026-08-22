@@ -1,0 +1,656 @@
+{
+  "source": "Equaldex Equality Index",
+  "methodologyUrl": "https://www.equaldex.com/equality-index",
+  "retrievedAt": "2026-08-22T08:18:12.360Z",
+  "terms": "Published with source credit and direct country links; values are frozen for this Queer Atlas edition.",
+  "records": [
+    {
+      "country": "Albania",
+      "url": "https://www.equaldex.com/region/albania",
+      "status": 200,
+      "equality": 48,
+      "legal": 68,
+      "opinion": 28
+    },
+    {
+      "country": "Argentina",
+      "url": "https://www.equaldex.com/region/argentina",
+      "status": 200,
+      "equality": 75,
+      "legal": 89,
+      "opinion": 61
+    },
+    {
+      "country": "Australia",
+      "url": "https://www.equaldex.com/region/australia",
+      "status": 200,
+      "equality": 78,
+      "legal": 95,
+      "opinion": 61
+    },
+    {
+      "country": "Austria",
+      "url": "https://www.equaldex.com/region/austria",
+      "status": 200,
+      "equality": 74,
+      "legal": 88,
+      "opinion": 60
+    },
+    {
+      "country": "Belgium",
+      "url": "https://www.equaldex.com/region/belgium",
+      "status": 200,
+      "equality": 78,
+      "legal": 95,
+      "opinion": 61
+    },
+    {
+      "country": "Bolivia",
+      "url": "https://www.equaldex.com/region/bolivia",
+      "status": 200,
+      "equality": 63,
+      "legal": 87,
+      "opinion": 38
+    },
+    {
+      "country": "Bosnia and Herzegovina",
+      "url": "https://www.equaldex.com/region/bosnia-and-herzegovina",
+      "status": 200,
+      "equality": 51,
+      "legal": 65,
+      "opinion": 38
+    },
+    {
+      "country": "Brazil",
+      "url": "https://www.equaldex.com/region/brazil",
+      "status": 200,
+      "equality": 75,
+      "legal": 94,
+      "opinion": 56
+    },
+    {
+      "country": "Bulgaria",
+      "url": "https://www.equaldex.com/region/bulgaria",
+      "status": 200,
+      "equality": 44,
+      "legal": 62,
+      "opinion": 27
+    },
+    {
+      "country": "Cambodia",
+      "url": "https://www.equaldex.com/region/cambodia",
+      "status": 200,
+      "equality": 48,
+      "legal": 45,
+      "opinion": 51
+    },
+    {
+      "country": "Canada",
+      "url": "https://www.equaldex.com/region/canada",
+      "status": 200,
+      "equality": 78,
+      "legal": 95,
+      "opinion": 61
+    },
+    {
+      "country": "Chile",
+      "url": "https://www.equaldex.com/region/chile",
+      "status": 200,
+      "equality": 80,
+      "legal": 100,
+      "opinion": 60
+    },
+    {
+      "country": "China",
+      "url": "https://www.equaldex.com/region/china",
+      "status": 200,
+      "equality": 56,
+      "legal": 47,
+      "opinion": 66
+    },
+    {
+      "country": "Colombia",
+      "url": "https://www.equaldex.com/region/colombia",
+      "status": 200,
+      "equality": 71,
+      "legal": 92,
+      "opinion": 50
+    },
+    {
+      "country": "Costa Rica",
+      "url": "https://www.equaldex.com/region/costa-rica",
+      "status": 200,
+      "equality": 69,
+      "legal": 85,
+      "opinion": 54
+    },
+    {
+      "country": "Croatia",
+      "url": "https://www.equaldex.com/region/croatia",
+      "status": 200,
+      "equality": 57,
+      "legal": 81,
+      "opinion": 33
+    },
+    {
+      "country": "Cuba",
+      "url": "https://www.equaldex.com/region/cuba",
+      "status": 200,
+      "equality": 77,
+      "legal": 87,
+      "opinion": 66
+    },
+    {
+      "country": "Cyprus",
+      "url": "https://www.equaldex.com/region/cyprus",
+      "status": 200,
+      "equality": 51,
+      "legal": 66,
+      "opinion": 36
+    },
+    {
+      "country": "Czech Republic",
+      "url": "https://www.equaldex.com/region/czech-republic",
+      "status": 200,
+      "equality": 72,
+      "legal": 81,
+      "opinion": 64
+    },
+    {
+      "country": "Denmark",
+      "url": "https://www.equaldex.com/region/denmark",
+      "status": 200,
+      "equality": 82,
+      "legal": 94,
+      "opinion": 69
+    },
+    {
+      "country": "Dominican Republic",
+      "url": "https://www.equaldex.com/region/dominican-republic",
+      "status": 200,
+      "equality": 38,
+      "legal": 44,
+      "opinion": 33
+    },
+    {
+      "country": "Ecuador",
+      "url": "https://www.equaldex.com/region/ecuador",
+      "status": 200,
+      "equality": 66,
+      "legal": 90,
+      "opinion": 42
+    },
+    {
+      "country": "Egypt",
+      "url": "https://www.equaldex.com/region/egypt",
+      "status": 200,
+      "equality": 10,
+      "legal": 4,
+      "opinion": 15
+    },
+    {
+      "country": "El Salvador",
+      "url": "https://www.equaldex.com/region/el-salvador",
+      "status": 200,
+      "equality": 43,
+      "legal": 50,
+      "opinion": 35
+    },
+    {
+      "country": "Estonia",
+      "url": "https://www.equaldex.com/region/estonia",
+      "status": 200,
+      "equality": 59,
+      "legal": 74,
+      "opinion": 44
+    },
+    {
+      "country": "Finland",
+      "url": "https://www.equaldex.com/region/finland",
+      "status": 200,
+      "equality": 76,
+      "legal": 87,
+      "opinion": 66
+    },
+    {
+      "country": "France",
+      "url": "https://www.equaldex.com/region/france",
+      "status": 200,
+      "equality": 74,
+      "legal": 90,
+      "opinion": 58
+    },
+    {
+      "country": "Georgia",
+      "url": "https://www.equaldex.com/region/georgia",
+      "status": 200,
+      "equality": 31,
+      "legal": 50,
+      "opinion": 13
+    },
+    {
+      "country": "Germany",
+      "url": "https://www.equaldex.com/region/germany",
+      "status": 200,
+      "equality": 80,
+      "legal": 99,
+      "opinion": 60
+    },
+    {
+      "country": "Greece",
+      "url": "https://www.equaldex.com/region/greece",
+      "status": 200,
+      "equality": 66,
+      "legal": 91,
+      "opinion": 40
+    },
+    {
+      "country": "Guatemala",
+      "url": "https://www.equaldex.com/region/guatemala",
+      "status": 200,
+      "equality": 36,
+      "legal": 40,
+      "opinion": 31
+    },
+    {
+      "country": "Honduras",
+      "url": "https://www.equaldex.com/region/honduras",
+      "status": 200,
+      "equality": 46,
+      "legal": 58,
+      "opinion": 33
+    },
+    {
+      "country": "Hong Kong",
+      "url": "https://www.equaldex.com/region/hong-kong",
+      "status": 200,
+      "equality": 58,
+      "legal": 61,
+      "opinion": 56
+    },
+    {
+      "country": "Hungary",
+      "url": "https://www.equaldex.com/region/hungary",
+      "status": 200,
+      "equality": 48,
+      "legal": 57,
+      "opinion": 40
+    },
+    {
+      "country": "Iceland",
+      "url": "https://www.equaldex.com/region/iceland",
+      "status": 200,
+      "equality": 93,
+      "legal": 96,
+      "opinion": 90
+    },
+    {
+      "country": "India",
+      "url": "https://www.equaldex.com/region/india",
+      "status": 200,
+      "equality": 52,
+      "legal": 50,
+      "opinion": 53
+    },
+    {
+      "country": "Indonesia",
+      "url": "https://www.equaldex.com/region/indonesia",
+      "status": 200,
+      "equality": 12,
+      "legal": 12,
+      "opinion": 11
+    },
+    {
+      "country": "Ireland",
+      "url": "https://www.equaldex.com/region/ireland",
+      "status": 200,
+      "equality": 70,
+      "legal": 81,
+      "opinion": 59
+    },
+    {
+      "country": "Israel",
+      "url": "https://www.equaldex.com/region/israel",
+      "status": 200,
+      "equality": 62,
+      "legal": 74,
+      "opinion": 51
+    },
+    {
+      "country": "Italy",
+      "url": "https://www.equaldex.com/region/italy",
+      "status": 200,
+      "equality": 66,
+      "legal": 74,
+      "opinion": 59
+    },
+    {
+      "country": "Japan",
+      "url": "https://www.equaldex.com/region/japan",
+      "status": 200,
+      "equality": 53,
+      "legal": 57,
+      "opinion": 50
+    },
+    {
+      "country": "Latvia",
+      "url": "https://www.equaldex.com/region/latvia",
+      "status": 200,
+      "equality": 46,
+      "legal": 57,
+      "opinion": 35
+    },
+    {
+      "country": "Lebanon",
+      "url": "https://www.equaldex.com/region/lebanon",
+      "status": 200,
+      "equality": 14,
+      "legal": 13,
+      "opinion": 15
+    },
+    {
+      "country": "Lithuania",
+      "url": "https://www.equaldex.com/region/lithuania",
+      "status": 200,
+      "equality": 47,
+      "legal": 67,
+      "opinion": 28
+    },
+    {
+      "country": "Malaysia",
+      "url": "https://www.equaldex.com/region/malaysia",
+      "status": 200,
+      "equality": 18,
+      "legal": 8,
+      "opinion": 27
+    },
+    {
+      "country": "Malta",
+      "url": "https://www.equaldex.com/region/malta",
+      "status": 200,
+      "equality": 80,
+      "legal": 100,
+      "opinion": 61
+    },
+    {
+      "country": "Mexico",
+      "url": "https://www.equaldex.com/region/mexico",
+      "status": 200,
+      "equality": 71,
+      "legal": 85,
+      "opinion": 57
+    },
+    {
+      "country": "Montenegro",
+      "url": "https://www.equaldex.com/region/montenegro",
+      "status": 200,
+      "equality": 56,
+      "legal": 76,
+      "opinion": 35
+    },
+    {
+      "country": "Morocco",
+      "url": "https://www.equaldex.com/region/morocco",
+      "status": 200,
+      "equality": 13,
+      "legal": 11,
+      "opinion": 15
+    },
+    {
+      "country": "Namibia",
+      "url": "https://www.equaldex.com/region/namibia",
+      "status": 200,
+      "equality": 42,
+      "legal": 51,
+      "opinion": 33
+    },
+    {
+      "country": "Netherlands",
+      "url": "https://www.equaldex.com/region/netherlands",
+      "status": 200,
+      "equality": 77,
+      "legal": 90,
+      "opinion": 64
+    },
+    {
+      "country": "New Zealand",
+      "url": "https://www.equaldex.com/region/new-zealand",
+      "status": 200,
+      "equality": 78,
+      "legal": 91,
+      "opinion": 65
+    },
+    {
+      "country": "Nicaragua",
+      "url": "https://www.equaldex.com/region/nicaragua",
+      "status": 200,
+      "equality": 46,
+      "legal": 51,
+      "opinion": 40
+    },
+    {
+      "country": "Norway",
+      "url": "https://www.equaldex.com/region/norway",
+      "status": 200,
+      "equality": 89,
+      "legal": 90,
+      "opinion": 87
+    },
+    {
+      "country": "Panama",
+      "url": "https://www.equaldex.com/region/panama",
+      "status": 200,
+      "equality": 40,
+      "legal": 45,
+      "opinion": 34
+    },
+    {
+      "country": "Paraguay",
+      "url": "https://www.equaldex.com/region/paraguay",
+      "status": 200,
+      "equality": 35,
+      "legal": 38,
+      "opinion": 31
+    },
+    {
+      "country": "Peru",
+      "url": "https://www.equaldex.com/region/peru",
+      "status": 200,
+      "equality": 53,
+      "legal": 62,
+      "opinion": 44
+    },
+    {
+      "country": "Philippines",
+      "url": "https://www.equaldex.com/region/philippines",
+      "status": 200,
+      "equality": 54,
+      "legal": 49,
+      "opinion": 59
+    },
+    {
+      "country": "Poland",
+      "url": "https://www.equaldex.com/region/poland",
+      "status": 200,
+      "equality": 51,
+      "legal": 59,
+      "opinion": 43
+    },
+    {
+      "country": "Portugal",
+      "url": "https://www.equaldex.com/region/portugal",
+      "status": 200,
+      "equality": 77,
+      "legal": 94,
+      "opinion": 60
+    },
+    {
+      "country": "Puerto Rico",
+      "url": "https://www.equaldex.com/region/puerto-rico",
+      "status": 200,
+      "equality": 76,
+      "legal": 86,
+      "opinion": 66
+    },
+    {
+      "country": "Romania",
+      "url": "https://www.equaldex.com/region/romania",
+      "status": 200,
+      "equality": 46,
+      "legal": 60,
+      "opinion": 33
+    },
+    {
+      "country": "Russia",
+      "url": "https://www.equaldex.com/region/russia",
+      "status": 200,
+      "equality": 27,
+      "legal": 35,
+      "opinion": 19
+    },
+    {
+      "country": "Serbia",
+      "url": "https://www.equaldex.com/region/serbia",
+      "status": 200,
+      "equality": 51,
+      "legal": 68,
+      "opinion": 33
+    },
+    {
+      "country": "Singapore",
+      "url": "https://www.equaldex.com/region/singapore",
+      "status": 200,
+      "equality": 44,
+      "legal": 40,
+      "opinion": 49
+    },
+    {
+      "country": "Slovakia",
+      "url": "https://www.equaldex.com/region/slovakia",
+      "status": 200,
+      "equality": 46,
+      "legal": 58,
+      "opinion": 33
+    },
+    {
+      "country": "Slovenia",
+      "url": "https://www.equaldex.com/region/slovenia",
+      "status": 200,
+      "equality": 65,
+      "legal": 82,
+      "opinion": 48
+    },
+    {
+      "country": "South Africa",
+      "url": "https://www.equaldex.com/region/south-africa",
+      "status": 200,
+      "equality": 67,
+      "legal": 77,
+      "opinion": 57
+    },
+    {
+      "country": "South Korea",
+      "url": "https://www.equaldex.com/region/south-korea",
+      "status": 200,
+      "equality": 46,
+      "legal": 53,
+      "opinion": 39
+    },
+    {
+      "country": "Spain",
+      "url": "https://www.equaldex.com/region/spain",
+      "status": 200,
+      "equality": 83,
+      "legal": 100,
+      "opinion": 67
+    },
+    {
+      "country": "Sweden",
+      "url": "https://www.equaldex.com/region/sweden",
+      "status": 200,
+      "equality": 75,
+      "legal": 85,
+      "opinion": 65
+    },
+    {
+      "country": "Switzerland",
+      "url": "https://www.equaldex.com/region/switzerland",
+      "status": 200,
+      "equality": 70,
+      "legal": 76,
+      "opinion": 64
+    },
+    {
+      "country": "Taiwan",
+      "url": "https://www.equaldex.com/region/taiwan",
+      "status": 200,
+      "equality": 60,
+      "legal": 69,
+      "opinion": 51
+    },
+    {
+      "country": "Thailand",
+      "url": "https://www.equaldex.com/region/thailand",
+      "status": 200,
+      "equality": 65,
+      "legal": 63,
+      "opinion": 67
+    },
+    {
+      "country": "Turkey",
+      "url": "https://www.equaldex.com/region/turkey",
+      "status": 200,
+      "equality": 33,
+      "legal": 34,
+      "opinion": 33
+    },
+    {
+      "country": "Ukraine",
+      "url": "https://www.equaldex.com/region/ukraine",
+      "status": 200,
+      "equality": 49,
+      "legal": 59,
+      "opinion": 39
+    },
+    {
+      "country": "United Kingdom",
+      "url": "https://www.equaldex.com/region/united-kingdom",
+      "status": 200,
+      "equality": 67,
+      "legal": 79,
+      "opinion": 55
+    },
+    {
+      "country": "United States",
+      "url": "https://www.equaldex.com/region/united-states",
+      "status": 200,
+      "equality": 64,
+      "legal": 71,
+      "opinion": 56
+    },
+    {
+      "country": "Uruguay",
+      "url": "https://www.equaldex.com/region/uruguay",
+      "status": 200,
+      "equality": 87,
+      "legal": 100,
+      "opinion": 74
+    },
+    {
+      "country": "Venezuela",
+      "url": "https://www.equaldex.com/region/venezuela",
+      "status": 200,
+      "equality": 53,
+      "legal": 50,
+      "opinion": 56
+    },
+    {
+      "country": "Vietnam",
+      "url": "https://www.equaldex.com/region/vietnam",
+      "status": 200,
+      "equality": 52,
+      "legal": 51,
+      "opinion": 53
+    }
+  ]
+}

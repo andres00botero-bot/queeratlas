@@ -42,12 +42,20 @@ const FINDINGS = [
   },
 ];
 
+const FINDING_TONES = [
+  "border-fuchsia-200/22 bg-fuchsia-200/[0.075]",
+  "border-cyan-200/22 bg-cyan-200/[0.07]",
+  "border-amber-200/22 bg-amber-200/[0.07]",
+  "border-violet-200/22 bg-violet-200/[0.075]",
+];
+const METHOD_TONES = ["bg-cyan-200/[0.055]", "bg-fuchsia-200/[0.055]", "bg-violet-200/[0.06]", "bg-amber-200/[0.05]", "bg-rose-200/[0.05]", "bg-teal-200/[0.05]"];
+
 export default function NightlifeIndexReport() {
   const index = NIGHTLIFE_INDEX_2026;
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_8%_0%,rgba(34,211,238,0.16),transparent_35%),radial-gradient(circle_at_92%_12%,rgba(217,70,239,0.13),transparent_36%),rgba(255,255,255,0.025)] p-5 sm:p-7">
+      <section className="overflow-hidden rounded-[32px] border border-cyan-200/22 bg-[radial-gradient(circle_at_8%_0%,rgba(34,211,238,0.22),transparent_35%),radial-gradient(circle_at_92%_12%,rgba(217,70,239,0.2),transparent_36%),linear-gradient(145deg,rgba(37,20,65,0.72),rgba(9,29,43,0.82))] p-5 shadow-[0_24px_80px_rgba(10,8,32,0.25)] sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-100/72">Published evidence snapshot</p>
@@ -79,8 +87,8 @@ export default function NightlifeIndexReport() {
             ["Nightlife places", index.eligibility.eligibleNightlifePlaces.toLocaleString("en")],
             ["2026 events", index.eligibility.eligibleEvents.toLocaleString("en")],
             ["Community reviews", index.eligibility.eligibleCommunityReviews.toLocaleString("en")],
-          ].map(([label, value]) => (
-            <article key={label} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-4">
+          ].map(([label, value], metricIndex) => (
+            <article key={label} className={`rounded-[20px] border px-4 py-4 ${FINDING_TONES[metricIndex]}`}>
               <p className="text-[9px] uppercase tracking-[0.16em] text-white/42">{label}</p>
               <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{value}</p>
             </article>
@@ -92,8 +100,8 @@ export default function NightlifeIndexReport() {
       </section>
 
       <section className="grid gap-3 md:grid-cols-2">
-        {FINDINGS.map((finding) => (
-          <article key={finding.title} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-5">
+        {FINDINGS.map((finding, index) => (
+          <article key={finding.title} className={`rounded-[24px] border p-5 transition hover:-translate-y-0.5 ${FINDING_TONES[index]}`}>
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-fuchsia-200/70">{finding.label}</p>
             <h3 className="mt-2 text-base font-semibold text-white">{finding.title}</h3>
             <p className="mt-2 text-sm leading-6 text-white/58">{finding.body}</p>
@@ -101,8 +109,8 @@ export default function NightlifeIndexReport() {
         ))}
       </section>
 
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.025]">
-        <div className="border-b border-white/10 px-5 py-5 sm:px-6">
+      <section className="overflow-hidden rounded-[30px] border border-violet-100/14 bg-[linear-gradient(160deg,rgba(139,92,246,0.055),rgba(8,13,25,0.92)_28%)]">
+        <div className="border-b border-white/10 bg-[linear-gradient(90deg,rgba(34,211,238,0.07),rgba(217,70,239,0.065))] px-5 py-5 sm:px-6">
           <p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/68">Full published table</p>
           <h2 className="mt-1 text-xl font-semibold text-white">Top 25 queer nightlife ecosystems</h2>
           <p className="mt-2 text-xs leading-5 text-white/46">Scores are rounded to one decimal. Ties retain the underlying unrounded calculation order.</p>
@@ -110,7 +118,7 @@ export default function NightlifeIndexReport() {
 
         <div className="divide-y divide-white/[0.07]">
           {index.entries.map((entry) => (
-            <article key={entry.city} className="grid gap-4 px-4 py-5 sm:px-6 lg:grid-cols-[52px_minmax(180px,1fr)_110px_1.65fr] lg:items-center">
+            <article key={entry.city} className={`grid gap-4 px-4 py-5 transition hover:bg-white/[0.025] sm:px-6 lg:grid-cols-[52px_minmax(180px,1fr)_110px_1.65fr] lg:items-center ${entry.rank <= 3 ? "bg-gradient-to-r from-fuchsia-200/[0.055] via-cyan-200/[0.025] to-transparent" : ""}`}>
               <div className="flex items-center justify-between lg:block">
                 <p className="text-xl font-semibold tabular-nums text-white/82">#{entry.rank}</p>
                 <p className="text-xl font-semibold tabular-nums text-cyan-100 lg:hidden">{entry.score}</p>
@@ -150,12 +158,12 @@ export default function NightlifeIndexReport() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-violet-200/14 bg-[linear-gradient(145deg,rgba(124,58,237,0.09),rgba(5,5,8,0.96))] p-5 sm:p-7">
+      <section className="rounded-[30px] border border-violet-200/20 bg-[radial-gradient(circle_at_90%_0%,rgba(217,70,239,0.12),transparent_34%),linear-gradient(145deg,rgba(124,58,237,0.13),rgba(7,12,25,0.96))] p-5 sm:p-7">
         <p className="text-[10px] uppercase tracking-[0.2em] text-violet-100/70">Methodology {index.methodologyVersion}</p>
         <h2 className="mt-2 text-xl font-semibold text-white">How the 100-point score is built</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {index.components.map((component) => (
-            <article key={component.key} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+          {index.components.map((component, componentIndex) => (
+            <article key={component.key} className={`rounded-[20px] border border-white/11 p-4 ${METHOD_TONES[componentIndex % METHOD_TONES.length]}`}>
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-white">{component.label}</h3>
                 <span className="rounded-full border border-violet-200/20 bg-violet-200/10 px-2 py-1 text-[10px] text-violet-100">{component.weight} pts</span>

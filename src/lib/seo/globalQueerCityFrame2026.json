@@ -1,0 +1,1287 @@
+{
+  "edition": 2026,
+  "status": "generated-pending-source-and-boundary-review",
+  "methodologyVersion": "QA-GQCI-0.2",
+  "seed": "QA-GQCI-2026-CITY-FRAME-01",
+  "generatedAt": "2026-08-22",
+  "source": {
+    "title": "WUP2025-F21-DEGURBA-Cities_Pop.xlsx",
+    "url": "https://population.un.org/wup/assets/Download/Cities/WUP2025-F21-DEGURBA-Cities_Pop.xlsx",
+    "sha256": "3a96030d87aec6c1c50f658d5321067d6345e1ab936c5d2854524f972caa75c0",
+    "populationYear": 2025,
+    "populationUnitInSource": "thousands"
+  },
+  "regionSource": {
+    "title": "UNSD M49 overview",
+    "url": "https://unstats.un.org/unsd/methodology/m49/overview/",
+    "sha256": "b9048114f6e7f2abda83bf03d4263c9d7cd1bd7230e3d0461025ee7839a7a1fb"
+  },
+  "strata": [
+    {
+      "region": "Africa",
+      "cohort": "large",
+      "seedDigest": "960edb62557a314b121b2bdd40fb7fbd06645845c655e487fb1dece8d10e0a54",
+      "selected": [
+        {
+          "cityCode": 4435,
+          "city": "Al-Qahirah (Cairo)",
+          "country": "Egypt",
+          "unLocId": 818,
+          "iso3": "EGY",
+          "region": "Africa",
+          "cohort": "large",
+          "population2025": 25566102,
+          "longitude": 31.260714,
+          "latitude": 30.06461,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 1854,
+          "city": "Kinshasa",
+          "country": "Democratic Republic of the Congo",
+          "unLocId": 180,
+          "iso3": "COD",
+          "region": "Africa",
+          "cohort": "large",
+          "population2025": 10943641,
+          "longitude": 15.326105,
+          "latitude": -4.383391,
+          "candidateRank": 4
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 1265,
+          "city": "Lagos",
+          "country": "Nigeria",
+          "unLocId": 566,
+          "iso3": "NGA",
+          "region": "Africa",
+          "cohort": "large",
+          "population2025": 12791699,
+          "longitude": 3.310281,
+          "latitude": 6.568449,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 939,
+          "city": "Luanda",
+          "country": "Angola",
+          "unLocId": 24,
+          "iso3": "AGO",
+          "region": "Africa",
+          "cohort": "large",
+          "population2025": 11370127,
+          "longitude": 13.297668,
+          "latitude": -8.878238,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 3566,
+          "city": "Dar es Salaam",
+          "country": "United Republic of Tanzania",
+          "unLocId": 834,
+          "iso3": "TZA",
+          "region": "Africa",
+          "cohort": "large",
+          "population2025": 7795114,
+          "longitude": 39.224142,
+          "latitude": -6.833528,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Africa",
+      "cohort": "mid-size",
+      "seedDigest": "2ab6f8dce52d386879cf33abfd3fd144d7350f3f6889b5b92e13073608d8e6f7",
+      "selected": [
+        {
+          "cityCode": 6577,
+          "city": "Lubumbashi",
+          "country": "Democratic Republic of the Congo",
+          "unLocId": 180,
+          "iso3": "COD",
+          "region": "Africa",
+          "cohort": "mid-size",
+          "population2025": 2832853,
+          "longitude": 27.481353,
+          "latitude": -11.663899,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 655,
+          "city": "Coyah (Conacry)",
+          "country": "Guinea",
+          "unLocId": 324,
+          "iso3": "GIN",
+          "region": "Africa",
+          "cohort": "mid-size",
+          "population2025": 2727684,
+          "longitude": -13.564984,
+          "latitude": 9.648302,
+          "candidateRank": 2
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 1752,
+          "city": "Cotonou",
+          "country": "Benin",
+          "unLocId": 204,
+          "iso3": "BEN",
+          "region": "Africa",
+          "cohort": "mid-size",
+          "population2025": 2506489,
+          "longitude": 2.389519,
+          "latitude": 6.386467,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 1378,
+          "city": "Tunis",
+          "country": "Tunisia",
+          "unLocId": 788,
+          "iso3": "TUN",
+          "region": "Africa",
+          "cohort": "mid-size",
+          "population2025": 2473428,
+          "longitude": 10.179582,
+          "latitude": 36.8139,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 801,
+          "city": "Lomé",
+          "country": "Togo",
+          "unLocId": 768,
+          "iso3": "TGO",
+          "region": "Africa",
+          "cohort": "mid-size",
+          "population2025": 2415011,
+          "longitude": 1.234988,
+          "latitude": 6.185489,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Africa",
+      "cohort": "smaller",
+      "seedDigest": "ee5c394844dac8283dbab734835b764f1ad567ed95379afe9b9cfbc56540f701",
+      "selected": [
+        {
+          "cityCode": 3610,
+          "city": "Malanje",
+          "country": "Angola",
+          "unLocId": 24,
+          "iso3": "AGO",
+          "region": "Africa",
+          "cohort": "smaller",
+          "population2025": 973086,
+          "longitude": 16.351084,
+          "latitude": -9.543583,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 3670,
+          "city": "Zanzibar City",
+          "country": "United Republic of Tanzania",
+          "unLocId": 834,
+          "iso3": "TZA",
+          "region": "Africa",
+          "cohort": "smaller",
+          "population2025": 966642,
+          "longitude": 39.224669,
+          "latitude": -6.164749,
+          "candidateRank": 2
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 444,
+          "city": "Lilongwe",
+          "country": "Malawi",
+          "unLocId": 454,
+          "iso3": "MWI",
+          "region": "Africa",
+          "cohort": "smaller",
+          "population2025": 961399,
+          "longitude": 33.775601,
+          "latitude": -13.953345,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 1868,
+          "city": "Mwanza",
+          "country": "United Republic of Tanzania",
+          "unLocId": 834,
+          "iso3": "TZA",
+          "region": "Africa",
+          "cohort": "smaller",
+          "population2025": 954104,
+          "longitude": 32.926747,
+          "latitude": -2.526069,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 2409,
+          "city": "Nyala",
+          "country": "Sudan",
+          "unLocId": 729,
+          "iso3": "SDN",
+          "region": "Africa",
+          "cohort": "smaller",
+          "population2025": 950803,
+          "longitude": 24.882319,
+          "latitude": 12.055489,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Asia",
+      "cohort": "large",
+      "seedDigest": "a038df0f92bb11de678bd26660955a395c4863890139379efeade130dfb1b4f8",
+      "selected": [
+        {
+          "cityCode": 5590,
+          "city": "Jakarta",
+          "country": "Indonesia",
+          "unLocId": 360,
+          "iso3": "IDN",
+          "region": "Asia",
+          "cohort": "large",
+          "population2025": 41913860,
+          "longitude": 106.824821,
+          "latitude": -6.327544,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 11738,
+          "city": "Shanghai",
+          "country": "China",
+          "unLocId": 156,
+          "iso3": "CHN",
+          "region": "Asia",
+          "cohort": "large",
+          "population2025": 29558908,
+          "longitude": 121.436921,
+          "latitude": 31.214776,
+          "candidateRank": 5
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 6249,
+          "city": "Dhaka",
+          "country": "Bangladesh",
+          "unLocId": 50,
+          "iso3": "BGD",
+          "region": "Asia",
+          "cohort": "large",
+          "population2025": 36585479,
+          "longitude": 90.579207,
+          "latitude": 23.751734,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 6030,
+          "city": "Tōkyō (Tokyo)",
+          "country": "Japan",
+          "unLocId": 392,
+          "iso3": "JPN",
+          "region": "Asia",
+          "cohort": "large",
+          "population2025": 33412512,
+          "longitude": 139.655776,
+          "latitude": 35.666179,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 8364,
+          "city": "New Delhi",
+          "country": "India",
+          "unLocId": 356,
+          "iso3": "IND",
+          "region": "Asia",
+          "cohort": "large",
+          "population2025": 30222405,
+          "longitude": 77.207813,
+          "latitude": 28.625733,
+          "candidateRank": 4
+        }
+      ]
+    },
+    {
+      "region": "Asia",
+      "cohort": "mid-size",
+      "seedDigest": "b0a9bd10bd948b19309474652551891bdf40a8af00566512963306f3e268f145",
+      "selected": [
+        {
+          "cityCode": 9058,
+          "city": "Shijiazhuang",
+          "country": "China",
+          "unLocId": 156,
+          "iso3": "CHN",
+          "region": "Asia",
+          "cohort": "mid-size",
+          "population2025": 2990397,
+          "longitude": 114.486806,
+          "latitude": 38.04441,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 7167,
+          "city": "Multan",
+          "country": "Pakistan",
+          "unLocId": 586,
+          "iso3": "PAK",
+          "region": "Asia",
+          "cohort": "mid-size",
+          "population2025": 2956642,
+          "longitude": 71.475292,
+          "latitude": 30.190471,
+          "candidateRank": 2
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 10013,
+          "city": "Thiruvananthapuram",
+          "country": "India",
+          "unLocId": 356,
+          "iso3": "IND",
+          "region": "Asia",
+          "cohort": "mid-size",
+          "population2025": 2946119,
+          "longitude": 76.967636,
+          "latitude": 8.509832,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 11531,
+          "city": "Asansol",
+          "country": "India",
+          "unLocId": 356,
+          "iso3": "IND",
+          "region": "Asia",
+          "cohort": "mid-size",
+          "population2025": 2924741,
+          "longitude": 86.911409,
+          "latitude": 23.697946,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 1601,
+          "city": "Aleppo",
+          "country": "Syrian Arab Republic",
+          "unLocId": 760,
+          "iso3": "SYR",
+          "region": "Asia",
+          "cohort": "mid-size",
+          "population2025": 2922277,
+          "longitude": 37.142929,
+          "latitude": 36.204483,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Asia",
+      "cohort": "smaller",
+      "seedDigest": "be848e92dc14255b2c7ad93a152ca6d95612f23fad09481252e7953615de768b",
+      "selected": [
+        {
+          "cityCode": 11782,
+          "city": "Jinhua",
+          "country": "China",
+          "unLocId": 156,
+          "iso3": "CHN",
+          "region": "Asia",
+          "cohort": "smaller",
+          "population2025": 998519,
+          "longitude": 119.640741,
+          "latitude": 29.105768,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 5155,
+          "city": "Nara",
+          "country": "Japan",
+          "unLocId": 392,
+          "iso3": "JPN",
+          "region": "Asia",
+          "cohort": "smaller",
+          "population2025": 993952,
+          "longitude": 135.76023,
+          "latitude": 34.620644,
+          "candidateRank": 4
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 10741,
+          "city": "Puducherry",
+          "country": "India",
+          "unLocId": 356,
+          "iso3": "IND",
+          "region": "Asia",
+          "cohort": "smaller",
+          "population2025": 998290,
+          "longitude": 79.805886,
+          "latitude": 11.935662,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 8108,
+          "city": "Mataram",
+          "country": "Indonesia",
+          "unLocId": 360,
+          "iso3": "IDN",
+          "region": "Asia",
+          "cohort": "smaller",
+          "population2025": 997132,
+          "longitude": 116.118827,
+          "latitude": -8.590663,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 9265,
+          "city": "Mangaluru",
+          "country": "India",
+          "unLocId": 356,
+          "iso3": "IND",
+          "region": "Asia",
+          "cohort": "smaller",
+          "population2025": 993566,
+          "longitude": 74.848617,
+          "latitude": 12.898132,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Europe",
+      "cohort": "large",
+      "seedDigest": "a384254f15511d6faf1889b3eed4d617f69670e59975414af7a0c1856bd0de88",
+      "selected": [
+        {
+          "cityCode": 2485,
+          "city": "Moskva (Moscow)",
+          "country": "Russian Federation",
+          "unLocId": 643,
+          "iso3": "RUS",
+          "region": "Europe",
+          "cohort": "large",
+          "population2025": 14524753,
+          "longitude": 37.638348,
+          "latitude": 55.750371,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 5938,
+          "city": "London",
+          "country": "United Kingdom",
+          "unLocId": 826,
+          "iso3": "GBR",
+          "region": "Europe",
+          "cohort": "large",
+          "population2025": 10416420,
+          "longitude": -0.126985,
+          "latitude": 51.508926,
+          "candidateRank": 2
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 2994,
+          "city": "Paris",
+          "country": "France",
+          "unLocId": 250,
+          "iso3": "FRA",
+          "region": "Europe",
+          "cohort": "large",
+          "population2025": 9381921,
+          "longitude": 2.355571,
+          "latitude": 48.849111,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 3440,
+          "city": "Madrid",
+          "country": "Spain",
+          "unLocId": 724,
+          "iso3": "ESP",
+          "region": "Europe",
+          "cohort": "large",
+          "population2025": 5583601,
+          "longitude": -3.707615,
+          "latitude": 40.40519,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 568,
+          "city": "Saint Petersburg",
+          "country": "Russian Federation",
+          "unLocId": 643,
+          "iso3": "RUS",
+          "region": "Europe",
+          "cohort": "large",
+          "population2025": 4736499,
+          "longitude": 30.337774,
+          "latitude": 59.934063,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Europe",
+      "cohort": "mid-size",
+      "seedDigest": "6a2bfbcca770a8cc8dd70dd0b97685853fc9cf27b574f7eeae9cf275bfd13ea5",
+      "selected": [
+        {
+          "cityCode": 4726,
+          "city": "Naples",
+          "country": "Italy",
+          "unLocId": 380,
+          "iso3": "ITA",
+          "region": "Europe",
+          "cohort": "mid-size",
+          "population2025": 2767923,
+          "longitude": 14.309211,
+          "latitude": 40.861454,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 3979,
+          "city": "Birmingham",
+          "country": "United Kingdom",
+          "unLocId": 826,
+          "iso3": "GBR",
+          "region": "Europe",
+          "cohort": "mid-size",
+          "population2025": 2631757,
+          "longitude": -1.9604,
+          "latitude": 52.504601,
+          "candidateRank": 3
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 675,
+          "city": "Essen",
+          "country": "Germany",
+          "unLocId": 276,
+          "iso3": "DEU",
+          "region": "Europe",
+          "cohort": "mid-size",
+          "population2025": 2717087,
+          "longitude": 6.972169,
+          "latitude": 51.488621,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 2178,
+          "city": "Kyiv (Kiev)",
+          "country": "Ukraine",
+          "unLocId": 804,
+          "iso3": "UKR",
+          "region": "Europe",
+          "cohort": "mid-size",
+          "population2025": 2614581,
+          "longitude": 30.519603,
+          "latitude": 50.449193,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 1848,
+          "city": "Milan",
+          "country": "Italy",
+          "unLocId": 380,
+          "iso3": "ITA",
+          "region": "Europe",
+          "cohort": "mid-size",
+          "population2025": 2599022,
+          "longitude": 9.192404,
+          "latitude": 45.518147,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Europe",
+      "cohort": "smaller",
+      "seedDigest": "28eda64fac8272a4fb47b2f62f0e1ef88428815f0f8f811aecb5eddd2409883c",
+      "selected": [
+        {
+          "cityCode": 1030,
+          "city": "Porto",
+          "country": "Portugal",
+          "unLocId": 620,
+          "iso3": "PRT",
+          "region": "Europe",
+          "cohort": "smaller",
+          "population2025": 990433,
+          "longitude": -8.603771,
+          "latitude": 41.156961,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 807,
+          "city": "Dusseldorf",
+          "country": "Germany",
+          "unLocId": 276,
+          "iso3": "DEU",
+          "region": "Europe",
+          "cohort": "smaller",
+          "population2025": 907386,
+          "longitude": 6.785991,
+          "latitude": 51.219399,
+          "candidateRank": 5
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 7462,
+          "city": "Omsk",
+          "country": "Russian Federation",
+          "unLocId": 643,
+          "iso3": "RUS",
+          "region": "Europe",
+          "cohort": "smaller",
+          "population2025": 975485,
+          "longitude": 73.362537,
+          "latitude": 54.983103,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 797,
+          "city": "Glasgow",
+          "country": "United Kingdom",
+          "unLocId": 826,
+          "iso3": "GBR",
+          "region": "Europe",
+          "cohort": "smaller",
+          "population2025": 970320,
+          "longitude": -4.290874,
+          "latitude": 55.857544,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 6468,
+          "city": "Samara",
+          "country": "Russian Federation",
+          "unLocId": 643,
+          "iso3": "RUS",
+          "region": "Europe",
+          "cohort": "smaller",
+          "population2025": 955599,
+          "longitude": 50.205027,
+          "latitude": 53.216183,
+          "candidateRank": 4
+        }
+      ]
+    },
+    {
+      "region": "Latin America & the Caribbean",
+      "cohort": "large",
+      "seedDigest": "bf24dc17f438c39a475fc8c0eba30ae1ac9496aeb95bf45cd9d40e88cc9d0658",
+      "selected": [
+        {
+          "cityCode": 7303,
+          "city": "São Paulo",
+          "country": "Brazil",
+          "unLocId": 76,
+          "iso3": "BRA",
+          "region": "Latin America & the Caribbean",
+          "cohort": "large",
+          "population2025": 18949790,
+          "longitude": -46.599858,
+          "latitude": -23.576745,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 1987,
+          "city": "Lima",
+          "country": "Peru",
+          "unLocId": 604,
+          "iso3": "PER",
+          "region": "Latin America & the Caribbean",
+          "cohort": "large",
+          "population2025": 10580241,
+          "longitude": -77.011002,
+          "latitude": -12.044575,
+          "candidateRank": 5
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 5439,
+          "city": "Ciudad de México (Mexico City)",
+          "country": "Mexico",
+          "unLocId": 484,
+          "iso3": "MEX",
+          "region": "Latin America & the Caribbean",
+          "cohort": "large",
+          "population2025": 17734212,
+          "longitude": -99.104939,
+          "latitude": 19.444824,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 4459,
+          "city": "Buenos Aires",
+          "country": "Argentina",
+          "unLocId": 32,
+          "iso3": "ARG",
+          "region": "Latin America & the Caribbean",
+          "cohort": "large",
+          "population2025": 14017736,
+          "longitude": -58.512819,
+          "latitude": -34.650789,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 3883,
+          "city": "Bogotá",
+          "country": "Colombia",
+          "unLocId": 170,
+          "iso3": "COL",
+          "region": "Latin America & the Caribbean",
+          "cohort": "large",
+          "population2025": 10624315,
+          "longitude": -74.11227,
+          "latitude": 4.643829,
+          "candidateRank": 4
+        }
+      ]
+    },
+    {
+      "region": "Latin America & the Caribbean",
+      "cohort": "mid-size",
+      "seedDigest": "f1a4f307fd4927708ae5ed5fcda65d244ae15f067a768bcfd2eb8670eb187d71",
+      "selected": [
+        {
+          "cityCode": 2063,
+          "city": "Ciudad de Guatemala (Guatemala City)",
+          "country": "Guatemala",
+          "unLocId": 320,
+          "iso3": "GTM",
+          "region": "Latin America & the Caribbean",
+          "cohort": "mid-size",
+          "population2025": 2837708,
+          "longitude": -90.544606,
+          "latitude": 14.598351,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 6446,
+          "city": "Curitiba",
+          "country": "Brazil",
+          "unLocId": 76,
+          "iso3": "BRA",
+          "region": "Latin America & the Caribbean",
+          "cohort": "mid-size",
+          "population2025": 2475352,
+          "longitude": -49.255343,
+          "latitude": -25.458137,
+          "candidateRank": 5
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 899,
+          "city": "Cali",
+          "country": "Colombia",
+          "unLocId": 170,
+          "iso3": "COL",
+          "region": "Latin America & the Caribbean",
+          "cohort": "mid-size",
+          "population2025": 2700232,
+          "longitude": -76.520602,
+          "latitude": 3.432913,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 3791,
+          "city": "Caracas",
+          "country": "Venezuela (Bolivarian Republic of)",
+          "unLocId": 862,
+          "iso3": "VEN",
+          "region": "Latin America & the Caribbean",
+          "cohort": "mid-size",
+          "population2025": 2576666,
+          "longitude": -66.889076,
+          "latitude": 10.479728,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 2524,
+          "city": "Quito",
+          "country": "Ecuador",
+          "unLocId": 218,
+          "iso3": "ECU",
+          "region": "Latin America & the Caribbean",
+          "cohort": "mid-size",
+          "population2025": 2534914,
+          "longitude": -78.498905,
+          "latitude": -0.203433,
+          "candidateRank": 4
+        }
+      ]
+    },
+    {
+      "region": "Latin America & the Caribbean",
+      "cohort": "smaller",
+      "seedDigest": "a7fa1d23027f36338afb24bbc86284a6258d586fd5f8354b1bad8b06bbe3b0ce",
+      "selected": [
+        {
+          "cityCode": 5218,
+          "city": "San Luis Potosí",
+          "country": "Mexico",
+          "unLocId": 484,
+          "iso3": "MEX",
+          "region": "Latin America & the Caribbean",
+          "cohort": "smaller",
+          "population2025": 992648,
+          "longitude": -100.960804,
+          "latitude": 22.152974,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 4679,
+          "city": "Bucaramanga",
+          "country": "Colombia",
+          "unLocId": 170,
+          "iso3": "COL",
+          "region": "Latin America & the Caribbean",
+          "cohort": "smaller",
+          "population2025": 939291,
+          "longitude": -73.112755,
+          "latitude": 7.103725,
+          "candidateRank": 5
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 3272,
+          "city": "Arequipa",
+          "country": "Peru",
+          "unLocId": 604,
+          "iso3": "PER",
+          "region": "Latin America & the Caribbean",
+          "cohort": "smaller",
+          "population2025": 977496,
+          "longitude": -71.528366,
+          "latitude": -16.401787,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 1458,
+          "city": "San Miguel de Tucumán",
+          "country": "Argentina",
+          "unLocId": 32,
+          "iso3": "ARG",
+          "region": "Latin America & the Caribbean",
+          "cohort": "smaller",
+          "population2025": 959565,
+          "longitude": -65.215205,
+          "latitude": -26.824956,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 1014,
+          "city": "Trujillo",
+          "country": "Peru",
+          "unLocId": 604,
+          "iso3": "PER",
+          "region": "Latin America & the Caribbean",
+          "cohort": "smaller",
+          "population2025": 949018,
+          "longitude": -79.028484,
+          "latitude": -8.094087,
+          "candidateRank": 4
+        }
+      ]
+    },
+    {
+      "region": "Northern America",
+      "cohort": "large",
+      "seedDigest": "18ffe588d0dda24fd9efcd391605567c17955ee6773f3c9ac0b03235db67fc4f",
+      "selected": [
+        {
+          "cityCode": 8354,
+          "city": "New York City",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "large",
+          "population2025": 13920148,
+          "longitude": -73.932685,
+          "latitude": 40.737858,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 2925,
+          "city": "Toronto",
+          "country": "Canada",
+          "unLocId": 124,
+          "iso3": "CAN",
+          "region": "Northern America",
+          "cohort": "large",
+          "population2025": 5494431,
+          "longitude": -79.473574,
+          "latitude": 43.719506,
+          "candidateRank": 3
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 1725,
+          "city": "Los Angeles",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "large",
+          "population2025": 12740420,
+          "longitude": -118.11672,
+          "latitude": 33.984236,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 6237,
+          "city": "Houston",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "large",
+          "population2025": 3955046,
+          "longitude": -95.467667,
+          "latitude": 29.746362,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 7747,
+          "city": "Chicago",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "large",
+          "population2025": 3683385,
+          "longitude": -87.70745,
+          "latitude": 41.872606,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Northern America",
+      "cohort": "mid-size",
+      "seedDigest": "17d57f19e1a5ee3f853552357ce5f88d495865a1d7ea41b13bbf8253c7be7644",
+      "selected": [
+        {
+          "cityCode": 7289,
+          "city": "Miami",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "mid-size",
+          "population2025": 2912486,
+          "longitude": -80.281365,
+          "latitude": 25.860611,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 3645,
+          "city": "Montreal",
+          "country": "Canada",
+          "unLocId": 124,
+          "iso3": "CAN",
+          "region": "Northern America",
+          "cohort": "mid-size",
+          "population2025": 2668723,
+          "longitude": -73.666008,
+          "latitude": 45.536375,
+          "candidateRank": 2
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 6032,
+          "city": "Denver",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "mid-size",
+          "population2025": 2265994,
+          "longitude": -104.968002,
+          "latitude": 39.723059,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 8270,
+          "city": "Philadelphia",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "mid-size",
+          "population2025": 2232420,
+          "longitude": -75.161345,
+          "latitude": 39.982153,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 4714,
+          "city": "Las Vegas",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "mid-size",
+          "population2025": 2183655,
+          "longitude": -115.186743,
+          "latitude": 36.162796,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Northern America",
+      "cohort": "smaller",
+      "seedDigest": "4ed5d801041dad564e6cb6b1312e3a3bc6675e00cd832cde445fa90877fa1da1",
+      "selected": [
+        {
+          "cityCode": 1546,
+          "city": "Edmonton",
+          "country": "Canada",
+          "unLocId": 124,
+          "iso3": "CAN",
+          "region": "Northern America",
+          "cohort": "smaller",
+          "population2025": 981522,
+          "longitude": -113.526777,
+          "latitude": 53.558041,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 8032,
+          "city": "Detroit",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "smaller",
+          "population2025": 809894,
+          "longitude": -83.154293,
+          "latitude": 42.415699,
+          "candidateRank": 3
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 7079,
+          "city": "Saint Petersburg",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "smaller",
+          "population2025": 877183,
+          "longitude": -82.799078,
+          "latitude": 27.92962,
+          "candidateRank": 2
+        },
+        {
+          "cityCode": 7962,
+          "city": "Columbus",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "smaller",
+          "population2025": 731335,
+          "longitude": -82.969109,
+          "latitude": 40.016942,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 7846,
+          "city": "Milwaukee",
+          "country": "United States of America",
+          "unLocId": 840,
+          "iso3": "USA",
+          "region": "Northern America",
+          "cohort": "smaller",
+          "population2025": 701928,
+          "longitude": -87.956277,
+          "latitude": 43.047311,
+          "candidateRank": 5
+        }
+      ]
+    },
+    {
+      "region": "Oceania",
+      "cohort": "large",
+      "seedDigest": "04ed119fc53833da5712569a662bad1d93fa70faa603be8c8489e4cca42aea37",
+      "selected": [
+        {
+          "cityCode": 2139,
+          "city": "Sydney",
+          "country": "Australia",
+          "unLocId": 36,
+          "iso3": "AUS",
+          "region": "Oceania",
+          "cohort": "large",
+          "population2025": 4150917,
+          "longitude": 151.078965,
+          "latitude": -33.858991,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 1634,
+          "city": "Melbourne",
+          "country": "Australia",
+          "unLocId": 36,
+          "iso3": "AUS",
+          "region": "Oceania",
+          "cohort": "large",
+          "population2025": 3639893,
+          "longitude": 145.05858,
+          "latitude": -37.830934,
+          "candidateRank": 2
+        }
+      ],
+      "reserves": []
+    },
+    {
+      "region": "Oceania",
+      "cohort": "mid-size",
+      "seedDigest": "76dbd9216f14f8cca78fad9b1c12b3bb66d3f64f576335cc92f13f0e95b810b0",
+      "selected": [
+        {
+          "cityCode": 1005,
+          "city": "Auckland",
+          "country": "New Zealand",
+          "unLocId": 554,
+          "iso3": "NZL",
+          "region": "Oceania",
+          "cohort": "mid-size",
+          "population2025": 1123094,
+          "longitude": 174.775922,
+          "latitude": -36.903272,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 2591,
+          "city": "Brisbane",
+          "country": "Australia",
+          "unLocId": 36,
+          "iso3": "AUS",
+          "region": "Oceania",
+          "cohort": "mid-size",
+          "population2025": 1071628,
+          "longitude": 153.027028,
+          "latitude": -27.475937,
+          "candidateRank": 3
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 330,
+          "city": "Perth",
+          "country": "Australia",
+          "unLocId": 36,
+          "iso3": "AUS",
+          "region": "Oceania",
+          "cohort": "mid-size",
+          "population2025": 1079374,
+          "longitude": 115.783064,
+          "latitude": -31.901278,
+          "candidateRank": 2
+        }
+      ]
+    },
+    {
+      "region": "Oceania",
+      "cohort": "smaller",
+      "seedDigest": "18ecd672808d1bd445629f5682474a421661fdc4c0c7b6a49d723f01c744a4bf",
+      "selected": [
+        {
+          "cityCode": 1003,
+          "city": "Adelaide",
+          "country": "Australia",
+          "unLocId": 36,
+          "iso3": "AUS",
+          "region": "Oceania",
+          "cohort": "smaller",
+          "population2025": 879249,
+          "longitude": 138.586284,
+          "latitude": -34.888845,
+          "candidateRank": 1
+        },
+        {
+          "cityCode": 1337,
+          "city": "Port Moresby",
+          "country": "Papua New Guinea",
+          "unLocId": 598,
+          "iso3": "PNG",
+          "region": "Oceania",
+          "cohort": "smaller",
+          "population2025": 413223,
+          "longitude": 147.182634,
+          "latitude": -9.456934,
+          "candidateRank": 2
+        }
+      ],
+      "reserves": [
+        {
+          "cityCode": 1336,
+          "city": "Point Cook",
+          "country": "Australia",
+          "unLocId": 36,
+          "iso3": "AUS",
+          "region": "Oceania",
+          "cohort": "smaller",
+          "population2025": 404501,
+          "longitude": 144.697419,
+          "latitude": -37.875676,
+          "candidateRank": 3
+        },
+        {
+          "cityCode": 2520,
+          "city": "Gold Coast",
+          "country": "Australia",
+          "unLocId": 36,
+          "iso3": "AUS",
+          "region": "Oceania",
+          "cohort": "smaller",
+          "population2025": 298750,
+          "longitude": 153.423846,
+          "latitude": -28.03679,
+          "candidateRank": 4
+        },
+        {
+          "cityCode": 1232,
+          "city": "Glenfield",
+          "country": "New Zealand",
+          "unLocId": 554,
+          "iso3": "NZL",
+          "region": "Oceania",
+          "cohort": "smaller",
+          "population2025": 275322,
+          "longitude": 174.737169,
+          "latitude": -36.77245,
+          "candidateRank": 5
+        }
+      ]
+    }
+  ]
+}

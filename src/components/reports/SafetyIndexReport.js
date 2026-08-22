@@ -21,11 +21,19 @@ const FINDINGS = [
   { label: "Evidence restraint", title: "Four safety ratings were excluded", body: "Only four of 1,535 reviews contain a safety-specific value. The sample is too small for a defensible community-safety component." },
 ];
 
+const FINDING_TONES = [
+  "border-emerald-200/22 bg-emerald-200/[0.075]",
+  "border-cyan-200/22 bg-cyan-200/[0.07]",
+  "border-amber-200/22 bg-amber-200/[0.065]",
+  "border-violet-200/22 bg-violet-200/[0.07]",
+];
+const METHOD_TONES = ["bg-emerald-200/[0.06]", "bg-cyan-200/[0.055]", "bg-teal-200/[0.055]", "bg-lime-200/[0.045]", "bg-violet-200/[0.05]", "bg-amber-200/[0.045]", "bg-sky-200/[0.05]"];
+
 export default function SafetyIndexReport() {
   const index = SAFETY_INDEX_2026;
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[28px] border border-emerald-200/16 bg-[radial-gradient(circle_at_8%_0%,rgba(52,211,153,0.16),transparent_35%),radial-gradient(circle_at_92%_12%,rgba(34,211,238,0.12),transparent_36%),rgba(255,255,255,0.025)] p-5 sm:p-7">
+      <section className="overflow-hidden rounded-[32px] border border-emerald-200/22 bg-[radial-gradient(circle_at_8%_0%,rgba(52,211,153,0.22),transparent_35%),radial-gradient(circle_at_92%_12%,rgba(34,211,238,0.18),transparent_36%),linear-gradient(145deg,rgba(12,57,48,0.72),rgba(12,30,51,0.86))] p-5 shadow-[0_24px_80px_rgba(5,24,23,0.24)] sm:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-100/72">Published evidence snapshot</p>
@@ -43,8 +51,8 @@ export default function SafetyIndexReport() {
             ["Country profiles", index.eligibility.countryProfiles],
             ["Welcome records", index.eligibility.venueWelcomeEvidence.toLocaleString("en")],
             ["Route-ready places", index.eligibility.routeReadyPlaces.toLocaleString("en")],
-          ].map(([label, value]) => (
-            <article key={label} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-4">
+          ].map(([label, value], metricIndex) => (
+            <article key={label} className={`rounded-[20px] border px-4 py-4 ${FINDING_TONES[metricIndex]}`}>
               <p className="text-[9px] uppercase tracking-[0.16em] text-white/42">{label}</p>
               <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">{value}</p>
             </article>
@@ -54,8 +62,8 @@ export default function SafetyIndexReport() {
       </section>
 
       <section className="grid gap-3 md:grid-cols-2">
-        {FINDINGS.map((finding) => (
-          <article key={finding.title} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-5">
+        {FINDINGS.map((finding, index) => (
+          <article key={finding.title} className={`rounded-[24px] border p-5 transition hover:-translate-y-0.5 ${FINDING_TONES[index]}`}>
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-emerald-200/70">{finding.label}</p>
             <h3 className="mt-2 text-base font-semibold text-white">{finding.title}</h3>
             <p className="mt-2 text-sm leading-6 text-white/58">{finding.body}</p>
@@ -63,15 +71,15 @@ export default function SafetyIndexReport() {
         ))}
       </section>
 
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.025]">
-        <div className="border-b border-white/10 px-5 py-5 sm:px-6">
+      <section className="overflow-hidden rounded-[30px] border border-emerald-100/14 bg-[linear-gradient(160deg,rgba(52,211,153,0.05),rgba(8,18,25,0.93)_28%)]">
+        <div className="border-b border-white/10 bg-[linear-gradient(90deg,rgba(52,211,153,0.075),rgba(34,211,238,0.055))] px-5 py-5 sm:px-6">
           <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-100/68">Full published table</p>
           <h2 className="mt-1 text-xl font-semibold text-white">Top 25 queer safety-readiness cities</h2>
           <p className="mt-2 text-xs leading-5 text-white/46">Scores are rounded to one decimal. Ties retain the underlying unrounded calculation order.</p>
         </div>
         <div className="divide-y divide-white/[0.07]">
           {index.entries.map((entry) => (
-            <article key={entry.city} className="grid gap-4 px-4 py-5 sm:px-6 lg:grid-cols-[52px_minmax(180px,1fr)_110px_1.8fr] lg:items-center">
+            <article key={entry.city} className={`grid gap-4 px-4 py-5 transition hover:bg-white/[0.025] sm:px-6 lg:grid-cols-[52px_minmax(180px,1fr)_110px_1.8fr] lg:items-center ${entry.rank <= 3 ? "bg-gradient-to-r from-emerald-200/[0.06] via-cyan-200/[0.025] to-transparent" : ""}`}>
               <div className="flex items-center justify-between lg:block">
                 <p className="text-xl font-semibold tabular-nums text-white/82">#{entry.rank}</p>
                 <p className="text-xl font-semibold tabular-nums text-emerald-100 lg:hidden">{entry.score}</p>
@@ -104,12 +112,12 @@ export default function SafetyIndexReport() {
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-emerald-200/14 bg-[linear-gradient(145deg,rgba(5,150,105,0.09),rgba(5,5,8,0.96))] p-5 sm:p-7">
+      <section className="rounded-[30px] border border-emerald-200/20 bg-[radial-gradient(circle_at_90%_0%,rgba(34,211,238,0.11),transparent_34%),linear-gradient(145deg,rgba(5,150,105,0.13),rgba(7,16,24,0.96))] p-5 sm:p-7">
         <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-100/70">Methodology {index.methodologyVersion}</p>
         <h2 className="mt-2 text-xl font-semibold text-white">How the 100-point readiness score is built</h2>
         <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {index.components.map((component) => (
-            <article key={component.key} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+          {index.components.map((component, componentIndex) => (
+            <article key={component.key} className={`rounded-[20px] border border-white/11 p-4 ${METHOD_TONES[componentIndex % METHOD_TONES.length]}`}>
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-white">{component.label}</h3>
                 <span className="rounded-full border border-emerald-200/20 bg-emerald-200/10 px-2 py-1 text-[10px] text-emerald-100">{component.weight} pts</span>

@@ -1,5 +1,71 @@
 export const SEO_REPORTS = [
   {
+    slug: "global-queer-safety-culture-index-methodology",
+    reportType: "methodology",
+    title: "Global Queer Safety & Culture Index 2026: Multi-Source Index & Methodology",
+    summary:
+      "A multi-source index combining published legal protection, public opinion, lived experience and long-term acceptance evidence.",
+    socialMeta: {
+      ogTitle: "Global Queer Safety & Culture Index 2026: Multi-Source Ranking",
+      ogDescription:
+        "Compare 159 Queer Atlas city contexts through a transparent ranking built from F&M, Equaldex, ILGA-Europe and the Williams Global Acceptance Index.",
+    },
+    publishedAt: "2026-08-22",
+    updatedAt: "2026-08-22",
+    authorId: "queer-atlas-editorial-team",
+    researchScope:
+      "The 2026 multi-source edition shows all 174 Queer Atlas destinations across 81 countries and territories. It ranks 159 city units using two balanced composites: legal protection from F&M, Equaldex and ILGA-Europe where covered; lived acceptance from F&M, Equaldex and the Williams Global Acceptance Index. Fifteen islands and regional destinations remain visible outside the city ranking.",
+    changeLog: [
+      {
+        date: "2026-08-22",
+        note: "Published methodology QA-GQSCI-3.0. Recalculated every position from two multi-source pillars: legal protection (F&M Unified Rights, Equaldex Legal Rights and ILGA-Europe where covered) and lived acceptance (F&M Lived Experience, Equaldex Public Opinion and Williams GAI). Each pillar requires at least two published inputs.",
+      },
+      {
+        date: "2026-08-22",
+        note: "Earlier QA-GQSCI-2.1 correction removed the incomplete Atlas-content composite and temporarily published a two-series external context table before the multi-source 3.0 edition was completed.",
+      },
+      {
+        date: "2026-08-22",
+        note: "Generated the pre-registered 36-city candidate frame from UN WUP 2025 across 18 region-by-population strata. Names remain unpublished pending source-name and GHSL boundary review; no city scoring was performed.",
+      },
+      {
+        date: "2026-08-22",
+        note: "Published the earlier QA-GQCI-0.2 research framework and its evidence-governance rules.",
+      },
+    ],
+    intent: "research",
+    keyphrases: [
+      "global queer safety and culture index 2026",
+      "best queer cities in the world",
+      "global queer safety and culture index methodology",
+      "LGBTQ city index research",
+      "queer city data methodology",
+    ],
+    methodology: [
+      "The published score gives 50% to legal protection and 50% to lived acceptance.",
+      "Legal protection is the mean of available F&M Unified Rights, Equaldex Legal Rights and ILGA-Europe 2026 inputs; ILGA-Europe applies only inside its published coverage.",
+      "Lived acceptance is the mean of available F&M Lived Experience, Equaldex Public Opinion and Williams Global Acceptance Index inputs; GAI is converted from 0–10 to 0–100 and retains its 2017–2020 period label.",
+      "Each pillar requires at least two published inputs. Every contributing value, source count and material source disagreement is disclosed with the ranking.",
+    ],
+    citations: [
+      "https://www.oecd.org/en/publications/handbook-on-constructing-composite-indicators-methodology-and-user-guide_9789264043466-en.html",
+      "https://ilga.org/laws-on-us-report/",
+      "https://rainbowmap.ilga-europe.org/about",
+      "https://fra.europa.eu/en/publication/2025/technical-report-eu-lgbtiq-survey-iii",
+      "https://www.hrc.org/resources/municipal-equality-index",
+      "https://www.citiesreport.open-for-business.org/methodology",
+      "https://www.fandmglobalbarometers.org/gbur-results/",
+      "https://www.fandmglobalbarometers.org/gbpi-results/",
+      "https://www.equaldex.com/equality-index",
+      "https://www.ilga-europe.org/report/rainbow-map-2026/",
+      "https://williamsinstitute.law.ucla.edu/publications/global-acceptance-index-lgbt/",
+      "https://population.un.org/wup/downloads?tab=Cities",
+      "https://unstats.un.org/unsd/methodology/m49/",
+      "https://human-settlement.emergency.copernicus.eu/ghs_ucdb_2024.php",
+    ],
+    creatorSnippets: {},
+  },
+  {
     slug: "queer-nightlife-index-2026",
     title: "Queer Nightlife Index 2026",
     summary:

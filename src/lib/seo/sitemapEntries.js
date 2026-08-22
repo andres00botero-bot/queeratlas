@@ -78,6 +78,7 @@ export async function getPageSitemapEntries() {
     "/now",
     "/now/news",
     "/now/rankings",
+    "/now/data",
     "/now/collections",
     "/now/voices",
     "/now/happening-soon",

@@ -47,6 +47,7 @@ import VibeTagChips from "@/components/ui/VibeTagChips";
 import BrandMark from "@/components/ui/BrandMark";
 import EmptyState from "@/components/ui/EmptyState";
 import PageControls from "@/components/ui/PageControls";
+import DataReportsNowSection from "@/components/reports/DataReportsNowSection";
 
 function isThisWeek(value, now) {
   const date = new Date(value);
@@ -1192,6 +1193,7 @@ export default function NowPage({ initialSection = "mixed" }) {
     () => [
       { id: "mixed", label: "News feed", href: "/now/news", tone: "cyan", count: displayedNewsItems.length },
       { id: "rankings", label: "Rankings", href: "/now/rankings", tone: "emerald", count: rankingItems.length },
+      { id: "data", label: "Data & Reports", href: "/now/data", tone: "fuchsia" },
       { id: "collections", label: "Atlas Collections", href: "/now/collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
       { id: "voices", label: "Voices", href: "/now/voices", tone: "fuchsia", count: communityStories.length },
       { id: "happening", label: "Happening soon", href: "/now/happening-soon", tone: "violet", count: happeningSoonEvents.length },
@@ -1947,10 +1949,22 @@ export default function NowPage({ initialSection = "mixed" }) {
 
   const isMixedSection = activeNowSection === "mixed";
   const isRankingSection = activeNowSection === "rankings";
+  const isDataSection = activeNowSection === "data";
   const isCollectionsSection = activeNowSection === "collections";
   const isPolicySection = activeNowSection === "policy";
   const isVoicesSection = activeNowSection === "voices";
   const isHappeningSection = activeNowSection === "happening";
+  const heroContent = isDataSection
+    ? {
+        eyebrow: "Original Research + Open Methodology",
+        title: "Queer Data & Reports",
+        description: "Citation-ready queer city research, transparent index methods, and frozen evidence snapshots.",
+      }
+    : {
+        eyebrow: "Live Discovery + Editorial Signal",
+        title: "Queer World News",
+        description: "Real-time queer signal across discovery, rights, and community narratives - curated in one premium flow.",
+      };
   useEffect(() => {
     if (activeNowSection === "policy") {
       queueMicrotask(() => {
@@ -1959,7 +1973,7 @@ export default function NowPage({ initialSection = "mixed" }) {
     }
   }, [activeNowSection]);
 
-  if (!ready || !today) {
+  if ((!ready || !today) && !isDataSection) {
     return (
       <main className="qa-page min-h-screen bg-black px-6 py-8 text-white">
         <script
@@ -1975,7 +1989,7 @@ export default function NowPage({ initialSection = "mixed" }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(nowCollectionsJsonLd) }}
         />
         <section className="sr-only" aria-label="Queer Atlas ranking index">
-          <h1>Queer World News</h1>
+          <h1>{heroContent.title}</h1>
           <h2>Top 10 Queer Travel Destinations {selectedRankingYear}</h2>
           <ol>
             {rankingItems.map((item, index) => {
@@ -2088,7 +2102,7 @@ export default function NowPage({ initialSection = "mixed" }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(nowCollectionsJsonLd) }}
         />
-        <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
+        {!isDataSection ? <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/now/queer-atlas-news-events-global-network-hero.png"
@@ -2103,13 +2117,13 @@ export default function NowPage({ initialSection = "mixed" }) {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(56,189,248,0.2),transparent_30%),radial-gradient(circle_at_82%_20%,rgba(244,114,182,0.2),transparent_28%)]" />
           </div>
           <div className="relative z-10 max-w-3xl">
-            <p className="qa-eyebrow text-fuchsia-100/90">Live Discovery + Editorial Signal</p>
+            <p className="qa-eyebrow text-fuchsia-100/90">{heroContent.eyebrow}</p>
             <h1 className="qa-display qa-h1 mt-3 inline-flex items-center gap-3 text-4xl font-bold text-white sm:gap-4 sm:text-5xl">
               <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12" />
-              Queer World News
+              {heroContent.title}
             </h1>
             <p className="qa-lead mt-4 max-w-2xl text-sm text-white/75">
-              Real-time queer signal across discovery, rights, and community narratives - curated in one premium flow.
+              {heroContent.description}
             </p>
           </div>
           {loadError && (
@@ -2128,9 +2142,22 @@ export default function NowPage({ initialSection = "mixed" }) {
               {syncWarning}
             </div>
           )}
-        </div>
+        </div> : null}
 
-        <PageControls
+        {isDataSection ? (
+          <nav aria-label="Now sections" className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {nowSections.map((section) => (
+              <Link
+                key={`data-nav-${section.id}`}
+                href={section.href}
+                aria-current={section.id === "data" ? "page" : undefined}
+                className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${section.id === "mixed" ? "border-amber-100/38 bg-[linear-gradient(135deg,rgba(251,191,36,0.2),rgba(244,114,182,0.16))] px-4 text-amber-50 shadow-[0_10px_30px_rgba(244,114,182,0.12)] hover:-translate-y-0.5 hover:border-amber-50/60 hover:bg-[linear-gradient(135deg,rgba(251,191,36,0.28),rgba(244,114,182,0.23))]" : section.id === "data" ? "border-cyan-100/30 bg-cyan-100/12 text-cyan-50" : "border-white/12 bg-white/[0.035] text-white/54 hover:border-white/22 hover:text-white/78"}`}
+              >
+                {section.id === "mixed" ? "← Back to news feed" : section.label}
+              </Link>
+            ))}
+          </nav>
+        ) : <PageControls
           className="mb-6 transition-all duration-300"
           controlsRef={nowControlsRef}
           controlButtonsRef={nowControlButtonsRef}
@@ -2139,7 +2166,7 @@ export default function NowPage({ initialSection = "mixed" }) {
           onSelect={(sectionId) => {
             setActiveNowSection(sectionId);
           }}
-        />
+        />}
 
         {(isMixedSection || isRankingSection) && (
         <section className="mb-6">
@@ -3148,6 +3175,8 @@ export default function NowPage({ initialSection = "mixed" }) {
           </div>
         </section>
         )}
+
+        {isDataSection && <DataReportsNowSection />}
 
         {isCollectionsSection && (
         <section id="atlas-collections" aria-labelledby="atlas-collections-heading" className="mt-8 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_8%_4%,rgba(34,211,238,0.16),transparent_28%),radial-gradient(circle_at_48%_-4%,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_92%_10%,rgba(190,242,100,0.10),transparent_26%),radial-gradient(circle_at_76%_90%,rgba(167,139,250,0.12),transparent_34%),linear-gradient(180deg,rgba(8,11,23,0.98),rgba(8,9,15,0.99),rgba(4,4,7,1))] p-5 shadow-[0_34px_120px_rgba(2,6,23,0.46)] sm:p-6">
