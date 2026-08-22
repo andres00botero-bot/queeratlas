@@ -11,6 +11,9 @@ import { GLOBAL_QUEER_SAFETY_CULTURE_INDEX_META_2026 } from "@/lib/seo/globalQue
 import NightlifeIndexReport from "@/components/reports/NightlifeIndexReport";
 import SafetyIndexReport from "@/components/reports/SafetyIndexReport";
 import GlobalQueerCityIndexMethodologyReport from "@/components/reports/GlobalQueerCityIndexMethodologyReport";
+import GlobalQueerEventReport from "@/components/reports/GlobalQueerEventReport";
+import TopNightlifeDestinationsReport from "@/components/reports/TopNightlifeDestinationsReport";
+import { GLOBAL_QUEER_EVENT_REPORT_2026 } from "@/lib/seo/globalQueerEventReport2026";
 
 const REPORT_THEMES = Object.freeze({
   nightlife: {
@@ -111,6 +114,20 @@ function buildFaqEntries(report) {
       },
     ];
   }
+  if (report.slug === "global-queer-event-report-2026") {
+    return [
+      { q: "What does the Global Queer Event Report 2026 show?", a: "It publishes a city-by-city list of 502 indexable 2026 events documented across 126 Queer Atlas cities." },
+      { q: "How are cities ordered?", a: "Cities are ordered by indexed event count. Ties use active calendar months, route-ready event count and then city name." },
+      { q: "Is this a complete census of global queer events?", a: "No. It is a transparent snapshot of documented Queer Atlas coverage and publishes that limitation with the results." },
+    ];
+  }
+  if (report.slug === "top-lgbtq-nightlife-destinations-2026") {
+    return [
+      { q: "What is the Top LGBTQ Nightlife Destinations 2026 list?", a: "It is the travel-facing Top 25 from the frozen QA-NI-1.0 Queer Nightlife Index, with every score component visible." },
+      { q: "How are destinations scored?", a: "The 100-point model combines nightlife depth, scene diversity, event momentum, venue intelligence, route readiness and community evidence." },
+      { q: "Does a high nightlife score guarantee personal safety?", a: "No. The ranking measures substantiated nightlife and route evidence; it is not a personal-safety guarantee or a complete measure of queer life." },
+    ];
+  }
   return [
     {
       q: `What is ${report.title}?`,
@@ -137,7 +154,10 @@ export default async function ReportDetailPage({ params }) {
   const isNightlifeIndex = report.slug === NIGHTLIFE_INDEX_2026.slug;
   const isSafetyIndex = report.slug === SAFETY_INDEX_2026.slug;
   const isGlobalMethodology = report.reportType === "methodology";
-  const evidenceIndex = isNightlifeIndex ? NIGHTLIFE_INDEX_2026 : isSafetyIndex ? SAFETY_INDEX_2026 : null;
+  const isGlobalEventReport = report.slug === "global-queer-event-report-2026";
+  const isTopNightlifeDestinations = report.slug === "top-lgbtq-nightlife-destinations-2026";
+  const prioritizeResults = isGlobalEventReport || isTopNightlifeDestinations;
+  const evidenceIndex = isNightlifeIndex || isTopNightlifeDestinations ? NIGHTLIFE_INDEX_2026 : isSafetyIndex ? SAFETY_INDEX_2026 : null;
   const theme = REPORT_THEMES[report.intent] || REPORT_THEMES.research;
   const storedEditorial = await getPublishedEditorialRecord(`report:${report.slug}`, {
     publishedAt: report.publishedAt,
@@ -146,7 +166,7 @@ export default async function ReportDetailPage({ params }) {
     changeLog: report.changeLog,
     author: EDITORIAL_TEAM,
   });
-  const editorial = evidenceIndex
+  const editorial = evidenceIndex || isGlobalEventReport
     ? {
         ...storedEditorial,
         updatedAt: report.updatedAt,
@@ -188,7 +208,7 @@ export default async function ReportDetailPage({ params }) {
     ...(citationUrls.length > 0 ? { citation: citationUrls } : {}),
     publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
     about: report.keyphrases,
-    ...(evidenceIndex || isGlobalMethodology ? { mainEntity: { "@id": `${canonicalUrl}#dataset` } } : {}),
+    ...(evidenceIndex || isGlobalMethodology || isGlobalEventReport ? { mainEntity: { "@id": `${canonicalUrl}#dataset` } } : {}),
   };
 
   const datasetJsonLd = isGlobalMethodology
@@ -222,6 +242,30 @@ export default async function ReportDetailPage({ params }) {
         license: `${QA_SITE_URL}/terms`,
         isAccessibleForFree: true,
       }
+    : isGlobalEventReport
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Dataset",
+        "@id": `${canonicalUrl}#dataset`,
+        name: report.title,
+        description: report.summary,
+        url: canonicalUrl,
+        creator: { "@id": QA_ORGANIZATION_ID },
+        publisher: { "@id": QA_ORGANIZATION_ID },
+        datePublished: editorial.publishedAt,
+        dateModified: editorial.updatedAt,
+        temporalCoverage: GLOBAL_QUEER_EVENT_REPORT_2026.temporalCoverage,
+        measurementTechnique: GLOBAL_QUEER_EVENT_REPORT_2026.methodologyVersion,
+        spatialCoverage: `${GLOBAL_QUEER_EVENT_REPORT_2026.scope.atlasCitiesWithEvents} Queer Atlas cities`,
+        variableMeasured: [
+          { "@type": "PropertyValue", name: "Indexed 2026 events" },
+          { "@type": "PropertyValue", name: "Active calendar months" },
+          { "@type": "PropertyValue", name: "Route-ready events" },
+        ],
+        distribution: { "@type": "DataDownload", encodingFormat: "text/csv", contentUrl: `${QA_SITE_URL}/api/reports/global-queer-event-report-2026` },
+        license: `${QA_SITE_URL}/terms`,
+        isAccessibleForFree: true,
+      }
     : evidenceIndex
     ? {
         "@context": "https://schema.org",
@@ -245,7 +289,7 @@ export default async function ReportDetailPage({ params }) {
         distribution: {
           "@type": "DataDownload",
           encodingFormat: "text/csv",
-          contentUrl: `${QA_SITE_URL}${isNightlifeIndex ? "/api/reports/nightlife-index-2026" : "/api/reports/safety-index-2026"}`,
+          contentUrl: `${QA_SITE_URL}${isNightlifeIndex || isTopNightlifeDestinations ? "/api/reports/nightlife-index-2026" : "/api/reports/safety-index-2026"}`,
         },
         license: `${QA_SITE_URL}/terms`,
         isAccessibleForFree: true,
@@ -281,7 +325,7 @@ export default async function ReportDetailPage({ params }) {
       {datasetJsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetJsonLd) }} /> : null}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <div className={`mx-auto space-y-6 ${evidenceIndex || isGlobalMethodology ? "max-w-6xl" : "max-w-4xl"}`}>
+      <div className={`mx-auto space-y-6 ${evidenceIndex || isGlobalMethodology || isGlobalEventReport ? "max-w-6xl" : "max-w-4xl"}`}>
         <nav aria-label="Report navigation" className="flex flex-wrap items-center gap-2">
           <Link href="/now/data" className="inline-flex min-h-11 items-center rounded-full border border-cyan-100/24 bg-cyan-100/[0.09] px-4 py-2.5 text-xs font-semibold text-cyan-50 shadow-[0_10px_28px_rgba(34,211,238,0.08)] transition hover:-translate-y-0.5 hover:border-cyan-100/42 hover:bg-cyan-100/[0.15]">← Data &amp; Reports</Link>
           <Link href="/reports" className="inline-flex min-h-11 items-center rounded-full border border-white/18 bg-white/[0.06] px-4 py-2.5 text-xs font-semibold text-white/82 transition hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.11]">All reports</Link>
@@ -294,7 +338,7 @@ export default async function ReportDetailPage({ params }) {
           <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 border-t border-white/12 pt-5 text-[10px] font-semibold uppercase tracking-[0.13em] text-white/42"><span>Published {editorial.publishedAt}</span><span>Updated {editorial.updatedAt}</span><span className={theme.accent}>Stable report URL</span></div>
         </header> : null}
 
-        {!isGlobalMethodology ? <EditorialDisclosure
+        {!isGlobalMethodology && !prioritizeResults ? <EditorialDisclosure
           author={editorial.author}
           reviewer={editorial.reviewer}
           publishedAt={editorial.publishedAt}
@@ -310,6 +354,10 @@ export default async function ReportDetailPage({ params }) {
           <SafetyIndexReport />
         ) : isGlobalMethodology ? (
           <GlobalQueerCityIndexMethodologyReport />
+        ) : isGlobalEventReport ? (
+          <GlobalQueerEventReport />
+        ) : isTopNightlifeDestinations ? (
+          <TopNightlifeDestinationsReport />
         ) : (
           <section className={`rounded-[28px] border p-5 sm:p-6 ${theme.soft}`}>
             <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${theme.eyebrow}`}>Transparent by design</p>
@@ -317,6 +365,16 @@ export default async function ReportDetailPage({ params }) {
             <div className="mt-5 grid gap-3 md:grid-cols-3">{report.methodology.map((item, index) => <article key={item} className="rounded-[20px] border border-white/11 bg-black/20 p-4"><span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-white/[0.07] text-xs font-semibold text-white/76">{index + 1}</span><p className="mt-3 text-sm leading-6 text-white/66">{item}</p></article>)}</div>
           </section>
         )}
+
+        {prioritizeResults ? <EditorialDisclosure
+          author={editorial.author}
+          reviewer={editorial.reviewer}
+          publishedAt={editorial.publishedAt}
+          updatedAt={editorial.updatedAt}
+          researchScope={editorial.researchScope}
+          changeLog={editorial.changeLog}
+          sources={editorial.sources}
+        /> : null}
 
         {!isGlobalMethodology ? <section className="rounded-[28px] border border-cyan-100/14 bg-[linear-gradient(145deg,rgba(34,211,238,0.055),rgba(139,92,246,0.035))] p-5 sm:p-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/58">Reader notes</p><h2 className="mt-2 text-xl font-semibold tracking-[-0.025em]">Questions, answered clearly</h2>

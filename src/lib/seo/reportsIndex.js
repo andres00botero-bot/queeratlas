@@ -167,18 +167,22 @@ export const SEO_REPORTS = [
     slug: "global-queer-event-report-2026",
     title: "Global Queer Event Report 2026",
     summary:
-      "Global event-intent report focused on timing density, discoverability, and route execution quality.",
+      "A transparent city list of 502 indexable 2026 queer events across 126 Atlas cities, with calendar depth and route readiness disclosed.",
     socialMeta: {
       ogTitle: "Global Queer Event Report 2026: Where Events Actually Convert",
       ogDescription:
-        "A global event-intent report mapping timing density and route execution quality across top queer cities.",
+        "Compare 502 documented 2026 queer events across 126 Atlas cities, including active months, source links and route-ready event coverage.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-08-04",
+    updatedAt: "2026-08-22",
     authorId: "queer-atlas-editorial-team",
     researchScope:
-      "This edition reviews event timing, discoverability, and route execution patterns represented in Queer Atlas event and city-topic coverage. It does not claim to be a complete global event census.",
+      "This edition counts 502 indexable events dated in 2026 across 126 Queer Atlas cities. It publishes every city position, active calendar months, source-link coverage, map coverage and route-ready count. It measures documented Atlas coverage, not every queer event operating worldwide.",
     changeLog: [
+      {
+        date: "2026-08-22",
+        note: "Published the complete QA-GER-1.0 city list, raw event counts, active months, route-ready coverage and downloadable CSV from a frozen 2026 event snapshot.",
+      },
       {
         date: "2026-08-04",
         note: "Added editorial ownership, research limitations, and a public change history; event findings were not changed.",
@@ -195,35 +199,39 @@ export const SEO_REPORTS = [
       "queer events trend report",
     ],
     methodology: [
-      "Event intensity measured by route-ready timing windows and city conversion paths.",
-      "Cross-check against discover pages for same-night usability.",
-      "Reporting emphasizes actionable sequence quality over raw event count.",
+      "Include events dated in 2026, attached to an Atlas city and not explicitly excluded from search indexing.",
+      "Order cities by raw event count; ties use active months, route-ready event count and city name.",
+      "Publish raw counts and coverage rather than a hidden composite score; route-ready means the record has both a source link and valid map coordinates.",
     ],
     creatorSnippets: {
       reddit:
-        "Global Queer Event Report 2026 just dropped. We mapped event timing density and route usability so you can plan beyond random event lists.",
+        "The Global Queer Event Report 2026 maps 502 documented events across 126 Atlas cities. Madrid leads the published calendar count, followed by Provincetown and London. Every city row and limitation is visible.",
       tiktok:
-        "Global Queer Event Report 2026 is live. We track where events are not just frequent, but actually routeable in real life.",
+        "502 queer events. 126 cities. Madrid, Provincetown and London lead the documented 2026 calendars—and the full city list is public.",
       instagram:
-        "Global Queer Event Report 2026 is here. Timing density + route execution = better nights, less guesswork. Save and share.",
+        "Global Queer Event Report 2026: 502 indexed events across 126 cities, with active months and route-ready coverage published for every destination.",
     },
   },
   {
     slug: "top-lgbtq-nightlife-destinations-2026",
     title: "Top LGBTQ Nightlife Destinations 2026",
     summary:
-      "Destination-level nightlife authority report for high-intent planning and AI-citable city comparisons.",
+      "A complete Top 25 destination list using the audited six-component Queer Nightlife Index 2026 snapshot.",
     socialMeta: {
       ogTitle: "Top LGBTQ Nightlife Destinations 2026: Authority Ranking",
       ogDescription:
-        "Destination ranking built on nightlife depth, route breadth, and social-fit consistency, not one-off hype.",
+        "Explore the full Top 25 using nightlife depth, diversity, event momentum, venue intelligence, route readiness and community evidence.",
     },
     publishedAt: "2026-05-01",
-    updatedAt: "2026-08-04",
+    updatedAt: "2026-08-22",
     authorId: "queer-atlas-editorial-team",
     researchScope:
-      "This edition reviews nightlife depth, route breadth, and social-fit coverage across Queer Atlas destinations. The current page does not expose a raw destination score table, so it should not be treated as an independently audited league table.",
+      "This travel-facing edition publishes all 25 leading destinations from the frozen QA-NI-1.0 Nightlife Index snapshot. Every city exposes its total score, six component scores, nightlife-place count, indexed event count, review count and direct city link.",
     changeLog: [
+      {
+        date: "2026-08-22",
+        note: "Replaced the generic report shell with the complete Top 25 destination table and all six visible QA-NI-1.0 components.",
+      },
       {
         date: "2026-08-04",
         note: "Added editorial ownership, research limitations, and a public change history; destination findings were not changed.",
@@ -240,17 +248,17 @@ export const SEO_REPORTS = [
       "queer nightlife destination ranking",
     ],
     methodology: [
-      "Destination ranking based on nightlife depth, city-route breadth, and social-fit diversity.",
-      "Scoring favors consistent route outcomes over one-off viral visibility.",
-      "Every destination claim maps back to city and topic route evidence.",
+      "Reuse the frozen QA-NI-1.0 ranking without a second editorial reorder.",
+      "Combine nightlife depth (30), scene diversity (15), event momentum (20), venue intelligence (15), route readiness (10) and community evidence (10).",
+      "Publish every component, evidence count, limitation and city route alongside the destination position.",
     ],
     creatorSnippets: {
       reddit:
-        "Top LGBTQ Nightlife Destinations 2026 is now published. We rank destinations by nightlife depth and route reliability, not one-off party buzz.",
+        "Berlin, Madrid and Amsterdam lead the Top LGBTQ Nightlife Destinations 2026. The full Top 25 publishes all six QA-NI-1.0 components, evidence counts and limitations.",
       tiktok:
-        "Top LGBTQ Nightlife Destinations 2026 just went live. Real route outcomes, not trend-chasing lists.",
+        "Berlin #1, Madrid #2, Amsterdam #3. Explore all 25 destinations with six visible nightlife and route components.",
       instagram:
-        "Top LGBTQ Nightlife Destinations 2026 is out. Built on route depth, consistency, and social-fit signals. Add this to your travel shortlist.",
+        "Top LGBTQ Nightlife Destinations 2026: Berlin, Madrid and Amsterdam lead a complete Top 25 built from six published evidence components.",
     },
   },
 ];

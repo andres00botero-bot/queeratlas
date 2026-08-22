@@ -26,6 +26,7 @@
     "audit:nightlife-index": "node --use-system-ca --env-file=.env.local scripts/audit-nightlife-index.mjs",
     "test:safety-index": "node scripts/test-safety-index.mjs",
     "test:global-queer-index": "node scripts/test-global-queer-index.mjs",
+    "test:report-lists": "node scripts/test-report-lists.mjs",
     "test:qari-phase1": "node scripts/test-qari-phase1.mjs",
     "test:search-trust": "node scripts/test-search-trust.mjs",
     "audit:safety-index": "node --use-system-ca --env-file=.env.local scripts/audit-safety-index.mjs",
