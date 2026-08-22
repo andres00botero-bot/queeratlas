@@ -97,7 +97,10 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
               <ShieldCheck size={14} className="text-cyan-100/44" aria-hidden="true" />
             </div>
             <div className="mt-2 flex items-center justify-between gap-3">
-              <h3 className="text-lg font-semibold tracking-[-0.02em] text-white">What is QARI?</h3>
+              <h3 className="text-lg font-semibold tracking-[-0.02em] text-white">
+                <span className="sm:hidden">QARI</span>
+                <span className="hidden sm:inline">What is QARI?</span>
+              </h3>
               <span className="flex items-center gap-1" aria-hidden="true">
                 {QARI_COLORS.map((color) => (
                   <span key={color} className="h-2 w-2 rounded-full shadow-[0_0_9px_currentColor]" style={{ backgroundColor: color, color }} />
@@ -120,6 +123,13 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
                 </div>
               ))}
             </div>
+
+            <p className="mt-2 text-[9px] font-medium tracking-[0.04em] text-white/48 sm:hidden" aria-label="Queer Atlas Risk Index">
+              <span className="font-semibold text-cyan-200">Q</span>ueer{" "}
+              <span className="font-semibold text-emerald-200">A</span>tlas{" "}
+              <span className="font-semibold text-amber-200">R</span>isk{" "}
+              <span className="font-semibold text-rose-200">I</span>ndex
+            </p>
 
             <Link
               href="/cities"
