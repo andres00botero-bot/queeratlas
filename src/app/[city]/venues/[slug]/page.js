@@ -13,6 +13,10 @@ import {
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
+import {
+  schemaTypeForVenue,
+  supportsVenueAggregateRating,
+} from "@/lib/seo/venueStructuredData";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
@@ -120,10 +124,11 @@ function buildPlaceJsonLd({ place, city, cityName }) {
   const hasGeo = Number.isFinite(maybeLat) && Number.isFinite(maybeLng);
   const reviewCount = Number(place?.reviewCount || 0);
   const ratingValue = Number(place?.avgRating || 0);
+  const schemaType = schemaTypeForVenue(place?.type);
 
   const payload = {
     "@context": "https://schema.org",
-    "@type": "Place",
+    "@type": schemaType,
     "@id": `${canonicalUrl}#place`,
     name: String(place?.name || ""),
     description: String(place?.description || "").trim() || `${String(place?.name || "")} in ${cityName}.`,
@@ -157,7 +162,11 @@ function buildPlaceJsonLd({ place, city, cityName }) {
     payload.sameAs = [String(place.link)];
   }
 
-  if (reviewCount > 0 && ratingValue > 0) {
+  if (
+    reviewCount > 0 &&
+    ratingValue > 0 &&
+    supportsVenueAggregateRating(place?.type)
+  ) {
     payload.aggregateRating = {
       "@type": "AggregateRating",
       ratingValue: Number(ratingValue.toFixed(1)),
