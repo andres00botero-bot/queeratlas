@@ -11,8 +11,8 @@ import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { evaluateMapInitReadiness } from "@/lib/mapInitGuard";
 import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { getEntityQuality, getQualityMap, getQualityStatus } from "@/lib/quality";
-import { cityPath } from "@/lib/cityRouting";
-import { buildEventPath, buildServicePath, buildVenuePath } from "@/lib/seo/entitySlug";
+import { cityPath, citySelectionPath } from "@/lib/cityRouting";
+import { buildEventPath, buildServicePath } from "@/lib/seo/entitySlug";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { formatVibeTagLabel, normalizeVibeTag } from "@/lib/vibeTaxonomy";
@@ -105,7 +105,7 @@ function getTypeLabel(type = "", { plural = false } = {}) {
 
 function getResultHref(item = {}) {
   if (item.type === "city") return cityPath(item.key || item.id || item.name);
-  if (item.type === "place") return buildVenuePath(item.city, item);
+  if (item.type === "place") return citySelectionPath(item.city, { placeId: item.id });
   if (item.type === "event") return buildEventPath(item.city, item);
   if (item.type === "service") return buildServicePath(item.city, item);
   if (item.type === "guide") return item.href || "/now";
