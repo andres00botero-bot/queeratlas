@@ -307,6 +307,20 @@ export default async function CityVenueDetailPage({ params }) {
         <header className="rounded-[22px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[28px] sm:p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Venue Detail</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{place.name}</h1>
+          <CityPanelButton
+            city={city}
+            entityKind="place"
+            entityId={String(place.id)}
+            className="group relative mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl border border-cyan-100/55 bg-[linear-gradient(105deg,rgba(8,145,178,0.34),rgba(124,58,237,0.34),rgba(219,39,119,0.28))] px-5 py-3 text-sm font-bold text-white shadow-[0_12px_34px_rgba(34,211,238,0.16)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-50/80 hover:shadow-[0_16px_42px_rgba(34,211,238,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090909] sm:w-auto"
+          >
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_22%_50%,rgba(103,232,249,0.28),transparent_44%)] motion-reduce:animate-none"
+            />
+            <MapPin className="relative h-4 w-4 shrink-0 text-cyan-100" aria-hidden="true" />
+            <span className="relative">Open {place.name} in the {cityName} city guide</span>
+            <span className="relative text-cyan-100 transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+          </CityPanelButton>
           <p className="mt-2 hidden text-sm text-white/70 sm:block">
             {cityName} venue intelligence with route context, hours, and trusted local signal.
           </p>
