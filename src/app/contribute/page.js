@@ -49,6 +49,7 @@ import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 import { buildVenueIntelPayload, getVenueIntelLabels } from "@/lib/venueIntel";
 import MemberContributionWorkspace from "@/components/contribute/MemberContributionWorkspace";
 import VenueLocationPicker from "@/components/location/VenueLocationPicker";
+import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 
 const STORAGE_KEY = "qa_contribute_requests";
 
@@ -280,6 +281,9 @@ export default function ContributePage() {
     city: "",
     type: "club",
     address: "",
+    lat: null,
+    lng: null,
+    location_source: "",
     description: "",
     hours: "",
     link: "",
@@ -293,6 +297,9 @@ export default function ContributePage() {
     name: "",
     city: "",
     address: "",
+    lat: null,
+    lng: null,
+    location_source: "",
     date: "",
     description: "",
     link: "",
@@ -415,7 +422,7 @@ export default function ContributePage() {
       try {
         const { data, error } = await supabase
           .from("services")
-          .select("id, name, city, type, provider_name, contact, booking_link, image_urls, location, description, hours, link, price_tier, vibe, vibe_tags, source, lastChecked, created_by")
+          .select("id, name, city, type, provider_name, contact, booking_link, image_urls, location, lat, lng, description, hours, link, price_tier, vibe, vibe_tags, source, lastChecked, created_by")
           .eq("id", editingServiceId)
           .maybeSingle();
 
@@ -456,6 +463,9 @@ export default function ContributePage() {
           booking_link: String(data.booking_link || ""),
           image_urls: normalizeServiceImageUrls(data.image_urls),
           address: String(data.location || ""),
+          lat: Number.isFinite(Number(data.lat)) ? Number(data.lat) : null,
+          lng: Number.isFinite(Number(data.lng)) ? Number(data.lng) : null,
+          location_source: "saved",
           description: String(data.description || ""),
           hours: String(data.hours || ""),
           link: String(data.link || ""),
@@ -687,20 +697,6 @@ export default function ContributePage() {
     ? cityConfig[selectedCity]?.title?.replace("Queer ", "") || "Selected city"
     : "Any city";
 
-  const geocodeAddress = async (address, cityName) => {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) throw new Error("Map token is missing.");
-    const query = `${address} ${cityName}`.trim();
-    const res = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&limit=1`
-    );
-    if (!res.ok) throw new Error("Could not reach geocoding service.");
-    const data = await res.json();
-    if (!data.features?.length) return null;
-    const [lng, lat] = data.features[0].center;
-    return { lat, lng };
-  };
-
   const submitRequest = (event) => {
     event.preventDefault();
 
@@ -839,8 +835,8 @@ export default function ContributePage() {
 
     try {
       const cityName = placeForm.city.trim();
-      const coords = { lat: Number(placeForm.lat), lng: Number(placeForm.lng) };
-      if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) {
+      const coords = normalizeConfirmedCoordinates(placeForm);
+      if (!coords) {
         setPlaceNotice("Choose an address suggestion or confirm the pin on the map before saving.");
         showToast("Venue not saved. Confirm its map position first.", { tone: "warn", duration: 2800 });
         return;
@@ -979,10 +975,10 @@ export default function ContributePage() {
 
     try {
       const cityName = eventForm.city.trim();
-      const coords = await geocodeAddress(eventForm.address, cityName);
-
+      const coords = normalizeConfirmedCoordinates(eventForm);
       if (!coords) {
-        setEventNotice("Address not found. Try a more specific address.");
+        setEventNotice("Choose an address suggestion or confirm the pin on the map before saving.");
+        showToast("Event not saved. Confirm its map position first.", { tone: "warn", duration: 2800 });
         return;
       }
 
@@ -1039,6 +1035,9 @@ export default function ContributePage() {
           name: "",
           city: "",
           address: "",
+          lat: null,
+          lng: null,
+          location_source: "",
           date: "",
           description: "",
           link: "",
@@ -1135,6 +1134,9 @@ export default function ContributePage() {
         name: "",
         city: "",
         address: "",
+        lat: null,
+        lng: null,
+        location_source: "",
         date: "",
         description: "",
         link: "",
@@ -1182,10 +1184,10 @@ export default function ContributePage() {
 
     try {
       const cityName = serviceForm.city.trim();
-      const coords = await geocodeAddress(serviceForm.address, cityName);
-
+      const coords = normalizeConfirmedCoordinates(serviceForm);
       if (!coords) {
-        setServiceNotice("Address not found. Try a more specific address.");
+        setServiceNotice("Choose an address suggestion or confirm the pin on the map before saving.");
+        showToast("Service not saved. Confirm its map position first.", { tone: "warn", duration: 2800 });
         return;
       }
 
@@ -1892,9 +1894,8 @@ export default function ContributePage() {
                   <VenueLocationPicker
                     address={placeForm.address}
                     city={placeForm.city}
-                    location={Number.isFinite(Number(placeForm.lat)) && Number.isFinite(Number(placeForm.lng)) ? {
-                      lat: Number(placeForm.lat),
-                      lng: Number(placeForm.lng),
+                    location={normalizeConfirmedCoordinates(placeForm) ? {
+                      ...normalizeConfirmedCoordinates(placeForm),
                       source: placeForm.location_source,
                     } : null}
                     onAddressChange={(nextAddress) => setPlaceForm((current) => ({ ...current, address: nextAddress }))}
@@ -1963,8 +1964,24 @@ export default function ContributePage() {
             {addEventMode && (
                 <div className="mt-4 space-y-3 rounded-2xl border border-violet-300/20 bg-violet-300/6 p-4">
                   <Field value={eventForm.name} onChange={(event) => setEventForm((current) => ({ ...current, name: event.target.value }))} placeholder="Event name" />
-                  <Field value={eventForm.city} onChange={(event) => setEventForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
-                  <Field value={eventForm.address} onChange={(event) => setEventForm((current) => ({ ...current, address: event.target.value }))} placeholder="Address" />
+                  <Field value={eventForm.city} onChange={(event) => setEventForm((current) => ({ ...current, city: event.target.value, lat: null, lng: null, location_source: "" }))} placeholder="City" />
+                  <VenueLocationPicker
+                    entityLabel="Event"
+                    inputId="event-location-address"
+                    address={eventForm.address}
+                    city={eventForm.city}
+                    location={normalizeConfirmedCoordinates(eventForm) ? {
+                      ...normalizeConfirmedCoordinates(eventForm),
+                      source: eventForm.location_source,
+                    } : null}
+                    onAddressChange={(nextAddress) => setEventForm((current) => ({ ...current, address: nextAddress }))}
+                    onLocationChange={(nextLocation) => setEventForm((current) => ({
+                      ...current,
+                      lat: nextLocation?.lat ?? null,
+                      lng: nextLocation?.lng ?? null,
+                      location_source: nextLocation?.source || "",
+                    }))}
+                  />
                 <DateInput
                   value={eventForm.date}
                   onChange={(event) => setEventForm((current) => ({ ...current, date: event.target.value }))}
@@ -2052,7 +2069,7 @@ export default function ContributePage() {
                 />
                 <Field
                   value={serviceForm.city}
-                  onChange={(event) => setServiceForm((current) => ({ ...current, city: event.target.value }))}
+                  onChange={(event) => setServiceForm((current) => ({ ...current, city: event.target.value, lat: null, lng: null, location_source: "" }))}
                   placeholder="City"
                 />
                 <div className="grid gap-3 md:grid-cols-2">
@@ -2161,10 +2178,22 @@ export default function ContributePage() {
                   onChange={(event) => setServiceForm((current) => ({ ...current, link: event.target.value }))}
                   placeholder="Official link (optional)"
                 />
-                <Field
-                  value={serviceForm.address}
-                  onChange={(event) => setServiceForm((current) => ({ ...current, address: event.target.value }))}
-                  placeholder="Address"
+                <VenueLocationPicker
+                  entityLabel="Service"
+                  inputId="service-location-address"
+                  address={serviceForm.address}
+                  city={serviceForm.city}
+                  location={normalizeConfirmedCoordinates(serviceForm) ? {
+                    ...normalizeConfirmedCoordinates(serviceForm),
+                    source: serviceForm.location_source,
+                  } : null}
+                  onAddressChange={(nextAddress) => setServiceForm((current) => ({ ...current, address: nextAddress }))}
+                  onLocationChange={(nextLocation) => setServiceForm((current) => ({
+                    ...current,
+                    lat: nextLocation?.lat ?? null,
+                    lng: nextLocation?.lng ?? null,
+                    location_source: nextLocation?.source || "",
+                  }))}
                 />
                 <Field
                   value={serviceForm.hours}

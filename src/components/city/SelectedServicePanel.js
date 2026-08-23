@@ -86,6 +86,7 @@ export default function SelectedServicePanel({
           canDelete={canDeleteSelectedService}
           serviceTypes={serviceTypes}
           priceTierOptions={priceTierOptions}
+          city={selectedService.city || cityLabel}
         />
       </div>
 

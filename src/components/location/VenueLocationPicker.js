@@ -22,6 +22,8 @@ export default function VenueLocationPicker({
   location,
   onAddressChange,
   onLocationChange,
+  entityLabel = "Venue",
+  inputId = "venue-location-address",
 }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -42,6 +44,8 @@ export default function VenueLocationPicker({
   const cityContext = useMemo(() => resolveCityGeocodingContext(city), [city]);
   const cityCenterKey = cityContext.center?.join(",") || "";
   const boundsRef = useRef(cityContext.bounds);
+  const normalizedEntityLabel = String(entityLabel || "Location").trim();
+  const entityLabelLower = normalizedEntityLabel.toLowerCase();
 
   useEffect(() => {
     addressRef.current = address;
@@ -232,8 +236,8 @@ export default function VenueLocationPicker({
 
   return (
     <div className="rounded-2xl border border-cyan-200/18 bg-cyan-200/[0.045] p-3">
-      <label htmlFor="venue-location-address" className="text-xs font-semibold text-white/82">
-        Venue address and map position
+      <label htmlFor={inputId} className="text-xs font-semibold text-white/82">
+        {normalizedEntityLabel} address and map position
       </label>
       <p className="mt-1 text-[11px] leading-4 text-white/46">
         Type the address, choose the intended result, then confirm the pin on the map.
@@ -241,7 +245,7 @@ export default function VenueLocationPicker({
       <div className="relative mt-2">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35" aria-hidden="true" />
         <input
-          id="venue-location-address"
+          id={inputId}
           value={address}
           onChange={handleAddressInput}
           placeholder={cityContext.city ? `Search an address in ${cityContext.city}` : "Enter city first, then search address"}
@@ -293,9 +297,9 @@ export default function VenueLocationPicker({
 
       {showMap ? (
         <div className="mt-3 overflow-hidden rounded-xl border border-white/14 bg-black/35">
-          <div ref={mapContainerRef} aria-label="Venue pin confirmation map" className="h-60 w-full" />
+          <div ref={mapContainerRef} aria-label={`${normalizedEntityLabel} pin confirmation map`} className="h-60 w-full" />
           <p className="border-t border-white/10 px-3 py-2 text-[11px] leading-4 text-white/48">
-            Click the exact location or drag the pin. The venue cannot be saved until a pin is confirmed.
+            Click the exact location or drag the pin. The {entityLabelLower} cannot be saved until a pin is confirmed.
           </p>
         </div>
       ) : null}

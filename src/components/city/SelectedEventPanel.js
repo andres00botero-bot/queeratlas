@@ -117,6 +117,7 @@ export default function SelectedEventPanel({
           isSaving={isSavingEventAdmin}
           onDelete={handleAdminDeleteEvent}
           isDeleting={isDeletingEventAdmin}
+          city={selectedEvent.city || cityName || cityLabel}
         />
       </div>
 

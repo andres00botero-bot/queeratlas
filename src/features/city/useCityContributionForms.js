@@ -22,6 +22,7 @@ export function useCityContributionForms() {
 
   const [eventName, setEventName] = useState("");
   const [eventAddress, setEventAddress] = useState("");
+  const [eventLocation, setEventLocation] = useState(null);
   const [eventStartDate, setEventStartDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
   const [eventVibe, setEventVibe] = useState("");
@@ -55,6 +56,7 @@ export function useCityContributionForms() {
   const resetEventForm = useCallback(() => {
     setEventName("");
     setEventAddress("");
+    setEventLocation(null);
     setEventStartDate("");
     setEventEndDate("");
     setEventVibe("");
@@ -102,6 +104,8 @@ export function useCityContributionForms() {
     setEventName,
     eventAddress,
     setEventAddress,
+    eventLocation,
+    setEventLocation,
     eventStartDate,
     setEventStartDate,
     eventEndDate,

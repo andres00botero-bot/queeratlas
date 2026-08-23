@@ -9,6 +9,7 @@ export function useCityServiceForm() {
   const [serviceName, setServiceName] = useState("");
   const [serviceType, setServiceType] = useState(DEFAULT_SERVICE_TYPE);
   const [serviceAddress, setServiceAddress] = useState("");
+  const [serviceLocation, setServiceLocation] = useState(null);
   const [serviceDescription, setServiceDescription] = useState("");
   const [serviceVibe, setServiceVibe] = useState("");
   const [serviceVibeTags, setServiceVibeTags] = useState([]);
@@ -29,6 +30,7 @@ export function useCityServiceForm() {
     setServiceName("");
     setServiceType(DEFAULT_SERVICE_TYPE);
     setServiceAddress("");
+    setServiceLocation(null);
     setServiceDescription("");
     setServiceVibe("");
     setServiceVibeTags([]);
@@ -53,6 +55,8 @@ export function useCityServiceForm() {
     setServiceType,
     serviceAddress,
     setServiceAddress,
+    serviceLocation,
+    setServiceLocation,
     serviceDescription,
     setServiceDescription,
     serviceVibe,

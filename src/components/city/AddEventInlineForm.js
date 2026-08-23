@@ -3,6 +3,7 @@
 import DateInput from "@/components/ui/DateInput";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
+import VenueLocationPicker from "@/components/location/VenueLocationPicker";
 
 export default function AddEventInlineForm({
   addEventFormRef,
@@ -20,6 +21,9 @@ export default function AddEventInlineForm({
   setEventTicketUrl,
   eventAddress,
   setEventAddress,
+  city,
+  eventLocation,
+  setEventLocation,
   eventStartDate,
   setEventStartDate,
   eventEndDate,
@@ -68,7 +72,15 @@ export default function AddEventInlineForm({
           className="mt-2 w-full rounded-2xl border border-emerald-100/24 bg-black/35 p-3 outline-none focus:border-emerald-100/55"
         />
       </label>
-      <input value={eventAddress} onChange={(event) => setEventAddress(event.target.value)} placeholder="Address" className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none" />
+      <VenueLocationPicker
+        entityLabel="Event"
+        inputId="city-event-location-address"
+        address={eventAddress}
+        city={city}
+        location={eventLocation}
+        onAddressChange={setEventAddress}
+        onLocationChange={setEventLocation}
+      />
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <p className="mb-1 text-[11px] uppercase tracking-[0.12em] text-white/55">From</p>
@@ -92,7 +104,7 @@ export default function AddEventInlineForm({
           { key: "inclusion", label: "Host and security inclusion", value: eventHostInclusivity, onChange: setEventHostInclusivity, placeholder: "Share a factual inclusion or accessibility signal", wide: true },
         ]}
       />
-      <button onClick={onSaveEvent} className="w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 font-semibold text-black">
+      <button disabled={!eventLocation} onClick={onSaveEvent} className="w-full rounded-2xl bg-gradient-to-r from-violet-300 to-fuchsia-200 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45">
         Save event
       </button>
     </div>

@@ -168,6 +168,7 @@ export default function SelectedPlacePanel({
                 onDelete={handleAdminDeletePlace}
                 isDeleting={isDeletingPlaceAdmin}
                 placeTypes={placeTypes}
+                city={selectedPlace.city || cityName}
               />
             </div>
           ) : null}

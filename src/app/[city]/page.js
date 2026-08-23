@@ -117,6 +117,7 @@ import {
   TYPE_STYLES,
 } from "@/features/city/cityPageConstants";
 import styles from "./page.module.css";
+import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 
@@ -237,6 +238,8 @@ export default function CityPage() {
     setEventName,
     eventAddress,
     setEventAddress,
+    eventLocation,
+    setEventLocation,
     eventStartDate,
     setEventStartDate,
     eventEndDate,
@@ -271,6 +274,8 @@ export default function CityPage() {
     setServiceType,
     serviceAddress,
     setServiceAddress,
+    serviceLocation,
+    setServiceLocation,
     serviceDescription,
     setServiceDescription,
     serviceVibe,
@@ -2007,25 +2012,6 @@ export default function CityPage() {
     ]);
   }, [cityPrivateEvents, fetchMyPrivateInvites, fetchPrivateEvents, fetchPrivateInviteRequests]);
 
-  const geocodeAddress = useCallback(async (value) => {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) {
-      throw new Error("Map token is missing.");
-    }
-
-    const res = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(`${value} ${city}`)}.json?access_token=${token}&limit=1`
-    );
-    if (!res.ok) {
-      throw new Error("Could not reach geocoding service.");
-    }
-
-    const data = await res.json();
-    if (!data.features?.length) return null;
-    const [lng, lat] = data.features[0].center;
-    return { lat, lng };
-  }, [city]);
-
   useEffect(() => {
     queueMicrotask(() => {
       fetchEvents();
@@ -2919,18 +2905,17 @@ export default function CityPage() {
     }
 
     try {
-      const coords = await geocodeAddress(eventAddress);
-
-      if (!coords) {
-        showToast("Address not found. Try a more specific address.", { tone: "warn", duration: 2400 });
+      const coords = eventLocation;
+      if (!Number.isFinite(Number(coords?.lat)) || !Number.isFinite(Number(coords?.lng))) {
+        showToast("Choose an address suggestion or confirm the event pin before saving.", { tone: "warn", duration: 2800 });
         return;
       }
 
       const insertBasePayload = {
         name: eventName,
         city,
-        lat: coords.lat,
-        lng: coords.lng,
+        lat: Number(coords.lat),
+        lng: Number(coords.lng),
         date: startDate,
         start_date: startDate,
         end_date: endDate || startDate,
@@ -3015,8 +3000,8 @@ export default function CityPage() {
           const legacyPayload = {
             name: eventName,
             city,
-            lat: coords.lat,
-            lng: coords.lng,
+            lat: Number(coords.lat),
+            lng: Number(coords.lng),
             date: startDate,
             description: eventDescription,
             link: eventLink,
@@ -3089,10 +3074,9 @@ export default function CityPage() {
     }
 
     try {
-      const coords = await geocodeAddress(serviceAddress);
-
-      if (!coords) {
-        showToast("Address not found. Try a more specific address.", { tone: "warn", duration: 2400 });
+      const coords = serviceLocation;
+      if (!Number.isFinite(Number(coords?.lat)) || !Number.isFinite(Number(coords?.lng))) {
+        showToast("Choose an address suggestion or confirm the service pin before saving.", { tone: "warn", duration: 2800 });
         return;
       }
 
@@ -3116,8 +3100,8 @@ export default function CityPage() {
         image_urls: normalizedImageUrls,
         price_tier: servicePriceTier || null,
         location: serviceAddress.trim(),
-        lat: coords.lat,
-        lng: coords.lng,
+        lat: Number(coords.lat),
+        lng: Number(coords.lng),
         created_by: user?.id || null,
         ...buildVibeDualWriteFields({
           vibe: serviceVibe,
@@ -3202,8 +3186,8 @@ export default function CityPage() {
             image_urls: normalizedImageUrls,
             price_tier: servicePriceTier || null,
             location: serviceAddress.trim(),
-            lat: coords.lat,
-            lng: coords.lng,
+            lat: Number(coords.lat),
+            lng: Number(coords.lng),
             created_by: user?.id || null,
           };
 
@@ -3264,7 +3248,7 @@ export default function CityPage() {
       });
       showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
     }
-  }, [canPublishDirect, city, fetchServices, geocodeAddress, memberName, resetServiceForm, serviceAddress, serviceBestTime, serviceBookingLeadTime, serviceBookingLink, serviceClientMix, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceName, servicePreparation, servicePriceTier, serviceProviderInclusivity, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
+  }, [canPublishDirect, city, fetchServices, memberName, resetServiceForm, serviceAddress, serviceBestTime, serviceBookingLeadTime, serviceBookingLink, serviceClientMix, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceLocation, serviceName, servicePreparation, servicePriceTier, serviceProviderInclusivity, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
 
   const handleReport = ({ targetType, targetId, title }) => {
     setReportDraft(createCityReportDraftFromTarget({
@@ -3774,17 +3758,13 @@ export default function CityPage() {
     try {
       const dbId = await resolvePlaceDbId(selectedPlace);
       const locationValue = String(placeAdminDraft.location || "").trim();
-      let nextLat = selectedPlace.lat ?? null;
-      let nextLng = selectedPlace.lng ?? null;
+      const confirmedLocation = normalizeConfirmedCoordinates(placeAdminDraft);
+      const nextLat = confirmedLocation?.lat ?? null;
+      const nextLng = confirmedLocation?.lng ?? null;
 
-      if (locationValue) {
-        const coords = await geocodeAddress(locationValue);
-        if (!coords) {
-          showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
-          return;
-        }
-        nextLat = coords.lat;
-        nextLng = coords.lng;
+      if (locationValue && (!Number.isFinite(nextLat) || !Number.isFinite(nextLng))) {
+        showToast("Choose the intended address or confirm the venue pin before saving.", { tone: "warn", duration: 3000 });
+        return;
       }
 
       const payload = {
@@ -3799,8 +3779,8 @@ export default function CityPage() {
         location: locationValue || null,
         hours: placeAdminDraft.hours.trim(),
         link: placeAdminDraft.link.trim() || null,
-        lat: nextLat,
-        lng: nextLng,
+        lat: Number.isFinite(nextLat) ? nextLat : null,
+        lng: Number.isFinite(nextLng) ? nextLng : null,
       };
       const nextVenueIntel = buildVenueIntelPayload(placeAdminDraft);
       const hasRequestedVenueIntel = hasVenueIntel(nextVenueIntel);
@@ -3934,7 +3914,7 @@ export default function CityPage() {
     } finally {
       setIsSavingPlaceAdmin(false);
     }
-  }, [buildSelectionUrl, city, geocodeAddress, isAdmin, placeAdminDraft, reloadPlaces, resolvePlaceDbId, router, selectedPlace, showToast]);
+  }, [buildSelectionUrl, city, isAdmin, placeAdminDraft, reloadPlaces, resolvePlaceDbId, router, selectedPlace, showToast]);
 
   const handleAdminDeletePlace = useCallback(async () => {
     if (!isAdmin || !selectedPlace) return;
@@ -3979,9 +3959,9 @@ export default function CityPage() {
 
     setIsSavingPlaceAddressOnly(true);
     try {
-      const coords = await geocodeAddress(locationValue);
+      const coords = normalizeConfirmedCoordinates(placeAdminDraft);
       if (!coords) {
-        showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+        showToast("Choose the intended address or confirm the venue pin before saving.", { tone: "warn", duration: 3000 });
         return;
       }
 
@@ -4032,7 +4012,7 @@ export default function CityPage() {
     } finally {
       setIsSavingPlaceAddressOnly(false);
     }
-  }, [geocodeAddress, isAdmin, placeAdminDraft.location, reloadPlaces, resolvePlaceDbId, selectedPlace, showToast]);
+  }, [isAdmin, placeAdminDraft, reloadPlaces, resolvePlaceDbId, selectedPlace, showToast]);
 
   const handleAdminSaveEvent = useCallback(async () => {
     if (!isAdmin || !selectedEvent) return;
@@ -4053,17 +4033,13 @@ export default function CityPage() {
     try {
       const ticketUrlValue = String(eventAdminDraft.ticket_url || "").trim();
       const dbId = await resolveEventDbId(selectedEvent);
-      let nextLat = selectedEvent.lat ?? null;
-      let nextLng = selectedEvent.lng ?? null;
+      const confirmedLocation = normalizeConfirmedCoordinates(eventAdminDraft);
+      const nextLat = confirmedLocation?.lat ?? null;
+      const nextLng = confirmedLocation?.lng ?? null;
 
-      if (locationValue) {
-        const coords = await geocodeAddress(locationValue);
-        if (!coords) {
-          showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
-          return;
-        }
-        nextLat = coords.lat;
-        nextLng = coords.lng;
+      if (locationValue && (!Number.isFinite(nextLat) || !Number.isFinite(nextLng))) {
+        showToast("Choose the intended address or confirm the event pin before saving.", { tone: "warn", duration: 3000 });
+        return;
       }
 
       const payload = {
@@ -4072,8 +4048,8 @@ export default function CityPage() {
         start_date: startDate,
         end_date: endDate || startDate,
         location: locationValue,
-        lat: nextLat,
-        lng: nextLng,
+        lat: Number.isFinite(nextLat) ? nextLat : null,
+        lng: Number.isFinite(nextLng) ? nextLng : null,
         ...buildVibeDualWriteFields({
           vibe: eventAdminDraft.vibe,
           vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags, { max: 3 }),
@@ -4254,7 +4230,7 @@ export default function CityPage() {
     } finally {
       setIsSavingEventAdmin(false);
     }
-  }, [buildSelectionUrl, city, eventAdminDraft, fetchEvents, geocodeAddress, isAdmin, resolveEventDbId, router, selectedEvent, showToast]);
+  }, [buildSelectionUrl, city, eventAdminDraft, fetchEvents, isAdmin, resolveEventDbId, router, selectedEvent, showToast]);
 
   const handleAdminSaveEventAddressOnly = useCallback(async () => {
     if (!isAdmin || !selectedEvent) return;
@@ -4266,9 +4242,9 @@ export default function CityPage() {
 
     setIsSavingEventAddressOnly(true);
     try {
-      const coords = await geocodeAddress(locationValue);
+      const coords = normalizeConfirmedCoordinates(eventAdminDraft);
       if (!coords) {
-        showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+        showToast("Choose the intended address or confirm the event pin before saving.", { tone: "warn", duration: 3000 });
         return;
       }
 
@@ -4319,7 +4295,7 @@ export default function CityPage() {
     } finally {
       setIsSavingEventAddressOnly(false);
     }
-  }, [eventAdminDraft.location, fetchEvents, geocodeAddress, isAdmin, resolveEventDbId, selectedEvent, showToast]);
+  }, [eventAdminDraft, fetchEvents, isAdmin, resolveEventDbId, selectedEvent, showToast]);
 
   const handleAdminDeleteEvent = useCallback(async () => {
     if (!isAdmin || !selectedEvent) return;
@@ -4371,20 +4347,13 @@ export default function CityPage() {
       }
 
       const locationValue = String(serviceAdminDraft.location || "").trim();
-      let nextLat = Number(selectedService?.lat);
-      let nextLng = Number(selectedService?.lng);
+      const confirmedLocation = normalizeConfirmedCoordinates(serviceAdminDraft);
+      const nextLat = confirmedLocation?.lat ?? null;
+      const nextLng = confirmedLocation?.lng ?? null;
 
-      if (!Number.isFinite(nextLat)) nextLat = null;
-      if (!Number.isFinite(nextLng)) nextLng = null;
-
-      if (locationValue) {
-        const coords = await geocodeAddress(locationValue);
-        if (!coords) {
-          showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
-          return;
-        }
-        nextLat = coords.lat;
-        nextLng = coords.lng;
+      if (locationValue && (!Number.isFinite(nextLat) || !Number.isFinite(nextLng))) {
+        showToast("Choose the intended address or confirm the service pin before saving.", { tone: "warn", duration: 3000 });
+        return;
       }
 
       const sourceValue = String(serviceAdminDraft.source || "").trim();
@@ -4400,8 +4369,8 @@ export default function CityPage() {
         link: String(serviceAdminDraft.link || "").trim() || null,
         price_tier: String(serviceAdminDraft.price_tier || "").trim() || null,
         location: locationValue || null,
-        lat: nextLat,
-        lng: nextLng,
+        lat: Number.isFinite(nextLat) ? nextLat : null,
+        lng: Number.isFinite(nextLng) ? nextLng : null,
         ...buildVibeDualWriteFields({
           vibe: serviceAdminDraft.vibe,
           vibeTags: normalizeVibeTags(serviceAdminDraft.vibe_tags, { max: 3 }),
@@ -4475,7 +4444,6 @@ export default function CityPage() {
   }, [
     canEditSelectedService,
     fetchServices,
-    geocodeAddress,
     resolveServiceDbId,
     selectedService,
     serviceAdminDraft,
@@ -4492,9 +4460,9 @@ export default function CityPage() {
 
     setIsSavingServiceAddressOnly(true);
     try {
-      const coords = await geocodeAddress(locationValue);
+      const coords = normalizeConfirmedCoordinates(serviceAdminDraft);
       if (!coords) {
-        showToast("Could not find that location. Use a more specific place/address.", { tone: "warn", duration: 3000 });
+        showToast("Choose the intended address or confirm the service pin before saving.", { tone: "warn", duration: 3000 });
         return;
       }
 
@@ -4548,10 +4516,9 @@ export default function CityPage() {
   }, [
     canEditSelectedService,
     fetchServices,
-    geocodeAddress,
     resolveServiceDbId,
     selectedService,
-    serviceAdminDraft.location,
+    serviceAdminDraft,
     showToast,
   ]);
 
@@ -4733,6 +4700,9 @@ export default function CityPage() {
                   setEventTicketUrl,
                   eventAddress,
                   setEventAddress,
+                  city,
+                  eventLocation,
+                  setEventLocation,
                   eventStartDate,
                   setEventStartDate,
                   eventEndDate,
@@ -4761,6 +4731,9 @@ export default function CityPage() {
                   setServiceVibe,
                   serviceAddress,
                   setServiceAddress,
+                  city,
+                  serviceLocation,
+                  setServiceLocation,
                   serviceType,
                   setServiceType,
                   serviceTypes: SERVICE_TYPES,

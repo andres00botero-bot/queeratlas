@@ -3,6 +3,8 @@
 import DateInput from "@/components/ui/DateInput";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
+import VenueLocationPicker from "@/components/location/VenueLocationPicker";
+import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 
 export default function SelectedEventAdminControls({
   isAdmin,
@@ -16,6 +18,7 @@ export default function SelectedEventAdminControls({
   isSaving,
   onDelete,
   isDeleting,
+  city,
 }) {
   if (!isAdmin) return null;
 
@@ -65,11 +68,22 @@ export default function SelectedEventAdminControls({
             placeholder="Legacy vibe label (optional)"
             className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
           />
-          <input
-            value={draft.location}
-            onChange={(event) => setDraft((current) => ({ ...current, location: event.target.value }))}
-            placeholder="Address / location (area / venue / neighborhood)"
-            className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+          <VenueLocationPicker
+            entityLabel="Event"
+            inputId="admin-event-location-address"
+            address={draft.location}
+            city={city}
+            location={normalizeConfirmedCoordinates(draft) ? {
+              ...normalizeConfirmedCoordinates(draft),
+              source: draft.location_source,
+            } : null}
+            onAddressChange={(nextAddress) => setDraft((current) => ({ ...current, location: nextAddress }))}
+            onLocationChange={(nextLocation) => setDraft((current) => ({
+              ...current,
+              lat: nextLocation?.lat ?? null,
+              lng: nextLocation?.lng ?? null,
+              location_source: nextLocation?.source || "",
+            }))}
           />
           <button
             type="button"

@@ -31,3 +31,13 @@ export function isCoordinateInsideBounds({ lat, lng }, bounds) {
     latitude <= bounds.north
   );
 }
+
+export function normalizeConfirmedCoordinates(location) {
+  if (!location || typeof location !== "object") return null;
+  if (location.lat === null || location.lat === undefined || location.lat === "") return null;
+  if (location.lng === null || location.lng === undefined || location.lng === "") return null;
+  const lat = Number(location.lat);
+  const lng = Number(location.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}

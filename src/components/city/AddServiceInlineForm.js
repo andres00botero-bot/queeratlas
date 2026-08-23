@@ -4,6 +4,7 @@ import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import { normalizeServicePriceTierOptions } from "@/features/city/serviceFormUtils";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 import { getServiceIntelLabels } from "@/lib/entityIntel";
+import VenueLocationPicker from "@/components/location/VenueLocationPicker";
 
 export default function AddServiceInlineForm({
   addServiceFormRef,
@@ -17,6 +18,9 @@ export default function AddServiceInlineForm({
   setServiceVibe,
   serviceAddress,
   setServiceAddress,
+  city,
+  serviceLocation,
+  setServiceLocation,
   serviceType,
   setServiceType,
   serviceTypes,
@@ -91,11 +95,14 @@ export default function AddServiceInlineForm({
           ))}
         </select>
       </div>
-      <input
-        value={serviceAddress}
-        onChange={(event) => setServiceAddress(event.target.value)}
-        placeholder="Address"
-        className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
+      <VenueLocationPicker
+        entityLabel="Service"
+        inputId="city-service-location-address"
+        address={serviceAddress}
+        city={city}
+        location={serviceLocation}
+        onAddressChange={setServiceAddress}
+        onLocationChange={setServiceLocation}
       />
       <input
         value={serviceHours}
@@ -159,8 +166,9 @@ export default function AddServiceInlineForm({
         ]}
       />
       <button
+        disabled={!serviceLocation}
         onClick={onSaveService}
-        className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-sky-200 py-3 font-semibold text-black"
+        className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-sky-200 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45"
       >
         Save service
       </button>
