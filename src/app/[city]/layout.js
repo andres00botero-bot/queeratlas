@@ -64,12 +64,18 @@ export default async function CityLayout({ children, params }) {
   const coreConfig = await getCityRegistryEntry(city);
   if (!coreConfig) notFound();
 
-  const cityGuide = Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : [];
+  const cityGuide = Array.isArray(cityGuideConfig[city])
+    ? cityGuideConfig[city]
+    : Array.isArray(coreConfig.guide) ? coreConfig.guide : [];
+  const staticGuideResearch = getCityGuideResearch(city);
+  const guideResearch = Array.isArray(staticGuideResearch?.sources) && staticGuideResearch.sources.length > 0
+    ? staticGuideResearch
+    : coreConfig.guideResearch || { checkedAt: "", sources: [] };
   const routeConfig = {
     ...coreConfig,
     key: city,
     guide: cityGuide,
-    guideResearch: getCityGuideResearch(city),
+    guideResearch,
   };
 
   return (

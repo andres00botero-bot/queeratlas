@@ -7,6 +7,7 @@ export default function QuickGuideSection({
   sectionRef,
   cityName,
   config,
+  isAdmin,
   placesLoading,
   placesLoadError,
   reloadPlaces,
@@ -30,6 +31,14 @@ export default function QuickGuideSection({
             {Array.isArray(config?.guide) ? config.guide.length : 0} tips
           </span>
         </div>
+        {isAdmin && config?.dynamic && (
+          <a
+            href={`/admin?editCity=${encodeURIComponent(config.key)}#city-registry`}
+            className="mt-4 inline-flex rounded-full border border-cyan-200/28 bg-cyan-200/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-100/50 hover:bg-cyan-200/15"
+          >
+            Edit city guide
+          </a>
+        )}
         <div className="mt-4 h-px w-full bg-[linear-gradient(90deg,#ffd166,#ff5fb7,#4de1ff,transparent)] opacity-70" />
       </div>
       {placesLoading && (

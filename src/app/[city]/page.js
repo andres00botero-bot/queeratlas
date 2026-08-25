@@ -138,7 +138,12 @@ export default function CityPage() {
   }, [cityParam, pathname]);
 
   const cityName = cityNameFromConfig(config, city);
-  const cityHero = getCityHeroCopy(city);
+  const cityHero = getCityHeroCopy(city) || {
+    hook: config?.localMood,
+    status: config?.queerStatus,
+    crowd: config?.crowd,
+    intro: config?.introduction,
+  };
   const cityHeroIntro = useMemo(() => {
     const editorialIntro = String(cityHero?.intro || "").trim();
     if (editorialIntro) return editorialIntro;
@@ -4795,6 +4800,7 @@ export default function CityPage() {
                   guideSectionRef={guideSectionRef}
                   cityName={cityName}
                   config={config}
+                  isAdmin={isAdmin}
                   placesLoading={placesLoading}
                   placesLoadError={placesLoadError}
                   reloadPlaces={reloadPlaces}

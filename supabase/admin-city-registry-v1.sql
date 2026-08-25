@@ -15,7 +15,13 @@ create table if not exists public.qa_cities (
   map_confirmed boolean not null default false,
   timezone text not null check (timezone ~ '^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$'),
   vibe text not null check (char_length(btrim(vibe)) >= 3),
+  local_mood text check (local_mood is null or char_length(btrim(local_mood)) >= 30),
+  queer_status text check (queer_status is null or char_length(btrim(queer_status)) >= 30),
+  crowd_profile text check (crowd_profile is null or char_length(btrim(crowd_profile)) >= 30),
   introduction text not null check (char_length(btrim(introduction)) >= 120),
+  guide_items jsonb not null default '[]'::jsonb check (jsonb_typeof(guide_items) = 'array'),
+  guide_sources jsonb not null default '[]'::jsonb check (jsonb_typeof(guide_sources) = 'array'),
+  guide_checked_at date,
   safety_context text not null check (char_length(btrim(safety_context)) >= 80),
   qari_destination_key text not null,
   qari_score smallint not null check (qari_score between 0 and 100),
@@ -30,6 +36,31 @@ create table if not exists public.qa_cities (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Upgrade installations created with the first city-registry version.
+alter table public.qa_cities add column if not exists local_mood text;
+alter table public.qa_cities add column if not exists queer_status text;
+alter table public.qa_cities add column if not exists crowd_profile text;
+alter table public.qa_cities add column if not exists guide_items jsonb not null default '[]'::jsonb;
+alter table public.qa_cities add column if not exists guide_sources jsonb not null default '[]'::jsonb;
+alter table public.qa_cities add column if not exists guide_checked_at date;
+
+alter table public.qa_cities drop constraint if exists qa_cities_guide_items_check;
+alter table public.qa_cities add constraint qa_cities_guide_items_check
+  check (jsonb_typeof(guide_items) = 'array');
+alter table public.qa_cities drop constraint if exists qa_cities_guide_sources_check;
+alter table public.qa_cities add constraint qa_cities_guide_sources_check
+  check (jsonb_typeof(guide_sources) = 'array');
+
+alter table public.qa_cities drop constraint if exists qa_cities_local_mood_check;
+alter table public.qa_cities add constraint qa_cities_local_mood_check
+  check (local_mood is null or char_length(btrim(local_mood)) >= 30);
+alter table public.qa_cities drop constraint if exists qa_cities_queer_status_check;
+alter table public.qa_cities add constraint qa_cities_queer_status_check
+  check (queer_status is null or char_length(btrim(queer_status)) >= 30);
+alter table public.qa_cities drop constraint if exists qa_cities_crowd_profile_check;
+alter table public.qa_cities add constraint qa_cities_crowd_profile_check
+  check (crowd_profile is null or char_length(btrim(crowd_profile)) >= 30);
 
 create index if not exists qa_cities_country_idx on public.qa_cities (lower(country));
 create index if not exists qa_cities_public_idx on public.qa_cities (status, seo_indexable);
@@ -56,6 +87,8 @@ declare
   has_identity boolean;
   has_map boolean;
   has_intro boolean;
+  has_hero boolean;
+  has_guide boolean;
   has_safety boolean;
   has_qari boolean;
   ready boolean;
@@ -80,12 +113,28 @@ begin
     and city_row.latitude between -90 and 90
     and city_row.longitude between -180 and 180;
   has_intro := char_length(btrim(city_row.introduction)) >= 120;
+  has_hero := char_length(btrim(coalesce(city_row.local_mood, ''))) >= 30
+    and char_length(btrim(coalesce(city_row.queer_status, ''))) >= 30
+    and char_length(btrim(coalesce(city_row.crowd_profile, ''))) >= 30;
+  has_guide := false;
+  if jsonb_typeof(city_row.guide_items) = 'array'
+    and jsonb_array_length(city_row.guide_items) >= 5
+    and jsonb_typeof(city_row.guide_sources) = 'array'
+    and jsonb_array_length(city_row.guide_sources) >= 2
+    and city_row.guide_checked_at is not null then
+    select not exists (
+      select 1
+      from jsonb_array_elements(city_row.guide_items) item
+      where char_length(btrim(coalesce(item ->> 'title', ''))) < 2
+        or char_length(btrim(coalesce(item ->> 'text', ''))) < 80
+    ) into has_guide;
+  end if;
   has_safety := char_length(btrim(city_row.safety_context)) >= 80;
   has_qari := nullif(btrim(city_row.qari_destination_key), '') is not null
     and char_length(btrim(city_row.qari_summary)) >= 40;
   ready := city_row.status = 'published'
     and approved_count >= 3
-    and has_identity and has_map and has_intro and has_safety and has_qari;
+    and has_identity and has_map and has_intro and has_hero and has_guide and has_safety and has_qari;
 
   update public.qa_cities
   set verified_place_count = approved_count,
@@ -95,6 +144,8 @@ begin
         'identity', has_identity,
         'mapConfirmed', has_map,
         'introduction', has_intro,
+        'cityHero', has_hero,
+        'essentialGuide', has_guide,
         'safetyContext', has_safety,
         'qariProfile', has_qari,
         'verifiedPlaces', approved_count,
@@ -165,7 +216,7 @@ $$;
 
 drop trigger if exists qa_cities_after_write on public.qa_cities;
 create trigger qa_cities_after_write
-after insert or update of status, map_confirmed, introduction, safety_context, qari_destination_key
+after insert or update of status, map_confirmed, introduction, local_mood, queer_status, crowd_profile, guide_items, guide_sources, guide_checked_at, safety_context, qari_destination_key
 on public.qa_cities
 for each row execute function public.qa_city_after_write();
 
@@ -192,6 +243,16 @@ create trigger qa_places_refresh_city
 after insert or delete or update of city, seo_indexable, seo_quality_status
 on public.places
 for each row execute function public.qa_places_refresh_city();
+
+do $$
+declare
+  city_record record;
+begin
+  for city_record in select slug from public.qa_cities loop
+    perform public.qa_refresh_city_seo_status(city_record.slug);
+  end loop;
+end;
+$$;
 
 alter table public.qa_cities enable row level security;
 

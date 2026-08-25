@@ -6,6 +6,7 @@ export default function CityGuideCluster({
   guideSectionRef,
   cityName,
   config,
+  isAdmin,
   placesLoading,
   placesLoadError,
   reloadPlaces,
@@ -15,6 +16,7 @@ export default function CityGuideCluster({
       sectionRef={guideSectionRef}
       cityName={cityName}
       config={config}
+      isAdmin={isAdmin}
       placesLoading={placesLoading}
       placesLoadError={placesLoadError}
       reloadPlaces={reloadPlaces}

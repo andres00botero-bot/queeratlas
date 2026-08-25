@@ -80,7 +80,7 @@ export default function CityHeroCard({
           <h1 className="max-w-3xl text-4xl font-bold leading-[0.98] tracking-[-0.02em] text-white drop-shadow-[0_8px_34px_rgba(0,0,0,0.34)] sm:text-5xl lg:text-6xl">
             {cityName}
           </h1>
-          <p className="qa-clamp-3 mt-4 max-w-2xl rounded-[18px] border border-white/22 bg-white/14 p-3 text-sm leading-6 text-white/92 shadow-[0_18px_44px_rgba(0,0,0,0.16)] backdrop-blur sm:mt-6 sm:rounded-[22px] sm:p-4 sm:text-base sm:[display:block]">
+          <p className="mt-4 h-auto max-w-2xl text-pretty rounded-[18px] border border-white/22 bg-white/14 p-3 text-sm leading-[1.65] text-white/92 shadow-[0_18px_44px_rgba(0,0,0,0.16)] backdrop-blur sm:mt-6 sm:rounded-[22px] sm:p-4 sm:text-base sm:leading-7">
             {introCopy}
           </p>
 
