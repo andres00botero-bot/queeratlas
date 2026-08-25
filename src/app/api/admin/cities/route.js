@@ -191,13 +191,6 @@ export async function PATCH(request) {
   if (body.mapConfirmed !== true) return failure("Confirm the city point on the map before saving.");
   if (!/^[A-Za-z_+-]+\/[A-Za-z0-9_+\-/]+$/.test(timezone)) return failure("Use an IANA timezone such as Europe/Stockholm.");
   if (vibe.length < 3) return failure("Add a short city vibe.");
-  if (localMood.length < 30) return failure("Local mood must contain at least 30 characters.");
-  if (queerStatus.length < 30) return failure("Queer status must contain at least 30 characters.");
-  if (crowd.length < 30) return failure("Crowd must contain at least 30 characters.");
-  if (introduction.length < 120) return failure("The introduction must contain at least 120 characters.");
-  const guideError = validateGuide(guideItems, guideSources, guideCheckedAt);
-  if (guideError) return failure(guideError);
-  if (safetyContext.length < 80) return failure("The city safety context must contain at least 80 characters.");
 
   const client = getTelemetryServiceClient();
   const [{ data: existing, error: existingError }, { data: qari, error: qariError }] = await Promise.all([
@@ -227,13 +220,13 @@ export async function PATCH(request) {
       map_confirmed: true,
       timezone,
       vibe,
-      local_mood: localMood,
-      queer_status: queerStatus,
-      crowd_profile: crowd,
+      local_mood: localMood || null,
+      queer_status: queerStatus || null,
+      crowd_profile: crowd || null,
       introduction,
       guide_items: guideItems,
       guide_sources: guideSources,
-      guide_checked_at: guideCheckedAt,
+      guide_checked_at: guideCheckedAt || null,
       safety_context: safetyContext,
       qari_destination_key: qari.destination_key,
       qari_score: qari.qari_score,

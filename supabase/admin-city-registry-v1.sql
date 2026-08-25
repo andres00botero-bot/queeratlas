@@ -15,9 +15,9 @@ create table if not exists public.qa_cities (
   map_confirmed boolean not null default false,
   timezone text not null check (timezone ~ '^[A-Za-z_+-]+(?:/[A-Za-z0-9_+-]+)+$'),
   vibe text not null check (char_length(btrim(vibe)) >= 3),
-  local_mood text check (local_mood is null or char_length(btrim(local_mood)) >= 30),
-  queer_status text check (queer_status is null or char_length(btrim(queer_status)) >= 30),
-  crowd_profile text check (crowd_profile is null or char_length(btrim(crowd_profile)) >= 30),
+  local_mood text,
+  queer_status text,
+  crowd_profile text,
   introduction text not null check (char_length(btrim(introduction)) >= 120),
   guide_items jsonb not null default '[]'::jsonb check (jsonb_typeof(guide_items) = 'array'),
   guide_sources jsonb not null default '[]'::jsonb check (jsonb_typeof(guide_sources) = 'array'),
@@ -53,14 +53,8 @@ alter table public.qa_cities add constraint qa_cities_guide_sources_check
   check (jsonb_typeof(guide_sources) = 'array');
 
 alter table public.qa_cities drop constraint if exists qa_cities_local_mood_check;
-alter table public.qa_cities add constraint qa_cities_local_mood_check
-  check (local_mood is null or char_length(btrim(local_mood)) >= 30);
 alter table public.qa_cities drop constraint if exists qa_cities_queer_status_check;
-alter table public.qa_cities add constraint qa_cities_queer_status_check
-  check (queer_status is null or char_length(btrim(queer_status)) >= 30);
 alter table public.qa_cities drop constraint if exists qa_cities_crowd_profile_check;
-alter table public.qa_cities add constraint qa_cities_crowd_profile_check
-  check (crowd_profile is null or char_length(btrim(crowd_profile)) >= 30);
 
 create index if not exists qa_cities_country_idx on public.qa_cities (lower(country));
 create index if not exists qa_cities_public_idx on public.qa_cities (status, seo_indexable);

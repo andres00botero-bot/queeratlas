@@ -303,7 +303,7 @@ export default function AdminCityManager() {
   const submit = async (event) => {
     event.preventDefault();
     if (isSaving) return;
-    if (!canSave) {
+    if (!editingCityId && !canSave) {
       setError(`Complete before saving: ${missingRequirements.join(", ")}.`);
       return;
     }
@@ -409,8 +409,8 @@ export default function AdminCityManager() {
             <p className="text-xs uppercase tracking-[0.18em] text-emerald-100/70">Publishing gate</p>
             <div className="mt-4 flex flex-wrap gap-2"><ReadinessPill ready={requirements.identity}>City + country</ReadinessPill><ReadinessPill ready={requirements.map}>Confirmed map point</ReadinessPill><ReadinessPill ready={requirements.timezone}>Timezone</ReadinessPill><ReadinessPill ready={requirements.hero}>Hero profile</ReadinessPill><ReadinessPill ready={requirements.guide}>Essential guide</ReadinessPill><ReadinessPill ready={requirements.introduction}>Introduction</ReadinessPill><ReadinessPill ready={requirements.safety}>Safety context</ReadinessPill><ReadinessPill ready={requirements.qari}>QARI attached</ReadinessPill><ReadinessPill ready={editingCityId ? (cities.find((city) => String(city.id) === editingCityId)?.verified_place_count || 0) >= 3 : false}>{editingCityId ? `${cities.find((city) => String(city.id) === editingCityId)?.verified_place_count || 0}/3 venues` : "0/3 venues at creation"}</ReadinessPill></div>
             <p className="mt-4 text-xs leading-5 text-white/48">Saving publishes the city route, but robots remain noindex. The database promotes it automatically when the venue threshold is reached.</p>
-            {missingRequirements.length > 0 && <p className="mt-4 text-[11px] leading-5 text-amber-100/72">Still needed: {missingRequirements.join(", ")}.</p>}
-            <button type="submit" disabled={isSaving || isLoading} className="mt-5 w-full rounded-2xl border border-cyan-200/30 bg-gradient-to-r from-cyan-300/20 via-blue-300/16 to-violet-300/18 px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(34,211,238,0.10)] transition hover:border-cyan-100/50 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">{isSaving ? "Saving city…" : editingCityId ? "Save city changes" : "Add city to Queer Atlas"}</button>
+            {missingRequirements.length > 0 && <p className="mt-4 text-[11px] leading-5 text-amber-100/72">{editingCityId ? "SEO requirements remaining — this does not block saving" : "Still needed before creation"}: {missingRequirements.join(", ")}.</p>}
+            <button type="submit" disabled={isSaving} className="mt-5 w-full rounded-2xl border border-cyan-200/30 bg-gradient-to-r from-cyan-300/20 via-blue-300/16 to-violet-300/18 px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(34,211,238,0.10)] transition hover:border-cyan-100/50 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">{isSaving ? "Saving city…" : editingCityId ? "Save city changes" : "Add city to Queer Atlas"}</button>
             {editingCityId && <button type="button" onClick={cancelEdit} className="mt-2 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-sm text-white/66 transition hover:border-white/25 hover:text-white">Cancel editing</button>}
           </div>
 
