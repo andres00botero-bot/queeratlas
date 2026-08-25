@@ -1,5 +1,5 @@
-import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { cityGuideConfig } from "@/lib/cityGuides";
+import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getCityGuideResearch } from "@/lib/cityGuideResearch";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
@@ -10,7 +10,7 @@ import { notFound } from "next/navigation";
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
   const city = normalizeCityKey(resolvedParams?.city);
-  const config = cityConfig[city];
+  const config = await getCityRegistryEntry(city);
 
   if (!config) {
     return {
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }) {
       canonical,
     },
     robots: {
-      index: true,
+      index: config.seoIndexable !== false,
       follow: true,
     },
     openGraph: {
@@ -61,12 +61,13 @@ export async function generateMetadata({ params }) {
 export default async function CityLayout({ children, params }) {
   const resolvedParams = await params;
   const city = normalizeCityKey(resolvedParams?.city);
-  const coreConfig = cityConfig[city] || null;
+  const coreConfig = await getCityRegistryEntry(city);
   if (!coreConfig) notFound();
 
   const cityGuide = Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : [];
   const routeConfig = {
     ...coreConfig,
+    key: city,
     guide: cityGuide,
     guideResearch: getCityGuideResearch(city),
   };

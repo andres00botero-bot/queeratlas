@@ -1,4 +1,4 @@
-import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
+import { listCityRegistry } from "@/lib/server/cityRegistry";
 import { listCityClusterTopics } from "@/lib/seo/cityClusters";
 import { buildEventPath, buildServicePath, buildVenuePath } from "@/lib/seo/entitySlug";
 import { resolveEntityLastModified } from "@/lib/seo/entityIndexing";
@@ -56,16 +56,18 @@ function canonicalEntries(entries = []) {
 }
 
 export async function getPageSitemapEntries() {
-  const [inventory, newsResponse] = await Promise.all([
+  const [inventory, newsResponse, registryCities] = await Promise.all([
     loadSeoEntityInventory(),
     supabase
       .from("qa_world_news")
       .select("id,date,created_at")
       .order("created_at", { ascending: false }),
+    listCityRegistry({ indexableOnly: true }),
   ]);
+  const cityKeys = registryCities.map((city) => city.key);
   const allEntities = [...inventory.venues, ...inventory.events, ...inventory.services];
   const cityDates = new Map();
-  for (const city of Object.keys(cityConfig)) {
+  for (const city of cityKeys) {
     cityDates.set(city, newestDate(allEntities.filter((row) => normalizeCitySlug(row?.city) === city)));
   }
 
@@ -105,7 +107,7 @@ export async function getPageSitemapEntries() {
     priority: route === "" ? 1 : route === "/now/news" ? 0.95 : ["/cities", "/events/calendar"].includes(route) ? 0.9 : 0.75,
   }));
 
-  const cityEntries = Object.keys(cityConfig).map((city) => entryWithDate({
+  const cityEntries = cityKeys.map((city) => entryWithDate({
     url: `${QA_SITE_URL}/${city}`,
     changeFrequency: "weekly",
     priority: 0.9,
@@ -116,7 +118,7 @@ export async function getPageSitemapEntries() {
     intent: String(topic.intent || "").trim().toLowerCase(),
   }));
   const todayIso = new Date().toISOString().slice(0, 10);
-  const cityClusterEntries = Object.keys(cityConfig).flatMap((city) => {
+  const cityClusterEntries = cityKeys.flatMap((city) => {
     const places = inventory.venues.filter((row) => normalizeCitySlug(row?.city) === city);
     const events = inventory.events.filter((row) => normalizeCitySlug(row?.city) === city);
     const services = inventory.services.filter((row) => normalizeCitySlug(row?.city) === city);
@@ -188,8 +190,12 @@ export async function getPageSitemapEntries() {
 }
 
 export async function getVenueSitemapEntries() {
-  const { venues } = await loadSeoEntityInventory();
-  return canonicalEntries(venues.map((venue) => entryWithDate({
+  const [{ venues }, registryCities] = await Promise.all([
+    loadSeoEntityInventory(),
+    listCityRegistry({ indexableOnly: true }),
+  ]);
+  const indexableCities = new Set(registryCities.map((city) => city.key));
+  return canonicalEntries(venues.filter((venue) => indexableCities.has(normalizeCitySlug(venue?.city))).map((venue) => entryWithDate({
     url: `${QA_SITE_URL}${buildVenuePath(venue.city, venue)}`,
     changeFrequency: "monthly",
     priority: 0.72,
@@ -197,8 +203,12 @@ export async function getVenueSitemapEntries() {
 }
 
 export async function getEventSitemapEntries() {
-  const { events } = await loadSeoEntityInventory();
-  return canonicalEntries(events.map((event) => entryWithDate({
+  const [{ events }, registryCities] = await Promise.all([
+    loadSeoEntityInventory(),
+    listCityRegistry({ indexableOnly: true }),
+  ]);
+  const indexableCities = new Set(registryCities.map((city) => city.key));
+  return canonicalEntries(events.filter((event) => indexableCities.has(normalizeCitySlug(event?.city))).map((event) => entryWithDate({
     url: `${QA_SITE_URL}${buildEventPath(event.city, event)}`,
     changeFrequency: "daily",
     priority: 0.76,
@@ -206,8 +216,12 @@ export async function getEventSitemapEntries() {
 }
 
 export async function getServiceSitemapEntries() {
-  const { services } = await loadSeoEntityInventory();
-  return canonicalEntries(services.map((service) => entryWithDate({
+  const [{ services }, registryCities] = await Promise.all([
+    loadSeoEntityInventory(),
+    listCityRegistry({ indexableOnly: true }),
+  ]);
+  const indexableCities = new Set(registryCities.map((city) => city.key));
+  return canonicalEntries(services.filter((service) => indexableCities.has(normalizeCitySlug(service?.city))).map((service) => entryWithDate({
     url: `${QA_SITE_URL}${buildServicePath(service.city, service)}`,
     changeFrequency: "monthly",
     priority: 0.68,

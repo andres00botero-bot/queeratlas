@@ -26,6 +26,7 @@ import PageOpeningState from "@/components/ui/PageOpeningState";
 import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
 import AdminTrafficPanel from "@/components/admin/AdminTrafficPanel";
+import AdminCityManager from "@/components/admin/AdminCityManager";
 import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
 import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 
@@ -933,6 +934,8 @@ export default function AdminPage() {
             </div>
           )}
         </section>
+
+        <AdminCityManager />
 
         <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
           <article className="rounded-3xl border border-cyan-200/18 bg-cyan-200/10 p-5">

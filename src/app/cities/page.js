@@ -259,6 +259,7 @@ export default function CitiesPage() {
   const [countryEditorError, setCountryEditorError] = useState("");
   const [countryEditorSuccess, setCountryEditorSuccess] = useState("");
   const [expandedSafetyCountry, setExpandedSafetyCountry] = useState("");
+  const [registryConfig, setRegistryConfig] = useState(cityConfig);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
@@ -275,6 +276,19 @@ export default function CitiesPage() {
     refresh: refreshCountryRightsProfiles,
   } = useCountryRightsProfiles();
   const { byCountry: qariProfilesByCountry } = useQariProfiles();
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/cities/registry")
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("City registry unavailable")))
+      .then((payload) => {
+        if (!active || !Array.isArray(payload?.cities)) return;
+        const next = Object.fromEntries(payload.cities.map((city) => [city.key, city]));
+        if (Object.keys(next).length) setRegistryConfig(next);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
   const lastExploredCity = useSyncExternalStore(
     subscribeLastExploredCity,
     getLastExploredCitySnapshot,
@@ -306,8 +320,8 @@ export default function CitiesPage() {
   }, []);
 
   const countries = useMemo(() => {
-    return ["All", ...new Set(Object.values(cityConfig).map((city) => city.country || "Other"))].sort();
-  }, []);
+    return ["All", ...new Set(Object.values(registryConfig).map((city) => city.country || "Other"))].sort();
+  }, [registryConfig]);
   const availableCountries = useMemo(() => countries.filter((country) => country !== "All"), [countries]);
 
   const updateCountryMapStyles = useCallback((selected) => {
@@ -551,7 +565,7 @@ export default function CitiesPage() {
       return acc;
     }, new Map());
 
-    return Object.entries(cityConfig).map(([key, city]) => {
+    return Object.entries(registryConfig).map(([key, city]) => {
       const cityPlaces = placesByCity.get(normalizeCityKey(key)) || [];
       const reviewCount = cityPlaces.reduce(
         (sum, place) => sum + (place.reviewCount || 0),
@@ -573,7 +587,7 @@ export default function CitiesPage() {
         topPlace: topPlace?.name || null,
       };
     });
-  }, [places]);
+  }, [places, registryConfig]);
 
   const filteredCities = useMemo(() => {
     return allCities
@@ -693,8 +707,8 @@ export default function CitiesPage() {
 
   const visibleCountries = Object.keys(groupedCities).sort();
   const crawlPathCities = useMemo(
-    () => TIER1_CITY_SLUGS.filter((cityKey) => Boolean(cityConfig[cityKey])),
-    []
+    () => TIER1_CITY_SLUGS.filter((cityKey) => Boolean(registryConfig[cityKey])),
+    [registryConfig]
   );
   const crawlClusterTopics = useMemo(
     () => TIER1_TOPIC_KEYS.filter((topicKey) => Boolean(listCityClusterTopics().find((topic) => topic.key === topicKey))),
@@ -705,7 +719,7 @@ export default function CitiesPage() {
     () => listTopicHubs().map((hub) => hub.key).filter((key) => isIndexableTopicHub(key)),
     []
   );
-  const totalCities = Object.keys(cityConfig).length;
+  const totalCities = Object.keys(registryConfig).length;
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
   const visibleCityCount = filteredCities.length;
@@ -836,7 +850,7 @@ export default function CitiesPage() {
   const citiesSeoJsonLd = useMemo(() => {
     const cityItems = crawlPathCities.slice(0, 24).map((cityKey, index) => {
       const cityTitle = String(
-        cityConfig?.[cityKey]?.title ||
+        registryConfig?.[cityKey]?.title ||
           cityKey.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
       );
       return {
@@ -872,7 +886,7 @@ export default function CitiesPage() {
         },
       },
     ];
-  }, [crawlPathCities]);
+  }, [crawlPathCities, registryConfig]);
 
   return (
     <main className="qa-page min-h-screen bg-[#050505] text-white">

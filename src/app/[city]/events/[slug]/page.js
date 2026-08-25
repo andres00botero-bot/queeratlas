@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
-import { cityCoreConfig } from "@/lib/cityCore";
+import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
@@ -74,7 +74,7 @@ const findEventByParams = cache(async (cityParam = "", slugParam = "") => {
   const slug = String(slugParam || "").trim();
   if (!city || !slug) return { city, event: null, coreConfig: null };
 
-  const coreConfig = cityCoreConfig[city] || null;
+  const coreConfig = await getCityRegistryEntry(city);
   if (!coreConfig) return { city, event: null, coreConfig: null };
 
   const parsed = parseEntitySlug(slug);
@@ -218,7 +218,7 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical: canonicalPath,
     },
-    robots: quality.indexable
+    robots: quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {

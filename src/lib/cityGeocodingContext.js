@@ -1,10 +1,20 @@
 import { cityCoreConfig } from "@/lib/cityCore";
 import { buildCityGeocodeBounds } from "@/lib/entityGeocoding";
 
+const runtimeCityConfig = new Map();
+
+export function registerRuntimeCityGeocodingContext(key, entry) {
+  const normalizedKey = String(key || "").trim().toLowerCase();
+  if (!normalizedKey || !entry || !Array.isArray(entry.center)) return;
+  runtimeCityConfig.set(normalizedKey, entry);
+  const titleKey = String(entry.title || "").replace(/^Queer\s+/i, "").trim().toLowerCase();
+  if (titleKey) runtimeCityConfig.set(titleKey, entry);
+}
+
 export function resolveCityGeocodingContext(value) {
   const input = String(value || "").trim();
   const key = input.toLowerCase();
-  const entry = cityCoreConfig[key] || Object.values(cityCoreConfig).find((item) => {
+  const entry = cityCoreConfig[key] || runtimeCityConfig.get(key) || Object.values(cityCoreConfig).find((item) => {
     const title = String(item?.title || "").replace(/^Queer\s+/i, "").trim();
     return title.toLowerCase() === key;
   });

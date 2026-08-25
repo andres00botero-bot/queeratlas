@@ -3,7 +3,7 @@ import CityPanelButton from "@/components/city/CityPanelButton";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import CityDiscoveryResults from "@/components/city/CityDiscoveryResults";
-import { cityCoreConfig } from "@/lib/cityCore";
+import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
@@ -293,7 +293,7 @@ export async function generateMetadata({ params }) {
   const resolved = await params;
   const city = normalizeCityKey(resolved?.city || "");
   const topic = String(resolved?.topic || "").trim().toLowerCase();
-  const config = cityCoreConfig[city] || null;
+  const config = await getCityRegistryEntry(city);
   const topicConfig = getCityClusterTopic(topic);
 
   if (!config || !topicConfig) {
@@ -312,7 +312,7 @@ export async function generateMetadata({ params }) {
   const discovery = await loadCityDiscoveryData(city, topic);
   const copyReady = shouldIndexCityTopicPage({ topicConfig, cityName, relatedTopicCount });
   const contentQuality = evaluateCityDiscoveryIndexability({ topic, discovery });
-  const shouldIndex = copyReady && contentQuality.indexable;
+  const shouldIndex = config.seoIndexable !== false && copyReady && contentQuality.indexable;
 
   return {
     title,
@@ -350,7 +350,7 @@ export default async function CityClusterTopicPage({ params }) {
   const resolved = await params;
   const city = normalizeCityKey(resolved?.city || "");
   const topic = String(resolved?.topic || "").trim().toLowerCase();
-  const config = cityCoreConfig[city] || null;
+  const config = await getCityRegistryEntry(city);
   const topicConfig = getCityClusterTopic(topic);
 
   if (!config || !topicConfig) {

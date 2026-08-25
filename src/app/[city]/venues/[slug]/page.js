@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
-import { cityCoreConfig } from "@/lib/cityCore";
+import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import {
@@ -44,7 +44,7 @@ const findVenueByParams = cache(async (cityParam = "", slugParam = "") => {
   const slug = String(slugParam || "").trim();
   if (!city || !slug) return { city, place: null };
 
-  const coreConfig = cityCoreConfig[city] || null;
+  const coreConfig = await getCityRegistryEntry(city);
   if (!coreConfig) return { city, place: null };
 
   const parsed = parseEntitySlug(slug);
@@ -235,7 +235,7 @@ export async function generateMetadata({ params }) {
     alternates: {
       canonical: canonicalPath,
     },
-    robots: quality.indexable
+    robots: quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {

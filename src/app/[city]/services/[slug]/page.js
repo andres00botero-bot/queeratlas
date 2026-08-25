@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
-import { cityCoreConfig } from "@/lib/cityCore";
+import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { cityNameFromConfig } from "@/features/city/checkinFeature";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { evaluateServiceSeoQuality } from "@/lib/seo/entityIndexing";
@@ -26,7 +26,7 @@ function toAbsoluteUrl(path = "") {
 const findServiceByParams = cache(async (cityParam = "", slugParam = "") => {
   const city = normalizeCitySlug(cityParam);
   const slug = String(slugParam || "").trim();
-  const coreConfig = cityCoreConfig[city] || null;
+  const coreConfig = await getCityRegistryEntry(city);
   if (!city || !slug || !coreConfig) return { city, service: null, coreConfig };
 
   const parsed = parseEntitySlug(slug);
@@ -67,7 +67,7 @@ export async function generateMetadata({ params }) {
     title,
     description,
     alternates: { canonical: canonicalPath },
-    robots: quality.indexable
+    robots: quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {

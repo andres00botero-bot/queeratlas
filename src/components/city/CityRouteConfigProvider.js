@@ -1,10 +1,15 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect } from "react";
+import { registerRuntimeCityGeocodingContext } from "@/lib/cityGeocodingContext";
 
 const CityRouteConfigContext = createContext(null);
 
 export function CityRouteConfigProvider({ config, children }) {
+  useEffect(() => {
+    registerRuntimeCityGeocodingContext(config?.key, config);
+  }, [config]);
+
   return (
     <CityRouteConfigContext.Provider value={config}>
       {children}
