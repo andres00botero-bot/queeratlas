@@ -1,4 +1,4 @@
-import { resolveCityGeocodingContext } from "@/lib/cityGeocodingContext";
+import { resolveServerCityGeocodingContext } from "@/lib/server/cityGeocodingContext";
 
 export const runtime = "nodejs";
 
@@ -81,7 +81,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const query = String(searchParams.get("q") || "").trim();
   const sessionToken = String(searchParams.get("sessionToken") || "").trim();
-  const context = resolveCityGeocodingContext(searchParams.get("city"));
+  const context = await resolveServerCityGeocodingContext(searchParams.get("city"));
   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || "";
 
   if (query.length < 3 || !sessionToken || !context.city || !context.center || !accessToken) {

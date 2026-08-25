@@ -1,7 +1,7 @@
 import {
   isCoordinateInsideBounds,
-  resolveCityGeocodingContext,
 } from "@/lib/cityGeocodingContext";
+import { resolveServerCityGeocodingContext } from "@/lib/server/cityGeocodingContext";
 
 export const runtime = "nodejs";
 
@@ -9,7 +9,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const mapboxId = String(searchParams.get("id") || "").trim();
   const sessionToken = String(searchParams.get("sessionToken") || "").trim();
-  const context = resolveCityGeocodingContext(searchParams.get("city"));
+  const context = await resolveServerCityGeocodingContext(searchParams.get("city"));
   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || "";
 
   if (!mapboxId || !sessionToken || !context.city || !context.bounds || !accessToken) {
