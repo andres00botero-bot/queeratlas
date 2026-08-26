@@ -50,7 +50,7 @@ function DiscoveryCard({ item }) {
     <button
       type="button"
       onClick={item.onClick}
-      className={`qa-premium-card group relative min-h-[6.75rem] overflow-hidden rounded-[22px] border p-3.5 text-left shadow-[0_18px_50px_rgba(0,0,0,0.3)] transition duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[8rem] sm:p-4 ${item.surface}`}
+      className={`qa-premium-card group relative min-h-[6.75rem] overflow-hidden rounded-[22px] border p-3.5 text-left shadow-[0_18px_50px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.055)] ring-1 ring-inset ring-white/[0.025] transition duration-300 hover:-translate-y-0.5 hover:border-white/26 hover:shadow-[0_22px_58px_rgba(0,0,0,0.36),inset_0_1px_0_rgba(255,255,255,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[8rem] sm:p-4 ${item.surface}`}
     >
       <div className={`pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full blur-2xl transition duration-500 group-hover:scale-125 ${item.glow}`} />
       <div className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r ${item.accentLine}`} />
@@ -125,7 +125,7 @@ function ParticipationStrip({ actions = [] }) {
   if (actions.length === 0) return null;
 
   return (
-    <section id="home-participation" data-home-section="participation" className="qa-defer-render mt-8 scroll-mt-20">
+    <section id="home-participation" data-home-section="participation" className="qa-defer-render mt-8 scroll-mt-20 py-[0.4cm]">
       <div className="relative py-2 sm:py-3">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(30rem,0.92fr)] lg:items-center">
             <div className="min-w-0 lg:border-l lg:border-rose-200/22 lg:pl-4">
@@ -240,11 +240,11 @@ export default function HomeDeferredSections({
   return (
     <>
       <section id="home-discovery" data-home-section="discovery" className="qa-defer-render mt-8 scroll-mt-20">
-        <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(91,119,255,0.12),transparent_31%),radial-gradient(circle_at_94%_12%,rgba(217,70,239,0.1),transparent_28%),linear-gradient(155deg,rgba(14,17,29,0.96),rgba(8,10,18,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.28)] sm:p-5">
-          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/24 to-transparent" />
-          <div className="relative mb-4 sm:flex sm:items-end sm:justify-between sm:gap-6">
-            <p className="mb-2 !text-left text-[9px] font-semibold uppercase tracking-[0.2em] text-sky-100/58 sm:mb-1.5">Explore Queer Atlas</p>
-            <h2 className="qa-display mt-2 !text-left text-2xl font-semibold tracking-[-0.03em] text-white sm:text-[2rem]">
+        <div className="relative overflow-hidden rounded-[30px] border border-white/14 bg-[radial-gradient(circle_at_7%_0%,rgba(56,189,248,0.14),transparent_32%),radial-gradient(circle_at_94%_8%,rgba(217,70,239,0.14),transparent_30%),radial-gradient(circle_at_52%_110%,rgba(139,92,246,0.1),transparent_38%),linear-gradient(155deg,rgba(16,19,33,0.98),rgba(7,9,17,0.99))] p-4 shadow-[0_28px_78px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.075)] ring-1 ring-inset ring-white/[0.035] sm:p-6">
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/46 to-transparent" />
+          <div className="relative mb-6 sm:mb-7">
+            <p className="!text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-cyan-100/68 sm:text-[10px]">Explore Queer Atlas</p>
+            <h2 className="qa-display mt-2.5 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2.1rem]">
               What do you want to find?
             </h2>
           </div>

@@ -188,16 +188,6 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
           </article>
         </div>
 
-        <footer className="relative z-10 mt-5 hidden items-center justify-end border-t border-white/10 pt-4 lg:flex">
-          <nav aria-label="Queer Atlas evidence resources" className="flex items-center gap-2">
-            <Link href="/verification" onClick={() => onContextOpen?.("/verification")} className="inline-flex min-h-10 items-center gap-1 rounded-full border border-white/14 bg-white/[0.045] px-3.5 text-[12px] font-semibold text-white/76 transition hover:border-white/26 hover:text-white">
-              How evidence is verified <ArrowUpRight size={11} aria-hidden="true" />
-            </Link>
-            <Link href="/now/data" onClick={() => onContextOpen?.("/now/data")} className="inline-flex min-h-10 items-center gap-1 rounded-full border border-violet-100/22 bg-violet-100/[0.08] px-3.5 text-[12px] font-semibold text-violet-50/86 transition hover:border-violet-100/38 hover:text-white">
-              All indexes &amp; reports <ArrowUpRight size={11} aria-hidden="true" />
-            </Link>
-          </nav>
-        </footer>
       </div>
     </section>
   );
