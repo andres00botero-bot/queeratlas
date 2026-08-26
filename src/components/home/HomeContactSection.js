@@ -397,7 +397,7 @@ export default function HomeContactSection({
       {!embedded ? <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/24 to-transparent" /> : null}
 
       {!isExpanded || !isStandalone ? (
-        <div className={`relative grid gap-4 ${embedded ? "" : "lg:grid-cols-[minmax(0,0.72fr)_minmax(36rem,1.28fr)] lg:items-center lg:gap-8"}`}>
+        <div className={`relative grid gap-4 ${embedded ? "h-full grid-rows-[auto_1fr]" : "lg:grid-cols-[minmax(0,0.72fr)_minmax(36rem,1.28fr)] lg:items-center lg:gap-8"}`}>
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-fuchsia-100/62">
               <MessageCircleMore size={13} strokeWidth={1.8} aria-hidden="true" />
@@ -414,7 +414,7 @@ export default function HomeContactSection({
             <p className="mt-3 hidden text-[10px] text-white/36 sm:block">Messages are reviewed by the Queer Atlas team.</p>
           </div>
 
-          <div className={`grid grid-cols-2 overflow-hidden rounded-[20px] border bg-black/10 ${embedded ? "border-fuchsia-100/14" : "border-white/10"}`}>
+          <div className={`grid grid-cols-2 ${embedded ? "gap-2 lg:mt-auto" : "overflow-hidden rounded-[20px] border border-white/10 bg-black/10"}`}>
             {CONTACT_PATHS.map((path) => {
               const Icon = path.icon;
               return (
@@ -422,15 +422,21 @@ export default function HomeContactSection({
                   key={path.key}
                   type="button"
                   onClick={() => openPath(path)}
-                  className={`group min-h-[3.75rem] border-b border-r border-white/8 p-2.5 text-left transition duration-300 even:border-r-0 sm:min-h-[4.5rem] sm:p-3 [&:nth-last-child(-n+2)]:border-b-0 ${path.cardClass}`}
+                  className={`group min-h-[3.75rem] p-2.5 text-left transition duration-300 sm:min-h-[4.5rem] sm:p-3 ${
+                    embedded
+                      ? "overflow-hidden rounded-[17px] border border-fuchsia-100/14 bg-[linear-gradient(145deg,rgba(244,114,182,0.075),rgba(255,255,255,0.025))] shadow-[0_10px_26px_rgba(0,0,0,0.16)] hover:-translate-y-0.5 hover:border-fuchsia-100/32 hover:shadow-[0_14px_32px_rgba(190,24,93,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45"
+                      : "border-b border-r border-white/8 even:border-r-0 [&:nth-last-child(-n+2)]:border-b-0"
+                  } ${path.cardClass}`}
                 >
                   <span className="flex items-start gap-2.5">
-                    <Icon size={15} strokeWidth={1.8} className={`mt-0.5 shrink-0 ${path.iconClass}`} aria-hidden="true" />
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${embedded ? "border border-fuchsia-100/16 bg-fuchsia-100/[0.07]" : ""}`}>
+                      <Icon size={15} strokeWidth={1.8} className={path.iconClass} aria-hidden="true" />
+                    </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[11px] font-semibold text-white/82 sm:text-xs">{path.title}</span>
                       <span className="mt-1 hidden text-[9px] leading-4 text-white/43 sm:block sm:text-[10px]">{path.description}</span>
                     </span>
-                    <ArrowUpRight size={11} className="mt-0.5 shrink-0 text-white/24 transition group-hover:text-white/66" aria-hidden="true" />
+                    <ArrowUpRight size={12} className="mt-0.5 shrink-0 text-fuchsia-100/32 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-fuchsia-50" aria-hidden="true" />
                   </span>
                 </button>
               );

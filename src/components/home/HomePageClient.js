@@ -1296,7 +1296,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               onEditorialAction={(destination) => trackHomeAction("editorial_trust", destination)}
               contactSlot={
                 <HomeContactSection
-                  className=""
+                  className="h-full"
                   embedded
                   isMember={isMember}
                   userId={String(user?.id || "")}
