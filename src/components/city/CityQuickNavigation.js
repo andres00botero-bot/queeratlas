@@ -73,8 +73,7 @@ export default function CityQuickNavigation({
     {
       key: "venues",
       onClick: () => {
-        onGoVenues?.();
-        setShowVenuePicker(true);
+        setShowVenuePicker((current) => !current);
       },
       label: "Venues",
       eyebrow: "Bars and places",
@@ -213,6 +212,7 @@ export default function CityQuickNavigation({
                   type="button"
                   onClick={() => {
                     onGoVenueType?.(item.value);
+                    setShowVenuePicker(false);
                   }}
                   aria-pressed={isActive}
                   className={`qa-action w-full rounded-lg border px-3 py-2 text-left text-[13px] transition ${
@@ -313,6 +313,7 @@ export default function CityQuickNavigation({
                 type="button"
                 onClick={() => {
                   onGoVenueType?.(group.value);
+                  setShowVenuePicker(false);
                 }}
                 aria-pressed={isActive}
                 className={`qa-action rounded-full border px-3 py-1.5 text-[11px] transition ${

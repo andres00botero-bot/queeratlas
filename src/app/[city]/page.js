@@ -1380,6 +1380,16 @@ export default function CityPage() {
     [routeCloseAllDetails]
   );
 
+  const handleGoMapMobile = useCallback(() => {
+    keepMapViewOnNextCloseRef.current = false;
+    selectionOriginRef.current = "map-nav";
+    resetMapToCityOverview();
+    if (placeId || eventId || serviceId) {
+      closeAllDetails({ origin: "map-nav", replace: true });
+    }
+    goToMobileSection("map", mapWrapperRef);
+  }, [closeAllDetails, eventId, goToMobileSection, placeId, resetMapToCityOverview, serviceId]);
+
   const effectiveDesktopContentSection = useMemo(() => {
     if (eventId) return "events";
     if (placeId) return "venues";
@@ -1432,6 +1442,44 @@ export default function CityPage() {
   const canDeleteSelectedService = isAdmin;
 
 
+  const showPlaceOnMap = () => {
+    const lat = Number(selectedPlace?.lat);
+    const lng = Number(selectedPlace?.lng);
+    if (!selectedPlace || !mapRef.current || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    mapRef.current.resize();
+    mapRef.current.flyTo({
+      center: [lng, lat],
+      zoom: 16.4,
+      essential: true,
+      duration: 760,
+    });
+
+    const isMobileViewport =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 1024px)").matches;
+
+    if (isMobileViewport) {
+      keepMapViewOnNextCloseRef.current = true;
+      setActiveCitySection("map");
+      closePlace({ origin: "map-cta", replace: true });
+      requestAnimationFrame(() => {
+        mapWrapperRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+      return;
+    }
+
+    mapWrapperRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+
   const showServiceOnMap = () => {
     const lat = Number(selectedService?.lat);
     const lng = Number(selectedService?.lng);
@@ -1449,7 +1497,8 @@ export default function CityPage() {
 
     if (isMobileViewport) {
       keepMapViewOnNextCloseRef.current = true;
-      closeService({ origin: "map-cta" });
+      setActiveCitySection("map");
+      closeService({ origin: "map-cta", replace: true });
       requestAnimationFrame(() => {
         mapWrapperRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -1488,7 +1537,8 @@ export default function CityPage() {
 
     if (isMobileViewport) {
       keepMapViewOnNextCloseRef.current = true;
-      closeEvent({ origin: "map-cta" });
+      setActiveCitySection("map");
+      closeEvent({ origin: "map-cta", replace: true });
       requestAnimationFrame(() => {
         mapWrapperRef.current?.scrollIntoView({
           behavior: "smooth",
@@ -2746,9 +2796,16 @@ export default function CityPage() {
     const targetLng = Number(target?.lng);
 
     if (!target || !mapRef.current || !Number.isFinite(targetLat) || !Number.isFinite(targetLng)) {
+      const hadSelection = Boolean(lastSelectionKeyRef.current);
       lastSelectionKeyRef.current = "";
       if (!selectedPlace && !selectedEvent && !selectedService && keepMapViewOnNextCloseRef.current) {
         keepMapViewOnNextCloseRef.current = false;
+        selectionOriginRef.current = "synced";
+        return;
+      }
+      if (!selectedPlace && !selectedEvent && !selectedService && hadSelection) {
+        resetMapToCityOverview();
+        selectionOriginRef.current = "synced";
       }
       return;
     }
@@ -2782,7 +2839,7 @@ export default function CityPage() {
       });
     }
     selectionOriginRef.current = "synced";
-  }, [selectedEvent, selectedPlace, selectedService]);
+  }, [resetMapToCityOverview, selectedEvent, selectedPlace, selectedService]);
 
   useEffect(() => {
     if (typeof window === "undefined" || window.innerWidth < 1280) return;
@@ -4780,7 +4837,7 @@ export default function CityPage() {
                   cityServiceCount={cityServiceCount}
                   activeCitySection={activeCitySection}
                   onGoHome={() => goToMobileSection("guide", guideSectionRef)}
-                  onGoMap={() => goToMobileSection("map", mapWrapperRef)}
+                  onGoMap={handleGoMapMobile}
                   onGoEvents={() => goToMobileSection("events", tonightSectionRef)}
                   onGoGuide={() => goToMobileSection("guide", guideSectionRef)}
                   onGoServices={() => goToMobileSection("services", servicesSectionRef)}
@@ -5041,6 +5098,7 @@ export default function CityPage() {
                       handleAdminDeletePlace={handleAdminDeletePlace}
                       isDeletingPlaceAdmin={isDeletingPlaceAdmin}
                       placeTypes={TYPES}
+                      showPlaceOnMap={showPlaceOnMap}
                       handleReport={handleReport}
                       toggleFavorite={toggleFavorite}
                       favorites={favorites}
@@ -5173,6 +5231,7 @@ export default function CityPage() {
         handleAdminDeletePlace={handleAdminDeletePlace}
         isDeletingPlaceAdmin={isDeletingPlaceAdmin}
         placeTypes={TYPES}
+        showPlaceOnMap={showPlaceOnMap}
         handleReport={handleReport}
         toggleFavorite={toggleFavorite}
         favorites={favorites}

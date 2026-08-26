@@ -2,6 +2,7 @@
 
 export default function SelectedPlaceActions({
   selectedPlace,
+  showPlaceOnMap,
   handleReport,
   toggleFavorite,
   favorites,
@@ -10,9 +11,18 @@ export default function SelectedPlaceActions({
   isDeletingPlaceAdmin,
 }) {
   const isSaved = favorites.includes(String(selectedPlace.id));
+  const canShowOnMap = Number.isFinite(Number(selectedPlace.lat)) && Number.isFinite(Number(selectedPlace.lng));
 
   return (
     <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <button
+        type="button"
+        onClick={showPlaceOnMap}
+        disabled={!canShowOnMap}
+        className="qa-action qa-city-cta-secondary rounded-2xl border border-cyan-100/22 bg-cyan-300/[0.08] px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-50 transition hover:border-cyan-100/40 hover:bg-cyan-300/[0.12] disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        Show on map
+      </button>
       <button
         onClick={() =>
           handleReport({

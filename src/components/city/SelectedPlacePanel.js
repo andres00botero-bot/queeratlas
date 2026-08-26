@@ -49,6 +49,7 @@ export default function SelectedPlacePanel({
   handleAdminDeletePlace,
   isDeletingPlaceAdmin,
   placeTypes,
+  showPlaceOnMap,
   handleReport,
   toggleFavorite,
   favorites,
@@ -144,6 +145,7 @@ export default function SelectedPlacePanel({
             <p className="mb-3 text-[10px] uppercase tracking-[0.18em] text-white/58">Actions</p>
             <SelectedPlaceActions
               selectedPlace={selectedPlace}
+              showPlaceOnMap={showPlaceOnMap}
               handleReport={handleReport}
               toggleFavorite={toggleFavorite}
               favorites={favorites}

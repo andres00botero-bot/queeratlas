@@ -79,6 +79,7 @@ export default function CityDetailsLayer({
   handleAdminDeletePlace,
   isDeletingPlaceAdmin,
   placeTypes,
+  showPlaceOnMap,
   handleReport,
   toggleFavorite,
   favorites,
@@ -222,6 +223,7 @@ export default function CityDetailsLayer({
             handleAdminDeletePlace={handleAdminDeletePlace}
             isDeletingPlaceAdmin={isDeletingPlaceAdmin}
             placeTypes={placeTypes}
+            showPlaceOnMap={showPlaceOnMap}
             handleReport={handleReport}
             toggleFavorite={toggleFavorite}
             favorites={favorites}
