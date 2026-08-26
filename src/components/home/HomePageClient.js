@@ -984,37 +984,60 @@ export default function HomePageClient({ initialHomeData = null }) {
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/5 blur-3xl" />
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
-          <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:overflow-visible xl:px-8 xl:pb-4 xl:pt-8">
+          <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] lg:overflow-visible xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
-                src="/home/queer-atlas-global-queer-nightlife-discovery-hero.webp"
+                src="/home/queer-atlas-living-map-hero-v2.webp"
                 alt=""
                 fill
-                loading="lazy"
-                fetchPriority="low"
-                quality={75}
+                priority
+                fetchPriority="high"
+                quality={82}
                 sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
-                className="object-cover object-center opacity-96"
-                style={{ objectPosition: "center calc(50% - 2.4cm)" }}
+                className="object-cover object-center opacity-[0.97]"
+                style={{ objectPosition: "center center" }}
               />
+              <div aria-hidden="true" className="absolute inset-0 hidden xl:block">
+                <span className="qa-atlas-signal left-[53.8%] top-[24.8%] border-violet-300/70 bg-violet-300/55" />
+                <span className="qa-atlas-signal left-[74.2%] top-[17.8%] border-violet-300/70 bg-violet-300/55 [animation-delay:1.4s]" />
+                <span className="qa-atlas-signal left-[71.4%] top-[52.6%] border-rose-300/70 bg-rose-300/55 [animation-delay:2.8s]" />
+                <span className="qa-atlas-signal left-[60.7%] top-[76.1%] border-emerald-300/70 bg-emerald-300/55 [animation-delay:4.2s]" />
+              </div>
             </div>
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(104deg,rgba(3,6,18,0.9)_0%,rgba(5,7,16,0.74)_38%,rgba(7,7,12,0.22)_68%,rgba(7,7,12,0.5)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#05060f]/88 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(104deg,rgba(3,10,18,0.88)_0%,rgba(4,14,23,0.64)_38%,rgba(4,15,23,0.16)_68%,rgba(4,10,17,0.38)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#04101a]/80 to-transparent" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070912]/55 to-[#01010C]" />
-            <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-28 bg-gradient-to-r from-[#05060f]/86 to-transparent lg:block" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-28 bg-gradient-to-l from-[#05060f]/86 to-transparent lg:block" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-28 bg-gradient-to-r from-[#04101a]/82 to-transparent lg:block" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-28 bg-gradient-to-l from-[#04101a]/72 to-transparent lg:block" />
             <div className="pointer-events-none absolute -left-24 top-36 h-56 w-56 rounded-full bg-fuchsia-500/12 blur-[90px] lg:hidden" />
             <div className="pointer-events-none absolute -right-24 top-10 h-64 w-64 rounded-full bg-cyan-400/12 blur-[100px] lg:hidden" />
 
-            <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col">
-          <div className={`mb-7 flex items-center gap-3 sm:mb-14 sm:gap-4 lg:mb-0 ${isMember ? "justify-between" : "justify-end"}`}>
-            {isMember && (
-              <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
-                {heroIdentityLabel}
+            <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[686px] xl:min-h-[690px]">
+          <div className="mb-7 flex items-center justify-end gap-3 sm:mb-14 sm:gap-4 lg:mb-0 lg:justify-between">
+            <div className="hidden items-center gap-3 lg:flex">
+              <Image
+                src="/queer-atlas-logo.png"
+                alt="Queer Atlas logo"
+                width={56}
+                height={56}
+                priority
+                className="h-12 w-12 shrink-0"
+              />
+              <div className="qa-display !text-left text-2xl font-semibold tracking-[-0.025em]">
+                <span className="text-white">Queer</span>{" "}
+                <span className="bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 bg-clip-text text-transparent">
+                  Atlas
+                </span>
               </div>
-            )}
+            </div>
 
             <div className="flex items-center gap-2.5 sm:gap-3">
+              {isMember && (
+                <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
+                  {heroIdentityLabel}
+                </div>
+              )}
+
               {!isMember ? (
                 <>
                 <p className="qa-display hidden text-[15px] font-semibold tracking-[-0.015em] text-white/92 sm:block lg:text-[16px]">
@@ -1081,7 +1104,7 @@ export default function HomePageClient({ initialHomeData = null }) {
 
           <div className="lg:flex lg:flex-1 lg:items-center">
             <section className="w-full pb-1 lg:pb-10 lg:pt-8 xl:pt-12">
-              <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 lg:hidden">
                 <Image
                   src="/queer-atlas-logo.png"
                   alt="Queer Atlas logo"

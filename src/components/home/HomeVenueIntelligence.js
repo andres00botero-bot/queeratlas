@@ -33,7 +33,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
 
   return (
     <section id="venue-intelligence" data-home-section="venue_intelligence" className="mt-1 scroll-mt-5">
-      <div className="relative py-3 sm:py-5 lg:py-7">
+      <div className="relative py-3 sm:py-5 lg:pb-7 lg:pt-2">
         <header className="relative z-10 flex flex-col gap-2 border-b border-white/9 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-4 lg:items-center lg:border-white/12 lg:pb-6">
           <div>
             <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/78">
