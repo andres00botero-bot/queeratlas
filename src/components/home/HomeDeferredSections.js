@@ -126,12 +126,8 @@ function ParticipationStrip({ actions = [] }) {
 
   return (
     <section id="home-participation" data-home-section="participation" className="qa-defer-render mt-8 scroll-mt-20">
-      <div className="qa-premium-card relative overflow-hidden rounded-[28px] border border-rose-100/14 bg-[radial-gradient(circle_at_4%_10%,rgba(251,113,133,0.16),transparent_30%),radial-gradient(circle_at_93%_85%,rgba(45,212,191,0.13),transparent_31%),linear-gradient(135deg,rgba(43,20,43,0.97),rgba(13,22,32,0.98)_56%,rgba(13,27,31,0.98))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.3)] sm:p-5">
-        <div className="pointer-events-none absolute -left-8 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-rose-300/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-6 bottom-0 h-24 w-24 rounded-full bg-teal-300/10 blur-3xl" />
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-rose-100/35 to-transparent" />
-
-        <div className="relative grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(30rem,0.92fr)] lg:items-center">
+      <div className="relative py-2 sm:py-3">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(30rem,0.92fr)] lg:items-center">
             <div className="min-w-0 lg:border-l lg:border-rose-200/22 lg:pl-4">
               <p className="flex items-center gap-2 !text-left text-[9px] font-semibold uppercase tracking-[0.2em] text-rose-100/66">
                 <span className="flex -space-x-1" aria-hidden="true">
@@ -261,6 +257,8 @@ export default function HomeDeferredSections({
         </div>
       </section>
 
+      <ParticipationStrip actions={participationActions} />
+
       {livePulseCards.length > 0 ? (
         <section data-home-section="live" className="qa-defer-render mt-8">
           <div className="qa-atlas-section">
@@ -301,8 +299,6 @@ export default function HomeDeferredSections({
           </div>
         </section>
       ) : null}
-
-      <ParticipationStrip actions={participationActions} />
 
       <TrustSupportStrip onAction={onEditorialAction} contactSlot={contactSlot} />
 
