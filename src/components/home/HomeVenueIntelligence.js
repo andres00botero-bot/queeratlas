@@ -33,9 +33,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
 
   return (
     <section id="venue-intelligence" data-home-section="venue_intelligence" className="mt-1 scroll-mt-5">
-      <div className="qa-atlas-section relative overflow-hidden rounded-[26px] border border-white/12 bg-[radial-gradient(circle_at_0%_0%,rgba(244,114,182,0.15),transparent_26%),radial-gradient(circle_at_100%_4%,rgba(34,211,238,0.13),transparent_27%),radial-gradient(circle_at_52%_100%,rgba(139,92,246,0.12),transparent_34%),linear-gradient(145deg,rgba(18,13,29,0.99),rgba(7,13,22,0.99)_52%,rgba(9,8,18,0.99))] p-3.5 shadow-[0_26px_76px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-inset ring-fuchsia-100/[0.045] sm:p-5 lg:rounded-[32px] lg:border-white/16 lg:bg-[radial-gradient(circle_at_8%_0%,rgba(244,114,182,0.12),transparent_28%),radial-gradient(circle_at_92%_0%,rgba(139,92,246,0.14),transparent_30%),linear-gradient(145deg,rgba(15,16,27,0.995),rgba(7,10,17,0.995))] lg:p-7 lg:shadow-[0_34px_100px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.09)]">
-        <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/28 to-transparent" />
-
+      <div className="relative py-3 sm:py-5 lg:py-7">
         <header className="relative z-10 flex flex-col gap-2 border-b border-white/9 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-4 lg:items-center lg:border-white/12 lg:pb-6">
           <div>
             <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/78">
@@ -47,9 +45,6 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             </h2>
           </div>
           <div className="flex items-center justify-between gap-3 sm:block">
-            <p className="hidden max-w-xl text-[12px] leading-5 text-white/68 sm:block sm:text-right lg:max-w-sm lg:text-[14px] lg:leading-6 lg:text-white/74 xl:max-w-md">
-              From what happens at the door to the wider context surrounding a destination.
-            </p>
             <span className="shrink-0 rounded-full border border-white/14 bg-white/[0.05] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-white/66 sm:hidden">
               Swipe 3 layers →
             </span>
@@ -78,14 +73,11 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
               </p>
             </div>
 
-            <div className="mt-auto flex items-center justify-between gap-2 pt-3 lg:flex-col lg:items-start xl:flex-row xl:items-center">
-              <span className="text-[9px] font-medium uppercase tracking-[0.1em] text-white/58 sm:text-[10px] lg:text-[11px] lg:text-white/68">
-                {intelligence.sourceUrls.length > 0 ? `${intelligence.sourceUrls.length} sources checked` : "Evidence checked"}
-              </span>
+            <div className="mt-auto flex items-start pt-3">
               <Link
                 href={hasVenueExample ? venueHref : "/cities"}
                 onClick={onOpen}
-                className="inline-flex min-h-11 items-center gap-1 text-[11px] font-semibold text-cyan-50/86 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:rounded-full lg:border lg:border-fuchsia-100/22 lg:bg-fuchsia-100/[0.08] lg:px-3.5 lg:text-[12px] lg:text-white lg:hover:border-fuchsia-100/38 lg:hover:bg-fuchsia-100/[0.13]"
+                className="inline-flex min-h-11 items-center justify-between gap-1 text-[11px] font-semibold text-cyan-50/86 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-fuchsia-100/22 lg:bg-fuchsia-100/[0.08] lg:px-3.5 lg:text-[12px] lg:text-white lg:hover:border-fuchsia-100/38 lg:hover:bg-fuchsia-100/[0.13]"
               >
                 <span className="lg:hidden">{hasVenueExample ? "Open venue" : "Explore venues"}</span>
                 <span className="hidden lg:inline xl:hidden">{hasVenueExample ? "View evidence" : "Explore evidence"}</span>
@@ -196,8 +188,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
           </article>
         </div>
 
-        <footer className="relative z-10 mt-5 hidden items-center justify-between border-t border-white/10 pt-4 lg:flex">
-          <p className="text-[12px] leading-5 text-white/60">A connected evidence chain—from what happens at the door to the wider destination context.</p>
+        <footer className="relative z-10 mt-5 hidden items-center justify-end border-t border-white/10 pt-4 lg:flex">
           <nav aria-label="Queer Atlas evidence resources" className="flex items-center gap-2">
             <Link href="/verification" onClick={() => onContextOpen?.("/verification")} className="inline-flex min-h-10 items-center gap-1 rounded-full border border-white/14 bg-white/[0.045] px-3.5 text-[12px] font-semibold text-white/76 transition hover:border-white/26 hover:text-white">
               How evidence is verified <ArrowUpRight size={11} aria-hidden="true" />
