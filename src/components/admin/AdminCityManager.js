@@ -5,6 +5,7 @@ import { Check, CircleAlert, MapPin, Search, Sparkles } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { normalizeRegistrySlug } from "@/lib/cityRegistryShared";
 import { loadMapboxGl } from "@/lib/mapboxGlLoader";
+import { isValidTimeZone } from "@/lib/timeZones";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 
 const EMPTY_FORM = {
@@ -55,6 +56,11 @@ function parseGuideSources(value) {
 
 function buildGuideItems(form) {
   return GUIDE_FIELDS.map((field) => ({ title: field.title, text: String(form[field.key] || "").trim(), extra: "" }));
+}
+
+function timeZoneLabel(value) {
+  const parts = String(value || "").split("/");
+  return (parts.at(-1) || value).replaceAll("_", " ");
 }
 
 async function adminHeaders() {
@@ -150,6 +156,7 @@ export default function AdminCityManager() {
   const [results, setResults] = useState([]);
   const [cities, setCities] = useState([]);
   const [profiles, setProfiles] = useState([]);
+  const [timezones, setTimezones] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -166,6 +173,7 @@ export default function AdminCityManager() {
       if (!response.ok) throw new Error(payload.error || "Could not load city registry.");
       setCities(payload.cities || []);
       setProfiles(payload.qariProfiles || []);
+      setTimezones(payload.timezones || []);
       setError("");
     } catch (loadError) {
       setError(loadError.message || "Could not load city registry. Run the city registry SQL first.");
@@ -205,6 +213,22 @@ export default function AdminCityManager() {
     [form.qariDestinationKey, profiles],
   );
 
+  const timezoneGroups = useMemo(() => {
+    const available = [...new Set([
+      ...timezones,
+      ...(form.timezone && isValidTimeZone(form.timezone) ? [form.timezone] : []),
+    ])].sort((left, right) => left.localeCompare(right, "en"));
+
+    return available.reduce((groups, timezone) => {
+      const separator = timezone.indexOf("/");
+      const region = separator > 0 ? timezone.slice(0, separator) : "Universal";
+      const current = groups.find((group) => group.region === region);
+      if (current) current.options.push(timezone);
+      else groups.push({ region, options: [timezone] });
+      return groups;
+    }, []);
+  }, [form.timezone, timezones]);
+
   const requirements = {
     identity: form.name.trim().length >= 2 && form.country.trim().length >= 2,
     map: form.mapConfirmed && Number.isFinite(form.latitude) && Number.isFinite(form.longitude),
@@ -215,7 +239,7 @@ export default function AdminCityManager() {
       && /^\d{4}-\d{2}-\d{2}$/.test(form.guideCheckedAt),
     safety: form.safetyContext.trim().length >= 80,
     qari: Boolean(matchingProfile),
-    timezone: /^[A-Za-z_+-]+\/[A-Za-z0-9_+\-/]+$/.test(form.timezone.trim()),
+    timezone: isValidTimeZone(form.timezone),
   };
   const canSave = Object.values(requirements).every(Boolean) && form.vibe.trim().length >= 3;
   const missingRequirements = [
@@ -368,7 +392,26 @@ export default function AdminCityManager() {
               <label className="text-xs text-white/60">City name<input value={form.name} onChange={(event) => updateForm({ name: event.target.value, slug: normalizeRegistrySlug(event.target.value) })} className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white" /></label>
               <label className="text-xs text-white/60">URL slug<input value={form.slug} readOnly={Boolean(editingCityId)} onChange={(event) => updateForm({ slug: normalizeRegistrySlug(event.target.value) })} className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white read-only:text-white/45" /></label>
               <label className="text-xs text-white/60">Country<input value={form.country} readOnly className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-sm text-white/72" /></label>
-              <label className="text-xs text-white/60">IANA timezone<input value={form.timezone} onChange={(event) => updateForm({ timezone: event.target.value })} placeholder="Europe/Stockholm" className="mt-1.5 w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2.5 text-sm text-white placeholder:text-white/25" /></label>
+              <label className="text-xs text-white/60">
+                Timezone
+                <select
+                  value={form.timezone}
+                  onChange={(event) => updateForm({ timezone: event.target.value })}
+                  className="mt-1.5 w-full rounded-xl border border-white/10 bg-[#111722] px-3 py-2.5 text-sm text-white outline-none transition focus:border-cyan-200/40"
+                >
+                  <option value="">Choose the city timezone…</option>
+                  {timezoneGroups.map((group) => (
+                    <optgroup key={group.region} label={group.region.replaceAll("_", " ")}>
+                      {group.options.map((timezone) => (
+                        <option key={timezone} value={timezone}>
+                          {timeZoneLabel(timezone)} · {timezone}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+                <span className="mt-1.5 block text-[10px] leading-4 text-white/38">Choose the local timezone used by this city. The saved IANA value is shown after the name.</span>
+              </label>
             </div>}
             <CityPointMap form={form} onChange={updateForm} />
           </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { normalizeRegistrySlug } from "@/lib/cityRegistryShared";
+import { getSupportedTimeZones, isValidTimeZone } from "@/lib/timeZones";
 import {
   getTelemetryServiceClient,
   hasAuthorizedSeoAdminRequest,
@@ -67,7 +68,11 @@ export async function GET(request) {
   ]);
   if (cityError) return failure(cityError.message, 500);
   if (qariError) return failure(qariError.message, 500);
-  return NextResponse.json({ cities: cities || [], qariProfiles: qariProfiles || [] });
+  return NextResponse.json({
+    cities: cities || [],
+    qariProfiles: qariProfiles || [],
+    timezones: getSupportedTimeZones(),
+  });
 }
 
 export async function POST(request) {
@@ -104,7 +109,7 @@ export async function POST(request) {
     return failure("Valid city coordinates are required.");
   }
   if (body.mapConfirmed !== true) return failure("Confirm the city point on the map before saving.");
-  if (!/^[A-Za-z_+-]+\/[A-Za-z0-9_+\-/]+$/.test(timezone)) return failure("Use an IANA timezone such as Europe/Stockholm.");
+  if (!isValidTimeZone(timezone)) return failure("Choose a valid timezone from the list.");
   if (vibe.length < 3) return failure("Add a short city vibe.");
   if (localMood.length < 30) return failure("Local mood must contain at least 30 characters.");
   if (queerStatus.length < 30) return failure("Queer status must contain at least 30 characters.");
@@ -189,7 +194,7 @@ export async function PATCH(request) {
   if (!/^[A-Z]{2}$/.test(countryCode)) return failure("A valid two-letter country code is required.");
   if (!validCoordinate(body.latitude, -90, 90) || !validCoordinate(body.longitude, -180, 180)) return failure("Valid city coordinates are required.");
   if (body.mapConfirmed !== true) return failure("Confirm the city point on the map before saving.");
-  if (!/^[A-Za-z_+-]+\/[A-Za-z0-9_+\-/]+$/.test(timezone)) return failure("Use an IANA timezone such as Europe/Stockholm.");
+  if (!isValidTimeZone(timezone)) return failure("Choose a valid timezone from the list.");
   if (vibe.length < 3) return failure("Add a short city vibe.");
 
   const client = getTelemetryServiceClient();

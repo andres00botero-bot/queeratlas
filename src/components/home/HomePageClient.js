@@ -987,7 +987,7 @@ export default function HomePageClient({ initialHomeData = null }) {
           <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] lg:overflow-visible xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <Image
-                src="/home/queer-atlas-living-map-hero-v2.webp"
+                src="/home/queer-atlas-signal-field-hero-v8.webp"
                 alt=""
                 fill
                 priority
@@ -997,12 +997,6 @@ export default function HomePageClient({ initialHomeData = null }) {
                 className="object-cover object-center opacity-[0.97]"
                 style={{ objectPosition: "center center" }}
               />
-              <div aria-hidden="true" className="absolute inset-0 hidden xl:block">
-                <span className="qa-atlas-signal left-[53.8%] top-[24.8%] border-violet-300/70 bg-violet-300/55" />
-                <span className="qa-atlas-signal left-[74.2%] top-[17.8%] border-violet-300/70 bg-violet-300/55 [animation-delay:1.4s]" />
-                <span className="qa-atlas-signal left-[71.4%] top-[52.6%] border-rose-300/70 bg-rose-300/55 [animation-delay:2.8s]" />
-                <span className="qa-atlas-signal left-[60.7%] top-[76.1%] border-emerald-300/70 bg-emerald-300/55 [animation-delay:4.2s]" />
-              </div>
             </div>
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(104deg,rgba(3,10,18,0.88)_0%,rgba(4,14,23,0.64)_38%,rgba(4,15,23,0.16)_68%,rgba(4,10,17,0.38)_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#04101a]/80 to-transparent" />
