@@ -849,10 +849,13 @@ export default function HomePageClient({ initialHomeData = null }) {
       label: isMember ? "Stories, guides and conversations" : "Join stories, guides and conversations",
       shortLabel: isMember ? "Open the network" : "Join & explore",
       icon: "Community",
-      cardClass: "border-teal-100/17 bg-[radial-gradient(circle_at_100%_0%,rgba(45,212,191,0.14),transparent_42%),linear-gradient(145deg,rgba(19,52,58,0.86),rgba(14,34,45,0.92))] hover:border-teal-100/34",
-      glowClass: "bg-teal-300/20",
-      lineClass: "from-transparent via-teal-200/64 to-transparent",
-      iconClass: "border-teal-100/20 bg-[linear-gradient(145deg,rgba(94,234,212,0.2),rgba(34,211,238,0.14))] text-teal-50",
+      cardClass: "border-cyan-100/26 bg-[radial-gradient(circle_at_8%_50%,rgba(45,212,191,0.16),transparent_30%),linear-gradient(110deg,rgba(10,35,42,0.96),rgba(10,19,31,0.98))] hover:border-cyan-100/48",
+      glowClass: "bg-cyan-300/16",
+      lineClass: "from-teal-300 via-cyan-300 to-sky-300",
+      iconClass: "border-cyan-100/28 bg-[linear-gradient(145deg,rgba(94,234,212,0.2),rgba(34,211,238,0.11))] text-cyan-50",
+      titleClass: "text-white",
+      copyClass: "text-cyan-50/58",
+      arrowClass: "border-cyan-100/20 bg-cyan-100/[0.07] text-cyan-100/70 group-hover:border-cyan-100/40 group-hover:bg-cyan-100/[0.13] group-hover:text-white",
       onClick: () => {
         trackHomeAction("community", "/community", { member_status: isMember ? "member" : "visitor" });
         if (isMember) {
@@ -867,10 +870,13 @@ export default function HomePageClient({ initialHomeData = null }) {
       label: isMember ? "Add places, events and services" : "Join to add what you know",
       shortLabel: isMember ? "Add what you know" : "Join & add",
       icon: "Contribute",
-      cardClass: "border-rose-100/17 bg-[radial-gradient(circle_at_100%_0%,rgba(251,113,133,0.15),transparent_42%),linear-gradient(145deg,rgba(73,30,58,0.88),rgba(47,24,51,0.93))] hover:border-rose-100/34",
-      glowClass: "bg-rose-300/20",
-      lineClass: "from-transparent via-rose-200/64 to-transparent",
-      iconClass: "border-rose-100/20 bg-[linear-gradient(145deg,rgba(253,164,175,0.2),rgba(232,121,249,0.14))] text-rose-50",
+      cardClass: "border-rose-100/26 bg-[radial-gradient(circle_at_8%_50%,rgba(251,113,133,0.17),transparent_30%),linear-gradient(110deg,rgba(49,18,38,0.96),rgba(25,15,31,0.98))] hover:border-rose-100/48",
+      glowClass: "bg-fuchsia-300/17",
+      lineClass: "from-rose-300 via-pink-300 to-fuchsia-300",
+      iconClass: "border-rose-100/28 bg-[linear-gradient(145deg,rgba(253,164,175,0.2),rgba(232,121,249,0.11))] text-rose-50",
+      titleClass: "text-white",
+      copyClass: "text-rose-50/58",
+      arrowClass: "border-rose-100/20 bg-rose-100/[0.07] text-rose-100/70 group-hover:border-rose-100/40 group-hover:bg-rose-100/[0.13] group-hover:text-white",
       onClick: () => {
         trackHomeAction("contribute", "/contribute", { member_status: isMember ? "member" : "visitor" });
         if (isMember) {

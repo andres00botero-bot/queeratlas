@@ -153,21 +153,21 @@ function ParticipationStrip({ actions = [] }) {
                     key={item.title}
                     type="button"
                     onClick={item.onClick}
-                    className={`group relative min-h-[5rem] overflow-hidden rounded-[20px] border p-2.5 text-left shadow-[0_14px_36px_rgba(0,0,0,0.2)] transition duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/45 sm:p-3 ${item.cardClass}`}
-                >
-                  <span className={`pointer-events-none absolute -right-5 -top-7 h-16 w-16 rounded-full blur-2xl ${item.glowClass}`} />
-                  <span className={`absolute inset-x-4 top-0 h-px bg-gradient-to-r ${item.lineClass}`} />
-                  <div className="relative flex items-center gap-2.5">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border shadow-[0_10px_26px_rgba(0,0,0,0.22)] sm:h-9 sm:w-9 ${item.iconClass}`}>
-                      <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
+                    className={`group relative min-h-[4.75rem] overflow-hidden rounded-full border p-2 text-left shadow-[0_16px_38px_rgba(0,0,0,0.26),inset_0_1px_0_rgba(255,255,255,0.07)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_46px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/55 sm:min-h-[5.25rem] sm:p-2.5 ${item.cardClass}`}
+                  >
+                  <span className={`pointer-events-none absolute -right-3 top-1/2 h-16 w-16 -translate-y-1/2 rounded-full blur-2xl ${item.glowClass}`} />
+                  <span className={`absolute inset-y-4 left-0 w-[2px] rounded-r-full bg-gradient-to-b ${item.lineClass}`} />
+                  <div className="relative flex h-full items-center gap-2.5 sm:gap-3">
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-[0_10px_24px_rgba(0,0,0,0.2)] sm:h-12 sm:w-12 ${item.iconClass}`}>
+                      <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block whitespace-nowrap text-[13px] font-semibold tracking-[-0.01em] text-white sm:text-sm">{item.title}</span>
-                      <span className="mt-1 block whitespace-nowrap text-[8px] text-white/50 sm:hidden">{item.shortLabel}</span>
-                      <span className="mt-1 hidden truncate text-[10px] text-white/52 sm:block">{item.label}</span>
+                      <span className={`block whitespace-nowrap text-[13px] font-semibold tracking-[-0.01em] sm:text-[15px] ${item.titleClass}`}>{item.title}</span>
+                      <span className={`mt-1 block whitespace-nowrap text-[8px] font-medium sm:hidden ${item.copyClass}`}>{item.shortLabel}</span>
+                      <span className={`mt-1 hidden truncate text-[10px] font-medium sm:block ${item.copyClass}`}>{item.label}</span>
                     </span>
-                    <span className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/10 text-white/38 transition group-hover:border-white/22 group-hover:bg-white/9 group-hover:text-white/82 sm:flex">
-                      <ArrowUpRight size={12} aria-hidden="true" />
+                    <span className={`mr-1 hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border transition duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 sm:flex ${item.arrowClass}`}>
+                      <ArrowUpRight size={13} strokeWidth={2} aria-hidden="true" />
                     </span>
                   </div>
                 </button>
