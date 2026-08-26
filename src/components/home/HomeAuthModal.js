@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Bookmark, MapPinned, MessageCircle, X } from "lucide-react";
+import { Eye, EyeOff, X } from "lucide-react";
 
-const MEMBER_BENEFITS = [
-  { label: "Save & plan", icon: Bookmark },
-  { label: "Ask locals", icon: MessageCircle },
-  { label: "Shape the atlas", icon: MapPinned },
-];
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 18 18" className="h-[18px] w-[18px]" aria-hidden="true">
+      <path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.715v2.258h2.909c1.702-1.567 2.684-3.876 2.684-6.614Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.181l-2.91-2.258c-.805.54-1.835.859-3.046.859-2.344 0-4.328-1.585-5.037-3.714H.956v2.332A9 9 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.963 10.706A5.412 5.412 0 0 1 3.682 9c0-.592.102-1.168.281-1.706V4.962H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.038l3.007-2.332Z" />
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.507.454 3.441 1.346l2.581-2.581C13.463.892 11.426 0 9 0A9 9 0 0 0 .956 4.962l3.007 2.332C4.672 5.165 6.656 3.58 9 3.58Z" />
+    </svg>
+  );
+}
 
 function evaluatePasswordStrength(password) {
   const value = String(password || "");
@@ -47,8 +52,6 @@ export default function HomeAuthModal({
   setResetPasswordConfirmInput,
   showSignupPassword,
   setShowSignupPassword,
-  showSignupConfirmPassword,
-  setShowSignupConfirmPassword,
   showResetPassword,
   setShowResetPassword,
   showResetConfirmPassword,
@@ -79,18 +82,121 @@ export default function HomeAuthModal({
     ? "Choose a new password."
     : authMode === "signin"
       ? "Welcome back."
-      : "Make the atlas yours.";
+      : "Join Queer Atlas.";
   const modalDescription = authMode === "signin"
-    ? "Pick up your saved places, plans, and community."
+    ? "Sign in to continue to your saved places and community contributions."
     : authMode === "reset"
       ? "Set a secure password, then return to your Atlas."
-      : "Save places, build trips, ask locals, and help keep the queer map current.";
+      : "Add places and events, write reviews, and share local updates that help our community travel with more confidence.";
   const closeModal = useCallback((reason) => {
     trackKpiEvent("home_member_prompt_closed", {
       meta: { reason, mode: authMode },
     });
     setShowSignup(false);
   }, [authMode, setShowSignup, trackKpiEvent]);
+
+  const handleGoogleAuth = async () => {
+    setAuthMessage("");
+    setAuthLoading(true);
+    writeLocalValue("qa_post_login_target", safePostLoginTarget);
+    const { error } = await signInWithGoogle();
+    if (error) setAuthMessage(error.message);
+    setAuthLoading(false);
+  };
+
+  const handlePasswordSignIn = async (event) => {
+    event.preventDefault();
+    if (!emailInput.trim() || !passwordInput.trim()) {
+      setAuthMessage("Enter both email and password.");
+      return;
+    }
+
+    setAuthMessage("");
+    setAuthLoading(true);
+    writeLocalValue("qa_post_login_target", safePostLoginTarget);
+    const { error } = await signInWithPassword(emailInput.trim(), passwordInput);
+    if (error) {
+      setAuthMessage(error.message);
+    } else {
+      setAuthMessage("Signed in. Redirecting...");
+      trackKpiEvent("login_completed", { memberKey: emailInput.trim().toLowerCase() });
+    }
+    setAuthLoading(false);
+  };
+
+  const handleMagicLink = async () => {
+    if (!emailInput.trim()) {
+      setAuthMessage("Enter your email to receive a sign-in link.");
+      return;
+    }
+
+    setAuthMessage("");
+    setAuthLoading(true);
+    writeLocalValue("qa_post_login_target", safePostLoginTarget);
+    const { error } = await signInWithEmail(emailInput.trim());
+    setAuthMessage(error ? error.message : "Sign-in link sent. Check your inbox.");
+    setAuthLoading(false);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!emailInput.trim()) {
+      setAuthMessage("Enter your email first, then request a password reset.");
+      return;
+    }
+
+    setAuthMessage("");
+    setAuthLoading(true);
+    const { error } = await resetPasswordForEmail(emailInput.trim());
+    setAuthMessage(error ? (error.message || "Could not send password reset email.") : "Password reset email sent. Open the link, then set your new password.");
+    setAuthLoading(false);
+  };
+
+  const handleCreateAccount = async (event) => {
+    event.preventDefault();
+    const email = signupForm.email.trim();
+    const password = signupForm.password.trim();
+    const profilePayload = {
+      displayName: signupForm.displayName.trim(),
+      pronouns: signupForm.pronouns.trim(),
+      homeCity: signupForm.homeCity.trim(),
+      residentCountry: signupForm.residentCountry.trim(),
+    };
+
+    if (!profilePayload.displayName || !email || !password) {
+      setAuthMessage("Display name, email, and password are required.");
+      return;
+    }
+    if (!isPasswordStrong(password)) {
+      setAuthMessage("Use at least 6 characters, including one uppercase letter and one symbol.");
+      return;
+    }
+
+    setAuthMessage("");
+    setAuthLoading(true);
+    writeLocalValue("qa_post_login_target", safePostLoginTarget);
+    const { data, error } = await signUpWithPassword(email, password);
+    if (error) {
+      setAuthMessage(error.message);
+      setPendingEmailConfirmation("");
+      setAuthLoading(false);
+      return;
+    }
+
+    if (data?.session) {
+      setPendingEmailConfirmation("");
+      const result = await updateMemberProfile(profilePayload);
+      setAuthMessage(result?.ok ? "Account ready. Welcome to Queer Atlas." : "Account created. Add more profile details in Your Atlas.");
+      trackKpiEvent("signup_completed", { memberKey: email.toLowerCase() });
+    } else {
+      setPendingEmailConfirmation(email);
+      localStorage.setItem(pendingSignupProfileKey, JSON.stringify({ ...profilePayload, email }));
+      setAuthMessage("Account created. Confirm your email to activate your profile.");
+      trackKpiEvent("signup_completed", { memberKey: email.toLowerCase() });
+    }
+
+    setSignupForm({ displayName: "", pronouns: "", homeCity: "", residentCountry: "", email: "", password: "", confirmPassword: "" });
+    setAuthLoading(false);
+  };
 
   useEffect(() => {
     if (!showSignup || typeof document === "undefined") return undefined;
@@ -153,7 +259,7 @@ export default function HomeAuthModal({
         aria-labelledby="home-auth-heading"
         aria-describedby="home-auth-description"
         tabIndex={-1}
-        className="relative max-h-[calc(100svh-2rem)] w-full max-w-lg overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(21,21,21,0.97),rgba(10,10,10,0.99))] p-5 shadow-[0_30px_120px_rgba(0,0,0,0.55)] outline-none sm:rounded-[32px] sm:p-8"
+        className="relative max-h-[calc(100svh-2rem)] w-full max-w-md overflow-y-auto rounded-[28px] border border-white/12 bg-[radial-gradient(circle_at_10%_0%,rgba(244,114,182,0.12),transparent_30%),radial-gradient(circle_at_95%_100%,rgba(34,211,238,0.1),transparent_34%),linear-gradient(165deg,rgba(28,19,31,0.985),rgba(10,13,20,0.995)_58%)] p-5 shadow-[0_34px_120px_rgba(0,0,0,0.62),inset_0_1px_0_rgba(255,255,255,0.08)] outline-none sm:rounded-[32px] sm:p-7"
       >
         <div className="pointer-events-none absolute left-0 top-0 h-40 w-40 rounded-full bg-rose-400/12 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 right-0 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
@@ -168,48 +274,17 @@ export default function HomeAuthModal({
         </button>
 
         <div className="relative">
-          <p className="text-xs uppercase tracking-[0.28em] text-white/40">
-            Free member access
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">
+            {authMode === "signup" ? "Free membership" : authMode === "signin" ? "Member access" : "Account security"}
           </p>
-          <h2 id="home-auth-heading" className="mt-3 pr-9 text-3xl font-semibold text-white">
+          <h2 id="home-auth-heading" className="qa-display mt-2 pr-9 text-[2rem] font-semibold tracking-[-0.035em] text-white">
             {modalHeading}
           </h2>
-          <p id="home-auth-description" className="mt-3 text-sm leading-6 text-white/62">
+          <p id="home-auth-description" className="mt-2 max-w-[42ch] text-sm leading-[1.55] text-white/64">
             {modalDescription}
           </p>
 
-          {authMode !== "reset" ? (
-            <div className="mt-4 grid grid-cols-3 gap-2" aria-label="Member benefits">
-              {MEMBER_BENEFITS.map((benefit) => {
-                const Icon = benefit.icon;
-                return (
-                  <div key={benefit.label} className="flex min-h-14 flex-col items-center justify-center gap-1.5 rounded-2xl border border-white/9 bg-white/[0.04] px-2 py-2 text-center">
-                    <Icon size={15} strokeWidth={1.8} className="text-cyan-100/70" aria-hidden="true" />
-                    <span className="text-[9px] font-medium leading-3 text-white/58 sm:text-[10px]">{benefit.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
-
-          <div role="tablist" aria-label="Member access mode" className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-black/30 p-1.5">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={authMode === "signin"}
-              onClick={() => {
-                trackKpiEvent("home_member_mode_selected", { meta: { mode: "signin" } });
-                setAuthMode("signin");
-                setAuthMessage("");
-                setResetPasswordInput("");
-                setResetPasswordConfirmInput("");
-              }}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                authMode === "signin" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
-              }`}
-            >
-              Sign in
-            </button>
+          <div role="tablist" aria-label="Member access mode" className={`mt-5 grid grid-cols-2 gap-1 rounded-2xl border border-white/10 bg-black/28 p-1 ${authMode === "reset" ? "hidden" : ""}`}>
             <button
               type="button"
               role="tab"
@@ -221,243 +296,146 @@ export default function HomeAuthModal({
                 setResetPasswordInput("");
                 setResetPasswordConfirmInput("");
               }}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
-                authMode === "signup" ? "bg-white text-black" : "bg-transparent text-white/70 hover:text-white"
+              className={`min-h-10 rounded-xl px-3 text-sm font-semibold transition ${
+                authMode === "signup" ? "bg-[linear-gradient(110deg,#ffd6e7,#ddd6fe)] text-[#2b162d] shadow-[0_8px_22px_rgba(244,114,182,0.14)]" : "bg-transparent text-white/58 hover:text-white"
               }`}
             >
-              Create account
+              Create free account
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={authMode === "signin"}
+              onClick={() => {
+                trackKpiEvent("home_member_mode_selected", { meta: { mode: "signin" } });
+                setAuthMode("signin");
+                setAuthMessage("");
+                setResetPasswordInput("");
+                setResetPasswordConfirmInput("");
+              }}
+              className={`min-h-10 rounded-xl px-3 text-sm font-semibold transition ${
+                authMode === "signin" ? "bg-white text-[#15151b] shadow-[0_8px_22px_rgba(0,0,0,0.2)]" : "bg-transparent text-white/58 hover:text-white"
+              }`}
+            >
+              Sign in
             </button>
           </div>
 
           {authMode === "signin" ? (
-            <div className="mt-6 space-y-3">
+            <div className="mt-5">
               <button
                 type="button"
-                onClick={async () => {
-                  setAuthMessage("");
-                  setAuthLoading(true);
-                  writeLocalValue("qa_post_login_target", safePostLoginTarget);
-                  const { error } = await signInWithGoogle();
-                  if (error) setAuthMessage(error.message);
-                  setAuthLoading(false);
-                }}
+                onClick={handleGoogleAuth}
                 disabled={authLoading}
-                className="w-full rounded-2xl bg-gradient-to-r from-white via-rose-100 to-orange-100 py-3 font-semibold text-black transition hover:opacity-95"
+                className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-2xl border border-[#747775] bg-white px-4 text-sm font-semibold text-[#1f1f1f] shadow-[0_10px_28px_rgba(0,0,0,0.2)] transition hover:bg-[#f7f7f7] disabled:cursor-wait disabled:opacity-65"
               >
+                <GoogleMark />
                 {authLoading ? "Opening..." : "Continue with Google"}
               </button>
-              <p className="px-1 text-xs leading-5 text-white/60">
-                Google sign-in only uses basic account identity (openid, email, profile).{" "}
-                <Link href="/privacy" className="text-cyan-300 underline underline-offset-2 hover:text-cyan-200">
-                  Privacy Policy
-                </Link>
-                .
-              </p>
 
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <div className="my-5 flex items-center gap-3" aria-hidden="true">
+                <span className="h-px flex-1 bg-white/10" />
+                <span className="text-[10px] uppercase tracking-[0.16em] text-white/38">or use email</span>
+                <span className="h-px flex-1 bg-white/10" />
+              </div>
+
+              <form onSubmit={handlePasswordSignIn} className="space-y-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium text-white/72">Email</span>
                 <input
+                  id="signin-email"
+                  name="email"
                   type="email"
-                  aria-label="Email address"
-                  autoComplete="email"
+                  autoComplete="username"
+                  required
                   value={emailInput}
                   onChange={(event) => setEmailInput(event.target.value)}
                   placeholder="you@email.com"
-                  className="mb-2 w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                  className="h-[52px] w-full rounded-2xl border border-white/14 bg-black/28 px-4 text-base text-white outline-none transition placeholder:text-white/30 focus:border-cyan-200/55 focus:ring-2 focus:ring-cyan-200/14"
                 />
-                <div className="mb-2 flex gap-2">
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium text-white/72">Password</span>
+                  <div className="relative">
                   <input
-                    aria-label="Password"
+                    id="signin-password"
+                    name="password"
                     autoComplete="current-password"
+                    required
                     value={passwordInput}
                     onChange={(event) => setPasswordInput(event.target.value)}
                     type={showSigninPassword ? "text" : "password"}
                     placeholder="Password"
-                    className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30"
+                    className="h-[52px] w-full rounded-2xl border border-white/14 bg-black/28 px-4 pr-12 text-base text-white outline-none transition placeholder:text-white/30 focus:border-cyan-200/55 focus:ring-2 focus:ring-cyan-200/14"
                   />
                   <button
                     type="button"
                     aria-label={showSigninPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowSigninPassword((current) => !current)}
-                    className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white"
+                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-white/48 transition hover:bg-white/8 hover:text-white"
                   >
-                    {showSigninPassword ? "Hide" : "Show"}
+                    {showSigninPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
                   </button>
                 </div>
+                </label>
                 <button
-                  type="button"
-                  onClick={async () => {
-                    if (!emailInput.trim() || !passwordInput.trim()) {
-                      setAuthMessage("Enter both email and password.");
-                      return;
-                    }
-
-                    setAuthMessage("");
-                    setAuthLoading(true);
-                    writeLocalValue("qa_post_login_target", safePostLoginTarget);
-                    const { error } = await signInWithPassword(emailInput.trim(), passwordInput);
-                    if (error) {
-                      setAuthMessage(error.message);
-                    } else {
-                      setAuthMessage("Signed in. Redirecting...");
-                      trackKpiEvent("login_completed", {
-                        memberKey: emailInput.trim().toLowerCase(),
-                      });
-                    }
-                    setAuthLoading(false);
-                  }}
+                  type="submit"
                   disabled={authLoading}
-                  className="w-full rounded-xl border border-white/15 bg-white/10 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15"
+                  className="min-h-[52px] w-full rounded-2xl border border-cyan-100/60 bg-[linear-gradient(110deg,#a5f3fc,#c4b5fd_58%,#fbcfe8)] px-4 text-sm font-bold text-[#211527] shadow-[0_14px_34px_rgba(139,92,246,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(139,92,246,0.28)] disabled:cursor-wait disabled:opacity-65"
                 >
-                  {authLoading ? "Signing in..." : "Sign in with email + password"}
+                  {authLoading ? "Signing in..." : "Sign in"}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!emailInput.trim()) {
-                      setAuthMessage("Enter your email to receive a magic link.");
-                      return;
-                    }
-
-                    setAuthMessage("");
-                    setAuthLoading(true);
-                    writeLocalValue("qa_post_login_target", safePostLoginTarget);
-                    const { error } = await signInWithEmail(emailInput.trim());
-                    if (error) {
-                      setAuthMessage(error.message);
-                    } else {
-                      setAuthMessage("Magic link sent. Check your inbox.");
-                    }
-                    setAuthLoading(false);
-                  }}
-                  disabled={authLoading}
-                  className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 py-2 text-xs font-semibold tracking-[0.08em] text-white/75 transition hover:border-white/24 hover:text-white"
-                >
-                  {authLoading ? "Sending..." : "Send magic link instead"}
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!emailInput.trim()) {
-                      setAuthMessage("Enter your email first, then request password reset.");
-                      return;
-                    }
-                    setAuthMessage("");
-                    setAuthLoading(true);
-                    const { error } = await resetPasswordForEmail(emailInput.trim());
-                    if (error) {
-                      setAuthMessage(error.message || "Could not send password reset email.");
-                    } else {
-                      setAuthMessage("Password reset email sent. Open the link, then set your new password.");
-                    }
-                    setAuthLoading(false);
-                  }}
-                  disabled={authLoading}
-                  className="mt-2 w-full rounded-xl border border-amber-200/26 bg-amber-200/12 py-2 text-xs font-semibold tracking-[0.08em] text-amber-100 transition hover:border-amber-200/44 hover:bg-amber-200/18 disabled:opacity-70"
-                >
-                  {authLoading ? "Sending..." : "Forgot password?"}
-                </button>
-              </div>
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-1 text-xs">
+                  <button type="button" onClick={handleMagicLink} disabled={authLoading} className="text-cyan-100/72 underline decoration-cyan-100/24 underline-offset-4 transition hover:text-cyan-50 disabled:opacity-50">Email me a sign-in link</button>
+                  <span className="h-1 w-1 rounded-full bg-white/18" aria-hidden="true" />
+                  <button type="button" onClick={handleForgotPassword} disabled={authLoading} className="text-white/54 underline decoration-white/16 underline-offset-4 transition hover:text-white disabled:opacity-50">Forgot password?</button>
+                </div>
+              </form>
             </div>
           ) : authMode === "signup" ? (
-            <div className="mt-6 rounded-2xl border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(244,114,182,0.08),rgba(0,0,0,0.22))] p-4">
-              <p className="mb-3 text-xs uppercase tracking-[0.14em] text-fuchsia-100/85">Build your member identity</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <input aria-label="Display name" autoComplete="nickname" value={signupForm.displayName} onChange={(event) => setSignupForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="Display name" className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
-                <input aria-label="Home city, optional" autoComplete="address-level2" value={signupForm.homeCity} onChange={(event) => setSignupForm((current) => ({ ...current, homeCity: event.target.value }))} placeholder="Home city (optional)" className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
-                <input type="email" aria-label="Email address" autoComplete="email" value={signupForm.email} onChange={(event) => setSignupForm((current) => ({ ...current, email: event.target.value }))} placeholder="Email" className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30 sm:col-span-2" />
-                <div className="flex gap-2">
-                  <input aria-label="Choose password" autoComplete="new-password" type={showSignupPassword ? "text" : "password"} value={signupForm.password} onChange={(event) => setSignupForm((current) => ({ ...current, password: event.target.value }))} placeholder="Choose password" className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
-                  <button type="button" aria-label={showSignupPassword ? "Hide chosen password" : "Show chosen password"} onClick={() => setShowSignupPassword((current) => !current)} className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white">{showSignupPassword ? "Hide" : "Show"}</button>
-                </div>
-                <div className="flex gap-2">
-                  <input aria-label="Confirm password" autoComplete="new-password" type={showSignupConfirmPassword ? "text" : "password"} value={signupForm.confirmPassword} onChange={(event) => setSignupForm((current) => ({ ...current, confirmPassword: event.target.value }))} placeholder="Confirm password" className="w-full rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
-                  <button type="button" aria-label={showSignupConfirmPassword ? "Hide confirmed password" : "Show confirmed password"} onClick={() => setShowSignupConfirmPassword((current) => !current)} className="rounded-xl border border-white/12 bg-white/8 px-3 py-2 text-xs font-semibold text-white/80 transition hover:border-white/24 hover:text-white">{showSignupConfirmPassword ? "Hide" : "Show"}</button>
-                </div>
+            <div className="mt-5">
+              <button type="button" onClick={handleGoogleAuth} disabled={authLoading} className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-2xl border border-[#747775] bg-white px-4 text-sm font-semibold text-[#1f1f1f] shadow-[0_10px_28px_rgba(0,0,0,0.2)] transition hover:bg-[#f7f7f7] disabled:cursor-wait disabled:opacity-65">
+                <GoogleMark />
+                {authLoading ? "Opening..." : "Continue with Google"}
+              </button>
+
+              <div className="my-5 flex items-center gap-3" aria-hidden="true">
+                <span className="h-px flex-1 bg-white/10" />
+                <span className="text-[10px] uppercase tracking-[0.16em] text-white/38">or use email</span>
+                <span className="h-px flex-1 bg-white/10" />
               </div>
-              <details className="mt-3 rounded-xl border border-white/9 bg-black/20 px-3 py-2.5">
-                <summary className="cursor-pointer text-[10px] uppercase tracking-[0.12em] text-white/52">
-                  Optional profile details
-                </summary>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <input aria-label="Pronouns, optional" autoComplete="off" value={signupForm.pronouns} onChange={(event) => setSignupForm((current) => ({ ...current, pronouns: event.target.value }))} placeholder="Pronouns" className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
-                  <input aria-label="Country, optional" autoComplete="country-name" value={signupForm.residentCountry} onChange={(event) => setSignupForm((current) => ({ ...current, residentCountry: event.target.value }))} placeholder="Country" className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 text-sm text-white outline-none focus:border-white/30" />
-                </div>
-              </details>
-              <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.08em] text-white/70">
-                <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.minLength ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>6+ chars</span>
-                <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.uppercase ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Uppercase</span>
-                <span className={`rounded-full border px-2.5 py-1 ${signupPasswordChecks.symbol ? "border-emerald-300/40 bg-emerald-300/14 text-emerald-100" : "border-white/15 bg-white/8 text-white/65"}`}>Symbol</span>
-              </div>
+
+              <form onSubmit={handleCreateAccount} className="space-y-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium text-white/72">Display name</span>
+                  <input id="signup-display-name" name="display-name" autoComplete="nickname" required value={signupForm.displayName} onChange={(event) => setSignupForm((current) => ({ ...current, displayName: event.target.value }))} placeholder="How you’ll appear in Queer Atlas" className="h-[52px] w-full rounded-2xl border border-white/14 bg-black/28 px-4 text-base text-white outline-none transition placeholder:text-white/30 focus:border-fuchsia-200/55 focus:ring-2 focus:ring-fuchsia-200/14" />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium text-white/72">Email</span>
+                  <input id="signup-email" name="email" type="email" autoComplete="username" required value={signupForm.email} onChange={(event) => setSignupForm((current) => ({ ...current, email: event.target.value }))} placeholder="you@email.com" className="h-[52px] w-full rounded-2xl border border-white/14 bg-black/28 px-4 text-base text-white outline-none transition placeholder:text-white/30 focus:border-fuchsia-200/55 focus:ring-2 focus:ring-fuchsia-200/14" />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-medium text-white/72">Password</span>
+                  <div className="relative">
+                    <input id="signup-password" name="new-password" autoComplete="new-password" required type={showSignupPassword ? "text" : "password"} value={signupForm.password} onChange={(event) => setSignupForm((current) => ({ ...current, password: event.target.value }))} placeholder="Choose a password" aria-describedby="signup-password-help" className="h-[52px] w-full rounded-2xl border border-white/14 bg-black/28 px-4 pr-12 text-base text-white outline-none transition placeholder:text-white/30 focus:border-fuchsia-200/55 focus:ring-2 focus:ring-fuchsia-200/14" />
+                    <button type="button" aria-label={showSignupPassword ? "Hide chosen password" : "Show chosen password"} onClick={() => setShowSignupPassword((current) => !current)} className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-white/48 transition hover:bg-white/8 hover:text-white">
+                      {showSignupPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                    </button>
+                  </div>
+                  <p id="signup-password-help" className={`mt-1.5 text-[11px] ${signupPasswordChecks.minLength && signupPasswordChecks.uppercase && signupPasswordChecks.symbol ? "text-emerald-200/78" : "text-white/42"}`}>
+                    6+ characters, including one uppercase letter and one symbol.
+                  </p>
+                </label>
 
               <button
-                type="button"
-                onClick={async () => {
-                  const email = signupForm.email.trim();
-                  const password = signupForm.password.trim();
-                  const confirmPassword = signupForm.confirmPassword.trim();
-                  const profilePayload = {
-                    displayName: signupForm.displayName.trim(),
-                    pronouns: signupForm.pronouns.trim(),
-                    homeCity: signupForm.homeCity.trim(),
-                    residentCountry: signupForm.residentCountry.trim(),
-                  };
-
-                  if (!profilePayload.displayName || !email || !password) {
-                    setAuthMessage("Name, email, and password are required.");
-                    return;
-                  }
-                  if (!isPasswordStrong(password)) {
-                    setAuthMessage("Use a stronger password: at least 6 characters, one uppercase letter, and one symbol.");
-                    return;
-                  }
-                  if (password !== confirmPassword) {
-                    setAuthMessage("Passwords do not match.");
-                    return;
-                  }
-
-                  setAuthMessage("");
-                  setAuthLoading(true);
-                  writeLocalValue("qa_post_login_target", safePostLoginTarget);
-                  const { data, error } = await signUpWithPassword(email, password);
-                  if (error) {
-                    setAuthMessage(error.message);
-                    setPendingEmailConfirmation("");
-                    setAuthLoading(false);
-                    return;
-                  }
-
-                  if (data?.session) {
-                    setPendingEmailConfirmation("");
-                    const result = await updateMemberProfile(profilePayload);
-                    if (result?.ok) {
-                      setAuthMessage("Account ready. Welcome to Queer Atlas.");
-                    } else {
-                      setAuthMessage("Account created. Profile can be edited in Your Atlas.");
-                    }
-                    trackKpiEvent("signup_completed", {
-                      memberKey: email.toLowerCase(),
-                    });
-                  } else {
-                    setPendingEmailConfirmation(email);
-                    localStorage.setItem(
-                      pendingSignupProfileKey,
-                      JSON.stringify({ ...profilePayload, email })
-                    );
-                    setAuthMessage("Account created. Confirm your email to activate your profile.");
-                    trackKpiEvent("signup_completed", {
-                      memberKey: email.toLowerCase(),
-                    });
-                  }
-
-                  setSignupForm({ displayName: "", pronouns: "", homeCity: "", residentCountry: "", email: "", password: "", confirmPassword: "" });
-                  setAuthLoading(false);
-                }}
+                type="submit"
                 disabled={authLoading}
-                className="mt-3 w-full rounded-xl border border-fuchsia-200/22 bg-fuchsia-200/12 py-2.5 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/38 hover:bg-fuchsia-200/18"
+                className="min-h-[52px] w-full rounded-2xl border border-pink-100/70 bg-[linear-gradient(110deg,#ffd6e7,#ddd6fe_55%,#bae6fd)] px-4 text-sm font-bold text-[#2b162d] shadow-[0_14px_34px_rgba(244,114,182,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(244,114,182,0.28)] disabled:cursor-wait disabled:opacity-65"
               >
-                {authLoading ? "Creating..." : "Create my free account"}
+                {authLoading ? "Creating your account..." : "Create free account"}
               </button>
+              </form>
             </div>
           ) : (
             <div className="mt-6 rounded-2xl border border-cyan-200/20 bg-[linear-gradient(180deg,rgba(34,211,238,0.09),rgba(0,0,0,0.26))] p-4">
@@ -565,8 +543,8 @@ export default function HomeAuthModal({
             </div>
           )}
 
-          <p className="mt-5 text-xs leading-6 text-white/36">
-            By signing in or creating an account, you agree to our{" "}
+          <p className="mt-5 text-center text-[11px] leading-5 text-white/38">
+            By continuing, you agree to our{" "}
             <Link href="/terms" className="text-white/70 underline underline-offset-2 transition hover:text-white">
               Terms
             </Link>{" "}
@@ -576,14 +554,6 @@ export default function HomeAuthModal({
             </Link>
             .
           </p>
-
-          <button
-            type="button"
-            onClick={() => closeModal("maybe_later")}
-            className="mt-4 text-sm text-white/46 transition hover:text-white/75"
-          >
-            Maybe later
-          </button>
         </div>
       </div>
     </div>
