@@ -45,7 +45,7 @@ export default function SelectedServicePanel({
       className={`qa-city-panel-cq animate-panel-in border border-white/10 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.08),transparent_24%),linear-gradient(180deg,rgba(10,23,20,0.98),rgba(10,10,10,1))] p-6 backdrop-blur ${
         inlineMode
           ? "relative z-10 max-h-none overflow-visible rounded-[24px] shadow-[0_18px_56px_rgba(0,0,0,0.34)]"
-          : "fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border-b-0 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)]"
+          : "fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border-b-0 pb-[calc(7.25rem+env(safe-area-inset-bottom,0px))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)]"
       }`}
     >
       <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-emerald-400/12 blur-3xl" />

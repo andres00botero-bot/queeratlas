@@ -86,7 +86,7 @@ export default function SelectedPlacePanel({
       className={`qa-city-panel-cq animate-panel-in border border-white/16 bg-[linear-gradient(145deg,rgba(244,114,182,0.14),rgba(34,211,238,0.08),rgba(12,10,18,0.98))] p-5 backdrop-blur sm:p-6 ${
         inlineMode
           ? "relative z-10 max-h-none overflow-visible rounded-[28px] shadow-[0_22px_68px_rgba(91,33,182,0.18)]"
-          : "fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border-b-0 pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[0_-24px_76px_rgba(91,33,182,0.25)] xl:inset-y-0 xl:right-0 xl:left-auto xl:max-h-none xl:w-[min(36rem,42vw)] xl:rounded-none xl:rounded-l-[30px] xl:border-b xl:border-r-0 xl:border-t-0 xl:pb-8 xl:shadow-[-30px_0_78px_rgba(91,33,182,0.28)]"
+          : "fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[28px] border-b-0 pb-[calc(7.25rem+env(safe-area-inset-bottom,0px))] shadow-[0_-24px_76px_rgba(91,33,182,0.25)] xl:inset-y-0 xl:right-0 xl:left-auto xl:max-h-none xl:w-[min(36rem,42vw)] xl:rounded-none xl:rounded-l-[30px] xl:border-b xl:border-r-0 xl:border-t-0 xl:pb-8 xl:shadow-[-30px_0_78px_rgba(91,33,182,0.28)]"
       }`}
     >
       <div className="sticky top-0 z-20 -mx-2 mb-5 rounded-[24px] border border-white/20 bg-[linear-gradient(135deg,rgba(38,16,48,0.98),rgba(20,35,48,0.98),rgba(28,13,34,0.98))] px-3 py-3 shadow-[0_18px_48px_rgba(0,0,0,0.34)] backdrop-blur-xl">
