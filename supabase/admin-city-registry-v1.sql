@@ -69,6 +69,35 @@ as $$
   select trim(both '_' from regexp_replace(lower(btrim(value)), '[^a-z0-9]+', '_', 'g'));
 $$;
 
+create or replace function public.qa_place_qualifies_for_city_index(place_row public.places)
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select
+    nullif(btrim(place_row.name), '') is not null
+    and nullif(btrim(place_row.city), '') is not null
+    and nullif(btrim(place_row.type), '') is not null
+    and char_length(btrim(coalesce(place_row.description, ''))) >= 90
+    and btrim(coalesce(place_row.link, '')) ~* '^https?://'
+    and (
+      char_length(btrim(coalesce(place_row.location, ''))) >= 4
+      or (
+        place_row.lat between -90 and 90
+        and place_row.lng between -180 and 180
+      )
+    )
+    and coalesce(place_row.seo_indexable, true) = true
+    and lower(coalesce(place_row.seo_quality_status, 'pending')) not in ('hold', 'rejected', 'blocked', 'draft')
+    and jsonb_typeof(coalesce(place_row.venue_intel, '{}'::jsonb)) = 'object'
+    and char_length(btrim(coalesce(place_row.venue_intel ->> 'queue_wait', place_row.venue_intel ->> 'queueWait', ''))) >= 24
+    and char_length(btrim(coalesce(place_row.venue_intel ->> 'best_nights', place_row.venue_intel ->> 'bestNights', ''))) >= 24
+    and char_length(btrim(coalesce(place_row.venue_intel ->> 'crowd_mix', place_row.venue_intel ->> 'crowdMix', ''))) >= 24
+    and char_length(btrim(coalesce(place_row.venue_intel ->> 'dress_code', place_row.venue_intel ->> 'dressCode', ''))) >= 24
+    and char_length(btrim(coalesce(place_row.venue_intel ->> 'staff_inclusivity', place_row.venue_intel ->> 'staffInclusivity', ''))) >= 24;
+$$;
+
 create or replace function public.qa_refresh_city_seo_status(target_slug text)
 returns public.qa_cities
 language plpgsql
@@ -77,7 +106,7 @@ set search_path = public
 as $$
 declare
   city_row public.qa_cities;
-  approved_count integer := 0;
+  qualified_count integer := 0;
   has_identity boolean;
   has_map boolean;
   has_intro boolean;
@@ -94,11 +123,10 @@ begin
 
   if not found then return null; end if;
 
-  select count(*)::integer into approved_count
+  select count(*)::integer into qualified_count
   from public.places p
   where public.qa_city_slug(p.city) = city_row.slug
-    and coalesce(p.seo_indexable, false) = true
-    and lower(coalesce(p.seo_quality_status, '')) = 'approved';
+    and public.qa_place_qualifies_for_city_index(p);
 
   has_identity := nullif(btrim(city_row.name), '') is not null
     and nullif(btrim(city_row.country), '') is not null
@@ -127,11 +155,11 @@ begin
   has_qari := nullif(btrim(city_row.qari_destination_key), '') is not null
     and char_length(btrim(city_row.qari_summary)) >= 40;
   ready := city_row.status = 'published'
-    and approved_count >= 3
+    and qualified_count >= 3
     and has_identity and has_map and has_intro and has_hero and has_guide and has_safety and has_qari;
 
   update public.qa_cities
-  set verified_place_count = approved_count,
+  set verified_place_count = qualified_count,
       seo_indexable = ready,
       seo_requirements = jsonb_build_object(
         'published', status = 'published',
@@ -142,7 +170,7 @@ begin
         'essentialGuide', has_guide,
         'safetyContext', has_safety,
         'qariProfile', has_qari,
-        'verifiedPlaces', approved_count,
+        'verifiedPlaces', qualified_count,
         'minimumVerifiedPlaces', 3
       ),
       indexable_at = case
@@ -234,7 +262,7 @@ $$;
 
 drop trigger if exists qa_places_refresh_city on public.places;
 create trigger qa_places_refresh_city
-after insert or delete or update of city, seo_indexable, seo_quality_status
+after insert or delete or update of city, name, type, description, link, location, lat, lng, venue_intel, seo_indexable, seo_quality_status
 on public.places
 for each row execute function public.qa_places_refresh_city();
 
@@ -270,6 +298,7 @@ for delete to authenticated using (public.qa_is_admin());
 grant select on public.qa_cities to anon, authenticated;
 grant insert, update, delete on public.qa_cities to authenticated;
 grant execute on function public.qa_city_slug(text) to anon, authenticated;
+grant execute on function public.qa_place_qualifies_for_city_index(public.places) to authenticated;
 grant execute on function public.qa_refresh_city_seo_status(text) to authenticated;
 
 commit;

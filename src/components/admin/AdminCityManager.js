@@ -350,7 +350,7 @@ export default function AdminCityManager() {
       if (!response.ok) throw new Error(payload.error || `Could not ${editingCityId ? "update" : "create"} city.`);
       setNotice(editingCityId
         ? `${form.name} was updated.`
-        : `${form.name} is live but remains noindex until three approved venues or hotels exist.`);
+        : `${form.name} is live but remains noindex until three quality-complete venues or hotels exist.`);
       setEditingCityId("");
       setForm(EMPTY_FORM);
       setQuery("");
@@ -368,7 +368,7 @@ export default function AdminCityManager() {
         <div>
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-cyan-100/78"><Sparkles size={14} /> City registry</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">{editingCityId ? "Edit Atlas city" : "Add a complete Atlas city"}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/62">The city is published with noindex first. Indexing switches on automatically after every quality requirement and three approved venues or hotels are present.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/62">The city is published with noindex first. Indexing switches on automatically after every city requirement and three quality-complete venues or hotels are present.</p>
         </div>
         <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1.5 text-xs text-cyan-50">{cities.length} registry cities</span>
       </div>
@@ -451,13 +451,13 @@ export default function AdminCityManager() {
           <div className="rounded-3xl border border-emerald-200/16 bg-emerald-200/[0.055] p-5">
             <p className="text-xs uppercase tracking-[0.18em] text-emerald-100/70">Publishing gate</p>
             <div className="mt-4 flex flex-wrap gap-2"><ReadinessPill ready={requirements.identity}>City + country</ReadinessPill><ReadinessPill ready={requirements.map}>Confirmed map point</ReadinessPill><ReadinessPill ready={requirements.timezone}>Timezone</ReadinessPill><ReadinessPill ready={requirements.hero}>Hero profile</ReadinessPill><ReadinessPill ready={requirements.guide}>Essential guide</ReadinessPill><ReadinessPill ready={requirements.introduction}>Introduction</ReadinessPill><ReadinessPill ready={requirements.safety}>Safety context</ReadinessPill><ReadinessPill ready={requirements.qari}>QARI attached</ReadinessPill><ReadinessPill ready={editingCityId ? (cities.find((city) => String(city.id) === editingCityId)?.verified_place_count || 0) >= 3 : false}>{editingCityId ? `${cities.find((city) => String(city.id) === editingCityId)?.verified_place_count || 0}/3 venues` : "0/3 venues at creation"}</ReadinessPill></div>
-            <p className="mt-4 text-xs leading-5 text-white/48">Saving publishes the city route, but robots remain noindex. The database promotes it automatically when the venue threshold is reached.</p>
+            <p className="mt-4 text-xs leading-5 text-white/48">Saving publishes the city route, but robots remain noindex. The database promotes it automatically when three venues pass the content, source, map and Venue Intelligence checks.</p>
             {missingRequirements.length > 0 && <p className="mt-4 text-[11px] leading-5 text-amber-100/72">{editingCityId ? "SEO requirements remaining — this does not block saving" : "Still needed before creation"}: {missingRequirements.join(", ")}.</p>}
             <button type="submit" disabled={isSaving} className="mt-5 w-full rounded-2xl border border-cyan-200/30 bg-gradient-to-r from-cyan-300/20 via-blue-300/16 to-violet-300/18 px-4 py-3 text-sm font-semibold text-white shadow-[0_14px_40px_rgba(34,211,238,0.10)] transition hover:border-cyan-100/50 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40">{isSaving ? "Saving city…" : editingCityId ? "Save city changes" : "Add city to Queer Atlas"}</button>
             {editingCityId && <button type="button" onClick={cancelEdit} className="mt-2 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-sm text-white/66 transition hover:border-white/25 hover:text-white">Cancel editing</button>}
           </div>
 
-          {cities.length > 0 && <div className="rounded-3xl border border-white/10 bg-black/25 p-5"><p className="text-xs uppercase tracking-[0.18em] text-white/50">Registered cities</p><div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{cities.map((city) => <div key={city.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.035] px-3 py-2"><div><p className="text-sm text-white/82">{city.name}</p><p className="text-[10px] text-white/38">{city.verified_place_count || 0}/3 verified places</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-[10px] ${city.seo_indexable ? "bg-emerald-200/12 text-emerald-100" : "bg-amber-200/10 text-amber-100"}`}>{city.seo_indexable ? "index" : "noindex"}</span><button type="button" onClick={() => beginEdit(city)} className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-cyan-100 transition hover:border-cyan-100/45">Edit city</button></div></div>)}</div></div>}
+          {cities.length > 0 && <div className="rounded-3xl border border-white/10 bg-black/25 p-5"><p className="text-xs uppercase tracking-[0.18em] text-white/50">Registered cities</p><div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{cities.map((city) => <div key={city.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.035] px-3 py-2"><div><p className="text-sm text-white/82">{city.name}</p><p className="text-[10px] text-white/38">{city.verified_place_count || 0}/3 quality-complete venues</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-[10px] ${city.seo_indexable ? "bg-emerald-200/12 text-emerald-100" : "bg-amber-200/10 text-amber-100"}`}>{city.seo_indexable ? "index" : "noindex"}</span><button type="button" onClick={() => beginEdit(city)} className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-cyan-100 transition hover:border-cyan-100/45">Edit city</button></div></div>)}</div></div>}
         </aside>
       </form>
     </section>
