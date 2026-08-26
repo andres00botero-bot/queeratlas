@@ -80,43 +80,6 @@ function normalizeCityValue(value) {
     .toLowerCase();
 }
 
-function CommunityJoinSignal({ onJoin }) {
-  const message = (
-    <span className="flex shrink-0 items-center gap-3 pr-10 sm:gap-4 sm:pr-14">
-      <span className="font-semibold uppercase tracking-[0.08em] text-white">A living atlas, built together</span>
-      <span className="text-cyan-200" aria-hidden="true">•</span>
-      <span className="font-medium text-white/88">Every contribution keeps our queer world visible and current.</span>
-      <span className="text-violet-200" aria-hidden="true">•</span>
-      <span className="font-medium text-white/88">Add places, events, reviews, and local updates as a free Queer Atlas member.</span>
-    </span>
-  );
-
-  return (
-    <aside className="qa-community-marquee relative min-w-0 py-3 lg:self-end lg:py-0" aria-labelledby="home-community-invite-title">
-      <p id="home-community-invite-title" className="sr-only">A living atlas, built together. Every contribution keeps our queer world visible and current. Add places, events, reviews, and local updates as a free Queer Atlas member.</p>
-      <div className="relative overflow-hidden py-2 text-[16px] leading-[1.15] [text-shadow:0_2px_18px_rgba(255,255,255,0.12)] sm:text-[17px]">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#090b13] to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#090b13] to-transparent" />
-        <div className="qa-community-marquee-track flex w-max" aria-hidden="true">
-          {message}
-          {message}
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onJoin}
-        className="qa-community-join-cta qa-action qa-action-strong group relative mx-auto mt-3 flex min-h-11 w-fit items-center gap-2.5 overflow-hidden rounded-full border border-pink-100/85 bg-[linear-gradient(110deg,#ffd6e7_0%,#e9d5ff_48%,#bae6fd_100%)] py-1.5 pl-2 pr-4 text-[13px] font-bold tracking-[-0.01em] text-[#32152f] shadow-[0_15px_38px_rgba(244,114,182,0.22),0_7px_22px_rgba(125,211,252,0.16),inset_0_1px_0_rgba(255,255,255,0.92)] transition duration-300 hover:-translate-y-0.5 hover:scale-[1.015] hover:border-white hover:shadow-[0_19px_46px_rgba(244,114,182,0.3),0_9px_26px_rgba(125,211,252,0.22),inset_0_1px_0_rgba(255,255,255,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-100/85 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090b13]"
-      >
-        <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/75 bg-white/55 text-fuchsia-600 shadow-[0_6px_16px_rgba(190,24,93,0.12)] transition duration-300 group-hover:-rotate-6 group-hover:scale-105" aria-hidden="true">
-          <Sparkles size={15} strokeWidth={2.2} />
-        </span>
-        <span className="relative z-10">Join free &amp; help it grow</span>
-        <span className="relative z-10 text-[14px] text-fuchsia-700/75 transition duration-300 group-hover:translate-x-0.5" aria-hidden="true">→</span>
-      </button>
-    </aside>
-  );
-}
-
 function resolveCityOption(value, options = []) {
   const normalized = normalizeCityValue(value);
   if (!normalized) return "";
@@ -1047,13 +1010,21 @@ export default function HomePageClient({ initialHomeData = null }) {
 
             <div className="flex items-center gap-2.5 sm:gap-3">
               {!isMember ? (
+                <>
+                <p className="qa-display hidden text-[15px] font-semibold tracking-[-0.015em] text-white/92 sm:block lg:text-[16px]">
+                  A living atlas, <span className="bg-gradient-to-r from-cyan-200 via-violet-200 to-pink-200 bg-clip-text text-transparent">built together.</span>
+                </p>
                 <button
                   aria-label="Join Queer Atlas for free"
                   onClick={() => openSignup("/", "signup", "hero_join")}
-                  className="qa-action inline-flex h-10 items-center justify-center rounded-full border border-white/22 bg-white/[0.07] px-5 text-sm font-medium text-white/88 backdrop-blur transition hover:border-white/38 hover:bg-white/[0.11] hover:text-white"
+                  className="qa-home-join-cta qa-action qa-action-strong group relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full border border-rose-200/78 bg-[linear-gradient(110deg,#f43f5e_0%,#d946ef_52%,#7c3aed_100%)] py-1.5 pl-2 pr-5 text-[15px] font-bold tracking-[-0.01em] text-white shadow-[0_15px_38px_rgba(217,70,239,0.34),0_7px_22px_rgba(244,63,94,0.2),inset_0_1px_0_rgba(255,255,255,0.3)] transition duration-300 hover:-translate-y-0.5 hover:border-white hover:brightness-110 hover:shadow-[0_20px_48px_rgba(217,70,239,0.46),0_9px_26px_rgba(244,63,94,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-100/85"
                 >
-                  Join free
+                  <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/34 bg-white/16 text-white shadow-[0_6px_16px_rgba(49,18,61,0.24)] transition group-hover:-rotate-6 group-hover:scale-105" aria-hidden="true">
+                    <Sparkles size={16} strokeWidth={2.2} />
+                  </span>
+                  <span className="relative z-10">Join free</span>
                 </button>
+                </>
               ) : (
                 <>
                 <button
@@ -1147,7 +1118,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className={`relative z-20 mt-5 grid w-full items-end gap-5 sm:mt-8 lg:gap-9 ${!isMember ? "max-w-[76rem] lg:grid-cols-[minmax(0,44rem)_minmax(18rem,1fr)]" : "max-w-[44rem]"}`}>
+              <div className="relative z-20 mt-5 w-full max-w-[44rem] sm:mt-8">
               <div className="relative w-full rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:rounded-[30px] sm:p-[18px]">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
@@ -1259,14 +1230,6 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
                 </div>
 
-                {!isMember ? (
-                  <CommunityJoinSignal
-                    onJoin={() => {
-                      trackHomeAction("community_member_invite", "/contribute", { member_status: "visitor" });
-                      openSignup("/contribute", "signup", "community_member_invite");
-                    }}
-                  />
-                ) : null}
               </div>
 
             </section>

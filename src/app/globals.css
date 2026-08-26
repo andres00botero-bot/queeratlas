@@ -599,26 +599,7 @@ body > div:first-child {
   }
 }
 
-@keyframes qaCommunityMarquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.qa-community-marquee-track {
-  animation: qaCommunityMarquee 30s linear infinite;
-  will-change: transform;
-}
-
-.qa-community-marquee:hover .qa-community-marquee-track,
-.qa-community-marquee:focus-within .qa-community-marquee-track {
-  animation-play-state: paused;
-}
-
-.qa-community-join-cta::before {
+.qa-home-join-cta::before {
   position: absolute;
   inset: -45% auto -45% -24%;
   width: 24%;
@@ -629,8 +610,8 @@ body > div:first-child {
   transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.qa-community-join-cta:hover::before,
-.qa-community-join-cta:focus-visible::before {
+.qa-home-join-cta:hover::before,
+.qa-home-join-cta:focus-visible::before {
   transform: translateX(620%) skewX(-18deg);
 }
 
@@ -846,11 +827,6 @@ body > div:first-child {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .qa-community-marquee-track {
-    animation: none;
-    transform: none;
-  }
-
   .qa-event-panel-cta,
   .qa-event-panel-cta::before {
     animation: none;
