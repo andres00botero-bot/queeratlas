@@ -39,6 +39,12 @@ export function getEntityAddressLabel(entity) {
   return "Address not available yet.";
 }
 
+function normalizeOptionalCoordinate(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : null;
+}
+
 export function buildPlaceAdminDraft(place) {
   const vibeValue = String(place?.vibe || "");
   const venueIntel = normalizeVenueIntel(place || {});
@@ -55,8 +61,8 @@ export function buildPlaceAdminDraft(place) {
     vibe: vibeValue,
     vibe_tags: vibeTags,
     location: String(place?.location || ""),
-    lat: Number.isFinite(Number(place?.lat)) ? Number(place.lat) : null,
-    lng: Number.isFinite(Number(place?.lng)) ? Number(place.lng) : null,
+    lat: normalizeOptionalCoordinate(place?.lat),
+    lng: normalizeOptionalCoordinate(place?.lng),
     location_source: "saved",
     hours: String(place?.hours || ""),
     link: String(place?.link || ""),
@@ -85,8 +91,8 @@ export function buildEventAdminDraft(event) {
     startDate: String(normalized.startDate || ""),
     endDate: String(normalized.endDate || ""),
     location: String(event?.location || ""),
-    lat: Number.isFinite(Number(event?.lat)) ? Number(event.lat) : null,
-    lng: Number.isFinite(Number(event?.lng)) ? Number(event.lng) : null,
+    lat: normalizeOptionalCoordinate(event?.lat),
+    lng: normalizeOptionalCoordinate(event?.lng),
     location_source: "saved",
     vibe: vibeValue,
     vibe_tags: vibeTags,
@@ -122,8 +128,8 @@ export function buildServiceAdminDraft(service) {
     link: String(service?.link || ""),
     price_tier: String(service?.price_tier || ""),
     location: String(service?.location || ""),
-    lat: Number.isFinite(Number(service?.lat)) ? Number(service.lat) : null,
-    lng: Number.isFinite(Number(service?.lng)) ? Number(service.lng) : null,
+    lat: normalizeOptionalCoordinate(service?.lat),
+    lng: normalizeOptionalCoordinate(service?.lng),
     location_source: "saved",
     vibe: vibeValue,
     vibe_tags: vibeTags,

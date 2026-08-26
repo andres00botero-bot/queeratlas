@@ -3,21 +3,42 @@ import { buildCityGeocodeBounds } from "@/lib/entityGeocoding";
 
 const runtimeCityConfig = new Map();
 
+function normalizeCityLookupKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^queer\s+/i, "")
+    .replace(/[\s-]+/g, "_")
+    .replace(/_+/g, "_");
+}
+
+function registerRuntimeAlias(value, entry) {
+  const rawKey = String(value || "").trim().toLowerCase();
+  const normalizedKey = normalizeCityLookupKey(value);
+  if (rawKey) runtimeCityConfig.set(rawKey, entry);
+  if (normalizedKey) runtimeCityConfig.set(normalizedKey, entry);
+}
+
 export function registerRuntimeCityGeocodingContext(key, entry) {
-  const normalizedKey = String(key || "").trim().toLowerCase();
-  if (!normalizedKey || !entry || !Array.isArray(entry.center)) return;
-  runtimeCityConfig.set(normalizedKey, entry);
-  const titleKey = String(entry.title || "").replace(/^Queer\s+/i, "").trim().toLowerCase();
-  if (titleKey) runtimeCityConfig.set(titleKey, entry);
+  if (!normalizeCityLookupKey(key) || !entry || !Array.isArray(entry.center)) return;
+  registerRuntimeAlias(key, entry);
+  registerRuntimeAlias(entry.key, entry);
+  registerRuntimeAlias(entry.slug, entry);
+  registerRuntimeAlias(entry.title, entry);
 }
 
 export function resolveCityGeocodingContext(value) {
   const input = String(value || "").trim();
-  const key = input.toLowerCase();
-  const entry = cityCoreConfig[key] || runtimeCityConfig.get(key) || Object.values(cityCoreConfig).find((item) => {
-    const title = String(item?.title || "").replace(/^Queer\s+/i, "").trim();
-    return title.toLowerCase() === key;
-  });
+  const rawKey = input.toLowerCase();
+  const normalizedKey = normalizeCityLookupKey(input);
+  const entry = cityCoreConfig[rawKey]
+    || cityCoreConfig[normalizedKey]
+    || runtimeCityConfig.get(rawKey)
+    || runtimeCityConfig.get(normalizedKey)
+    || Object.entries(cityCoreConfig).find(([configKey, item]) => (
+      normalizeCityLookupKey(configKey) === normalizedKey
+      || normalizeCityLookupKey(item?.title) === normalizedKey
+    ))?.[1];
   const center = Array.isArray(entry?.center) ? entry.center.map(Number) : null;
 
   return {

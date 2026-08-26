@@ -206,6 +206,10 @@ export default function VenueLocationPicker({
           lng: Number(suggestion.lng),
           source: suggestion.provider,
         };
+        if (!isCoordinateInsideBounds(nextLocation, cityContext.bounds)) {
+          setMessage(`That result is outside ${cityContext.city}. Choose a closer address or place the pin manually.`);
+          return;
+        }
         onAddressChange?.(suggestion.address);
         onLocationChange?.(nextLocation);
         setSuggestions([]);
@@ -221,6 +225,10 @@ export default function VenueLocationPicker({
       const response = await fetch(`/api/geocode/retrieve?${params}`);
       const payload = await response.json();
       if (!response.ok) throw new Error(payload?.error || "Could not retrieve the selected address.");
+      if (!isCoordinateInsideBounds(payload, cityContext.bounds)) {
+        setMessage(`That result is outside ${cityContext.city}. Choose a closer address or place the pin manually.`);
+        return;
+      }
       onAddressChange?.(payload.address || suggestion.address);
       onLocationChange?.(payload);
       setSuggestions([]);
