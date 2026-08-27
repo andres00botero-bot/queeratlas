@@ -75,12 +75,20 @@ with raw_places as (
 ]
 $qa_places$) p(name text,city text,type text,description text,hours text,link text,location text,lat double precision,lng double precision,vibe text,q text,best text,crowd text,dress text,staff text,sources jsonb)
 ), places as (
- select p.*,jsonb_build_object('queue_wait',q,'best_nights',best,'crowd_mix',crowd,'dress_code',dress,'staff_inclusivity',staff,'source_urls',sources,'research_status','current_operator_and_community_source','updated_at','2026-08-27T00:00:00Z') intel from raw_places p
+ select p.*,
+   case
+     when p.type='gay_store' then 'gallery'
+     when p.type='other' and p.name='Campit Outdoor Resort' then 'club'
+     when p.type='other' and p.name='Oval Beach' then 'cruising_area'
+     else p.type
+   end as schema_type,
+   jsonb_build_object('queue_wait',q,'best_nights',best,'crowd_mix',crowd,'dress_code',dress,'staff_inclusivity',staff,'source_urls',sources,'research_status','current_operator_and_community_source','source_entity_type',p.type,'updated_at','2026-08-27T00:00:00Z') intel
+ from raw_places p
 ), upd as (
- update public.places t set type=p.type,description=p.description,hours=p.hours,link=p.link,location=p.location,lat=p.lat,lng=p.lng,vibe=p.vibe,vibe_tags=array[]::text[],venue_intel=p.intel,seo_indexable=true,seo_quality_status='approved',updated_at=timezone('utc',now()) from places p where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)) returning t.id
+ update public.places t set type=p.schema_type,description=p.description,hours=p.hours,link=p.link,location=p.location,lat=p.lat,lng=p.lng,vibe=p.vibe,vibe_tags=array[]::text[],venue_intel=p.intel,seo_indexable=true,seo_quality_status='approved',updated_at=timezone('utc',now()) from places p where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)) returning t.id
 )
 insert into public.places(name,city,type,description,hours,link,location,lat,lng,vibe,vibe_tags,venue_intel,seo_indexable,seo_quality_status,updated_at)
-select name,city,type,description,hours,link,location,lat,lng,vibe,array[]::text[],intel,true,'approved',timezone('utc',now()) from places p where not exists(select 1 from public.places t where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)));
+select name,city,schema_type,description,hours,link,location,lat,lng,vibe,array[]::text[],intel,true,'approved',timezone('utc',now()) from places p where not exists(select 1 from public.places t where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)));
 
 with raw_events as (
  select * from jsonb_to_recordset($qa_events$
