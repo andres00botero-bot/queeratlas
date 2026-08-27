@@ -1133,9 +1133,16 @@ export default function CityPage() {
   }, [featuredEvent, sortedEvents]);
   const isFocusMode = Boolean(selectedPlace || selectedEvent || selectedService);
   const isAddComposerActive = Boolean(addMode || addEventMode || addServiceMode);
-  const cityPlaceCount = cityPlaces.length;
-  const cityEventCount = cityEvents.length;
-  const cityServiceCount = cityServices.length;
+  const initialEntityCounts = config?.initialEntityCounts || {};
+  const cityPlaceCount = placesLoading
+    ? initialEntityCounts.venues ?? null
+    : cityPlaces.length;
+  const cityEventCount = eventsLoading
+    ? initialEntityCounts.events ?? null
+    : cityEvents.length;
+  const cityServiceCount = servicesLoading
+    ? initialEntityCounts.services ?? null
+    : cityServices.length;
   const cityCanonicalUrl = `https://www.queeratlas.app/${city}`;
   const cityBreadcrumbJsonLd = useMemo(
     () => ({
@@ -4636,7 +4643,7 @@ export default function CityPage() {
             <aside className="hidden xl:self-start xl:block">
               <div className="sticky top-6 h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
                 <CityNavigationCluster
-                  cityPlacesCount={cityPlaces.length}
+                  cityPlacesCount={cityPlaceCount}
                   cityEventCount={cityEventCount}
                   cityServiceCount={cityServiceCount}
                   activeCitySection={effectiveDesktopContentSection}
@@ -4832,7 +4839,7 @@ export default function CityPage() {
 
               <div className="xl:hidden">
                 <CityNavigationCluster
-                  cityPlacesCount={cityPlaces.length}
+                  cityPlacesCount={cityPlaceCount}
                   cityEventCount={cityEventCount}
                   cityServiceCount={cityServiceCount}
                   activeCitySection={activeCitySection}

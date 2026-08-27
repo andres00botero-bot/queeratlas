@@ -2,9 +2,12 @@ import { cityGuideConfig } from "@/lib/cityGuides";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getCityGuideResearch } from "@/lib/cityGuideResearch";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
+import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
+import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
 import CityEntityCrawlSection from "@/components/city/CityEntityCrawlSection";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
+import { isEventVisibleOnCityPage } from "@/features/city/eventRailFeature";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({ params }) {
@@ -71,17 +74,39 @@ export default async function CityLayout({ children, params }) {
   const guideResearch = Array.isArray(staticGuideResearch?.sources) && staticGuideResearch.sources.length > 0
     ? staticGuideResearch
     : coreConfig.guideResearch || { checkedAt: "", sources: [] };
+  const inventory = await loadSeoEntityInventory();
+  const normalizedCity = normalizeCitySlug(city);
+  const matchesCity = (item) => normalizeCitySlug(item?.city) === normalizedCity;
+  const countEntities = (items, sourceAvailable) => {
+    const count = items.filter(matchesCity).length;
+    // Places and events have bundled seed fallbacks. Preserve those crawlable
+    // counts when Supabase is temporarily unavailable instead of rendering 0.
+    return sourceAvailable || count > 0 ? count : null;
+  };
+  const initialEntityCounts = {
+    venues: countEntities(inventory.allVenues, inventory.availability.places),
+    events: countEntities(
+      inventory.allEvents.filter(isEventVisibleOnCityPage),
+      inventory.availability.events,
+    ),
+    services: countEntities(inventory.allServices, inventory.availability.services),
+  };
   const routeConfig = {
     ...coreConfig,
     key: city,
     guide: cityGuide,
     guideResearch,
+    initialEntityCounts,
   };
 
   return (
     <CityRouteConfigProvider config={routeConfig}>
       {children}
-      <CityEntityCrawlSection city={city} cityName={String(coreConfig.title || city).replace(/^Queer\s+/i, "").trim()} />
+      <CityEntityCrawlSection
+        city={city}
+        cityName={String(coreConfig.title || city).replace(/^Queer\s+/i, "").trim()}
+        inventory={inventory}
+      />
     </CityRouteConfigProvider>
   );
 }

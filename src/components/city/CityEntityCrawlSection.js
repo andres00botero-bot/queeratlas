@@ -23,9 +23,9 @@ function EntityLinkGroup({ title, items, buildPath }) {
   );
 }
 
-export default async function CityEntityCrawlSection({ city, cityName }) {
+export default async function CityEntityCrawlSection({ city, cityName, inventory: suppliedInventory }) {
   const normalizedCity = normalizeCitySlug(city);
-  const inventory = await loadSeoEntityInventory();
+  const inventory = suppliedInventory || await loadSeoEntityInventory();
   const matchesCity = (item) => normalizeCitySlug(item?.city) === normalizedCity;
   const venues = inventory.venues.filter(matchesCity);
   const events = inventory.events.filter(matchesCity);
