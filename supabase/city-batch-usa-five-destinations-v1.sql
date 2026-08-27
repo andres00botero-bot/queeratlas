@@ -204,12 +204,12 @@ with src as (
 ]
 $qa_us_places$) p(name text,city text,type text,description text,vibe text,hours text,link text,location text,lat double precision,lng double precision,intel jsonb)
 ), upd as (
-  update public.places p set type=s.type,description=s.description,vibe=s.vibe,hours=s.hours,link=s.link,location=s.location,lat=s.lat,lng=s.lng,
+  update public.places p set type=case when s.type='other' then 'cruising_area' else s.type end,description=s.description,vibe=s.vibe,hours=s.hours,link=s.link,location=s.location,lat=s.lat,lng=s.lng,
     venue_intel=s.intel,seo_indexable=true,seo_quality_status='approved',updated_at=timezone('utc',now())
   from src s where lower(trim(p.city))=s.city and lower(trim(p.name))=lower(trim(s.name)) returning p.id
 )
 insert into public.places(name,city,type,description,vibe,vibe_tags,hours,link,location,lat,lng,venue_intel,seo_indexable,seo_quality_status,updated_at)
-select name,city,type,description,vibe,array[]::text[],hours,link,location,lat,lng,intel,true,'approved',timezone('utc',now()) from src s
+select name,city,case when type='other' then 'cruising_area' else type end,description,vibe,array[]::text[],hours,link,location,lat,lng,intel,true,'approved',timezone('utc',now()) from src s
 where not exists(select 1 from public.places p where lower(trim(p.city))=s.city and lower(trim(p.name))=lower(trim(s.name)));
 
 -- Events: dated from current organiser pages. Past 2026 flagship dates remain as
