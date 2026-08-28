@@ -1187,10 +1187,13 @@ export default function CitiesPage() {
           {!isLoading && visibleCountries.map((country) => (
             (() => {
               const tone = getCountryTone(country);
+              const countryHeadingId = `country-${String(country).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+              const countryCityCount = groupedCities[country].length;
 
               return (
                 <section
                   key={country}
+                  aria-labelledby={countryHeadingId}
                   ref={(node) => {
                     if (node) {
                       countrySectionRefs.current[country] = node;
@@ -1198,13 +1201,25 @@ export default function CitiesPage() {
                       delete countrySectionRefs.current[country];
                     }
                   }}
-                  className={`qa-premium-card rounded-[32px] border p-6 shadow-[0_28px_98px_rgba(0,0,0,0.34)] ${tone.section}`}
+                  className={`qa-premium-card rounded-[32px] border p-4 shadow-[0_28px_98px_rgba(0,0,0,0.34)] sm:p-6 ${tone.section}`}
                 >
-                  <div className="mb-6 flex items-center gap-4">
-                    <div className={`rounded-full border px-4 py-2 text-xs uppercase tracking-[0.24em] ${tone.chip}`}>
-                      {country}
+                  <div className="mb-6 flex items-end gap-4 border-b border-white/[0.09] pb-5 sm:gap-6">
+                    <div className="min-w-0 shrink-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-white/38 sm:text-[10px]">
+                        Country
+                      </p>
+                      <h2
+                        id={countryHeadingId}
+                        className="mt-1 text-[1.65rem] font-semibold leading-none tracking-[-0.035em] text-white sm:text-[2rem]"
+                      >
+                        {country}
+                      </h2>
                     </div>
-                    <div className={`h-px flex-1 bg-gradient-to-r ${tone.divider} to-transparent`} />
+                    <div className={`mb-1.5 hidden h-px flex-1 bg-gradient-to-r ${tone.divider} via-white/[0.07] to-transparent sm:block`} />
+                    <p className="mb-0.5 ml-auto shrink-0 text-right text-[10px] uppercase tracking-[0.16em] text-white/42 sm:mb-1">
+                      <span className="mr-1.5 font-semibold tabular-nums text-white/72">{countryCityCount}</span>
+                      {countryCityCount === 1 ? "city" : "cities"}
+                    </p>
                     {isAdmin && (
                       <button
                         type="button"
@@ -1295,9 +1310,9 @@ export default function CitiesPage() {
                             <p className="text-xs uppercase tracking-[0.18em] text-white/34">
                               {city.country}
                             </p>
-                            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white drop-shadow-[0_4px_22px_rgba(255,255,255,0.07)] transition group-hover:translate-x-[2px]">
+                            <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white drop-shadow-[0_4px_22px_rgba(255,255,255,0.07)] transition group-hover:translate-x-[2px]">
                               {city.title}
-                            </h2>
+                            </h3>
                           </div>
 
                           <div className={`rounded-full border px-3 py-1 text-xs transition group-hover:scale-[1.03] ${tone.pill}`}>
