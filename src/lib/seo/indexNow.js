@@ -144,7 +144,7 @@ export function buildPublishedEntityIndexNowUrls(entityType = "", entity = {}, s
   const cityPath = CITY_PATHS.has(city) ? `/${city}` : "";
   const urls = [];
 
-  if (type === "community_story") urls.push("/now/voices");
+  if (type === "community_story" || type === "community_guide") urls.push("/now/voices");
   if (type === "event") urls.push("/events/calendar");
   if (cityPath) urls.push(cityPath);
 

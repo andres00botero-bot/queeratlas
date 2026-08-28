@@ -48,6 +48,7 @@ import BrandMark from "@/components/ui/BrandMark";
 import EmptyState from "@/components/ui/EmptyState";
 import PageControls from "@/components/ui/PageControls";
 import DataReportsNowSection from "@/components/reports/DataReportsNowSection";
+import VoicesEditorialPanel from "@/components/now/VoicesEditorialPanel";
 
 function isThisWeek(value, now) {
   const date = new Date(value);
@@ -158,7 +159,9 @@ function isVoicesMemberItem(item) {
   const source = String(item?.sourceName || "").trim().toLowerCase();
   return (
     id.startsWith("member-story-") ||
+    id.startsWith("member-guide-") ||
     source.includes("member story") ||
+    source.includes("member guide") ||
     source.includes("voices submission")
   );
 }
@@ -226,6 +229,16 @@ function createCommunityStoryFormDefault() {
     title: "",
     summary: "",
     whyItMatters: "",
+  };
+}
+
+function createCommunityGuideFormDefault() {
+  return {
+    city: "",
+    title: "",
+    focus: "",
+    summary: "",
+    content: "",
   };
 }
 
@@ -524,7 +537,6 @@ export default function NowPage({ initialSection = "mixed" }) {
   const [selectedNewsCategory, setSelectedNewsCategory] = useState("all");
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
   const [selectedSafetyRankingYear, setSelectedSafetyRankingYear] = useState("2026");
-  const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [activeNowSection, setActiveNowSection] = useState(initialSection);
   const [activeCollectionFilter, setActiveCollectionFilter] = useState("all");
   const [showCollectionNominationForm, setShowCollectionNominationForm] = useState(false);
@@ -554,6 +566,10 @@ export default function NowPage({ initialSection = "mixed" }) {
   const [isSubmittingCommunityStory, setIsSubmittingCommunityStory] = useState(false);
   const [communityStoryNotice, setCommunityStoryNotice] = useState("");
   const [communityStoryForm, setCommunityStoryForm] = useState(() => createCommunityStoryFormDefault());
+  const [showCommunityGuideForm, setShowCommunityGuideForm] = useState(false);
+  const [isSubmittingCommunityGuide, setIsSubmittingCommunityGuide] = useState(false);
+  const [communityGuideNotice, setCommunityGuideNotice] = useState("");
+  const [communityGuideForm, setCommunityGuideForm] = useState(() => createCommunityGuideFormDefault());
   const [isRefreshingPulse, setIsRefreshingPulse] = useState(false);
   const nowControlsRef = useRef(null);
   const nowControlButtonsRef = useRef({});
@@ -565,6 +581,17 @@ export default function NowPage({ initialSection = "mixed" }) {
     if (!button || typeof button.scrollIntoView !== "function") return;
     button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
   }, [activeNowSection]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const compose = String(new URLSearchParams(window.location.search).get("compose") || "").trim();
+    if (compose !== "story" && compose !== "guide") return;
+    queueMicrotask(() => {
+      setActiveNowSection("voices");
+      setShowCommunityStoryForm(compose === "story");
+      setShowCommunityGuideForm(compose === "guide");
+    });
+  }, []);
   useEffect(() => {
     if (!isEditingNews) return;
     if (!showAdminForm && !showPolicyAdminForm) return;
@@ -1155,20 +1182,16 @@ export default function NowPage({ initialSection = "mixed" }) {
     [worldNewsItems]
   );
   const communityStories = useMemo(
-    () => worldNewsItems.filter((item) => isVoicesMemberItem(item)).slice(0, 6),
+    () => worldNewsItems.filter((item) => isVoicesMemberItem(item)).slice(0, 30),
     [worldNewsItems]
-  );
-  const visibleCommunityStories = useMemo(
-    () => (isCommunityExpanded ? communityStories : communityStories.slice(0, 4)),
-    [communityStories, isCommunityExpanded]
   );
   const nowSections = useMemo(
     () => [
       { id: "mixed", label: "News feed", href: "/now/news", tone: "cyan", count: displayedNewsItems.length },
+      { id: "voices", label: "Voices", href: "/now/voices", tone: "fuchsia", count: communityStories.length },
       { id: "rankings", label: "Rankings", href: "/now/rankings", tone: "emerald", count: rankingItems.length },
       { id: "data", label: "Data & Reports", href: "/now/data", tone: "fuchsia" },
       { id: "collections", label: "Atlas Collections", href: "/now/collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
-      { id: "voices", label: "Voices", href: "/now/voices", tone: "fuchsia", count: communityStories.length },
     ],
     [communityStories.length, displayedNewsItems.length, rankingItems.length]
   );
@@ -1202,6 +1225,10 @@ export default function NowPage({ initialSection = "mixed" }) {
   const resetCommunityStoryForm = useCallback(() => {
     setCommunityStoryForm(createCommunityStoryFormDefault());
     setShowCommunityStoryForm(false);
+  }, []);
+  const resetCommunityGuideForm = useCallback(() => {
+    setCommunityGuideForm(createCommunityGuideFormDefault());
+    setShowCommunityGuideForm(false);
   }, []);
   const resetCollectionNominationForm = useCallback(() => {
     setCollectionNominationForm(createCollectionNominationDefault());
@@ -1340,6 +1367,69 @@ export default function NowPage({ initialSection = "mixed" }) {
       resetCommunityStoryForm();
     } finally {
       setIsSubmittingCommunityStory(false);
+    }
+  };
+
+  const submitCommunityGuide = async (event) => {
+    event.preventDefault();
+    if (!isMember || !user?.id) {
+      localStorage.setItem("qa_post_login_target", "/now/voices?compose=guide");
+      router.push("/?join=true");
+      return;
+    }
+    if (isSubmittingCommunityGuide) return;
+
+    const title = String(communityGuideForm.title || "").trim();
+    const city = String(communityGuideForm.city || "").trim();
+    const focus = String(communityGuideForm.focus || "").trim();
+    const summary = String(communityGuideForm.summary || "").trim();
+    const content = String(communityGuideForm.content || "").trim();
+    if (!title || !city || !focus || !summary || !content) {
+      setCommunityGuideNotice("Fill in the title, city, focus, summary, and guide.");
+      return;
+    }
+
+    setIsSubmittingCommunityGuide(true);
+    setCommunityGuideNotice("");
+    try {
+      const submissionRes = await createContentSubmission({
+        entityType: "community_guide",
+        actionType: "create",
+        city,
+        title,
+        payload: {
+          id: createClientId("member-guide"),
+          title,
+          city,
+          category: "culture_tip",
+          focus,
+          summary,
+          content,
+          why_it_matters: content,
+          source_name: `${memberName || "Member"} | Member guide`,
+          description: summary,
+        },
+        user: {
+          id: user.id,
+          email: user.email || "",
+          memberName: memberName || "Member",
+        },
+        isTrustedContributor: Boolean(memberProfile?.trustedContributor),
+      });
+
+      if (submissionRes.tableMissing) {
+        setCommunityGuideNotice("Guide moderation is not configured yet. Run supabase/content-submissions-v4-community-guides.sql.");
+        return;
+      }
+      if (submissionRes.error) {
+        setCommunityGuideNotice(submissionRes.error.message || "Could not submit the guide right now.");
+        return;
+      }
+
+      setCommunityGuideNotice("Guide submitted. It will appear in Voices after editorial approval.");
+      resetCommunityGuideForm();
+    } finally {
+      setIsSubmittingCommunityGuide(false);
     }
   };
 
@@ -1925,8 +2015,14 @@ export default function NowPage({ initialSection = "mixed" }) {
   const isCollectionsSection = activeNowSection === "collections";
   const isPolicySection = activeNowSection === "policy";
   const isVoicesSection = activeNowSection === "voices";
-  const heroContent = isDataSection
+  const heroContent = isVoicesSection
     ? {
+        eyebrow: "First-person queer intelligence",
+        title: "Voices from the Atlas",
+        description: "Stories, local guides, and lived experience from queer people around the world - reviewed before publication.",
+      }
+    : isDataSection
+      ? {
         eyebrow: "Original Research + Open Methodology",
         title: "Queer Data & Reports",
         description: "Citation-ready queer city research, transparent index methods, and frozen evidence snapshots.",
@@ -2136,7 +2232,7 @@ export default function NowPage({ initialSection = "mixed" }) {
           ariaLabel="Queer World News sections"
           mobileCompact
           mobileLayout="fit"
-          mobilePrimaryIds={["mixed", "rankings", "data"]}
+          mobilePrimaryIds={["mixed", "voices", "rankings"]}
           mobileLabelsById={{
             mixed: "News",
             rankings: "Rankings",
@@ -3644,220 +3740,81 @@ export default function NowPage({ initialSection = "mixed" }) {
         </section>
         )}
 
-        {isVoicesSection && (
-        <div className="mt-8">
-          <section className="rounded-[30px] border border-fuchsia-200/18 bg-[linear-gradient(155deg,rgba(58,21,68,0.9),rgba(18,16,36,0.96)_44%,rgba(8,8,8,1))] p-6 shadow-[0_30px_95px_rgba(217,70,239,0.12)]">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.27em] text-fuchsia-200/95">Community voices</p>
-                <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Voices from members</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/66">
-                  Real member stories, reviewed before publishing, so the signal stays clear and useful.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-fuchsia-200/26 bg-fuchsia-300/[0.08] px-3.5 py-2.5 text-right shadow-[0_10px_30px_rgba(217,70,239,0.14)]">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-100/80">Approved stories</p>
-                <p className="mt-1 text-lg font-semibold text-white">{communityStories.length}</p>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isMember) {
-                    localStorage.setItem("qa_post_login_target", "/now");
-                    router.push("/?join=true");
-                    return;
-                  }
-                  setShowCommunityStoryForm((current) => !current);
-                  setCommunityStoryNotice("");
-                }}
-                className="rounded-full border border-fuchsia-200/32 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-fuchsia-50 transition hover:border-fuchsia-100/55 hover:bg-fuchsia-200/20"
-              >
-                {isMember
-                  ? showCommunityStoryForm
-                    ? "Close story form"
-                    : "Share your story"
-                  : "Join to publish"}
-              </button>
-              <span className="text-xs font-medium text-fuchsia-100/88">
-                Share verified realities that help others navigate safely.
-              </span>
-            </div>
+        {isVoicesSection ? (
+          <VoicesEditorialPanel
+            items={communityStories}
+            isMember={isMember}
+            onComposeStory={() => {
+              if (!isMember) {
+                localStorage.setItem("qa_post_login_target", "/now/voices?compose=story");
+                router.push("/?join=true");
+                return;
+              }
+              setShowCommunityStoryForm((current) => !current);
+              setShowCommunityGuideForm(false);
+              setCommunityStoryNotice("");
+            }}
+            onComposeGuide={() => {
+              if (!isMember) {
+                localStorage.setItem("qa_post_login_target", "/now/voices?compose=guide");
+                router.push("/?join=true");
+                return;
+              }
+              setShowCommunityGuideForm((current) => !current);
+              setShowCommunityStoryForm(false);
+              setCommunityGuideNotice("");
+            }}
+            onOpenCommunity={() => {
+              if (isMember) {
+                router.push("/community");
+                return;
+              }
+              localStorage.setItem("qa_post_login_target", "/community");
+              router.push("/?join=true");
+            }}
+            onDelete={deleteFeedItem}
+            canDelete={(item) => isAdmin && adminNewsIdSet.has(String(item.id))}
+            composer={(
+              <div className="grid gap-4 lg:grid-cols-2">
+                {showCommunityStoryForm ? (
+                  <form onSubmit={submitCommunityStory} className="rounded-[28px] border border-rose-200/18 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.13),transparent_34%),linear-gradient(160deg,rgba(32,16,27,0.96),rgba(9,9,12,1))] p-4 sm:p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-100/72">Submit a member story</p>
+                    <h3 className="mt-2 text-xl font-semibold text-white">Share lived experience</h3>
+                    <p className="mt-1 text-xs leading-5 text-white/50">Every story is reviewed before it appears publicly.</p>
+                    <div className="mt-4 grid gap-3">
+                      <select value={communityStoryForm.storyType} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, storyType: event.target.value }))} className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45">
+                        {COMMUNITY_STORY_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                      </select>
+                      <input value={communityStoryForm.city} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City (optional)" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <input required value={communityStoryForm.title} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Headline" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <textarea required value={communityStoryForm.summary} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Tell us what happened and where." className="min-h-[100px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <textarea required value={communityStoryForm.whyItMatters} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, whyItMatters: event.target.value }))} placeholder="Why will this perspective help someone else?" className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <div className="flex flex-wrap gap-2"><button type="submit" disabled={isSubmittingCommunityStory} className="rounded-full border border-rose-100/42 bg-rose-200/16 px-4 py-2 text-xs font-semibold text-rose-50 disabled:opacity-60">{isSubmittingCommunityStory ? "Submitting..." : "Submit for review"}</button><button type="button" onClick={resetCommunityStoryForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs text-white/70">Cancel</button></div>
+                    </div>
+                  </form>
+                ) : null}
 
-            <div className="mt-4 rounded-2xl border border-fuchsia-200/28 bg-[linear-gradient(135deg,rgba(217,70,239,0.14),rgba(56,189,248,0.08),rgba(10,10,10,0.3))] px-4 py-3 shadow-[0_16px_42px_rgba(217,70,239,0.14)]">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/92">What to report here</p>
-              <p className="mt-1.5 text-sm leading-6 text-white/84">
-                Use Voices to report harassment, threats, violence, discrimination, and real queer lived experiences in each city.
-                These reports are reviewed before publication to keep signal quality high and actionable.
-              </p>
-            </div>
+                {showCommunityGuideForm ? (
+                  <form onSubmit={submitCommunityGuide} className="rounded-[28px] border border-violet-200/18 bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.14),transparent_34%),linear-gradient(160deg,rgba(23,18,42,0.96),rgba(9,9,12,1))] p-4 sm:p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-100/72">Submit a local guide</p>
+                    <h3 className="mt-2 text-xl font-semibold text-white">Turn local knowledge into a route</h3>
+                    <p className="mt-1 text-xs leading-5 text-white/50">Useful, specific guidance is reviewed before publication.</p>
+                    <div className="mt-4 grid gap-3">
+                      <div className="grid gap-3 sm:grid-cols-2"><input required value={communityGuideForm.city} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or region" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" /><input required value={communityGuideForm.focus} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder="Focus, e.g. solo weekend" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" /></div>
+                      <input required value={communityGuideForm.title} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
+                      <textarea required value={communityGuideForm.summary} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="A concise promise of what this guide helps with." className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
+                      <textarea required value={communityGuideForm.content} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the route, local context, useful stops, and practical advice." className="min-h-[130px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
+                      <div className="flex flex-wrap gap-2"><button type="submit" disabled={isSubmittingCommunityGuide} className="rounded-full border border-violet-100/42 bg-violet-200/16 px-4 py-2 text-xs font-semibold text-violet-50 disabled:opacity-60">{isSubmittingCommunityGuide ? "Submitting..." : "Submit guide for review"}</button><button type="button" onClick={resetCommunityGuideForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs text-white/70">Cancel</button></div>
+                    </div>
+                  </form>
+                ) : null}
 
-            {showCommunityStoryForm && (
-              <form
-                onSubmit={submitCommunityStory}
-                className="mt-4 grid gap-3 rounded-2xl border border-fuchsia-200/18 bg-fuchsia-200/[0.06] p-4"
-              >
-                <p className="text-xs uppercase tracking-[0.14em] text-fuchsia-100/90">
-                  Submit to moderation queue
-                </p>
-                <select
-                  value={communityStoryForm.storyType}
-                  onChange={(event) =>
-                    setCommunityStoryForm((current) => ({ ...current, storyType: event.target.value }))
-                  }
-                  className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
-                >
-                  {COMMUNITY_STORY_TYPES.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  value={communityStoryForm.city}
-                  onChange={(event) =>
-                    setCommunityStoryForm((current) => ({ ...current, city: event.target.value }))
-                  }
-                  placeholder="City (optional, or leave blank for Global)"
-                  className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
-                />
-                <input
-                  required
-                  value={communityStoryForm.title}
-                  onChange={(event) =>
-                    setCommunityStoryForm((current) => ({ ...current, title: event.target.value }))
-                  }
-                  placeholder="Headline"
-                  className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
-                />
-                <textarea
-                  required
-                  value={communityStoryForm.summary}
-                  onChange={(event) =>
-                    setCommunityStoryForm((current) => ({ ...current, summary: event.target.value }))
-                  }
-                  placeholder="What happened? Include what, where, and when. Keep it factual and helpful."
-                  className="min-h-[100px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
-                />
-                <textarea
-                  required
-                  value={communityStoryForm.whyItMatters}
-                  onChange={(event) =>
-                    setCommunityStoryForm((current) => ({ ...current, whyItMatters: event.target.value }))
-                  }
-                  placeholder="Why should the community know this? Add practical safety context if relevant."
-                  className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-fuchsia-200/45"
-                />
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="submit"
-                    disabled={isSubmittingCommunityStory}
-                    className="rounded-full border border-cyan-200/35 bg-cyan-200/15 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-100/55 disabled:cursor-not-allowed disabled:opacity-65"
-                  >
-                    {isSubmittingCommunityStory ? "Submitting..." : "Submit for approval"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={resetCommunityStoryForm}
-                    className="rounded-full border border-white/16 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {communityStoryNotice && (
-              <div className="mt-3 rounded-xl border border-fuchsia-200/20 bg-fuchsia-200/10 px-3 py-2 text-xs text-fuchsia-100">
-                {communityStoryNotice}
+                {communityStoryNotice ? <p role="status" className="rounded-2xl border border-rose-200/18 bg-rose-200/10 px-4 py-3 text-xs text-rose-50 lg:col-span-2">{communityStoryNotice}</p> : null}
+                {communityGuideNotice ? <p role="status" className="rounded-2xl border border-violet-200/18 bg-violet-200/10 px-4 py-3 text-xs text-violet-50 lg:col-span-2">{communityGuideNotice}</p> : null}
               </div>
             )}
-
-            <div className="qa-defer-render mt-5 space-y-3">
-              {visibleCommunityStories.map((story) => {
-                const canEditAdminNews = adminNewsIdSet.has(String(story.id));
-                return (
-                <article
-                  key={`story-${story.id}`}
-                  className="group w-full rounded-2xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.015))] px-4 py-3 text-left shadow-[0_14px_40px_rgba(0,0,0,0.24)] transition hover:-translate-y-[1px] hover:border-fuchsia-200/34"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/95">
-                      {story.city || "Global"}
-                    </span>
-                    <span className="rounded-full border border-white/16 bg-white/[0.06] px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/72">
-                      {formatDateShort(story.date || story.createdAt)}
-                    </span>
-                    <span className="hidden rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-cyan-100/90 sm:inline-flex">
-                      Moderated
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm font-semibold text-white">{story.title}</p>
-                  <p className="mt-2 text-xs leading-5 text-white/67">
-                    {story.summary}
-                  </p>
-                  {story.whyItMatters ? (
-                    <p className="mt-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-xs leading-5 text-white/78">
-                      {story.whyItMatters}
-                    </p>
-                  ) : null}
-                  <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-[11px] uppercase tracking-[0.12em] text-white/55">
-                      {resolveNewsConfidence(story, canEditAdminNews)} | {story.sourceName || QA_SOURCE_CONFIDENCE.communitySignal}
-                    </span>
-                    {isAdmin && (
-                      <div className="flex items-center gap-2">
-                        {canEditAdminNews && (
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openEditNewsComposer(story);
-                            }}
-                            className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
-                          >
-                            Edit
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            deleteFeedItem(story.id);
-                          }}
-                          className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </article>
-                );
-              })}
-              {communityStories.length === 0 && (
-                <EmptyState
-                  title="No approved community stories yet."
-                  description="Members will be able to submit stories for admin approval."
-                  className="px-4 py-8"
-                />
-              )}
-            </div>
-            {communityStories.length > 4 && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsCommunityExpanded((current) => !current)}
-                  className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.13em] text-fuchsia-50 transition hover:border-fuchsia-100/45 hover:bg-fuchsia-200/18"
-                >
-                  {isCommunityExpanded ? "Show less stories" : "Show more stories"}
-                </button>
-              </div>
-            )}
-          </section>
-        </div>
-        )}
+          />
+        ) : null}
 
         <section className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-[11px] text-white/74">
           <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">Discover paths</p>

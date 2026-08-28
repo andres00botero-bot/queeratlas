@@ -7,7 +7,7 @@ function normalizeText(value = "") {
 }
 
 function normalizeEntityType(value = "") {
-  const allowed = new Set(["place", "event", "service", "community_story", "collection_nomination"]);
+  const allowed = new Set(["place", "event", "service", "community_story", "community_guide", "collection_nomination"]);
   const normalized = normalizeText(value).toLowerCase();
   return allowed.has(normalized) ? normalized : "";
 }
@@ -185,31 +185,36 @@ function resolvePublishTarget(entityType = "") {
   if (normalized === "event") return "events";
   if (normalized === "service") return "services";
   if (normalized === "community_story") return "qa_world_news";
+  if (normalized === "community_guide") return "qa_world_news";
   if (normalized === "collection_nomination") return "submission_status_only";
   return "";
 }
 
-function buildCommunityStoryNewsRow(submission = {}) {
+function buildCommunityVoiceNewsRow(submission = {}) {
   const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
+  const isGuide = normalizeEntityType(submission?.entity_type) === "community_guide";
+  const voiceLabel = isGuide ? "Member guide" : "Member story";
   const sourceName = normalizeText(
-    payload.source_name || `${submission?.submitted_by_name || "Member"} | Member story`
+    payload.source_name || `${submission?.submitted_by_name || "Member"} | ${voiceLabel}`
   );
-  const fallbackId = `member-story-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const idPrefix = isGuide ? "member-guide" : "member-story";
+  const fallbackId = `${idPrefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   return {
-    id: normalizeText(payload.id || `member-story-${submission?.id || fallbackId}`),
-    title: normalizeText(payload.title || payload.name || submission?.title || "Community story"),
+    id: normalizeText(payload.id || `${idPrefix}-${submission?.id || fallbackId}`),
+    title: normalizeText(payload.title || payload.name || submission?.title || (isGuide ? "Community guide" : "Community story")),
     city: normalizeText(payload.city || submission?.city || "Global"),
     category: normalizeText(payload.category || "culture_tip"),
     date: normalizeText(payload.date || new Date().toISOString().slice(0, 10)),
-    summary: normalizeText(payload.summary || payload.description || "Member report from the community."),
+    summary: normalizeText(payload.summary || payload.description || (isGuide ? "Practical member-made city guidance." : "Member report from the community.")),
     why_it_matters: normalizeText(
       payload.why_it_matters ||
         payload.whyItMatters ||
+        payload.content ||
         payload.details ||
-        "Community-grounded signal to help others plan safer choices."
+        (isGuide ? "Community-made planning help with local context." : "Community-grounded signal to help others plan safer choices.")
     ),
-    source_name: sourceName || "Member story",
+    source_name: sourceName || voiceLabel,
     created_by_email: normalizeText(submission?.submitted_by_email || "") || null,
   };
 }
@@ -240,7 +245,7 @@ export async function publishContentSubmission({
   }
 
   if (targetTable === "qa_world_news") {
-    payload = buildCommunityStoryNewsRow(submission);
+    payload = buildCommunityVoiceNewsRow(submission);
   }
 
   if (submission?.action_type === "update" && ["places", "events", "services"].includes(targetTable)) {

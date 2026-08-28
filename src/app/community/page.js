@@ -420,6 +420,7 @@ function Field({ value, onChange, placeholder, area = false }) {
 export default function CommunityPage() {
   const router = useRouter();
   const [isReady, setIsReady] = useState(false);
+  const [authWaitExpired, setAuthWaitExpired] = useState(false);
   const { isMember, memberName, user, isLoading: isAuthLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [stories, setStories] = useState(baseStories);
@@ -497,22 +498,14 @@ export default function CommunityPage() {
     const params = new URLSearchParams(window.location.search);
     const panel = String(params.get("panel") || "").trim();
     const compose = String(params.get("compose") || "").trim();
-    const city = String(params.get("city") || "").trim();
-    queueMicrotask(() => {
-      if (panel === "feed" || compose === "story" || compose === "guide") {
-        setActiveCommunityPanel("feed");
-      }
-      if (compose === "story") {
-        setShowStoryForm(true);
-        setShowGuideForm(false);
-        if (city) setStoryForm((current) => ({ ...current, city }));
-      }
-      if (compose === "guide") {
-        setShowGuideForm(true);
-        setShowStoryForm(false);
-        if (city) setGuideForm((current) => ({ ...current, city }));
-      }
-    });
+    if (panel !== "feed" && compose !== "story" && compose !== "guide") return;
+    const nextCompose = compose === "guide" ? "guide" : "story";
+    router.replace(`/now/voices?compose=${nextCompose}`);
+  }, [router]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setAuthWaitExpired(true), 2600);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
@@ -983,14 +976,42 @@ export default function CommunityPage() {
     node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
   }, [activeCommunityPanel, topicId, messages]);
 
-  if (!isReady || !isMember) {
+  if (!isReady && !authWaitExpired) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
         <PageOpeningState
           title="Opening community..."
-          subtitle="Loading stories, guides, and live member flow."
+          subtitle="Connecting members, jobs, and live conversations."
           tone="violet"
         />
+      </main>
+    );
+  }
+
+  if (!isMember) {
+    return (
+      <main className="min-h-screen bg-[radial-gradient(circle_at_16%_8%,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_86%_10%,rgba(244,114,182,0.13),transparent_30%),linear-gradient(180deg,#05070b,#030304)] px-4 py-8 text-white sm:px-6 sm:py-12">
+        <div className="mx-auto flex min-h-[72vh] max-w-5xl items-center">
+          <section className="qa-premium-card relative w-full overflow-hidden rounded-[36px] border border-white/12 bg-[radial-gradient(circle_at_8%_0%,rgba(34,211,238,0.17),transparent_30%),radial-gradient(circle_at_92%_4%,rgba(217,70,239,0.17),transparent_32%),linear-gradient(150deg,rgba(15,25,35,0.98),rgba(24,13,35,0.97)_58%,rgba(7,8,11,1))] p-6 shadow-[0_40px_130px_rgba(0,0,0,0.48)] sm:p-10">
+            <div className="pointer-events-none absolute inset-0 opacity-[0.1] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:56px_56px]" />
+            <div className="relative grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:items-end">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72">The Queer Atlas member hub</p>
+                <h1 className="qa-display mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.045em] text-white sm:text-6xl">Find your people in the atlas.</h1>
+                <p className="mt-4 max-w-xl text-sm leading-7 text-white/64 sm:text-base">Connect with members, discover queer jobs, join live rooms, and help shape what Queer Atlas becomes next.</p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => { writeLocalValue("qa_post_login_target", "/community"); router.push("/?join=true"); }} className="qa-action qa-cta-primary rounded-full border border-cyan-100/42 bg-[linear-gradient(110deg,rgba(34,211,238,0.25),rgba(217,70,239,0.22))] px-5 py-2.5 text-xs font-semibold text-white">Join the community</button>
+                  <Link href="/now/voices" className="qa-action rounded-full border border-white/16 bg-white/[0.05] px-5 py-2.5 text-xs font-semibold text-white/76 transition hover:border-white/30 hover:text-white">Read community Voices</Link>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[['Member discovery', 'Find trusted people by city and community signal.'], ['Queer jobs', 'Share and discover opportunities across the network.'], ['Live rooms', 'Ask locals and join focused conversations.'], ['Improve Atlas', 'Vote and help prioritize what we build next.']].map(([title, description]) => (
+                  <div key={title} className="rounded-[22px] border border-white/10 bg-black/22 p-4 backdrop-blur-xl"><p className="text-sm font-semibold text-white">{title}</p><p className="mt-2 text-xs leading-5 text-white/46">{description}</p></div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
     );
   }
@@ -1660,12 +1681,12 @@ export default function CommunityPage() {
           <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full bg-fuchsia-300/10 blur-3xl" />
           <div className="relative z-10 max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.35em] text-white/68">Community Signal</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-white/68">Member Network</p>
             <h1 className="qa-display mt-2 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:mt-3 sm:gap-4 sm:text-5xl">
               <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12" />
               Community
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:mt-4 sm:leading-7">Live member signal, practical city knowledge, and trusted conversations in one focused flow.</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:mt-4 sm:leading-7">Find members, share opportunities, join live rooms, and help shape the atlas in one trusted hub.</p>
             <p className="mt-2 text-xs text-white/64 sm:mt-3">
               Safety-first participation. Read our{" "}
               <Link href="/community-policy" className="underline underline-offset-2 transition hover:text-white">
@@ -1688,7 +1709,6 @@ export default function CommunityPage() {
             controlButtonsRef={communityControlButtonsRef}
             buttons={[
               { id: "discovery", label: "Member discovery" },
-              { id: "feed", label: "Member stories & guides" },
               { id: "jobs", label: "Queer jobs" },
               { id: "chat", label: "Live chat" },
               { id: "improve", label: "Improve atlas" },

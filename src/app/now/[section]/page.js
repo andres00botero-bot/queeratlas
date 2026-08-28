@@ -23,9 +23,9 @@ const NOW_SECTIONS = {
   },
   voices: {
     sectionId: "voices",
-    title: "Queer Voices | Community Stories & Local Perspectives",
-    name: "Queer Voices",
-    description: "Read community-led queer stories, local perspectives, and lived experiences from destinations around the world.",
+    title: "Queer Voices, Member Stories & Local Guides | Queer Atlas",
+    name: "Voices from the Atlas",
+    description: "Read moderated member stories, practical local guides, field reports, and lived queer perspectives from destinations around the world.",
   },
 };
 

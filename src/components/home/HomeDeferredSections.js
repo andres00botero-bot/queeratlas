@@ -141,7 +141,7 @@ function ParticipationStrip({ actions = [] }) {
                 Make the atlas feel more like us.
               </h2>
               <p className="mt-2 hidden max-w-2xl !text-left text-[13px] leading-5 text-white/58 sm:block sm:text-sm">
-                Share a story, add a place, or update what changed. Local knowledge is what keeps Queer Atlas useful.
+                Meet members, share opportunities, join live conversations, or contribute to the editorial Voices hub.
               </p>
             </div>
 

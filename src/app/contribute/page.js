@@ -1770,7 +1770,7 @@ export default function ContributePage() {
           }}
           places={places}
           onOpenAdd={openNewContribution}
-          onOpenCommunity={(mode) => router.push(`/community?panel=feed&compose=${mode}`)}
+          onOpenCommunity={(mode) => router.push(`/now/voices?compose=${mode}`)}
           onSubmitSignal={submitMemberSignal}
         />
 

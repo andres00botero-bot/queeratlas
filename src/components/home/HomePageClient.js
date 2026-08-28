@@ -854,8 +854,8 @@ export default function HomePageClient({ initialHomeData = null }) {
   const participationActions = [
     {
       title: "Community",
-      label: isMember ? "Stories, guides and conversations" : "Join stories, guides and conversations",
-      shortLabel: isMember ? "Open the network" : "Join & explore",
+      label: isMember ? "Members, jobs and live conversations" : "Join members, jobs and live conversations",
+      shortLabel: isMember ? "Open member hub" : "Join the network",
       icon: "Community",
       cardClass: "border-cyan-100/26 bg-[radial-gradient(circle_at_8%_50%,rgba(45,212,191,0.16),transparent_30%),linear-gradient(110deg,rgba(10,35,42,0.96),rgba(10,19,31,0.98))] hover:border-cyan-100/48",
       glowClass: "bg-cyan-300/16",
