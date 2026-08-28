@@ -14,6 +14,8 @@ import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { usePlaces } from "@/lib/usePlaces";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
+import { fetchEventsData } from "@/features/events/eventDataApi";
+import { isEventVisibleOnCityPage } from "@/features/city/eventRailFeature";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import { useQariProfiles } from "@/lib/useQariProfiles";
 import { QARI_MAP_PALETTE } from "@/lib/qari";
@@ -260,6 +262,8 @@ export default function CitiesPage() {
   const [countryEditorSuccess, setCountryEditorSuccess] = useState("");
   const [expandedSafetyCountry, setExpandedSafetyCountry] = useState("");
   const [registryConfig, setRegistryConfig] = useState(cityConfig);
+  const [eventsData, setEventsData] = useState([]);
+  const [isEventsLoading, setIsEventsLoading] = useState(true);
   const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const mapboxMissing = !mapboxToken;
   const countrySectionRefs = useRef({});
@@ -288,6 +292,37 @@ export default function CitiesPage() {
       })
       .catch(() => {});
     return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadEvents = async () => {
+      setIsEventsLoading(true);
+      try {
+        const { data } = await fetchEventsData();
+        if (active) setEventsData(Array.isArray(data) ? data : []);
+      } catch {
+        if (active) setEventsData([]);
+      } finally {
+        if (active) setIsEventsLoading(false);
+      }
+    };
+
+    loadEvents();
+    const channel = supabase
+      .channel("realtime-cities-events")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "events" },
+        loadEvents,
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
   }, []);
   const lastExploredCity = useSyncExternalStore(
     subscribeLastExploredCity,
@@ -564,6 +599,13 @@ export default function CitiesPage() {
       acc.get(cityKey).push(place);
       return acc;
     }, new Map());
+    const eventsByCity = eventsData.reduce((acc, event) => {
+      if (!isEventVisibleOnCityPage(event)) return acc;
+      const cityKey = normalizeCityKey(event?.city || "");
+      if (!cityKey) return acc;
+      acc.set(cityKey, (acc.get(cityKey) || 0) + 1);
+      return acc;
+    }, new Map());
 
     return Object.entries(registryConfig).map(([key, city]) => {
       const cityPlaces = placesByCity.get(normalizeCityKey(key)) || [];
@@ -571,9 +613,6 @@ export default function CitiesPage() {
         (sum, place) => sum + (place.reviewCount || 0),
         0
       );
-      const avgRating =
-        cityPlaces.reduce((sum, place) => sum + (place.avgRating || 0), 0) /
-        (cityPlaces.length || 1);
       const topPlace = cityPlaces
         .slice()
         .sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0))[0];
@@ -582,12 +621,12 @@ export default function CitiesPage() {
         key,
         ...city,
         placeCount: cityPlaces.length,
+        eventCount: eventsByCity.get(normalizeCityKey(key)) || 0,
         reviewCount,
-        avgRating: cityPlaces.length ? avgRating : null,
         topPlace: topPlace?.name || null,
       };
     });
-  }, [places, registryConfig]);
+  }, [eventsData, places, registryConfig]);
 
   const filteredCities = useMemo(() => {
     return allCities
@@ -1321,21 +1360,21 @@ export default function CitiesPage() {
                         </div>
 
                         <div className="mt-5 grid grid-cols-2 gap-3">
-                          <div className="rounded-2xl border border-amber-200/12 bg-amber-200/[0.06] p-3">
-                            <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                              Avg rating
-                            </p>
-                            <p className="mt-2 text-lg font-semibold text-white/96">
-                              {isLoading ? "—" : city.avgRating ? city.avgRating.toFixed(1) : "-"}
-                            </p>
-                          </div>
-
                           <div className="rounded-2xl border border-cyan-200/12 bg-cyan-200/[0.06] p-3">
                             <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
                               Places
                             </p>
                             <p className="mt-2 text-lg font-semibold text-white/96">
                               {isLoading ? "—" : city.placeCount}
+                            </p>
+                          </div>
+
+                          <div className="rounded-2xl border border-fuchsia-200/12 bg-fuchsia-200/[0.06] p-3">
+                            <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
+                              Events
+                            </p>
+                            <p className="mt-2 text-lg font-semibold text-white/96">
+                              {isEventsLoading ? "—" : city.eventCount}
                             </p>
                           </div>
                         </div>
