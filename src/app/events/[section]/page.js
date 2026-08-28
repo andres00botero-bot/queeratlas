@@ -24,6 +24,13 @@ const EVENT_SECTIONS = {
     description: "Search the Queer Atlas event calendar by date, city, or vibe.",
     index: false,
   },
+  "happening-soon": {
+    sectionId: "happening",
+    title: "Queer Events Happening Soon | Queer Atlas",
+    name: "Queer Events Happening Soon",
+    description: "Discover LGBTQ events happening tonight, this week, and over the next 30 days across Queer Atlas destinations.",
+    index: true,
+  },
 };
 
 export function generateStaticParams() {

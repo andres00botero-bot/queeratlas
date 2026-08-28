@@ -54,6 +54,7 @@ import EventSkeletonCard from "@/components/events/EventSkeletonCard";
 import EventReportModal from "@/components/events/EventReportModal";
 import EventQualityModal from "@/components/events/EventQualityModal";
 import GlobalEventForm from "@/components/events/GlobalEventForm";
+import HappeningSoonPanel from "@/components/events/HappeningSoonPanel";
 import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
 import BrandMark from "@/components/ui/BrandMark";
@@ -631,14 +632,14 @@ export default function EventsPage({ initialSection = "calendar" }) {
       .sort((a, b) => a.startMs - b.startMs)
       .map((entry) => entry.event);
 
-    if (futureFirst.length >= 3) return futureFirst.slice(0, 3);
+    if (futureFirst.length >= 2) return futureFirst.slice(0, 2);
 
     const fallbackPast = dated
       .filter((entry) => entry.startMs < todayMs)
       .sort((a, b) => b.startMs - a.startMs)
       .map((entry) => entry.event);
 
-    return [...futureFirst, ...fallbackPast].slice(0, 3);
+    return [...futureFirst, ...fallbackPast].slice(0, 2);
   }, [calendarEvents]);
   const searchCityOptions = useMemo(() => {
     const counts = new Map();
@@ -1018,6 +1019,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const openEvent = (event) => {
     const intent = resolveEventOpenIntent(event);
     if (intent.kind === "offgrid") {
+      setActiveEventsSection("offgrid");
       focusOffgridEvent(intent.id);
       return;
     }
@@ -1039,29 +1041,16 @@ export default function EventsPage({ initialSection = "calendar" }) {
     });
   }, []);
 
-  const openNowSignal = useCallback(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const today = `${year}-${month}-${day}`;
-
-    setSelectedDate(today);
-
-    if (typeof window === "undefined") return;
-    requestAnimationFrame(() => {
-      eventListSectionRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
-  }, []);
+  const openHappeningSoon = useCallback(() => {
+    router.push("/events/happening-soon");
+  }, [router]);
 
   const eventSectionButtons = useMemo(
     () => ([
       { id: "calendar", label: "Calendar", href: "/events/calendar" },
       { id: "offgrid", label: "Off-grid events", href: "/events/off-grid" },
       { id: "search", label: "Search", href: "/events/search" },
+      { id: "happening", label: "Happening soon", href: "/events/happening-soon" },
     ]),
     []
   );
@@ -1073,6 +1062,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const showSearchSection = activeEventsSection === "search";
   const showCalendarSection = activeEventsSection === "calendar";
   const showOffgridSection = activeEventsSection === "offgrid";
+  const showHappeningSection = activeEventsSection === "happening";
 
   return (
     <main className="qa-page qa-events min-h-screen overflow-x-hidden bg-[#050608] text-white">
@@ -1139,10 +1129,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   </div>
 
                   <button
-                    onClick={openNowSignal}
+                    onClick={openHappeningSoon}
                     className="qa-action qa-cta-primary rounded-full border border-cyan-200/30 bg-cyan-200/14 px-4 py-2 text-xs text-cyan-50 transition hover:border-cyan-200/42 hover:bg-cyan-200/20"
                   >
-                    Open Now
+                    Open pulse
                   </button>
                 </div>
                 <div className="mt-5 space-y-3">
@@ -1232,11 +1222,22 @@ export default function EventsPage({ initialSection = "calendar" }) {
               ariaLabel="Event sections"
               mobileCompact
               mobileLayout="fit"
-              mobileLabelsById={{ offgrid: "Off-grid" }}
+              mobileLabelsById={{ offgrid: "Off-grid", happening: "Soon" }}
               className="qa-panel"
             />
           </section>
           </div>
+
+          {showHappeningSection ? (
+            <HappeningSoonPanel
+              events={calendarEvents}
+              isLoading={isLoading}
+              onOpenEvent={openEvent}
+              onOpenCalendar={() => router.push("/events/calendar")}
+              onSaveEvent={saveEventToFavorites}
+              isSaved={(event) => favoriteIdSet.has(`event-${String(event?.id || "")}`)}
+            />
+          ) : null}
 
           {showSearchSection ? (
           <section

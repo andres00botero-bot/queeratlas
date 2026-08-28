@@ -27,12 +27,6 @@ const NOW_SECTIONS = {
     name: "Queer Voices",
     description: "Read community-led queer stories, local perspectives, and lived experiences from destinations around the world.",
   },
-  "happening-soon": {
-    sectionId: "happening",
-    title: "Queer Events Happening Soon | Queer Atlas",
-    name: "Queer Events Happening Soon",
-    description: "Discover upcoming LGBTQ events and queer community happenings across Queer Atlas destinations.",
-  },
 };
 
 export function generateStaticParams() {

@@ -83,7 +83,7 @@ export async function getPageSitemapEntries() {
     "/now/data",
     "/now/collections",
     "/now/voices",
-    "/now/happening-soon",
+    "/events/happening-soon",
     "/gay-guide",
     "/queer-guide",
     "/hbtq-guide",

@@ -20,7 +20,7 @@ const STATIC_PATHS = new Set([
   "/now/rankings",
   "/now/collections",
   "/now/voices",
-  "/now/happening-soon",
+  "/events/happening-soon",
   "/gay-guide",
   "/queer-guide",
   "/hbtq-guide",

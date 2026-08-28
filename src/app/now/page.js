@@ -520,12 +520,10 @@ export default function NowPage({ initialSection = "mixed" }) {
   const [selectedCity, setSelectedCity] = useState("all");
   const [loadError, setLoadError] = useState("");
   const [syncWarning, setSyncWarning] = useState("");
-  const [expandedSoonEventId, setExpandedSoonEventId] = useState(null);
   const [expandedNewsId, setExpandedNewsId] = useState(null);
   const [selectedNewsCategory, setSelectedNewsCategory] = useState("all");
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
   const [selectedSafetyRankingYear, setSelectedSafetyRankingYear] = useState("2026");
-  const [isHappeningExpanded, setIsHappeningExpanded] = useState(false);
   const [isCommunityExpanded, setIsCommunityExpanded] = useState(false);
   const [activeNowSection, setActiveNowSection] = useState(initialSection);
   const [activeCollectionFilter, setActiveCollectionFilter] = useState("all");
@@ -873,8 +871,6 @@ export default function NowPage({ initialSection = "mixed" }) {
     [filteredEvents, today]
   );
 
-  const tonightEvents = useMemo(() => upcomingEvents.slice(0, 4), [upcomingEvents]);
-
   const thisWeekEvents = useMemo(
     () => upcomingEvents.filter((event) => isThisWeek(event.date, today)).slice(0, 6),
     [today, upcomingEvents]
@@ -887,29 +883,6 @@ export default function NowPage({ initialSection = "mixed" }) {
         .slice(0, 6),
     [filteredPlaces]
   );
-  const monthlyUpcomingEvents = useMemo(() => {
-    if (!today) return [];
-    const end = new Date(today);
-    end.setDate(today.getDate() + 30);
-    return upcomingEvents.filter((event) => {
-      const eventDate = new Date(event.date);
-      return eventDate >= today && eventDate <= end;
-    });
-  }, [today, upcomingEvents]);
-  const upcomingBeyondTonight = useMemo(() => {
-    const tonightIds = new Set(tonightEvents.map((event) => String(event.id)));
-    return monthlyUpcomingEvents.filter((event) => !tonightIds.has(String(event.id)));
-  }, [monthlyUpcomingEvents, tonightEvents]);
-  const happeningSoonEvents = useMemo(() => {
-    const tonightTagged = tonightEvents.map((event) => ({ ...event, qaTiming: "tonight" }));
-    const nextTagged = upcomingBeyondTonight.slice(0, 8).map((event) => ({ ...event, qaTiming: "next" }));
-    return [...tonightTagged, ...nextTagged];
-  }, [tonightEvents, upcomingBeyondTonight]);
-  const visibleHappeningEvents = useMemo(
-    () => (isHappeningExpanded ? happeningSoonEvents : happeningSoonEvents.slice(0, 6)),
-    [happeningSoonEvents, isHappeningExpanded]
-  );
-
   const categoryLabels = useMemo(() => {
     const base = PULSE_CATEGORIES.reduce((acc, item) => {
       acc[item.key] = item.label;
@@ -1196,9 +1169,8 @@ export default function NowPage({ initialSection = "mixed" }) {
       { id: "data", label: "Data & Reports", href: "/now/data", tone: "fuchsia" },
       { id: "collections", label: "Atlas Collections", href: "/now/collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
       { id: "voices", label: "Voices", href: "/now/voices", tone: "fuchsia", count: communityStories.length },
-      { id: "happening", label: "Happening soon", href: "/now/happening-soon", tone: "violet", count: happeningSoonEvents.length },
     ],
-    [communityStories.length, displayedNewsItems.length, happeningSoonEvents.length, rankingItems.length]
+    [communityStories.length, displayedNewsItems.length, rankingItems.length]
   );
   const crawlClusterTopics = useMemo(
     () => TIER1_TOPIC_KEYS.filter((topicKey) => Boolean(listCityClusterTopics().find((topic) => topic.key === topicKey))),
@@ -1953,7 +1925,6 @@ export default function NowPage({ initialSection = "mixed" }) {
   const isCollectionsSection = activeNowSection === "collections";
   const isPolicySection = activeNowSection === "policy";
   const isVoicesSection = activeNowSection === "voices";
-  const isHappeningSection = activeNowSection === "happening";
   const heroContent = isDataSection
     ? {
         eyebrow: "Original Research + Open Methodology",
@@ -3671,126 +3642,6 @@ export default function NowPage({ initialSection = "mixed" }) {
             )}
           </div>
         </section>
-        )}
-
-        {isHappeningSection && (
-        <div className="mt-8">
-          <section className="rounded-[28px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(232,121,249,0.14),transparent_34%),radial-gradient(circle_at_88%_20%,rgba(56,189,248,0.14),transparent_36%),linear-gradient(180deg,rgba(42,22,50,0.95),rgba(16,16,26,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_90px_rgba(232,121,249,0.09)]">
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.25em] text-fuchsia-100/90">Happening Soon</p>
-                <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Tonight and next up</h2>
-              </div>
-              <button
-                onClick={() => router.push("/events")}
-                className="rounded-full border border-fuchsia-200/34 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-50 transition hover:border-fuchsia-100/52 hover:bg-fuchsia-200/20"
-              >
-                Open all events
-              </button>
-            </div>
-            <p className="mb-4 text-xs text-fuchsia-50/70">
-              One unified flow: tonight picks first, then the next 30-day pulse.
-            </p>
-            <div className="qa-defer-render grid gap-4 md:grid-cols-2">
-              {visibleHappeningEvents.map((event) => {
-                const isTonight = event.qaTiming === "tonight";
-                return (
-                  <div
-                    key={`happening-${event.id}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() =>
-                      setExpandedSoonEventId((current) =>
-                        String(current) === String(event.id) ? null : String(event.id)
-                      )
-                    }
-                    onKeyDown={(keyEvent) => {
-                      if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                        keyEvent.preventDefault();
-                        setExpandedSoonEventId((current) =>
-                          String(current) === String(event.id) ? null : String(event.id)
-                        );
-                      }
-                    }}
-                    className="cursor-pointer rounded-[24px] border border-fuchsia-200/18 bg-[linear-gradient(180deg,rgba(68,28,74,0.72),rgba(22,16,28,0.94))] p-5 transition hover:-translate-y-[1px] hover:border-fuchsia-100/44 hover:shadow-[0_20px_58px_rgba(232,121,249,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/45"
-                  >
-                    <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-fuchsia-200/95 via-cyan-200/65 to-transparent" />
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-50/85">
-                        {event.city || "City"} | {formatDateShort(event.date)}
-                      </p>
-                      <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.14em] ${
-                        isTonight
-                          ? "border-fuchsia-200/25 bg-fuchsia-200/16 text-fuchsia-100"
-                          : "border-cyan-200/25 bg-cyan-200/14 text-cyan-100"
-                      }`}>
-                        {isTonight ? "Tonight" : "Next"}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 text-lg font-semibold text-white">{event.name}</h3>
-                    <VibeTagChips
-                      entity={event}
-                      tone="fuchsia"
-                      className="mt-2"
-                      includeTypeFallback
-                      includeMixedFallback
-                    />
-                    <p
-                      className={`mt-3 text-sm leading-6 text-white/68 transition-all ${
-                        String(expandedSoonEventId) === String(event.id) ? "" : "line-clamp-2"
-                      }`}
-                    >
-                      {event.description || "Upcoming community event with high signal value."}
-                    </p>
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="text-[11px] uppercase tracking-[0.16em] text-white/45">
-                        {String(expandedSoonEventId) === String(event.id) ? "Tap again to collapse" : "Tap to expand"}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(clickEvent) => {
-                          clickEvent.stopPropagation();
-                          router.push(citySelectionPath(event.city, { eventId: event.id }));
-                        }}
-                        className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/14 px-3 py-1 text-xs text-fuchsia-50 transition hover:border-fuchsia-100/50"
-                      >
-                        Open event
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-              {happeningSoonEvents.length === 0 && (
-                <EmptyState
-                  title="No upcoming events in this view yet."
-                  description="Switch city filter or open all events."
-                  className="md:col-span-2 px-4 py-8"
-                >
-                  <button
-                    onClick={() => {
-                      setSelectedCity("all");
-                      router.push("/events");
-                    }}
-                    className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/12 px-4 py-2 text-xs text-fuchsia-50 transition hover:border-fuchsia-100/50 hover:bg-fuchsia-200/18"
-                  >
-                    Open global events
-                  </button>
-                </EmptyState>
-              )}
-            </div>
-            {happeningSoonEvents.length > 6 && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setIsHappeningExpanded((current) => !current)}
-                  className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.13em] text-fuchsia-50 transition hover:border-fuchsia-100/45 hover:bg-fuchsia-200/18"
-                >
-                  {isHappeningExpanded ? "Show less events" : "Show more events"}
-                </button>
-              </div>
-            )}
-          </section>
-        </div>
         )}
 
         {isVoicesSection && (
