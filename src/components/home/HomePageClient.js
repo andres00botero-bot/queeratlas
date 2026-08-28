@@ -23,6 +23,9 @@ const HOME_DATA_CACHE_TTL_MS = 3 * 60 * 1000;
 const HOME_CITY_OPTIONS = Object.keys(cityCoreConfig).sort((a, b) =>
   formatCityLabel(a).localeCompare(formatCityLabel(b))
 );
+const HOME_COUNTRY_COUNT = new Set(
+  Object.values(cityCoreConfig).map((city) => city?.country).filter(Boolean)
+).size;
 const HomeDeferredSections = dynamic(() => import("@/components/home/HomeDeferredSections"));
 const HomeContactSection = dynamic(() => import("@/components/home/HomeContactSection"));
 const HomeAuthModal = dynamic(() => import("@/components/home/HomeAuthModal"));
@@ -745,6 +748,10 @@ export default function HomePageClient({ initialHomeData = null }) {
   const placeCount = places.length;
   const metricsForCards = useMemo(
     () => ({
+      countries:
+        Number.isFinite(Number(homeMetrics?.countries))
+          ? Number(homeMetrics.countries)
+          : HOME_COUNTRY_COUNT,
       cities:
         Number.isFinite(Number(homeMetrics?.cities))
           ? Number(homeMetrics.cities)
@@ -761,6 +768,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     [cityCount, eventCount, homeMetrics, placeCount]
   );
   const formatMetric = (value) => (value > 0 ? String(value) : "-");
+  const countryCountDisplay = isDataLoading && !homeMetrics ? "..." : formatMetric(metricsForCards.countries);
   const cityCountDisplay = isDataLoading && !homeMetrics ? "..." : formatMetric(metricsForCards.cities);
   const placeCountDisplay = isDataLoading && !homeMetrics ? "..." : formatMetric(metricsForCards.places);
   const eventCountDisplay = isDataLoading && !homeMetrics ? "..." : formatMetric(metricsForCards.events);
@@ -1141,7 +1149,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className="relative z-20 mt-5 w-full max-w-[44rem] sm:mt-8">
+              <div className="relative z-20 mt-5 w-full max-w-[48rem] sm:mt-8">
               <div className="relative w-full rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:rounded-[30px] sm:p-[18px]">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
@@ -1238,15 +1246,19 @@ export default function HomePageClient({ initialHomeData = null }) {
                   )}
 
                 <div className="mt-3 flex items-center divide-x divide-white/10 border-t border-white/10 px-1 pt-3">
-                  <div className="min-w-0 flex-1 px-2.5 text-center sm:px-4">
+                  <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
+                    <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{countryCountDisplay}</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Countries</p>
+                  </div>
+                  <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{cityCountDisplay}</p>
                     <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Cities</p>
                   </div>
-                  <div className="min-w-0 flex-1 px-2.5 text-center sm:px-4">
+                  <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{placeCountDisplay}</p>
                     <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Places</p>
                   </div>
-                  <div className="min-w-0 flex-1 px-2.5 text-center sm:px-4">
+                  <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{eventCountDisplay}</p>
                     <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Events</p>
                   </div>
