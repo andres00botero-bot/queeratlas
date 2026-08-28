@@ -993,26 +993,39 @@ export default function HomePageClient({ initialHomeData = null }) {
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
           <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] lg:overflow-visible xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
-            <div className="pointer-events-none absolute inset-0 hidden lg:block">
-              <Image
-                src="/home/queer-atlas-signal-field-hero-v8.webp"
-                alt=""
-                fill
-                priority
-                fetchPriority="high"
-                quality={82}
-                sizes="(max-width: 1023px) 0px, (max-width: 1600px) 100vw, 1800px"
-                className="object-cover object-center opacity-[0.97]"
-                style={{ objectPosition: "center center" }}
-              />
+            <div
+              className="pointer-events-none absolute inset-0 hidden lg:block"
+              style={{
+                WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%)",
+              }}
+            >
+              <picture>
+                <source
+                  media="(min-width: 1024px)"
+                  srcSet="/home/queer-atlas-luminous-hero-v9.webp"
+                  type="image/webp"
+                />
+                <img
+                  src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+                  alt=""
+                  aria-hidden="true"
+                  width="2560"
+                  height="1440"
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
+                  className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.96] [filter:brightness(0.9)_contrast(1.08)_saturate(0.94)]"
+                />
+              </picture>
             </div>
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(104deg,rgba(3,10,18,0.88)_0%,rgba(4,14,23,0.64)_38%,rgba(4,15,23,0.16)_68%,rgba(4,10,17,0.38)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#04101a]/80 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 bg-gradient-to-b from-transparent via-[#070912]/55 to-[#01010C]" />
-            <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-28 bg-gradient-to-r from-[#04101a]/82 to-transparent lg:block" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-28 bg-gradient-to-l from-[#04101a]/72 to-transparent lg:block" />
-            <div className="pointer-events-none absolute -left-24 top-36 h-56 w-56 rounded-full bg-fuchsia-500/12 blur-[90px] lg:hidden" />
-            <div className="pointer-events-none absolute -right-24 top-10 h-64 w-64 rounded-full bg-cyan-400/12 blur-[100px] lg:hidden" />
+            <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(100deg,rgba(2,8,18,0.94)_0%,rgba(3,11,21,0.78)_30%,rgba(3,13,23,0.3)_56%,rgba(3,12,21,0.08)_76%,rgba(2,8,16,0.28)_100%)] lg:block" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_92%_8%,rgba(34,211,238,0.11),transparent_34%),radial-gradient(circle_at_4%_45%,rgba(244,114,182,0.075),transparent_32%),linear-gradient(180deg,#03101a_0%,#020914_46%,#01010C_100%)] lg:hidden" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_72%_40%,transparent_0%,transparent_32%,rgba(1,5,13,0.16)_65%,rgba(1,3,10,0.52)_100%)]" />
+            <div className="qa-hero-aurora pointer-events-none absolute right-[4%] top-[12%] hidden h-[58%] w-[50%] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(34,211,238,0.12)_0%,rgba(244,114,182,0.055)_34%,transparent_70%)] mix-blend-screen blur-[44px] lg:block" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#020812]/72 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-[#030612]/58 to-[#01010C]" />
+            <div className="qa-hero-grain pointer-events-none absolute inset-0 hidden opacity-[0.022] mix-blend-soft-light lg:block" />
 
             <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[686px] xl:min-h-[690px]">
           <div className="mb-7 flex items-center justify-end gap-3 sm:mb-14 sm:gap-4 lg:mb-0 lg:justify-between">
