@@ -49,7 +49,7 @@ import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import { SERVICE_TYPES as CITY_SERVICE_TYPES } from "@/features/city/cityPageConstants";
 import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
 import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
-import { buildVenueIntelPayload, getVenueIntelLabels } from "@/lib/venueIntel";
+import { buildVenueIntelPayload, getVenueIntelGuidance, getVenueIntelLabels } from "@/lib/venueIntel";
 import MemberContributionWorkspace from "@/components/contribute/MemberContributionWorkspace";
 import VenueLocationPicker from "@/components/location/VenueLocationPicker";
 import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
@@ -322,6 +322,7 @@ export default function ContributePage() {
   });
   const canPublishDirect = isAdmin || isTrustedContributor;
   const placeIntelLabels = getVenueIntelLabels(placeForm.type);
+  const placeIntelGuidance = getVenueIntelGuidance(placeForm.type);
   const completedPlaceIntelCount = PLACE_INTEL_FIELDS.filter(([key]) => String(placeForm.venue_intel?.[key] || "").trim()).length;
   const notifyPublishedEntity = useCallback(
     async (entityType, entity, submission = {}, source = "contribute-publish") => {
@@ -1942,7 +1943,7 @@ export default function ContributePage() {
                     {PLACE_INTEL_FIELDS.map(([key, labelKey, hint]) => (
                       <label key={`new-place-intel-${key}`} className={key === "staff_inclusivity" ? "md:col-span-2" : ""}>
                         <span className="block text-xs font-semibold text-violet-50/90">{placeIntelLabels[labelKey]} <span className="text-fuchsia-200">*</span></span>
-                        <span className="mt-1 block text-[11px] leading-4 text-white/42">{hint}</span>
+                        <span className="mt-1 block text-[11px] leading-4 text-white/42">{placeForm.type === "store" ? placeIntelGuidance[labelKey] : hint}</span>
                         <textarea
                           required
                           value={placeForm.venue_intel?.[key] || ""}

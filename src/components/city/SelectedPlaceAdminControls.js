@@ -2,7 +2,7 @@
 
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
-import { getVenueIntelLabels } from "@/lib/venueIntel";
+import { getVenueIntelGuidance, getVenueIntelLabels } from "@/lib/venueIntel";
 import VenueLocationPicker from "@/components/location/VenueLocationPicker";
 import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 
@@ -23,6 +23,7 @@ export default function SelectedPlaceAdminControls({
 }) {
   if (!isAdmin) return null;
   const intelLabels = getVenueIntelLabels(draft.type);
+  const intelGuidance = getVenueIntelGuidance(draft.type);
 
   return (
     <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
@@ -119,11 +120,11 @@ export default function SelectedPlaceAdminControls({
             title="Practical venue intelligence"
             description="The prompts adapt to the selected venue type. Use observed, current wording."
             fields={[
-              { key: "queue", label: intelLabels.queueWait, value: draft.queue_wait, onChange: (value) => setDraft((current) => ({ ...current, queue_wait: value })), placeholder: "Typical wait or arrival pattern" },
-              { key: "best", label: intelLabels.bestNights, value: draft.best_nights, onChange: (value) => setDraft((current) => ({ ...current, best_nights: value })), placeholder: "Best day or time" },
-              { key: "crowd", label: intelLabels.crowdMix, value: draft.crowd_mix, onChange: (value) => setDraft((current) => ({ ...current, crowd_mix: value })), placeholder: "Describe the crowd mix" },
-              { key: "dress", label: intelLabels.dressCode, value: draft.dress_code, onChange: (value) => setDraft((current) => ({ ...current, dress_code: value })), placeholder: "What people actually wear or bring" },
-              { key: "inclusion", label: intelLabels.staffInclusivity, value: draft.staff_inclusivity, onChange: (value) => setDraft((current) => ({ ...current, staff_inclusivity: value })), placeholder: "Factual community experience", wide: true },
+              { key: "queue", label: intelLabels.queueWait, value: draft.queue_wait, onChange: (value) => setDraft((current) => ({ ...current, queue_wait: value })), placeholder: intelGuidance.queueWait },
+              { key: "best", label: intelLabels.bestNights, value: draft.best_nights, onChange: (value) => setDraft((current) => ({ ...current, best_nights: value })), placeholder: intelGuidance.bestNights },
+              { key: "crowd", label: intelLabels.crowdMix, value: draft.crowd_mix, onChange: (value) => setDraft((current) => ({ ...current, crowd_mix: value })), placeholder: intelGuidance.crowdMix },
+              { key: "dress", label: intelLabels.dressCode, value: draft.dress_code, onChange: (value) => setDraft((current) => ({ ...current, dress_code: value })), placeholder: intelGuidance.dressCode },
+              { key: "inclusion", label: intelLabels.staffInclusivity, value: draft.staff_inclusivity, onChange: (value) => setDraft((current) => ({ ...current, staff_inclusivity: value })), placeholder: intelGuidance.staffInclusivity, wide: true },
             ]}
           />
           <div className="rounded-2xl border border-white/12 bg-black/25 p-3">

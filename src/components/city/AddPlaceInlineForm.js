@@ -3,7 +3,7 @@
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 import VenueLocationPicker from "@/components/location/VenueLocationPicker";
-import { getVenueIntelLabels } from "@/lib/venueIntel";
+import { getVenueIntelGuidance, getVenueIntelLabels } from "@/lib/venueIntel";
 
 export default function AddPlaceInlineForm({
   name,
@@ -39,6 +39,7 @@ export default function AddPlaceInlineForm({
   onSave,
 }) {
   const intelLabels = getVenueIntelLabels(type);
+  const intelGuidance = getVenueIntelGuidance(type);
 
   return (
     <div className="mb-6 space-y-3 rounded-[28px] border border-emerald-300/12 bg-[linear-gradient(180deg,rgba(9,36,30,0.92),rgba(14,14,14,0.96))] p-5 shadow-[0_18px_50px_rgba(16,185,129,0.08)]">
@@ -80,11 +81,11 @@ export default function AddPlaceInlineForm({
         title="Practical venue intelligence"
         description="Optional first-hand details that help people choose when and how to visit. The prompts adapt to the venue type."
         fields={[
-          { key: "queue", label: intelLabels.queueWait, value: placeQueueWait, onChange: setPlaceQueueWait, placeholder: "For example: 10–20 minutes after midnight" },
-          { key: "best", label: intelLabels.bestNights, value: placeBestNights, onChange: setPlaceBestNights, placeholder: "For example: Friday after 23:30" },
-          { key: "crowd", label: intelLabels.crowdMix, value: placeCrowdMix, onChange: setPlaceCrowdMix, placeholder: "For example: mostly locals, more visitors on Saturdays" },
-          { key: "dress", label: intelLabels.dressCode, value: placeDressCode, onChange: setPlaceDressCode, placeholder: "Describe what people actually wear" },
-          { key: "inclusion", label: intelLabels.staffInclusivity, value: placeStaffInclusivity, onChange: setPlaceStaffInclusivity, placeholder: "Share a factual inclusion signal", wide: true },
+          { key: "queue", label: intelLabels.queueWait, value: placeQueueWait, onChange: setPlaceQueueWait, placeholder: intelGuidance.queueWait },
+          { key: "best", label: intelLabels.bestNights, value: placeBestNights, onChange: setPlaceBestNights, placeholder: intelGuidance.bestNights },
+          { key: "crowd", label: intelLabels.crowdMix, value: placeCrowdMix, onChange: setPlaceCrowdMix, placeholder: intelGuidance.crowdMix },
+          { key: "dress", label: intelLabels.dressCode, value: placeDressCode, onChange: setPlaceDressCode, placeholder: intelGuidance.dressCode },
+          { key: "inclusion", label: intelLabels.staffInclusivity, value: placeStaffInclusivity, onChange: setPlaceStaffInclusivity, placeholder: intelGuidance.staffInclusivity, wide: true },
         ]}
       />
       <button disabled={!placeLocation} onClick={onSave} className="w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-teal-200 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45">

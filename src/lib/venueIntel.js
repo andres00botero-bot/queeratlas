@@ -99,6 +99,16 @@ export function hasVenueIntel(value = {}) {
 export function getVenueIntelLabels(type = "") {
   const normalizedType = String(type || "").trim().toLowerCase();
 
+  if (normalizedType === "store") {
+    return {
+      queueWait: "What you’ll find",
+      bestNights: "Best time to browse",
+      crowdMix: "Online store & international shipping",
+      dressCode: "Payment methods",
+      staffInclusivity: "Privacy & inclusion",
+    };
+  }
+
   if (normalizedType === "hotel") {
     return {
       queueWait: "Check-in wait",
@@ -135,5 +145,26 @@ export function getVenueIntelLabels(type = "") {
     crowdMix: "Locals vs visitors",
     dressCode: "Dress code in practice",
     staffInclusivity: "Staff inclusion",
+  };
+}
+
+export function getVenueIntelGuidance(type = "") {
+  const normalizedType = String(type || "").trim().toLowerCase();
+  if (normalizedType === "store") {
+    return {
+      queueWait: "Describe the product range, specialist stock or queer brands available.",
+      bestNights: "Share quieter browsing times or when specialist staff and the fullest range are available.",
+      crowdMix: "Note the online shop, click and collect, delivery regions, international shipping and discreet packaging.",
+      dressCode: "List accepted payment methods and any cash, card or contactless limitations.",
+      staffInclusivity: "Share factual signals about discreet service, pronouns, accessibility and inclusive customer care.",
+    };
+  }
+
+  return {
+    queueWait: "Typical wait or arrival pattern",
+    bestNights: "Best day or time",
+    crowdMix: "Describe the crowd mix",
+    dressCode: "What people actually wear or bring",
+    staffInclusivity: "Factual community experience",
   };
 }
