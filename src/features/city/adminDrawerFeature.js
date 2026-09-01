@@ -1,5 +1,9 @@
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
-import { inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
+import {
+  inferVibeTagsFromLegacyVibe,
+  normalizePlaceVibeTags,
+  normalizeVibeTags,
+} from "@/lib/vibeTaxonomy";
 import { normalizeVenueIntel } from "@/lib/venueIntel";
 import { normalizeEventIntel, normalizeServiceIntel } from "@/lib/entityIntel";
 
@@ -47,16 +51,19 @@ function normalizeOptionalCoordinate(value) {
 
 export function buildPlaceAdminDraft(place) {
   const vibeValue = String(place?.vibe || "");
+  const placeType = String(place?.type || "bar");
   const venueIntel = normalizeVenueIntel(place || {});
-  const vibeTags = normalizeVibeTags(
-    Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
-      ? place.vibe_tags
-      : inferVibeTagsFromLegacyVibe(vibeValue),
-    { max: 3 }
-  );
+  const vibeTags = placeType === "store"
+    ? ["store"]
+    : normalizePlaceVibeTags(
+      Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
+        ? place.vibe_tags
+        : inferVibeTagsFromLegacyVibe(vibeValue),
+      { max: 3 }
+    );
   return {
     name: String(place?.name || ""),
-    type: String(place?.type || "bar"),
+    type: placeType,
     description: String(place?.description || ""),
     vibe: vibeValue,
     vibe_tags: vibeTags,
@@ -110,12 +117,7 @@ export function buildEventAdminDraft(event) {
 export function buildServiceAdminDraft(service) {
   const serviceIntel = normalizeServiceIntel(service || {});
   const vibeValue = String(service?.vibe || "");
-  const vibeTags = normalizeVibeTags(
-    Array.isArray(service?.vibe_tags) && service.vibe_tags.length > 0
-      ? service.vibe_tags
-      : inferVibeTagsFromLegacyVibe(vibeValue),
-    { max: 3 }
-  );
+  const vibeTags = ["service"];
 
   return {
     name: String(service?.name || ""),

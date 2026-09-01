@@ -1,7 +1,7 @@
 import { getVenueWelcomeEvidence } from "./safetyIndexModel.js";
 import { hasCompleteVenueIntelligence, hasRouteReadyEvidence, isEligibleIndexEvent, isEligibleNightlifePlace } from "./nightlifeIndexModel.js";
 
-const INFRASTRUCTURE_TYPES = new Set(["bar", "club", "sauna", "cruise_club", "cruising_area", "cafe", "restaurant", "cinema", "gallery"]);
+const INFRASTRUCTURE_TYPES = new Set(["bar", "club", "sauna", "cruise_club", "cruising_area", "cafe", "restaurant", "cinema", "gallery", "store"]);
 
 const roundOne = (value) => Number(Number(value || 0).toFixed(1));
 const hasNumericEvidence = (value) => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
@@ -52,7 +52,7 @@ export function scoreGlobalQueerCity({ city, country, countryEvidence, places = 
     { weight: 3, value: 3 * ratio(routeReadyCount, infrastructurePlaces.length), available: infrastructurePlaces.length > 0 },
   ], 20);
 
-  const culturePlaces = infrastructurePlaces.filter((place) => ["cafe", "restaurant", "cinema", "gallery"].includes(place.type));
+  const culturePlaces = infrastructurePlaces.filter((place) => ["cafe", "restaurant", "cinema", "gallery", "store"].includes(place.type));
   const culture = normalizedCategory([
     { weight: 6, value: 6 * Math.sqrt(Math.min(eligibleEvents.length, 20) / 20) },
     { weight: 3, value: 3 * Math.sqrt(Math.min(nightlifePlaces.length, 30) / 30) },

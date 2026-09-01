@@ -19,7 +19,7 @@ create table if not exists public.services (
   lng double precision,
   price_tier text,
   vibe text,
-  vibe_tags text[] not null default '{}',
+  vibe_tags text[] not null default array['service']::text[],
   source text,
   "lastChecked" date,
   verified boolean not null default false,
@@ -28,6 +28,12 @@ create table if not exists public.services (
 
 alter table if exists public.services
   add column if not exists image_urls text[] not null default '{}';
+
+alter table if exists public.services
+  alter column vibe_tags set default array['service']::text[];
+
+update public.services
+set vibe_tags = array['service']::text[];
 
 alter table if exists public.services
   alter column created_by set default auth.uid();
@@ -69,30 +75,7 @@ alter table if exists public.services
   drop constraint if exists qa_services_vibe_tags_allowed;
 alter table if exists public.services
   add constraint qa_services_vibe_tags_allowed
-  check (
-    vibe_tags <@ array[
-      'techno',
-      'pop',
-      'mixed',
-      'electronic',
-      'men_only',
-      'after',
-      'chill',
-      'cultural',
-      'fetish',
-      'social',
-      'cozy',
-      'massive',
-      'luxury',
-      'festival',
-      'underground',
-      'cruise',
-      'relax',
-      'drag',
-      'industrial',
-      'service'
-    ]::text[]
-  );
+  check (vibe_tags = array['service']::text[]);
 
 alter table if exists public.services
   drop constraint if exists qa_services_image_urls_max_8;

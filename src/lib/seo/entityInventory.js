@@ -1,5 +1,5 @@
 import { cityCoreConfig } from "@/lib/cityCore";
-import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { supabase } from "@/lib/supabase";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import {
@@ -68,7 +68,7 @@ async function buildInventory() {
   ]);
 
   const allVenues = dedupeByPathIdentity(
-    (await mergeSeedPlacesAsync(placesResult.rows)).filter(inSupportedCity),
+    placesResult.rows.filter(inSupportedCity),
   );
   const allEvents = dedupeByPathIdentity(
     (await mergeSeedEventsAsync(eventsResult.rows)).filter(inSupportedCity),

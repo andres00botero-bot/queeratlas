@@ -20,6 +20,7 @@ const STANDARD_VIBE_TAG_DEFS = [
   { key: "relax", label: "Relax", description: "Recovery, sauna, or rest-forward mode." },
   { key: "drag", label: "Drag", description: "Drag-first performance programming." },
   { key: "industrial", label: "Industrial", description: "Industrial or warehouse-coded atmosphere." },
+  { key: "store", label: "Store", description: "Queer retail, books, fashion, or specialist shopping." },
   { key: "service", label: "Service", description: "Private service or provider-led experience." },
 ];
 
@@ -161,6 +162,13 @@ export function normalizeVibeTags(input, options = {}) {
   return out;
 }
 
+export function normalizePlaceVibeTags(input, options = {}) {
+  const max = Number(options.max || DEFAULT_MAX_VIBE_TAGS);
+  const normalizedTags = normalizeVibeTags(input, { max: STANDARD_VIBE_TAGS.length })
+    .filter((tag) => tag !== "service" && tag !== "store");
+  return max > 0 ? normalizedTags.slice(0, max) : normalizedTags;
+}
+
 export function validateVibeTags(input, options = {}) {
   const max = Number(options.max || DEFAULT_MAX_VIBE_TAGS);
   const allowEmpty = options.allowEmpty !== false;
@@ -248,6 +256,28 @@ export function buildVibeDualWriteFields({ vibe = "", vibeTags = [] } = {}) {
   return {
     vibe: trimmedVibe || fallbackVibe || null,
     vibe_tags: normalizedTags,
+  };
+}
+
+export function buildPlaceVibeDualWriteFields({ type = "", vibe = "", vibeTags = [] } = {}) {
+  if (String(type || "").trim().toLowerCase() === "store") {
+    return {
+      vibe: String(vibe || "").trim() || "Store",
+      vibe_tags: ["store"],
+    };
+  }
+  const fields = buildVibeDualWriteFields({ vibe, vibeTags });
+  const normalizedTags = normalizePlaceVibeTags(fields.vibe_tags, { max: DEFAULT_MAX_VIBE_TAGS });
+  return {
+    ...fields,
+    vibe_tags: normalizedTags.length > 0 ? normalizedTags : ["mixed"],
+  };
+}
+
+export function buildServiceVibeDualWriteFields({ vibe = "" } = {}) {
+  return {
+    vibe: String(vibe || "").trim() || "Service",
+    vibe_tags: ["service"],
   };
 }
 

@@ -207,7 +207,7 @@ function testUsePlacesUsesFallbackLoader() {
   );
   assert(
     usePlacesSource.includes('setLoadError("Live stats view is unavailable. Showing direct place data.");') &&
-      usePlacesSource.includes("setPlaces(mergedWithSeed);") &&
+      usePlacesSource.includes("setPlaces(mergedRows);") &&
       usePlacesSource.includes("setIsLoading(false);"),
     "usePlaces loader: stats view errors should degrade gracefully without blocking place rendering"
   );
@@ -309,7 +309,7 @@ function testPlacesAtlasNormalizesRatingFields() {
     "places atlas stats: data layer should query reviews for fallback rating stats"
   );
   assert(
-    source.includes('selectPlaces(client, "places", PLACES_FALLBACK_SELECT, undefined, undefined)'),
+    source.includes('selectPlaces(client, "places", PLACES_FALLBACK_SELECT_WITH_LEGACY_ID, undefined, filters)'),
     "places atlas stats: atlas loader should read directly from places table"
   );
   assert(

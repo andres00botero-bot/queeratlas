@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
-import { mergeSeedPlacesAsync } from "./seedMerge";
 import { captureOperationalError } from "./monitoring";
 import { logDevError } from "./devLogger";
 import { fetchPlacesQueryWithFallback } from "./placesDataApi";
 import {
-  buildVibeDualWriteFields,
+  buildPlaceVibeDualWriteFields,
   inferVibeTagsFromLegacyVibe,
   isMissingVibeTagsColumnError,
   normalizeVibeTags,
 } from "./vibeTaxonomy";
 import { hasVenueIntel } from "./venueIntel";
 
+const PLACE_SELECT_FIELDS_WITH_LEGACY_ID =
+  "id, legacy_seed_id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, venue_intel";
 const PLACE_SELECT_FIELDS_WITH_INTEL =
   "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, venue_intel";
 const PLACE_SELECT_FIELDS =
@@ -61,7 +62,10 @@ async function fetchAllPlacePages(client, selectFields, city) {
 }
 
 async function fetchPlacesRows(client, city) {
-  let response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_WITH_INTEL, city);
+  let response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_WITH_LEGACY_ID, city);
+  if (response?.error && isMissingColumnError(response.error, "legacy_seed_id")) {
+    response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_WITH_INTEL, city);
+  }
   if (response?.error && isMissingColumnError(response.error, "venue_intel")) {
     response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS, city);
   }
@@ -452,8 +456,7 @@ export function usePlaces(city) {
       };
     });
 
-    const mergedWithSeed = await mergeSeedPlacesAsync(mergedRows);
-    setPlaces(mergedWithSeed);
+    setPlaces(mergedRows);
     setIsLoading(false);
   }, [city]);
 
@@ -484,7 +487,8 @@ export function usePlaces(city) {
 
   /* ---------------- ADD PLACE ---------------- */
   const addPlace = useCallback(async (place) => {
-    const vibeFields = buildVibeDualWriteFields({
+    const vibeFields = buildPlaceVibeDualWriteFields({
+      type: place.type,
       vibe: place.vibe,
       vibeTags: place.vibe_tags,
     });
@@ -583,7 +587,8 @@ export function usePlaces(city) {
         name: placeName,
         type: String(place?.type || "bar"),
         description: String(place?.description || "").trim(),
-        ...buildVibeDualWriteFields({
+        ...buildPlaceVibeDualWriteFields({
+          type: String(place?.type || "bar"),
           vibe: String(place?.vibe || "").trim(),
           vibeTags: place?.vibe_tags,
         }),

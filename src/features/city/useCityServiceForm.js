@@ -12,7 +12,6 @@ export function useCityServiceForm() {
   const [serviceLocation, setServiceLocation] = useState(null);
   const [serviceDescription, setServiceDescription] = useState("");
   const [serviceVibe, setServiceVibe] = useState("");
-  const [serviceVibeTags, setServiceVibeTags] = useState([]);
   const [serviceHours, setServiceHours] = useState("");
   const [serviceLink, setServiceLink] = useState("");
   const [serviceBookingLink, setServiceBookingLink] = useState("");
@@ -33,7 +32,6 @@ export function useCityServiceForm() {
     setServiceLocation(null);
     setServiceDescription("");
     setServiceVibe("");
-    setServiceVibeTags([]);
     setServiceHours("");
     setServiceLink("");
     setServiceBookingLink("");
@@ -61,8 +59,6 @@ export function useCityServiceForm() {
     setServiceDescription,
     serviceVibe,
     setServiceVibe,
-    serviceVibeTags,
-    setServiceVibeTags,
     serviceHours,
     setServiceHours,
     serviceLink,

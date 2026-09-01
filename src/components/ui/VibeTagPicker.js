@@ -48,10 +48,15 @@ export default function VibeTagPicker({
   title = "Standard vibes",
   hint = "Choose up to 3 tags.",
   max = 3,
+  excludeTags = ["service", "store"],
   tone = "cyan",
   className = "",
 }) {
-  const selectedTags = normalizeVibeTags(value, { max });
+  const excludedTagSet = new Set(
+    normalizeVibeTags(excludeTags, { max: STANDARD_VIBE_TAGS.length })
+  );
+  const availableTags = STANDARD_VIBE_TAGS.filter((item) => !excludedTagSet.has(item.key));
+  const selectedTags = normalizeVibeTags(value, { max }).filter((tag) => !excludedTagSet.has(tag));
   const selectedSet = new Set(selectedTags);
   const styles = resolveToneStyles(tone);
 
@@ -65,7 +70,7 @@ export default function VibeTagPicker({
       </div>
       <p className={`mt-1 text-[11px] ${styles.helper}`}>{hint}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        {STANDARD_VIBE_TAGS.map((item) => {
+        {availableTags.map((item) => {
           const selected = selectedSet.has(item.key);
           return (
             <button

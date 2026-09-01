@@ -28,17 +28,6 @@ function resolveCityValue(input = "") {
   return normalizeCitySlug(input);
 }
 
-function normalizedExternalIdentity(value = "") {
-  try {
-    const url = new URL(String(value || ""));
-    const hostname = url.hostname.replace(/^www\./, "").toLowerCase();
-    const pathname = url.pathname.replace(/\/+$/, "").toLowerCase();
-    return hostname ? `${hostname}${pathname}` : "";
-  } catch {
-    return "";
-  }
-}
-
 const findVenueByParams = cache(async (cityParam = "", slugParam = "") => {
   const city = resolveCityValue(cityParam);
   const slug = String(slugParam || "").trim();
@@ -51,25 +40,20 @@ const findVenueByParams = cache(async (cityParam = "", slugParam = "") => {
   const isDatabaseId = Boolean(parsed.id && !parsed.id.startsWith("seed-"));
   const { data: allPlaces } = await fetchPlacesForAtlas({
     filters: isDatabaseId ? { city, id: parsed.id } : { city },
-    mergeSeed: !isDatabaseId,
   });
   const cityPlaces = (Array.isArray(allPlaces) ? allPlaces : []).filter(
     (row) => normalizeCityKey(String(row?.city || "")) === city
   );
 
   const byId = parsed.id
-    ? cityPlaces.find((row) => String(row?.id || "") === parsed.id) || null
-    : null;
-  const bySlug = cityPlaces.find((row) => placeMatchesSlug(row, slug)) || null;
-  const matchedPlace = byId || bySlug;
-  const matchedOfficialIdentity = normalizedExternalIdentity(matchedPlace?.link);
-  const databaseDuplicate = String(matchedPlace?.id || "").startsWith("seed-") && matchedOfficialIdentity
-    ? cityPlaces.find((row) =>
-        !String(row?.id || "").startsWith("seed-") &&
-        normalizedExternalIdentity(row?.link) === matchedOfficialIdentity
+    ? cityPlaces.find(
+        (row) =>
+          String(row?.id || "") === parsed.id ||
+          String(row?.legacy_seed_id || "") === parsed.id,
       ) || null
     : null;
-  const place = databaseDuplicate || matchedPlace;
+  const bySlug = cityPlaces.find((row) => placeMatchesSlug(row, slug)) || null;
+  const place = byId || bySlug;
 
   return { city, place, coreConfig };
 });
@@ -92,9 +76,10 @@ function buildVenueDiscoverLinks({ city, cityName, placeType }) {
     sauna: "gay-sauna-guide",
     cruise_club: "underground-queer-nightlife",
     cruising_area: "queer-safe-areas",
+    store: "queer-stores",
   };
   const primaryKey = byType[normalizedType] || "queer-bars";
-  const topicHub = ["cafe", "hotel"].includes(normalizedType) ? "/topics/cafes" : "/topics/nightlife";
+  const topicHub = ["cafe", "hotel", "store"].includes(normalizedType) ? "/topics/cafes" : "/topics/nightlife";
 
   return [
     {

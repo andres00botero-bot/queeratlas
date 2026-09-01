@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
 import { usePlaces } from "@/lib/usePlaces";
 import { supabase } from "@/lib/supabase";
-import { mergeSeedEventsAsync, mergeSeedPlacesAsync } from "@/lib/seedMerge";
+import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
@@ -34,9 +34,12 @@ import { useActionToast } from "@/lib/useActionToast";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { captureOperationalError } from "@/lib/monitoring";
 import {
+  buildPlaceVibeDualWriteFields,
+  buildServiceVibeDualWriteFields,
   buildVibeDualWriteFields,
   inferVibeTagsFromLegacyVibe,
   isMissingVibeTagsColumnError,
+  normalizePlaceVibeTags,
   normalizeVibeTags,
 } from "@/lib/vibeTaxonomy";
 import ActionToast from "@/components/ui/ActionToast";
@@ -75,6 +78,7 @@ const PLACE_TYPES = [
   { value: "hotel", label: "Hotel" },
   { value: "cinema", label: "Cinema" },
   { value: "gallery", label: "Art & Gallery" },
+  { value: "store", label: "Store" },
 ];
 
 const PLACE_INTEL_FIELDS = [
@@ -619,7 +623,7 @@ export default function ContributePage() {
         }
 
         setQaSnapshot({
-          places: await mergeSeedPlacesAsync(placesData || []),
+          places: placesData || [],
           events: await mergeSeedEventsAsync(eventsData || []),
           services: servicesData || [],
           loading: false,
@@ -848,8 +852,11 @@ export default function ContributePage() {
         description: placeForm.description,
         hours: placeForm.hours,
         link: placeForm.link || null,
-        vibe: placeForm.vibe,
-        vibe_tags: normalizeVibeTags(placeForm.vibe_tags, { max: 3 }),
+        ...buildPlaceVibeDualWriteFields({
+          type: placeForm.type,
+          vibe: placeForm.vibe,
+          vibeTags: placeForm.vibe_tags,
+        }),
         lat: coords.lat,
         lng: coords.lng,
         city: cityName,
@@ -1191,10 +1198,7 @@ export default function ContributePage() {
         return;
       }
 
-      const vibeFields = buildVibeDualWriteFields({
-        vibe: serviceForm.vibe,
-        vibeTags: normalizeVibeTags(serviceForm.vibe_tags, { max: 3 }),
-      });
+      const vibeFields = buildServiceVibeDualWriteFields({ vibe: serviceForm.vibe });
       const announcerName = String(memberName || user?.email || "Member").trim();
       const isEditing = Boolean(editingServiceId);
       let savePayload = {
@@ -1615,7 +1619,7 @@ export default function ContributePage() {
     const placeIssues = qaSnapshot.places
       .map((place) => {
         const issues = [];
-        const placeVibeTags = normalizeVibeTags(
+        const placeVibeTags = normalizePlaceVibeTags(
           Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
             ? place.vibe_tags
             : inferVibeTagsFromLegacyVibe(String(place?.vibe || "")),
@@ -1884,13 +1888,16 @@ export default function ContributePage() {
                       placeholder="Legacy vibe label (optional)"
                     />
                   </div>
-                  <VibeTagPicker
-                    value={placeForm.vibe_tags}
-                    onChange={(nextTags) => setPlaceForm((current) => ({ ...current, vibe_tags: nextTags }))}
-                    title="Place vibe tags"
-                    hint="Pick up to 3 standardized tags."
-                    tone="emerald"
-                  />
+                  {placeForm.type !== "store" && (
+                    <VibeTagPicker
+                      value={placeForm.vibe_tags}
+                      onChange={(nextTags) => setPlaceForm((current) => ({ ...current, vibe_tags: nextTags }))}
+                      excludeTags={["service", "store"]}
+                      title="Place vibe tags"
+                      hint="Pick up to 3 standardized tags."
+                      tone="emerald"
+                    />
+                  )}
                   <VenueLocationPicker
                     address={placeForm.address}
                     city={placeForm.city}
@@ -2204,13 +2211,6 @@ export default function ContributePage() {
                   value={serviceForm.vibe}
                   onChange={(event) => setServiceForm((current) => ({ ...current, vibe: event.target.value }))}
                   placeholder="Legacy vibe label (optional)"
-                />
-                <VibeTagPicker
-                  value={serviceForm.vibe_tags}
-                  onChange={(nextTags) => setServiceForm((current) => ({ ...current, vibe_tags: nextTags }))}
-                  title="Service vibe tags"
-                  hint="Pick up to 3 standardized tags."
-                  tone="cyan"
                 />
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field

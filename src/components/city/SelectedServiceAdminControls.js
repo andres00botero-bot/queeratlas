@@ -1,7 +1,6 @@
 "use client";
 
 import DateInput from "@/components/ui/DateInput";
-import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 import { getServiceIntelLabels } from "@/lib/entityIntel";
 import VenueLocationPicker from "@/components/location/VenueLocationPicker";
@@ -64,13 +63,6 @@ export default function SelectedServiceAdminControls({
             onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
             placeholder="Description"
             className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
-          />
-          <VibeTagPicker
-            value={draft.vibe_tags}
-            onChange={(nextTags) => setDraft((current) => ({ ...current, vibe_tags: nextTags }))}
-            tone="amber"
-            title="Service vibe tags"
-            hint="Choose up to 3 tags."
           />
           <input
             value={draft.vibe}

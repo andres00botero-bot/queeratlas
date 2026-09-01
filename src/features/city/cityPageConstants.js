@@ -9,6 +9,7 @@ export const TYPES = [
   { value: "hotel", label: "Hotels", color: "#eab308" },
   { value: "cinema", label: "Cinemas", color: "#fb7185" },
   { value: "gallery", label: "Art & Galleries", color: "#22d3ee" },
+  { value: "store", label: "Stores", color: "#a78bfa" },
 ];
 
 export const TYPE_LABELS = {
@@ -22,6 +23,7 @@ export const TYPE_LABELS = {
   hotel: "Hotel",
   cinema: "Cinema",
   gallery: "Art & Gallery",
+  store: "Store",
 };
 
 export const TYPE_STYLES = {
@@ -84,6 +86,12 @@ export const TYPE_STYLES = {
     selected: "border-cyan-200/30 bg-[linear-gradient(180deg,rgba(8,145,178,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(34,211,238,0.12)]",
     label: "text-cyan-100",
     line: "from-cyan-300/75 via-blue-300/45 to-transparent",
+  },
+  store: {
+    card: "border-violet-300/12 bg-[linear-gradient(180deg,rgba(58,35,92,0.34),rgba(15,15,15,0.96))]",
+    selected: "border-violet-200/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.18),rgba(15,15,15,0.98))] shadow-[0_18px_50px_rgba(139,92,246,0.12)]",
+    label: "text-violet-100",
+    line: "from-violet-300/75 via-purple-300/45 to-transparent",
   },
 };
 

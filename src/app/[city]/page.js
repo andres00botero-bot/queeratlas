@@ -23,8 +23,11 @@ import { showActionFeedback } from "@/lib/actionFeedback";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { createContentSubmission } from "@/lib/contentSubmissions";
 import {
+  buildPlaceVibeDualWriteFields,
+  buildServiceVibeDualWriteFields,
   buildVibeDualWriteFields,
   isMissingVibeTagsColumnError,
+  normalizePlaceVibeTags,
   normalizeVibeTags,
 } from "@/lib/vibeTaxonomy";
 import {
@@ -94,6 +97,7 @@ import { useCityAdminEditors } from "@/features/city/useCityAdminEditors";
 import { useJoinRedirect } from "@/features/city/useJoinRedirect";
 import { useCitySelectionRouting } from "@/features/city/useCitySelectionRouting";
 import { useCityServiceForm } from "@/features/city/useCityServiceForm";
+import { buildVenueJumpGroups, selectVisiblePlaceGroups } from "@/features/city/venueGroupUtils";
 import {
   arePrivateEventsEquivalent,
   areRequestMapsEqual,
@@ -287,8 +291,6 @@ export default function CityPage() {
     setServiceDescription,
     serviceVibe,
     setServiceVibe,
-    serviceVibeTags,
-    setServiceVibeTags,
     serviceHours,
     setServiceHours,
     serviceLink,
@@ -687,7 +689,11 @@ export default function CityPage() {
 
   const selectedPlace = useMemo(() => {
     if (!placeId) return null;
-    return cityPlaces.find((place) => String(place.id) === String(placeId)) || null;
+    return cityPlaces.find(
+      (place) =>
+        String(place.id) === String(placeId) ||
+        String(place.legacy_seed_id || "") === String(placeId),
+    ) || null;
   }, [cityPlaces, placeId]);
 
   const selectedEvent = useMemo(() => {
@@ -1016,23 +1022,12 @@ export default function CityPage() {
     return [key];
   }, [activeVenueFilter]);
   const visiblePlaceGroups = useMemo(
-    () =>
-      groupedPlaces.filter((group) => {
-        const hasItems = group.items.length > 0;
-        if (!hasItems) return false;
-        if (activeVenueFilterValues.length === 0) return true;
-        return activeVenueFilterValues.includes(String(group.value || ""));
-      }),
+    () => selectVisiblePlaceGroups(groupedPlaces, activeVenueFilterValues),
     [activeVenueFilterValues, groupedPlaces]
   );
   const venueJumpGroups = useMemo(
-    () =>
-      visiblePlaceGroups.map((group) => ({
-        value: String(group.value || ""),
-        label: String(group.label || group.value || "Venues"),
-        count: Array.isArray(group.items) ? group.items.length : 0,
-      })),
-    [visiblePlaceGroups]
+    () => buildVenueJumpGroups(groupedPlaces),
+    [groupedPlaces]
   );
   const handleGoVenueType = useCallback((groupValue) => {
     const rawKey = String(groupValue || "").trim();
@@ -2875,8 +2870,7 @@ export default function CityPage() {
         name: name.trim(),
         type,
         description: description.trim(),
-        vibe: vibe.trim(),
-        vibe_tags: normalizeVibeTags(vibeTags, { max: 3 }),
+        ...buildPlaceVibeDualWriteFields({ type, vibe, vibeTags }),
         hours: placeHours.trim(),
         link: placeLink.trim() || null,
         location: address.trim(),
@@ -3174,10 +3168,7 @@ export default function CityPage() {
         lat: Number(coords.lat),
         lng: Number(coords.lng),
         created_by: user?.id || null,
-        ...buildVibeDualWriteFields({
-          vibe: serviceVibe,
-          vibeTags: normalizeVibeTags(serviceVibeTags, { max: 3 }),
-        }),
+        ...buildServiceVibeDualWriteFields({ vibe: serviceVibe }),
         service_intel: buildServiceIntelPayload({
           bookingLeadTime: serviceBookingLeadTime,
           bestTime: serviceBestTime,
@@ -3270,7 +3261,7 @@ export default function CityPage() {
             legacyPayload.vibe = serviceVibe.trim() || null;
           }
           if (!missingVibeTags) {
-            legacyPayload.vibe_tags = normalizeVibeTags(serviceVibeTags, { max: 3 });
+            legacyPayload.vibe_tags = ["service"];
           }
 
           insertResult = await supabase
@@ -3319,7 +3310,7 @@ export default function CityPage() {
       });
       showToast(error?.message || "Could not save service right now.", { tone: "warn", duration: 2600 });
     }
-  }, [canPublishDirect, city, fetchServices, memberName, resetServiceForm, serviceAddress, serviceBestTime, serviceBookingLeadTime, serviceBookingLink, serviceClientMix, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceLocation, serviceName, servicePreparation, servicePriceTier, serviceProviderInclusivity, serviceProviderName, serviceType, serviceVibe, serviceVibeTags, showToast, user?.email, user?.id]);
+  }, [canPublishDirect, city, fetchServices, memberName, resetServiceForm, serviceAddress, serviceBestTime, serviceBookingLeadTime, serviceBookingLink, serviceClientMix, serviceContact, serviceDescription, serviceHours, serviceImageUrlsInput, serviceLink, serviceLocation, serviceName, servicePreparation, servicePriceTier, serviceProviderInclusivity, serviceProviderName, serviceType, serviceVibe, showToast, user?.email, user?.id]);
 
   const handleReport = ({ targetType, targetId, title }) => {
     setReportDraft(createCityReportDraftFromTarget({
@@ -3842,9 +3833,10 @@ export default function CityPage() {
         name: placeAdminDraft.name.trim(),
         type: placeAdminDraft.type,
         description: placeAdminDraft.description.trim(),
-        ...buildVibeDualWriteFields({
+        ...buildPlaceVibeDualWriteFields({
+          type: placeAdminDraft.type,
           vibe: placeAdminDraft.vibe,
-          vibeTags: normalizeVibeTags(placeAdminDraft.vibe_tags, { max: 3 }),
+          vibeTags: normalizePlaceVibeTags(placeAdminDraft.vibe_tags, { max: 3 }),
         }),
         legacy_vibe_user_set: Boolean(String(placeAdminDraft.vibe || "").trim()),
         location: locationValue || null,
@@ -4000,13 +3992,22 @@ export default function CityPage() {
         return;
       }
 
-      const { error } = await supabase
+      const { data: deleted, error } = await supabase
         .from("places")
         .delete()
-        .eq("id", dbId);
+        .eq("id", dbId)
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         showToast(error.message || "Could not delete venue.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      if (!deleted?.id) {
+        showToast("Venue was not deleted. The database returned no matching admin-visible row.", {
+          tone: "warn",
+          duration: 3400,
+        });
         return;
       }
 
@@ -4442,10 +4443,7 @@ export default function CityPage() {
         location: locationValue || null,
         lat: Number.isFinite(nextLat) ? nextLat : null,
         lng: Number.isFinite(nextLng) ? nextLng : null,
-        ...buildVibeDualWriteFields({
-          vibe: serviceAdminDraft.vibe,
-          vibeTags: normalizeVibeTags(serviceAdminDraft.vibe_tags, { max: 3 }),
-        }),
+        ...buildServiceVibeDualWriteFields({ vibe: serviceAdminDraft.vibe }),
         source: sourceValue || null,
         lastChecked: lastCheckedValue || null,
         verified: Boolean(sourceValue && lastCheckedValue),
@@ -4796,8 +4794,6 @@ export default function CityPage() {
                   setServiceName,
                   serviceDescription,
                   setServiceDescription,
-                  serviceVibeTags,
-                  setServiceVibeTags,
                   serviceVibe,
                   setServiceVibe,
                   serviceAddress,

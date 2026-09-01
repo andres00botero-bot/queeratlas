@@ -62,13 +62,16 @@ export default function SelectedPlaceAdminControls({
             placeholder="Description"
             className="min-h-[95px] w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
           />
-          <VibeTagPicker
-            value={draft.vibe_tags}
-            onChange={(nextTags) => setDraft((current) => ({ ...current, vibe_tags: nextTags }))}
-            tone="amber"
-            title="Venue vibe tags"
-            hint="Choose up to 3 tags."
-          />
+          {draft.type !== "store" && (
+            <VibeTagPicker
+              value={draft.vibe_tags}
+              onChange={(nextTags) => setDraft((current) => ({ ...current, vibe_tags: nextTags }))}
+              excludeTags={["service", "store"]}
+              tone="amber"
+              title="Venue vibe tags"
+              hint="Choose up to 3 tags."
+            />
+          )}
           <input
             value={draft.vibe}
             onChange={(event) => setDraft((current) => ({ ...current, vibe: event.target.value }))}

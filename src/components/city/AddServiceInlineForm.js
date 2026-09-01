@@ -1,6 +1,5 @@
 "use client";
 
-import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import { normalizeServicePriceTierOptions } from "@/features/city/serviceFormUtils";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 import { getServiceIntelLabels } from "@/lib/entityIntel";
@@ -12,8 +11,6 @@ export default function AddServiceInlineForm({
   setServiceName,
   serviceDescription,
   setServiceDescription,
-  serviceVibeTags,
-  setServiceVibeTags,
   serviceVibe,
   setServiceVibe,
   serviceAddress,
@@ -139,13 +136,6 @@ export default function AddServiceInlineForm({
         onChange={(event) => setServiceImageUrlsInput(event.target.value)}
         placeholder="Image URLs, comma separated (optional)"
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
-      />
-      <VibeTagPicker
-        value={serviceVibeTags}
-        onChange={setServiceVibeTags}
-        tone="cyan"
-        title="Service vibe tags"
-        hint="Choose up to 3 tags for standardized discovery."
       />
       <input
         value={serviceVibe}

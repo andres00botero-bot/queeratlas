@@ -434,7 +434,7 @@ export const loadCityDiscoveryData = cache(async (city = "", topic = "") => {
   const cityKey = normalizeCityKey(city);
   const todayIso = new Date().toISOString().slice(0, 10);
   const [placesResponse, eventsResponse, servicesResponse] = await Promise.all([
-    fetchPlacesForAtlas({ filters: { city: cityKey }, mergeSeed: true }),
+    fetchPlacesForAtlas({ filters: { city: cityKey } }),
     fetchEventsData(),
     fetchServicesQuery(),
   ]);

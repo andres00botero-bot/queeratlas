@@ -59,7 +59,7 @@ alter table if exists public.places
       'relax',
       'drag',
       'industrial',
-      'service'
+      'store'
     ]::text[]
   );
 

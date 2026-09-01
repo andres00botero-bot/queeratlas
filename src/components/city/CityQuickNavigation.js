@@ -91,6 +91,7 @@ export default function CityQuickNavigation({
     { key: "cruising_area", label: "Cruise areas", value: "cruising_area" },
     { key: "cafe_restaurant", label: "Cafes and restaurants", value: "cafe_restaurant" },
     { key: "hotel", label: "Hotels", value: "hotel" },
+    { key: "store", label: "Stores", value: "store" },
   ];
   const isVenueTypeActive = (value) => {
     const current = String(activeVenueFilter || "").trim();

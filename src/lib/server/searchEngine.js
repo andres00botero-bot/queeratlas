@@ -3,7 +3,6 @@ import "server-only";
 import { supabase } from "../supabase.js";
 import { fetchPlacesForAtlas } from "../placesDataApi.js";
 import { fetchServicesQuery } from "../servicesDataApi.js";
-import { mergeSeedPlaces } from "../seedPlacesContent.js";
 import { mergeSeedEvents } from "../seedEventsContent.js";
 import { buildAtlasSearchResults } from "../search.js";
 import { inferSearchIntent } from "../searchIntent.js";
@@ -59,7 +58,7 @@ function buildCorpusFromRpcRows(rows = [], cityScope = "") {
   });
 
   return {
-    places: filterCity(mergeSeedPlaces(places), cityScope),
+    places: filterCity(places, cityScope),
     events: filterCity(mergeSeedEvents(events), cityScope),
     services: filterCity(services, cityScope),
     guides: getSearchGuides(),
@@ -91,7 +90,6 @@ async function loadSearchCorpus({ cityScope = "", typeScope = "all" } = {}) {
   const placesPromise = needsPlaces
     ? fetchPlacesForAtlas({
         filters: databaseCity ? { city: databaseCity } : undefined,
-        mergeSeed: false,
       })
     : Promise.resolve(EMPTY_RESPONSE);
 
@@ -112,7 +110,7 @@ async function loadSearchCorpus({ cityScope = "", typeScope = "all" } = {}) {
 
   return {
     places: filterCity(
-      mergeSeedPlaces(Array.isArray(placesResponse?.data) ? placesResponse.data : []),
+      Array.isArray(placesResponse?.data) ? placesResponse.data : [],
       databaseCity
     ),
     events: filterCity(mergeSeedEvents(eventsResponse?.data || []), databaseCity),

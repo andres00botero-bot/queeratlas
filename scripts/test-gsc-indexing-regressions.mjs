@@ -26,8 +26,8 @@ for (const route of ["venues", "events", "services"]) {
 const venueDetail = source("src/app/[city]/venues/[slug]/page.js");
 assert.match(venueDetail, /filters: isDatabaseId \? \{ city, id: parsed\.id \} : \{ city \}/);
 assert.doesNotMatch(venueDetail, /redirect\(buildVenueFallbackPath/);
-assert.match(venueDetail, /const databaseDuplicate =/);
-assert.match(venueDetail, /normalizedExternalIdentity\(row\?\.link\) === matchedOfficialIdentity/);
+assert.match(venueDetail, /String\(row\?\.legacy_seed_id \|\| ""\) === parsed\.id/);
+assert.doesNotMatch(venueDetail, /mergeSeed/);
 
 const eventDetail = source("src/app/[city]/events/[slug]/page.js");
 assert.match(eventDetail, /\.from\("events"\)\.select\("\*"\)\.eq\("city", city\)/);

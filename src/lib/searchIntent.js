@@ -127,6 +127,11 @@ const PLACE_TYPE_INTENTS = Object.freeze([
     aliases: ["gallery", "galleries", "art gallery", "art galleries", "art space", "art spaces"],
   },
   {
+    label: "store",
+    types: ["store"],
+    aliases: ["store", "stores", "shop", "shops", "bookstore", "bookstores", "queer store", "queer stores"],
+  },
+  {
     label: "cruise",
     types: ["cruise_club", "cruising_area"],
     aliases: ["cruise", "cruising", "cruise club", "cruise clubs", "cruising area", "cruising areas"],

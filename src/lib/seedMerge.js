@@ -1,12 +1,4 @@
-let seedPlacesContentPromise = null;
 let seedEventsContentPromise = null;
-
-function importSeedPlacesWithReset() {
-  return import("./seedPlacesContent").catch((error) => {
-    seedPlacesContentPromise = null;
-    throw error;
-  });
-}
 
 function importSeedEventsWithReset() {
   return import("./seedEventsContent").catch((error) => {
@@ -25,30 +17,11 @@ function retryOnce(importer) {
   });
 }
 
-async function loadSeedPlacesContent() {
-  if (!seedPlacesContentPromise) {
-    seedPlacesContentPromise = retryOnce(importSeedPlacesWithReset);
-  }
-  return seedPlacesContentPromise;
-}
-
 async function loadSeedEventsContent() {
   if (!seedEventsContentPromise) {
     seedEventsContentPromise = retryOnce(importSeedEventsWithReset);
   }
   return seedEventsContentPromise;
-}
-
-export async function mergeSeedPlacesAsync(databasePlaces = []) {
-  try {
-    const { mergeSeedPlaces } = await loadSeedPlacesContent();
-    return mergeSeedPlaces(databasePlaces);
-  } catch (error) {
-    if (typeof console !== "undefined" && typeof console.warn === "function") {
-      console.warn("[seed-merge] Failed to load seed places content, using database places only.", error);
-    }
-    return databasePlaces;
-  }
 }
 
 export async function mergeSeedEventsAsync(databaseEvents = []) {

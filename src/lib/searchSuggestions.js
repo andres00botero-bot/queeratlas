@@ -41,6 +41,7 @@ const PLACE_TYPE_LABELS = Object.freeze({
   hotel: "hotels",
   restaurant: "restaurants",
   sauna: "saunas",
+  store: "stores",
 });
 
 function detectCityPrefixMatches(query = "", max = 4) {
