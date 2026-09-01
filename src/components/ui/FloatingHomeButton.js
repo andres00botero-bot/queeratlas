@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Home, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
+import { CalendarDays, Home, LocateFixed, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { supabase } from "@/lib/supabase";
@@ -162,8 +162,17 @@ export default function FloatingHomeButton() {
       label: "Search",
       icon: Search,
       accent: "violet",
-      mobile: true,
+      desktopOnly: true,
       isActive: (route) => route === "/search" || route.startsWith("/search/"),
+    },
+    {
+      href: "/nearby",
+      label: "Nearby",
+      icon: LocateFixed,
+      accent: "violet",
+      mobile: true,
+      desktop: false,
+      isActive: (route) => route === "/nearby" || route.startsWith("/nearby/"),
     },
     {
       href: "/events",
@@ -185,7 +194,7 @@ export default function FloatingHomeButton() {
           "about", "admin", "api", "cities", "community", "community-policy", "contact",
           "contribute", "contributors", "corrections", "editorial-policy", "events", "favorites",
           "gay-guide", "hbtq-guide", "join", "manifest.webmanifest", "messages", "moderation",
-          "now", "offline.html", "press", "privacy", "queer-guide", "reports", "robots.txt",
+          "nearby", "now", "offline.html", "press", "privacy", "queer-guide", "reports", "robots.txt",
           "search", "sitemap.xml", "sources", "sources-and-reviews", "terms", "topics", "updates",
           "verification",
         ]);
