@@ -131,6 +131,7 @@ import PageControls from "@/components/ui/PageControls";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import FavoritesCardSkeleton from "@/components/favorites/FavoritesCardSkeleton";
 import FavoritesMomentumPanel from "@/components/favorites/FavoritesMomentumPanel";
+import FavoritesProfileHome from "@/components/favorites/FavoritesProfileHome";
 import { useFavoritesStateController } from "@/features/favorites/useFavoritesStateController";
 
 const TripPlannerV2 = dynamic(() => import("@/components/planner/TripPlannerV2"), {
@@ -3195,7 +3196,7 @@ export default function FavoritesPage() {
         <div className="pointer-events-none absolute -left-10 top-20 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-12 top-28 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
 
-        <section className="qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.44)] sm:rounded-[34px] sm:p-6 sm:shadow-[0_42px_132px_rgba(0,0,0,0.56)]">
+        <section className={`qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.44)] sm:rounded-[34px] sm:p-6 sm:shadow-[0_42px_132px_rgba(0,0,0,0.56)] ${isProfileAboutTab ? (isReadOnlyPublicProfileView ? "hidden" : "border-0 !bg-transparent !p-0 !shadow-none [&>div:not(:last-child)]:hidden") : ""}`}>
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/favorites/queer-atlas-saved-places-neon-waves-hero.png"
@@ -3287,7 +3288,75 @@ export default function FavoritesPage() {
           ) : null}
         </section>
 
-        {isProfileAboutTab ? (
+        {isProfileAboutTab && !isEditingAbout ? (
+          <FavoritesProfileHome
+            isReadOnly={isReadOnlyPublicProfileView}
+            isLoading={viewedProfileLoading}
+            error={viewedProfileError}
+            displayName={effectiveDisplayName}
+            displayInitials={displayInitials}
+            avatarUrl={effectiveAvatarUrl}
+            showAvatarImage={shouldRenderAvatarImage}
+            avatarInputRef={avatarFileInputRef}
+            onAvatarSelected={onProfileAvatarSelected}
+            onEditAvatar={openAvatarEditor}
+            onAvatarError={() => setProfileAvatarLoadFailed(true)}
+            titleLabel={memberTitleMeta.label || "Contributor"}
+            visibilityLabel={profileVisibilityLabel}
+            locationLabel={profileLocationLabel}
+            pronouns={effectivePronouns}
+            about={profileAboutMe}
+            vibeChips={profileVibeChips}
+            stats={isReadOnlyPublicProfileView
+              ? [
+                  { label: "Contributions", value: atlasCredScore },
+                  { label: "Places", value: atlasPlacesAdded },
+                  { label: "Events", value: atlasEventsAdded },
+                  { label: "Friends", value: effectiveProfileFriends.length },
+                ]
+              : [
+                  { label: "Saved", value: totalPlaces + totalEvents, onClick: () => { setMyMapView("saved"); setActiveProfileTab("map"); } },
+                  { label: "Check-ins", value: checkins.length, onClick: () => { setMyMapView("checkins"); setActiveProfileTab("map"); } },
+                  { label: "Cities", value: totalCities, onClick: () => setActiveProfileTab("map") },
+                  { label: "Friends", value: effectiveProfileFriends.length },
+                ]}
+            recentSaves={recentSaves}
+            friends={effectiveProfileFriends}
+            friendsLoading={viewedProfileFriendsLoading}
+            memories={effectiveProfileMemories}
+            memoriesLoading={viewedProfileMemoriesLoading}
+            stories={effectiveProfileStories}
+            storiesLoading={profileStoriesLoading}
+            showStoryForm={showProfileStoryForm}
+            storyForm={profileStoryForm}
+            setStoryForm={setProfileStoryForm}
+            onToggleStoryForm={() => setShowProfileStoryForm((current) => !current)}
+            onPublishStory={publishProfileStory}
+            onUploadMoment={openMemoriesEditor}
+            memoryInputRef={memoryFileInputRef}
+            onMemoriesSelected={onProfileMemoriesSelected}
+            onRemoveMoment={removeProfileMemory}
+            onOpenFriend={openMemberProfileFromFriend}
+            onOpenRecentSave={(item) => router.push(citySelectionPath(item.city, item.type === "event" ? { eventId: item.id } : { placeId: item.id }))}
+            onEditProfile={() => {
+              setProfileForm({
+                displayName: memberProfile?.displayName || authMemberName || memberName,
+                pronouns: memberProfile?.pronouns || "",
+                homeCity: memberProfile?.homeCity || "",
+                residentCountry: memberProfile?.residentCountry || "",
+              });
+              setIsEditingAbout(true);
+              setIsEditingProfile(true);
+            }}
+            onCloseProfile={() => router.push("/community")}
+            onFollow={toggleProfileFollow}
+            isFollowed={isViewedProfileFollowed}
+            onMessage={openProfileMessage}
+            onReport={reportProfile}
+          />
+        ) : null}
+
+        {isProfileAboutTab && isEditingAbout ? (
         <section className="qa-premium-card relative mb-6 overflow-hidden rounded-[28px] border border-fuchsia-200/18 bg-[radial-gradient(circle_at_12%_16%,rgba(34,211,238,0.18),transparent_38%),radial-gradient(circle_at_84%_10%,rgba(244,114,182,0.18),transparent_36%),radial-gradient(circle_at_52%_88%,rgba(168,85,247,0.14),transparent_42%),linear-gradient(180deg,rgba(18,14,28,0.97),rgba(8,8,12,0.99))] p-4 shadow-[0_34px_108px_rgba(0,0,0,0.5)] sm:rounded-[30px] sm:p-5">
           <div className="pointer-events-none absolute -left-20 top-0 h-56 w-56 rounded-full bg-cyan-400/7 blur-3xl sm:bg-cyan-400/10" />
           <div className="pointer-events-none absolute -right-24 top-8 h-64 w-64 rounded-full bg-fuchsia-400/7 blur-3xl sm:bg-fuchsia-400/10" />
@@ -3295,10 +3364,10 @@ export default function FavoritesPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="mt-1 bg-gradient-to-r from-cyan-100 via-fuchsia-100 to-amber-100 bg-clip-text text-xl font-semibold tracking-[-0.02em] text-transparent sm:text-3xl sm:drop-shadow-[0_10px_26px_rgba(217,70,239,0.24)]">
-                Member Signal
+                {isEditingAbout ? "Edit profile" : "Member Signal"}
               </h2>
               <p className="mt-1 text-xs text-white/56 sm:text-sm">
-                A warmer profile card for identity, vibe, trust, and community presence.
+                {isEditingAbout ? "Update the details that make your Atlas feel personal." : "A warmer profile card for identity, vibe, trust, and community presence."}
               </p>
             </div>
             {isViewingAnotherMember ? (
@@ -3743,7 +3812,7 @@ export default function FavoritesPage() {
               </div>
             </div>
           ) : (
-            <form onSubmit={saveAboutProfile} className="mt-4 space-y-3">
+            <form onSubmit={saveAboutProfile} className="qa-profile-edit mt-4 space-y-5">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
                   <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Display name</p>

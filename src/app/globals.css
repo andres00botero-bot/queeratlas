@@ -649,6 +649,12 @@ body > div:first-child {
   }
 }
 
+.qa-profile-edit > div:first-child > div {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
 .qa-home-join-cta::before {
   position: absolute;
   inset: -45% auto -45% -24%;
