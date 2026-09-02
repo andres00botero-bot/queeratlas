@@ -71,7 +71,7 @@ export default function CityDiscoveryResults({ city, cityName, discovery, narrat
               )}
 
               {entry.description && (
-                <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/70">{entry.description}</p>
+                <p className="qa-copy-justify mt-3 line-clamp-3 text-sm leading-6 text-white/70">{entry.description}</p>
               )}
 
               <div className="mt-4 flex flex-wrap items-center gap-2">

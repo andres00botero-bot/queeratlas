@@ -331,7 +331,7 @@ export default async function CityEventDetailPage({ params }) {
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
           <h2 className="text-lg font-semibold">About this event</h2>
-          <p className="mt-3 text-sm leading-7 text-white/82">
+          <p className="qa-copy-justify mt-3 text-sm leading-7 text-white/82">
             {String(event?.description || "").trim() ||
               `${event.name} is part of ${cityName}'s live queer event network.`}
           </p>

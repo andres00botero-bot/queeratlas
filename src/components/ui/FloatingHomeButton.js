@@ -253,6 +253,7 @@ export default function FloatingHomeButton() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = typeof item.isActive === "function" ? item.isActive(pathname) : pathname === item.href;
+          const isNearby = item.href === "/nearby";
           const inactiveToneClass =
             item.accent === "fuchsia"
               ? "border-fuchsia-300/28 bg-fuchsia-300/[0.1] hover:border-fuchsia-200/55 hover:bg-fuchsia-300/[0.18]"
@@ -278,7 +279,7 @@ export default function FloatingHomeButton() {
                 isActive
                   ? "border-white/55 bg-[linear-gradient(135deg,rgba(255,255,255,0.26),rgba(255,255,255,0.1),rgba(10,10,10,0.86))] text-white shadow-[0_12px_34px_rgba(0,0,0,0.44)]"
                   : `${inactiveToneClass} text-white/90 hover:-translate-y-[1px]`
-              }`}
+              } ${isNearby ? "qa-nearby-premium" : ""}`}
             >
               <Icon
                 className={`h-[18px] w-[18px] ${

@@ -98,7 +98,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
               className={`rounded-2xl border px-3.5 py-3 ${isKnown ? "border-white/14 bg-white/[0.065]" : "border-white/10 bg-black/20"}`}
             >
               <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/48">{field.label}</p>
-              <p className={`mt-1.5 text-sm leading-5 ${isKnown ? "text-white/90" : "text-white/48"}`}>{value}</p>
+              <p className={`qa-copy-justify mt-1.5 text-sm leading-5 ${isKnown ? "text-white/90" : "text-white/48"}`}>{value}</p>
               {field.detail ? <p className="mt-1 text-[11px] text-white/46">{field.detail}</p> : null}
               {field.evidence?.status && !hidesUnsupportedText ? (
                 <div className="mt-2 hidden flex-wrap items-center gap-2 text-[10px] text-cyan-50/58 sm:flex">

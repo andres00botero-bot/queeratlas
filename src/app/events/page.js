@@ -1557,7 +1557,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                               <p className="text-[11px] uppercase tracking-[0.18em] text-white/36">
                                 About event
                               </p>
-                              <p className="mt-3 text-sm leading-7 text-white/68">
+                              <p className="qa-copy-justify mt-3 text-sm leading-7 text-white/68">
                                 {event.description || "No description yet."}
                               </p>
                               <VibeTagChips entity={event} tone="amber" className="mt-3" includeMixedFallback />
@@ -1792,7 +1792,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     </p>
                     <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
                     {event.description && (
-                      <p className="mt-3 text-sm leading-7 text-white/66">{event.description}</p>
+                      <p className="qa-copy-justify mt-3 text-sm leading-7 text-white/66">{event.description}</p>
                     )}
                     <div className="mt-3 flex flex-wrap gap-2">
                       {event.link && (

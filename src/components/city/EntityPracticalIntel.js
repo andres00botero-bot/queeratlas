@@ -50,7 +50,7 @@ export default function EntityPracticalIntel({ entity, kind = "event", compact =
           return (
             <div key={key} className={`rounded-2xl border px-3.5 py-3 ${value ? "border-white/14 bg-white/[0.065]" : "border-white/10 bg-black/20"}`}>
               <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/48">{label}</p>
-              <p className={`mt-1.5 text-sm leading-5 ${value ? "text-white/90" : "text-white/48"}`}>{value || emptyValues[key]}</p>
+              <p className={`qa-copy-justify mt-1.5 text-sm leading-5 ${value ? "text-white/90" : "text-white/48"}`}>{value || emptyValues[key]}</p>
             </div>
           );
         })}

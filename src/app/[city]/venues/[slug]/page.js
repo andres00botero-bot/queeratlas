@@ -350,7 +350,7 @@ export default async function CityVenueDetailPage({ params }) {
 
         <section className="rounded-[20px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[24px] sm:p-6">
           <h2 className="text-lg font-semibold">About this venue</h2>
-          <p className="qa-clamp-3 mt-2 text-sm leading-6 text-white/82 sm:mt-3 sm:line-clamp-none sm:leading-7">
+          <p className="qa-copy-justify qa-clamp-3 mt-2 text-sm leading-6 text-white/82 sm:mt-3 sm:line-clamp-none sm:leading-7">
             {String(place?.description || "").trim() || `${place.name} is part of ${cityName}'s live queer nightlife network.`}
           </p>
         </section>

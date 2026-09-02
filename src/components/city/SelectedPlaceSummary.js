@@ -53,7 +53,7 @@ export default function SelectedPlaceSummary({
       </div>
       {polishVenueDescription(selectedPlace, cityName, typeLabels) && (
         <div className="mb-4 rounded-[20px] border border-white/14 bg-white/[0.065] p-4">
-          <p className="text-[15px] leading-7 text-white/78">{polishVenueDescription(selectedPlace, cityName, typeLabels)}</p>
+          <p className="qa-copy-justify text-[15px] leading-7 text-white/78">{polishVenueDescription(selectedPlace, cityName, typeLabels)}</p>
         </div>
       )}
       <div className="mb-4 rounded-[20px] border border-amber-100/22 bg-amber-300/[0.08] p-4">
