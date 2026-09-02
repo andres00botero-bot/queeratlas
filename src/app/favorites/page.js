@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { BookmarkCheck, MapPinned, RadioTower } from "lucide-react";
+import { BookmarkCheck } from "lucide-react";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -422,6 +422,7 @@ export default function FavoritesPage() {
   const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
   const [activeProfileTab, setActiveProfileTab] = useState("about");
   const [myMapView, setMyMapView] = useState("checkins");
+  const [isCheckinComposerOpen, setIsCheckinComposerOpen] = useState(false);
   const [checkinMapReadyTick, setCheckinMapReadyTick] = useState(0);
   const [calendarReminderByEventId, setCalendarReminderByEventId] = useState(() =>
     readLocalJson(FAVORITES_CALENDAR_REMINDER_STORAGE_KEY, {})
@@ -1955,7 +1956,7 @@ export default function FavoritesPage() {
         point.markerKind === "saved"
           ? "#34d399"
           : point.markerKind === "friend"
-            ? "#22d3ee"
+            ? "#fbbf24"
             : "#f472b6";
       markerEl.style.boxShadow =
         point.markerKind === "saved"
@@ -2757,6 +2758,7 @@ export default function FavoritesPage() {
       setCheckinVibeCooldownUntil(Date.now() + CHECKIN_VIBE_COOLDOWN_MS);
       showToast("Live vibe shared.", { tone: "ok", duration: 1600 });
       setPendingCheckinVibe(null);
+      setIsCheckinComposerOpen(false);
     } finally {
       setIsSubmittingCheckinVibe(false);
     }
@@ -2874,6 +2876,7 @@ export default function FavoritesPage() {
       if (isEditing) {
         setEditingCheckinId("");
         setPendingCheckinVibe(null);
+        setIsCheckinComposerOpen(false);
       } else if (user?.id) {
         try {
           const placeDbId = await resolveCheckinPlaceDbId(savedRow);
@@ -2885,10 +2888,14 @@ export default function FavoritesPage() {
             });
           } else {
             setPendingCheckinVibe(null);
+            setIsCheckinComposerOpen(false);
           }
         } catch {
           setPendingCheckinVibe(null);
+          setIsCheckinComposerOpen(false);
         }
+      } else {
+        setIsCheckinComposerOpen(false);
       }
     } finally {
       setIsSavingCheckin(false);
@@ -2899,6 +2906,7 @@ export default function FavoritesPage() {
     if (!entry?.id) return;
     setEditingCheckinId(String(entry.id));
     setSelectedCheckinId(String(entry.id));
+    setIsCheckinComposerOpen(true);
     setCheckinForm((current) => ({
       ...current,
       ...buildEditCheckinFormPatch({
@@ -2913,6 +2921,7 @@ export default function FavoritesPage() {
 
   const cancelEditCheckin = () => {
     setEditingCheckinId("");
+    setIsCheckinComposerOpen(false);
   };
 
   const deleteCheckin = async (entry) => {
@@ -3196,7 +3205,7 @@ export default function FavoritesPage() {
         <div className="pointer-events-none absolute -left-10 top-20 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-12 top-28 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
 
-        <section className={`qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.44)] sm:rounded-[34px] sm:p-6 sm:shadow-[0_42px_132px_rgba(0,0,0,0.56)] ${isProfileAboutTab ? (isReadOnlyPublicProfileView ? "hidden" : "border-0 !bg-transparent !p-0 !shadow-none [&>div:not(:last-child)]:hidden") : ""}`}>
+        <section className={`qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.44)] sm:rounded-[34px] sm:p-6 sm:shadow-[0_42px_132px_rgba(0,0,0,0.56)] ${(isProfileAboutTab || isProfileMapTab) ? (isReadOnlyPublicProfileView ? "hidden" : "border-0 !bg-transparent !p-0 !shadow-none [&>div:not(:last-child)]:hidden") : ""}`}>
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/favorites/queer-atlas-saved-places-neon-waves-hero.png"
@@ -4157,49 +4166,28 @@ export default function FavoritesPage() {
           ref={tonightSectionRef}
           className="qa-atlas-section mb-6"
         >
-          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-200/18 bg-fuchsia-200/[0.07] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-fuchsia-100/78">
-                <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-200 shadow-[0_0_16px_rgba(244,114,182,0.85)]" />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100/72">My queer atlas</p>
+              <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
                 My map
-              </div>
-              <h2 className="qa-h2 mt-3 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-2xl font-semibold tracking-[-0.02em] text-transparent sm:text-3xl">
-                Atlas signal map
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/62">
-                Your saved places, check-ins, and route signals in one premium map surface.
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-violet-50/68">
+                Places you love and moments you’ve lived.
               </p>
             </div>
-            <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto lg:min-w-[27rem]">
-              <div className="rounded-2xl border border-fuchsia-200/16 bg-fuchsia-200/[0.07] px-3 py-3 shadow-[0_14px_34px_rgba(0,0,0,0.2)]">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-fuchsia-100/62">Check-ins</p>
-                  <RadioTower size={15} className="text-fuchsia-100/58" strokeWidth={1.8} />
-                </div>
-                <p className="mt-1 text-xl font-semibold text-white">{checkins.length}</p>
-              </div>
-              <div className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.07] px-3 py-3 shadow-[0_14px_34px_rgba(0,0,0,0.2)]">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-cyan-100/62">Saved places</p>
-                  <BookmarkCheck size={15} className="text-cyan-100/58" strokeWidth={1.8} />
-                </div>
-                <p className="mt-1 text-xl font-semibold text-white">{savedPlaces.length}</p>
-              </div>
-              <div className="rounded-2xl border border-white/12 bg-white/[0.055] px-3 py-3 shadow-[0_14px_34px_rgba(0,0,0,0.2)]">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/48">Cities</p>
-                  <MapPinned size={15} className="text-white/48" strokeWidth={1.8} />
-                </div>
-                <p className="mt-1 text-xl font-semibold text-white">
-                  {myMapView === "checkins" ? checkinCities.length : savedPlaceCities}
-                </p>
-              </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-violet-50/58 sm:justify-end">
+              <span><strong className="font-semibold text-white">{savedPlaces.length}</strong> saved</span>
+              <span aria-hidden="true">·</span>
+              <span><strong className="font-semibold text-white">{checkins.length}</strong> check-ins</span>
+              <span aria-hidden="true">·</span>
+              <span><strong className="font-semibold text-white">{myMapView === "checkins" ? checkinCities.length : savedPlaceCities}</strong> cities</span>
             </div>
           </div>
-          <div className="mb-5 grid gap-2 rounded-[24px] border border-white/10 bg-black/22 p-2 sm:grid-cols-2">
+          <div className="mb-4 inline-flex rounded-full border border-white/16 bg-white/10 p-1 shadow-[0_14px_38px_rgba(72,36,94,0.22)] backdrop-blur-xl">
             {[
-              { id: "checkins", label: "Check-ins", detail: "Live visits and vibe taps" },
-              { id: "saved", label: "Saved places", detail: "Venues you want nearby" },
+              { id: "saved", label: "Saved" },
+              { id: "checkins", label: "Check-ins" },
             ].map((view) => {
               const isActive = myMapView === view.id;
               return (
@@ -4208,49 +4196,51 @@ export default function FavoritesPage() {
                   type="button"
                   onClick={() => setMyMapView(view.id)}
                   aria-pressed={isActive}
-                  className={`rounded-[18px] border px-4 py-3 text-left transition-colors ${
+                  className={`rounded-full px-5 py-2 text-xs font-semibold transition-colors ${
                     isActive
                       ? view.id === "checkins"
-                        ? "border-fuchsia-300/62 bg-fuchsia-500/24 text-fuchsia-50 shadow-[0_18px_48px_rgba(244,114,182,0.12)]"
-                        : "border-cyan-300/62 bg-cyan-500/24 text-cyan-50 shadow-[0_18px_48px_rgba(34,211,238,0.12)]"
-                      : "border-white/10 bg-white/[0.045] text-white/74 hover:border-white/22 hover:bg-white/[0.075] hover:text-white"
+                        ? "bg-gradient-to-r from-rose-200 to-fuchsia-200 text-[#32152e] shadow-[0_8px_24px_rgba(244,114,182,0.28)]"
+                        : "bg-gradient-to-r from-emerald-100 via-teal-100 to-amber-100 text-[#17322c] shadow-[0_8px_24px_rgba(167,243,208,0.24)]"
+                      : "text-violet-50/62 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  <span className="block text-xs font-semibold uppercase tracking-[0.14em]">{view.label}</span>
-                  <span className="mt-1 block text-[11px] text-white/48">{view.detail}</span>
+                  {view.label}
                 </button>
               );
             })}
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div>
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.38fr)_minmax(19rem,0.62fr)]">
             <div
               ref={checkinMapCardRef}
-              className={`qa-premium-card rounded-[30px] border bg-[radial-gradient(circle_at_12%_0%,rgba(244,114,182,0.12),transparent_34%),radial-gradient(circle_at_92%_8%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.075),rgba(255,255,255,0.022))] p-3 shadow-[0_24px_76px_rgba(0,0,0,0.36)] transition sm:p-4 ${
+              className={`relative rounded-[28px] border bg-[radial-gradient(circle_at_10%_0%,rgba(139,92,246,0.15),transparent_32%),linear-gradient(155deg,#26213f,#171c2e)] p-2 shadow-[0_24px_66px_rgba(10,8,25,0.36)] transition sm:p-3 ${
                 selectedCheckin
-                  ? "border-fuchsia-200/34 shadow-[0_0_0_1px_rgba(244,114,182,0.18),0_28px_88px_rgba(244,114,182,0.14)]"
-                  : "border-white/10 hover:shadow-[0_28px_78px_rgba(6,182,212,0.16),0_10px_26px_rgba(0,0,0,0.34)]"
+                  ? myMapView === "saved"
+                    ? "border-emerald-200/42"
+                    : "border-rose-200/42"
+                  : "border-white/14"
               }`}
             >
               {selectedCheckin ? (
-                <div className="mb-3 inline-flex max-w-full items-center gap-2 rounded-full border border-fuchsia-200/35 bg-fuchsia-200/12 px-3 py-1.5 text-[11px] text-fuchsia-100/95 shadow-[0_14px_34px_rgba(244,114,182,0.12)]">
+                <div className="mb-2 inline-flex max-w-[calc(100%-7rem)] items-center gap-2 rounded-full bg-white/14 px-3 py-1.5 text-[11px] text-white/88 backdrop-blur-xl">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200 shadow-[0_0_14px_rgba(244,114,182,0.85)]" />
                   <span className="truncate">
                     Selected: {selectedCheckin.label || "Check-in"} | {selectedCheckin.city || "City"}
                   </span>
                 </div>
               ) : null}
-              <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-black/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <div className="qa-profile-map-canvas relative overflow-hidden rounded-[22px] border border-white/12 bg-[#342c3c] shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]">
                 {mapboxToken && !checkinMapLoadFailed ? (
                   <div
                     ref={checkinMapContainerRef}
-                    className="h-[300px] w-full overflow-hidden bg-black/25 sm:h-[360px] xl:h-[400px]"
+                    className="h-[360px] w-full overflow-hidden bg-[#342c3c] sm:h-[430px] xl:h-[570px]"
                   />
                 ) : checkinMapEmbedUrl ? (
                   <iframe
                     title="Your check-in map"
                     src={checkinMapEmbedUrl}
-                    className="h-[300px] w-full bg-black/25 sm:h-[360px] xl:h-[400px]"
+                    className="h-[360px] w-full bg-[#342c3c] brightness-110 saturate-[0.72] sm:h-[430px] xl:h-[570px]"
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                   />
@@ -4260,7 +4250,7 @@ export default function FavoritesPage() {
                     src={staticMapUrl}
                     alt="Your check-in map"
                     onError={() => setCheckinMapLoadFailed(true)}
-                    className="h-[300px] w-full bg-black/25 object-contain sm:h-[360px] xl:h-[400px]"
+                    className="h-[360px] w-full bg-[#342c3c] object-contain brightness-110 saturate-[0.72] sm:h-[430px] xl:h-[570px]"
                   />
                 ) : openStreetMapStaticUrl && !checkinStaticFallbackFailed ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -4268,31 +4258,32 @@ export default function FavoritesPage() {
                     src={openStreetMapStaticUrl}
                     alt="Your check-in map fallback"
                     onError={() => setCheckinStaticFallbackFailed(true)}
-                    className="h-[300px] w-full bg-black/25 object-contain sm:h-[360px] xl:h-[400px]"
+                    className="h-[360px] w-full bg-[#342c3c] object-contain brightness-110 saturate-[0.72] sm:h-[430px] xl:h-[570px]"
                   />
                 ) : (
-                  <div className="flex h-[300px] items-center justify-center border border-dashed border-white/12 bg-black/20 px-4 text-center text-sm text-white/45 sm:h-[360px] xl:h-[400px]">
-                    Check-ins auto-pin from city + venue. Add more check-ins to render the map.
+                  <div className="flex h-[360px] items-center justify-center bg-[radial-gradient(circle_at_24%_18%,rgba(244,114,182,0.16),transparent_34%),radial-gradient(circle_at_82%_76%,rgba(52,211,153,0.09),transparent_36%),linear-gradient(145deg,#3a293f,#252b36)] px-7 text-center text-sm text-white/68 sm:h-[430px] xl:h-[570px]">
+                    <span><strong className="block text-lg font-semibold text-white">Your queer world starts here ✦</strong><span className="mt-2 block">Save a venue or check in somewhere you loved. Your map will grow with you.</span></span>
                   </div>
                 )}
-                <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-200/22 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/86 backdrop-blur">
-                    <span className="h-2 w-2 rounded-full bg-fuchsia-300 shadow-[0_0_14px_rgba(244,114,182,0.8)]" />
-                    Check-ins
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/22 bg-black/58 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-emerald-100/86 backdrop-blur">
-                    <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(52,211,153,0.8)]" />
-                    Saved
-                  </span>
-                  {selectedCheckin ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/18 bg-white/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-white/78 backdrop-blur">
-                      Selected
-                    </span>
-                  ) : null}
-                </div>
+                {myMapView === "checkins" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isCheckinComposerOpen) {
+                        cancelEditCheckin();
+                        return;
+                      }
+                      setIsCheckinComposerOpen(true);
+                      window.setTimeout(() => checkinFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+                    }}
+                    className="absolute bottom-4 right-4 z-20 rounded-full border border-white/50 bg-[linear-gradient(135deg,#ffd4df,#f3d8ff)] px-4 py-2.5 text-xs font-semibold text-[#38152f] shadow-[0_14px_38px_rgba(28,12,31,0.42)] transition hover:-translate-y-0.5 hover:brightness-105 sm:bottom-5 sm:right-5"
+                  >
+                    {isCheckinComposerOpen ? "Close" : "+ Check in"}
+                  </button>
+                ) : null}
               </div>
 
-              {myMapView === "checkins" ? (
+              {myMapView === "checkins" && isCheckinComposerOpen ? (
               <>
                 <form
                   ref={checkinFormRef}
@@ -4347,7 +4338,7 @@ export default function FavoritesPage() {
 
                   await submitCheckin(payload);
                   }}
-                  className="mt-4 grid gap-3 rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(244,114,182,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.018))] p-3.5 shadow-[0_20px_58px_rgba(0,0,0,0.30)] sm:grid-cols-2 sm:p-4"
+                  className="mt-3 grid gap-3 rounded-[22px] border border-orange-100/22 bg-[radial-gradient(circle_at_0%_0%,rgba(251,146,60,0.16),transparent_34%),linear-gradient(145deg,#4a2338,#4a3029)] p-4 shadow-[0_18px_48px_rgba(30,12,25,0.28)] sm:grid-cols-2"
                 >
                 <div className="sm:col-span-2">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -4515,7 +4506,7 @@ export default function FavoritesPage() {
                 <button
                   type="submit"
                   disabled={isSavingCheckin}
-                  className="qa-action qa-action-strong rounded-2xl border border-fuchsia-100/55 bg-gradient-to-r from-fuchsia-300 via-pink-300 to-cyan-200 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
+                  className="qa-action qa-action-strong rounded-2xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-rose-200 to-emerald-200 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#34221f] shadow-[0_12px_32px_rgba(251,191,36,0.18)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
                 >
                   {isSavingCheckin ? "Saving check-in..." : editingCheckinId ? "Save check-in changes" : "Check in now"}
                 </button>
@@ -4558,7 +4549,10 @@ export default function FavoritesPage() {
                   <div className="mt-2 flex justify-end">
                     <button
                       type="button"
-                      onClick={() => setPendingCheckinVibe(null)}
+                      onClick={() => {
+                        setPendingCheckinVibe(null);
+                        setIsCheckinComposerOpen(false);
+                      }}
                       className="rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-white/75 transition hover:border-white/28"
                     >
                       Skip for now
@@ -4572,31 +4566,30 @@ export default function FavoritesPage() {
                 </div>
                 )}
               </>
-              ) : (
-                <div className="mt-4 rounded-2xl border border-cyan-200/24 bg-cyan-200/10 px-4 py-3 text-xs text-cyan-100/88">
-                  Saved places mode is active. Switch to <span className="font-semibold">My check-ins</span> to create new check-ins and live vibe taps.
-                </div>
-              )}
+              ) : null}
             </div>
 
-            <div className={`qa-premium-card relative flex min-h-0 flex-col overflow-hidden rounded-[32px] border border-white/12 bg-[radial-gradient(circle_at_10%_0%,rgba(244,114,182,0.10),transparent_32%),radial-gradient(circle_at_92%_0%,rgba(34,211,238,0.12),transparent_36%),linear-gradient(180deg,rgba(18,18,26,0.94),rgba(7,8,12,0.98))] p-4 shadow-[0_34px_110px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] ${myMapView === "checkins" ? "xl:h-[56rem]" : "xl:h-[34rem]"}`}>
-              <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/35 to-transparent" />
-              <div className="mb-3 rounded-[24px] border border-white/10 bg-white/[0.035] p-3 shadow-[0_16px_42px_rgba(0,0,0,0.20)]">
+            <div className={`relative z-10 mx-2 -mt-8 flex min-h-0 flex-col overflow-hidden rounded-[26px] border p-4 shadow-[0_22px_58px_rgba(8,8,18,0.36)] backdrop-blur-xl transition-colors duration-300 xl:mx-0 xl:mt-0 xl:h-[39rem] ${
+              myMapView === "checkins"
+                ? "border-emerald-100/20 bg-[radial-gradient(circle_at_100%_0%,rgba(110,231,183,0.13),transparent_34%),linear-gradient(155deg,#173a35,#142925)]"
+                : "border-emerald-100/20 bg-[radial-gradient(circle_at_100%_0%,rgba(167,243,208,0.11),transparent_34%),linear-gradient(155deg,#173a35,#142925)]"
+            }`}>
+              <div className="mb-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/42">
-                    {myMapView === "checkins" ? "Your check-ins" : "My saved places"}
+                  <p className="text-base font-semibold text-white">
+                    {myMapView === "checkins" ? "Check-ins" : "Saved places"}
                   </p>
-                  <p className="mt-1 text-sm text-white/62">
+                  <p className="mt-1 text-xs text-white/58">
                     {myMapView === "checkins"
                       ? "Tap a card to focus the map."
-                      : "Turn saved venues into check-ins or routes."}
+                      : "Tap a place to find it on your map."}
                   </p>
                 </div>
                 <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${
                   myMapView === "checkins"
-                    ? "border-fuchsia-200/22 bg-fuchsia-200/[0.09] text-fuchsia-100/78"
-                    : "border-cyan-200/22 bg-cyan-200/[0.09] text-cyan-100/78"
+                    ? "border-rose-100/28 bg-rose-100/12 text-rose-50/90"
+                    : "border-emerald-100/30 bg-emerald-100/12 text-emerald-50/90"
                 }`}>
                   {myMapView === "checkins" ? filteredRecentCheckins.length : savedPlaces.length}
                 </span>
@@ -4604,11 +4597,7 @@ export default function FavoritesPage() {
               </div>
               {myMapView === "checkins" ? (
               <div className="flex min-h-0 flex-1 flex-col">
-                <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                  <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/12 px-2 py-0.5 text-fuchsia-100/90">You</span>
-                  <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved check-ins</span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-black/18 p-2">
+                {checkins.length > 4 ? <div className="mt-2 flex flex-wrap gap-1.5">
                   {[
                     { id: "all", label: "All" },
                     { id: "places", label: "Places" },
@@ -4619,30 +4608,30 @@ export default function FavoritesPage() {
                       key={filter.id}
                       type="button"
                       onClick={() => setCheckinViewFilter(filter.id)}
-                      className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] transition ${
+                      className={`rounded-full px-3 py-1.5 text-[11px] transition ${
                         checkinViewFilter === filter.id
-                          ? "border-fuchsia-200/50 bg-fuchsia-200/18 text-fuchsia-100 shadow-[0_12px_30px_rgba(244,114,182,0.12)]"
-                          : "border-white/14 bg-white/6 text-white/62 hover:border-white/24 hover:text-white/82"
+                          ? "bg-rose-100/24 text-rose-50"
+                          : "text-violet-50/54 hover:bg-white/10 hover:text-white"
                       }`}
                     >
                       {filter.label}
                     </button>
                   ))}
-                </div>
+                </div> : null}
                 <div
-                  className={`${FAVORITES_CHECKIN_LIST_SCROLL_CLASS} rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_18%_0%,rgba(244,114,182,0.08),transparent_32%),linear-gradient(180deg,rgba(0,0,0,0.24),rgba(0,0,0,0.13))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] xl:h-auto xl:min-h-0 xl:flex-1`}
+                  className={`${FAVORITES_CHECKIN_LIST_SCROLL_CLASS} mt-3 xl:h-auto xl:min-h-0 xl:flex-1`}
                   style={{ scrollbarGutter: "stable" }}
                 >
                 {filteredRecentCheckins.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="divide-y divide-white/10">
                       {filteredRecentCheckins.map((entry) => (
                         <article
                           key={entry.id}
                           onClick={() => focusCheckinOnMap(entry)}
-                          className={`qa-premium-card cursor-pointer rounded-[22px] border bg-[radial-gradient(circle_at_12%_0%,rgba(244,114,182,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-3.5 shadow-[0_16px_38px_rgba(0,0,0,0.22)] transition ${
+                          className={`cursor-pointer px-1 py-4 transition ${
                             String(selectedCheckinId) === String(entry.id)
-                              ? "border-fuchsia-200/48 shadow-[0_0_0_1px_rgba(244,114,182,0.25),0_18px_44px_rgba(244,114,182,0.12)]"
-                              : "border-white/10 hover:border-fuchsia-200/22 hover:bg-white/[0.06] hover:shadow-[0_20px_52px_rgba(244,114,182,0.10),0_12px_28px_rgba(0,0,0,0.28)]"
+                              ? "text-rose-50"
+                              : "hover:bg-white/[0.045]"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -4668,7 +4657,7 @@ export default function FavoritesPage() {
                                 event.stopPropagation();
                                 startEditCheckin(entry);
                               }}
-                              className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/35"
+                              className="rounded-full border border-amber-100/26 bg-amber-100/10 px-3 py-1 text-[11px] text-amber-50/90 transition hover:border-amber-100/42"
                             >
                               Edit
                             </button>
@@ -4691,7 +4680,7 @@ export default function FavoritesPage() {
                     <div className="mb-2 text-base">No check-ins in this filter yet.</div>
                     <button
                       type="button"
-                      onClick={() => checkinFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                      onClick={() => setIsCheckinComposerOpen(true)}
                       className="rounded-full border border-fuchsia-200/30 bg-fuchsia-200/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.11em] text-fuchsia-100 transition hover:border-fuchsia-200/45"
                     >
                       Create check-in
@@ -4702,20 +4691,17 @@ export default function FavoritesPage() {
               </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
-                  <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                    <span className="rounded-full border border-cyan-200/24 bg-cyan-200/12 px-2 py-0.5 text-cyan-100/90">Saved</span>
-                    <span className="rounded-full border border-white/14 bg-white/8 px-2 py-0.5 text-white/75">Map shows your saved venues</span>
-                  </div>
                   <div
-                    className={`${FAVORITES_CHECKIN_LIST_SCROLL_CLASS} rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.08),transparent_32%),linear-gradient(180deg,rgba(0,0,0,0.24),rgba(0,0,0,0.13))] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] xl:h-auto xl:min-h-0 xl:flex-1`}
+                    className={`${FAVORITES_CHECKIN_LIST_SCROLL_CLASS} mt-3 xl:h-auto xl:min-h-0 xl:flex-1`}
                     style={{ scrollbarGutter: "stable" }}
                   >
                     {savedPlaces.length > 0 ? (
-                      <div className="space-y-3">
+                      <div className="divide-y divide-white/10">
                       {savedPlaces.map((place) => (
                         <article
                           key={`saved-map-${place.id}`}
-                          className="qa-premium-card rounded-[22px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] p-3.5 shadow-[0_16px_38px_rgba(0,0,0,0.22)] transition hover:border-cyan-200/24 hover:bg-white/[0.06] hover:shadow-[0_20px_52px_rgba(34,211,238,0.10),0_12px_28px_rgba(0,0,0,0.28)]"
+                          onClick={() => focusSavedPlaceOnMap(place)}
+                          className="cursor-pointer px-1 py-4 transition hover:bg-white/[0.045]"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -4724,7 +4710,7 @@ export default function FavoritesPage() {
                               </p>
                               <p className="mt-1 truncate text-sm font-semibold text-white">{place.name || "Unnamed place"}</p>
                             </div>
-                            <BookmarkCheck className="shrink-0 text-cyan-100/62" size={17} strokeWidth={1.8} />
+                            <BookmarkCheck className="shrink-0 text-emerald-100/78" size={17} strokeWidth={1.8} />
                           </div>
                           {place.location || place.address ? (
                             <p className="mt-1 text-xs text-white/62">{place.location || place.address}</p>
@@ -4733,13 +4719,6 @@ export default function FavoritesPage() {
                             Saved {formatSavedTime(place.addedAt)}
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2 border-t border-white/8 pt-3">
-                            <button
-                              type="button"
-                              onClick={() => focusSavedPlaceOnMap(place)}
-                              className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-[11px] text-fuchsia-100/90 transition hover:border-fuchsia-200/35"
-                            >
-                              Show on map
-                            </button>
                             <button
                               type="button"
                               onClick={() => router.push(citySelectionPath(place.city, { placeId: place.id }))}
@@ -4753,7 +4732,7 @@ export default function FavoritesPage() {
                                 event.stopPropagation();
                                 quickCheckinFromItem(place, "place");
                               }}
-                              className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/35"
+                              className="rounded-full border border-emerald-100/30 bg-emerald-100/12 px-3 py-1 text-[11px] text-emerald-50/92 transition hover:border-emerald-100/48"
                             >
                               Check in
                             </button>
@@ -4770,6 +4749,7 @@ export default function FavoritesPage() {
                 </div>
               )}
             </div>
+          </div>
           </div>
         </section>
         )

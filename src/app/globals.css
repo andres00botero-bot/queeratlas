@@ -655,6 +655,10 @@ body > div:first-child {
   padding: 0;
 }
 
+.qa-profile-map-canvas .mapboxgl-canvas {
+  filter: brightness(1.28) contrast(0.92) saturate(0.72) sepia(0.04);
+}
+
 .qa-home-join-cta::before {
   position: absolute;
   inset: -45% auto -45% -24%;
