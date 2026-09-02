@@ -20,6 +20,7 @@ export default function CityQuickNavigation({
   variant = "default",
 }) {
   const [showVenuePicker, setShowVenuePicker] = useState(false);
+  const isPhoneVariant = variant === "phone";
 
   const venueGroups = useMemo(
     () =>
@@ -82,6 +83,7 @@ export default function CityQuickNavigation({
         "border-pink-100/34 bg-[linear-gradient(135deg,rgba(251,113,133,0.20),rgba(34,211,238,0.12),rgba(255,255,255,0.08))] text-white hover:border-pink-100/54 hover:bg-pink-200/[0.13]",
     },
   ];
+  const visibleItems = isPhoneVariant ? [items[2], items[1], items[3], items[4]] : items;
 
   const venueMenuItems = [
     { key: "club", label: "Clubs", value: "club" },
@@ -236,7 +238,9 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className="qa-city-panel-cq animate-cinematic-in sticky top-2 z-30 mb-4 rounded-[20px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-2.5 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur sm:top-3 sm:mb-8 sm:rounded-[24px] sm:p-4"
+      className={`qa-city-panel-cq animate-cinematic-in z-30 rounded-[20px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-2.5 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur sm:top-3 sm:mb-8 sm:rounded-[24px] sm:p-4 ${
+        isPhoneVariant ? "relative mt-[-0.25rem] mb-0" : "sticky top-2 mb-4"
+      }`}
       style={{ animationDelay: "170ms" }}
     >
       <div className="flex items-center justify-between gap-2">
@@ -245,8 +249,8 @@ export default function CityQuickNavigation({
           Current: {activeSection || "overview"}
         </p>
       </div>
-      <div className="mt-2 grid grid-cols-5 gap-1.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5">
-        {items.map((item) => {
+      <div className={`mt-2 grid gap-1.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5 ${isPhoneVariant ? "grid-cols-4" : "grid-cols-5"}`}>
+        {visibleItems.map((item) => {
           const Icon = item.Icon;
           const isActive =
             activeSection === item.key || (activeSection === "venues" && item.key === "venues");

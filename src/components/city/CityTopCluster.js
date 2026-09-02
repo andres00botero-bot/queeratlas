@@ -23,10 +23,11 @@ export default function CityTopCluster({
   showHero = true,
   showContribution = true,
   showContributionActions = true,
+  mobileDiscovery = null,
 }) {
   return (
     <>
-      {showHero ? (
+      {showHero || mobileDiscovery ? (
         <>
           <CityHeroCard
             cityName={cityName}
@@ -34,12 +35,16 @@ export default function CityTopCluster({
             eventsChipLabel={eventsChipLabel}
             cityHero={cityHero}
             heroIntro={cityHeroIntro}
+            mobileDiscovery={mobileDiscovery}
+            showOnLargerScreens={showHero}
           />
-          <div className="hidden xl:block">
-            <div className="mt-8">
-              <CitySeoTopicLinks city={city} cityName={cityName} />
+          {showHero ? (
+            <div className="hidden xl:block">
+              <div className="mt-8">
+                <CitySeoTopicLinks city={city} cityName={cityName} />
+              </div>
             </div>
-          </div>
+          ) : null}
         </>
       ) : null}
 

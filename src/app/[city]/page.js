@@ -376,6 +376,8 @@ export default function CityPage() {
 
   const mapContainerRef = useRef(null);
   const mapWrapperRef = useRef(null);
+  const phoneMapContainerRef = useRef(null);
+  const phoneMapWrapperRef = useRef(null);
   const mainScrollRef = useRef(null);
   const centerColumnScrollRef = useRef(null);
   const eventsSectionRef = useRef(null);
@@ -1443,6 +1445,16 @@ export default function CityPage() {
   });
   const canDeleteSelectedService = isAdmin;
 
+  const scrollVisibleMapIntoView = () => {
+    const isPhoneViewport =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 639px)").matches;
+    const target = isPhoneViewport
+      ? phoneMapWrapperRef.current
+      : mapWrapperRef.current;
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const showPlaceOnMap = () => {
     const lat = Number(selectedPlace?.lat);
@@ -1467,18 +1479,12 @@ export default function CityPage() {
       setActiveCitySection("map");
       closePlace({ origin: "map-cta", replace: true });
       requestAnimationFrame(() => {
-        mapWrapperRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+        scrollVisibleMapIntoView();
       });
       return;
     }
 
-    mapWrapperRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    scrollVisibleMapIntoView();
   };
 
 
@@ -1502,18 +1508,12 @@ export default function CityPage() {
       setActiveCitySection("map");
       closeService({ origin: "map-cta", replace: true });
       requestAnimationFrame(() => {
-        mapWrapperRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+        scrollVisibleMapIntoView();
       });
       return;
     }
 
-    mapWrapperRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    scrollVisibleMapIntoView();
   };
 
   const handleReportSelectedService = () => {
@@ -1542,18 +1542,12 @@ export default function CityPage() {
       setActiveCitySection("map");
       closeEvent({ origin: "map-cta", replace: true });
       requestAnimationFrame(() => {
-        mapWrapperRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+        scrollVisibleMapIntoView();
       });
       return;
     }
 
-    mapWrapperRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    scrollVisibleMapIntoView();
   };
 
   const toggleFavorite = (id) => {
@@ -2219,6 +2213,13 @@ export default function CityPage() {
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
     let isCancelled = false;
+    const usePhoneMap =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 639px)").matches;
+    const activeMapContainer = usePhoneMap
+      ? phoneMapContainerRef.current
+      : mapContainerRef.current;
 
     (async () => {
       try {
@@ -2230,7 +2231,7 @@ export default function CityPage() {
           mapboxgl,
           isMapboxStylesReady,
           mapboxToken: token,
-          container: mapContainerRef.current,
+          container: activeMapContainer,
           mapInstance: mapRef.current,
           requireWebGl: true,
         });
@@ -2249,7 +2250,7 @@ export default function CityPage() {
 
         mapboxgl.accessToken = token;
         mapRef.current = new mapboxgl.Map({
-          container: mapContainerRef.current,
+          container: activeMapContainer,
           style: "mapbox://styles/mapbox/dark-v11",
           center: config.center,
           zoom: config.zoom ?? 11,
@@ -2835,7 +2836,14 @@ export default function CityPage() {
     });
 
     if (shouldScrollToMap) {
-      mapWrapperRef.current?.scrollIntoView({
+      const isPhoneViewport =
+        typeof window !== "undefined" &&
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(max-width: 639px)").matches;
+      const activeMapWrapper = isPhoneViewport
+        ? phoneMapWrapperRef.current
+        : mapWrapperRef.current;
+      activeMapWrapper?.scrollIntoView({
         behavior: "smooth",
         block: "start",
       });
@@ -4688,7 +4696,7 @@ export default function CityPage() {
               </div>
             </aside>
 
-            <aside className="order-2 min-w-0 xl:order-none xl:col-start-3 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start">
+            <aside className="order-2 hidden min-w-0 sm:block xl:order-none xl:col-start-3 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start">
               <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
                 <CityMapSection
                   mapWrapperRef={mapWrapperRef}
@@ -4720,6 +4728,33 @@ export default function CityPage() {
                 onToggleAddService={onToggleAddService}
                 showHero={effectiveDesktopContentSection === "home"}
                 showContributionActions={false}
+                mobileDiscovery={
+                  <>
+                    <CityMapSection
+                      mapWrapperRef={phoneMapWrapperRef}
+                      mapContainerRef={phoneMapContainerRef}
+                      mapError={mapError}
+                      onContinueInListMode={() => goToMobileSection("guide", guideSectionRef)}
+                    />
+                    <CityNavigationCluster
+                      cityPlacesCount={cityPlaceCount}
+                      cityEventCount={cityEventCount}
+                      cityServiceCount={cityServiceCount}
+                      activeCitySection={activeCitySection}
+                      onGoEvents={() => goToMobileSection("events", tonightSectionRef)}
+                      onGoGuide={() => goToMobileSection("guide", guideSectionRef)}
+                      onGoServices={() => goToMobileSection("services", servicesSectionRef)}
+                      onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
+                      onGoVenueType={(value) => {
+                        goToMobileSection("venues", placesSectionRef);
+                        handleGoVenueType(value);
+                      }}
+                      venueJumpGroups={venueJumpGroups}
+                      activeVenueFilter={activeVenueFilter}
+                      variant="phone"
+                    />
+                  </>
+                }
                 placeFormProps={{
                   name,
                   setName,
@@ -4834,24 +4869,26 @@ export default function CityPage() {
               />
 
               <div className="xl:hidden">
-                <CityNavigationCluster
-                  cityPlacesCount={cityPlaceCount}
-                  cityEventCount={cityEventCount}
-                  cityServiceCount={cityServiceCount}
-                  activeCitySection={activeCitySection}
-                  onGoHome={() => goToMobileSection("guide", guideSectionRef)}
-                  onGoMap={handleGoMapMobile}
-                  onGoEvents={() => goToMobileSection("events", tonightSectionRef)}
-                  onGoGuide={() => goToMobileSection("guide", guideSectionRef)}
-                  onGoServices={() => goToMobileSection("services", servicesSectionRef)}
-                  onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
-                  onGoVenueType={(value) => {
-                    goToMobileSection("venues", placesSectionRef);
-                    handleGoVenueType(value);
-                  }}
-                  venueJumpGroups={venueJumpGroups}
-                  activeVenueFilter={activeVenueFilter}
-                />
+                <div className="hidden sm:block">
+                  <CityNavigationCluster
+                    cityPlacesCount={cityPlaceCount}
+                    cityEventCount={cityEventCount}
+                    cityServiceCount={cityServiceCount}
+                    activeCitySection={activeCitySection}
+                    onGoHome={() => goToMobileSection("guide", guideSectionRef)}
+                    onGoMap={handleGoMapMobile}
+                    onGoEvents={() => goToMobileSection("events", tonightSectionRef)}
+                    onGoGuide={() => goToMobileSection("guide", guideSectionRef)}
+                    onGoServices={() => goToMobileSection("services", servicesSectionRef)}
+                    onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
+                    onGoVenueType={(value) => {
+                      goToMobileSection("venues", placesSectionRef);
+                      handleGoVenueType(value);
+                    }}
+                    venueJumpGroups={venueJumpGroups}
+                    activeVenueFilter={activeVenueFilter}
+                  />
+                </div>
                 <CitySeoTopicLinks city={city} cityName={cityName} />
               </div>
 

@@ -54,6 +54,22 @@ export default function CityNavigationCluster({
     );
   }
 
+  if (variant === "phone") {
+    return (
+      <CityQuickNavigation
+        onGoEvents={onGoEvents}
+        onGoGuide={onGoGuide}
+        onGoServices={onGoServices}
+        onGoVenues={onGoVenues}
+        onGoVenueType={onGoVenueType}
+        venueJumpGroups={venueJumpGroups}
+        activeSection={activeCitySection}
+        activeVenueFilter={activeVenueFilter}
+        variant="phone"
+      />
+    );
+  }
+
   return (
     <>
       <CitySignalSummaryBar
