@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Maximize2, MapPin } from "lucide-react";
-import { loadMapboxGl } from "@/lib/mapboxGlLoader";
-import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 
 const TONES = {
   venue: {
@@ -24,10 +22,7 @@ const TONES = {
 };
 
 export default function SelectedEntityMiniMap({ entity, kind = "venue", onExpand }) {
-  const containerRef = useRef(null);
-  const mapRef = useRef(null);
-  const [mapFailed, setMapFailed] = useState(false);
-  const isMapboxStylesReady = useMapboxStylesheet();
+  const [failedMapUrl, setFailedMapUrl] = useState("");
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
   const lat = Number(entity?.lat);
   const lng = Number(entity?.lng);
@@ -41,52 +36,25 @@ export default function SelectedEntityMiniMap({ entity, kind = "venue", onExpand
     Number.isFinite(lat) &&
     Number.isFinite(lng);
   const tone = TONES[kind] || TONES.venue;
+  const markerColor = tone.marker.replace("#", "");
+  const marker = `pin-s+${markerColor}(${lng},${lat})`;
+  const mapUrl = hasCoordinates && token
+    ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${marker}/${lng},${lat},15.4,0/600x380@2x?access_token=${encodeURIComponent(token)}&logo=true&attribution=true`
+    : "";
 
-  useEffect(() => {
-    if (!hasCoordinates || !token || !isMapboxStylesReady || !containerRef.current) return;
-
-    let cancelled = false;
-    let marker = null;
-
-    (async () => {
-      try {
-        const mapboxgl = await loadMapboxGl();
-        if (cancelled || !containerRef.current) return;
-
-        mapboxgl.accessToken = token;
-        const map = new mapboxgl.Map({
-          container: containerRef.current,
-          style: "mapbox://styles/mapbox/dark-v11",
-          center: [lng, lat],
-          zoom: 15.4,
-          interactive: false,
-          attributionControl: true,
-          fadeDuration: 0,
-        });
-        mapRef.current = map;
-        marker = new mapboxgl.Marker({ color: tone.marker, scale: 0.9 })
-          .setLngLat([lng, lat])
-          .addTo(map);
-        map.on("load", () => map.resize());
-        map.on("error", () => setMapFailed(true));
-      } catch {
-        if (!cancelled) setMapFailed(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      marker?.remove();
-      mapRef.current?.remove();
-      mapRef.current = null;
-    };
-  }, [hasCoordinates, isMapboxStylesReady, lat, lng, token, tone.marker]);
-
-  if (!hasCoordinates || !token || mapFailed) return null;
+  if (!mapUrl || failedMapUrl === mapUrl) return null;
 
   return (
     <div className={`relative mb-4 h-[190px] overflow-hidden rounded-[20px] border bg-[#101018] shadow-[0_16px_40px_rgba(0,0,0,0.22)] sm:hidden ${tone.border}`}>
-      <div ref={containerRef} className="absolute inset-0" aria-hidden="true" />
+      {/* A static image avoids creating a second WebGL context inside the animated mobile sheet. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={mapUrl}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full object-cover"
+        onError={() => setFailedMapUrl(mapUrl)}
+      />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(6,8,15,0.04),rgba(6,8,15,0.34))]" />
       <div className={`pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] backdrop-blur-md ${tone.badge}`}>
         <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
