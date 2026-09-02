@@ -12,6 +12,7 @@ export default function SelectedEventSummary({
   cityLabel = "",
   cityName = "",
   showEventOnMap,
+  liveSignal = null,
 }) {
   if (!selectedEvent) return null;
 
@@ -36,6 +37,7 @@ export default function SelectedEventSummary({
         Address: {getEntityAddressLabel(selectedEvent)}
       </p>
       <SelectedEntityMiniMap entity={selectedEvent} kind="event" onExpand={showEventOnMap} />
+      {liveSignal}
       <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
       {polishEventDescription(selectedEvent, cityName) && (
         <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">

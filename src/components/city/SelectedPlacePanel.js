@@ -17,9 +17,6 @@ export default function SelectedPlacePanel({
   typeLabels,
   selectedPlaceSafetySignal,
   liveVibeSummary,
-  liveVibeHeadline,
-  liveVibePulse,
-  liveVibeConsensus,
   liveVibeUpdatedLabel,
   liveVibeTableMissing,
   handleSubmitLiveVibe,
@@ -33,10 +30,6 @@ export default function SelectedPlacePanel({
   isLoadingLiveVibe,
   liveVibeError,
   liveVibeCooldownRemainingSec,
-  showLiveVibeMomentum,
-  setShowLiveVibeMomentum,
-  liveVibeMemberMomentum,
-  liveVibeStreakNudge,
   isAdmin,
   placeAdminOpen,
   onTogglePlaceAdmin,
@@ -75,7 +68,6 @@ export default function SelectedPlacePanel({
   const placeTypeLabel = typeLabels?.[selectedPlace.type] || "Venue";
   const tabs = [
     { key: "overview", label: "Overview" },
-    { key: "live", label: "Live Signal" },
     { key: "reviews", label: "Reviews" },
   ];
   const reviewCount = Number(selectedPlace.reviewCount || 0);
@@ -105,7 +97,7 @@ export default function SelectedPlacePanel({
             Close
           </button>
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-2 rounded-full border border-white/14 bg-black/18 p-1">
+        <div className="mt-4 grid grid-cols-2 gap-2 rounded-full border border-white/14 bg-black/18 p-1">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
@@ -139,6 +131,24 @@ export default function SelectedPlacePanel({
               typeLabels={typeLabels}
               selectedPlaceSafetySignal={selectedPlaceSafetySignal}
               showPlaceOnMap={showPlaceOnMap}
+              liveSignal={
+                <SelectedPlaceLiveVibePanel
+                  liveVibeSummary={liveVibeSummary}
+                  liveVibeUpdatedLabel={liveVibeUpdatedLabel}
+                  liveVibeTableMissing={liveVibeTableMissing}
+                  handleSubmitLiveVibe={handleSubmitLiveVibe}
+                  isSubmittingLiveVibe={isSubmittingLiveVibe}
+                  liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
+                  liveVibeSubmittingKey={liveVibeSubmittingKey}
+                  liveVibeJustSentKey={liveVibeJustSentKey}
+                  LIVE_VIBE_OPTIONS={liveVibeOptions}
+                  isMember={isMember}
+                  liveVibeSelectedOption={liveVibeSelectedOption}
+                  isLoadingLiveVibe={isLoadingLiveVibe}
+                  liveVibeError={liveVibeError}
+                  liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
+                />
+              }
             />
           </div>
 
@@ -176,32 +186,6 @@ export default function SelectedPlacePanel({
             </div>
           ) : null}
         </>
-      ) : null}
-
-      {activeTab === "live" ? (
-        <SelectedPlaceLiveVibePanel
-          liveVibeSummary={liveVibeSummary}
-          liveVibeHeadline={liveVibeHeadline}
-          liveVibePulse={liveVibePulse}
-          liveVibeConsensus={liveVibeConsensus}
-          liveVibeUpdatedLabel={liveVibeUpdatedLabel}
-          liveVibeTableMissing={liveVibeTableMissing}
-          handleSubmitLiveVibe={handleSubmitLiveVibe}
-          isSubmittingLiveVibe={isSubmittingLiveVibe}
-          liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
-          liveVibeSubmittingKey={liveVibeSubmittingKey}
-          liveVibeJustSentKey={liveVibeJustSentKey}
-          LIVE_VIBE_OPTIONS={liveVibeOptions}
-          isMember={isMember}
-          liveVibeSelectedOption={liveVibeSelectedOption}
-          isLoadingLiveVibe={isLoadingLiveVibe}
-          liveVibeError={liveVibeError}
-          liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
-          showLiveVibeMomentum={showLiveVibeMomentum}
-          setShowLiveVibeMomentum={setShowLiveVibeMomentum}
-          liveVibeMemberMomentum={liveVibeMemberMomentum}
-          liveVibeStreakNudge={liveVibeStreakNudge}
-        />
       ) : null}
 
       {activeTab === "reviews" ? (

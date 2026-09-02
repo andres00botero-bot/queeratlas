@@ -16,6 +16,7 @@ export default function SelectedPlaceSummary({
   typeLabels,
   selectedPlaceSafetySignal,
   showPlaceOnMap,
+  liveSignal = null,
 }) {
   if (!selectedPlace) return null;
   const addressLabel = getEntityAddressLabel(selectedPlace);
@@ -54,6 +55,7 @@ export default function SelectedPlaceSummary({
         </div>
       </div>
       <SelectedEntityMiniMap entity={selectedPlace} kind="venue" onExpand={showPlaceOnMap} />
+      {liveSignal}
       {polishVenueDescription(selectedPlace, cityName, typeLabels) && (
         <div className="mb-4 rounded-[20px] border border-white/14 bg-white/[0.065] p-4">
           <p className="qa-copy-justify text-[15px] leading-7 text-white/78">{polishVenueDescription(selectedPlace, cityName, typeLabels)}</p>

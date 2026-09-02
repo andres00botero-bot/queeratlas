@@ -74,6 +74,18 @@ export default function SelectedEventPanel({
           cityLabel={cityLabel}
           cityName={cityName}
           showEventOnMap={showEventOnMap}
+          liveSignal={
+            <SelectedEventLiveVibePanel
+              LIVE_VIBE_OPTIONS={liveVibeOptions}
+              eventLiveVibeSignalKey={eventLiveVibeSignalKey}
+              isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
+              eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
+              eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
+              handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
+              isMember={isMember}
+              eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
+            />
+          }
         />
         <div className="mt-2 text-xs leading-5 text-white/56">
           <Link
@@ -83,16 +95,6 @@ export default function SelectedEventPanel({
             Open canonical event page
           </Link>
         </div>
-        <SelectedEventLiveVibePanel
-          LIVE_VIBE_OPTIONS={liveVibeOptions}
-          eventLiveVibeSignalKey={eventLiveVibeSignalKey}
-          isSubmittingEventLiveVibe={isSubmittingEventLiveVibe}
-          eventLiveVibeSubmittingKey={eventLiveVibeSubmittingKey}
-          eventLiveVibeJustSentKey={eventLiveVibeJustSentKey}
-          handleSubmitEventLiveVibe={handleSubmitEventLiveVibe}
-          isMember={isMember}
-          eventLiveVibeSelectedOption={eventLiveVibeSelectedOption}
-        />
         <SelectedEventMetaCards
           selectedEvent={selectedEvent}
           selectedEventQuality={selectedEventQuality}
