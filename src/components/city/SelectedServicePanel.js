@@ -69,6 +69,7 @@ export default function SelectedServicePanel({
           refreshEntityQuality={refreshEntityQuality}
           canRefreshQuality={canRefreshQuality}
           formatDate={formatDate}
+          onShowOnMap={onShowOnMap}
         />
 
         <SelectedServiceAdminControls

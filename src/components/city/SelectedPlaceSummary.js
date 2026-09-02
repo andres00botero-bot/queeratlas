@@ -8,12 +8,14 @@ import { getDisplayedSafetyShields, shouldShowLegacyVibe } from "@/features/city
 import { getSafetyToneClass } from "@/lib/placeSafetySignals";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
+import SelectedEntityMiniMap from "@/components/city/SelectedEntityMiniMap";
 
 export default function SelectedPlaceSummary({
   selectedPlace,
   cityName,
   typeLabels,
   selectedPlaceSafetySignal,
+  showPlaceOnMap,
 }) {
   if (!selectedPlace) return null;
   const addressLabel = getEntityAddressLabel(selectedPlace);
@@ -51,6 +53,7 @@ export default function SelectedPlaceSummary({
           <p className="mt-1 text-sm leading-6 text-white/90">{addressLabel}</p>
         </div>
       </div>
+      <SelectedEntityMiniMap entity={selectedPlace} kind="venue" onExpand={showPlaceOnMap} />
       {polishVenueDescription(selectedPlace, cityName, typeLabels) && (
         <div className="mb-4 rounded-[20px] border border-white/14 bg-white/[0.065] p-4">
           <p className="qa-copy-justify text-[15px] leading-7 text-white/78">{polishVenueDescription(selectedPlace, cityName, typeLabels)}</p>

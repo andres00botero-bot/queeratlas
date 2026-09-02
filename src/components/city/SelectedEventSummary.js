@@ -5,11 +5,13 @@ import { getEntityAddressLabel } from "@/features/city/adminDrawerFeature";
 import { formatEventDateLabel, normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
+import SelectedEntityMiniMap from "@/components/city/SelectedEntityMiniMap";
 
 export default function SelectedEventSummary({
   selectedEvent,
   cityLabel = "",
   cityName = "",
+  showEventOnMap,
 }) {
   if (!selectedEvent) return null;
 
@@ -33,6 +35,7 @@ export default function SelectedEventSummary({
       <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/68">
         Address: {getEntityAddressLabel(selectedEvent)}
       </p>
+      <SelectedEntityMiniMap entity={selectedEvent} kind="event" onExpand={showEventOnMap} />
       <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />
       {polishEventDescription(selectedEvent, cityName) && (
         <div className="mb-1 rounded-xl border border-white/10 bg-white/[0.03] p-3">

@@ -73,6 +73,7 @@ export default function SelectedEventPanel({
           selectedEvent={selectedEvent}
           cityLabel={cityLabel}
           cityName={cityName}
+          showEventOnMap={showEventOnMap}
         />
         <div className="mt-2 text-xs leading-5 text-white/56">
           <Link

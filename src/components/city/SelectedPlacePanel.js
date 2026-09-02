@@ -138,6 +138,7 @@ export default function SelectedPlacePanel({
               cityName={cityName}
               typeLabels={typeLabels}
               selectedPlaceSafetySignal={selectedPlaceSafetySignal}
+              showPlaceOnMap={showPlaceOnMap}
             />
           </div>
 

@@ -4,6 +4,7 @@ import Image from "next/image";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { getEntityAddressLabel, normalizeExternalUrl, qualityPillClass } from "@/features/city/adminDrawerFeature";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
+import SelectedEntityMiniMap from "@/components/city/SelectedEntityMiniMap";
 
 export default function SelectedServiceSummary({
   selectedService,
@@ -15,6 +16,7 @@ export default function SelectedServiceSummary({
   refreshEntityQuality,
   canRefreshQuality,
   formatDate,
+  onShowOnMap,
 }) {
   return (
     <>
@@ -36,6 +38,7 @@ export default function SelectedServiceSummary({
       <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/68">
         Area: {getEntityAddressLabel(selectedService) || "City-wide"}
       </p>
+      <SelectedEntityMiniMap entity={selectedService} kind="service" onExpand={onShowOnMap} />
       <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-emerald-300 via-cyan-300 to-sky-300" />
 
       {selectedServiceImages.length > 0 && (
