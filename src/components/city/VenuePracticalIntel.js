@@ -16,27 +16,6 @@ const STORE_EMPTY_VALUES = {
   staffInclusivity: "Not enough privacy and inclusion information yet",
 };
 
-function formatResearchDate(value = "") {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return new Intl.DateTimeFormat("en", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
-function getSourceLabel(value = "", index = 0) {
-  try {
-    const hostname = new URL(value).hostname.replace(/^www\./i, "");
-    return hostname || `Source ${index + 1}`;
-  } catch {
-    return `Source ${index + 1}`;
-  }
-}
-
 const EVIDENCE_LABELS = {
   verified: "Source verified",
   verified_policy: "Policy verified",
@@ -58,7 +37,6 @@ export default function VenuePracticalIntel({ place, compact = false }) {
   const hasRating = Number.isFinite(rating) && rating > 0;
   const labels = getVenueIntelLabels(place?.type);
   const emptyValues = String(place?.type || "").trim().toLowerCase() === "store" ? STORE_EMPTY_VALUES : EMPTY_VALUES;
-  const researchDate = formatResearchDate(intel.updatedAt);
   const fields = [
     { key: "queueWait", label: labels.queueWait, value: intel.queueWait, evidence: intel.topicEvidence.queueWait },
     { key: "bestNights", label: labels.bestNights, value: intel.bestNights, evidence: intel.topicEvidence.bestNights },
@@ -125,28 +103,6 @@ export default function VenuePracticalIntel({ place, compact = false }) {
       <p className="mt-3 hidden text-[11px] leading-5 text-white/46 sm:block">
         Patterns can change by event and season. Recent community reports should always outweigh old venue notes.
       </p>
-
-      {intel.sourceUrls.length > 0 ? (
-        <details className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-3.5 py-3">
-          <summary className="cursor-pointer text-xs font-medium text-cyan-50/76">
-            Reference links ({intel.sourceUrls.length}){researchDate ? ` · Updated ${researchDate}` : ""}
-          </summary>
-          <ul className="mt-2 space-y-1.5">
-            {intel.sourceUrls.map((sourceUrl, index) => (
-              <li key={sourceUrl}>
-                <a
-                  href={sourceUrl}
-                  target="_blank"
-                  rel="noopener noreferrer nofollow"
-                  className="break-all text-xs text-cyan-100/72 underline decoration-cyan-100/25 underline-offset-2 transition hover:text-cyan-50"
-                >
-                  {getSourceLabel(sourceUrl, index)}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
     </section>
   );
 }
