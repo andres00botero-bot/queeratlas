@@ -32,6 +32,12 @@ export default function SelectedEventActions({
       >
         {isSaved ? "Saved in atlas" : "Save to atlas"}
       </button>
+      <a
+        href={`/favorites?trip_add_type=event&trip_add_id=${encodeURIComponent(String(selectedEvent.id))}&trip_add_city=${encodeURIComponent(String(selectedEvent.city || ""))}`}
+        className="qa-action flex min-h-12 w-full items-center justify-center rounded-2xl border border-fuchsia-200/28 bg-fuchsia-200/10 px-4 py-3 text-sm font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/46 hover:bg-fuchsia-200/15"
+      >
+        + Add to trip
+      </a>
       {eventLinkUrl && (
         <OfficialExternalLink
           href={eventLinkUrl}

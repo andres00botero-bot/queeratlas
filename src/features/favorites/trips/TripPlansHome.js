@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, CalendarDays, ChevronDown, MapPinned, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, CalendarDays, ChevronDown, MapPinned, Navigation, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, X } from "lucide-react";
 
 function parsePlanDate(value) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return null;
@@ -35,6 +35,13 @@ function groupPlans(plans = []) {
 
 function planStopCount(plan) {
   return Array.isArray(plan?.stops) ? plan.stops.length : 0;
+}
+
+function isPlanToday(plan) {
+  const date = parsePlanDate(plan?.date);
+  if (!date) return false;
+  const today = new Date();
+  return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
 }
 
 function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRemove, onUpdate }) {
@@ -129,6 +136,15 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
 
       {expanded ? (
         <div className="border-t border-white/8 px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
+          {featured && isPlanToday(plan) && stops[0] ? (
+            <div className="mb-3 rounded-[18px] border border-[#88d9d4]/18 bg-[#88d9d4]/8 p-3.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#9ce9e3]">Up next</p>
+              <div className="mt-1.5 flex items-center justify-between gap-3">
+                <div className="min-w-0"><p className="truncate text-sm font-semibold text-white">{stops[0].name}</p><p className="mt-0.5 text-xs text-white/48">{stops[0].time || "Time open"} · {stops[0].city || plan.city}</p></div>
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${stops[0].name || ""}, ${stops[0].city || plan.city || ""}`)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 flex-none items-center gap-2 rounded-full bg-[#88d9d4] px-4 text-xs font-semibold text-[#102421]"><Navigation size={14} aria-hidden="true" />Directions</a>
+              </div>
+            </div>
+          ) : null}
           {isEditing ? (
             <div className="mb-4 space-y-3 rounded-[18px] border border-[#f5a9c6]/14 bg-black/20 p-3.5 sm:p-4">
               <label className="block text-xs font-medium text-white/62">

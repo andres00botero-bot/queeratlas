@@ -432,9 +432,11 @@ export default function FavoritesPage() {
   const [activeFavoritesIntent, setActiveFavoritesIntent] = useState("go_out_tonight");
   const [tripWorkspaceMode, setTripWorkspaceMode] = useState("home");
   const [pendingTripItem, setPendingTripItem] = useState(null);
+  const handledTripAddRef = useRef("");
   const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
   const [activeProfileTab, setActiveProfileTab] = useState("about");
   const [myMapView, setMyMapView] = useState("checkins");
+  const [selectedTripMapId, setSelectedTripMapId] = useState(null);
   const [isCheckinComposerOpen, setIsCheckinComposerOpen] = useState(false);
   const [checkinMapReadyTick, setCheckinMapReadyTick] = useState(0);
   const [calendarReminderByEventId, setCalendarReminderByEventId] = useState(() =>
@@ -1801,11 +1803,41 @@ export default function FavoritesPage() {
       }));
   }, [savedPlaces]);
 
+  const selectedMapTrip = useMemo(
+    () => (plans || []).find((plan) => String(plan.id) === String(selectedTripMapId)) || plans?.[0] || null,
+    [plans, selectedTripMapId]
+  );
+
+  const tripMapMarkers = useMemo(() => {
+    if (!selectedMapTrip) return [];
+    return (selectedMapTrip.stops || []).flatMap((stop, index) => {
+      const source = stop.type === "event"
+        ? (events || []).find((item) => String(item.id) === String(stop.id))
+        : (places || []).find((item) => String(item.id) === String(stop.id));
+      const lat = Number(source?.lat ?? source?.latitude);
+      const lng = Number(source?.lng ?? source?.longitude ?? source?.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+      return [{
+        id: `trip-${selectedMapTrip.id}-${index}`,
+        sourceId: stop.id,
+        sourceType: stop.type,
+        label: stop.name || source?.name || "Trip stop",
+        city: stop.city || selectedMapTrip.city || "",
+        markerLat: lat,
+        markerLng: lng,
+        tripStopNumber: index + 1,
+        time: stop.time || null,
+      }];
+    });
+  }, [events, places, selectedMapTrip]);
+
   const checkinMarkers = useMemo(
     () => (
       myMapView === "saved"
         ? savedPlaceMapMarkers
-        : buildCheckinMarkers({
+        : myMapView === "trips"
+          ? tripMapMarkers
+          : buildCheckinMarkers({
             checkins: filteredRecentCheckins,
             atlasPlaces: places,
             atlasEvents: events,
@@ -1813,7 +1845,7 @@ export default function FavoritesPage() {
             savedEvents,
           })
     ),
-    [events, filteredRecentCheckins, myMapView, places, savedEvents, savedPlaceMapMarkers, savedPlaces]
+    [events, filteredRecentCheckins, myMapView, places, savedEvents, savedPlaceMapMarkers, savedPlaces, tripMapMarkers]
   );
 
   const followingCheckinMarkers = useMemo(
@@ -1827,7 +1859,7 @@ export default function FavoritesPage() {
     const mine = checkinMarkers.map((item) => ({
       ...item,
       markerId: `mine-${String(item.id)}`,
-      markerKind: myMapView === "saved" ? "saved" : "mine",
+      markerKind: myMapView === "saved" ? "saved" : myMapView === "trips" ? "trip" : "mine",
     }));
     const friends = followingCheckinMarkers.map((item) => ({
       ...item,
@@ -1972,6 +2004,8 @@ export default function FavoritesPage() {
 
     checkinMapMarkersRef.current.forEach((marker) => marker.remove());
     checkinMapMarkersRef.current = [];
+    if (map.getLayer("qa-trip-route")) map.removeLayer("qa-trip-route");
+    if (map.getSource("qa-trip-route")) map.removeSource("qa-trip-route");
 
     if (!interactiveCheckinPoints.length) {
       if (checkinMapCenter) {
@@ -1992,12 +2026,14 @@ export default function FavoritesPage() {
 
       const markerEl = document.createElement("button");
       markerEl.type = "button";
-      markerEl.style.width = "14px";
-      markerEl.style.height = "14px";
+      markerEl.style.width = point.markerKind === "trip" ? "28px" : "14px";
+      markerEl.style.height = point.markerKind === "trip" ? "28px" : "14px";
       markerEl.style.borderRadius = "9999px";
       markerEl.style.border = "2px solid rgba(255,255,255,0.85)";
       markerEl.style.background =
-        point.markerKind === "saved"
+        point.markerKind === "trip"
+          ? "#f5a9c6"
+          : point.markerKind === "saved"
           ? "#34d399"
           : point.markerKind === "friend"
             ? "#fbbf24"
@@ -2007,10 +2043,16 @@ export default function FavoritesPage() {
           ? "0 0 0 2px rgba(0,0,0,0.42), 0 0 18px rgba(52,211,153,0.42)"
           : "0 0 0 2px rgba(0,0,0,0.42), 0 0 18px rgba(244,114,182,0.36)";
       markerEl.style.cursor = "pointer";
+      if (point.markerKind === "trip") {
+        markerEl.textContent = String(point.tripStopNumber || "");
+        markerEl.style.color = "#24131d";
+        markerEl.style.fontSize = "11px";
+        markerEl.style.fontWeight = "800";
+      }
       markerEl.style.transform = String(selectedCheckinId) === String(point.id) ? "scale(1.2)" : "scale(1)";
       markerEl.title = String(point.label || point.ownerName || "Check-in");
       markerEl.addEventListener("click", () => {
-        if (point.markerKind === "mine" || point.markerKind === "saved") {
+        if (["mine", "saved", "trip"].includes(point.markerKind)) {
           setSelectedCheckinId(String(point.id || ""));
         }
         map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 12), essential: true });
@@ -2022,6 +2064,25 @@ export default function FavoritesPage() {
       checkinMapMarkersRef.current.push(marker);
       bounds.extend([lng, lat]);
     });
+
+    const tripCoordinates = interactiveCheckinPoints
+      .filter((point) => point.markerKind === "trip")
+      .sort((a, b) => Number(a.tripStopNumber) - Number(b.tripStopNumber))
+      .map((point) => [Number(point.markerLng), Number(point.markerLat)])
+      .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
+    if (tripCoordinates.length > 1) {
+      map.addSource("qa-trip-route", {
+        type: "geojson",
+        data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: tripCoordinates } },
+      });
+      map.addLayer({
+        id: "qa-trip-route",
+        type: "line",
+        source: "qa-trip-route",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": "#f5a9c6", "line-width": 3, "line-opacity": 0.72, "line-dasharray": [1.5, 1.2] },
+      });
+    }
 
     if (!bounds.isEmpty()) {
       if (selectedCheckinId) {
@@ -3397,6 +3458,29 @@ export default function FavoritesPage() {
     setPendingTripItem({ item, itemType, matchingPlans });
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined" || isAtlasLoading) return;
+    const params = new URLSearchParams(window.location.search);
+    const itemType = params.get("trip_add_type") === "event" ? "event" : "place";
+    const itemId = String(params.get("trip_add_id") || "").trim();
+    if (!itemId) return;
+    const requestKey = `${itemType}-${itemId}`;
+    if (handledTripAddRef.current === requestKey) return;
+    const source = itemType === "event"
+      ? (events || []).find((item) => String(item.id) === itemId)
+      : (places || []).find((item) => String(item.id) === itemId);
+    if (!source) return;
+    handledTripAddRef.current = requestKey;
+    queueMicrotask(() => addSavedItemToTrip(source, itemType));
+    params.delete("trip_add_type");
+    params.delete("trip_add_id");
+    params.delete("trip_add_city");
+    const nextSearch = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}`);
+    // addSavedItemToTrip intentionally runs once for the URL handoff.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, isAtlasLoading, places, plans]);
+
   const openPlannerStopOnMap = (stop) => {
     if (!stop?.city || !stop?.id) return;
     if (stop.itemType === "event") {
@@ -4540,6 +4624,7 @@ export default function FavoritesPage() {
             {[
               { id: "saved", label: "Saved" },
               { id: "checkins", label: "Check-ins" },
+              { id: "trips", label: "Trips" },
             ].map((view) => {
               const isActive = myMapView === view.id;
               return (
@@ -4552,7 +4637,9 @@ export default function FavoritesPage() {
                     isActive
                       ? view.id === "checkins"
                         ? "bg-gradient-to-r from-rose-200 to-fuchsia-200 text-[#32152e] shadow-[0_8px_24px_rgba(244,114,182,0.28)]"
-                        : "bg-gradient-to-r from-emerald-100 via-teal-100 to-amber-100 text-[#17322c] shadow-[0_8px_24px_rgba(167,243,208,0.24)]"
+                        : view.id === "trips"
+                          ? "bg-gradient-to-r from-fuchsia-100 to-rose-100 text-[#32152e] shadow-[0_8px_24px_rgba(245,169,198,0.22)]"
+                          : "bg-gradient-to-r from-emerald-100 via-teal-100 to-amber-100 text-[#17322c] shadow-[0_8px_24px_rgba(167,243,208,0.24)]"
                       : "text-violet-50/62 hover:bg-white/10 hover:text-white"
                   }`}
                 >
@@ -4930,12 +5017,12 @@ export default function FavoritesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-white">
-                    {myMapView === "checkins" ? "Check-ins" : "Saved places"}
+                    {myMapView === "checkins" ? "Check-ins" : myMapView === "trips" ? "Trip route" : "Saved places"}
                   </p>
                   <p className="mt-1 text-xs text-white/58">
                     {myMapView === "checkins"
                       ? "Tap a card to focus the map."
-                      : "Tap a place to find it on your map."}
+                      : myMapView === "trips" ? "Numbered stops match your plan." : "Tap a place to find it on your map."}
                   </p>
                 </div>
                 <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${
@@ -4943,7 +5030,7 @@ export default function FavoritesPage() {
                     ? "border-rose-100/28 bg-rose-100/12 text-rose-50/90"
                     : "border-emerald-100/30 bg-emerald-100/12 text-emerald-50/90"
                 }`}>
-                  {myMapView === "checkins" ? filteredRecentCheckins.length : savedPlaces.length}
+                  {myMapView === "checkins" ? filteredRecentCheckins.length : myMapView === "trips" ? tripMapMarkers.length : savedPlaces.length}
                 </span>
               </div>
               </div>
@@ -5041,6 +5128,28 @@ export default function FavoritesPage() {
                 )}
                 </div>
               </div>
+              ) : myMapView === "trips" ? (
+                <div className="flex min-h-0 flex-1 flex-col">
+                  {plans.length > 0 ? (
+                    <>
+                      <select value={selectedMapTrip?.id || ""} onChange={(event) => setSelectedTripMapId(event.target.value)} className="mt-2 min-h-11 rounded-2xl border border-white/12 bg-[#151018] px-3 text-sm text-white outline-none focus:border-[#f5a9c6]/45">
+                        {plans.map((plan) => <option key={`map-trip-${plan.id}`} value={plan.id}>{plan.title || `${plan.city} trip`}</option>)}
+                      </select>
+                      <div className={`${FAVORITES_CHECKIN_LIST_SCROLL_CLASS} mt-3 space-y-1.5 xl:h-auto xl:min-h-0 xl:flex-1`} style={{ scrollbarGutter: "stable" }}>
+                        {(selectedMapTrip?.stops || []).map((stop, index) => {
+                          const marker = tripMapMarkers.find((item) => item.tripStopNumber === index + 1);
+                          return (
+                            <button key={`map-trip-stop-${stop.type}-${stop.id}-${index}`} type="button" onClick={() => marker ? setSelectedCheckinId(marker.id) : openPlannerStopOnMap({ ...stop, itemType: stop.type })} className="flex min-h-14 w-full items-center gap-3 rounded-[15px] px-2.5 text-left transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-[#f5a9c6]">
+                              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[#f5a9c6] text-xs font-bold text-[#24131d]">{index + 1}</span>
+                              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold text-white/88">{stop.name}</span><span className="mt-0.5 block text-xs text-white/44">{stop.time || "Time open"} · {stop.type}</span></span>
+                              <span className="text-[10px] text-[#ffd8e7]">{marker ? "Map" : "Open"}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  ) : <div className="mt-3 rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/48">Create a trip to see its route here.</div>}
+                </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
                   <div

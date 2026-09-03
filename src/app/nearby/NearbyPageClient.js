@@ -148,31 +148,24 @@ export default function NearbyPageClient() {
                 const isEvent = item.entityType === "event";
                 const Icon = isEvent ? CalendarDays : MapPin;
                 return (
-                  <Link
+                  <article
                     key={`${item.entityType}-${item.id}`}
-                    href={resultHref(item)}
-                    className="group grid min-h-[104px] grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[20px] border border-white/12 bg-[linear-gradient(145deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.20)] transition hover:border-cyan-100/34 hover:bg-white/[0.085] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100/60"
+                    className="group rounded-[20px] border border-white/12 bg-[linear-gradient(145deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.20)] transition hover:border-cyan-100/34 hover:bg-white/[0.085]"
                   >
-                    <span className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${isEvent ? "border-violet-200/24 bg-violet-200/12 text-violet-100" : "border-cyan-200/24 bg-cyan-200/12 text-cyan-100"}`}>
-                      <Icon size={19} aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="truncate text-[15px] font-semibold text-white">{item.name}</span>
-                        <span className="rounded-full border border-white/10 bg-white/[0.055] px-2 py-0.5 text-[10px] font-semibold text-white/56">
-                          {isEvent ? "Event" : formatCategory(item.category)}
+                    <Link href={resultHref(item)} className="grid min-h-[78px] grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-3 rounded-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100/60">
+                      <span className={`flex h-11 w-11 items-center justify-center rounded-2xl border ${isEvent ? "border-violet-200/24 bg-violet-200/12 text-violet-100" : "border-cyan-200/24 bg-cyan-200/12 text-cyan-100"}`}><Icon size={19} aria-hidden="true" /></span>
+                      <span className="min-w-0">
+                        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="truncate text-[15px] font-semibold text-white">{item.name}</span>
+                          <span className="rounded-full border border-white/10 bg-white/[0.055] px-2 py-0.5 text-[10px] font-semibold text-white/56">{isEvent ? "Event" : formatCategory(item.category)}</span>
                         </span>
+                        <span className="mt-1 block truncate text-xs text-white/48">{isEvent ? `${formatEventDate(item)} · ` : ""}{item.location || formatCategory(item.city)}</span>
+                        <span className="mt-1 block text-[11px] font-medium text-white/36">{formatCategory(item.city)}</span>
                       </span>
-                      <span className="mt-1 block truncate text-xs text-white/48">
-                        {isEvent ? `${formatEventDate(item)} · ` : ""}{item.location || formatCategory(item.city)}
-                      </span>
-                      <span className="mt-1 block text-[11px] font-medium text-white/36">{formatCategory(item.city)}</span>
-                    </span>
-                    <span className="flex flex-col items-end gap-2 pl-1">
-                      <span className="whitespace-nowrap text-sm font-bold tabular-nums text-cyan-100">{formatNearbyDistance(item.distanceKm)}</span>
-                      <ArrowRight size={17} className="text-white/38 transition group-hover:translate-x-0.5 group-hover:text-cyan-100" aria-hidden="true" />
-                    </span>
-                  </Link>
+                      <span className="flex flex-col items-end gap-2 pl-1"><span className="whitespace-nowrap text-sm font-bold tabular-nums text-cyan-100">{formatNearbyDistance(item.distanceKm)}</span><ArrowRight size={17} className="text-white/38 transition group-hover:translate-x-0.5 group-hover:text-cyan-100" aria-hidden="true" /></span>
+                    </Link>
+                    <Link href={`/favorites?trip_add_type=${isEvent ? "event" : "place"}&trip_add_id=${encodeURIComponent(String(item.id))}&trip_add_city=${encodeURIComponent(String(item.city || ""))}`} className="mt-2 flex min-h-10 w-full items-center justify-center rounded-full border border-fuchsia-200/22 bg-fuchsia-200/8 px-3 text-xs font-semibold text-fuchsia-100 transition hover:border-fuchsia-200/40 hover:bg-fuchsia-200/14">+ Add to trip</Link>
+                  </article>
                 );
               })}
             </div>

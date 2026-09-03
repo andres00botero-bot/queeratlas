@@ -48,6 +48,12 @@ export default function SelectedPlaceActions({
       >
         {isSaved ? "Saved in atlas" : "Save to atlas"}
       </button>
+      <a
+        href={`/favorites?trip_add_type=place&trip_add_id=${encodeURIComponent(String(selectedPlace.id))}&trip_add_city=${encodeURIComponent(String(selectedPlace.city || ""))}`}
+        className="qa-action flex min-h-11 items-center justify-center rounded-2xl border border-fuchsia-200/28 bg-fuchsia-200/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/46 hover:bg-fuchsia-200/15 sm:col-span-2"
+      >
+        + Add to trip
+      </a>
       {isAdmin && (
         <button
           type="button"
