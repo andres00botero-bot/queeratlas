@@ -86,14 +86,14 @@ export default function CalendarMonthExperience({
             <p className="text-[10px] uppercase tracking-[0.19em] text-[#f5a9c6]/68">Month overview</p>
             <h3 className="mt-1 text-2xl font-semibold tracking-[-0.04em] text-[#fff7fb] sm:text-3xl">{monthLabel}</h3>
           </div>
-          <div className="flex items-center justify-between gap-2 sm:justify-end">
-            <div className="flex items-center rounded-full border border-white/9 bg-white/[0.03] p-1">
+          <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex sm:w-auto sm:items-center sm:justify-end">
+            <div className="flex min-w-0 items-center justify-between rounded-full border border-white/9 bg-white/[0.03] p-1 sm:justify-start">
               <button type="button" onClick={() => onMoveMonth(-1)} aria-label="Previous month" className="flex h-10 w-10 items-center justify-center rounded-full text-white/58 transition hover:bg-white/[0.07] hover:text-white"><ChevronLeft size={18} /></button>
               <button type="button" onClick={onToday} className="min-h-10 rounded-full px-3 text-xs font-semibold text-[#ffd8e7] transition hover:bg-[#f5a9c6]/9">Today</button>
               <button type="button" onClick={() => onMoveMonth(1)} aria-label="Next month" className="flex h-10 w-10 items-center justify-center rounded-full text-white/58 transition hover:bg-white/[0.07] hover:text-white"><ChevronRight size={18} /></button>
             </div>
             <button type="button" onClick={onEnablePush} disabled={pushState === "loading" || pushState === "enabled"} className="flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white/62 disabled:opacity-60"><Bell size={15} /> {pushState === "enabled" ? "On" : "Reminders"}</button>
-            <button type="button" onClick={openAdd} className="flex min-h-11 items-center gap-2 rounded-full bg-[#f5a9c6] px-4 text-xs font-semibold text-[#24131d] shadow-[0_10px_28px_rgba(245,169,198,0.18)] transition hover:bg-[#ffc0d7]"><Plus size={16} /> Add plan</button>
+            <button type="button" onClick={openAdd} className="col-span-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[#f5a9c6] px-4 text-xs font-semibold text-[#24131d] shadow-[0_10px_28px_rgba(245,169,198,0.18)] transition hover:bg-[#ffc0d7] sm:w-auto"><Plus size={16} /> Add plan</button>
           </div>
         </header>
 

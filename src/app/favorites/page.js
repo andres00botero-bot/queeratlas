@@ -5010,7 +5010,7 @@ export default function FavoritesPage() {
               ) : null}
             </div>
 
-            <div className={`relative z-10 mx-2 -mt-8 flex min-h-0 flex-col overflow-hidden rounded-[26px] border p-4 shadow-[0_22px_58px_rgba(8,8,18,0.36)] backdrop-blur-xl transition-colors duration-300 xl:mx-0 xl:mt-0 xl:h-[39rem] ${
+            <div className={`relative z-10 mx-0 mt-3 flex min-h-0 flex-col overflow-hidden rounded-[26px] border p-4 shadow-[0_22px_58px_rgba(8,8,18,0.36)] backdrop-blur-xl transition-colors duration-300 xl:mt-0 xl:h-[39rem] ${
               myMapView === "checkins"
                 ? "border-emerald-100/20 bg-[radial-gradient(circle_at_100%_0%,rgba(110,231,183,0.13),transparent_34%),linear-gradient(155deg,#173a35,#142925)]"
                 : "border-emerald-100/20 bg-[radial-gradient(circle_at_100%_0%,rgba(167,243,208,0.11),transparent_34%),linear-gradient(155deg,#173a35,#142925)]"
