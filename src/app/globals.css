@@ -93,6 +93,13 @@ body > div:first-child {
   }
 }
 
+/* City pages manage their own mobile spacing; avoid an empty block after the page. */
+@media (max-width: 767px) {
+  body:has(main.qa-city) {
+    padding-bottom: 0;
+  }
+}
+
 .qa-page {
   --qa-section-space: var(--qa-space-6);
 }
