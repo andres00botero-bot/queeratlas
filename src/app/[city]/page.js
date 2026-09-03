@@ -4867,7 +4867,7 @@ export default function CityPage() {
   }, [closeService, fetchServices, isAdmin, resolveServiceDbId, selectedService, showToast]);
 
   return (
-    <main className="qa-city flex min-h-screen bg-[#0b0910] text-[#fff8fc] xl:h-screen xl:overflow-hidden">
+    <main className="qa-city flex min-h-0 bg-[#0b0910] text-[#fff8fc] xl:h-screen xl:min-h-screen xl:overflow-hidden">
       <CitySeoScaffold
         city={city}
         cityName={cityName}
