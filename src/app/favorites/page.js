@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BookmarkCheck } from "lucide-react";
+import CalendarMonthExperience from "@/features/favorites/calendar/CalendarMonthExperience";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -146,6 +147,8 @@ const FAVORITES_PROFILE_MEMORIES_STORAGE_KEY = "qa_favorites_profile_memories_v1
 const FAVORITES_PERSONAL_CALENDAR_STORAGE_KEY = "qa_favorites_personal_calendar_v1";
 const FAVORITES_CALENDAR_REMINDER_STORAGE_KEY = "qa_favorites_calendar_reminders_v1";
 const FAVORITES_CALENDAR_LAST_ALERT_DAY_STORAGE_KEY = "qa_favorites_calendar_last_alert_day_v1";
+const FAVORITES_CALENDAR_VIEW_STORAGE_KEY = "qa_favorites_calendar_view_v1";
+const FAVORITES_CALENDAR_GOING_STORAGE_KEY = "qa_favorites_calendar_going_v1";
 const MEMBER_AVATAR_BUCKET = "member-avatars";
 
 function formatCalendarDateKey(date = new Date()) {
@@ -186,6 +189,13 @@ function buildCalendarMonthCells(monthKey = getCalendarMonthKey()) {
       isCurrentMonth: date.getMonth() === firstDay.getMonth(),
     };
   });
+}
+
+function decodeVapidPublicKey(value = "") {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = `${value}${padding}`.replaceAll("-", "+").replaceAll("_", "/");
+  const bytes = window.atob(base64);
+  return Uint8Array.from(bytes, (character) => character.charCodeAt(0));
 }
 
 function normalizePersonalCalendarItem(raw = {}) {
@@ -436,6 +446,14 @@ export default function FavoritesPage() {
     formatCalendarDateKey(new Date())
   );
   const [calendarMonthKey, setCalendarMonthKey] = useState(() => getCalendarMonthKey(new Date()));
+  const [calendarView, setCalendarView] = useState(() => {
+    const storedView = readLocalJson(FAVORITES_CALENDAR_VIEW_STORAGE_KEY, "agenda");
+    return storedView === "month" ? "month" : "agenda";
+  });
+  const [calendarGoingByEventId, setCalendarGoingByEventId] = useState(() =>
+    readLocalJson(FAVORITES_CALENDAR_GOING_STORAGE_KEY, {}) || {}
+  );
+  const [calendarPushState, setCalendarPushState] = useState("idle");
   const [calendarItemForm, setCalendarItemForm] = useState(() => ({
     title: "",
     type: "plan",
@@ -1591,6 +1609,7 @@ export default function FavoritesPage() {
       dateKey: event.calendarDate.toISOString().slice(0, 10),
       time: String(event.time || event.start_time || "").slice(0, 5),
       reminderMode: String(calendarReminderByEventId?.[String(event.id || "")] || "off"),
+      status: calendarGoingByEventId?.[String(event.id || "")] ? "going" : "saved",
       raw: event,
     }));
     return [...eventEntries, ...planCalendarEntries, ...personalCalendarEntries].sort((a, b) => {
@@ -1598,7 +1617,7 @@ export default function FavoritesPage() {
       if (dateCompare !== 0) return dateCompare;
       return String(a.time || "99:99").localeCompare(String(b.time || "99:99"));
     });
-  }, [calendarEvents, calendarReminderByEventId, personalCalendarEntries, planCalendarEntries]);
+  }, [calendarEvents, calendarGoingByEventId, calendarReminderByEventId, personalCalendarEntries, planCalendarEntries]);
   const calendarEntriesByDate = useMemo(() => {
     const lookup = new Map();
     unifiedCalendarEntries.forEach((entry) => {
@@ -1621,6 +1640,28 @@ export default function FavoritesPage() {
     () => unifiedCalendarEntries.filter((entry) => String(entry.reminderMode || "off") !== "off"),
     [unifiedCalendarEntries]
   );
+  const calendarAgendaGroups = useMemo(() => {
+    const groups = new Map();
+    unifiedCalendarEntries
+      .filter((entry) => String(entry.dateKey || "") >= todayDateKey)
+      .forEach((entry) => {
+        if (!groups.has(entry.dateKey)) groups.set(entry.dateKey, []);
+        groups.get(entry.dateKey).push(entry);
+      });
+    return Array.from(groups, ([dateKey, entries]) => ({ dateKey, entries })).slice(0, 16);
+  }, [todayDateKey, unifiedCalendarEntries]);
+  const calendarDateStrip = useMemo(() => {
+    const today = new Date(`${todayDateKey}T12:00:00`);
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + index);
+      return {
+        dateKey: formatCalendarDateKey(date),
+        weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+        day: date.getDate(),
+      };
+    });
+  }, [todayDateKey]);
 
   const totalPlaces = savedPlaces.length;
   const totalEvents = savedEvents.length;
@@ -2514,6 +2555,14 @@ export default function FavoritesPage() {
   }, [personalCalendarItems]);
 
   useEffect(() => {
+    writeLocalJson(FAVORITES_CALENDAR_VIEW_STORAGE_KEY, calendarView);
+  }, [calendarView]);
+
+  useEffect(() => {
+    writeLocalJson(FAVORITES_CALENDAR_GOING_STORAGE_KEY, calendarGoingByEventId || {});
+  }, [calendarGoingByEventId]);
+
+  useEffect(() => {
     if (activeProfileTab !== "calendar") return;
     const todayWithReminder = todayCalendarEvents.filter((event) => {
       const mode = String(calendarReminderByEventId?.[String(event.id)] || "off");
@@ -2609,6 +2658,49 @@ export default function FavoritesPage() {
       ...(current || {}),
       [safeId]: safeMode,
     }));
+    if (user?.id) {
+      const calendarEvent = calendarEvents.find((item) => String(item.id || "") === safeId);
+      if (calendarEvent) {
+        void (async () => {
+          const clientId = `event-${safeId}`;
+          if (safeMode === "off") {
+            await supabase.from("member_calendar_reminders").delete().eq("user_id", user.id).eq("entry_client_id", clientId);
+            return;
+          }
+          const dateKey = calendarEvent.calendarDate.toISOString().slice(0, 10);
+          const timeValue = String(calendarEvent.time || calendarEvent.start_time || "20:00").slice(0, 5);
+          const startsAt = new Date(`${dateKey}T${timeValue}:00`);
+          const scheduledFor = safeMode === "day_before"
+            ? new Date(startsAt.getTime() - 86400000)
+            : new Date(`${dateKey}T09:00:00`);
+          const { error: entryError } = await supabase.from("member_calendar_entries").upsert({
+            user_id: user.id,
+            client_id: clientId,
+            source_type: "event",
+            source_id: safeId,
+            status: calendarGoingByEventId?.[safeId] ? "going" : "saved",
+            title: calendarEvent.name || "Saved event",
+            city: calendarEvent.city || null,
+            date_key: dateKey,
+            time_value: timeValue,
+            payload: { eventId: safeId },
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id,client_id" });
+          if (entryError) return;
+          await supabase.from("member_calendar_reminders").upsert({
+            user_id: user.id,
+            entry_client_id: clientId,
+            mode: safeMode,
+            scheduled_for: scheduledFor.toISOString(),
+            status: "pending",
+            attempt_count: 0,
+            delivered_at: null,
+            last_error: null,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id,entry_client_id,mode" });
+        })();
+      }
+    }
     if (safeMode === "off") {
       showToast("Reminder removed.", { tone: "info", duration: 1400 });
       return;
@@ -2619,7 +2711,124 @@ export default function FavoritesPage() {
         : "Reminder set: on event day.",
       { tone: "ok", duration: 1600 }
     );
+  }, [calendarEvents, calendarGoingByEventId, showToast, user]);
+
+  const toggleCalendarGoing = useCallback((eventId) => {
+    const safeId = String(eventId || "").trim();
+    if (!safeId) return;
+    setCalendarGoingByEventId((current) => {
+      const next = { ...(current || {}) };
+      if (next[safeId]) delete next[safeId];
+      else next[safeId] = true;
+      return next;
+    });
+    const wasGoing = Boolean(calendarGoingByEventId?.[safeId]);
+    showToast(wasGoing ? "Moved back to Saved." : "You’re going — lovely.", { tone: wasGoing ? "info" : "ok", duration: 1700 });
+  }, [calendarGoingByEventId, showToast]);
+
+  const openCalendarEntryOnMap = useCallback((entry) => {
+    if (!entry?.city) {
+      showToast("This plan does not have a map location yet.", { tone: "info", duration: 1900 });
+      return;
+    }
+    if (entry.kind === "event") {
+      router.push(citySelectionPath(entry.city, { eventId: entry.sourceId }));
+      return;
+    }
+    setMyMapView("saved");
+    setActiveProfileTab("map");
+    showToast("Opened My Map for this city.", { tone: "info", duration: 1500 });
+  }, [router, showToast]);
+
+  const openCalendarDirections = useCallback((entry) => {
+    const raw = entry?.raw || {};
+    const lat = Number(raw.lat ?? raw.latitude);
+    const lng = Number(raw.lng ?? raw.longitude ?? raw.lon);
+    const destination = Number.isFinite(lat) && Number.isFinite(lng)
+      ? `${lat},${lng}`
+      : [raw.location || raw.address, entry?.city].filter(Boolean).join(", ");
+    if (!destination) {
+      showToast("Directions are unavailable until a location is added.", { tone: "info", duration: 1900 });
+      return;
+    }
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`, "_blank", "noopener,noreferrer");
   }, [showToast]);
+
+  const enableCalendarPush = useCallback(async () => {
+    const vapidPublicKey = String(process.env.NEXT_PUBLIC_WEB_PUSH_VAPID_PUBLIC_KEY || "").trim();
+    if (!vapidPublicKey) {
+      showToast("Push reminders need the VAPID public key before they can be enabled.", { tone: "info", duration: 2400 });
+      return;
+    }
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      showToast("Push reminders are not supported by this browser.", { tone: "info", duration: 2200 });
+      return;
+    }
+    setCalendarPushState("loading");
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setCalendarPushState("denied");
+        showToast("Notifications remain off. You can enable them later.", { tone: "info", duration: 2200 });
+        return;
+      }
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: decodeVapidPublicKey(vapidPublicKey),
+      });
+      const json = subscription.toJSON();
+      const { error } = await supabase.from("member_push_subscriptions").upsert({
+        user_id: user.id,
+        endpoint: subscription.endpoint,
+        p256dh: String(json.keys?.p256dh || ""),
+        auth_key: String(json.keys?.auth || ""),
+        user_agent: navigator.userAgent,
+        active: true,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,endpoint" });
+      if (error) throw error;
+      setCalendarPushState("enabled");
+      showToast("Push reminders enabled.", { tone: "ok", duration: 1900 });
+    } catch {
+      setCalendarPushState("error");
+      showToast("Push reminders could not be enabled yet.", { tone: "warn", duration: 2200 });
+    }
+  }, [showToast, user]);
+
+  const addCalendarEventToTrip = useCallback(async (entry) => {
+    if (!entry || entry.kind !== "event") return;
+    const matchingPlan = (plans || []).find((plan) => normalizeCityKey(plan?.city) === normalizeCityKey(entry.city));
+    if (!matchingPlan) {
+      setActiveProfileTab("trips");
+      showToast(`Create a ${formatCityLabel(entry.city || "city")} trip first, then add this event.`, { tone: "info", duration: 2400 });
+      window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+      return;
+    }
+    const eventId = String(entry.sourceId || "");
+    if ((matchingPlan.eventIds || []).map(String).includes(eventId)) {
+      setActiveProfileTab("trips");
+      setExpandedPlanId(matchingPlan.id);
+      showToast("This event is already in your trip.", { tone: "info", duration: 1700 });
+      return;
+    }
+    const nextEventIds = [...(matchingPlan.eventIds || []), eventId];
+    const nextStops = [...(matchingPlan.stops || []), {
+      type: "event",
+      id: eventId,
+      name: entry.title,
+      city: entry.city,
+      time: entry.time || null,
+      dayLabel: entry.dateKey,
+    }];
+    setPlans((current) => current.map((plan) => String(plan.id) === String(matchingPlan.id) ? { ...plan, eventIds: nextEventIds, stops: nextStops } : plan));
+    if (user?.id) {
+      const { error } = await supabase.from("member_plans").update({ event_ids: nextEventIds, stops: nextStops }).eq("user_id", user.id).eq("client_id", String(matchingPlan.id));
+      if (error) setSyncWarning("Event added locally. Cloud sync unavailable.");
+    }
+    setCalendarGoingByEventId((current) => ({ ...(current || {}), [eventId]: true }));
+    showToast(`Added to ${matchingPlan.title || "your trip"}.`, { tone: "ok", duration: 1900 });
+  }, [plans, setExpandedPlanId, setPlans, setSyncWarning, showToast, user]);
 
   const moveCalendarMonth = useCallback((offset) => {
     setCalendarMonthKey((current) => {
@@ -4952,29 +5161,196 @@ export default function FavoritesPage() {
 
         {showCalendarSection ? (
         <section className="qa-atlas-section mb-6">
-          <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-rose-100/78">My Calendar</p>
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-                Calendar Studio
+                Your plans, beautifully in sync.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
-                Saved events, trip plans, personal notes, and reminders in one interactive agenda.
+                Saved events, trip plans and personal moments — arranged around where you are going next.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1.5 text-xs text-rose-100">
-                Today {todayCalendarEvents.length}
-              </span>
-              <span className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1.5 text-xs text-cyan-100">
-                Upcoming {upcomingCalendarEvents.length}
-              </span>
-              <span className="rounded-full border border-amber-200/24 bg-amber-200/10 px-3 py-1.5 text-xs text-amber-100">
-                Reminders {reminderCalendarEntries.length}
-              </span>
+            <div className="flex items-center gap-2 self-start rounded-full border border-white/10 bg-[#17121d]/90 p-1 shadow-[0_14px_38px_rgba(0,0,0,0.26)]">
+              {[{ id: "agenda", label: "Agenda" }, { id: "month", label: "Month" }].map((view) => (
+                <button
+                  key={`calendar-view-${view.id}`}
+                  type="button"
+                  onClick={() => setCalendarView(view.id)}
+                  aria-pressed={calendarView === view.id}
+                  className={`min-h-10 rounded-full px-4 text-xs font-semibold transition ${
+                    calendarView === view.id
+                      ? "bg-[#f5a9c6] text-[#24131d] shadow-[0_8px_24px_rgba(245,169,198,0.20)]"
+                      : "text-white/58 hover:bg-white/[0.055] hover:text-white"
+                  }`}
+                >
+                  {view.label}
+                </button>
+              ))}
             </div>
           </div>
 
+          {calendarView === "agenda" ? (
+            <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_12%_0%,rgba(245,169,198,0.10),transparent_30%),linear-gradient(180deg,#19131f_0%,#120e17_100%)] shadow-[0_28px_82px_rgba(0,0,0,0.32)]">
+              <div className="border-b border-white/8 px-4 pb-4 pt-5 sm:px-6 sm:pt-6">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#f5a9c6]/70">Coming up</p>
+                    <h3 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[#fff7fb]">Your agenda</h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={enableCalendarPush} disabled={calendarPushState === "loading" || calendarPushState === "enabled"} className="min-h-10 rounded-full border border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white/62 disabled:opacity-60">
+                      {calendarPushState === "enabled" ? "Reminders on" : calendarPushState === "loading" ? "Enabling…" : "Enable reminders"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/events")}
+                      className="min-h-10 rounded-full border border-[#f5a9c6]/22 bg-[#f5a9c6]/10 px-4 text-xs font-semibold text-[#ffd8e7] transition hover:border-[#f5a9c6]/38 hover:bg-[#f5a9c6]/14"
+                    >
+                      Browse events
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {calendarDateStrip.map((day, index) => {
+                    const isSelected = selectedCalendarDateKey === day.dateKey;
+                    const itemCount = (calendarEntriesByDate.get(day.dateKey) || []).length;
+                    return (
+                      <button
+                        key={`agenda-strip-${day.dateKey}`}
+                        type="button"
+                        onClick={() => {
+                          selectCalendarDate(day.dateKey);
+                          document.getElementById(`agenda-date-${day.dateKey}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }}
+                        aria-label={`${day.weekday} ${day.day}${itemCount ? `, ${itemCount} plans` : ", no plans"}`}
+                        className={`relative flex min-h-[4.4rem] min-w-[3.6rem] flex-col items-center justify-center rounded-[18px] border px-3 transition ${
+                          isSelected
+                            ? "border-[#f5a9c6]/48 bg-[#f5a9c6]/15 text-[#fff7fb]"
+                            : index === 0
+                              ? "border-[#f5a9c6]/24 bg-[#241825] text-[#fff7fb]"
+                              : "border-white/8 bg-white/[0.025] text-white/58 hover:border-white/16 hover:bg-white/[0.045]"
+                        }`}
+                      >
+                        <span className="text-[9px] uppercase tracking-[0.13em]">{day.weekday}</span>
+                        <span className="mt-1 text-lg font-semibold">{day.day}</span>
+                        {itemCount > 0 ? <span className="absolute bottom-1.5 h-1 w-1 rounded-full bg-[#ff78ad]" /> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="px-4 py-5 sm:px-6 sm:py-7">
+                {calendarAgendaGroups.length > 0 ? (
+                  <div className="mx-auto max-w-3xl space-y-8">
+                    {calendarAgendaGroups.map((group) => {
+                      const dayOffset = Math.round((new Date(`${group.dateKey}T12:00:00`).getTime() - new Date(`${todayDateKey}T12:00:00`).getTime()) / 86400000);
+                      const dateLabel = dayOffset === 0
+                        ? "Today"
+                        : dayOffset === 1
+                          ? "Tomorrow"
+                          : new Date(`${group.dateKey}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+                      return (
+                        <section key={`agenda-group-${group.dateKey}`} id={`agenda-date-${group.dateKey}`} className="scroll-mt-36">
+                          <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-white/8 pb-2">
+                            <h4 className="text-sm font-semibold text-[#fff7fb]">{dateLabel}</h4>
+                            <span className="text-[10px] uppercase tracking-[0.14em] text-white/34">{group.entries.length} {group.entries.length === 1 ? "plan" : "plans"}</span>
+                          </div>
+                          <div className="space-y-2">
+                            {group.entries.map((entry) => {
+                              const isEvent = entry.kind === "event";
+                              const isPlan = entry.kind === "plan";
+                              const railClass = isEvent ? "bg-[#ff78ad]" : isPlan ? "bg-[#88d9d4]" : "bg-[#d8b678]";
+                              const sourceLabel = isEvent ? (entry.status === "going" ? "Going" : "Saved event") : isPlan ? "Trip plan" : entry.type || "Personal";
+                              return (
+                                <article key={`agenda-${entry.id}`} className="group relative overflow-hidden rounded-[18px] border border-white/8 bg-white/[0.028] transition hover:border-white/14 hover:bg-white/[0.045]">
+                                  <span className={`absolute inset-y-0 left-0 w-[3px] ${railClass}`} />
+                                  <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+                                    <div className="w-12 flex-none text-center">
+                                      <span className="block text-sm font-semibold text-[#fff7fb]">{entry.time || "All day"}</span>
+                                    </div>
+                                    <div className="min-w-0 flex-1 border-l border-white/8 pl-3 sm:pl-4">
+                                      <p className="text-[9px] uppercase tracking-[0.15em] text-white/38">{sourceLabel}</p>
+                                      <h5 className="mt-1 truncate text-sm font-semibold text-[#fff7fb] sm:text-base">{entry.title}</h5>
+                                      <p className="mt-1 truncate text-xs text-[#bcaeb9]">{entry.city ? formatCityLabel(entry.city) : "Location not set"}</p>
+                                    </div>
+                                    {isEvent ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleCalendarGoing(entry.sourceId)}
+                                        className={`min-h-10 flex-none rounded-full px-3 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${entry.status === "going" ? "border border-[#f5a9c6]/26 bg-[#f5a9c6]/12 text-[#ffd8e7]" : "bg-[#f5a9c6] text-[#24131d] hover:bg-[#ffc0d7]"}`}
+                                      >
+                                        {entry.status === "going" ? "Going" : "Going?"}
+                                      </button>
+                                    ) : isPlan ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveProfileTab("trips");
+                                          setExpandedPlanId(entry.sourceId);
+                                          window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+                                        }}
+                                        className="min-h-10 flex-none rounded-full border border-[#88d9d4]/20 bg-[#88d9d4]/8 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#bff5ef] transition hover:border-[#88d9d4]/36"
+                                      >
+                                        Open trip
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                </article>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mx-auto flex min-h-72 max-w-md flex-col items-center justify-center px-5 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#f5a9c6]/18 bg-[#f5a9c6]/8 text-2xl" aria-hidden="true">✦</div>
+                    <h3 className="mt-5 text-xl font-semibold tracking-[-0.025em] text-[#fff7fb]">Your next plan starts here</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#bcaeb9]">Save an event and it will appear here automatically.</p>
+                    <button type="button" onClick={() => router.push("/events")} className="mt-5 min-h-11 rounded-full bg-[#f5a9c6] px-5 text-sm font-semibold text-[#24131d]">Explore events</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : calendarView === "month" ? (
+            <CalendarMonthExperience
+              monthKey={calendarMonthKey}
+              monthCells={calendarMonthCells}
+              entriesByDate={calendarEntriesByDate}
+              selectedDateKey={selectedCalendarDateKey}
+              todayDateKey={todayDateKey}
+              selectedEntries={selectedCalendarEntries}
+              itemForm={calendarItemForm}
+              setItemForm={setCalendarItemForm}
+              onMoveMonth={moveCalendarMonth}
+              onToday={() => {
+                const today = formatCalendarDateKey(new Date());
+                setCalendarMonthKey(getCalendarMonthKey(new Date()));
+                selectCalendarDate(today);
+              }}
+              onSelectDate={selectCalendarDate}
+              onSaveItem={savePersonalCalendarItem}
+              onRemovePersonal={removePersonalCalendarItem}
+              onSetEventReminder={setCalendarReminderMode}
+              onSetPersonalReminder={setPersonalCalendarReminderMode}
+              onToggleGoing={toggleCalendarGoing}
+              onShowOnMap={openCalendarEntryOnMap}
+              onDirections={openCalendarDirections}
+              onAddToTrip={addCalendarEventToTrip}
+              onEnablePush={enableCalendarPush}
+              pushState={calendarPushState}
+              onOpenEvent={(entry) => router.push(citySelectionPath(entry.city, { eventId: entry.sourceId }))}
+              onOpenTrip={(entry) => {
+                setActiveProfileTab("trips");
+                setExpandedPlanId(entry.sourceId);
+                window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+              }}
+            />
+          ) : (
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(24rem,0.82fr)] xl:items-stretch">
             <div className="qa-premium-card rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.13),transparent_32%),radial-gradient(circle_at_92%_4%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(18,16,22,0.96),rgba(9,9,11,0.99))] p-4 shadow-[0_28px_82px_rgba(0,0,0,0.38)] sm:p-5 xl:h-[54rem] xl:overflow-y-auto">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -5298,6 +5674,7 @@ export default function FavoritesPage() {
               </form>
             </aside>
           </div>
+          )}
         </section>
         ) : null}
       </div>

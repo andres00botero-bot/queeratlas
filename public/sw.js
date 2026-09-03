@@ -70,3 +70,38 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch {
+    payload = { body: event.data ? event.data.text() : "You have a plan coming up." };
+  }
+  const title = String(payload.title || "QueerAtlas reminder");
+  const options = {
+    body: String(payload.body || "You have a plan coming up."),
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: String(payload.tag || "qa-calendar-reminder"),
+    renotify: false,
+    data: { url: String(payload.url || "/favorites?tab=calendar") },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification?.data?.url || "/favorites?tab=calendar", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
+      const existing = clients.find((client) => client.url.startsWith(self.location.origin));
+      if (existing) {
+        await existing.focus();
+        if ("navigate" in existing) await existing.navigate(targetUrl);
+        return;
+      }
+      await self.clients.openWindow(targetUrl);
+    })
+  );
+});
