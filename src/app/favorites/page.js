@@ -1955,10 +1955,11 @@ export default function FavoritesPage() {
         });
         map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
         map.on("load", () => {
+          if (isCancelled) return;
           map.resize();
+          setCheckinMapReadyTick((tick) => tick + 1);
         });
         checkinMapRef.current = map;
-        setCheckinMapReadyTick((tick) => tick + 1);
       } catch {
         if (!isCancelled) {
           setCheckinMapLoadFailed(true);
@@ -2004,8 +2005,9 @@ export default function FavoritesPage() {
 
     checkinMapMarkersRef.current.forEach((marker) => marker.remove());
     checkinMapMarkersRef.current = [];
-    if (map.getLayer("qa-trip-route")) map.removeLayer("qa-trip-route");
-    if (map.getSource("qa-trip-route")) map.removeSource("qa-trip-route");
+    const isMapStyleReady = map.isStyleLoaded();
+    if (isMapStyleReady && map.getLayer("qa-trip-route")) map.removeLayer("qa-trip-route");
+    if (isMapStyleReady && map.getSource("qa-trip-route")) map.removeSource("qa-trip-route");
 
     if (!interactiveCheckinPoints.length) {
       if (checkinMapCenter) {
@@ -2070,7 +2072,7 @@ export default function FavoritesPage() {
       .sort((a, b) => Number(a.tripStopNumber) - Number(b.tripStopNumber))
       .map((point) => [Number(point.markerLng), Number(point.markerLat)])
       .filter(([lng, lat]) => Number.isFinite(lng) && Number.isFinite(lat));
-    if (tripCoordinates.length > 1) {
+    if (isMapStyleReady && tripCoordinates.length > 1 && !map.getSource("qa-trip-route")) {
       map.addSource("qa-trip-route", {
         type: "geojson",
         data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: tripCoordinates } },
