@@ -62,7 +62,6 @@ import SelectedPlacePanel from "@/components/city/SelectedPlacePanel";
 import SelectedServicePanel from "@/components/city/SelectedServicePanel";
 import CityServicesCluster from "@/components/city/CityServicesCluster";
 import CitySeoScaffold from "@/components/city/CitySeoScaffold";
-import CitySeoTopicLinks from "@/components/city/CitySeoTopicLinks";
 import CityTopCluster from "@/components/city/CityTopCluster";
 import CityTonightCluster from "@/components/city/CityTonightCluster";
 import SafetyShields from "@/components/city/SafetyShields";
@@ -5109,7 +5108,6 @@ export default function CityPage() {
                     activeVenueFilter={activeVenueFilter}
                   />
                 </div>
-                <CitySeoTopicLinks city={city} cityName={cityName} />
               </div>
 
               <div className={`${activeCitySection === "guide" ? "block" : "hidden"} ${effectiveDesktopContentSection === "guide" && !isAddComposerActive ? "xl:block" : "xl:hidden"}`}>

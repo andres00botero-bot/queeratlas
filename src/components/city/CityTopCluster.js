@@ -2,10 +2,8 @@
 
 import CityContributionStack from "@/components/city/CityContributionStack";
 import CityHeroCard from "@/components/city/CityHeroCard";
-import CitySeoTopicLinks from "@/components/city/CitySeoTopicLinks";
 
 export default function CityTopCluster({
-  city,
   cityName,
   placesChipLabel,
   eventsChipLabel,
@@ -38,13 +36,6 @@ export default function CityTopCluster({
             mobileDiscovery={mobileDiscovery}
             showOnLargerScreens={showHero}
           />
-          {showHero ? (
-            <div className="hidden xl:block">
-              <div className="mt-8">
-                <CitySeoTopicLinks city={city} cityName={cityName} />
-              </div>
-            </div>
-          ) : null}
         </>
       ) : null}
 
