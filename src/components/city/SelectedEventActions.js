@@ -19,7 +19,7 @@ export default function SelectedEventActions({
   const ticketUrl = normalizeExternalUrl(selectedEvent?.ticket_url || selectedEvent?.ticketUrl || "");
 
   return (
-    <div className="mt-3 space-y-2">
+    <div className="qa-city-detail-surface mt-4 space-y-2 rounded-[22px] border p-4">
       <button
         onClick={() => toggleFavorite(favoriteKey)}
         className={`qa-action qa-action-strong ${isSaved ? "qa-city-cta-primary" : "qa-city-cta-secondary"} w-full rounded-2xl border px-4 py-3 text-sm ${
@@ -81,7 +81,7 @@ export default function SelectedEventActions({
             title: selectedEvent.name,
           })
         }
-        className="qa-action qa-city-cta-tertiary w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+        className="qa-action qa-city-cta-tertiary w-full rounded-2xl border border-white/[0.09] bg-white/[0.025] py-3 text-sm text-white/56 hover:border-rose-200/24 hover:text-rose-100"
         aria-label={`Report event ${selectedEvent.name}`}
       >
         Report issue

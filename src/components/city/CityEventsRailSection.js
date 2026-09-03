@@ -36,7 +36,7 @@ export default function CityEventsRailSection({
   return (
     <div
       ref={sectionRef}
-      className="hidden qa-city-section animate-cinematic-in relative mb-10 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,1))] p-6 shadow-[0_24px_82px_rgba(0,0,0,0.34)]"
+      className="hidden qa-city-section qa-city-content-section qa-city-tone-events animate-cinematic-in relative mb-10 overflow-hidden rounded-[28px] border p-6"
       style={{ animationDelay: "210ms" }}
     >
       <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
@@ -79,6 +79,7 @@ export default function CityEventsRailSection({
                 onClick={() => openEvent(featuredEvent)}
                 role="button"
                 tabIndex={0}
+                aria-pressed={String(selectedEvent?.id) === String(featuredEvent.id)}
                 aria-label={`Open event details for ${featuredEvent.name}`}
                 onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
                 onMouseLeave={() => setHoveredEventId(null)}
@@ -88,7 +89,7 @@ export default function CityEventsRailSection({
                     openEvent(featuredEvent);
                   }
                 }}
-                className={`qa-cinematic-hover qa-city-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-300/16 bg-[linear-gradient(130deg,rgba(109,40,217,0.36),rgba(244,114,182,0.14),rgba(16,16,16,0.96))] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+                className={`qa-cinematic-hover qa-city-card qa-city-content-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[20px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
                   String(hoveredEventId) === String(featuredEvent.id)
                     ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
                     : ""
@@ -162,6 +163,7 @@ export default function CityEventsRailSection({
               onClick={() => openEvent(event)}
               role="button"
               tabIndex={0}
+              aria-pressed={String(selectedEvent?.id) === String(event.id)}
               aria-label={`Open event details for ${event.name}`}
               onMouseEnter={() => setHoveredEventId(String(event.id))}
               onMouseLeave={() => setHoveredEventId(null)}
@@ -171,7 +173,7 @@ export default function CityEventsRailSection({
                   openEvent(event);
                 }
               }}
-              className={`qa-cinematic-hover qa-city-card animate-rise-in mb-3 cursor-pointer rounded-[24px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+              className={`qa-cinematic-hover qa-city-card qa-city-content-card animate-rise-in mb-3 cursor-pointer rounded-[20px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
                 String(selectedEvent?.id) === String(event.id)
                   ? "border-violet-200/24 bg-[linear-gradient(180deg,rgba(90,35,170,0.35),rgba(15,15,15,0.96))]"
                   : `border-violet-300/12 bg-[linear-gradient(180deg,rgba(34,24,46,0.82),rgba(15,15,15,0.96))] hover:border-violet-200/22 ${

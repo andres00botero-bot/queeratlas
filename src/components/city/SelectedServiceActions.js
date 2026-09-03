@@ -12,13 +12,13 @@ export default function SelectedServiceActions({
   serviceName,
 }) {
   return (
-    <div className="mt-3 space-y-2">
+    <div className="qa-city-detail-surface mt-4 space-y-2 rounded-[22px] border p-4">
       {bookingUrl && (
         <a
           href={bookingUrl}
           target="_blank"
           rel="noreferrer"
-          className="qa-action qa-action-strong qa-city-cta-primary block w-full rounded-2xl bg-gradient-to-r from-emerald-300 to-cyan-200 py-3 text-center font-semibold text-black"
+          className="qa-action qa-action-strong qa-city-cta-primary block w-full rounded-2xl border border-[#88d9d4]/35 bg-[#88d9d4] py-3 text-center font-semibold text-[#0b1716] shadow-[0_12px_30px_rgba(136,217,212,0.14)]"
         >
           Open booking
         </a>
@@ -50,7 +50,7 @@ export default function SelectedServiceActions({
       )}
       <button
         onClick={onReport}
-        className="qa-action qa-city-cta-tertiary w-full rounded-2xl border border-rose-200/20 bg-rose-200/8 py-3 text-sm text-rose-100 hover:border-rose-200/35 hover:bg-rose-200/12"
+        className="qa-action qa-city-cta-tertiary w-full rounded-2xl border border-white/[0.09] bg-white/[0.025] py-3 text-sm text-white/56 hover:border-rose-200/24 hover:text-rose-100"
         aria-label={`Report service ${serviceName}`}
       >
         Report issue

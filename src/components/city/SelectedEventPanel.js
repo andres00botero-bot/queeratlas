@@ -52,23 +52,22 @@ export default function SelectedEventPanel({
   return (
     <div
       onWheel={onWheel}
-      className={`qa-city-panel-cq animate-panel-in border border-white/10 bg-[radial-gradient(circle_at_top,rgba(139,92,246,0.10),transparent_26%),linear-gradient(180deg,rgba(21,17,32,0.98),rgba(10,10,10,1))] p-6 backdrop-blur ${
+      className={`qa-city-panel-cq qa-city-detail-sheet qa-city-detail-event animate-panel-in border p-5 backdrop-blur sm:p-6 ${
         inlineMode
           ? "relative z-10 max-h-none overflow-visible rounded-[24px] shadow-[0_18px_56px_rgba(0,0,0,0.34)]"
           : "fixed inset-x-0 bottom-0 z-40 max-h-[82vh] overflow-y-auto overscroll-contain rounded-t-[24px] border-b-0 pb-[calc(7.25rem+env(safe-area-inset-bottom))] shadow-[0_-20px_70px_rgba(0,0,0,0.45)]"
       }`}
     >
       <div className="pointer-events-none absolute right-[-60px] top-8 h-44 w-44 rounded-full bg-violet-400/14 blur-3xl" />
-      <button
-        type="button"
-        aria-label="Close event details"
-        className="sticky top-0 z-20 qa-cinematic-hover rounded-full border border-white/14 bg-[#111021]/90 px-4 py-2.5 text-sm text-white/80 backdrop-blur hover:border-white/25 hover:text-white"
-        onClick={onClose}
-      >
-        Close
-      </button>
+      <div className="qa-city-detail-header sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[22px] border px-4 py-3 backdrop-blur-xl">
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#cbbcff]">Event</p>
+          <p className="truncate text-sm font-semibold text-white/92">{selectedEvent.name}</p>
+        </div>
+        <button type="button" aria-label="Close event details" className="qa-cinematic-hover rounded-full border border-white/14 bg-white/[0.06] px-3 py-2 text-xs text-white/76 hover:border-white/28 hover:text-white" onClick={onClose}>Close</button>
+      </div>
 
-      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="qa-city-detail-surface mt-4 rounded-[22px] border p-4">
         <SelectedEventSummary
           selectedEvent={selectedEvent}
           cityLabel={cityLabel}

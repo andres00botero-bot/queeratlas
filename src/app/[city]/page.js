@@ -340,6 +340,9 @@ export default function CityPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsLoadError, setEventsLoadError] = useState("");
   const [mapError, setMapError] = useState("");
+  const [isMapReady, setIsMapReady] = useState(false);
+  const [showSearchArea, setShowSearchArea] = useState(false);
+  const [mapAreaResult, setMapAreaResult] = useState("");
   const [safetySignalsByPlaceId, setSafetySignalsByPlaceId] = useState({});
   const [, setQualityTick] = useState(0);
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
@@ -493,6 +496,8 @@ export default function CityPage() {
     setAddServiceMode(false);
     handleDesktopSectionNav("home", guideSectionRef);
     resetMapToCityOverview();
+    setShowSearchArea(false);
+    setMapAreaResult("");
   }, [handleDesktopSectionNav, resetMapToCityOverview]);
 
   const setVenueGroupRef = useCallback((groupValue, node) => {
@@ -667,6 +672,23 @@ export default function CityPage() {
     () => selectVisibleCityEvents(cityEventsAll, isEventVisibleOnCityPage),
     [cityEventsAll]
   );
+
+  const handleSearchThisArea = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const bounds = map.getBounds();
+    const entities = [...cityPlaces, ...cityEvents, ...cityServices];
+    const visibleCount = entities.reduce((count, entity) => {
+      const lat = Number(entity?.lat);
+      const lng = Number(entity?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return count;
+      return bounds.contains([lng, lat]) ? count + 1 : count;
+    }, 0);
+    const resultLabel = visibleCount === 1 ? "1 place in this area" : `${visibleCount} places in this area`;
+    setMapAreaResult(resultLabel);
+    setShowSearchArea(false);
+    showToast(resultLabel, { tone: visibleCount > 0 ? "ok" : "warn", duration: 2200 });
+  }, [cityEvents, cityPlaces, cityServices, showToast]);
 
   const cityPrivateEvents = useMemo(() => {
     const normalizedCity = normalizeCityKey(city);
@@ -2213,6 +2235,7 @@ export default function CityPage() {
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
     let isCancelled = false;
+    queueMicrotask(() => setIsMapReady(false));
     const usePhoneMap =
       typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
@@ -2286,6 +2309,7 @@ export default function CityPage() {
 
     const handleMapError = () => {
       queueMicrotask(() => {
+        setIsMapReady(false);
         setMapError("Map had trouble loading. Venue and event lists are still fully available.");
       });
     };
@@ -2298,10 +2322,15 @@ export default function CityPage() {
     const endInteraction = () => {
       isMapInteractingRef.current = false;
       setIsMapInteracting(false);
+      setShowSearchArea(true);
+      setMapAreaResult("");
     };
     const handleMapLoad = () => {
       const map = mapRef.current;
       if (!map) return;
+
+      map.resize();
+      queueMicrotask(() => setIsMapReady(true));
 
       // Force a stable camera/fog state to avoid fog opacity runtime crashes in Mapbox internals.
       try {
@@ -2318,6 +2347,18 @@ export default function CityPage() {
 
     const handleResize = () => mapRef.current?.resize();
     window.addEventListener("resize", handleResize);
+
+    let resizeFrame = 0;
+    const containerObserver =
+      typeof ResizeObserver === "function"
+        ? new ResizeObserver(() => {
+            cancelAnimationFrame(resizeFrame);
+            resizeFrame = requestAnimationFrame(() => mapRef.current?.resize());
+          })
+        : null;
+    if (activeMapContainer) {
+      containerObserver?.observe(activeMapContainer);
+    }
 
     queueMicrotask(() => {
       mapRef.current?.resize();
@@ -2336,6 +2377,8 @@ export default function CityPage() {
       mapRef.current?.off("pitchend", endInteraction);
       mapRef.current?.off("load", handleMapLoad);
       window.removeEventListener("resize", handleResize);
+      containerObserver?.disconnect();
+      cancelAnimationFrame(resizeFrame);
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current = [];
       mapRef.current?.remove();
@@ -2379,22 +2422,24 @@ export default function CityPage() {
     const createNeonPinElement = (baseColor = "#9ca3af") => {
       const wrapper = document.createElement("div");
       wrapper.dataset.neonColor = baseColor;
-      wrapper.style.width = "22px";
-      wrapper.style.height = "24px";
+      wrapper.style.width = "20px";
+      wrapper.style.height = "22px";
       wrapper.style.display = "flex";
       wrapper.style.alignItems = "flex-start";
       wrapper.style.justifyContent = "center";
-      wrapper.style.filter = "saturate(1.9) brightness(1.16)";
+      wrapper.style.filter = "saturate(0.88) brightness(0.92)";
+      wrapper.style.opacity = "0.72";
+      wrapper.style.cursor = "pointer";
 
       const pin = document.createElement("div");
       pin.className = "qa-neon-pin";
-      pin.style.width = "20px";
-      pin.style.height = "20px";
+      pin.style.width = "18px";
+      pin.style.height = "18px";
       pin.style.transform = "rotate(-45deg)";
       pin.style.borderRadius = "999px 999px 999px 2px";
-      pin.style.background = `radial-gradient(circle at 22% 16%,rgba(255,255,255,0.82),${baseColor} 34%)`;
-      pin.style.border = "1.6px solid rgba(255,255,255,0.92)";
-      pin.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.16), 0 0 8px ${baseColor}, 0 0 16px ${baseColor}`;
+      pin.style.background = `radial-gradient(circle at 24% 18%,rgba(255,255,255,0.72),${baseColor} 38%)`;
+      pin.style.border = "1.4px solid rgba(255,255,255,0.78)";
+      pin.style.boxShadow = `0 0 0 1px rgba(255,255,255,0.09), 0 0 8px color-mix(in srgb, ${baseColor} 62%, transparent)`;
 
       const core = document.createElement("div");
       core.style.width = "6px";
@@ -2411,6 +2456,13 @@ export default function CityPage() {
       pin.appendChild(core);
       wrapper.appendChild(pin);
       return wrapper;
+    };
+    const configureMarkerElement = (marker, label) => {
+      const element = marker.getElement();
+      element.setAttribute("role", "button");
+      element.setAttribute("tabindex", "0");
+      element.setAttribute("aria-label", label);
+      return element;
     };
     const EVENT_MARKER_COLOR = "#ff4ec4";
 
@@ -2431,15 +2483,22 @@ export default function CityPage() {
         .setLngLat([place.lng, place.lat])
         .addTo(mapRef.current);
 
-      marker.getElement().addEventListener("click", () => {
+      const markerElement = configureMarkerElement(marker, `Open venue: ${place.name || "Venue"}`);
+      markerElement.addEventListener("click", () => {
         openPlace(place, { origin: "map" });
       });
-      marker.getElement().addEventListener("mouseenter", () => {
+      markerElement.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openPlace(place, { origin: "map" });
+        }
+      });
+      markerElement.addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
         setHoveredPlaceId(String(place.id));
         showHoverPopup(place.name || "Venue", place.lng, place.lat);
       });
-      marker.getElement().addEventListener("mouseleave", () => {
+      markerElement.addEventListener("mouseleave", () => {
         setHoveredPlaceId(null);
         hideHoverPopup();
       });
@@ -2469,15 +2528,22 @@ export default function CityPage() {
         .setLngLat([event.lng, event.lat])
         .addTo(mapRef.current);
 
-      marker.getElement().addEventListener("click", () => {
+      const markerElement = configureMarkerElement(marker, `Open event: ${event.name || "Event"}`);
+      markerElement.addEventListener("click", () => {
         openEvent(event, { origin: "map" });
       });
-      marker.getElement().addEventListener("mouseenter", () => {
+      markerElement.addEventListener("keydown", (keyboardEvent) => {
+        if (keyboardEvent.key === "Enter" || keyboardEvent.key === " ") {
+          keyboardEvent.preventDefault();
+          openEvent(event, { origin: "map" });
+        }
+      });
+      markerElement.addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
         setHoveredEventId(String(event.id));
         showHoverPopup(event.name || "Event", event.lng, event.lat);
       });
-      marker.getElement().addEventListener("mouseleave", () => {
+      markerElement.addEventListener("mouseleave", () => {
         setHoveredEventId(null);
         hideHoverPopup();
       });
@@ -2510,15 +2576,22 @@ export default function CityPage() {
         .setLngLat([lng, lat])
         .addTo(mapRef.current);
 
-      marker.getElement().addEventListener("click", () => {
+      const markerElement = configureMarkerElement(marker, `Open service: ${service.name || "Service"}`);
+      markerElement.addEventListener("click", () => {
         openService(service, { origin: "map" });
       });
-      marker.getElement().addEventListener("mouseenter", () => {
+      markerElement.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openService(service, { origin: "map" });
+        }
+      });
+      markerElement.addEventListener("mouseenter", () => {
         if (isMapInteractingRef.current) return;
         setHoveredServiceId(String(service.id));
         showHoverPopup(service.name || "Service", lng, lat);
       });
-      marker.getElement().addEventListener("mouseleave", () => {
+      markerElement.addEventListener("mouseleave", () => {
         setHoveredServiceId(null);
         hideHoverPopup();
       });
@@ -2529,6 +2602,159 @@ export default function CityPage() {
   }, [city, cityEvents, cityPlaces, cityServices, openEvent, openPlace, openService]);
 
   useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return undefined;
+
+    const sourceId = "qa-city-clusters";
+    const clusterLayerId = "qa-city-cluster-bubbles";
+    const clusterCountLayerId = "qa-city-cluster-count";
+    const pointLayerId = "qa-city-cluster-points";
+    const clusterZoomThreshold = 14;
+    const entitiesByKey = new Map();
+    const features = [];
+
+    const addEntity = (entity, kind) => {
+      const lat = Number(entity?.lat);
+      const lng = Number(entity?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const id = String(entity?.id || "");
+      if (!id) return;
+      entitiesByKey.set(`${kind}:${id}`, entity);
+      features.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [lng, lat] },
+        properties: { id, kind, name: String(entity?.name || "") },
+      });
+    };
+
+    cityPlaces.forEach((entity) => addEntity(entity, "venue"));
+    cityEvents.forEach((entity) => addEntity(entity, "event"));
+    cityServices.forEach((entity) => addEntity(entity, "service"));
+
+    const data = { type: "FeatureCollection", features };
+    let mounted = true;
+
+    const syncDomMarkerVisibility = () => {
+      const showDetailedMarkers = map.getZoom() >= clusterZoomThreshold;
+      markersRef.current.forEach((marker) => {
+        marker.getElement().style.display = showDetailedMarkers ? "flex" : "none";
+      });
+    };
+
+    const openClusterPoint = (event) => {
+      const feature = event?.features?.[0];
+      const kind = String(feature?.properties?.kind || "");
+      const id = String(feature?.properties?.id || "");
+      const entity = entitiesByKey.get(`${kind}:${id}`);
+      if (!entity) return;
+      if (kind === "venue") openPlace(entity, { origin: "map" });
+      if (kind === "event") openEvent(entity, { origin: "map" });
+      if (kind === "service") openService(entity, { origin: "map" });
+    };
+
+    const expandCluster = (event) => {
+      const feature = event?.features?.[0];
+      const clusterId = feature?.properties?.cluster_id;
+      const coordinates = feature?.geometry?.coordinates;
+      const source = map.getSource(sourceId);
+      if (clusterId == null || !Array.isArray(coordinates) || !source?.getClusterExpansionZoom) return;
+      source.getClusterExpansionZoom(clusterId, (error, zoom) => {
+        if (error || !mounted) return;
+        map.easeTo({ center: coordinates, zoom: Math.min(Number(zoom || clusterZoomThreshold), clusterZoomThreshold), duration: 500 });
+      });
+    };
+
+    const setPointerCursor = () => {
+      map.getCanvas().style.cursor = "pointer";
+    };
+    const clearPointerCursor = () => {
+      map.getCanvas().style.cursor = "";
+    };
+
+    const setupClusters = () => {
+      if (!mounted || !map.getStyle()) return;
+      const existingSource = map.getSource(sourceId);
+      if (existingSource?.setData) {
+        existingSource.setData(data);
+      } else {
+        map.addSource(sourceId, {
+          type: "geojson",
+          data,
+          cluster: true,
+          clusterMaxZoom: clusterZoomThreshold - 1,
+          clusterRadius: 46,
+        });
+        map.addLayer({
+          id: clusterLayerId,
+          type: "circle",
+          source: sourceId,
+          filter: ["has", "point_count"],
+          maxzoom: clusterZoomThreshold,
+          paint: {
+            "circle-color": "rgba(29,23,35,0.94)",
+            "circle-stroke-color": "#f5a9c6",
+            "circle-stroke-width": 2,
+            "circle-radius": ["step", ["get", "point_count"], 17, 10, 21, 30, 25],
+          },
+        });
+        map.addLayer({
+          id: clusterCountLayerId,
+          type: "symbol",
+          source: sourceId,
+          filter: ["has", "point_count"],
+          maxzoom: clusterZoomThreshold,
+          layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 12 },
+          paint: { "text-color": "#fff8fc" },
+        });
+        map.addLayer({
+          id: pointLayerId,
+          type: "circle",
+          source: sourceId,
+          filter: ["!", ["has", "point_count"]],
+          maxzoom: clusterZoomThreshold,
+          paint: {
+            "circle-color": ["match", ["get", "kind"], "event", "#b7a0f7", "service", "#88d9d4", "#f5a9c6"],
+            "circle-radius": 6,
+            "circle-stroke-color": "rgba(255,248,252,0.88)",
+            "circle-stroke-width": 1.5,
+          },
+        });
+        map.on("click", clusterLayerId, expandCluster);
+        map.on("click", pointLayerId, openClusterPoint);
+        map.on("mouseenter", clusterLayerId, setPointerCursor);
+        map.on("mouseleave", clusterLayerId, clearPointerCursor);
+        map.on("mouseenter", pointLayerId, setPointerCursor);
+        map.on("mouseleave", pointLayerId, clearPointerCursor);
+      }
+      syncDomMarkerVisibility();
+    };
+
+    if (map.isStyleLoaded()) setupClusters();
+    else map.once("load", setupClusters);
+    map.on("zoom", syncDomMarkerVisibility);
+
+    return () => {
+      mounted = false;
+      map.off("load", setupClusters);
+      map.off("zoom", syncDomMarkerVisibility);
+      if (!map.getStyle()) return;
+      if (map.getLayer(clusterLayerId)) map.off("click", clusterLayerId, expandCluster);
+      if (map.getLayer(pointLayerId)) map.off("click", pointLayerId, openClusterPoint);
+      if (map.getLayer(clusterLayerId)) map.off("mouseenter", clusterLayerId, setPointerCursor);
+      if (map.getLayer(clusterLayerId)) map.off("mouseleave", clusterLayerId, clearPointerCursor);
+      if (map.getLayer(pointLayerId)) map.off("mouseenter", pointLayerId, setPointerCursor);
+      if (map.getLayer(pointLayerId)) map.off("mouseleave", pointLayerId, clearPointerCursor);
+      [clusterCountLayerId, pointLayerId, clusterLayerId].forEach((layerId) => {
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+      });
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+      markersRef.current.forEach((marker) => {
+        marker.getElement().style.display = "flex";
+      });
+    };
+  }, [cityEvents, cityPlaces, cityServices, isMapReady, openEvent, openPlace, openService]);
+
+  useEffect(() => {
     const useNeonMarkers = true;
     placeMarkersRef.current.forEach((marker, id) => {
       const hovered = !isMapInteracting && hoveredPlaceId && String(id) === String(hoveredPlaceId);
@@ -2536,19 +2762,22 @@ export default function CityPage() {
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
       const neonPin = el.querySelector(".qa-neon-pin");
-      el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
+      el.style.transition = "filter 180ms ease, opacity 180ms ease";
       if (useNeonMarkers) {
         const markerColor = el.dataset.neonColor || "#9ca3af";
         el.style.boxShadow = "none";
         if (neonPin) {
+          neonPin.style.transition = "transform 180ms ease, box-shadow 180ms ease";
+          neonPin.style.transform = `rotate(-45deg) scale(${selected ? 1.32 : active ? 1.14 : 1})`;
           neonPin.style.boxShadow = active
-            ? `0 0 0 2px rgba(255,255,255,0.22), 0 0 18px ${markerColor}, 0 0 36px ${markerColor}`
-            : `0 0 0 1px rgba(255,255,255,0.14), 0 0 12px ${markerColor}, 0 0 24px ${markerColor}`;
+            ? `0 0 0 ${selected ? 3 : 2}px rgba(255,248,252,0.30), 0 0 14px ${markerColor}, 0 0 26px ${markerColor}`
+            : `0 0 0 1px rgba(255,255,255,0.08), 0 0 7px ${markerColor}`;
         }
       } else {
         el.style.boxShadow = active ? "0 0 0 4px rgba(255,255,255,0.22), 0 0 22px rgba(255,255,255,0.35)" : "none";
       }
-      el.style.filter = active ? "saturate(1.2)" : "saturate(1)";
+      el.style.filter = active ? "saturate(1.12) brightness(1.1)" : "saturate(0.82) brightness(0.9)";
+      el.style.opacity = active ? "1" : "0.7";
       el.style.zIndex = active ? "30" : "10";
     });
 
@@ -2558,19 +2787,22 @@ export default function CityPage() {
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
       const neonPin = el.querySelector(".qa-neon-pin");
-      el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
+      el.style.transition = "filter 180ms ease, opacity 180ms ease";
       if (useNeonMarkers) {
         const markerColor = el.dataset.neonColor || "#8b5cf6";
         el.style.boxShadow = "none";
         if (neonPin) {
+          neonPin.style.transition = "transform 180ms ease, box-shadow 180ms ease";
+          neonPin.style.transform = `rotate(-45deg) scale(${selected ? 1.32 : active ? 1.14 : 1})`;
           neonPin.style.boxShadow = active
-            ? `0 0 0 2px rgba(255,255,255,0.22), 0 0 18px ${markerColor}, 0 0 36px ${markerColor}`
-            : `0 0 0 1px rgba(255,255,255,0.14), 0 0 12px ${markerColor}, 0 0 24px ${markerColor}`;
+            ? `0 0 0 ${selected ? 3 : 2}px rgba(255,248,252,0.30), 0 0 14px ${markerColor}, 0 0 26px ${markerColor}`
+            : `0 0 0 1px rgba(255,255,255,0.08), 0 0 7px ${markerColor}`;
         }
       } else {
         el.style.boxShadow = active ? "0 0 0 4px rgba(139,92,246,0.24), 0 0 22px rgba(139,92,246,0.45)" : "none";
       }
-      el.style.filter = active ? "brightness(1.15)" : "brightness(1)";
+      el.style.filter = active ? "saturate(1.12) brightness(1.1)" : "saturate(0.82) brightness(0.9)";
+      el.style.opacity = active ? "1" : "0.7";
       el.style.zIndex = active ? "32" : "12";
     });
     serviceMarkersRef.current.forEach((marker, id) => {
@@ -2579,19 +2811,22 @@ export default function CityPage() {
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
       const neonPin = el.querySelector(".qa-neon-pin");
-      el.style.transition = "box-shadow 160ms ease, filter 160ms ease";
+      el.style.transition = "filter 180ms ease, opacity 180ms ease";
       if (useNeonMarkers) {
         const markerColor = el.dataset.neonColor || "#10b981";
         el.style.boxShadow = "none";
         if (neonPin) {
+          neonPin.style.transition = "transform 180ms ease, box-shadow 180ms ease";
+          neonPin.style.transform = `rotate(-45deg) scale(${selected ? 1.32 : active ? 1.14 : 1})`;
           neonPin.style.boxShadow = active
-            ? `0 0 0 2px rgba(255,255,255,0.22), 0 0 18px ${markerColor}, 0 0 36px ${markerColor}`
-            : `0 0 0 1px rgba(255,255,255,0.14), 0 0 12px ${markerColor}, 0 0 24px ${markerColor}`;
+            ? `0 0 0 ${selected ? 3 : 2}px rgba(255,248,252,0.30), 0 0 14px ${markerColor}, 0 0 26px ${markerColor}`
+            : `0 0 0 1px rgba(255,255,255,0.08), 0 0 7px ${markerColor}`;
         }
       } else {
         el.style.boxShadow = active ? "0 0 0 4px rgba(16,185,129,0.24), 0 0 22px rgba(16,185,129,0.42)" : "none";
       }
-      el.style.filter = active ? "brightness(1.15)" : "brightness(1)";
+      el.style.filter = active ? "saturate(1.12) brightness(1.1)" : "saturate(0.82) brightness(0.9)";
+      el.style.opacity = active ? "1" : "0.7";
       el.style.zIndex = active ? "34" : "14";
     });
   }, [
@@ -4633,7 +4868,7 @@ export default function CityPage() {
   }, [closeService, fetchServices, isAdmin, resolveServiceDbId, selectedService, showToast]);
 
   return (
-    <main className="qa-city flex min-h-screen bg-[linear-gradient(135deg,#170a24,#071826_46%,#1b0b19)] text-white xl:h-screen xl:overflow-hidden">
+    <main className="qa-city flex min-h-screen bg-[#0b0910] text-[#fff8fc] xl:h-screen xl:overflow-hidden">
       <CitySeoScaffold
         city={city}
         cityName={cityName}
@@ -4643,11 +4878,32 @@ export default function CityPage() {
         cityFaqJsonLd={cityFaqJsonLd}
       />
       <ActionToast toast={toast} />
-      <div ref={mainScrollRef} className="flex-1 overflow-y-auto px-3.5 py-4 pb-24 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
-        <div className="mx-auto w-full max-w-[1900px]">
-          <div className="flex flex-col xl:grid xl:min-h-[calc(100vh-3rem)] xl:grid-cols-[224px_minmax(0,1fr)_minmax(360px,440px)] xl:items-start xl:gap-[0.9rem]">
-            <aside className="hidden xl:self-start xl:block">
-              <div className="sticky top-6 h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
+      <div ref={mainScrollRef} className="relative flex-1 overflow-y-auto px-3.5 py-4 pb-28 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
+        <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(245,169,198,0.11),transparent_28%),radial-gradient(circle_at_78%_14%,rgba(136,217,212,0.075),transparent_25%),linear-gradient(180deg,#0b0910_0%,#100b14_56%,#0b0910_100%)]" />
+        <div className="relative mx-auto w-full max-w-[1900px]">
+          <div className="flex flex-col xl:grid xl:min-h-[calc(100vh-3rem)] xl:grid-cols-[minmax(0,3fr)_minmax(400px,2fr)] xl:items-start xl:gap-4">
+            <aside className="order-2 hidden min-w-0 sm:block xl:order-none xl:col-start-2 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start">
+              <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
+                <CityMapSection
+                  mapWrapperRef={mapWrapperRef}
+                  mapContainerRef={mapContainerRef}
+                  mapError={mapError}
+                  isMapReady={isMapReady}
+                  showSearchArea={showSearchArea}
+                  searchAreaLabel={mapAreaResult || "Search this area"}
+                  onSearchThisArea={handleSearchThisArea}
+                  onContinueInListMode={() => {
+                    mapWrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                />
+              </div>
+            </aside>
+
+            <section
+              ref={centerColumnScrollRef}
+              className="order-1 min-w-0 xl:order-none xl:col-start-1 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto xl:pr-1"
+            >
+              <div className="hidden xl:block">
                 <CityNavigationCluster
                   cityPlacesCount={cityPlaceCount}
                   cityEventCount={cityEventCount}
@@ -4660,59 +4916,19 @@ export default function CityPage() {
                   onGoServices={() => handleDesktopSectionNav("services", servicesSectionRef)}
                   onGoVenues={() => handleDesktopSectionNav("venues", placesSectionRef)}
                   onGoVenueType={handleGoVenueType}
-                  onAddPlace={() => {
-                    handleDesktopSectionNav("guide", guideSectionRef);
-                    onToggleAddPlace();
-                  }}
-                  onAddEvent={() => {
-                    handleDesktopSectionNav("events", tonightSectionRef);
-                    onToggleAddEvent();
-                  }}
-                  onAddService={() => {
-                    handleDesktopSectionNav("services", servicesSectionRef);
-                    onToggleAddService();
-                  }}
                   venueJumpGroups={venueJumpGroups}
                   activeVenueFilter={activeVenueFilter}
-                  variant="rail"
+                  variant="desktop"
                 />
-                <div className="mt-5">
-                  <CityNavigationCluster
-                    onAddPlace={() => {
-                      handleDesktopSectionNav("guide", guideSectionRef);
-                      onToggleAddPlace();
-                    }}
-                    onAddEvent={() => {
-                      handleDesktopSectionNav("events", tonightSectionRef);
-                      onToggleAddEvent();
-                    }}
-                    onAddService={() => {
-                      handleDesktopSectionNav("services", servicesSectionRef);
-                      onToggleAddService();
-                    }}
-                    variant="contribute"
-                  />
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-white/[0.025] px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/48">Help keep {cityName} current</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => { handleDesktopSectionNav("guide", guideSectionRef); onToggleAddPlace(); }} className="qa-action rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-xs text-white/72 transition hover:border-[#88d9d4]/35 hover:text-white">+ Place</button>
+                    <button type="button" onClick={() => { handleDesktopSectionNav("events", tonightSectionRef); onToggleAddEvent(); }} className="qa-action rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-xs text-white/72 transition hover:border-[#b7a0f7]/35 hover:text-white">+ Event</button>
+                    <button type="button" onClick={() => { handleDesktopSectionNav("services", servicesSectionRef); onToggleAddService(); }} className="qa-action rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-xs text-white/72 transition hover:border-[#88d9d4]/35 hover:text-white">+ Service</button>
+                  </div>
                 </div>
               </div>
-            </aside>
-
-            <aside className="order-2 hidden min-w-0 sm:block xl:order-none xl:col-start-3 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start">
-              <div className="xl:sticky xl:top-6 xl:h-[calc(100vh-3rem)]">
-                <CityMapSection
-                  mapWrapperRef={mapWrapperRef}
-                  mapContainerRef={mapContainerRef}
-                  mapError={mapError}
-                  onContinueInListMode={() => {
-                    mapWrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                />
-              </div>
-            </aside>
-
-            <section
-              ref={centerColumnScrollRef}
-              className="order-1 min-w-0 xl:order-none xl:col-start-2 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto"
-            >
               <CityTopCluster
                 city={city}
                 cityName={cityName}
@@ -4734,6 +4950,10 @@ export default function CityPage() {
                       mapWrapperRef={phoneMapWrapperRef}
                       mapContainerRef={phoneMapContainerRef}
                       mapError={mapError}
+                      isMapReady={isMapReady}
+                      showSearchArea={showSearchArea}
+                      searchAreaLabel={mapAreaResult || "Search this area"}
+                      onSearchThisArea={handleSearchThisArea}
                       onContinueInListMode={() => goToMobileSection("guide", guideSectionRef)}
                     />
                     <CityNavigationCluster

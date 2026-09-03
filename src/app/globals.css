@@ -362,6 +362,18 @@ body > div:first-child {
   color: rgba(255, 255, 255, 0.92);
 }
 
+.qa-city {
+  --qa-city-canvas: #0b0910;
+  --qa-city-surface: #17121c;
+  --qa-city-surface-raised: #211925;
+  --qa-city-text: #fff8fc;
+  --qa-city-muted: #bdafba;
+  --qa-city-petal: #f5a9c6;
+  --qa-city-sea: #88d9d4;
+  --qa-city-orchid: #b7a0f7;
+  --qa-city-amber: #d8b678;
+}
+
 .qa-city-section {
   position: relative;
   overflow: hidden;
@@ -383,6 +395,101 @@ body > div:first-child {
 
 .qa-city-section:hover::after {
   opacity: 0.55;
+}
+
+.qa-city-map-shell::after {
+  display: none;
+}
+
+.qa-city-map-shell .mapboxgl-canvas {
+  filter: saturate(0.72) contrast(0.96) brightness(0.9);
+}
+
+.qa-city-map-shell .mapboxgl-marker:focus-visible {
+  outline: 2px solid var(--qa-city-text);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+.qa-city-content-section {
+  --qa-city-section-accent: var(--qa-city-petal);
+  border-color: rgba(255, 255, 255, 0.085) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--qa-city-section-accent) 5%, transparent), transparent 34%),
+    rgba(23, 18, 28, 0.94) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--qa-city-section-accent) 22%, transparent),
+    0 24px 68px rgba(0, 0, 0, 0.24) !important;
+}
+
+.qa-city-tone-guide {
+  --qa-city-section-accent: var(--qa-city-amber);
+}
+
+.qa-city-tone-events {
+  --qa-city-section-accent: var(--qa-city-orchid);
+}
+
+.qa-city-tone-services {
+  --qa-city-section-accent: var(--qa-city-sea);
+}
+
+.qa-city-tone-venues {
+  --qa-city-section-accent: var(--qa-city-petal);
+}
+
+.qa-city-content-card:not([aria-pressed="true"]) {
+  border-color: rgba(255, 255, 255, 0.085) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.16) !important;
+}
+
+.qa-city-content-card:not([aria-pressed="true"]):hover {
+  border-color: color-mix(in srgb, var(--qa-city-section-accent, var(--qa-city-petal)) 30%, rgba(255, 255, 255, 0.12)) !important;
+  background: rgba(255, 255, 255, 0.052) !important;
+}
+
+.qa-city-detail-sheet {
+  --qa-city-detail-accent: var(--qa-city-petal);
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  background:
+    radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--qa-city-detail-accent) 9%, transparent), transparent 28%),
+    rgba(15, 11, 18, 0.985) !important;
+}
+
+.qa-city-detail-event {
+  --qa-city-detail-accent: var(--qa-city-orchid);
+}
+
+.qa-city-detail-service {
+  --qa-city-detail-accent: var(--qa-city-sea);
+}
+
+.qa-city-detail-header {
+  border-color: rgba(255, 255, 255, 0.10) !important;
+  background: rgba(29, 23, 35, 0.94) !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.24);
+}
+
+.qa-city-detail-surface {
+  border-color: rgba(255, 255, 255, 0.085) !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--qa-city-detail-accent) 14%, transparent);
+}
+
+@media (max-width: 1279px) {
+  .qa-city-detail-sheet:not(.relative)::before {
+    content: "";
+    position: sticky;
+    z-index: 30;
+    top: 0.45rem;
+    display: block;
+    width: 2.75rem;
+    height: 0.25rem;
+    margin: -0.45rem auto 0.65rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.30);
+  }
 }
 
 .qa-city-card {
@@ -460,6 +567,20 @@ body > div:first-child {
   hyphens: auto !important;
   word-break: normal;
   overflow-wrap: normal;
+}
+
+@media (max-width: 639px) {
+  .qa-city p,
+  .qa-city li,
+  .qa-city .qa-city-guide-copy,
+  .qa-city .qa-city-copy-left .qa-city-guide-copy,
+  .qa-city .qa-city-copy-left p.qa-city-guide-copy {
+    text-align: left !important;
+    text-align-last: auto;
+    text-justify: auto !important;
+    hyphens: manual !important;
+    overflow-wrap: anywhere;
+  }
 }
 
 .qa-page :is(p, li, h1, h2, h3, h4, h5, h6) {

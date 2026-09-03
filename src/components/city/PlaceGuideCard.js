@@ -60,7 +60,7 @@ export default function PlaceGuideCard({
         }
       }}
       style={{ animationDelay: `${Math.min(index * 45, 280)}ms` }}
-      className={`qa-cinematic-hover qa-city-card qa-city-copy-left animate-rise-in relative cursor-pointer overflow-hidden rounded-[22px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 sm:p-5 ${
+      className={`qa-cinematic-hover qa-city-card qa-city-content-card qa-city-copy-left animate-rise-in relative cursor-pointer overflow-hidden rounded-[20px] border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 sm:p-5 ${
         isFocusMode && !isSelected ? "opacity-60 saturate-75" : ""
       } ${
         isSelected

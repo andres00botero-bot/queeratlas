@@ -21,6 +21,7 @@ export default function CityQuickNavigation({
 }) {
   const [showVenuePicker, setShowVenuePicker] = useState(false);
   const isPhoneVariant = variant === "phone";
+  const isDesktopVariant = variant === "desktop";
 
   const venueGroups = useMemo(
     () =>
@@ -36,13 +37,22 @@ export default function CityQuickNavigation({
 
   const items = [
     {
+      key: "home",
+      onClick: onGoHome,
+      label: "Home",
+      eyebrow: "City overview",
+      Icon: BookOpen,
+      className:
+        "border-[#f5a9c6]/20 bg-[#f5a9c6]/[0.075] text-[#ffd2e3] hover:border-[#f5a9c6]/42 hover:bg-[#f5a9c6]/[0.12]",
+    },
+    {
       key: "map",
       onClick: onGoMap,
       label: "Map",
       eyebrow: "Explore nearby",
       Icon: Map,
       className:
-        "border-cyan-100/38 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(59,130,246,0.16),rgba(255,255,255,0.07))] text-cyan-50 shadow-[0_14px_34px_rgba(34,211,238,0.16)] hover:border-cyan-100/60 hover:bg-cyan-200/[0.18]",
+        "border-[#88d9d4]/20 bg-[#88d9d4]/[0.075] text-[#bcebe7] hover:border-[#88d9d4]/42 hover:bg-[#88d9d4]/[0.12]",
     },
     {
       key: "events",
@@ -51,7 +61,7 @@ export default function CityQuickNavigation({
       eyebrow: "Tonight and soon",
       Icon: CalendarDays,
       className:
-        "border-fuchsia-100/38 bg-[linear-gradient(135deg,rgba(244,114,182,0.25),rgba(139,92,246,0.18),rgba(255,255,255,0.07))] text-fuchsia-50 shadow-[0_14px_34px_rgba(217,70,239,0.16)] hover:border-fuchsia-100/60 hover:bg-fuchsia-200/[0.18]",
+        "border-[#b7a0f7]/20 bg-[#b7a0f7]/[0.075] text-[#d8cdfb] hover:border-[#b7a0f7]/42 hover:bg-[#b7a0f7]/[0.12]",
     },
     {
       key: "guide",
@@ -60,7 +70,7 @@ export default function CityQuickNavigation({
       eyebrow: "City basics",
       Icon: BookOpen,
       className:
-        "border-amber-100/34 bg-[linear-gradient(135deg,rgba(251,191,36,0.22),rgba(248,113,113,0.12),rgba(255,255,255,0.07))] text-amber-50 hover:border-amber-100/54 hover:bg-amber-200/[0.16]",
+        "border-[#f5a9c6]/20 bg-[#f5a9c6]/[0.075] text-[#ffd2e3] hover:border-[#f5a9c6]/42 hover:bg-[#f5a9c6]/[0.12]",
     },
     {
       key: "services",
@@ -69,7 +79,7 @@ export default function CityQuickNavigation({
       eyebrow: "Local support",
       Icon: HeartHandshake,
       className:
-        "border-emerald-100/34 bg-[linear-gradient(135deg,rgba(52,211,153,0.22),rgba(45,212,191,0.13),rgba(255,255,255,0.07))] text-emerald-50 hover:border-emerald-100/54 hover:bg-emerald-200/[0.16]",
+        "border-[#88d9d4]/20 bg-[#88d9d4]/[0.055] text-[#bcebe7] hover:border-[#88d9d4]/42 hover:bg-[#88d9d4]/[0.10]",
     },
     {
       key: "venues",
@@ -80,10 +90,14 @@ export default function CityQuickNavigation({
       eyebrow: "Bars and places",
       Icon: MapPin,
       className:
-        "border-pink-100/34 bg-[linear-gradient(135deg,rgba(251,113,133,0.20),rgba(34,211,238,0.12),rgba(255,255,255,0.08))] text-white hover:border-pink-100/54 hover:bg-pink-200/[0.13]",
+        "border-white/[0.11] bg-white/[0.045] text-white/86 hover:border-[#f5a9c6]/36 hover:bg-[#f5a9c6]/[0.08]",
     },
   ];
-  const visibleItems = isPhoneVariant ? [items[2], items[1], items[3], items[4]] : items;
+  const visibleItems = isPhoneVariant
+    ? [items[3], items[2], items[4], items[5]]
+    : isDesktopVariant
+      ? [items[0], items[3], items[2], items[4], items[5]]
+      : items.slice(1);
 
   const venueMenuItems = [
     { key: "club", label: "Clubs", value: "club" },
@@ -238,18 +252,18 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className={`qa-city-panel-cq animate-cinematic-in z-30 rounded-[20px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.13),rgba(34,211,238,0.10),rgba(13,15,20,0.94))] p-2.5 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur sm:top-3 sm:mb-8 sm:rounded-[24px] sm:p-4 ${
-        isPhoneVariant ? "relative mt-[-0.25rem] mb-0" : "sticky top-2 mb-4"
+      className={`qa-city-panel-cq animate-cinematic-in z-30 sm:top-3 sm:mb-8 sm:rounded-[24px] sm:border sm:border-white/[0.10] sm:bg-[#17121c]/92 sm:p-4 sm:shadow-[0_18px_52px_rgba(0,0,0,0.24)] sm:backdrop-blur ${
+        isPhoneVariant ? "relative mb-0 mt-[-0.25rem]" : "sticky top-2 mb-4 rounded-[20px] border border-white/[0.10] bg-[#17121c]/92 p-2.5 shadow-[0_18px_52px_rgba(0,0,0,0.24)] backdrop-blur"
       }`}
       style={{ animationDelay: "170ms" }}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className={`items-center justify-between gap-2 ${isPhoneVariant ? "hidden" : "flex"}`}>
         <p className="text-[10px] uppercase tracking-[0.16em] text-white/72 sm:text-[11px] sm:tracking-[0.18em]">Explore this city</p>
         <p className="hidden rounded-full border border-white/14 bg-white/[0.08] px-2 py-1 text-[11px] text-white/72 sm:block">
           Current: {activeSection || "overview"}
         </p>
       </div>
-      <div className={`mt-2 grid gap-1.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5 ${isPhoneVariant ? "grid-cols-4" : "grid-cols-5"}`}>
+      <div className={`grid gap-1.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5 ${isPhoneVariant ? "grid-cols-4" : "mt-2 grid-cols-5"}`}>
         {visibleItems.map((item) => {
           const Icon = item.Icon;
           const isActive =
@@ -273,7 +287,7 @@ export default function CityQuickNavigation({
             }
             className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl border px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${item.className} ${
               isActive
-                ? "ring-1 ring-white/34"
+                ? "ring-1 ring-[#f5a9c6]/45 shadow-[0_10px_28px_rgba(245,169,198,0.10)]"
                 : ""
             }`}
           >

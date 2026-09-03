@@ -15,7 +15,7 @@ export default function QuickGuideSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section qa-city-copy-left animate-cinematic-in relative mb-10 overflow-hidden rounded-[30px] border border-white/16 bg-[linear-gradient(145deg,rgba(255,79,163,0.12),rgba(251,191,36,0.08),rgba(14,15,22,0.96))] p-5 shadow-[0_24px_72px_rgba(91,33,182,0.18)] sm:p-6"
+      className="qa-city-section qa-city-content-section qa-city-tone-guide qa-city-copy-left animate-cinematic-in relative mb-10 overflow-hidden rounded-[28px] border p-5 sm:p-6"
       style={{ animationDelay: "250ms" }}
     >
       <div className="mb-8">
@@ -87,7 +87,7 @@ export default function QuickGuideSection({
           return (
             <div
               key={`${item.title}-${index}`}
-              className={`qa-cinematic-hover qa-city-card rounded-[22px] border p-5 transition sm:p-6 ${guideTone.card}`}
+              className={`qa-cinematic-hover qa-city-card qa-city-content-card rounded-[20px] border p-5 transition sm:p-6 ${guideTone.card}`}
             >
               <div className="grid gap-5 md:grid-cols-[11rem_1fr] md:gap-7">
                 <div className="min-w-0">

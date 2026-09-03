@@ -18,82 +18,77 @@ export default function CityHeroCard({
     {
       label: "Local mood",
       value: cityHero?.hook,
-      tone: "border-fuchsia-100/30 bg-fuchsia-300/[0.12]",
-      accent: "from-fuchsia-300 to-pink-200",
+      tone: "bg-[#f5a9c6]/10 text-[#f5a9c6]",
     },
     {
       label: "Queer status",
       value: cityHero?.status,
-      tone: "border-cyan-100/30 bg-cyan-300/[0.12]",
-      accent: "from-cyan-300 to-sky-200",
+      tone: "bg-[#88d9d4]/10 text-[#88d9d4]",
     },
     {
       label: "Crowd",
       value: cityHero?.crowd,
-      tone: "border-amber-100/30 bg-amber-300/[0.12]",
-      accent: "from-amber-200 to-orange-200",
+      tone: "bg-[#d8b678]/10 text-[#d8b678]",
     },
   ].filter((item) => String(item.value || "").trim());
   const stats = [
-    { label: "Venues", value: placesChipLabel, tone: "text-cyan-50 border-cyan-100/42 bg-cyan-300/18" },
-    { label: "Events", value: eventsChipLabel, tone: "text-fuchsia-50 border-fuchsia-100/42 bg-fuchsia-300/18" },
-    { label: "Signal", value: "Live", tone: "text-amber-50 border-amber-100/42 bg-amber-200/18" },
+    { label: "Venues", value: placesChipLabel, dot: "bg-[#88d9d4]" },
+    { label: "Events", value: eventsChipLabel, dot: "bg-[#b7a0f7]" },
+    { label: "Signal", value: "Live", dot: "bg-[#d8b678]" },
   ];
 
   return (
-    <section className={`animate-cinematic-in relative mb-4 overflow-hidden rounded-[24px] border border-white/18 bg-[#120b1d] p-4 shadow-[0_24px_72px_rgba(91,33,182,0.24)] sm:mb-8 sm:rounded-[32px] sm:p-7 xl:min-h-[calc(100vh-3rem)] ${showOnLargerScreens ? "" : "sm:hidden"}`}>
+    <section className={`animate-cinematic-in relative mb-4 overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#17121c]/95 p-5 shadow-[0_28px_90px_rgba(0,0,0,0.32)] sm:mb-8 sm:rounded-[32px] sm:p-8 ${showOnLargerScreens ? "" : "sm:hidden"}`}>
       <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.13] mix-blend-luminosity"
         style={{ backgroundImage: "url('/queer-city-guide-neon-orbit-background.png')" }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,92,178,0.40),rgba(255,207,64,0.22)_28%,rgba(31,211,255,0.32)_58%,rgba(123,92,255,0.44))]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(12,6,18,0.18),rgba(12,6,18,0.36)_48%,rgba(10,6,14,0.70))]" />
-      <div className="pointer-events-none absolute inset-x-5 top-5 h-1 rounded-full bg-[linear-gradient(90deg,#ff4fa3,#ffd166,#4de1ff,#8b5cf6)] opacity-95" />
-      <div className="relative z-10 flex min-h-full flex-col gap-6 sm:gap-12">
-        <div className="mt-4 flex items-center justify-between gap-4 sm:mt-5">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/44 bg-white/22 px-3.5 py-2.5 shadow-[0_16px_44px_rgba(255,79,163,0.18)] ring-1 ring-white/10 backdrop-blur-md">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-white/18 shadow-[0_10px_28px_rgba(0,0,0,0.20)]">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(245,169,198,0.15),transparent_38%,rgba(136,217,212,0.07)_72%,transparent)]" />
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,#f5a9c6,#88d9d4,transparent)] opacity-75" />
+      <div className="relative z-10 flex min-h-full flex-col gap-6 sm:gap-8">
+        <div className="flex items-center justify-between gap-3">
+          <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.11] bg-white/[0.055] px-2.5 py-2 backdrop-blur-md">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07]">
               <Image
                 src="/queer-atlas-logo.png"
                 alt="Queer Atlas logo"
                 width={64}
                 height={64}
-                className="h-8 w-8 shrink-0 sm:h-9 sm:w-9"
+                className="h-7 w-7 shrink-0"
               />
             </span>
             <span className="leading-none">
               <span className="block text-[11px] font-bold uppercase tracking-[0.20em] text-white">
                 Queer Atlas
               </span>
-              <span className="mt-1 block text-[10px] uppercase tracking-[0.16em] text-white/62">
-                City guide
-              </span>
             </span>
           </div>
-          <span className="hidden rounded-full border border-white/34 bg-white/16 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/84 shadow-[0_10px_26px_rgba(255,79,163,0.16)] backdrop-blur sm:inline-flex">
-            City guide
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#d8b678]/20 bg-[#d8b678]/[0.07] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#ead09b] sm:text-[10px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#d8b678] shadow-[0_0_12px_rgba(216,182,120,0.8)]" aria-hidden="true" />
+            Live city guide
           </span>
         </div>
 
         <div className="max-w-4xl">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/82">
-            Queer city guide
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#f5a9c6]">
+            Your queer guide to
           </p>
-          <h1 className="max-w-3xl text-4xl font-bold leading-[0.98] tracking-[-0.02em] text-white drop-shadow-[0_8px_34px_rgba(0,0,0,0.34)] sm:text-5xl lg:text-6xl">
+          <h1 className="max-w-3xl text-4xl font-bold leading-[0.98] tracking-[-0.035em] text-[#fff8fc] sm:text-5xl lg:text-6xl">
             {cityName}
           </h1>
-          <p className="mt-4 h-auto max-w-2xl text-pretty rounded-[18px] border border-white/22 bg-white/14 p-3 text-sm leading-[1.65] text-white/92 shadow-[0_18px_44px_rgba(0,0,0,0.16)] backdrop-blur sm:mt-6 sm:rounded-[22px] sm:p-4 sm:text-base sm:leading-7">
+          <p className="qa-city-copy-left mt-4 h-auto max-w-2xl text-pretty text-sm leading-[1.65] text-[#d8ccd5] sm:mt-5 sm:text-base sm:leading-7">
             {introCopy}
           </p>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 sm:mt-7 sm:gap-3">
+          <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className={`rounded-xl border px-2 py-2.5 shadow-[0_14px_34px_rgba(0,0,0,0.16)] backdrop-blur sm:rounded-2xl sm:px-3.5 sm:py-3 ${stat.tone}`}
+                className="inline-flex items-center gap-2 rounded-full border border-white/[0.10] bg-white/[0.045] px-3 py-2 text-xs text-white/78"
               >
-                <p className="text-[10px] uppercase tracking-[0.18em] opacity-70">{stat.label}</p>
-                <p className="mt-1 text-sm font-semibold text-white">{stat.value}</p>
+                <span className={`h-1.5 w-1.5 rounded-full ${stat.dot}`} aria-hidden="true" />
+                <span className="uppercase tracking-[0.13em] text-white/55">{stat.label}</span>
+                <span className="font-semibold text-[#fff8fc]">{stat.value}</span>
               </div>
             ))}
           </div>
@@ -102,19 +97,27 @@ export default function CityHeroCard({
         {mobileDiscovery ? <div className="sm:hidden">{mobileDiscovery}</div> : null}
 
         {highlights.length > 0 ? (
-          <div className="grid items-stretch gap-3 sm:grid-cols-3 sm:gap-5">
+          <div className="overflow-hidden rounded-[22px] border border-white/[0.09] bg-white/[0.035]">
+            <div className="border-b border-white/[0.07] px-4 py-3 sm:px-5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Know before you go</p>
+            </div>
             {highlights.map((item, index) => (
               <div
                 key={item.label}
-                className={`flex h-full min-h-[8.5rem] flex-col rounded-[20px] border p-4 shadow-[0_20px_54px_rgba(0,0,0,0.16)] backdrop-blur sm:min-h-[11rem] sm:rounded-[24px] sm:p-5 ${item.tone}`}
+                className={`grid grid-cols-[auto_1fr] gap-3 border-b border-white/[0.07] p-4 last:border-b-0 sm:grid-cols-[9rem_1fr] sm:gap-5 sm:px-5 ${
+                  index % 2 === 0 ? "bg-white/[0.018]" : ""
+                }`}
               >
-                <div className={`mb-2.5 h-1 w-10 rounded-full bg-gradient-to-r sm:mb-4 sm:h-1.5 sm:w-14 ${item.accent}`} />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/66">
-                  {String(index + 1).padStart(2, "0")} / {item.label}
-                </p>
-                <p className="mt-2.5 text-pretty text-sm font-medium leading-[1.55] text-white/92 sm:mt-3 sm:text-[0.95rem] sm:leading-6">
-                  {item.value}
-                </p>
+                <div className="flex items-start gap-2">
+                  <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${item.tone}`}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <p className="hidden pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/58 sm:block">{item.label}</p>
+                </div>
+                <div>
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/58 sm:hidden">{item.label}</p>
+                  <p className="qa-city-copy-left text-pretty text-sm leading-[1.6] text-[#ddd1da] sm:text-[0.95rem] sm:leading-6">{item.value}</p>
+                </div>
               </div>
             ))}
           </div>

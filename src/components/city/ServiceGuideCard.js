@@ -29,8 +29,9 @@ export default function ServiceGuideCard({
       key={`service-${service.id}`}
       role="button"
       tabIndex={0}
+      aria-pressed={isSelectedService}
       style={{ animationDelay: `${Math.min(index * 40, 220)}ms` }}
-      className={`qa-cinematic-hover qa-city-card qa-city-copy-left animate-rise-in rounded-[22px] border p-4 sm:p-5 ${style.card} ${
+      className={`qa-cinematic-hover qa-city-card qa-city-content-card qa-city-copy-left animate-rise-in rounded-[20px] border p-4 sm:p-5 ${style.card} ${
         isSelectedService
           ? "border-emerald-200/40 shadow-[0_16px_42px_rgba(16,185,129,0.14)]"
           : "hover:border-emerald-200/22"

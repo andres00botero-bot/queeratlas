@@ -20,7 +20,7 @@ export default function CityServicesSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section qa-city-copy-left animate-cinematic-in mb-10 rounded-[30px] border border-white/16 bg-[linear-gradient(145deg,rgba(52,211,153,0.13),rgba(34,211,238,0.07),rgba(9,15,18,0.96))] p-5 shadow-[0_22px_64px_rgba(16,185,129,0.14)] sm:p-6"
+      className="qa-city-section qa-city-content-section qa-city-tone-services qa-city-copy-left animate-cinematic-in mb-10 rounded-[28px] border p-5 sm:p-6"
       style={{ animationDelay: "270ms" }}
     >
       <div className="mb-7">

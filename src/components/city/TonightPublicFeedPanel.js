@@ -51,7 +51,7 @@ export default function TonightPublicFeedPanel({
   ];
 
   return (
-    <div className="space-y-3 rounded-[24px] border border-white/16 bg-[linear-gradient(145deg,rgba(244,114,182,0.12),rgba(139,92,246,0.10),rgba(255,255,255,0.06))] p-4 shadow-[0_18px_48px_rgba(217,70,239,0.12)] sm:p-5">
+    <div className="space-y-3 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
       {eventsLoadError ? (
         <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
           <p>{eventsLoadError}</p>
@@ -76,6 +76,7 @@ export default function TonightPublicFeedPanel({
           onClick={() => openEvent(featuredEvent)}
           role="button"
           tabIndex={0}
+          aria-pressed={String(selectedEvent?.id) === String(featuredEvent.id)}
           aria-label={`Open event details for ${featuredEvent.name}`}
           onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
           onMouseLeave={() => setHoveredEventId(null)}
@@ -85,7 +86,7 @@ export default function TonightPublicFeedPanel({
               openEvent(featuredEvent);
             }
           }}
-          className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[24px] border border-fuchsia-100/30 bg-[linear-gradient(135deg,rgba(244,114,182,0.22),rgba(139,92,246,0.14),rgba(255,255,255,0.08))] p-5 shadow-[0_18px_46px_rgba(217,70,239,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+          className={`qa-cinematic-hover qa-city-card qa-city-content-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[20px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
             String(hoveredEventId) === String(featuredEvent.id)
               ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
               : ""
@@ -127,6 +128,7 @@ export default function TonightPublicFeedPanel({
               onClick={() => openEvent(event)}
               role="button"
               tabIndex={0}
+              aria-pressed={String(selectedEvent?.id) === String(event.id)}
               aria-label={`Open event details for ${event.name}`}
               onMouseEnter={() => setHoveredEventId(String(event.id))}
               onMouseLeave={() => setHoveredEventId(null)}

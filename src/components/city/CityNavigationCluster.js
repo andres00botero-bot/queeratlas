@@ -70,6 +70,23 @@ export default function CityNavigationCluster({
     );
   }
 
+  if (variant === "desktop") {
+    return (
+      <CityQuickNavigation
+        onGoHome={onGoHome}
+        onGoEvents={onGoEvents}
+        onGoGuide={onGoGuide}
+        onGoServices={onGoServices}
+        onGoVenues={onGoVenues}
+        onGoVenueType={onGoVenueType}
+        venueJumpGroups={venueJumpGroups}
+        activeSection={activeCitySection}
+        activeVenueFilter={activeVenueFilter}
+        variant="desktop"
+      />
+    );
+  }
+
   return (
     <>
       <CitySignalSummaryBar

@@ -31,7 +31,7 @@ export default function CityPlacesSection({
   return (
     <>
       {!placesLoading && !hasAnyPlaces && (
-        <div className="qa-city-section mb-10 rounded-[30px] border border-dashed border-emerald-200/22 bg-[linear-gradient(150deg,rgba(6,78,59,0.20),rgba(17,17,17,0.96))] p-8 text-center">
+        <div className="qa-city-section qa-city-content-section qa-city-tone-venues mb-10 rounded-[28px] border border-dashed p-8 text-center">
           <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
           <h3 className="mt-2 text-lg font-semibold text-white">Venue map is taking shape</h3>
           <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
@@ -86,9 +86,7 @@ export default function CityPlacesSection({
         <div
           ref={attachGroupRef}
           key={group.value}
-          className={`qa-city-section qa-city-copy-left animate-cinematic-in mb-10 border border-white/16 bg-[linear-gradient(145deg,rgba(34,211,238,0.10),rgba(255,79,163,0.07),rgba(12,14,20,0.96))] p-5 shadow-[0_22px_64px_rgba(8,47,73,0.18)] sm:p-6 ${
-            groupIndex % 2 === 0 ? "rounded-[30px]" : "rounded-[26px]"
-          }`}
+          className="qa-city-section qa-city-content-section qa-city-tone-venues qa-city-copy-left animate-cinematic-in mb-10 rounded-[28px] border p-5 sm:p-6"
             style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
           >
             <div className="mb-7">
