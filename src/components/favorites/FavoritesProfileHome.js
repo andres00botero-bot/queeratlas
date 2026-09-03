@@ -45,6 +45,7 @@ export default function FavoritesProfileHome({
   onRemoveMoment,
   onOpenFriend,
   onOpenRecentSave,
+  onAddRecentSaveToTrip,
   onEditProfile,
   onCloseProfile,
   onFollow,
@@ -122,7 +123,16 @@ export default function FavoritesProfileHome({
             <div className="flex items-end justify-between gap-3"><div><p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/66">Recently saved</p><h3 className="mt-1 text-xl font-semibold text-white">Your latest finds</h3></div>{recentSaves.length > 0 ? <Bookmark className="h-5 w-5 text-cyan-100/46" aria-hidden="true" /> : null}</div>
             {recentSaves.length > 0 ? (
               <div className="mt-4 flex snap-x gap-3 overflow-x-auto pb-2">
-                {recentSaves.slice(0, 5).map((item) => <button key={`${item.type}-${item.id}`} type="button" onClick={() => onOpenRecentSave(item)} className="min-w-[12.5rem] snap-start rounded-[22px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-4 text-left transition hover:border-cyan-100/28"><span className="text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/62">{item.type === "event" ? "Event" : "Venue"}</span><span className="mt-2 block line-clamp-2 text-sm font-semibold text-white">{item.name}</span><span className="mt-2 block text-xs text-white/48">{item.city}</span></button>)}
+                {recentSaves.slice(0, 5).map((item) => (
+                  <article key={`${item.type}-${item.id}`} className="min-w-[12.5rem] snap-start rounded-[22px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-3 transition hover:border-cyan-100/28">
+                    <button type="button" onClick={() => onOpenRecentSave(item)} className="block min-h-20 w-full rounded-[14px] p-1 text-left focus-visible:outline-2 focus-visible:outline-cyan-100/60">
+                      <span className="text-[10px] uppercase tracking-[0.12em] text-fuchsia-100/62">{item.type === "event" ? "Event" : "Venue"}</span>
+                      <span className="mt-2 block line-clamp-2 text-sm font-semibold text-white">{item.name}</span>
+                      <span className="mt-2 block text-xs text-white/48">{item.city}</span>
+                    </button>
+                    <button type="button" onClick={() => onAddRecentSaveToTrip?.(item)} className="mt-2 min-h-10 w-full rounded-full border border-[#f5a9c6]/20 bg-[#f5a9c6]/8 px-3 text-[11px] font-semibold text-[#ffd8e7] transition hover:border-[#f5a9c6]/38 hover:bg-[#f5a9c6]/14 focus-visible:outline-2 focus-visible:outline-[#f5a9c6]">+ Add to trip</button>
+                  </article>
+                ))}
               </div>
             ) : <p className="mt-3 text-sm text-white/48">Save a venue or event and it will appear here.</p>}
           </div>

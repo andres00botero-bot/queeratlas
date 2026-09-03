@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BookmarkCheck } from "lucide-react";
 import CalendarMonthExperience from "@/features/favorites/calendar/CalendarMonthExperience";
+import TripPlansHome from "@/features/favorites/trips/TripPlansHome";
 import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
@@ -429,6 +430,8 @@ export default function FavoritesPage() {
   } = useAuth();
   const { toast, showToast } = useActionToast();
   const [activeFavoritesIntent, setActiveFavoritesIntent] = useState("go_out_tonight");
+  const [tripWorkspaceMode, setTripWorkspaceMode] = useState("home");
+  const [pendingTripItem, setPendingTripItem] = useState(null);
   const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
   const [activeProfileTab, setActiveProfileTab] = useState("about");
   const [myMapView, setMyMapView] = useState("checkins");
@@ -2495,6 +2498,9 @@ export default function FavoritesPage() {
           ? "trips"
           : "map";
       setActiveProfileTab(nextTab);
+      if (nextIntent === "plan_a_trip") {
+        setTripWorkspaceMode("home");
+      }
       if (nextIntent === "go_out_tonight") {
         setMyMapView("checkins");
       }
@@ -2801,6 +2807,7 @@ export default function FavoritesPage() {
     const matchingPlan = (plans || []).find((plan) => normalizeCityKey(plan?.city) === normalizeCityKey(entry.city));
     if (!matchingPlan) {
       setActiveProfileTab("trips");
+      setTripWorkspaceMode("builder");
       showToast(`Create a ${formatCityLabel(entry.city || "city")} trip first, then add this event.`, { tone: "info", duration: 2400 });
       window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
       return;
@@ -2808,6 +2815,7 @@ export default function FavoritesPage() {
     const eventId = String(entry.sourceId || "");
     if ((matchingPlan.eventIds || []).map(String).includes(eventId)) {
       setActiveProfileTab("trips");
+      setTripWorkspaceMode("home");
       setExpandedPlanId(matchingPlan.id);
       showToast("This event is already in your trip.", { tone: "info", duration: 1700 });
       return;
@@ -3293,6 +3301,102 @@ export default function FavoritesPage() {
     }
   };
 
+  const updatePlan = async (planId, patch) => {
+    const safeStops = Array.isArray(patch?.stops) ? patch.stops : [];
+    const nextPlaceIds = [...new Set(safeStops.filter((stop) => stop.type === "place").map((stop) => String(stop.id)))];
+    const nextEventIds = [...new Set(safeStops.filter((stop) => stop.type === "event").map((stop) => String(stop.id)))];
+    const safePatch = {
+      title: String(patch?.title || "").trim() || "Untitled trip",
+      date: String(patch?.date || "").trim() || null,
+      note: String(patch?.note || "").trim(),
+      stops: safeStops,
+      placeIds: nextPlaceIds,
+      eventIds: nextEventIds,
+    };
+
+    setPlans((current) =>
+      current.map((plan) =>
+        String(plan.id) === String(planId) ? { ...plan, ...safePatch } : plan
+      )
+    );
+
+    if (user?.id) {
+      const { error } = await supabase
+        .from("member_plans")
+        .update({
+          title: safePatch.title,
+          date: safePatch.date,
+          note: safePatch.note,
+          stops: safePatch.stops,
+          place_ids: nextPlaceIds,
+          event_ids: nextEventIds,
+        })
+        .eq("user_id", user.id)
+        .eq("client_id", String(planId));
+
+      if (error) {
+        setSyncWarning("Trip updated locally. Cloud sync unavailable.");
+        return true;
+      }
+    }
+
+    if (patch?.feedback !== false) {
+      showToast("Trip updated.", { tone: "ok", duration: 1600 });
+    }
+    return true;
+  };
+
+  const addItemToPlan = async (plan, item, itemType) => {
+    const normalizedType = itemType === "event" ? "event" : "place";
+    const itemId = String(item?.id || "");
+    if (!plan || !itemId) return;
+    const alreadyAdded = (plan.stops || []).some(
+      (stop) => stop.type === normalizedType && String(stop.id) === itemId
+    );
+    if (alreadyAdded) {
+      setPendingTripItem(null);
+      setActiveProfileTab("trips");
+      setTripWorkspaceMode("home");
+      setExpandedPlanId(plan.id);
+      showToast("Already in this trip.", { tone: "info", duration: 1700 });
+      return;
+    }
+
+    const nextStop = {
+      type: normalizedType,
+      id: itemId,
+      name: String(item?.name || "Saved stop"),
+      city: String(item?.city || plan.city || ""),
+      time: String(item?.time || "").trim() || null,
+      dayLabel: normalizedType === "event" ? String(item?.date || "").slice(0, 10) || null : null,
+    };
+    await updatePlan(plan.id, {
+      ...plan,
+      stops: [...(plan.stops || []), nextStop],
+      feedback: false,
+    });
+    setPendingTripItem(null);
+    showToast(`Added to ${plan.title || "your trip"}.`, { tone: "ok", duration: 1800 });
+  };
+
+  const addSavedItemToTrip = (item, itemType = "place") => {
+    const matchingPlans = (plans || []).filter(
+      (plan) => normalizeCityKey(plan?.city) === normalizeCityKey(item?.city)
+    );
+    if (matchingPlans.length === 0) {
+      setActiveProfileTab("trips");
+      setTripWorkspaceMode("builder");
+      showToast(`Create a ${formatCityLabel(item?.city || "city")} trip first.`, { tone: "info", duration: 2200 });
+      window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+      return;
+    }
+    if (matchingPlans.length === 1) {
+      addItemToPlan(matchingPlans[0], item, itemType);
+      return;
+    }
+    setPendingTripItem({ item, itemType, matchingPlans });
+  };
+
   const openPlannerStopOnMap = (stop) => {
     if (!stop?.city || !stop?.id) return;
     if (stop.itemType === "event") {
@@ -3383,6 +3487,7 @@ export default function FavoritesPage() {
 
     setPlans((current) => [savedPlan, ...current]);
     setExpandedPlanId(savedPlan.id);
+    setTripWorkspaceMode("home");
     trackKpiEvent("plan_saved", {
       city: cityName,
       targetType: "plan",
@@ -3390,6 +3495,43 @@ export default function FavoritesPage() {
       memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
     });
     showToast("Plan saved.", { tone: "ok", duration: 2200 });
+    return true;
+  };
+
+  const saveBlankPlan = async ({ city, planDate, horizon }) => {
+    const cityName = String(city || "").trim();
+    if (!cityName) return false;
+    const draftPlan = {
+      id: `plan-blank-${Date.now()}`,
+      title: `${cityName} trip`,
+      city: cityName,
+      date: String(planDate || "").trim() || null,
+      placeIds: [],
+      eventIds: [],
+      stops: [],
+      note: `Blank ${String(horizon || "trip").replaceAll("_", " ")} plan`,
+      createdAt: new Date().toISOString(),
+    };
+    let savedPlan = draftPlan;
+    if (user?.id) {
+      const { data, error } = await supabase.from("member_plans").insert([{
+        user_id: user.id,
+        client_id: draftPlan.id,
+        title: draftPlan.title,
+        city: draftPlan.city,
+        date: draftPlan.date,
+        place_ids: [],
+        event_ids: [],
+        stops: [],
+        note: draftPlan.note,
+      }]).select("*").single();
+      if (error || !data) setSyncWarning("Trip created locally. Cloud sync unavailable.");
+      else savedPlan = mapPlanRow(data);
+    }
+    setPlans((current) => [savedPlan, ...current]);
+    setExpandedPlanId(savedPlan.id);
+    setTripWorkspaceMode("home");
+    showToast("Blank trip created. Add your first stop when you are ready.", { tone: "ok", duration: 2200 });
     return true;
   };
 
@@ -3556,6 +3698,7 @@ export default function FavoritesPage() {
             onRemoveMoment={removeProfileMemory}
             onOpenFriend={openMemberProfileFromFriend}
             onOpenRecentSave={(item) => router.push(citySelectionPath(item.city, item.type === "event" ? { eventId: item.id } : { placeId: item.id }))}
+            onAddRecentSaveToTrip={(item) => addSavedItemToTrip(item, item.type === "event" ? "event" : "place")}
             onEditProfile={() => {
               setProfileForm({
                 displayName: memberProfile?.displayName || authMemberName || memberName,
@@ -4930,7 +5073,20 @@ export default function FavoritesPage() {
                           <div className="mt-3 flex flex-wrap gap-2 border-t border-white/8 pt-3">
                             <button
                               type="button"
-                              onClick={() => router.push(citySelectionPath(place.city, { placeId: place.id }))}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                addSavedItemToTrip(place, "place");
+                              }}
+                              className="min-h-9 rounded-full border border-[#f5a9c6]/24 bg-[#f5a9c6]/10 px-3 text-[11px] font-semibold text-[#ffd8e7] transition hover:border-[#f5a9c6]/42 hover:bg-[#f5a9c6]/16 focus-visible:outline-2 focus-visible:outline-[#f5a9c6]"
+                            >
+                              + Add to trip
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                router.push(citySelectionPath(place.city, { placeId: place.id }));
+                              }}
                               className="rounded-full border border-white/18 bg-white/8 px-3 py-1 text-[11px] text-white/85 transition hover:border-white/30"
                             >
                               Open venue
@@ -4985,17 +5141,43 @@ export default function FavoritesPage() {
         <section ref={tripSectionRef} className="qa-atlas-section mb-8">
           <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">Plan a trip</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-[#9ce9e3]/80">
+                {tripWorkspaceMode === "home" ? "Plan a trip" : "New trip"}
+              </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-                Trip Studio
+                {tripWorkspaceMode === "home" ? "Trip plans" : "Build your trip"}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
-                Build a queer night, weekend, or city flow from saved places, events, hotels, and local signal.
+                {tripWorkspaceMode === "home"
+                  ? "Saved places and events, shaped into simple plans you can actually use."
+                  : "Choose the mood, city and pace. You can refine everything before saving."}
               </p>
             </div>
+            {tripWorkspaceMode === "builder" ? (
+              <button
+                type="button"
+                onClick={() => setTripWorkspaceMode("home")}
+                className="min-h-11 self-start rounded-full border border-white/12 bg-white/[0.035] px-4 text-sm font-semibold text-white/72 transition hover:border-white/22 hover:bg-white/[0.065] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#88d9d4]"
+              >
+                Back to trips
+              </button>
+            ) : null}
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.42fr)_minmax(22rem,0.78fr)] xl:items-stretch">
+          {tripWorkspaceMode === "home" ? (
+            <div className="rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_8%_0%,rgba(136,217,212,0.08),transparent_28%),radial-gradient(circle_at_92%_0%,rgba(245,169,198,0.07),transparent_26%),linear-gradient(180deg,rgba(20,15,23,0.94),rgba(10,9,12,0.98))] px-3 py-5 shadow-[0_28px_82px_rgba(0,0,0,0.30)] sm:px-6 sm:py-7">
+              <TripPlansHome
+                plans={plans}
+                expandedPlanId={expandedPlanId}
+                onExpandedPlanChange={setExpandedPlanId}
+                onCreateTrip={() => setTripWorkspaceMode("builder")}
+                onOpenStop={openPlannerStopOnMap}
+                onRemovePlan={removePlan}
+                onUpdatePlan={updatePlan}
+              />
+            </div>
+          ) : (
+          <div className="mx-auto grid max-w-5xl gap-5">
             <div className="min-w-0">
               <TripPlannerV2
             plannerCities={plannerCities}
@@ -5004,6 +5186,7 @@ export default function FavoritesPage() {
             trustedFavoriteIds={(followingFeedRows || [])
               .map((row) => String(row.favorite_id || ""))
               .filter(Boolean)}
+            savedFavoriteIds={favorites}
             trustedFavoriteStats={(followingFeedRows || []).reduce((acc, row) => {
               const favoriteId = String(row.favorite_id || "");
               if (!favoriteId) return acc;
@@ -5012,11 +5195,12 @@ export default function FavoritesPage() {
             }, {})}
             onOpenStop={openPlannerStopOnMap}
             onSavePlan={saveV2Plan}
+            onCreateBlankPlan={saveBlankPlan}
             hotelSuggestionsPortalId="trip-hotel-suggestions-panel"
               />
             </div>
 
-            <aside className="qa-premium-card flex flex-col overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(20,16,24,0.95),rgba(8,8,10,0.99))] p-5 shadow-[0_28px_82px_rgba(0,0,0,0.38)] xl:h-[48rem]">
+            <aside className="hidden">
               <div className="mb-4">
                 <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/70">Saved itineraries</p>
                 <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Your route library</h3>
@@ -5155,6 +5339,7 @@ export default function FavoritesPage() {
               </div>
             </aside>
           </div>
+          )}
         </section>
         )
         ) : null}
@@ -5289,6 +5474,7 @@ export default function FavoritesPage() {
                                         type="button"
                                         onClick={() => {
                                           setActiveProfileTab("trips");
+                                          setTripWorkspaceMode("home");
                                           setExpandedPlanId(entry.sourceId);
                                           window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
                                         }}
@@ -5346,6 +5532,7 @@ export default function FavoritesPage() {
               onOpenEvent={(entry) => router.push(citySelectionPath(entry.city, { eventId: entry.sourceId }))}
               onOpenTrip={(entry) => {
                 setActiveProfileTab("trips");
+                setTripWorkspaceMode("home");
                 setExpandedPlanId(entry.sourceId);
                 window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
               }}
@@ -5575,6 +5762,7 @@ export default function FavoritesPage() {
                               type="button"
                               onClick={() => {
                                 setActiveProfileTab("trips");
+                                setTripWorkspaceMode("home");
                                 setExpandedPlanId(entry.sourceId);
                                 window.setTimeout(() => tripSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
                               }}
@@ -5676,6 +5864,51 @@ export default function FavoritesPage() {
           </div>
           )}
         </section>
+        ) : null}
+
+        {pendingTripItem ? (
+          <div
+            className="fixed inset-0 z-[120] flex items-end justify-center bg-black/68 p-3 backdrop-blur-sm sm:items-center"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="trip-picker-title"
+            onClick={() => setPendingTripItem(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,#211721,#110f14)] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.62)] sm:p-5"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9ce9e3]/72">Add to trip</p>
+                  <h3 id="trip-picker-title" className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white">
+                    Choose a {pendingTripItem.item?.city || "matching"} trip
+                  </h3>
+                  <p className="mt-1.5 text-sm text-white/52">{pendingTripItem.item?.name}</p>
+                </div>
+                <button type="button" onClick={() => setPendingTripItem(null)} aria-label="Close trip chooser" className="flex h-11 w-11 flex-none items-center justify-center rounded-full text-xl text-white/48 transition hover:bg-white/[0.06] hover:text-white">×</button>
+              </div>
+              <div className="mt-4 space-y-2">
+                {pendingTripItem.matchingPlans.map((plan) => {
+                  const alreadyAdded = (plan.stops || []).some((stop) => stop.type === pendingTripItem.itemType && String(stop.id) === String(pendingTripItem.item?.id));
+                  return (
+                    <button
+                      key={`trip-picker-${plan.id}`}
+                      type="button"
+                      onClick={() => addItemToPlan(plan, pendingTripItem.item, pendingTripItem.itemType)}
+                      className="flex min-h-14 w-full items-center justify-between gap-3 rounded-[16px] border border-white/9 bg-white/[0.035] px-4 text-left transition hover:border-[#88d9d4]/28 hover:bg-[#88d9d4]/7 focus-visible:outline-2 focus-visible:outline-[#88d9d4]"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-white/88">{plan.title || "Untitled trip"}</span>
+                        <span className="mt-0.5 block text-xs text-white/42">{plan.date ? formatDate(plan.date) : "Dates undecided"} · {(plan.stops || []).length} stops</span>
+                      </span>
+                      <span className={`flex-none text-[10px] font-semibold uppercase tracking-[0.1em] ${alreadyAdded ? "text-white/36" : "text-[#9ce9e3]"}`}>{alreadyAdded ? "Added" : "Choose"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </main>

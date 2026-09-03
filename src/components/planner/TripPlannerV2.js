@@ -48,6 +48,12 @@ const PLAN_VARIANTS = [
   },
 ];
 
+const TRIP_START_MODES = [
+  { value: "suggest", label: "Suggest a plan", summary: "Let QueerAtlas shape a balanced route." },
+  { value: "saved", label: "Use my saves", summary: "Prioritize venues and events you already saved." },
+  { value: "blank", label: "Blank trip", summary: "Create the trip now and add stops yourself." },
+];
+
 const PLANNER_STEP_CARD_CLASS =
   "group rounded-[24px] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_42px_rgba(0,0,0,0.22)] transition hover:border-cyan-200/22 hover:bg-white/[0.06]";
 const PLANNER_SELECT_CLASS =
@@ -1137,9 +1143,11 @@ export default function TripPlannerV2({
   places = [],
   events = [],
   trustedFavoriteIds = [],
+  savedFavoriteIds = [],
   trustedFavoriteStats = {},
   onOpenStop,
   onSavePlan,
+  onCreateBlankPlan,
   hotelSuggestionsPortalId = "",
 }) {
   const [planTitle, setPlanTitle] = useState("");
@@ -1154,6 +1162,7 @@ export default function TripPlannerV2({
   const [soloSafe, setSoloSafe] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [startMode, setStartMode] = useState("suggest");
   const [itinerary, setItinerary] = useState([]);
   const [locks, setLocks] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -1173,6 +1182,13 @@ export default function TripPlannerV2({
   const trustedFavoritesSet = useMemo(
     () => new Set((trustedFavoriteIds || []).map((item) => String(item))),
     [trustedFavoriteIds]
+  );
+  const savedFavoritesSet = useMemo(
+    () => new Set((savedFavoriteIds || []).map((item) => {
+      const value = String(item);
+      return value.startsWith("event-") || value.startsWith("place-") ? value : `place-${value}`;
+    })),
+    [savedFavoriteIds]
   );
   const selectedVibeTagSet = useMemo(
     () => new Set(normalizeVibeTags(selectedVibeTags, { max: MAX_PLANNER_VIBE_TAGS })),
@@ -1311,8 +1327,15 @@ export default function TripPlannerV2({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const generate = () => {
+  const generate = async () => {
     if (!canBuild) return;
+    if (startMode === "blank") {
+      if (!onCreateBlankPlan || isSaving) return;
+      setIsSaving(true);
+      await onCreateBlankPlan({ city, planDate, horizon });
+      setIsSaving(false);
+      return;
+    }
     shouldScrollToItineraryRef.current = true;
     const next = buildItinerary({
       city,
@@ -1324,7 +1347,7 @@ export default function TripPlannerV2({
       budget,
       energy,
       planDate,
-      preferredFavoriteIds: trustedFavoritesSet,
+      preferredFavoriteIds: startMode === "saved" ? savedFavoritesSet : trustedFavoritesSet,
       trustedFavoriteStats,
       qualityMap,
     });
@@ -1351,7 +1374,7 @@ export default function TripPlannerV2({
       budget,
       energy,
       planDate,
-      preferredFavoriteIds: trustedFavoritesSet,
+      preferredFavoriteIds: startMode === "saved" ? savedFavoritesSet : trustedFavoritesSet,
       trustedFavoriteStats,
       qualityMap,
     });
@@ -1567,7 +1590,7 @@ export default function TripPlannerV2({
           <p className="text-[10px] uppercase tracking-[0.22em] text-cyan-100/72">Build your flow</p>
           <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-white">Start with three choices</h3>
           <p className="mt-2 max-w-xl text-sm leading-6 text-white/60">
-            Pick a city, choose the vibe, set the trip window, then let the atlas build a route you can save or export.
+            Choose where, when, and how you want to begin. Everything else is optional.
           </p>
         </div>
       </div>
@@ -1601,35 +1624,8 @@ export default function TripPlannerV2({
           <div className="flex items-center gap-3">
             <span className="flex h-8 w-8 items-center justify-center rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 text-xs font-semibold text-fuchsia-100">2</span>
             <div>
-              <p className="text-sm font-semibold text-white">Mood</p>
-              <p className="text-[11px] text-white/48">Choose the kind of night.</p>
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {PLAN_VARIANTS.map((variant) => (
-              <button
-                key={variant.value}
-                type="button"
-                onClick={() => applyVariantPreset(variant.value)}
-                className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${
-                  planVariant === variant.value
-                    ? "border-fuchsia-100/46 bg-fuchsia-200/18 text-fuchsia-50 shadow-[0_10px_26px_rgba(244,114,182,0.16)]"
-                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22 hover:text-white"
-                }`}
-              >
-                {variant.label}
-              </button>
-            ))}
-          </div>
-          <p className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-[11px] leading-5 text-white/62">{selectedVariantMeta.summary}</p>
-        </section>
-
-        <section className={PLANNER_STEP_CARD_CLASS}>
-          <div className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/26 bg-amber-200/12 text-xs font-semibold text-amber-100">3</span>
-            <div>
               <p className="text-sm font-semibold text-white">When</p>
-              <p className="text-[11px] text-white/48">Set the length and date.</p>
+              <p className="text-[11px] text-white/48">Date optional. Choose the length.</p>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -1640,7 +1636,7 @@ export default function TripPlannerV2({
                 onClick={() => setHorizon(item.value)}
                 className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${
                   horizon === item.value
-                    ? "border-amber-100/42 bg-amber-200/16 text-amber-50 shadow-[0_10px_26px_rgba(251,191,36,0.13)]"
+                    ? "border-fuchsia-100/46 bg-fuchsia-200/18 text-fuchsia-50 shadow-[0_10px_26px_rgba(244,114,182,0.16)]"
                     : "border-white/12 bg-white/6 text-white/70 hover:border-white/22 hover:text-white"
                 }`}
               >
@@ -1649,13 +1645,34 @@ export default function TripPlannerV2({
             ))}
           </div>
           <div className="mt-2">
-            <DateInput
-              value={planDate}
-              onChange={(event) => setPlanDate(event.target.value)}
-              name="trip-plan-date"
-              id="trip-plan-date"
-              tone="violet"
-            />
+            <DateInput value={planDate} onChange={(event) => setPlanDate(event.target.value)} name="trip-plan-date" id="trip-plan-date" tone="violet" />
+          </div>
+        </section>
+
+        <section className={PLANNER_STEP_CARD_CLASS}>
+          <div className="flex items-center gap-3">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/26 bg-amber-200/12 text-xs font-semibold text-amber-100">3</span>
+            <div>
+              <p className="text-sm font-semibold text-white">Start with</p>
+              <p className="text-[11px] text-white/48">Choose how much help you want.</p>
+            </div>
+          </div>
+          <div className="mt-3 grid gap-1.5">
+            {TRIP_START_MODES.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() => setStartMode(item.value)}
+                className={`rounded-[14px] border px-3 py-2 text-left transition ${
+                  startMode === item.value
+                    ? "border-amber-100/42 bg-amber-200/14 text-amber-50"
+                    : "border-white/12 bg-white/6 text-white/70 hover:border-white/22 hover:text-white"
+                }`}
+              >
+                <span className="block text-xs font-semibold">{item.label}</span>
+                <span className="mt-0.5 block text-[10px] opacity-62">{item.summary}</span>
+              </button>
+            ))}
           </div>
         </section>
       </div>
@@ -1664,7 +1681,7 @@ export default function TripPlannerV2({
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/58">Next step</p>
-            <p className="mt-1 text-sm text-white/72">Build the itinerary first. Save, share, and export appear once a route exists.</p>
+            <p className="mt-1 text-sm text-white/72">{startMode === "blank" ? "Create the trip now, then add saved places and events from your atlas." : "Create a route first. You can review every stop before saving."}</p>
           </div>
           {plannerNotice ? <p className="text-[11px] text-cyan-100/78">{plannerNotice}</p> : null}
         </div>
@@ -1672,10 +1689,10 @@ export default function TripPlannerV2({
           <button
             type="button"
             onClick={generate}
-            disabled={!canBuild}
+            disabled={!canBuild || isSaving}
             className="rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-5 py-3 text-sm font-semibold text-black shadow-[0_16px_40px_rgba(34,211,238,0.22)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2 lg:col-span-1"
           >
-            Build itinerary
+            {startMode === "blank" ? "Create blank trip" : startMode === "saved" ? "Build from my saves" : "Suggest my trip"}
           </button>
           <button
             type="button"
