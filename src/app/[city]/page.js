@@ -349,7 +349,7 @@ export default function CityPage() {
   const [hoveredEventId, setHoveredEventId] = useState(null);
   const [hoveredServiceId, setHoveredServiceId] = useState(null);
   const [isMapInteracting, setIsMapInteracting] = useState(false);
-  const [activeCitySection, setActiveCitySection] = useState("map");
+  const [activeCitySection, setActiveCitySection] = useState("guide");
   const [desktopContentSection, setDesktopContentSection] = useState("home");
   const [activeVenueFilter, setActiveVenueFilter] = useState("");
   const { isMember, user, memberName } = useAuth();
