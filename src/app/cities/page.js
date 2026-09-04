@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
+import { distanceKmBetween } from "@/lib/nearby";
 import { buildRightsSnapshotFromProfile, getCityRightsSignals } from "@/lib/cityRightsSignals";
 import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
 import { loadMapboxGl } from "@/lib/mapboxGlLoader";
@@ -28,36 +29,69 @@ import {
 } from "@/lib/seo/indexingTier";
 import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
-import CitiesSeoClusterPanel from "@/components/cities/CitiesSeoClusterPanel";
 import EmptyState from "@/components/ui/EmptyState";
 import BrandMark from "@/components/ui/BrandMark";
 
 const COUNTRY_TONES = [
   {
-    section: "border-fuchsia-300/14 bg-[radial-gradient(circle_at_12%_14%,rgba(244,114,182,0.14),transparent_26%),radial-gradient(circle_at_86%_18%,rgba(59,130,246,0.11),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
-    chip: "border-fuchsia-200/18 bg-fuchsia-200/[0.08] text-fuchsia-100/78",
-    divider: "from-fuchsia-300/22",
-    card: "bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(96,165,250,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
-    hover: "hover:border-fuchsia-200/24 hover:shadow-[0_24px_75px_rgba(217,70,239,0.18),0_18px_45px_rgba(14,165,233,0.12)]",
-    pill: "border-fuchsia-200/16 bg-fuchsia-200/[0.08] text-fuchsia-100/76",
+    section: "border-violet-200/[0.10] bg-[radial-gradient(circle_at_8%_4%,rgba(167,139,250,0.085),transparent_30%),linear-gradient(180deg,rgba(17,18,25,0.97),rgba(9,10,15,0.99))]",
+    divider: "from-violet-200/22",
+    card: "bg-[radial-gradient(circle_at_8%_0%,rgba(167,139,250,0.07),transparent_30%),linear-gradient(155deg,rgba(255,255,255,0.052),rgba(255,255,255,0.018))]",
+    hover: "hover:border-violet-200/22 hover:shadow-[0_25px_72px_rgba(76,56,130,0.18),0_16px_42px_rgba(0,0,0,0.28)]",
+    primary: "text-violet-100/90",
+    secondary: "text-sky-100/78",
+    titleHover: "group-hover:text-violet-50",
+    line: "from-violet-200/72 via-sky-200/35",
+    arrow: "text-violet-100/68",
   },
   {
-    section: "border-cyan-300/14 bg-[radial-gradient(circle_at_16%_14%,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_88%_18%,rgba(168,85,247,0.12),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
-    chip: "border-cyan-200/18 bg-cyan-200/[0.08] text-cyan-100/80",
-    divider: "from-cyan-300/24",
-    card: "bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(168,85,247,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
-    hover: "hover:border-cyan-200/24 hover:shadow-[0_24px_75px_rgba(34,211,238,0.15),0_18px_45px_rgba(168,85,247,0.12)]",
-    pill: "border-cyan-200/16 bg-cyan-200/[0.08] text-cyan-100/76",
+    section: "border-teal-100/[0.09] bg-[radial-gradient(circle_at_10%_5%,rgba(94,234,212,0.07),transparent_31%),linear-gradient(180deg,rgba(15,20,23,0.97),rgba(8,11,14,0.99))]",
+    divider: "from-teal-100/20",
+    card: "bg-[radial-gradient(circle_at_8%_0%,rgba(94,234,212,0.055),transparent_30%),linear-gradient(155deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))]",
+    hover: "hover:border-teal-100/20 hover:shadow-[0_25px_72px_rgba(31,92,87,0.17),0_16px_42px_rgba(0,0,0,0.28)]",
+    primary: "text-teal-50/88",
+    secondary: "text-violet-100/76",
+    titleHover: "group-hover:text-teal-50",
+    line: "from-teal-100/68 via-violet-200/32",
+    arrow: "text-teal-50/66",
   },
   {
-    section: "border-fuchsia-300/14 bg-[radial-gradient(circle_at_12%_16%,rgba(244,114,182,0.13),transparent_28%),radial-gradient(circle_at_84%_18%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))]",
-    chip: "border-fuchsia-200/18 bg-fuchsia-200/[0.08] text-fuchsia-100/80",
-    divider: "from-fuchsia-300/24",
-    card: "bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.09),transparent_24%),radial-gradient(circle_at_92%_16%,rgba(34,211,238,0.08),transparent_28%),linear-gradient(160deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))]",
-    hover: "hover:border-fuchsia-200/24 hover:shadow-[0_24px_75px_rgba(244,114,182,0.16),0_18px_45px_rgba(34,211,238,0.10)]",
-    pill: "border-fuchsia-200/16 bg-fuchsia-200/[0.08] text-fuchsia-100/76",
+    section: "border-rose-100/[0.09] bg-[radial-gradient(circle_at_9%_4%,rgba(251,207,232,0.065),transparent_30%),linear-gradient(180deg,rgba(21,17,22,0.97),rgba(11,9,14,0.99))]",
+    divider: "from-rose-100/20",
+    card: "bg-[radial-gradient(circle_at_8%_0%,rgba(251,207,232,0.05),transparent_30%),linear-gradient(155deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))]",
+    hover: "hover:border-rose-100/20 hover:shadow-[0_25px_72px_rgba(105,55,82,0.16),0_16px_42px_rgba(0,0,0,0.28)]",
+    primary: "text-rose-50/88",
+    secondary: "text-indigo-100/76",
+    titleHover: "group-hover:text-rose-50",
+    line: "from-rose-100/68 via-indigo-200/32",
+    arrow: "text-rose-50/66",
+  },
+  {
+    section: "border-indigo-100/[0.09] bg-[radial-gradient(circle_at_9%_4%,rgba(165,180,252,0.065),transparent_31%),linear-gradient(180deg,rgba(16,18,25,0.97),rgba(8,10,15,0.99))]",
+    divider: "from-indigo-100/20",
+    card: "bg-[radial-gradient(circle_at_8%_0%,rgba(165,180,252,0.055),transparent_30%),linear-gradient(155deg,rgba(255,255,255,0.05),rgba(255,255,255,0.016))]",
+    hover: "hover:border-indigo-100/20 hover:shadow-[0_25px_72px_rgba(51,65,120,0.17),0_16px_42px_rgba(0,0,0,0.28)]",
+    primary: "text-indigo-50/88",
+    secondary: "text-cyan-100/74",
+    titleHover: "group-hover:text-indigo-50",
+    line: "from-indigo-100/68 via-cyan-200/30",
+    arrow: "text-indigo-50/66",
   },
 ];
+
+const REGION_COUNTRIES = {
+  Europe: new Set(["Albania", "Austria", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Georgia", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Lithuania", "Malta", "Montenegro", "Netherlands", "Norway", "Poland", "Portugal", "Romania", "Russia", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Turkey", "Ukraine", "United Kingdom"]),
+  "North & Central America": new Set(["Canada", "Costa Rica", "Cuba", "Dominican Republic", "El Salvador", "Guatemala", "Honduras", "Mexico", "Nicaragua", "Panama", "Puerto Rico", "United States"]),
+  "South America": new Set(["Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Paraguay", "Peru", "Uruguay", "Venezuela"]),
+  Africa: new Set(["Egypt", "Morocco", "Namibia", "South Africa"]),
+  Asia: new Set(["Cambodia", "China", "Hong Kong", "India", "Indonesia", "Israel", "Japan", "Lebanon", "Malaysia", "Philippines", "Singapore", "South Korea", "Taiwan", "Thailand", "Vietnam"]),
+  Oceania: new Set(["Australia", "New Zealand"]),
+};
+const REGION_OPTIONS = ["All regions", ...Object.keys(REGION_COUNTRIES)];
+
+function getCityRegion(country = "") {
+  return Object.entries(REGION_COUNTRIES).find(([, countries]) => countries.has(country))?.[0] || "Other";
+}
 
 function getCountryTone(country) {
   const value = String(country || "other");
@@ -132,6 +166,14 @@ function normalizeCountry(value) {
     .toLowerCase()
     .replace(/[._-]+/g, " ")
     .replace(/\s+/g, " ");
+}
+
+function normalizeCitySearchText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 }
 
 function getCountryMapboxNames(country) {
@@ -250,9 +292,11 @@ export default function CitiesPage() {
   const { user, isMember, isLoading: isAuthLoading } = useAuth();
   const isMapboxStylesReady = useMapboxStylesheet();
   const [query, setQuery] = useState("");
+  const [searchSuggestionsOpen, setSearchSuggestionsOpen] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("All regions");
   const [selectedCountry, setSelectedCountry] = useState("All");
-  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
-  const [countryPickerQuery, setCountryPickerQuery] = useState("");
   const [mapError, setMapError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingCountry, setEditingCountry] = useState("");
@@ -269,7 +313,7 @@ export default function CitiesPage() {
   const countrySectionRefs = useRef({});
   const cityCardRefs = useRef({});
   const lastCityAutoFocusRef = useRef("");
-  const countryPickerRef = useRef(null);
+  const citySearchRef = useRef(null);
   const countryMapContainerRef = useRef(null);
   const countryMapRef = useRef(null);
   const { places, isLoading } = usePlaces();
@@ -358,6 +402,12 @@ export default function CitiesPage() {
     return ["All", ...new Set(Object.values(registryConfig).map((city) => city.country || "Other"))].sort();
   }, [registryConfig]);
   const availableCountries = useMemo(() => countries.filter((country) => country !== "All"), [countries]);
+  const countriesForSelectedRegion = useMemo(
+    () => selectedRegion === "All regions"
+      ? availableCountries
+      : availableCountries.filter((country) => REGION_COUNTRIES[selectedRegion]?.has(country)),
+    [availableCountries, selectedRegion],
+  );
 
   const updateCountryMapStyles = useCallback((selected) => {
     const map = countryMapRef.current;
@@ -439,6 +489,14 @@ export default function CitiesPage() {
       0.27,
       0.08,
     ]);
+
+    if (map.getLayer("qa-countries-selected-line")) {
+      map.setFilter("qa-countries-selected-line", [
+        "in",
+        countryNameExpression,
+        ["literal", selectedNames],
+      ]);
+    }
   }, [availableCountries, countryRightsProfiles, qariProfilesByCountry]);
 
   useEffect(() => {
@@ -480,12 +538,27 @@ export default function CitiesPage() {
             [-180, -85],
             [180, 85],
           ],
+          antialias: true,
           attributionControl: false,
         });
 
         countryMapRef.current = map;
 
         map.on("load", () => {
+          const styleLayers = map.getStyle().layers || [];
+          const firstSymbolLayerId = styleLayers.find((layer) => layer.type === "symbol")?.id;
+
+          styleLayers
+            .filter((layer) => layer.type === "symbol" && /country.*label|label.*country/i.test(layer.id))
+            .forEach((layer) => {
+              map.setPaintProperty(layer.id, "text-color", "rgba(210,226,234,0.78)");
+              map.setPaintProperty(layer.id, "text-halo-color", "rgba(4,9,15,0.92)");
+              map.setPaintProperty(layer.id, "text-halo-width", 1.15);
+              map.setPaintProperty(layer.id, "text-halo-blur", 0.45);
+              map.setLayoutProperty(layer.id, "text-font", ["DIN Pro Regular", "Arial Unicode MS Regular"]);
+              map.setLayoutProperty(layer.id, "text-letter-spacing", 0.035);
+            });
+
           if (!map.getSource("qa-country-boundaries")) {
             map.addSource("qa-country-boundaries", {
               type: "vector",
@@ -493,25 +566,44 @@ export default function CitiesPage() {
             });
           }
 
-          map.addLayer({
-            id: "qa-countries-fill",
-            type: "fill",
-            source: "qa-country-boundaries",
-            "source-layer": "country_boundaries",
-            paint: {
-              "fill-color": "#111111",
-              "fill-opacity": 0.12,
+          map.addLayer(
+            {
+              id: "qa-countries-fill",
+              type: "fill",
+              source: "qa-country-boundaries",
+              "source-layer": "country_boundaries",
+              paint: {
+                "fill-color": "#111111",
+                "fill-opacity": 0.12,
+              },
             },
-          });
+            firstSymbolLayerId,
+          );
+
+          map.addLayer(
+            {
+              id: "qa-countries-line",
+              type: "line",
+              source: "qa-country-boundaries",
+              "source-layer": "country_boundaries",
+              paint: {
+                "line-color": "rgba(207,225,235,0.22)",
+                "line-width": ["interpolate", ["linear"], ["zoom"], 0.7, 0.35, 3.3, 0.8],
+              },
+            },
+            firstSymbolLayerId,
+          );
 
           map.addLayer({
-            id: "qa-countries-line",
+            id: "qa-countries-selected-line",
             type: "line",
             source: "qa-country-boundaries",
             "source-layer": "country_boundaries",
+            filter: ["==", ["coalesce", ["get", "name_en"], ["get", "name"], ["get", "name_long"], ""], ""],
             paint: {
-              "line-color": "rgba(255,255,255,0.24)",
-              "line-width": 0.45,
+              "line-color": "rgba(207,250,254,0.96)",
+              "line-width": ["interpolate", ["linear"], ["zoom"], 0.7, 1.15, 3.3, 2.1],
+              "line-blur": 0.25,
             },
           });
 
@@ -537,10 +629,14 @@ export default function CitiesPage() {
             return;
           }
 
-          setSelectedCountry(matchedCountry);
-          setCountryPickerOpen(false);
-          setCountryPickerQuery("");
-          scrollToCountrySection(matchedCountry);
+          if (selectedCountry === matchedCountry) {
+            setSelectedCountry("All");
+            setSelectedRegion("All regions");
+          } else {
+            setSelectedCountry(matchedCountry);
+            setSelectedRegion(getCityRegion(matchedCountry));
+            scrollToCountrySection(matchedCountry);
+          }
         });
 
         map.on("error", () => {
@@ -570,17 +666,15 @@ export default function CitiesPage() {
   }, [selectedCountry, updateCountryMapStyles]);
 
   useEffect(() => {
-    if (!countryPickerOpen) return undefined;
+    if (!searchSuggestionsOpen) return undefined;
 
     const handleClickOutside = (event) => {
-      if (!countryPickerRef.current) return;
-      if (countryPickerRef.current.contains(event.target)) return;
-      setCountryPickerOpen(false);
+      if (citySearchRef.current?.contains(event.target)) return;
+      setSearchSuggestionsOpen(false);
     };
 
     const handleEscape = (event) => {
-      if (event.key !== "Escape") return;
-      setCountryPickerOpen(false);
+      if (event.key === "Escape") setSearchSuggestionsOpen(false);
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -589,7 +683,7 @@ export default function CitiesPage() {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [countryPickerOpen]);
+  }, [searchSuggestionsOpen]);
 
   const allCities = useMemo(() => {
     const placesByCity = places.reduce((acc, place) => {
@@ -620,6 +714,7 @@ export default function CitiesPage() {
       return {
         key,
         ...city,
+        region: getCityRegion(city.country),
         placeCount: cityPlaces.length,
         eventCount: eventsByCity.get(normalizeCityKey(key)) || 0,
         reviewCount,
@@ -628,60 +723,127 @@ export default function CitiesPage() {
     });
   }, [eventsData, places, registryConfig]);
 
+  const citySearchSuggestions = useMemo(() => {
+    const search = normalizeCitySearchText(query);
+    if (!search) return [];
+
+    return allCities
+      .map((city) => {
+        const cityName = String(city.title || "").replace(/^Queer\s+/i, "");
+        const cityText = normalizeCitySearchText(cityName);
+        const countryText = normalizeCitySearchText(city.country);
+        const matches = cityText.includes(search) || countryText.includes(search);
+        const priority = cityText === search ? 0 : cityText.startsWith(search) ? 1 : countryText.startsWith(search) ? 2 : 3;
+        return { city, cityName, matches, priority };
+      })
+      .filter((item) => item.matches)
+      .sort((left, right) => left.priority - right.priority || CITY_NAME_COLLATOR.compare(left.cityName, right.cityName))
+      .slice(0, 7);
+  }, [allCities, query]);
+
+  const countrySearchSuggestions = useMemo(() => {
+    const search = normalizeCitySearchText(query);
+    if (!search) return [];
+
+    return availableCountries
+      .map((country) => {
+        const countryText = normalizeCitySearchText(country);
+        return {
+          country,
+          cityCount: allCities.filter((city) => city.country === country).length,
+          matches: countryText.includes(search),
+          priority: countryText === search ? 0 : countryText.startsWith(search) ? 1 : 2,
+        };
+      })
+      .filter((item) => item.matches)
+      .sort((left, right) => left.priority - right.priority || left.country.localeCompare(right.country))
+      .slice(0, 4);
+  }, [allCities, availableCountries, query]);
+
   const filteredCities = useMemo(() => {
     return allCities
       .filter((city) => {
+        if (selectedRegion !== "All regions" && city.region !== selectedRegion) return false;
         if (selectedCountry !== "All" && city.country !== selectedCountry) return false;
 
         if (!query) return true;
 
-        const search = query.toLowerCase();
+        const search = normalizeCitySearchText(query);
         return (
-          city.title.toLowerCase().includes(search) ||
-          city.country?.toLowerCase().includes(search) ||
-          city.vibe?.toLowerCase().includes(search)
+          normalizeCitySearchText(city.title).includes(search) ||
+          normalizeCitySearchText(city.country).includes(search)
         );
       })
       .sort((a, b) => CITY_NAME_COLLATOR.compare(a.title, b.title));
-  }, [allCities, query, selectedCountry]);
+  }, [allCities, query, selectedCountry, selectedRegion]);
 
   const lastExploredCityRecord = useMemo(
     () => allCities.find((city) => city.key === lastExploredCity) || null,
     [allCities, lastExploredCity],
   );
 
-  const countryStats = useMemo(() => {
-    const stats = allCities.reduce((acc, city) => {
-      const country = city.country || "Other";
-      if (!acc[country]) {
-        acc[country] = { cityCount: 0, reviewCount: 0 };
+  const openNearestCity = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setLocationError("Location is not available in this browser.");
+      return;
+    }
+
+    if (isLocating) return;
+
+    setIsLocating(true);
+    setLocationError("");
+
+    const openCityFromPosition = ({ coords }) => {
+      const nearestCity = allCities
+        .map((city) => {
+          const [lng, lat] = Array.isArray(city.center) ? city.center : [];
+          return {
+            city,
+            distance: distanceKmBetween(
+              { lat: coords.latitude, lng: coords.longitude },
+              { lat, lng },
+            ),
+          };
+        })
+        .filter((item) => Number.isFinite(item.distance))
+        .sort((left, right) => left.distance - right.distance)[0]?.city;
+
+      setIsLocating(false);
+      if (!nearestCity) {
+        setLocationError("We could not match your location to an Atlas city.");
+        return;
       }
-      acc[country].cityCount += 1;
-      acc[country].reviewCount += Number(city.reviewCount || 0);
-      return acc;
-    }, {});
+      router.push(`/${nearestCity.key}`);
+    };
 
-    return availableCountries
-      .map((country) => ({
-        country,
-        cityCount: stats[country]?.cityCount || 0,
-        reviewCount: stats[country]?.reviewCount || 0,
-      }))
-      .sort((a, b) => {
-        if (b.cityCount !== a.cityCount) return b.cityCount - a.cityCount;
-        if (b.reviewCount !== a.reviewCount) return b.reviewCount - a.reviewCount;
-        return a.country.localeCompare(b.country);
-      });
-  }, [allCities, availableCountries]);
+    const showLocationError = (error) => {
+      setIsLocating(false);
+      if (error?.code === 1) {
+        setLocationError("Allow location access to find your nearest Atlas city.");
+      } else if (error?.code === 3) {
+        setLocationError("Finding your position took too long. Try again with Wi-Fi or GPS enabled.");
+      } else {
+        setLocationError("Your current position could not be found. Try again.");
+      }
+    };
 
-  const topCountries = useMemo(() => countryStats.slice(0, 7), [countryStats]);
+    navigator.geolocation.getCurrentPosition(
+      openCityFromPosition,
+      (firstError) => {
+        if (firstError?.code === 1) {
+          showLocationError(firstError);
+          return;
+        }
 
-  const filteredCountryOptions = useMemo(() => {
-    const search = String(countryPickerQuery || "").trim().toLowerCase();
-    const withAll = [{ country: "All", cityCount: allCities.length, reviewCount: places.length }, ...countryStats];
-    if (!search) return withAll;
-    return withAll.filter((item) => item.country.toLowerCase().includes(search));
-  }, [allCities.length, countryPickerQuery, countryStats, places.length]);
+        navigator.geolocation.getCurrentPosition(
+          openCityFromPosition,
+          showLocationError,
+          { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+        );
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+    );
+  }, [allCities, isLocating, router]);
 
   const groupedCities = useMemo(() => {
     return filteredCities.reduce((acc, city) => {
@@ -762,14 +924,6 @@ export default function CitiesPage() {
   const totalCountries = countries.length - 1;
   const totalPlaces = places.length;
   const visibleCityCount = filteredCities.length;
-  const activeFilterLabel = selectedCountry === "All" ? "All countries" : selectedCountry;
-  const filterModeLabel = query ? "Search + country filter" : "Country filter";
-  const metricsForCards = {
-    cities: totalCities,
-    countries: totalCountries,
-    places: totalPlaces,
-  };
-
   useEffect(() => {
     if (isAuthLoading) return;
 
@@ -964,7 +1118,7 @@ export default function CitiesPage() {
         <div className="pointer-events-none absolute -left-14 top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-10 top-20 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl" />
 
-        <section className="qa-panel qa-premium-card relative mb-4 overflow-hidden rounded-[24px] border border-amber-300/10 bg-[#0f0618] p-4 shadow-[0_24px_84px_rgba(0,0,0,0.38)] sm:mb-8 sm:rounded-[36px] sm:p-8 sm:shadow-[0_36px_126px_rgba(0,0,0,0.42)]">
+        <section className="qa-panel relative mb-5 overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#0b0d15] px-5 py-7 shadow-[0_28px_90px_rgba(0,0,0,0.34)] sm:mb-8 sm:rounded-[36px] sm:px-10 sm:py-12">
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/city-assets/queer-atlas-global-city-network-hero.png"
@@ -972,105 +1126,256 @@ export default function CitiesPage() {
               fill
               priority
               sizes="100vw"
-              className="object-cover"
-              style={{ objectPosition: "center 38%" }}
+              className="object-cover opacity-70"
+              style={{ objectPosition: "center 42%" }}
             />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,6,18,0.42),rgba(11,6,18,0.70)_56%,rgba(11,6,18,0.9)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_14%,rgba(251,191,36,0.16),transparent_28%),radial-gradient(circle_at_84%_20%,rgba(244,114,182,0.15),transparent_26%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,9,15,0.97)_0%,rgba(7,9,15,0.86)_48%,rgba(7,9,15,0.52)_100%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,9,15,0.12),rgba(7,9,15,0.74)_100%)]" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-200/28 to-transparent" />
           </div>
-          <div className="relative z-10 max-w-4xl">
-            <p className="qa-eyebrow text-white/45">
-              Live Discovery + Atlas Signal
+          <div className="relative z-10 max-w-3xl">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100/62 sm:text-xs">
+              Explore the queer world
             </p>
-            <h1 className="qa-display qa-h1 mt-2 inline-flex items-center gap-2.5 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-[2rem] font-bold text-transparent sm:mt-4 sm:gap-4 sm:text-6xl">
-              <BrandMark iconOnly className="h-8 w-8 sm:h-14 sm:w-14" />
-              Cities Atlas
+            <h1 className="qa-display mt-3 inline-flex items-center gap-3 text-[2.5rem] font-semibold leading-none tracking-[-0.045em] text-white sm:mt-4 sm:gap-4 sm:text-6xl">
+              <BrandMark iconOnly className="h-9 w-9 shrink-0 sm:h-14 sm:w-14" />
+              Cities
             </h1>
-            <p className="qa-lead qa-clamp-2 mt-2.5 max-w-2xl text-sm leading-5 text-white/62 sm:mt-5 sm:text-base sm:leading-6 sm:[display:block]">
-              Browse queer cities by country, scan signal quickly, and jump straight
-              into the local atlas. Built to scale globally without turning into chaos.
+            <p className="mt-4 max-w-xl text-sm leading-6 text-white/64 sm:mt-5 sm:text-base sm:leading-7">
+              Find the places, scenes and local signal that fit your trip.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2 sm:mt-5">
-              <span className="rounded-full border border-cyan-200/18 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/85">
-                {filterModeLabel}
-              </span>
-              <span className="rounded-full border border-fuchsia-200/18 bg-fuchsia-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-fuchsia-100/85">
-                {activeFilterLabel}
-              </span>
-              <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
-                {visibleCityCount} visible
-              </span>
+
+            <div className="mt-6 flex flex-col gap-2.5 sm:mt-7 sm:flex-row sm:items-start">
+              <label htmlFor="hero-city-search" className="sr-only">Search city or country</label>
+              <div ref={citySearchRef} className="group min-w-0 flex-1">
+                <div className="relative">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/38 transition group-focus-within:text-cyan-100/80"
+                  >
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m20 20-3.8-3.8" />
+                  </svg>
+                  <input
+                    id="hero-city-search"
+                    value={query}
+                    onFocus={() => setSearchSuggestionsOpen(true)}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      setSearchSuggestionsOpen(true);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") setSearchSuggestionsOpen(false);
+                    }}
+                    placeholder="Search city or country"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={searchSuggestionsOpen && Boolean(query.trim())}
+                    aria-controls="city-search-suggestions"
+                    className="min-h-13 w-full rounded-[18px] border border-white/14 bg-black/34 py-3.5 pl-12 pr-11 text-base text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] outline-none backdrop-blur-md transition placeholder:text-white/38 hover:border-white/22 focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/14"
+                  />
+                  {query ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery("");
+                        setSearchSuggestionsOpen(false);
+                      }}
+                      aria-label="Clear city search"
+                      className="absolute right-2.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-lg text-white/42 transition hover:bg-white/10 hover:text-white"
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+
+                {searchSuggestionsOpen && query.trim() ? (
+                  <div
+                    id="city-search-suggestions"
+                    role="listbox"
+                    aria-label="Matching Atlas cities"
+                    className="mt-2 overflow-hidden rounded-[18px] border border-white/14 bg-[#111521]/96 p-1.5 shadow-[0_24px_70px_rgba(0,0,0,0.46)] backdrop-blur-xl"
+                  >
+                    {countrySearchSuggestions.length || citySearchSuggestions.length ? (
+                      <>
+                        {countrySearchSuggestions.length ? (
+                          <div role="group" aria-label="Matching countries">
+                            <p className="px-3.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/34">Countries</p>
+                            {countrySearchSuggestions.map(({ country, cityCount }) => (
+                              <button
+                                key={`country-search-${country}`}
+                                type="button"
+                                role="option"
+                                aria-selected={selectedCountry === country}
+                                onClick={() => {
+                                  setSelectedRegion(getCityRegion(country));
+                                  setSelectedCountry(country);
+                                  setSearchSuggestionsOpen(false);
+                                  scrollToCountrySection(country);
+                                }}
+                                className="group/result flex min-h-14 w-full items-center justify-between gap-4 rounded-[14px] px-3.5 py-2.5 text-left transition hover:bg-white/[0.075] focus-visible:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200/40"
+                              >
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-semibold text-white group-hover/result:text-cyan-50">{country}</span>
+                                  <span className="mt-0.5 block text-xs text-white/46">Browse the country collection</span>
+                                </span>
+                                <span className="flex shrink-0 items-center gap-2 text-[10px] text-white/42">
+                                  <span>{cityCount} {cityCount === 1 ? "city" : "cities"}</span>
+                                  <span aria-hidden="true" className="text-cyan-100/70">↓</span>
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        {citySearchSuggestions.length ? (
+                          <div role="group" aria-label="Matching cities" className={countrySearchSuggestions.length ? "mt-1 border-t border-white/[0.07] pt-1" : ""}>
+                            <p className="px-3.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/34">Cities</p>
+                            {citySearchSuggestions.map(({ city, cityName }) => (
+                              <Link
+                                key={`city-search-${city.key}`}
+                                href={`/${city.key}`}
+                                role="option"
+                                aria-selected="false"
+                                onClick={() => setSearchSuggestionsOpen(false)}
+                                className="group/result flex min-h-14 items-center justify-between gap-4 rounded-[14px] px-3.5 py-2.5 text-left transition hover:bg-white/[0.075] focus-visible:bg-white/[0.075] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-200/40"
+                              >
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-semibold text-white group-hover/result:text-cyan-50">{cityName}</span>
+                                  <span className="mt-0.5 block truncate text-xs capitalize text-white/46">{city.country} · {String(city.vibe || "mixed").replaceAll("_", " ")}</span>
+                                </span>
+                                <span className="flex shrink-0 items-center gap-2 text-[10px] text-white/42">
+                                  <span>{city.placeCount} places</span>
+                                  <span aria-hidden="true" className="text-cyan-100/70">→</span>
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="px-3.5 py-4 text-sm text-white/52">No Atlas cities or countries match “{query.trim()}”.</p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={openNearestCity}
+                disabled={isLocating}
+                className="qa-action min-h-13 shrink-0 rounded-[18px] border border-cyan-200/24 bg-cyan-200/[0.09] px-5 text-sm font-semibold text-cyan-50 transition hover:border-cyan-100/42 hover:bg-cyan-200/[0.14] disabled:cursor-wait disabled:opacity-60 sm:hidden"
+              >
+                {isLocating ? "Finding city…" : "Near me"}
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] text-white/44 sm:text-xs">
+              <span><strong className="font-semibold tabular-nums text-white/78">{totalCities}</strong> cities</span>
+              <span aria-hidden="true" className="text-white/20">·</span>
+              <span><strong className="font-semibold tabular-nums text-white/78">{totalCountries}</strong> countries</span>
+              <span aria-hidden="true" className="text-white/20">·</span>
+              <span><strong className="font-semibold tabular-nums text-white/78">{isLoading ? "—" : totalPlaces}</strong> places</span>
+              {(query || selectedCountry !== "All") ? (
+                <>
+                  <span aria-hidden="true" className="text-white/20">·</span>
+                  <span className="text-cyan-100/72">{visibleCityCount} shown</span>
+                </>
+              ) : null}
+              <button
+                type="button"
+                onClick={openNearestCity}
+                disabled={isLocating}
+                className="ml-1 hidden items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.055] px-3 py-1.5 font-medium text-white/66 transition hover:border-cyan-200/28 hover:bg-cyan-200/[0.08] hover:text-white disabled:cursor-wait disabled:opacity-55 sm:inline-flex"
+              >
+                <span aria-hidden="true" className="text-cyan-100/72">⌖</span>
+                {isLocating ? "Locating…" : "My position"}
+              </button>
               {lastExploredCityRecord && (
                 <button
                   type="button"
                   onClick={() => router.push(`/${lastExploredCityRecord.key}`)}
-                  className="rounded-full border border-emerald-200/22 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/86 transition hover:border-emerald-200/36 hover:text-white"
+                  className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.055] px-3 py-1.5 font-medium text-white/66 transition hover:border-white/24 hover:bg-white/[0.09] hover:text-white"
                 >
-                  Last explored: {lastExploredCityRecord.title}
+                  Continue {lastExploredCityRecord.title.replace(/^Queer\s+/i, "")}
+                  <span aria-hidden="true">→</span>
                 </button>
               )}
             </div>
+            {locationError ? (
+              <p role="status" className="mt-3 text-xs text-amber-100/78">{locationError}</p>
+            ) : null}
           </div>
-
-          <div className="relative z-10 mt-7 hidden gap-3 sm:grid sm:grid-cols-3">
-            <div className="qa-card qa-premium-card rounded-2xl border border-fuchsia-200/10 bg-fuchsia-200/[0.06] p-4 shadow-[0_14px_30px_rgba(236,72,153,0.14),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/40">Cities</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.cities}</p>
-            </div>
-            <div className="qa-card qa-premium-card rounded-2xl border border-cyan-200/10 bg-cyan-200/[0.05] p-4 shadow-[0_14px_30px_rgba(6,182,212,0.14),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/40">Countries</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{metricsForCards.countries}</p>
-            </div>
-            <div className="qa-card qa-premium-card rounded-2xl border border-cyan-200/10 bg-cyan-200/[0.05] p-4 shadow-[0_14px_30px_rgba(34,197,94,0.13),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/40">Places</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{isLoading ? "—" : metricsForCards.places}</p>
-            </div>
-          </div>
-
         </section>
 
-        <section className="qa-panel relative mb-4 sm:hidden">
-          <label htmlFor="mobile-city-search" className="sr-only">Search city, country, or vibe</label>
-          <input
-            id="mobile-city-search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search city, country, or vibe"
-            className="min-h-12 w-full rounded-2xl border border-cyan-200/20 bg-white/[0.07] px-4 text-base text-white outline-none placeholder:text-white/42 focus:border-cyan-200/48 focus:ring-2 focus:ring-cyan-200/16"
-          />
-        </section>
-
-        <section className="qa-panel qa-premium-card relative mb-8 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.96),rgba(10,10,10,0.99))] p-3.5 shadow-[0_24px_76px_rgba(0,0,0,0.30)] sm:rounded-[32px] sm:p-6 sm:shadow-[0_30px_104px_rgba(0,0,0,0.34)]">
-          <div className="mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.12),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/72">
-                Interactive country filter
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
+        <section className="relative mb-8 overflow-hidden rounded-[24px] border border-cyan-100/[0.09] bg-[#090b10] shadow-[0_26px_90px_rgba(0,0,0,0.36),0_0_0_1px_rgba(255,255,255,0.018)] sm:rounded-[32px]">
+          <div className="overflow-hidden bg-[radial-gradient(circle_at_20%_12%,rgba(34,211,238,0.12),transparent_34%),radial-gradient(circle_at_86%_14%,rgba(244,114,182,0.10),transparent_34%),linear-gradient(180deg,rgba(10,10,10,0.88),rgba(8,8,8,0.96))]">
+            <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-white/[0.07] bg-[#0a0d13]/88 px-4 py-3 sm:px-5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.23em] text-cyan-100/65">
+                  Safety atlas
+                </p>
+                <p className="mt-0.5 hidden text-[11px] text-white/35 sm:block">Select a country to explore its cities</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 {Object.entries(MAP_RISK_PALETTE)
                   .filter(([, item]) => item.showInLegend)
                   .map(([key, item]) => (
                   <span
                     key={`map-safety-${key}`}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-black/30 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-white/75"
+                    className="inline-flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.1em] text-white/52"
                   >
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color }} />
+                    <span className="h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: item.color, color: item.color }} />
                     {item.label}
                   </span>
                   ))}
               </div>
-              <button
-                onClick={() => {
-                  setSelectedCountry("All");
-                  setCountryPickerOpen(false);
-                  setCountryPickerQuery("");
-                }}
-                className="qa-action rounded-full border border-white/16 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/70 transition hover:border-white/24 hover:text-white"
-              >
-                Show all
-              </button>
             </div>
-            <div ref={countryMapContainerRef} className="h-[320px] w-full shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]" />
+            <div className="relative">
+              <div ref={countryMapContainerRef} className="h-[340px] w-full sm:h-[400px]" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-14 bg-gradient-to-b from-[#070a10]/38 to-transparent" aria-hidden="true" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-20 bg-gradient-to-t from-[#07090e]/52 to-transparent" aria-hidden="true" />
+              <div className="absolute bottom-3 right-3 z-10 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4 sm:flex-row">
+                <label className="relative w-40 sm:w-48">
+                  <span className="sr-only">Filter cities by region</span>
+                  <select
+                    value={selectedRegion}
+                    onChange={(event) => {
+                      const nextRegion = event.target.value;
+                      setSelectedRegion(nextRegion);
+                      if (selectedCountry !== "All" && nextRegion !== "All regions" && !REGION_COUNTRIES[nextRegion]?.has(selectedCountry)) {
+                        setSelectedCountry("All");
+                      }
+                    }}
+                    className="min-h-11 w-full appearance-none rounded-[14px] border border-white/18 bg-[#0b0e16]/92 px-3.5 pr-8 text-xs font-medium text-white shadow-[0_12px_34px_rgba(0,0,0,0.38)] outline-none backdrop-blur-xl transition hover:border-white/30 focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/16"
+                  >
+                    {REGION_OPTIONS.map((region) => <option key={region} value={region} className="bg-[#111218]">{region}</option>)}
+                  </select>
+                  <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/45">⌄</span>
+                </label>
+
+                <label className="relative w-40 sm:w-48">
+                  <span className="sr-only">Filter cities by country</span>
+                  <select
+                    value={selectedCountry}
+                    onChange={(event) => {
+                      const nextCountry = event.target.value;
+                      setSelectedCountry(nextCountry);
+                      if (nextCountry !== "All") setSelectedRegion(getCityRegion(nextCountry));
+                      if (nextCountry !== "All") scrollToCountrySection(nextCountry);
+                    }}
+                    className="min-h-11 w-full appearance-none rounded-[14px] border border-white/18 bg-[#0b0e16]/92 px-3.5 pr-8 text-xs font-medium text-white shadow-[0_12px_34px_rgba(0,0,0,0.38)] outline-none backdrop-blur-xl transition hover:border-white/30 focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/16"
+                  >
+                    <option value="All" className="bg-[#111218]">All countries</option>
+                    {countriesForSelectedRegion.map((country) => <option key={country} value={country} className="bg-[#111218]">{country}</option>)}
+                  </select>
+                  <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/45">⌄</span>
+                </label>
+              </div>
+            </div>
             {(mapboxMissing || mapError) && (
               <p className="border-t border-white/10 px-4 py-3 text-sm text-amber-100/85">
                 {mapboxMissing
@@ -1080,105 +1385,6 @@ export default function CitiesPage() {
             )}
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
-            <div className="hidden sm:block">
-              <p className="text-xs uppercase tracking-[0.26em] text-white/38">
-                Search atlas
-              </p>
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search city, country, or vibe"
-                className="mt-3 w-full rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-4 text-sm outline-none transition focus:border-fuchsia-300/35 focus:ring-2 focus:ring-fuchsia-300/20"
-              />
-            </div>
-
-            <div>
-              <p className="text-xs uppercase tracking-[0.26em] text-white/38">
-                Country filter
-              </p>
-              <div className="mt-3 space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {topCountries.map((item) => {
-                    const active = selectedCountry === item.country;
-                    return (
-                      <button
-                        key={`top-country-${item.country}`}
-                        onClick={() => {
-                          setSelectedCountry(item.country);
-                          setCountryPickerOpen(false);
-                          setCountryPickerQuery("");
-                          scrollToCountrySection(item.country);
-                        }}
-                        className={`qa-action rounded-full border px-3 py-1.5 text-xs transition ${
-                          active
-                            ? "border-fuchsia-300/36 bg-fuchsia-300/14 text-white shadow-[0_16px_42px_rgba(217,70,239,0.16)]"
-                            : "border-white/10 bg-white/6 text-white/70 hover:border-white/22 hover:text-white"
-                        }`}
-                      >
-                        {item.country}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div ref={countryPickerRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setCountryPickerOpen((current) => !current)}
-                    className="qa-action flex w-full items-center justify-between rounded-2xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-4 py-3 text-left text-sm text-white/84 transition hover:border-cyan-200/32"
-                  >
-                    <span className="truncate">
-                      {selectedCountry === "All" ? "All countries" : selectedCountry}
-                    </span>
-                    <span className="text-white/55">{countryPickerOpen ? "Close" : "Choose"}</span>
-                  </button>
-
-                  {countryPickerOpen && (
-                    <div className="mt-2 w-full overflow-hidden rounded-2xl border border-white/12 bg-[#101015]/95 shadow-[0_28px_84px_rgba(0,0,0,0.45)] backdrop-blur">
-                      <div className="border-b border-white/10 p-2.5">
-                        <input
-                          value={countryPickerQuery}
-                          onChange={(event) => setCountryPickerQuery(event.target.value)}
-                          placeholder="Search country"
-                          className="w-full rounded-xl border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300/40 focus:ring-2 focus:ring-cyan-300/18"
-                        />
-                      </div>
-                      <div className="max-h-80 overflow-y-auto p-2">
-                        {filteredCountryOptions.map((item) => {
-                          const active = selectedCountry === item.country;
-                          return (
-                            <button
-                              key={`country-option-${item.country}`}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCountry(item.country);
-                                setCountryPickerOpen(false);
-                                setCountryPickerQuery("");
-                                scrollToCountrySection(item.country);
-                              }}
-                              className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition ${
-                                active
-                                  ? "bg-fuchsia-300/16 text-white"
-                                  : "text-white/78 hover:bg-white/8 hover:text-white"
-                              }`}
-                            >
-                              <span>{item.country === "All" ? "All countries" : item.country}</span>
-                              <span className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-                                {item.cityCount} cities
-                              </span>
-                            </button>
-                          );
-                        })}
-                        {filteredCountryOptions.length === 0 && (
-                          <p className="px-3 py-2 text-sm text-white/52">No country match.</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
         </section>
 
         <div className="relative space-y-8">
@@ -1212,8 +1418,6 @@ export default function CitiesPage() {
                   onClick={() => {
                     setQuery("");
                     setSelectedCountry("All");
-                    setCountryPickerOpen(false);
-                    setCountryPickerQuery("");
                   }}
                   className="qa-action rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
                 >
@@ -1336,68 +1540,63 @@ export default function CitiesPage() {
 
                           router.push(`/${city.key}`);
                         }}
-                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 p-5 text-left transition duration-300 hover:-translate-y-[4px] active:translate-y-0 ${tone.card} ${tone.hover} ${
+                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 px-5 py-5 text-left transition duration-300 hover:-translate-y-[3px] active:translate-y-0 sm:px-6 sm:py-6 ${tone.card} ${tone.hover} ${
                           city.key === lastExploredCity
-                            ? "ring-1 ring-emerald-300/45 shadow-[0_28px_92px_rgba(16,185,129,0.22)]"
+                            ? "ring-1 ring-white/28 shadow-[0_28px_92px_rgba(0,0,0,0.34),0_0_38px_rgba(186,230,253,0.07)]"
                             : ""
                         }`}
                       >
                         <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/8 opacity-0 blur-3xl transition duration-300 group-hover:opacity-100" />
                         <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br from-white/7 via-transparent to-transparent" />
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.18em] text-white/34">
-                              {city.country}
-                            </p>
-                            <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white drop-shadow-[0_4px_22px_rgba(255,255,255,0.07)] transition group-hover:translate-x-[2px]">
-                              {city.title}
-                            </h3>
+                        <div className="relative flex min-h-full flex-col">
+                          <div className="flex items-start justify-between gap-5">
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
+                                {city.country}
+                              </p>
+                              <h3 className={`mt-2 truncate text-[1.55rem] font-semibold tracking-[-0.035em] text-white transition duration-300 ${tone.titleHover}`}>
+                                {city.title}
+                              </h3>
+                            </div>
+                            <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums tracking-[0.14em] text-white/28">
+                              {String(cityIndex + 1).padStart(2, "0")}
+                            </span>
                           </div>
 
-                          <div className={`rounded-full border px-3 py-1 text-xs transition group-hover:scale-[1.03] ${tone.pill}`}>
-                            #{cityIndex + 1}
+                          <div className="mt-6 flex items-end gap-7 border-b border-white/[0.09] pb-5">
+                            <div>
+                              <p className={`text-xl font-semibold tabular-nums leading-none ${tone.primary}`}>
+                                {isLoading ? "—" : city.placeCount}
+                              </p>
+                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">Places</p>
+                            </div>
+                            <div className="h-8 w-px bg-white/[0.09]" aria-hidden="true" />
+                            <div>
+                              <p className={`text-xl font-semibold tabular-nums leading-none ${tone.secondary}`}>
+                                {isEventsLoading ? "—" : city.eventCount}
+                              </p>
+                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">Events</p>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="mt-5 grid grid-cols-2 gap-3">
-                          <div className="rounded-2xl border border-cyan-200/12 bg-cyan-200/[0.06] p-3">
-                            <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                              Places
+                          <div className="mt-4 min-h-[3.25rem]">
+                            <p className="qa-clamp-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">
+                              {String(city.vibe || "mixed").replaceAll("_", " ")} atmosphere
                             </p>
-                            <p className="mt-2 text-lg font-semibold text-white/96">
-                              {isLoading ? "—" : city.placeCount}
-                            </p>
-                          </div>
-
-                          <div className="rounded-2xl border border-fuchsia-200/12 bg-fuchsia-200/[0.06] p-3">
-                            <p className="text-[11px] uppercase tracking-[0.16em] text-white/34">
-                              Events
-                            </p>
-                            <p className="mt-2 text-lg font-semibold text-white/96">
-                              {isEventsLoading ? "—" : city.eventCount}
+                            <p className="qa-clamp-1 mt-1.5 text-sm text-white/57">
+                              {city.topPlace
+                                ? `Known for ${city.topPlace}`
+                                : "Ready for more local discoveries"}
                             </p>
                           </div>
-                        </div>
 
-                        <div className="mt-4 rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-4">
-                          <p className="text-xs uppercase tracking-[0.16em] text-white/36">
-                            Signal
-                          </p>
-                          <p className="qa-clamp-2 mt-2 text-sm capitalize text-white/68">
-                            {String(city.vibe || "mixed").replaceAll("_", " ")} atmosphere
-                          </p>
-                          <p className="qa-clamp-2 mt-2 text-sm text-white/52">
-                            {city.topPlace
-                              ? `Top place: ${city.topPlace}`
-                              : "This city is ready for more local signal."}
-                          </p>
-                        </div>
-
-                        <div className="mt-5 flex items-center justify-between">
-                          <div className="h-1.5 w-24 rounded-full bg-gradient-to-r from-amber-200 via-fuchsia-300 to-cyan-300 opacity-85 transition-all duration-300 group-hover:w-36" />
-                          <span className="text-[11px] uppercase tracking-[0.18em] text-white/40 transition group-hover:text-white/72">
-                            Open
-                          </span>
+                          <div className="mt-5 flex items-center justify-between pt-1">
+                            <div className={`h-px w-14 bg-gradient-to-r ${tone.line} to-transparent transition-all duration-300 group-hover:w-24`} />
+                            <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.17em] text-white/42 transition group-hover:text-white/78">
+                              Explore
+                              <span aria-hidden="true" className={`${tone.arrow} transition-transform duration-300 group-hover:translate-x-1`}>→</span>
+                            </span>
+                          </div>
                         </div>
                       </button>
                     ))}
@@ -1408,12 +1607,6 @@ export default function CitiesPage() {
           ))}
         </div>
 
-        <CitiesSeoClusterPanel
-          cityKeys={crawlPathCities}
-          topicHubKeys={topicHubKeys}
-          crawlClusterCities={crawlClusterCities}
-          crawlClusterTopics={crawlClusterTopics}
-        />
       </div>
     </main>
   );
