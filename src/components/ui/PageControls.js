@@ -19,16 +19,21 @@ export default function PageControls({
   mobileCompact = false,
 }) {
   const isFavoritesDesktopLuxe = variant === "favorites-desktop-luxe";
+  const isEventsCompact = variant === "events-compact";
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const moreMenuRef = useRef(null);
   const moreMenuId = useId();
   const hasMobileMore = mobileCompact && mobilePrimaryIds.length > 0 && buttons.some((button) => !mobilePrimaryIds.includes(button.id));
   const mobileMoreItems = hasMobileMore ? buttons.filter((button) => !mobilePrimaryIds.includes(button.id)) : [];
   const isMobileMoreActive = mobileMoreItems.some((button) => button.id === activeId);
-  const rootClassName = mobileCompact
+  const rootClassName = isEventsCompact
+    ? "relative z-40 overflow-visible sm:z-auto"
+    : mobileCompact
     ? "relative z-40 overflow-visible rounded-[18px] border border-white/12 bg-[linear-gradient(180deg,rgba(19,23,32,0.94),rgba(9,10,15,0.97))] p-1.5 shadow-[0_14px_38px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl sm:z-auto sm:overflow-hidden sm:rounded-[26px] sm:border-cyan-200/26 sm:bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.14),transparent_32%),linear-gradient(180deg,rgba(13,17,28,0.97),rgba(8,8,12,0.99))] sm:p-3.5 sm:shadow-[0_24px_72px_rgba(0,0,0,0.42),0_0_0_1px_rgba(244,114,182,0.08),0_18px_54px_rgba(34,211,238,0.08)]"
     : "relative overflow-hidden rounded-[20px] border border-cyan-200/26 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.15),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.14),transparent_32%),linear-gradient(180deg,rgba(13,17,28,0.97),rgba(8,8,12,0.99))] p-2 shadow-[0_24px_72px_rgba(0,0,0,0.42),0_0_0_1px_rgba(244,114,182,0.08),0_18px_54px_rgba(34,211,238,0.08)] backdrop-blur-xl sm:rounded-[26px] sm:p-3.5";
-  const railClassName = mobileCompact
+  const railClassName = isEventsCompact
+    ? "relative flex min-h-11 items-center gap-1.5 overflow-x-auto bg-transparent p-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-2.5"
+    : mobileCompact
     ? "relative flex min-h-12 items-center gap-1 overflow-x-auto rounded-[14px] bg-transparent p-0 [padding-left:max(0rem,env(safe-area-inset-left))] [padding-right:max(0rem,env(safe-area-inset-right))] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:min-h-[48px] sm:gap-2 sm:rounded-[18px] sm:border sm:border-white/8 sm:bg-black/18 sm:px-1.5 sm:py-1"
     : "relative flex min-h-[48px] items-center gap-1.5 overflow-x-auto rounded-[16px] border border-white/8 bg-black/18 p-1 [padding-left:max(0.25rem,env(safe-area-inset-left))] [padding-right:max(0.25rem,env(safe-area-inset-right))] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:min-h-[48px] sm:gap-2 sm:rounded-[18px] sm:px-1.5";
 
@@ -99,7 +104,7 @@ export default function PageControls({
       <div className={`pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/65 to-transparent ${mobileCompact ? "hidden sm:block" : ""}`} />
       <div className={`pointer-events-none absolute -left-16 top-0 h-32 w-32 rounded-full bg-cyan-300/12 blur-3xl ${mobileCompact ? "hidden sm:block" : ""}`} />
       <div className={`pointer-events-none absolute -right-16 top-0 h-32 w-32 rounded-full bg-fuchsia-300/12 blur-3xl ${mobileCompact ? "hidden sm:block" : ""}`} />
-      <div className="relative mb-3 hidden border-b border-white/12 pb-2.5 sm:mb-3.5 sm:flex sm:items-end sm:justify-between sm:gap-3 sm:pb-3">
+      <div className={`relative mb-3 hidden border-b border-white/12 pb-2.5 sm:mb-3.5 sm:items-end sm:justify-between sm:gap-3 sm:pb-3 ${isEventsCompact ? "sm:hidden" : "sm:flex"}`}>
         <div>
           <p className={`text-sm font-semibold uppercase tracking-[0.18em] text-white sm:tracking-[0.2em] ${isFavoritesDesktopLuxe ? "sm:text-[12px] sm:font-semibold sm:tracking-[0.22em] sm:text-white" : ""}`}>
             Page controls
@@ -124,12 +129,16 @@ export default function PageControls({
           const activeTheme = activeButtonThemeById?.[button.id] || {};
           const activeClassName = String(activeTheme.className || "").trim();
           const useCustomActiveTheme = Boolean(activeClassName);
-          const activeBaseClass = useCustomActiveTheme
+          const activeBaseClass = isEventsCompact
+            ? "border-cyan-200 bg-transparent text-white shadow-none"
+            : useCustomActiveTheme
             ? "border-white/42 bg-white/14 text-white shadow-[0_8px_20px_rgba(0,0,0,0.22)] sm:border-white/55 sm:shadow-[0_10px_28px_rgba(0,0,0,0.26)]"
             : mobileCompact
               ? "border-cyan-100/48 bg-cyan-100/[0.13] text-white shadow-[inset_0_-2px_0_rgba(103,232,249,0.72),0_7px_18px_rgba(0,0,0,0.2)] sm:-translate-y-[1px] sm:border-cyan-100/70 sm:bg-[linear-gradient(135deg,rgba(34,211,238,0.28),rgba(244,114,182,0.20),rgba(255,255,255,0.10))] sm:ring-1 sm:ring-cyan-200/42 sm:inset-ring-1 sm:inset-ring-white/40 sm:shadow-[0_12px_30px_rgba(34,211,238,0.16),0_8px_22px_rgba(244,114,182,0.12)]"
               : "border-cyan-100/70 bg-[linear-gradient(135deg,rgba(34,211,238,0.28),rgba(244,114,182,0.20),rgba(255,255,255,0.10))] text-white -translate-y-[1px] ring-1 ring-cyan-200/42 inset-ring-1 inset-ring-white/40 shadow-[0_12px_30px_rgba(34,211,238,0.16),0_8px_22px_rgba(244,114,182,0.12)]";
-          const mobileButtonLayoutClass = mobileCompact
+          const mobileButtonLayoutClass = isEventsCompact
+            ? `${mobileLayout === "fit" ? "min-w-0 flex-1" : "shrink-0"} inline-flex min-h-10 items-center justify-center border-b-2 border-x-0 border-t-0 px-1.5 text-[11px] font-semibold tracking-[-0.01em] sm:min-h-11 sm:px-4 sm:text-xs sm:uppercase sm:tracking-[0.12em]`
+            : mobileCompact
             ? `${mobileLayout === "fit" || hasMobileMore ? "min-w-0 flex-1" : "shrink-0"} ${isMobileMoreItem ? "hidden sm:inline-flex" : "inline-flex"} min-h-12 items-center justify-center rounded-[13px] border px-2 text-[12px] font-semibold tracking-[-0.01em] sm:shrink-0 sm:rounded-full sm:px-4 sm:py-2.5 sm:text-xs sm:uppercase sm:tracking-[0.12em]`
             : "shrink-0 rounded-full border px-3 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] sm:px-4 sm:text-xs sm:tracking-[0.12em]";
           const controlProps = {
@@ -141,7 +150,9 @@ export default function PageControls({
             className: `${mobileButtonLayoutClass} outline-none transition-[box-shadow,transform,background-color,border-color,color] duration-150 ease-out ${
               isActive
                 ? `${activeBaseClass} ${isFavoritesDesktopLuxe && !useCustomActiveTheme ? "sm:border-white/62 sm:bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(168,85,247,0.16))] sm:text-white sm:ring-1 sm:ring-white/42 sm:inset-ring-1 sm:inset-ring-white/46 sm:shadow-[0_8px_22px_rgba(168,85,247,0.16)]" : ""} ${activeClassName}`
-                : `border-white/18 bg-white/8 text-white/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:-translate-y-[1px] hover:border-cyan-100/36 hover:bg-white/12 hover:text-white hover:shadow-[0_10px_24px_rgba(34,211,238,0.08)] focus-visible:border-cyan-200/60 focus-visible:text-cyan-50 focus-visible:shadow-[0_0_0_1px_rgba(125,211,252,0.42)] ${isFavoritesDesktopLuxe ? "sm:border-white/16 sm:bg-white/[0.045] sm:text-white/78 sm:hover:border-white/30 sm:hover:bg-white/[0.08] sm:hover:text-white sm:focus-visible:border-white/42 sm:focus-visible:text-white sm:focus-visible:shadow-[0_0_0_1px_rgba(255,255,255,0.28)]" : ""}`
+                : isEventsCompact
+                  ? "border-transparent bg-transparent text-white/48 shadow-none hover:border-white/22 hover:text-white/82 focus-visible:border-cyan-200/60 focus-visible:text-cyan-50"
+                  : `border-white/18 bg-white/8 text-white/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:-translate-y-[1px] hover:border-cyan-100/36 hover:bg-white/12 hover:text-white hover:shadow-[0_10px_24px_rgba(34,211,238,0.08)] focus-visible:border-cyan-200/60 focus-visible:text-cyan-50 focus-visible:shadow-[0_0_0_1px_rgba(125,211,252,0.42)] ${isFavoritesDesktopLuxe ? "sm:border-white/16 sm:bg-white/[0.045] sm:text-white/78 sm:hover:border-white/30 sm:hover:bg-white/[0.08] sm:hover:text-white sm:focus-visible:border-white/42 sm:focus-visible:text-white sm:focus-visible:shadow-[0_0_0_1px_rgba(255,255,255,0.28)]" : ""}`
             }`,
           };
 

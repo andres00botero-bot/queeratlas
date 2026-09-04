@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Bookmark, CalendarDays, ChevronDown, Clock3, MapPin, Sparkles } from "lucide-react";
+import { ArrowRight, Bookmark, CalendarDays, Clock3, MapPin, Sparkles } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { formatCityLabel, formatEventDateLabel } from "@/features/events/eventDateUtils";
 
 const SCOPE_OPTIONS = [
   { id: "tonight", label: "Tonight" },
-  { id: "week", label: "This week" },
+  { id: "weekend", label: "This weekend" },
   { id: "month", label: "Next 30 days" },
 ];
 
@@ -25,24 +25,29 @@ function addDays(dateKey, days) {
   return toLocalDateKey(date);
 }
 
+function getUpcomingWeekendWindow(todayKey) {
+  const today = new Date(`${todayKey}T12:00:00`);
+  const dayOfWeek = today.getDay();
+  if (dayOfWeek === 6) return { startKey: todayKey, endKey: addDays(todayKey, 1) };
+  if (dayOfWeek === 0) return { startKey: todayKey, endKey: todayKey };
+  const daysUntilSaturday = 6 - dayOfWeek;
+  const startKey = addDays(todayKey, daysUntilSaturday);
+  return { startKey, endKey: addDays(startKey, 1) };
+}
+
 function resolveEventStartDate(event = {}) {
   return String(event.startDate || event.start_date || event.date || "").slice(0, 10);
 }
 
-function resolveEventEndDate(event = {}) {
-  return String(event.endDate || event.end_date || resolveEventStartDate(event)).slice(0, 10);
-}
-
-function eventOverlapsWindow(event, startKey, endKey) {
+function eventStartsInWindow(event, startKey, endKey) {
   const startDate = resolveEventStartDate(event);
-  const endDate = resolveEventEndDate(event);
-  if (!startDate || !endDate) return false;
-  return startDate <= endKey && endDate >= startKey;
+  if (!startDate) return false;
+  return startDate >= startKey && startDate <= endKey;
 }
 
-function getTimingLabel(event, todayKey, weekEndKey) {
-  if (eventOverlapsWindow(event, todayKey, todayKey)) return "Tonight";
-  if (eventOverlapsWindow(event, todayKey, weekEndKey)) return "This week";
+function getTimingLabel(event, todayKey, weekendStartKey, weekendEndKey) {
+  if (eventStartsInWindow(event, todayKey, todayKey)) return "Tonight";
+  if (eventStartsInWindow(event, weekendStartKey, weekendEndKey)) return "This weekend";
   return "Next up";
 }
 
@@ -64,22 +69,22 @@ function eventKey(event) {
 export default function HappeningSoonPanel({
   events = [],
   isLoading = false,
+  initialScope = "month",
   onOpenEvent,
   onOpenCalendar,
   onSaveEvent,
   isSaved,
 }) {
-  const [scope, setScope] = useState("month");
+  const [scope, setScope] = useState(() => (["tonight", "weekend", "month"].includes(initialScope) ? initialScope : "month"));
   const [selectedCity, setSelectedCity] = useState("");
-  const [expandedEventId, setExpandedEventId] = useState("");
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [visibleCount, setVisibleCount] = useState(5);
   const todayKey = useMemo(() => toLocalDateKey(), []);
-  const weekEndKey = useMemo(() => addDays(todayKey, 7), [todayKey]);
+  const weekendWindow = useMemo(() => getUpcomingWeekendWindow(todayKey), [todayKey]);
   const monthEndKey = useMemo(() => addDays(todayKey, 30), [todayKey]);
 
   const upcoming = useMemo(() => {
     return (events || [])
-      .filter((event) => eventOverlapsWindow(event, todayKey, monthEndKey))
+      .filter((event) => eventStartsInWindow(event, todayKey, monthEndKey))
       .sort((a, b) => {
         const byDate = resolveEventStartDate(a).localeCompare(resolveEventStartDate(b));
         if (byDate !== 0) return byDate;
@@ -88,10 +93,10 @@ export default function HappeningSoonPanel({
   }, [events, monthEndKey, todayKey]);
 
   const scopeCounts = useMemo(() => ({
-    tonight: upcoming.filter((event) => eventOverlapsWindow(event, todayKey, todayKey)).length,
-    week: upcoming.filter((event) => eventOverlapsWindow(event, todayKey, weekEndKey)).length,
+    tonight: upcoming.filter((event) => eventStartsInWindow(event, todayKey, todayKey)).length,
+    weekend: upcoming.filter((event) => eventStartsInWindow(event, weekendWindow.startKey, weekendWindow.endKey)).length,
     month: upcoming.length,
-  }), [todayKey, upcoming, weekEndKey]);
+  }), [todayKey, upcoming, weekendWindow]);
 
   const cityOptions = useMemo(() => {
     const counts = new Map();
@@ -105,13 +110,14 @@ export default function HappeningSoonPanel({
   }, [upcoming]);
 
   const scopedEvents = useMemo(() => {
-    const scopeEnd = scope === "tonight" ? todayKey : scope === "week" ? weekEndKey : monthEndKey;
+    const scopeStart = scope === "weekend" ? weekendWindow.startKey : todayKey;
+    const scopeEnd = scope === "tonight" ? todayKey : scope === "weekend" ? weekendWindow.endKey : monthEndKey;
     return upcoming.filter((event) => {
-      if (!eventOverlapsWindow(event, todayKey, scopeEnd)) return false;
+      if (!eventStartsInWindow(event, scopeStart, scopeEnd)) return false;
       if (!selectedCity) return true;
       return formatCityLabel(event?.city || "Global") === selectedCity;
     });
-  }, [monthEndKey, scope, selectedCity, todayKey, upcoming, weekEndKey]);
+  }, [monthEndKey, scope, selectedCity, todayKey, upcoming, weekendWindow]);
 
   const featuredEvent = scopedEvents[0] || null;
   const remainingEvents = scopedEvents.slice(1);
@@ -124,14 +130,12 @@ export default function HappeningSoonPanel({
   const chooseScope = (nextScope) => {
     setScope(nextScope);
     if (nextScope !== "month" && scopeCounts[nextScope] === 0) setSelectedCity("");
-    setVisibleCount(6);
-    setExpandedEventId("");
+    setVisibleCount(5);
   };
 
   const chooseCity = (nextCity) => {
     setSelectedCity(nextCity);
-    setVisibleCount(6);
-    setExpandedEventId("");
+    setVisibleCount(5);
   };
 
   const renderSaveButton = (event, featured = false) => (
@@ -153,10 +157,9 @@ export default function HappeningSoonPanel({
     <section
       data-events-section-id="happening"
       aria-labelledby="happening-soon-title"
-      className="qa-premium-card relative mt-8 overflow-hidden rounded-[34px] border border-fuchsia-200/18 bg-[radial-gradient(circle_at_8%_4%,rgba(217,70,239,0.18),transparent_30%),radial-gradient(circle_at_88%_2%,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_52%_92%,rgba(249,115,22,0.08),transparent_34%),linear-gradient(160deg,rgba(20,13,30,0.98),rgba(8,15,23,0.98)_48%,rgba(7,8,12,1))] p-4 shadow-[0_34px_110px_rgba(0,0,0,0.42),0_18px_70px_rgba(168,85,247,0.08)] sm:p-7"
+      className="qa-premium-card relative mt-8 overflow-hidden rounded-[30px] border border-fuchsia-200/16 bg-[radial-gradient(circle_at_8%_0%,rgba(217,70,239,0.12),transparent_30%),radial-gradient(circle_at_90%_0%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(160deg,rgba(18,14,25,0.98),rgba(8,14,20,0.98)_50%,rgba(7,8,11,1))] p-4 shadow-[0_30px_90px_rgba(0,0,0,0.38)] sm:p-6"
     >
-      <div className="pointer-events-none absolute inset-0 opacity-[0.12] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:56px_56px]" />
-      <div className="pointer-events-none absolute inset-x-8 top-[7.6rem] h-px bg-gradient-to-r from-transparent via-fuchsia-200/30 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-200/34 to-transparent" />
 
       <div className="relative">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -169,7 +172,7 @@ export default function HappeningSoonPanel({
               Live event pulse
             </div>
             <h2 id="happening-soon-title" className="qa-display mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-              Tonight, this week, what&apos;s next.
+              Tonight, this weekend, what&apos;s next.
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62 sm:text-base">
               A time-first view of the strongest upcoming queer signals across the atlas.
@@ -182,8 +185,8 @@ export default function HappeningSoonPanel({
               <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-fuchsia-100/56">Tonight</p>
             </div>
             <div className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.055] px-3 py-3 text-center">
-              <p className="text-xl font-semibold text-white">{scopeCounts.week}</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-cyan-100/56">7 days</p>
+              <p className="text-xl font-semibold text-white">{scopeCounts.weekend}</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-cyan-100/56">Weekend</p>
             </div>
             <div className="rounded-2xl border border-white/12 bg-white/[0.045] px-3 py-3 text-center">
               <p className="text-xl font-semibold text-white">{activeCityCount}</p>
@@ -232,7 +235,7 @@ export default function HappeningSoonPanel({
 
         {isLoading ? (
           <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="h-[310px] animate-pulse rounded-[28px] border border-white/10 bg-white/[0.045]" />
+            <div className="h-[270px] animate-pulse rounded-[24px] border border-white/10 bg-white/[0.045]" />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <div className="h-[148px] animate-pulse rounded-3xl border border-white/10 bg-white/[0.035]" />
               <div className="h-[148px] animate-pulse rounded-3xl border border-white/10 bg-white/[0.035]" />
@@ -241,7 +244,7 @@ export default function HappeningSoonPanel({
         ) : featuredEvent ? (
           <>
             <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-              <article className="group relative min-h-[310px] overflow-hidden rounded-[28px] border border-fuchsia-100/22 bg-[radial-gradient(circle_at_82%_10%,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_10%_8%,rgba(244,114,182,0.2),transparent_38%),linear-gradient(145deg,rgba(54,24,64,0.9),rgba(9,24,34,0.96)_62%,rgba(8,9,14,1))] p-5 shadow-[0_28px_80px_rgba(217,70,239,0.14)] sm:p-7">
+              <article className="group relative min-h-[270px] overflow-hidden rounded-[24px] border border-fuchsia-100/20 bg-[radial-gradient(circle_at_84%_8%,rgba(34,211,238,0.13),transparent_34%),linear-gradient(145deg,rgba(43,23,52,0.88),rgba(9,22,31,0.96)_64%,rgba(8,9,13,1))] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.3)] sm:p-6">
                 <div className="pointer-events-none absolute right-[-8%] top-[-12%] h-52 w-52 rounded-full border border-cyan-200/14 shadow-[0_0_70px_rgba(34,211,238,0.12)]" />
                 <div className="relative flex h-full flex-col">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -249,11 +252,11 @@ export default function HappeningSoonPanel({
                       <Sparkles size={12} className="text-fuchsia-100" /> Featured signal
                     </span>
                     <span className="rounded-full border border-cyan-100/22 bg-cyan-200/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-cyan-50">
-                      {getTimingLabel(featuredEvent, todayKey, weekEndKey)}
+                      {getTimingLabel(featuredEvent, todayKey, weekendWindow.startKey, weekendWindow.endKey)}
                     </span>
                   </div>
 
-                  <div className="mt-8">
+                  <div className="mt-6">
                     <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/54">
                       <MapPin size={13} /> {formatCityLabel(featuredEvent.city || "Global")}
                       <span className="text-white/22">•</span>
@@ -284,9 +287,8 @@ export default function HappeningSoonPanel({
               <div className="grid content-start gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 {visibleEvents.map((event) => {
                   const parts = getEventDayParts(event);
-                  const expanded = expandedEventId === eventKey(event);
                   return (
-                    <article key={eventKey(event)} className="rounded-3xl border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025))] p-4 transition hover:-translate-y-0.5 hover:border-cyan-100/24 hover:bg-white/[0.075]">
+                    <article key={eventKey(event)} className="rounded-[20px] border border-white/[0.09] bg-white/[0.035] p-4 transition hover:-translate-y-0.5 hover:border-cyan-100/24 hover:bg-white/[0.055]">
                       <div className="flex gap-4">
                         <div className="flex h-16 w-14 shrink-0 flex-col items-center justify-center rounded-2xl border border-fuchsia-100/16 bg-fuchsia-200/[0.075]">
                           <span className="text-xl font-semibold text-white">{parts.day}</span>
@@ -298,7 +300,7 @@ export default function HappeningSoonPanel({
                               {formatCityLabel(event.city || "Global")}
                             </p>
                             <span className="shrink-0 text-[9px] uppercase tracking-[0.13em] text-white/38">
-                              {getTimingLabel(event, todayKey, weekEndKey)}
+                              {getTimingLabel(event, todayKey, weekendWindow.startKey, weekendWindow.endKey)}
                             </span>
                           </div>
                           <h3 className="mt-1.5 text-base font-semibold leading-snug text-white">{event.name}</h3>
@@ -306,21 +308,11 @@ export default function HappeningSoonPanel({
                         </div>
                       </div>
 
-                      {expanded && (
-                        <p className="mt-3 border-t border-white/8 pt-3 text-sm leading-6 text-white/60">
-                          {event.description || "Upcoming queer event with useful community signal."}
-                        </p>
-                      )}
+                      <p className="mt-3 line-clamp-2 border-t border-white/8 pt-3 text-sm leading-6 text-white/52">
+                        {event.description || "Upcoming queer event with useful community signal."}
+                      </p>
 
-                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/8 pt-3">
-                        <button
-                          type="button"
-                          aria-expanded={expanded}
-                          onClick={() => setExpandedEventId(expanded ? "" : eventKey(event))}
-                          className="qa-action inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-white/44 transition hover:text-white/78"
-                        >
-                          Details <ChevronDown size={12} className={`transition ${expanded ? "rotate-180" : ""}`} />
-                        </button>
+                      <div className="mt-3 flex items-center justify-end gap-2 border-t border-white/8 pt-3">
                         <div className="flex items-center gap-2">
                           {renderSaveButton(event)}
                           <button
@@ -347,7 +339,7 @@ export default function HappeningSoonPanel({
                 {remainingEvents.length > visibleCount && (
                   <button
                     type="button"
-                    onClick={() => setVisibleCount((current) => current + 6)}
+                    onClick={() => setVisibleCount((current) => current + 5)}
                     className="qa-action rounded-full border border-white/14 bg-white/[0.05] px-4 py-2 text-xs text-white/72 transition hover:border-white/28 hover:text-white"
                   >
                     Show more

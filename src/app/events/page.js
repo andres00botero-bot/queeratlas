@@ -57,11 +57,8 @@ import GlobalEventForm from "@/components/events/GlobalEventForm";
 import HappeningSoonPanel from "@/components/events/HappeningSoonPanel";
 import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
-import BrandMark from "@/components/ui/BrandMark";
 import PageControls from "@/components/ui/PageControls";
 import VibeTagChips from "@/components/ui/VibeTagChips";
-
-const EVENTS_METRICS_DAILY_CACHE_KEY = "qa_events_metrics_daily_v1";
 
 function getLocalDateKey() {
   const now = new Date();
@@ -69,6 +66,20 @@ function getLocalDateKey() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function getEventDateBadgeParts(event = {}) {
+  const { startDate } = normalizeEventRange(event);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(startDate || ""))) {
+    return { day: "--", month: "TBA" };
+  }
+
+  const [, monthNumber, dayNumber] = startDate.split("-").map(Number);
+  const badgeDate = new Date(2000, monthNumber - 1, dayNumber);
+  return {
+    day: String(dayNumber),
+    month: badgeDate.toLocaleDateString("en-GB", { month: "short" }).toUpperCase(),
+  };
 }
 
 function normalizeExternalUrl(value = "") {
@@ -132,16 +143,19 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const eventsControlButtonsRef = useRef({});
 
   const [events, setEvents] = useState([]);
-  const [qualityTick, setQualityTick] = useState(0);
+  const [, setQualityTick] = useState(0);
   const [globalEvents, setGlobalEvents] = useState([]);
   const [showGlobalForm, setShowGlobalForm] = useState(false);
+  const [offgridVisibleLimit, setOffgridVisibleLimit] = useState(6);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingGlobalEventId, setEditingGlobalEventId] = useState("");
   const [globalForm, setGlobalForm] = useState(EMPTY_GLOBAL_FORM);
   const [selectedDate, setSelectedDate] = useState("");
+  const [agendaVisibleLimit, setAgendaVisibleLimit] = useState(5);
   const [searchDate, setSearchDate] = useState("");
   const [searchCity, setSearchCity] = useState("");
   const [searchVibe, setSearchVibe] = useState("");
+  const [searchVisibleLimit, setSearchVisibleLimit] = useState(8);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -168,7 +182,6 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportDraft, setReportDraft] = useState(() => createInitialReportDraft(REPORT_REASONS[0].value));
   const [qualityModal, setQualityModal] = useState(() => createInitialQualityModal());
-  const [dailyMetricsSnapshot, setDailyMetricsSnapshot] = useState(null);
   const [offgridEventParam, setOffgridEventParam] = useState(() => {
     if (typeof window === "undefined") return "";
     return String(new URLSearchParams(window.location.search).get("offgridEventId") || "").trim();
@@ -176,6 +189,11 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const [favoriteIds, setFavoriteIds] = useState(() => readLocalJson(FAVORITES_STORAGE_KEY, []));
   const [addedEntries, setAddedEntries] = useState(() => readLocalJson(ADDED_STORAGE_KEY, []));
   const [activeEventsSection, setActiveEventsSection] = useState(initialSection);
+  const [happeningInitialScope] = useState(() => {
+    if (typeof window === "undefined") return "month";
+    const value = String(new URLSearchParams(window.location.search).get("scope") || "");
+    return ["tonight", "weekend", "month"].includes(value) ? value : "month";
+  });
 
   const blockedEventIds = useMemo(() => (
     new Set(
@@ -497,77 +515,53 @@ export default function EventsPage({ initialSection = "calendar" }) {
       .filter((event) => !isExpiredEvent(event, todayIso));
   }, [blockedEventIds, events, globalEvents]);
 
-  const filteredEvents = useMemo(() => (
-    selectedDate
-      ? calendarEvents.filter((event) => eventOverlapsDate(event, selectedDate))
-      : calendarEvents
-  ), [calendarEvents, selectedDate]);
+  const filteredEvents = useMemo(() => {
+    const datedEvents = calendarEvents.filter((event) => /^\d{4}-\d{2}-\d{2}$/.test(String(event?.startDate || "")));
+    return selectedDate
+      ? datedEvents.filter((event) => eventOverlapsDate(event, selectedDate))
+      : datedEvents;
+  }, [calendarEvents, selectedDate]);
 
   const displayedGlobalEvents = useMemo(
-    () => (normalizedFocusedOffgridId ? globalEvents : globalEvents.slice(0, 8)),
-    [globalEvents, normalizedFocusedOffgridId]
+    () => (normalizedFocusedOffgridId ? globalEvents : globalEvents.slice(0, offgridVisibleLimit)),
+    [globalEvents, normalizedFocusedOffgridId, offgridVisibleLimit]
   );
 
   const eventsByCity = useMemo(() => (
     filteredEvents.reduce((acc, event) => {
       const cityKey = normalizeCityKey(event.city || "Other");
       const cityLabel = formatCityLabel(event.city || "Other");
-
-      if (!acc[cityKey]) {
-        acc[cityKey] = {
-          label: cityLabel,
-          events: [],
-        };
-      }
-
+      if (!acc[cityKey]) acc[cityKey] = { label: cityLabel, events: [] };
       acc[cityKey].events.push(event);
       return acc;
     }, {})
   ), [filteredEvents]);
-
   const sortedCities = useMemo(() => (
     Object.keys(eventsByCity).sort((a, b) => (
       (eventsByCity[a]?.label || formatCityLabel(a)).localeCompare(eventsByCity[b]?.label || formatCityLabel(b))
     ))
   ), [eventsByCity]);
-
-  const sortedEventsByCity = useMemo(
-    () =>
-      sortedCities.reduce((acc, cityKey) => {
-        const cityGroup = eventsByCity[cityKey];
-        const cityEvents = (cityGroup?.events || []).slice().sort((a, b) => {
-          const aStart = String(a?.startDate || "");
-          const bStart = String(b?.startDate || "");
-          return String(aStart || "").localeCompare(String(bStart || ""));
-        });
-        if (cityEvents.length > 0) {
-          acc[cityKey] = cityEvents;
-        }
-        return acc;
-      }, {}),
-    [eventsByCity, sortedCities]
+  const sortedEventsByCity = useMemo(() => (
+    sortedCities.reduce((acc, cityKey) => {
+      const cityEvents = (eventsByCity[cityKey]?.events || []).slice().sort((a, b) =>
+        String(a?.startDate || "").localeCompare(String(b?.startDate || ""))
+      );
+      if (cityEvents.length) acc[cityKey] = cityEvents;
+      return acc;
+    }, {})
+  ), [eventsByCity, sortedCities]);
+  const agendaEvents = useMemo(
+    () => sortedCities.flatMap((cityKey) => sortedEventsByCity[cityKey] || []),
+    [sortedCities, sortedEventsByCity]
   );
-
-  const qualityByEventKey = useMemo(
-    () => {
-      const currentQualityMap = qualityTick >= 0 ? getQualityMap() : {};
-      return filteredEvents.reduce((acc, event) => {
-        const eventKey = `${event.isGlobal ? "global" : "city"}-${event.id}`;
-        const quality = getEntityQuality({
-          targetType: "event",
-          targetId: event.id,
-          entity: event,
-          map: currentQualityMap,
-        });
-        acc[eventKey] = {
-          quality,
-          qualityStatus: getQualityStatus(quality),
-        };
-        return acc;
-      }, {});
-    },
-    [filteredEvents, qualityTick]
-  );
+  const visibleAgendaEventKeys = useMemo(() => new Set(
+    agendaEvents.slice(0, agendaVisibleLimit).map((event) => `${event.isGlobal ? "global" : "city"}-${event.id}`)
+  ), [agendaEvents, agendaVisibleLimit]);
+  const visibleAgendaCities = useMemo(() => sortedCities.filter((cityKey) =>
+    (sortedEventsByCity[cityKey] || []).some((event) =>
+      visibleAgendaEventKeys.has(`${event.isGlobal ? "global" : "city"}-${event.id}`)
+    )
+  ), [sortedCities, sortedEventsByCity, visibleAgendaEventKeys]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -577,6 +571,11 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const monthName = currentDate.toLocaleString("default", {
     month: "long",
   });
+  const displayMonthName = titleCaseWords(monthName);
+  const todayDateKey = getLocalDateKey();
+  const isViewingCurrentMonth = todayDateKey.startsWith(
+    `${year}-${String(month + 1).padStart(2, "0")}`
+  );
 
   const dayEventCounts = useMemo(() => {
     const viewYear = currentDate.getFullYear();
@@ -613,34 +612,6 @@ export default function EventsPage({ initialSection = "calendar" }) {
     return counts;
   }, [calendarEvents, currentDate]);
 
-  const upcomingEvents = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayMs = today.getTime();
-
-    const dated = calendarEvents.reduce((acc, event) => {
-      const startDate = String(event.startDate || "");
-      if (!startDate) return acc;
-      const startMs = new Date(startDate).getTime();
-      if (!Number.isFinite(startMs)) return acc;
-      acc.push({ event, startMs });
-      return acc;
-    }, []);
-
-    const futureFirst = dated
-      .filter((entry) => entry.startMs >= todayMs)
-      .sort((a, b) => a.startMs - b.startMs)
-      .map((entry) => entry.event);
-
-    if (futureFirst.length >= 2) return futureFirst.slice(0, 2);
-
-    const fallbackPast = dated
-      .filter((entry) => entry.startMs < todayMs)
-      .sort((a, b) => b.startMs - a.startMs)
-      .map((entry) => entry.event);
-
-    return [...futureFirst, ...fallbackPast].slice(0, 2);
-  }, [calendarEvents]);
   const searchCityOptions = useMemo(() => {
     const counts = new Map();
     calendarEvents.forEach((event) => {
@@ -682,10 +653,6 @@ export default function EventsPage({ initialSection = "calendar" }) {
     });
   }, [calendarEvents, searchCity, searchDate, searchVibe]);
   const hasActiveSearchFilter = Boolean(searchDate || searchCity || searchVibe);
-  const activeCities = useMemo(
-    () => new Set(events.map((event) => event.city).filter(Boolean)).size,
-    [events]
-  );
   const eventsThisMonth = useMemo(
     () => {
       const viewYear = currentDate.getFullYear();
@@ -698,69 +665,6 @@ export default function EventsPage({ initialSection = "calendar" }) {
     },
     [calendarEvents, currentDate]
   );
-  const metricsForCards = useMemo(
-    () => ({
-      allEvents:
-        Number.isFinite(Number(dailyMetricsSnapshot?.allEvents))
-          ? Number(dailyMetricsSnapshot.allEvents)
-          : calendarEvents.length,
-      activeCities:
-        Number.isFinite(Number(dailyMetricsSnapshot?.activeCities))
-          ? Number(dailyMetricsSnapshot.activeCities)
-          : activeCities,
-      thisMonth:
-        Number.isFinite(Number(dailyMetricsSnapshot?.thisMonth))
-          ? Number(dailyMetricsSnapshot.thisMonth)
-          : eventsThisMonth,
-    }),
-    [activeCities, calendarEvents.length, dailyMetricsSnapshot, eventsThisMonth]
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    try {
-      const raw = localStorage.getItem(EVENTS_METRICS_DAILY_CACHE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw);
-      if (String(parsed?.dateKey || "") !== getLocalDateKey()) return;
-      queueMicrotask(() => {
-        setDailyMetricsSnapshot({
-          dateKey: String(parsed.dateKey),
-          allEvents: Number(parsed.allEvents) || 0,
-          activeCities: Number(parsed.activeCities) || 0,
-          thisMonth: Number(parsed.thisMonth) || 0,
-        });
-      });
-    } catch {
-      // Ignore local cache parse issues.
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isLoading) return;
-
-    const dateKey = getLocalDateKey();
-    if (String(dailyMetricsSnapshot?.dateKey || "") === dateKey) return;
-
-    const nextSnapshot = {
-      dateKey,
-      allEvents: Number(calendarEvents.length) || 0,
-      activeCities: Number(activeCities) || 0,
-      thisMonth: Number(eventsThisMonth) || 0,
-    };
-
-    try {
-      localStorage.setItem(EVENTS_METRICS_DAILY_CACHE_KEY, JSON.stringify(nextSnapshot));
-    } catch {
-      // Ignore local cache write issues.
-    }
-
-    queueMicrotask(() => {
-      setDailyMetricsSnapshot(nextSnapshot);
-    });
-  }, [activeCities, calendarEvents.length, dailyMetricsSnapshot?.dateKey, eventsThisMonth, isLoading]);
-
   const handleReport = (event, clickEvent) => {
     clickEvent?.stopPropagation();
     setReportDraft(createReportDraftFromEvent(event, REPORT_REASONS[0].value));
@@ -1030,6 +934,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
 
   const selectCalendarDate = useCallback((dateStr) => {
     setSelectedDate(dateStr);
+    setAgendaVisibleLimit(5);
     if (typeof window === "undefined") return;
     if (!window.matchMedia("(max-width: 1023px)").matches) return;
 
@@ -1041,9 +946,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
     });
   }, []);
 
-  const openHappeningSoon = useCallback(() => {
-    router.push("/events/happening-soon");
-  }, [router]);
+  const clearCalendarDate = useCallback(() => {
+    setSelectedDate("");
+    setAgendaVisibleLimit(5);
+  }, []);
 
   const eventSectionButtons = useMemo(
     () => ([
@@ -1074,145 +980,30 @@ export default function EventsPage({ initialSection = "calendar" }) {
         <div className="pointer-events-none absolute bottom-16 left-1/3 h-72 w-72 rounded-full bg-orange-400/8 blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 top-[23rem] h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
-        <div className="qa-shell relative">
+        <div className="qa-shell relative md:!pb-32">
           <div className="flex flex-col">
           <section
             ref={overviewSectionRef}
             data-events-section-id="hero"
-            className="qa-panel qa-premium-card order-1 overflow-hidden rounded-[22px] border border-white/12 bg-[linear-gradient(145deg,rgba(22,24,30,0.96),rgba(8,8,10,0.99))] px-4 py-4 shadow-[0_24px_76px_rgba(0,0,0,0.36)] sm:order-2 sm:rounded-[36px] sm:px-8 sm:py-7 sm:shadow-[0_35px_120px_rgba(0,0,0,0.42)]"
+            className="relative order-1 overflow-hidden border-b border-white/[0.08] px-1 pb-5 pt-2 sm:px-2 sm:pb-7 sm:pt-5"
           >
-            <div className="grid gap-4 sm:gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-              <div className="flex flex-col xl:min-h-[380px]">
-                <div className="qa-eyebrow inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2 text-white/72 backdrop-blur">
-                  <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_20px_rgba(103,232,249,0.9)]" />
-                  Live Discovery + Event Signal
-                </div>
+            <div className="pointer-events-none absolute -left-24 top-0 h-40 w-80 rounded-full bg-cyan-400/[0.055] blur-3xl" />
+            <div className="relative">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/52">Queer Atlas</p>
+              <h1 className="qa-display mt-2 text-[2.8rem] font-semibold leading-[0.92] tracking-[-0.055em] text-white sm:text-7xl">Events</h1>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/58 sm:mt-4 sm:text-lg">What&apos;s happening in queer cities now and next.</p>
 
-                <div className="flex flex-1 items-center pt-3 sm:pt-4 xl:pt-0">
-                  <div className="mx-auto w-full max-w-3xl text-center xl:mx-0 xl:max-w-none xl:text-left">
-                    <h1 className="qa-display qa-h1 inline-flex items-center justify-center gap-2.5 text-[2rem] font-semibold text-white sm:gap-4 sm:text-5xl xl:max-w-2xl xl:justify-start xl:text-6xl">
-                      <BrandMark iconOnly className="h-8 w-8 sm:h-12 sm:w-12 xl:h-14 xl:w-14" />
-                      Events Radar
-                    </h1>
-
-                    <p className="qa-lead mx-auto mt-3 max-w-2xl text-sm text-white/68 sm:mt-5 sm:text-lg xl:mx-0">
-                      Find queer events by date, city, or vibe.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-auto hidden grid-cols-3 gap-2 pt-4 sm:grid sm:gap-2.5 sm:pt-6">
-                  <div className="qa-card qa-premium-card rounded-xl border border-cyan-300/24 bg-[linear-gradient(180deg,rgba(34,211,238,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(6,182,212,0.16),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
-                    <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/72">All events</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{isLoading && !dailyMetricsSnapshot ? "—" : metricsForCards.allEvents}</p>
-                  </div>
-                  <div className="qa-card qa-premium-card rounded-xl border border-fuchsia-300/24 bg-[linear-gradient(180deg,rgba(244,114,182,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(236,72,153,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
-                    <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">Active cities</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{isLoading && !dailyMetricsSnapshot ? "—" : metricsForCards.activeCities}</p>
-                  </div>
-                  <div className="qa-card qa-premium-card rounded-xl border border-orange-300/22 bg-[linear-gradient(180deg,rgba(251,146,60,0.14),rgba(255,255,255,0.03))] p-2.5 shadow-[0_14px_30px_rgba(249,115,22,0.15),0_8px_20px_rgba(0,0,0,0.24)] backdrop-blur sm:rounded-2xl sm:p-3.5">
-                    <p className="text-xs uppercase tracking-[0.18em] text-orange-100/75">This month</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{isLoading && !dailyMetricsSnapshot ? "—" : metricsForCards.thisMonth}</p>
-                  </div>
-                </div>
+              <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
+                <button type="button" onClick={() => router.push("/events/happening-soon?scope=tonight")} className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black transition hover:bg-cyan-100">Tonight</button>
+                <button type="button" onClick={() => router.push("/events/happening-soon?scope=weekend")} className="rounded-full border border-white/16 bg-white/[0.045] px-4 py-2 text-xs font-semibold text-white/76 transition hover:border-white/30 hover:text-white">This weekend</button>
+                <button type="button" onClick={() => router.push("/events/search")} className="rounded-full border border-white/16 bg-transparent px-4 py-2 text-xs font-semibold text-white/58 transition hover:border-cyan-200/34 hover:text-cyan-50">Choose city</button>
               </div>
 
-              <div className="qa-premium-card hidden rounded-[22px] border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(13,24,34,0.92),rgba(8,8,10,0.98))] p-4 shadow-[0_28px_84px_rgba(8,145,178,0.22),0_14px_36px_rgba(0,0,0,0.34)] backdrop-blur sm:block sm:rounded-[30px] sm:p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/70">
-                      Next up
-                    </p>
-                    <h2 className="mt-2 text-2xl font-semibold text-white">
-                      Upcoming signal
-                    </h2>
-                  </div>
-
-                  <button
-                    onClick={openHappeningSoon}
-                    className="qa-action qa-cta-primary rounded-full border border-cyan-200/30 bg-cyan-200/14 px-4 py-2 text-xs text-cyan-50 transition hover:border-cyan-200/42 hover:bg-cyan-200/20"
-                  >
-                    Open pulse
-                  </button>
-                </div>
-                <div className="mt-5 space-y-3">
-                  {isLoading && (
-                    <div className="space-y-3 rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.03] p-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/62">Loading upcoming signal</p>
-                      <EventSkeletonCard tone="cyan" />
-                      <div className="hidden sm:block"><EventSkeletonCard tone="cyan" /></div>
-                    </div>
-                  )}
-                  {upcomingEvents.map((event) => {
-                    const quality = getEntityQuality({
-                      targetType: "event",
-                      targetId: event.id,
-                      entity: event,
-                      map: qualityMap,
-                    });
-                    const qualityStatus = getQualityStatus(quality);
-
-                    return (
-                    <div
-                      key={`${event.isGlobal ? "global" : "city"}-${event.id}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => openEvent(event)}
-                      onKeyDown={(keyEvent) => {
-                        if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                          keyEvent.preventDefault();
-                          openEvent(event);
-                        }
-                      }}
-                      className="w-full rounded-2xl border border-cyan-200/15 bg-[linear-gradient(180deg,rgba(14,36,56,0.55),rgba(14,14,14,0.96))] p-4 text-left shadow-[0_16px_34px_rgba(8,145,178,0.16),0_8px_20px_rgba(0,0,0,0.28)] transition hover:-translate-y-[1px] hover:border-cyan-200/35 hover:shadow-[0_22px_42px_rgba(8,145,178,0.22),0_10px_24px_rgba(0,0,0,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/72">
-                          {formatCityLabel(event.city)} | {formatEventDateLabel(event)}
-                        </p>
-                        <button
-                          onClick={(clickEvent) => refreshQuality(event, clickEvent)}
-                          className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}>
-                          {qualityStatus.label}
-                        </button>
-                      </div>
-                      <p className="mt-3 text-base font-semibold text-white">{event.name}</p>
-                      <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
-                      {quality.lastChecked && (
-                        <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                          Checked {formatDateLabel(quality.lastChecked)}
-                        </p>
-                      )}
-                    </div>
-                    );
-                  })}
-
-                  {!isLoading && upcomingEvents.length === 0 && (
-                    <EmptyState
-                      title="No upcoming event signal yet."
-                      description="Check all dates or add a new off-grid event."
-                      className="px-4 py-8"
-                      primaryActionLabel="Show all dates"
-                      onPrimaryAction={() => setSelectedDate("")}
-                    />
-                  )}
-                  {loadError && (
-                    <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
-                      <p>{loadError}</p>
-                      <button
-                        onClick={loadAllEvents}
-                        className="mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
-                      >
-                        Retry
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+              {loadError ? <p className="mt-3 text-xs text-rose-100/68">Event data is temporarily unavailable.</p> : null}
             </div>
           </section>
 
-          <section className="order-2 mb-3 mt-3 sm:order-1 sm:mb-6 sm:mt-0">
+          <section className="order-2 mb-5 mt-1 w-full sm:mb-7 sm:mt-2">
             <PageControls
               controlsRef={eventsControlsRef}
               controlButtonsRef={eventsControlButtonsRef}
@@ -1223,7 +1014,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
               mobileCompact
               mobileLayout="fit"
               mobileLabelsById={{ offgrid: "Off-grid", happening: "Soon" }}
-              className="qa-panel"
+              variant="events-compact"
             />
           </section>
           </div>
@@ -1232,6 +1023,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
             <HappeningSoonPanel
               events={calendarEvents}
               isLoading={isLoading}
+              initialScope={happeningInitialScope}
               onOpenEvent={openEvent}
               onOpenCalendar={() => router.push("/events/calendar")}
               onSaveEvent={saveEventToFavorites}
@@ -1243,7 +1035,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
           <section
             ref={searchSectionRef}
             data-events-section-id="search"
-            className="qa-premium-card mt-8 overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_18%_12%,rgba(34,211,238,0.14),transparent_34%),radial-gradient(circle_at_82%_12%,rgba(236,72,153,0.10),transparent_34%),linear-gradient(180deg,rgba(14,18,24,0.96),rgba(8,8,8,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7"
+            className="qa-premium-card mt-8 overflow-hidden rounded-[30px] border border-cyan-300/14 bg-[radial-gradient(circle_at_18%_0%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(180deg,rgba(14,18,24,0.97),rgba(8,8,10,0.99))] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.32)] sm:p-6"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -1254,14 +1046,17 @@ export default function EventsPage({ initialSection = "calendar" }) {
               </div>
             </div>
 
-            <div className="sticky top-2 z-30 -mx-2 mt-6 rounded-2xl border border-cyan-200/18 bg-[linear-gradient(180deg,rgba(6,10,14,0.95),rgba(6,10,14,0.90))] px-3 py-3 shadow-[0_18px_48px_rgba(0,0,0,0.32)] backdrop-blur-xl md:mx-0 md:px-4 md:py-4">
+            <div className="mt-6 rounded-[22px] border border-white/[0.09] bg-black/20 p-3 sm:p-4">
               <div className="grid gap-3 md:grid-cols-4">
                 <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-white/62">
                   Date
                   <input
                     type="date"
                     value={searchDate}
-                    onChange={(event) => setSearchDate(String(event.target.value || ""))}
+                    onChange={(event) => {
+                      setSearchDate(String(event.target.value || ""));
+                      setSearchVisibleLimit(8);
+                    }}
                     className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55"
                   />
                 </label>
@@ -1269,7 +1064,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   City
                   <select
                     value={searchCity}
-                    onChange={(event) => setSearchCity(String(event.target.value || ""))}
+                    onChange={(event) => {
+                      setSearchCity(String(event.target.value || ""));
+                      setSearchVisibleLimit(8);
+                    }}
                     className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55 [&>option]:bg-[#0b0f14] [&>option]:text-white"
                   >
                     <option value="">All cities</option>
@@ -1284,7 +1082,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   Vibe
                   <select
                     value={searchVibe}
-                    onChange={(event) => setSearchVibe(String(event.target.value || ""))}
+                    onChange={(event) => {
+                      setSearchVibe(String(event.target.value || ""));
+                      setSearchVisibleLimit(8);
+                    }}
                     className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55 [&>option]:bg-[#0b0f14] [&>option]:text-white"
                   >
                     <option value="">All vibes</option>
@@ -1302,6 +1103,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                       setSearchDate("");
                       setSearchCity("");
                       setSearchVibe("");
+                      setSearchVisibleLimit(8);
                     }}
                     disabled={!hasActiveSearchFilter}
                     className="w-full rounded-xl border border-white/16 bg-white/8 px-4 py-2 text-sm text-white/80 transition hover:border-white/28 hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
@@ -1310,6 +1112,14 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   </button>
                 </div>
               </div>
+
+              {hasActiveSearchFilter ? (
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-white/[0.07] pt-3" aria-label="Active filters">
+                  {searchDate ? <span className="rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] text-cyan-50">Date · {formatDateLabel(searchDate)}</span> : null}
+                  {searchCity ? <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/[0.08] px-3 py-1 text-[11px] text-fuchsia-50">City · {searchCity}</span> : null}
+                  {searchVibe ? <span className="rounded-full border border-amber-200/20 bg-amber-200/[0.08] px-3 py-1 text-[11px] text-amber-50">Vibe · {titleCaseWords(searchVibe.replaceAll("_", " "))}</span> : null}
+                </div>
+              ) : null}
 
               <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
                 <p className="text-sm text-white/70">
@@ -1321,7 +1131,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
               </div>
             </div>
 
-            <div className="qa-defer-render mt-4 max-h-[560px] space-y-3 overflow-y-auto pr-1">
+            <div className="qa-defer-render mt-4 space-y-3">
               {searchResults.length === 0 ? (
                 <EmptyState
                   title="No events found."
@@ -1329,21 +1139,41 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   className="px-5 py-7"
                 />
               ) : (
-                searchResults.slice(0, 50).map((event) => (
+                searchResults.slice(0, searchVisibleLimit).map((event) => (
                   <button
                     key={`search-event-${event.isGlobal ? "global" : "city"}-${event.id}`}
                     type="button"
                     onClick={() => openEvent(event)}
-                    className="w-full rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition hover:border-cyan-200/30 hover:bg-white/[0.07]"
+                    className="group flex w-full items-start gap-3 rounded-[18px] border border-white/[0.09] bg-white/[0.035] p-3.5 text-left transition hover:-translate-y-px hover:border-cyan-200/28 hover:bg-white/[0.055] sm:items-center sm:p-4"
                   >
-                    <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/74">
-                      {formatCityLabel(event.city || "Global")} | {formatEventDateLabel(event)}
-                    </p>
-                    <p className="mt-2 text-base font-semibold text-white">{event.name}</p>
-                    <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
+                    <span className="min-w-[70px] shrink-0 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.06] px-2.5 py-2 text-center text-[11px] font-medium leading-5 text-cyan-50/82">
+                      {formatEventDateLabel(event)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] uppercase tracking-[0.16em] text-white/42">
+                        {formatCityLabel(event.city || "Global")}
+                      </span>
+                      <span className="mt-1 block text-base font-semibold text-white transition group-hover:text-cyan-50">{event.name}</span>
+                      <span className="mt-1 line-clamp-1 block text-sm text-white/48">
+                        {event.description || event.location || "Open event details"}
+                      </span>
+                    </span>
+                    <span className="hidden shrink-0 text-xs font-medium text-cyan-100/65 transition group-hover:translate-x-0.5 group-hover:text-cyan-50 sm:inline">View →</span>
                   </button>
                 ))
               )}
+              {searchResults.length > searchVisibleLimit ? (
+                <div className="flex flex-col items-center gap-2 border-t border-white/[0.07] pt-5">
+                  <button
+                    type="button"
+                    onClick={() => setSearchVisibleLimit((current) => current + 8)}
+                    className="rounded-full border border-cyan-200/22 bg-cyan-200/[0.08] px-5 py-2.5 text-sm font-medium text-cyan-50 transition hover:border-cyan-200/38 hover:bg-cyan-200/[0.13]"
+                  >
+                    Show more results
+                  </button>
+                  <p className="text-[11px] text-white/38">Showing {Math.min(searchVisibleLimit, searchResults.length)} of {searchResults.length}</p>
+                </div>
+              ) : null}
             </div>
           </section>
           ) : null}
@@ -1354,11 +1184,8 @@ export default function EventsPage({ initialSection = "calendar" }) {
             data-events-section-id="calendar"
             className="mt-8 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]"
           >
-            <div className="qa-premium-card relative overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_14%_10%,rgba(34,211,238,0.16),transparent_36%),radial-gradient(circle_at_85%_12%,rgba(168,85,247,0.14),transparent_34%),radial-gradient(circle_at_50%_85%,rgba(249,115,22,0.10),transparent_40%),linear-gradient(180deg,rgba(17,20,24,0.96),rgba(9,10,12,0.99))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
-              <div className="pointer-events-none absolute -left-14 -top-14 h-56 w-56 rounded-full bg-fuchsia-500/14 blur-3xl" />
-              <div className="pointer-events-none absolute -right-12 top-16 h-52 w-52 rounded-full bg-blue-500/14 blur-3xl" />
-              <div className="pointer-events-none absolute bottom-[-96px] left-1/3 h-56 w-56 rounded-full bg-orange-400/10 blur-3xl" />
-              <div className="pointer-events-none absolute inset-x-8 top-24 h-px bg-gradient-to-r from-transparent via-fuchsia-200/28 to-transparent" />
+            <div className="qa-premium-card relative overflow-hidden rounded-[30px] border border-cyan-200/14 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.10),transparent_34%),radial-gradient(circle_at_92%_8%,rgba(168,85,247,0.09),transparent_32%),linear-gradient(180deg,rgba(16,20,27,0.97),rgba(8,10,14,0.99))] p-5 shadow-[0_26px_72px_rgba(0,0,0,0.32)] sm:p-6">
+              <div className="pointer-events-none absolute inset-x-8 top-24 h-px bg-gradient-to-r from-transparent via-cyan-100/18 to-transparent" />
 
               <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -1366,22 +1193,41 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     Calendar
                   </p>
                   <h2 className="mt-2 bg-gradient-to-r from-fuchsia-100 via-white to-cyan-100 bg-clip-text text-2xl font-semibold tracking-[-0.03em] text-transparent">
-                    {monthName} {year}
+                    {displayMonthName} {year}
                   </h2>
+                  <p className="mt-2 text-xs text-white/52">
+                    {eventsThisMonth} {eventsThisMonth === 1 ? "event" : "events"} this month
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
+                    type="button"
+                    onClick={() => {
+                      const today = new Date();
+                      setCurrentDate(today);
+                      selectCalendarDate(getLocalDateKey());
+                    }}
+                    aria-pressed={isViewingCurrentMonth && selectedDate === todayDateKey}
+                    className="rounded-full border border-white/14 bg-white/[0.055] px-4 py-2 text-sm text-white/72 transition hover:border-white/26 hover:bg-white/[0.09] hover:text-white"
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Previous month"
                     onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
                     className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-4 py-2 text-sm text-fuchsia-100/85 transition hover:border-fuchsia-200/35 hover:bg-fuchsia-200/16 hover:text-white"
                   >
-                    Prev
+                    <span aria-hidden="true">←</span><span className="sr-only">Previous month</span>
                   </button>
                   <button
+                    type="button"
+                    aria-label="Next month"
                     onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
                     className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100/85 transition hover:border-cyan-200/35 hover:bg-cyan-200/16 hover:text-white"
                   >
-                    Next
+                    <span aria-hidden="true">→</span><span className="sr-only">Next month</span>
                   </button>
                 </div>
               </div>
@@ -1423,35 +1269,42 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
                   const eventsCount = dayEventCounts[dateStr] || 0;
                   const isSelected = selectedDate === dateStr;
+                  const isToday = todayDateKey === dateStr;
 
                   return (
                     <button
                       key={day}
                       onClick={() => selectCalendarDate(dateStr)}
-                      className={`h-12 rounded-xl border p-1.5 text-left transition sm:h-24 sm:rounded-2xl sm:p-3 ${
+                      aria-label={`${formatDateLabel(dateStr)}${eventsCount > 0 ? `, ${eventsCount} ${eventsCount === 1 ? "event" : "events"}` : ", no events"}${isToday ? ", today" : ""}`}
+                      aria-pressed={isSelected}
+                      className={`relative flex h-12 flex-col justify-between rounded-xl border p-1.5 text-left transition sm:h-24 sm:rounded-2xl sm:p-3 ${
                         isSelected
                           ? "border-fuchsia-200/72 bg-[linear-gradient(180deg,rgba(232,121,249,0.20),rgba(76,29,149,0.34))] shadow-[0_0_0_1px_rgba(244,114,182,0.45),0_18px_44px_rgba(168,85,247,0.30)]"
                           : eventsCount > 0
                             ? "border-cyan-300/38 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.02))] shadow-[0_0_0_1px_rgba(56,189,248,0.14)] hover:border-cyan-200/52 hover:bg-[linear-gradient(180deg,rgba(34,211,238,0.18),rgba(255,255,255,0.03))] hover:shadow-[0_0_0_1px_rgba(103,232,249,0.30),0_14px_32px_rgba(6,182,212,0.20)]"
                             : "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025))] hover:border-white/18 hover:bg-white/8"
-                      }`}
+                      } ${isToday && !isSelected ? "ring-1 ring-amber-200/70 ring-offset-1 ring-offset-[#0b0d12]" : ""}`}
                     >
-                      <p className={`inline-block whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal] text-[13px] font-semibold leading-none tracking-normal sm:text-sm sm:font-medium ${
+                      <span className={`inline-block whitespace-nowrap break-normal [overflow-wrap:normal] [word-break:normal] text-[13px] font-semibold leading-none tracking-normal sm:text-sm sm:font-medium ${
                         isSelected ? "text-white" : eventsCount > 0 ? "text-cyan-100" : "text-white"
                       }`}>
                         {day}
-                      </p>
-
+                      </span>
+                      {eventsCount > 0 ? (
+                        <span className="flex items-center gap-1.5 text-[9px] font-semibold text-cyan-100/82 sm:text-[10px]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.8)]" aria-hidden="true" />
+                          <span className="hidden sm:inline">{eventsCount} {eventsCount === 1 ? "event" : "events"}</span>
+                        </span>
+                      ) : null}
+                      {isToday ? <span className="sr-only">Today</span> : null}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div ref={eventListSectionRef} className="qa-premium-card relative overflow-hidden rounded-[34px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_86%_10%,rgba(34,211,238,0.12),transparent_32%),radial-gradient(circle_at_18%_20%,rgba(236,72,153,0.14),transparent_35%),linear-gradient(180deg,rgba(18,18,20,0.96),rgba(8,8,8,1))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)]">
-              <div className="pointer-events-none absolute -right-10 top-24 h-48 w-48 rounded-full bg-cyan-500/12 blur-3xl" />
-              <div className="pointer-events-none absolute -left-12 bottom-12 h-52 w-52 rounded-full bg-violet-500/10 blur-3xl" />
-              <div className="pointer-events-none absolute inset-x-8 top-20 h-px bg-gradient-to-r from-transparent via-cyan-200/24 to-transparent" />
+            <div ref={eventListSectionRef} className="qa-premium-card relative scroll-mt-24 overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,24,0.97),rgba(10,10,12,0.99))] p-4 shadow-[0_28px_80px_rgba(0,0,0,0.32)] sm:p-6">
+              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/28 to-transparent" />
 
               <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
@@ -1461,10 +1314,21 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   <h2 className="mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-2xl font-semibold tracking-[-0.03em] text-transparent">
                     {selectedDate ? `Events on ${formatDateLabel(selectedDate)}` : "All events"}
                   </h2>
+                  <p className="mt-2 text-xs text-white/48">
+                    {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"} across {sortedCities.length} {sortedCities.length === 1 ? "city" : "cities"}
+                  </p>
                 </div>
-
+                {selectedDate ? (
+                  <button
+                    type="button"
+                    onClick={clearCalendarDate}
+                    className="w-fit rounded-full border border-white/12 bg-white/[0.05] px-4 py-2 text-xs font-medium text-white/66 transition hover:border-white/22 hover:bg-white/[0.08] hover:text-white"
+                  >
+                    Show all dates
+                  </button>
+                ) : null}
               </div>
-              <div className="qa-defer-render mt-6 max-h-[900px] space-y-6 overflow-y-auto pr-1">
+              <div className="qa-defer-render mt-6 space-y-8">
                 {isLoading && (
                   <div className="space-y-3">
                     <EventSkeletonCard tone="cyan" />
@@ -1472,26 +1336,24 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     <EventSkeletonCard tone="cyan" />
                   </div>
                 )}
-                {sortedCities.map((cityKey) => {
+                {visibleAgendaCities.map((cityKey) => {
                   const cityGroup = eventsByCity[cityKey];
-                  const cityEvents = sortedEventsByCity[cityKey] || [];
+                  const cityEvents = (sortedEventsByCity[cityKey] || []).filter((event) =>
+                    visibleAgendaEventKeys.has(`${event.isGlobal ? "global" : "city"}-${event.id}`)
+                  );
                   const cityLabel = cityGroup?.label || formatCityLabel(cityKey);
-
-                  if (!cityEvents || cityEvents.length === 0) return null;
-
+                  if (!cityEvents.length) return null;
                   return (
-                    <section key={cityKey}>
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <h3 className="text-lg font-semibold text-white">{cityLabel}</h3>
+                    <section key={cityKey} aria-labelledby={`event-city-${cityKey}`}>
+                      <div className="mb-3 flex items-center gap-3">
+                        <h3 id={`event-city-${cityKey}`} className="text-sm font-semibold uppercase tracking-[0.16em] text-white/72">{cityLabel}</h3>
+                        <span className="rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1 text-[10px] text-white/44">{cityEvents.length}</span>
+                        <span className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                       </div>
-
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {cityEvents.map((event) => {
                           const eventKey = `${event.isGlobal ? "global" : "city"}-${event.id}`;
-                          const qualityEntry = qualityByEventKey[eventKey];
-                          const quality = qualityEntry?.quality;
-                          const qualityStatus = qualityEntry?.qualityStatus || getQualityStatus(quality);
-
+                          const eventDateBadge = getEventDateBadgeParts(event);
                           return (
                           <div
                             key={eventKey}
@@ -1504,74 +1366,32 @@ export default function EventsPage({ initialSection = "calendar" }) {
                                 openEvent(event);
                               }
                             }}
-                            className="qa-premium-card cursor-pointer rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] p-5 shadow-[0_14px_30px_rgba(0,0,0,0.28)] transition hover:-translate-y-[1px] hover:border-cyan-200/28 hover:shadow-[0_24px_54px_rgba(6,182,212,0.14),0_12px_30px_rgba(0,0,0,0.36)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 [content-visibility:auto] [contain-intrinsic-size:540px]"
+                            className="group cursor-pointer rounded-[18px] border border-white/[0.09] bg-white/[0.035] p-3 shadow-[0_8px_20px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-px hover:border-cyan-200/24 hover:bg-white/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 [content-visibility:auto] [contain-intrinsic-size:150px]"
                           >
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <p className="text-xs uppercase tracking-[0.18em] text-fuchsia-200/70">
-                                  {event.isGlobal ? "Global off-grid event" : "Community event"}
-                                </p>
-                                <h4 className="mt-2 text-xl font-semibold text-white">
-                                  {event.name}
-                                </h4>
+                            <div className="flex items-start gap-3">
+                              <div
+                                className="relative flex h-[68px] w-[64px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[16px] border border-violet-200/22 bg-[linear-gradient(145deg,rgba(82,72,130,0.48),rgba(34,80,104,0.38))] shadow-[inset_0_1px_0_rgba(255,255,255,0.13),0_8px_22px_rgba(15,18,38,0.24)]"
+                                aria-label={formatEventDateLabel(event)}
+                                title={formatEventDateLabel(event)}
+                              >
+                                <span className="pointer-events-none absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/70 to-transparent" />
+                                <span className="text-[25px] font-semibold leading-none tracking-[-0.04em] text-white">
+                                  {eventDateBadge.day}
+                                </span>
+                                <span className="mt-1.5 text-[10px] font-semibold leading-none tracking-[0.18em] text-cyan-100/82">
+                                  {eventDateBadge.month}
+                                </span>
                               </div>
-
-                              {event.startDate && (
-                                <div className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100">
-                                  {formatEventDateLabel(event)}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                              <button
-                                onClick={(clickEvent) => refreshQuality(event, clickEvent)}
-                                disabled={event.isGlobal && !isAdmin}
-                                className={`rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.14em] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 ${qualityPillClass(qualityStatus.tone)}`}>
-                                {qualityStatus.label}
-                              </button>
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                {!event.isGlobal && isAdmin && (
-                                  <button
-                                    onClick={(eventClick) => openCityEdit(event, eventClick)}
-                                    className="rounded-full border border-emerald-200/22 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium text-emerald-100/88 transition hover:border-emerald-200/40 hover:bg-emerald-200/14"
-                                  >
-                                    Edit
-                                  </button>
-                                )}
-                                <button
-                                  onClick={(eventClick) => handleReport(event, eventClick)}
-                                  className="rounded-full border border-rose-200/20 bg-rose-200/[0.07] px-3 py-1 text-[11px] font-medium text-rose-100/82 transition hover:border-rose-200/38 hover:bg-rose-200/12"
-                                >
-                                  Report
-                                </button>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-base font-semibold leading-5 tracking-[-0.015em] text-white transition group-hover:text-cyan-50">{event.name}</h4>
+                                <p className="mt-1 line-clamp-1 text-xs leading-5 text-white/50">{event.description || event.location || "Open for event details."}</p>
                               </div>
                             </div>
-                            {quality.lastChecked && (
-                              <p className="mb-3 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                                Checked {formatDateLabel(quality.lastChecked)}
-                              </p>
-                            )}
 
-                            <div className="mt-4 rounded-2xl border border-white/6 bg-black/20 p-4">
-                              <p className="text-[11px] uppercase tracking-[0.18em] text-white/36">
-                                About event
-                              </p>
-                              <p className="qa-copy-justify mt-3 text-sm leading-7 text-white/68">
-                                {event.description || "No description yet."}
-                              </p>
-                              <VibeTagChips entity={event} tone="amber" className="mt-3" includeMixedFallback />
-                              {event.isGlobal && event.location && (
-                                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-cyan-200/75">
-                                  Location: {event.location}
-                                </p>
-                              )}
-                            </div>
-
-                            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                            <div className="mt-2 flex flex-wrap items-center justify-end gap-2 border-t border-white/[0.06] pt-2">
                               <button
                                 onClick={(eventClick) => saveEventToFavorites(event, eventClick)}
-                                className={`rounded-2xl border px-4 py-3 text-sm transition ${
+                                className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
                                   favoriteIdSet.has(`event-${String(event.id)}`)
                                     ? "cursor-default border-emerald-200/28 bg-emerald-200/12 text-emerald-100"
                                     : "border-emerald-200/20 bg-emerald-200/8 text-emerald-100/90 hover:border-emerald-200/34 hover:bg-emerald-200/14"
@@ -1579,46 +1399,9 @@ export default function EventsPage({ initialSection = "calendar" }) {
                               >
                                 {favoriteIdSet.has(`event-${String(event.id)}`) ? "Saved" : "Save event"}
                               </button>
-                              {event.link && (
-                                <a
-                                  href={normalizeExternalUrl(event.link)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={(eventClick) => eventClick.stopPropagation()}
-                                  className="qa-action qa-cta-primary rounded-2xl bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:opacity-95"
-                                >
-                                  Open official link
-                                </a>
-                              )}
-                              {(event.ticket_url || event.ticketUrl) && (
-                                <a
-                                  href={normalizeExternalUrl(event.ticket_url || event.ticketUrl)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  onClick={(eventClick) => eventClick.stopPropagation()}
-                                  className="rounded-2xl border border-emerald-200/30 bg-emerald-200/12 px-4 py-3 text-center text-sm font-semibold text-emerald-100 transition hover:border-emerald-200/48 hover:bg-emerald-200/18"
-                                >
-                                  Get tickets
-                                </a>
-                              )}
-
-                              {!event.isGlobal && (
-                                <button
-                                  onClick={(eventClick) => {
-                                    eventClick.stopPropagation();
-                                    router.push(
-                                      citySelectionPath(event.city, {
-                                        eventId: event.id,
-                                        extraParams: { lat: event.lat, lng: event.lng },
-                                      })
-                                    );
-                                  }}
-                                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/72 transition hover:border-white/16 hover:bg-white/8 hover:text-white"
-                                >
-                                  Show on map
-                                </button>
-                              )}
-
+                              <span className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.07] px-3 py-1.5 text-[11px] font-medium text-cyan-50/88 transition group-hover:border-cyan-200/30 group-hover:bg-cyan-200/[0.1]">
+                                View details →
+                              </span>
                             </div>
                           </div>
                           );
@@ -1628,6 +1411,21 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   );
                 })}
 
+                {!isLoading && agendaVisibleLimit < agendaEvents.length ? (
+                  <div className="flex flex-col items-center gap-2 border-t border-white/[0.07] pt-5">
+                    <button
+                      type="button"
+                      onClick={() => setAgendaVisibleLimit((current) => current + 5)}
+                      className="rounded-full border border-cyan-200/22 bg-cyan-200/[0.08] px-5 py-2.5 text-sm font-medium text-cyan-50 transition hover:border-cyan-200/38 hover:bg-cyan-200/[0.13]"
+                    >
+                      Show more events
+                    </button>
+                    <p className="text-[11px] text-white/38">
+                      Showing {Math.min(agendaVisibleLimit, agendaEvents.length)} of {agendaEvents.length}
+                    </p>
+                  </div>
+                ) : null}
+
                 {!isLoading && sortedCities.length === 0 && (
                   <EmptyState
                     title="No events match this date yet."
@@ -1636,7 +1434,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   >
                     <div className="flex flex-wrap items-center justify-center gap-2">
                       <button
-                        onClick={() => setSelectedDate("")}
+                        onClick={clearCalendarDate}
                         className="rounded-full border border-white/15 bg-white/6 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
                       >
                         Show all dates
@@ -1663,19 +1461,18 @@ export default function EventsPage({ initialSection = "calendar" }) {
           <section
             ref={offgridSectionRef}
             data-events-section-id="offgrid"
-            className="qa-premium-card mt-8 overflow-hidden rounded-[34px] border border-emerald-300/14 bg-[linear-gradient(165deg,rgba(16,20,18,0.96),rgba(8,8,8,0.98))] p-6 shadow-[0_32px_95px_rgba(0,0,0,0.35)] sm:p-7"
+            className="qa-premium-card mt-8 overflow-hidden rounded-[30px] border border-emerald-300/13 bg-[radial-gradient(circle_at_88%_0%,rgba(34,211,238,0.08),transparent_30%),linear-gradient(165deg,rgba(14,19,18,0.98),rgba(8,9,10,0.99))] p-4 shadow-[0_28px_82px_rgba(0,0,0,0.34)] sm:p-6"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-emerald-100/58">
-                  Off-grid calendar
+                  Discover off-grid
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-                  Add global events outside city pages
+                  Queer events beyond city limits
                 </h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-white/62 sm:text-base">
-                  For queer cruises, ski weekends, destination pop-ups, and nomadic party formats.
-                  Use this when an event does not belong to any city in our atlas yet.
+                  Cruises, ski weekends, destination pop-ups, and nomadic formats—all in one focused feed.
                 </p>
               </div>
 
@@ -1688,10 +1485,20 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   }
                 }}
                 disabled={!isMember}
-                className="qa-action rounded-2xl border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
+                className="qa-action rounded-full border border-cyan-300/24 bg-cyan-300/10 px-4 py-2.5 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {showGlobalForm ? "Close form" : "Add off-grid event"}
               </button>
+            </div>
+
+            <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.035] px-4 py-3">
+                <p className="text-xs font-medium text-white/72">{globalEvents.length} off-grid {globalEvents.length === 1 ? "event" : "events"}</p>
+                <p className="mt-1 text-xs leading-5 text-white/42">Use this feed when the experience travels or does not belong to one Atlas city.</p>
+              </div>
+              {!isMember ? (
+                <p className="px-2 text-xs text-white/44">Members can suggest new events.</p>
+              ) : null}
             </div>
 
             <GlobalEventForm
@@ -1746,10 +1553,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   <div
                     id={`offgrid-event-${event.id}`}
                     key={event.id}
-                    className={`rounded-2xl border p-4 transition [content-visibility:auto] [contain-intrinsic-size:360px] ${
+                    className={`rounded-[20px] border p-4 transition [content-visibility:auto] [contain-intrinsic-size:220px] ${
                       isFocused
                         ? "border-cyan-200/55 bg-[linear-gradient(180deg,rgba(34,211,238,0.20),rgba(10,10,10,0.94))] shadow-[0_0_0_1px_rgba(34,211,238,0.35),0_24px_80px_rgba(34,211,238,0.18)]"
-                        : "border-white/10 bg-[linear-gradient(180deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))]"
+                        : "border-white/[0.09] bg-white/[0.035] hover:-translate-y-px hover:border-cyan-200/24 hover:bg-white/[0.05]"
                     }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1766,7 +1573,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                         </button>
                       </div>
                     </div>
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {isFocused ? <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/[0.07] pt-3">
                       {isAdmin && (
                         <button
                           onClick={(clickEvent) => startEditGlobalEvent(event, clickEvent)}
@@ -1781,8 +1588,8 @@ export default function EventsPage({ initialSection = "calendar" }) {
                       >
                         Report
                       </button>
-                    </div>
-                    {quality.lastChecked && (
+                    </div> : null}
+                    {isFocused && quality.lastChecked && (
                       <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/50">
                         Checked {formatDateLabel(quality.lastChecked)}
                       </p>
@@ -1792,10 +1599,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     </p>
                     <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
                     {event.description && (
-                      <p className="qa-copy-justify mt-3 text-sm leading-7 text-white/66">{event.description}</p>
+                      <p className={`mt-3 text-sm leading-6 text-white/60 ${isFocused ? "qa-copy-justify" : "line-clamp-2"}`}>{event.description}</p>
                     )}
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {event.link && (
+                    <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-white/[0.07] pt-3">
+                      {isFocused && event.link && (
                         <a
                           href={normalizeExternalUrl(event.link)}
                           target="_blank"
@@ -1805,7 +1612,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           Open official link
                         </a>
                       )}
-                      {(event.ticket_url || event.ticketUrl) && (
+                      {isFocused && (event.ticket_url || event.ticketUrl) && (
                         <a
                           href={normalizeExternalUrl(event.ticket_url || event.ticketUrl)}
                           target="_blank"
@@ -1815,7 +1622,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           Get tickets
                         </a>
                       )}
-                      {isAdmin && (
+                      {isFocused && isAdmin && (
                         <button
                           onClick={(clickEvent) => deleteGlobalEvent(event.id, clickEvent)}
                           disabled={deletingGlobalEventId === String(event.id || "")}
@@ -1824,12 +1631,44 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           {deletingGlobalEventId === String(event.id || "") ? "Deleting..." : "Delete event"}
                         </button>
                       )}
+                      <button
+                        type="button"
+                        onClick={(clickEvent) => saveEventToFavorites(event, clickEvent)}
+                        className={`rounded-full border px-3.5 py-2 text-xs font-medium transition ${
+                          favoriteIdSet.has(`event-${String(event.id)}`)
+                            ? "border-emerald-200/28 bg-emerald-200/12 text-emerald-100"
+                            : "border-emerald-200/20 bg-emerald-200/[0.08] text-emerald-100/88 hover:border-emerald-200/34"
+                        }`}
+                      >
+                        {favoriteIdSet.has(`event-${String(event.id)}`) ? "Saved" : "Save"}
+                      </button>
+                      {!isFocused ? (
+                        <button
+                          type="button"
+                          onClick={() => openEvent(event)}
+                          className="rounded-full border border-cyan-200/22 bg-cyan-200/[0.08] px-3.5 py-2 text-xs font-medium text-cyan-50 transition hover:border-cyan-200/38 hover:bg-cyan-200/[0.13]"
+                        >
+                          View details →
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                     );
                   })()
                 ))
               )}
+              {!isLoading && !normalizedFocusedOffgridId && globalEvents.length > offgridVisibleLimit ? (
+                <div className="flex flex-col items-center gap-2 border-t border-white/[0.07] pt-5">
+                  <button
+                    type="button"
+                    onClick={() => setOffgridVisibleLimit((current) => current + 6)}
+                    className="rounded-full border border-emerald-200/22 bg-emerald-200/[0.08] px-5 py-2.5 text-sm font-medium text-emerald-50 transition hover:border-emerald-200/38 hover:bg-emerald-200/[0.13]"
+                  >
+                    Show more off-grid events
+                  </button>
+                  <p className="text-[11px] text-white/38">Showing {Math.min(offgridVisibleLimit, globalEvents.length)} of {globalEvents.length}</p>
+                </div>
+              ) : null}
             </div>
           </section>
           ) : null}
