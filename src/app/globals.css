@@ -1007,36 +1007,7 @@ body > div:first-child {
   }
 }
 
-/* Hero atmosphere: a restrained light drift and fine film grain tie the image,
-   gradients, and glass search surface into one material. */
-@keyframes qaHeroAuroraDrift {
-  0% {
-    opacity: 0.68;
-    transform: translate3d(-1.2%, 0.4%, 0) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(1.2%, -0.6%, 0) scale(1.025);
-  }
-}
-
-.qa-hero-aurora {
-  animation: qaHeroAuroraDrift 22s ease-in-out infinite alternate;
-  transform-origin: 66% 42%;
-  will-change: opacity, transform;
-}
-
-.qa-hero-grain {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.86' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .qa-hero-aurora {
-    animation: none;
-    will-change: auto;
-  }
-
   .qa-event-panel-cta,
   .qa-event-panel-cta::before {
     animation: none;

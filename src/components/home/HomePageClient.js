@@ -993,17 +993,11 @@ export default function HomePageClient({ initialHomeData = null }) {
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
           <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] lg:overflow-visible xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
-            <div
-              className="pointer-events-none absolute inset-0 hidden lg:block"
-              style={{
-                WebkitMaskImage: "linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%)",
-                maskImage: "linear-gradient(to bottom, #000 0%, #000 74%, transparent 100%)",
-              }}
-            >
+            <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <picture>
                 <source
                   media="(min-width: 1024px)"
-                  srcSet="/home/queer-atlas-luminous-hero-v9.webp"
+                  srcSet="/home/queer-atlas-luminous-hero-v10.webp"
                   type="image/webp"
                 />
                 <img
@@ -1011,21 +1005,18 @@ export default function HomePageClient({ initialHomeData = null }) {
                   alt=""
                   aria-hidden="true"
                   width="2560"
-                  height="1440"
+                  height="1088"
                   loading="eager"
                   decoding="async"
                   fetchPriority="high"
-                  className="absolute inset-0 h-full w-full object-cover object-center opacity-[0.96] [filter:brightness(0.9)_contrast(1.08)_saturate(0.94)]"
+                  className="absolute inset-0 h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)]"
                 />
               </picture>
             </div>
-            <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(100deg,rgba(2,8,18,0.94)_0%,rgba(3,11,21,0.78)_30%,rgba(3,13,23,0.3)_56%,rgba(3,12,21,0.08)_76%,rgba(2,8,16,0.28)_100%)] lg:block" />
+            <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(100deg,rgba(1,6,15,0.96)_0%,rgba(2,9,19,0.72)_30%,rgba(2,10,20,0.22)_55%,rgba(2,8,17,0.05)_76%,rgba(1,5,13,0.16)_100%)] lg:block" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_92%_8%,rgba(34,211,238,0.11),transparent_34%),radial-gradient(circle_at_4%_45%,rgba(244,114,182,0.075),transparent_32%),linear-gradient(180deg,#03101a_0%,#020914_46%,#01010C_100%)] lg:hidden" />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_72%_40%,transparent_0%,transparent_32%,rgba(1,5,13,0.16)_65%,rgba(1,3,10,0.52)_100%)]" />
-            <div className="qa-hero-aurora pointer-events-none absolute right-[4%] top-[12%] hidden h-[58%] w-[50%] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(34,211,238,0.12)_0%,rgba(244,114,182,0.055)_34%,transparent_70%)] mix-blend-screen blur-[44px] lg:block" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#020812]/72 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent via-[#030612]/58 to-[#01010C]" />
-            <div className="qa-hero-grain pointer-events-none absolute inset-0 hidden opacity-[0.022] mix-blend-soft-light lg:block" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-32 bg-gradient-to-b from-[#010610]/78 via-[#020812]/26 to-transparent lg:block" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#020611]/38 to-[#01010C]" />
 
             <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[686px] xl:min-h-[690px]">
           <div className="mb-7 flex items-center justify-end gap-3 sm:mb-14 sm:gap-4 lg:mb-0 lg:justify-between">
@@ -1162,8 +1153,8 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               )}
 
-              <div className="relative z-20 mt-5 w-full max-w-[48rem] sm:mt-8">
-              <div className="relative w-full rounded-[24px] border border-cyan-200/24 bg-[linear-gradient(180deg,rgba(255,255,255,0.11),rgba(255,255,255,0.035))] p-3 shadow-[0_20px_56px_rgba(2,6,23,0.36),inset_0_1px_0_rgba(255,255,255,0.11)] backdrop-blur-xl sm:rounded-[30px] sm:p-[18px]">
+              <div className="relative z-20 mt-5 w-full max-w-[44rem] sm:mt-7">
+              <div className="relative w-full rounded-[24px] border border-cyan-100/18 bg-[linear-gradient(180deg,rgba(13,20,31,0.76),rgba(7,12,22,0.68))] p-3 shadow-[0_18px_48px_rgba(0,3,12,0.32),inset_0_1px_0_rgba(255,255,255,0.09)] backdrop-blur-lg sm:rounded-[28px] sm:p-4">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
@@ -1188,7 +1179,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                       }}
                       onFocus={() => setShowResults(true)}
                       placeholder="Search a city, venue or event"
-                      className="h-12 w-full rounded-[21px] border border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] py-0 pl-11 pr-4 text-[15px] leading-none text-white outline-none backdrop-blur placeholder:text-white/42 focus:border-cyan-300/48 focus:ring-2 focus:ring-cyan-300/22 sm:h-[52px] sm:text-base"
+                      className="h-12 w-full rounded-[21px] border border-white/13 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] py-0 pl-11 pr-4 text-[15px] leading-none text-white outline-none backdrop-blur placeholder:text-white/42 focus:border-cyan-300/48 focus:ring-2 focus:ring-cyan-300/22 sm:h-[52px] sm:text-base"
                     />
                   </div>
 
