@@ -36,7 +36,7 @@ export default async function CityEntityCrawlSection({ city, cityName, inventory
   return (
     <section
       aria-labelledby="city-verified-directory-title"
-      className="border-t border-white/10 bg-[#07090f] px-4 py-8 text-white sm:px-6"
+      className="hidden border-t border-white/10 bg-[#07090f] px-4 py-8 text-white sm:block sm:px-6"
     >
       <div className="mx-auto max-w-6xl">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/62">
