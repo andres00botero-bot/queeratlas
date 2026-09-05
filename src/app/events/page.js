@@ -69,16 +69,40 @@ function getLocalDateKey() {
 }
 
 function getEventDateBadgeParts(event = {}) {
-  const { startDate } = normalizeEventRange(event);
+  const { startDate, endDate } = normalizeEventRange(event);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(startDate || ""))) {
-    return { day: "--", month: "TBA" };
+    return { day: "--", month: "TBA", isRange: false, isCrossMonth: false };
   }
 
-  const [, monthNumber, dayNumber] = startDate.split("-").map(Number);
-  const badgeDate = new Date(2000, monthNumber - 1, dayNumber);
+  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
+  const [endYear, endMonth, endDay] = (endDate || startDate).split("-").map(Number);
+  const monthLabel = (monthNumber) => new Date(2000, monthNumber - 1, 1)
+    .toLocaleDateString("en-GB", { month: "short" })
+    .toUpperCase();
+
+  if (endDate && endDate !== startDate) {
+    if (startYear === endYear && startMonth === endMonth) {
+      return {
+        day: `${startDay}–${endDay}`,
+        month: monthLabel(startMonth),
+        isRange: true,
+        isCrossMonth: false,
+      };
+    }
+
+    return {
+      day: `${startDay} ${monthLabel(startMonth)}`,
+      month: `– ${endDay} ${monthLabel(endMonth)}`,
+      isRange: true,
+      isCrossMonth: true,
+    };
+  }
+
   return {
-    day: String(dayNumber),
-    month: badgeDate.toLocaleDateString("en-GB", { month: "short" }).toUpperCase(),
+    day: String(startDay),
+    month: monthLabel(startMonth),
+    isRange: false,
+    isCrossMonth: false,
   };
 }
 
@@ -150,7 +174,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingGlobalEventId, setEditingGlobalEventId] = useState("");
   const [globalForm, setGlobalForm] = useState(EMPTY_GLOBAL_FORM);
-  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() => getLocalDateKey());
   const [agendaVisibleLimit, setAgendaVisibleLimit] = useState(5);
   const [searchDate, setSearchDate] = useState("");
   const [searchCity, setSearchCity] = useState("");
@@ -580,33 +604,15 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const dayEventCounts = useMemo(() => {
     const viewYear = currentDate.getFullYear();
     const viewMonth = currentDate.getMonth();
-    const viewDaysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
     const counts = {};
     if (calendarEvents.length === 0) return counts;
-    const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}`;
-    const monthStart = `${monthPrefix}-01`;
-    const monthEnd = `${monthPrefix}-${String(viewDaysInMonth).padStart(2, "0")}`;
 
-    const incrementDateString = (dateStr) => {
-      const [yearPart, monthPart, dayPart] = dateStr.split("-").map((value) => Number(value));
-      const next = new Date(Date.UTC(yearPart, monthPart - 1, dayPart + 1));
-      return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}-${String(next.getUTCDate()).padStart(2, "0")}`;
-    };
-
-    for (const event of calendarEvents) {
-      const startDate = String(event?.startDate || "").trim();
-      if (!startDate) continue;
-      const endDate = String(event?.endDate || startDate).trim() || startDate;
-
-      const clampedStart = startDate < monthStart ? monthStart : startDate;
-      const clampedEnd = endDate > monthEnd ? monthEnd : endDate;
-      if (clampedStart > clampedEnd) continue;
-
-      let cursor = clampedStart;
-      while (cursor <= clampedEnd) {
-        counts[cursor] = (counts[cursor] || 0) + 1;
-        cursor = incrementDateString(cursor);
-      }
+    const daysInViewedMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    for (let day = 1; day <= daysInViewedMonth; day += 1) {
+      const dateKey = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      counts[dateKey] = calendarEvents.filter((event) =>
+        eventOverlapsDate(event, dateKey)
+      ).length;
     }
 
     return counts;
@@ -657,11 +663,9 @@ export default function EventsPage({ initialSection = "calendar" }) {
     () => {
       const viewYear = currentDate.getFullYear();
       const viewMonth = currentDate.getMonth();
-      return (
-      calendarEvents.filter((event) => {
-          return eventOverlapsMonth(event, viewYear, viewMonth);
-        }).length
-      );
+      return calendarEvents.filter((event) =>
+        eventOverlapsMonth(event, viewYear, viewMonth)
+      ).length;
     },
     [calendarEvents, currentDate]
   );
@@ -1370,15 +1374,15 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           >
                             <div className="flex items-start gap-3">
                               <div
-                                className="relative flex h-[68px] w-[64px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[16px] border border-violet-200/22 bg-[linear-gradient(145deg,rgba(82,72,130,0.48),rgba(34,80,104,0.38))] shadow-[inset_0_1px_0_rgba(255,255,255,0.13),0_8px_22px_rgba(15,18,38,0.24)]"
+                                className="relative flex h-[68px] w-[72px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-[16px] border border-violet-200/22 bg-[linear-gradient(145deg,rgba(82,72,130,0.48),rgba(34,80,104,0.38))] px-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.13),0_8px_22px_rgba(15,18,38,0.24)]"
                                 aria-label={formatEventDateLabel(event)}
                                 title={formatEventDateLabel(event)}
                               >
                                 <span className="pointer-events-none absolute inset-x-2 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/70 to-transparent" />
-                                <span className="text-[25px] font-semibold leading-none tracking-[-0.04em] text-white">
+                                <span className={`${eventDateBadge.isCrossMonth ? "text-[12px] tracking-[0.04em]" : eventDateBadge.isRange ? "text-[20px] tracking-[-0.03em]" : "text-[25px] tracking-[-0.04em]"} whitespace-nowrap font-semibold leading-none text-white`}>
                                   {eventDateBadge.day}
                                 </span>
-                                <span className="mt-1.5 text-[10px] font-semibold leading-none tracking-[0.18em] text-cyan-100/82">
+                                <span className={`${eventDateBadge.isCrossMonth ? "tracking-[0.04em]" : "tracking-[0.18em]"} mt-1.5 whitespace-nowrap text-[10px] font-semibold leading-none text-cyan-100/82`}>
                                   {eventDateBadge.month}
                                 </span>
                               </div>
