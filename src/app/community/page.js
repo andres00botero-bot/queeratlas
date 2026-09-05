@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import "../signal-motion.css";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -20,9 +19,12 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import ActionToast from "@/components/ui/ActionToast";
-import BrandMark from "@/components/ui/BrandMark";
-import PageControls from "@/components/ui/PageControls";
 import PageOpeningState from "@/components/ui/PageOpeningState";
+import {
+  CommunityField as Field,
+  CommunityHero,
+  CommunityNavigation,
+} from "@/components/community/CommunityChrome";
 
 const MEMBER_AVATAR_BUCKET = "member-avatars";
 
@@ -87,6 +89,39 @@ const JOB_REVIEW_STATUSES = ["pending", "published", "rejected", "expired", "rem
 const JOB_LOCATION_MODES = ["On-site", "Hybrid", "Remote"];
 const JOB_EMPLOYMENT_TYPES = ["Full-time", "Part-time", "Freelance", "Contract", "Internship", "Volunteer"];
 const JOB_CATEGORIES = ["Venue / nightlife", "Events", "Community org", "Creative", "Hospitality", "Tech", "Health", "Operations", "Other"];
+const JOB_VISIBLE_BATCH = 8;
+const IDEA_CATEGORIES = ["Feature", "Bug / Fix", "City data", "Safety", "Design"];
+const IDEA_VISIBLE_BATCH = 10;
+const ROOM_CATEGORIES = ["City question", "Tonight", "Solo travel", "Safety", "Recommendations", "Event meetup"];
+const ROOM_FILTERS = [
+  { id: "all", label: "For you" },
+  { id: "city", label: "Cities" },
+  { id: "event", label: "Events" },
+  { id: "ask", label: "Ask locals" },
+];
+const ROOM_KIND_META = {
+  city: {
+    label: "City lounge",
+    kicker: "Drop in",
+    accent: "text-cyan-100",
+    dot: "bg-cyan-200",
+    wash: "bg-[radial-gradient(circle_at_82%_15%,rgba(103,232,249,0.20),transparent_30%),linear-gradient(145deg,rgba(13,29,38,0.96),rgba(7,10,15,0.99))]",
+  },
+  event: {
+    label: "Event room",
+    kicker: "Make a plan",
+    accent: "text-rose-100",
+    dot: "bg-rose-200",
+    wash: "bg-[radial-gradient(circle_at_84%_14%,rgba(251,113,133,0.20),transparent_31%),linear-gradient(145deg,rgba(39,19,28,0.96),rgba(9,9,14,0.99))]",
+  },
+  ask: {
+    label: "Ask locals",
+    kicker: "Local knowledge",
+    accent: "text-emerald-100",
+    dot: "bg-emerald-200",
+    wash: "bg-[radial-gradient(circle_at_84%_14%,rgba(110,231,183,0.18),transparent_31%),linear-gradient(145deg,rgba(14,33,29,0.96),rgba(7,10,13,0.99))]",
+  },
+};
 const REPORT_REASON_OPTIONS = [
   { value: "1", label: "Safety issue" },
   { value: "2", label: "Wrong info" },
@@ -276,6 +311,53 @@ function timeAgo(value) {
   return new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
+function getRoomKind(topic = {}) {
+  const category = String(topic.mood || "").toLowerCase();
+  if (category.includes("event") || category.includes("tonight")) return "event";
+  if (
+    category.includes("question") ||
+    category.includes("safety") ||
+    category.includes("recommend") ||
+    category.includes("helpful") ||
+    category.includes("feedback")
+  ) return "ask";
+  return "city";
+}
+
+function getRoomCity(topic = {}) {
+  const explicitCity = String(topic.city || "").trim();
+  if (explicitCity) return explicitCity;
+  const searchable = `${topic.name || ""} ${topic.description || ""}`.toLowerCase();
+  const citySlug = Object.keys(cityConfig || {}).find((slug) => {
+    const label = formatCityLabel(slug).toLowerCase();
+    return label.length > 2 && searchable.includes(label);
+  });
+  return citySlug ? formatCityLabel(citySlug) : "Across the atlas";
+}
+
+function getRoomActivityLabel(value = "") {
+  if (!value) return "Waiting for a first message";
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return "Recently active";
+  const ageInHours = Math.max(0, (Date.now() - timestamp) / 36e5);
+  if (ageInHours < 2) return "Active now";
+  if (ageInHours < 24) return "Active today";
+  if (ageInHours < 168) return "Active this week";
+  return "Quiet room";
+}
+
+function formatMessageDay(value = "") {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Conversation";
+  const today = new Date();
+  const startToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const startDate = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const difference = Math.round((startToday - startDate) / 86400000);
+  if (difference === 0) return "Today";
+  if (difference === 1) return "Yesterday";
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+}
+
 function addDaysIso(days) {
   const date = new Date();
   date.setDate(date.getDate() + days);
@@ -286,6 +368,25 @@ function formatJobLocation(job) {
   const locationParts = [job.city, job.country].filter(Boolean);
   const location = locationParts.length > 0 ? locationParts.join(", ") : "Location flexible";
   return `${job.locationMode || "On-site"} | ${location}`;
+}
+
+function getOrganizationInitials(value = "") {
+  const parts = String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return "QA";
+  return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
+}
+
+function parseIdeaText(value = "") {
+  const raw = String(value || "").trim();
+  const match = raw.match(/^\[([^\]]+)\]\s*(.*)$/s);
+  if (!match) return { category: "Feature", content: raw };
+  return {
+    category: match[1].trim() || "Feature",
+    content: match[2].trim() || raw,
+  };
 }
 
 function formatJobStatus(status = "pending") {
@@ -367,10 +468,13 @@ async function insertCommunityRowWithIdentity(table, payload) {
 
 function formatMemberSeen(lastSeenAt = "", isOnline = false) {
   if (isOnline) return "Active now";
-  if (!lastSeenAt) return "Seen unknown";
+  if (!lastSeenAt) return "Activity private";
   const safe = new Date(lastSeenAt);
-  if (Number.isNaN(safe.getTime())) return "Seen recently";
-  return `Seen ${safe.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  if (Number.isNaN(safe.getTime())) return "Active recently";
+  const ageInHours = Math.max(0, (Date.now() - safe.getTime()) / 36e5);
+  if (ageInHours <= 24) return "Active recently";
+  if (ageInHours <= 168) return "Active this week";
+  return "Activity private";
 }
 
 function mapMemberSearchRow(row) {
@@ -408,13 +512,6 @@ function resolveAvatarUrlFromProfile(profileLike) {
   const path = String(profileLike?.avatar_path || "").trim();
   if (!path) return "";
   return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
-}
-
-function Field({ value, onChange, placeholder, area = false }) {
-  if (area) {
-    return <textarea value={value} onChange={onChange} placeholder={placeholder} className="h-28 w-full rounded-xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/16" />;
-  }
-  return <input value={value} onChange={onChange} placeholder={placeholder} className="w-full rounded-xl border border-white/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/45 focus:ring-2 focus:ring-cyan-300/16" />;
 }
 
 export default function CommunityPage() {
@@ -459,9 +556,18 @@ export default function CommunityPage() {
   });
   const [jobCityFilter, setJobCityFilter] = useState("");
   const [jobModeFilter, setJobModeFilter] = useState("all");
+  const [jobCategoryFilter, setJobCategoryFilter] = useState("all");
+  const [jobSearchTerm, setJobSearchTerm] = useState("");
+  const [visibleJobCount, setVisibleJobCount] = useState(JOB_VISIBLE_BATCH);
   const [messageForm, setMessageForm] = useState({ text: "" });
-  const [topicForm, setTopicForm] = useState({ name: "", mood: "Fresh", description: "" });
+  const [topicForm, setTopicForm] = useState({ name: "", mood: "City question", description: "" });
+  const [showTopicForm, setShowTopicForm] = useState(false);
+  const [mobileRoomOpen, setMobileRoomOpen] = useState(false);
+  const [roomFilter, setRoomFilter] = useState("all");
   const [ideaForm, setIdeaForm] = useState({ text: "", category: "Feature" });
+  const [ideaCategoryFilter, setIdeaCategoryFilter] = useState("all");
+  const [ideaSort, setIdeaSort] = useState("top");
+  const [visibleIdeaCount, setVisibleIdeaCount] = useState(IDEA_VISIBLE_BATCH);
   const [syncError, setSyncError] = useState("");
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [leaderboard, setLeaderboard] = useState([]);
@@ -475,7 +581,7 @@ export default function CommunityPage() {
   const [memberSearchOffset, setMemberSearchOffset] = useState(0);
   const [memberSearchWarning, setMemberSearchWarning] = useState("");
   const [memberSearchBusyById, setMemberSearchBusyById] = useState({});
-  const [activeCommunityPanel, setActiveCommunityPanel] = useState("discovery");
+  const [activeCommunityPanel, setActiveCommunityPanel] = useState("home");
   const [communityFeedMode, setCommunityFeedMode] = useState("all");
   const [reportModal, setReportModal] = useState({
     open: false,
@@ -488,6 +594,8 @@ export default function CommunityPage() {
   const { toast, showToast } = useActionToast();
   const memberUserId = String(user?.id || "");
   const memberSearchCacheRef = useRef(new Map());
+  const loadedCommunityScopesRef = useRef(new Set());
+  const communityScopeRequestsRef = useRef(new Map());
   const memberSearchSentinelRef = useRef(null);
   const chatMessagesRef = useRef(null);
   const communityControlsRef = useRef(null);
@@ -510,9 +618,27 @@ export default function CommunityPage() {
 
   useEffect(() => {
     const button = communityControlButtonsRef.current[activeCommunityPanel];
-    if (!button || typeof button.scrollIntoView !== "function") return;
-    button.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const controls = communityControlsRef.current;
+    if (!button || !controls || typeof controls.scrollTo !== "function") return;
+    const nextLeft = button.offsetLeft - (controls.clientWidth - button.clientWidth) / 2;
+    controls.scrollTo({ left: Math.max(0, nextLeft), behavior: "smooth" });
   }, [activeCommunityPanel]);
+
+  useEffect(() => {
+    if (!reportModal.open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setReportModal((current) => ({ ...current, open: false }));
+      }
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [reportModal.open]);
 
   const hydrateMemberRowsWithAvatars = useCallback(async (rows = []) => {
     const userIds = [
@@ -540,7 +666,20 @@ export default function CommunityPage() {
     }));
   }, []);
 
-  const loadCommunityData = useCallback(async () => {
+  const loadCommunityData = useCallback(async ({ scope = "home", force = false } = {}) => {
+    const safeScope = ["home", "feed", "chat", "jobs", "improve", "discovery"].includes(scope) ? scope : "home";
+    if (!force && loadedCommunityScopesRef.current.has(safeScope)) return;
+    if (!force && communityScopeRequestsRef.current.has(safeScope)) {
+      await communityScopeRequestsRef.current.get(safeScope);
+      return;
+    }
+
+    const request = (async () => {
+    const needsFeed = safeScope === "feed";
+    const needsRooms = safeScope === "home" || safeScope === "chat";
+    const needsJobs = safeScope === "home" || safeScope === "jobs";
+    const needsIdeas = safeScope === "improve";
+    const needsLeaderboard = safeScope === "discovery";
     setSyncError("");
     const localStories = readStored(KEYS.stories, baseStories);
     const localGuides = readStored(KEYS.guides, baseGuides);
@@ -550,23 +689,24 @@ export default function CommunityPage() {
     const localIdeas = readStored(KEYS.ideas, baseIdeas);
     const localArchive = readStored(KEYS.messageArchive, {});
 
+    const skippedResponse = { data: [], error: null, skipped: true };
     const [storiesRes, guidesRes, jobsRes, topicsRes, messagesRes, ideasRes, leaderboardRes] = await Promise.all([
-      supabase.from("community_stories").select("*").order("created_at", { ascending: false }),
-      supabase.from("community_guides").select("*").order("created_at", { ascending: false }),
-      supabase.from("community_jobs").select("*").order("created_at", { ascending: false }),
-      supabase.from("community_topics").select("*").order("created_at", { ascending: false }),
-      supabase.from("community_messages").select("*").order("created_at", { ascending: true }),
-      supabase.from("community_ideas").select("*").order("created_at", { ascending: false }),
-      supabase.from("qa_member_leaderboard").select("*").order("rank", { ascending: true }).limit(200),
+      needsFeed ? supabase.from("community_stories").select("*").order("created_at", { ascending: false }) : Promise.resolve(skippedResponse),
+      needsFeed ? supabase.from("community_guides").select("*").order("created_at", { ascending: false }) : Promise.resolve(skippedResponse),
+      needsJobs ? supabase.from("community_jobs").select("*").order("created_at", { ascending: false }) : Promise.resolve(skippedResponse),
+      needsRooms ? supabase.from("community_topics").select("*").order("created_at", { ascending: false }) : Promise.resolve(skippedResponse),
+      needsRooms ? supabase.from("community_messages").select("*").order("created_at", { ascending: true }) : Promise.resolve(skippedResponse),
+      needsIdeas ? supabase.from("community_ideas").select("*").order("created_at", { ascending: false }) : Promise.resolve(skippedResponse),
+      needsLeaderboard ? supabase.from("qa_member_leaderboard").select("*").order("rank", { ascending: true }).limit(200) : Promise.resolve(skippedResponse),
     ]);
 
     const errorParts = [];
-    if (storiesRes.error) errorParts.push("stories");
-    if (guidesRes.error) errorParts.push("guides");
-    if (jobsRes.error) errorParts.push("jobs");
-    if (topicsRes.error) errorParts.push("topics");
-    if (messagesRes.error) errorParts.push("messages");
-    if (ideasRes.error) errorParts.push("ideas");
+    if (!storiesRes.skipped && storiesRes.error) errorParts.push("stories");
+    if (!guidesRes.skipped && guidesRes.error) errorParts.push("guides");
+    if (!jobsRes.skipped && jobsRes.error) errorParts.push("jobs");
+    if (!topicsRes.skipped && topicsRes.error) errorParts.push("topics");
+    if (!messagesRes.skipped && messagesRes.error) errorParts.push("messages");
+    if (!ideasRes.skipped && ideasRes.error) errorParts.push("ideas");
 
     const nextStories = storiesRes.error
       ? localStories
@@ -615,7 +755,7 @@ export default function CommunityPage() {
       ),
     ];
     const nextLeaderboardDisplayNameByUserId = {};
-    if (leaderboardUserIds.length > 0) {
+    if (needsLeaderboard && leaderboardUserIds.length > 0) {
       const { data: leaderboardProfiles } = await supabase
         .from("member_profiles")
         .select("user_id,display_name")
@@ -630,7 +770,7 @@ export default function CommunityPage() {
       });
     }
     const nextLeaderboardRpcNameByUserId = {};
-    if (memberUserId) {
+    if (needsLeaderboard && memberUserId) {
       const { data: searchRows, error: searchError } = await supabase.rpc("qa_search_members", {
         search_query: "",
         city_filter: "",
@@ -666,16 +806,35 @@ export default function CommunityPage() {
       };
     });
 
-    setStories(nextStories);
-    setGuides(nextGuides);
-    setJobs(nextJobs);
-    setTopics(nextTopics);
-    setMessages(Object.keys(cappedMessages).length > 0 ? cappedMessages : baseMessages);
-    setMessageArchive(nextArchive);
-    setIdeas(nextIdeas);
-    setLeaderboard(resolvedLeaderboard);
+    if (needsFeed) {
+      setStories(nextStories);
+      setGuides(nextGuides);
+    }
+    if (needsJobs) setJobs(nextJobs);
+    if (needsRooms) {
+      setTopics(nextTopics);
+      setMessages(Object.keys(cappedMessages).length > 0 ? cappedMessages : baseMessages);
+      setMessageArchive(nextArchive);
+    }
+    if (needsIdeas) setIdeas(nextIdeas);
+    if (needsLeaderboard) setLeaderboard(resolvedLeaderboard);
     if (errorParts.length > 0) {
       setSyncError(`Partial cloud sync: ${errorParts.join(", ")} using local fallback.`);
+    }
+    if (errorParts.length === 0) {
+      loadedCommunityScopesRef.current.add(safeScope);
+      if (safeScope === "home") {
+        loadedCommunityScopesRef.current.add("chat");
+        loadedCommunityScopesRef.current.add("jobs");
+      }
+    }
+    })();
+
+    communityScopeRequestsRef.current.set(safeScope, request);
+    try {
+      await request;
+    } finally {
+      communityScopeRequestsRef.current.delete(safeScope);
     }
   }, [memberUserId]);
 
@@ -689,7 +848,7 @@ export default function CommunityPage() {
         { event: "*", schema: "public", table: "community_topics" },
         () => {
           queueMicrotask(async () => {
-            await loadCommunityData();
+            await loadCommunityData({ scope: "chat", force: true });
           });
         }
       )
@@ -698,7 +857,7 @@ export default function CommunityPage() {
         { event: "*", schema: "public", table: "community_messages" },
         () => {
           queueMicrotask(async () => {
-            await loadCommunityData();
+            await loadCommunityData({ scope: "chat", force: true });
           });
         }
       )
@@ -707,7 +866,7 @@ export default function CommunityPage() {
         { event: "*", schema: "public", table: "community_jobs" },
         () => {
           queueMicrotask(async () => {
-            await loadCommunityData();
+            await loadCommunityData({ scope: "jobs", force: true });
           });
         }
       )
@@ -724,6 +883,7 @@ export default function CommunityPage() {
     if (!isMember) {
       writeLocalValue("qa_redirect", "/community");
       writeLocalValue("qa_post_login_target", "/community");
+      router.replace("/?join=true");
       queueMicrotask(() => {
         setIsReady(true);
       });
@@ -731,21 +891,40 @@ export default function CommunityPage() {
     }
 
     queueMicrotask(async () => {
-      await loadCommunityData();
+      await loadCommunityData({ scope: "home" });
       setIsReady(true);
     });
-  }, [isAuthLoading, isMember, loadCommunityData]);
+  }, [isAuthLoading, isMember, loadCommunityData, router]);
+
+  useEffect(() => {
+    if (!isReady || !isMember) return;
+    queueMicrotask(async () => {
+      await loadCommunityData({ scope: activeCommunityPanel });
+    });
+  }, [activeCommunityPanel, isReady, isMember, loadCommunityData]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
     writeLocalJson(KEYS.stories, stories);
     writeLocalJson(KEYS.guides, guides);
+  }, [isReady, isMember, stories, guides]);
+
+  useEffect(() => {
+    if (!isReady || !isMember) return;
     writeLocalJson(KEYS.jobs, jobs);
+  }, [isReady, isMember, jobs]);
+
+  useEffect(() => {
+    if (!isReady || !isMember) return;
     writeLocalJson(KEYS.topics, topics);
     writeLocalJson(KEYS.messages, messages);
     writeLocalJson(KEYS.messageArchive, messageArchive);
+  }, [isReady, isMember, topics, messages, messageArchive]);
+
+  useEffect(() => {
+    if (!isReady || !isMember) return;
     writeLocalJson(KEYS.ideas, ideas);
-  }, [isReady, isMember, stories, guides, jobs, topics, messages, messageArchive, ideas]);
+  }, [isReady, isMember, ideas]);
 
   useEffect(() => {
     if (!isReady || !isMember) return;
@@ -794,6 +973,7 @@ export default function CommunityPage() {
     force = false,
   } = {}) => {
     if (!isReady || !isMember || !memberUserId) return;
+    if (activeCommunityPanel !== "home" && activeCommunityPanel !== "discovery") return;
     const query = String(memberSearchTerm || "").trim();
     const city = String(memberSearchCity || "").trim();
     const safeOffset = Math.max(0, Number(offset || 0));
@@ -923,6 +1103,7 @@ export default function CommunityPage() {
     memberSearchCity,
     memberSearchSort,
     memberSearchScope,
+    activeCommunityPanel,
     leaderboard,
     hydrateMemberRowsWithAvatars,
   ]);
@@ -943,6 +1124,7 @@ export default function CommunityPage() {
     memberSearchCity,
     memberSearchSort,
     memberSearchScope,
+    activeCommunityPanel,
     loadMemberDiscovery,
   ]);
 
@@ -990,28 +1172,12 @@ export default function CommunityPage() {
 
   if (!isMember) {
     return (
-      <main className="min-h-screen bg-[radial-gradient(circle_at_16%_8%,rgba(34,211,238,0.12),transparent_28%),radial-gradient(circle_at_86%_10%,rgba(244,114,182,0.13),transparent_30%),linear-gradient(180deg,#05070b,#030304)] px-4 py-8 text-white sm:px-6 sm:py-12">
-        <div className="mx-auto flex min-h-[72vh] max-w-5xl items-center">
-          <section className="qa-premium-card relative w-full overflow-hidden rounded-[36px] border border-white/12 bg-[radial-gradient(circle_at_8%_0%,rgba(34,211,238,0.17),transparent_30%),radial-gradient(circle_at_92%_4%,rgba(217,70,239,0.17),transparent_32%),linear-gradient(150deg,rgba(15,25,35,0.98),rgba(24,13,35,0.97)_58%,rgba(7,8,11,1))] p-6 shadow-[0_40px_130px_rgba(0,0,0,0.48)] sm:p-10">
-            <div className="pointer-events-none absolute inset-0 opacity-[0.1] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:56px_56px]" />
-            <div className="relative grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:items-end">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72">The Queer Atlas member hub</p>
-                <h1 className="qa-display mt-4 max-w-2xl text-4xl font-semibold tracking-[-0.045em] text-white sm:text-6xl">Find your people in the atlas.</h1>
-                <p className="mt-4 max-w-xl text-sm leading-7 text-white/64 sm:text-base">Connect with members, discover queer jobs, join live rooms, and help shape what Queer Atlas becomes next.</p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => { writeLocalValue("qa_post_login_target", "/community"); router.push("/?join=true"); }} className="qa-action qa-cta-primary rounded-full border border-cyan-100/42 bg-[linear-gradient(110deg,rgba(34,211,238,0.25),rgba(217,70,239,0.22))] px-5 py-2.5 text-xs font-semibold text-white">Join the community</button>
-                  <Link href="/now/voices" className="qa-action rounded-full border border-white/16 bg-white/[0.05] px-5 py-2.5 text-xs font-semibold text-white/76 transition hover:border-white/30 hover:text-white">Read community Voices</Link>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {[['Member discovery', 'Find trusted people by city and community signal.'], ['Queer jobs', 'Share and discover opportunities across the network.'], ['Live rooms', 'Ask locals and join focused conversations.'], ['Improve Atlas', 'Vote and help prioritize what we build next.']].map(([title, description]) => (
-                  <div key={title} className="rounded-[22px] border border-white/10 bg-black/22 p-4 backdrop-blur-xl"><p className="text-sm font-semibold text-white">{title}</p><p className="mt-2 text-xs leading-5 text-white/46">{description}</p></div>
-                ))}
-              </div>
-            </div>
-          </section>
-        </div>
+      <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+        <PageOpeningState
+          title="Opening sign in..."
+          subtitle="Community is reserved for Queer Atlas members."
+          tone="violet"
+        />
       </main>
     );
   }
@@ -1059,8 +1225,21 @@ export default function CommunityPage() {
   const filteredJobs = publishedJobs.filter((job) => {
     const cityPass = !jobCityFilter || normalizeMemberKey(job.city) === normalizeMemberKey(jobCityFilter);
     const modePass = jobModeFilter === "all" || normalizeMemberKey(job.locationMode) === normalizeMemberKey(jobModeFilter);
-    return cityPass && modePass;
+    const categoryPass = jobCategoryFilter === "all" || normalizeMemberKey(job.category) === normalizeMemberKey(jobCategoryFilter);
+    const searchNeedle = normalizeMemberKey(jobSearchTerm);
+    const searchPass = !searchNeedle || normalizeMemberKey([
+      job.title,
+      job.organizationName,
+      job.city,
+      job.country,
+      job.category,
+      job.employmentType,
+      job.description,
+    ].join(" ")).includes(searchNeedle);
+    return cityPass && modePass && categoryPass && searchPass;
   }).sort((a, b) => new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt));
+  const displayedJobs = filteredJobs.slice(0, visibleJobCount);
+  const hasActiveJobFilters = Boolean(jobCityFilter || jobModeFilter !== "all" || jobCategoryFilter !== "all" || jobSearchTerm.trim());
   const reviewJobs = pendingJobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const unifiedFeedItems = [...sortedStories.map((story) => ({
     id: `story-${story.id}`,
@@ -1079,17 +1258,71 @@ export default function CommunityPage() {
     return true;
   });
   const sortedIdeas = [...visibleIdeas].sort((a, b) => b.votes - a.votes);
+  const filteredIdeas = visibleIdeas
+    .filter((idea) => ideaCategoryFilter === "all" || normalizeMemberKey(parseIdeaText(idea.text).category) === normalizeMemberKey(ideaCategoryFilter))
+    .sort((a, b) => {
+      if (ideaSort === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
+      return Number(b.votes || 0) - Number(a.votes || 0) || new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  const displayedIdeas = filteredIdeas.slice(0, visibleIdeaCount);
   const resolvedTopicId = visibleTopics.some((topic) => topic.id === topicId) ? topicId : visibleTopics[0]?.id;
   const activeTopic = visibleTopics.find((topic) => topic.id === resolvedTopicId) || null;
   const activeMessages = activeTopic
     ? (messages[activeTopic.id] || []).filter((message) => !isBlocked("community-message", message.id))
     : [];
-  const busiestTopic = [...visibleTopics]
-    .map((topic) => ({
-      ...topic,
-      replies: (messages[topic.id] || []).filter((message) => !isBlocked("community-message", message.id)).length,
-    }))
-    .sort((a, b) => b.replies - a.replies)[0];
+  const roomCards = [...visibleTopics]
+    .map((topic) => {
+      const topicMessages = (messages[topic.id] || []).filter((message) => !isBlocked("community-message", message.id));
+      const latestMessage = topicMessages[topicMessages.length - 1];
+      const participants = new Set(
+        [topic.author, ...topicMessages.map((message) => message.author)]
+          .map((value) => normalizeMemberKey(value))
+          .filter(Boolean)
+      ).size;
+      return {
+        ...topic,
+        kind: getRoomKind(topic),
+        cityLabel: getRoomCity(topic),
+        replies: topicMessages.length,
+        participants,
+        latestMessage,
+        latestActivity: latestMessage?.createdAt || topic.createdAt || "",
+      };
+    })
+    .sort((a, b) => {
+      const dateDifference = new Date(b.latestActivity || 0) - new Date(a.latestActivity || 0);
+      return dateDifference || b.replies - a.replies;
+    });
+  const filteredRoomCards = roomFilter === "all" ? roomCards : roomCards.filter((room) => room.kind === roomFilter);
+  const featuredRoom = filteredRoomCards[0] || null;
+  const roomList = filteredRoomCards.slice(1);
+  const activeRoomKind = activeTopic ? getRoomKind(activeTopic) : "city";
+  const activeRoomMeta = ROOM_KIND_META[activeRoomKind];
+  const homeTopics = [...visibleTopics]
+    .map((topic) => {
+      const topicMessages = (messages[topic.id] || []).filter((message) => !isBlocked("community-message", message.id));
+      const latestMessage = topicMessages[topicMessages.length - 1];
+      return {
+        ...topic,
+        replies: topicMessages.length,
+        latestActivity: latestMessage?.createdAt || topic.createdAt || "",
+      };
+    })
+    .sort((a, b) => {
+      const dateDifference = new Date(b.latestActivity || 0) - new Date(a.latestActivity || 0);
+      return dateDifference || b.replies - a.replies;
+    })
+    .slice(0, 2);
+  const homeMembers = [...memberSearchRows]
+    .sort((a, b) => {
+      const aSignal = Number(a.is_online) * 4 + Number(a.trusted_contributor) * 2 + Math.min(a.mutual_count, 3);
+      const bSignal = Number(b.is_online) * 4 + Number(b.trusted_contributor) * 2 + Math.min(b.mutual_count, 3);
+      return bSignal - aSignal;
+    })
+    .slice(0, 3);
+  const homeJob = [...publishedJobs].sort((a, b) => new Date(b.publishedAt || b.createdAt) - new Date(a.publishedAt || a.createdAt))[0] || null;
+  const homeVoice = unifiedFeedItems[0] || null;
+  const homeIdea = sortedIdeas[0] || null;
   const rankMetaByAuthor = (() => {
     const map = new Map();
     leaderboard.forEach((entry) => {
@@ -1132,22 +1365,6 @@ export default function CommunityPage() {
   })();
 
   const displayedMemberRows = memberSearchRows;
-  const memberDiscoveryStats = (() => {
-    const activeNow = displayedMemberRows.filter((row) => row.is_online).length;
-    const trustedVoices = displayedMemberRows.filter((row) => row.trusted_contributor).length;
-    const cityCount = new Set(
-      displayedMemberRows
-        .map((row) => String(row.home_city || "").trim())
-        .filter(Boolean)
-    ).size;
-
-    return [
-      { label: "Active now", value: activeNow, className: "border-emerald-200/24 bg-emerald-200/10 text-emerald-100" },
-      { label: "Trusted voices", value: trustedVoices, className: "border-cyan-200/24 bg-cyan-200/10 text-cyan-100" },
-      { label: "Cities", value: cityCount, className: "border-amber-200/24 bg-amber-200/10 text-amber-100" },
-    ];
-  })();
-
   const canDeleteTopic = (topic) => {
     if (!topic) return false;
     if (isAdmin) return true;
@@ -1188,6 +1405,7 @@ export default function CommunityPage() {
       return next;
     });
     setTopicId((current) => (String(current) === topicIdValue ? "" : current));
+    setMobileRoomOpen(false);
 
     const [messagesDeleteRes, topicDeleteRes] = await Promise.all([
       supabase.from("community_messages").delete().eq("topic_id", topicIdValue),
@@ -1468,7 +1686,9 @@ export default function CommunityPage() {
     setMessages((current) => ({ ...current, [item.id]: [] }));
     setMessageArchive((current) => ({ ...current, [item.id]: [] }));
     setTopicId(item.id);
-    setTopicForm({ name: "", mood: "Fresh", description: "" });
+    setTopicForm({ name: "", mood: "City question", description: "" });
+    setShowTopicForm(false);
+    setMobileRoomOpen(true);
     showToast(error ? "Topic saved locally. Supabase sync unavailable." : "Topic created.", { tone: error ? "info" : "ok", duration: 2200 });
   };
 
@@ -1615,15 +1835,15 @@ export default function CommunityPage() {
       targetType: reportModal.targetType,
       targetId: reportModal.targetId,
       city: "",
-      title: reportModal.title,
+      title: String(reportModal.title || "").slice(0, 160),
       reason,
-      message: String(reportModal.details || "").trim(),
+      message: String(reportModal.details || "").trim().slice(0, 1000),
     });
 
     trackKpiEvent("report_submitted", {
       targetType: reportModal.targetType,
       targetId: String(reportModal.targetId),
-      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+      memberKey: String(user?.id || "member"),
       meta: { reason },
     });
     closeReportModal();
@@ -1652,6 +1872,7 @@ export default function CommunityPage() {
     );
   };
 
+  const isHomePanel = activeCommunityPanel === "home";
   const isDiscoveryPanel = activeCommunityPanel === "discovery";
   const isFeedPanel = activeCommunityPanel === "feed";
   const isJobsPanel = activeCommunityPanel === "jobs";
@@ -1659,271 +1880,288 @@ export default function CommunityPage() {
   const isImprovePanel = activeCommunityPanel === "improve";
 
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_8%,rgba(34,211,238,0.06),transparent_24%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.06),transparent_24%),linear-gradient(180deg,#040406_0%,#05070b_52%,#040406_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
+    <main data-community-section={activeCommunityPanel} className="qa-page qa-community-page min-h-screen px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
       <ActionToast toast={toast} />
       <div className="qa-shell relative mx-auto max-w-7xl">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.04),transparent_18%),radial-gradient(circle_at_82%_14%,rgba(59,130,246,0.05),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.015),transparent_30%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div className="qa-premium-card relative mb-7 overflow-hidden rounded-[30px] border border-white/10 bg-[#060910] p-5 shadow-[0_40px_120px_rgba(0,0,0,0.46)] sm:mb-8 sm:rounded-[34px] sm:p-8">
-          <div className="pointer-events-none absolute inset-0">
-            <Image
-              src="/community/queer-atlas-community-global-network-hero.png"
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-              style={{ objectPosition: "center 36%" }}
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,14,0.48),rgba(4,7,14,0.74)_56%,rgba(4,7,14,0.9)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(244,114,182,0.15),transparent_28%),radial-gradient(circle_at_82%_20%,rgba(56,189,248,0.14),transparent_30%)]" />
-          </div>
-          <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl" />
-          <div className="pointer-events-none absolute -right-20 top-6 h-56 w-56 rounded-full bg-fuchsia-300/10 blur-3xl" />
-          <div className="relative z-10 max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.35em] text-white/68">Member Network</p>
-            <h1 className="qa-display mt-2 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:mt-3 sm:gap-4 sm:text-5xl">
-              <BrandMark iconOnly className="h-10 w-10 sm:h-12 sm:w-12" />
-              Community
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/78 sm:mt-4 sm:leading-7">Find members, share opportunities, join live rooms, and help shape the atlas in one trusted hub.</p>
-            <p className="mt-2 text-xs text-white/64 sm:mt-3">
-              Safety-first participation. Read our{" "}
-              <Link href="/community-policy" className="underline underline-offset-2 transition hover:text-white">
-                Community Policy & Reporting
-              </Link>
-              .
-            </p>
-            {syncError && (
-              <p role="status" aria-live="polite" className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
-                {syncError}
-              </p>
-            )}
-          </div>
-        </div>
+        <CommunityHero
+          memberName={memberName}
+          onExplore={() => {
+            setActiveCommunityPanel("discovery");
+            window.requestAnimationFrame(() => {
+              document.getElementById("community-discovery-heading")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }}
+        />
 
-        <section className="mb-6">
-          <PageControls
-            className="qa-premium-card sticky top-3 z-20"
-            controlsRef={communityControlsRef}
-            controlButtonsRef={communityControlButtonsRef}
-            buttons={[
-              { id: "discovery", label: "Member discovery" },
-              { id: "jobs", label: "Queer jobs" },
-              { id: "chat", label: "Live chat" },
-              { id: "improve", label: "Improve atlas" },
-            ]}
-            activeId={activeCommunityPanel}
-            onSelect={(panelId) => {
-              setActiveCommunityPanel(panelId);
-            }}
-          />
-        </section>
+        {syncError && (
+          <p role="status" aria-live="polite" className="mb-5 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
+            {syncError}
+          </p>
+        )}
+
+        <CommunityNavigation
+          activePanel={activeCommunityPanel}
+          onSelect={setActiveCommunityPanel}
+          controlsRef={communityControlsRef}
+          controlButtonsRef={communityControlButtonsRef}
+        />
+
+        {isHomePanel ? (
+          <section
+            aria-labelledby="community-home-heading"
+            className="qa-community-section qa-community-section-home animate-rise-in mb-6 overflow-hidden rounded-[28px] border border-white/[0.10] bg-[linear-gradient(155deg,rgba(15,19,28,0.97),rgba(7,9,14,0.99))] shadow-[0_28px_90px_rgba(0,0,0,0.32)] [&_h2]:!text-left [&_h2]:[hyphens:none] [&_h3]:!text-left [&_h3]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none] sm:rounded-[32px]"
+          >
+            <div className="border-b border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7 lg:flex lg:items-end lg:justify-between lg:gap-8">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">Your community</p>
+                <h2 id="community-home-heading" className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">
+                  Start with what is moving now.
+                </h2>
+              </div>
+              <p className="mt-3 max-w-md text-sm leading-6 text-white/52 lg:mt-0">
+                Conversations, people, and opportunities selected from across the member network.
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-[1.18fr_0.82fr]">
+              <div className="px-5 py-6 sm:px-7 sm:py-7 lg:border-r lg:border-white/[0.08]">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">Active rooms</p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">Join the conversation</h3>
+                  </div>
+                  <button type="button" onClick={() => setActiveCommunityPanel("chat")} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">
+                    All rooms
+                  </button>
+                </div>
+
+                <div className="mt-5 border-y border-white/[0.08]">
+                  {homeTopics.map((topic, index) => (
+                    <button
+                      key={topic.id}
+                      type="button"
+                      onClick={() => {
+                        setTopicId(topic.id);
+                        setActiveCommunityPanel("chat");
+                        setMobileRoomOpen(true);
+                      }}
+                      className={`group flex min-h-[104px] w-full items-center justify-between gap-5 py-4 text-left transition hover:bg-white/[0.025] ${index > 0 ? "border-t border-white/[0.08]" : ""}`}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <h3 className="text-base font-semibold text-white transition group-hover:text-cyan-50">{topic.name}</h3>
+                          <span className="text-[11px] text-cyan-100/58">{topic.mood}</span>
+                        </div>
+                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/54">{topic.description}</p>
+                        <p className="mt-2 text-xs text-white/38">{topic.replies} {topic.replies === 1 ? "reply" : "replies"}{topic.latestActivity ? ` · ${timeAgo(topic.latestActivity)}` : ""}</p>
+                      </div>
+                      <span aria-hidden="true" className="shrink-0 text-lg text-white/28 transition group-hover:translate-x-1 group-hover:text-cyan-100">→</span>
+                    </button>
+                  ))}
+                  {homeTopics.length === 0 ? (
+                    <div className="py-8">
+                      <p className="text-sm text-white/52">No active rooms yet. Start the first conversation.</p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="border-t border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7 lg:border-t-0">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">People to know</p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">Across the atlas</h3>
+                  </div>
+                  <button type="button" onClick={() => setActiveCommunityPanel("discovery")} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">
+                    Find people
+                  </button>
+                </div>
+
+                <div className="mt-5 divide-y divide-white/[0.08] border-y border-white/[0.08]">
+                  {homeMembers.map((entry) => {
+                    const avatarUrl = resolveAvatarUrlFromProfile(entry);
+                    const initials = String(entry.display_name || "Member").split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("") || "M";
+                    const memberContext = [entry.home_city ? formatCityLabel(entry.home_city) : "", entry.mutual_count > 0 ? `${entry.mutual_count} mutual` : ""].filter(Boolean).join(" · ");
+                    return (
+                      <div key={entry.user_id} className="flex min-h-[72px] items-center gap-3 py-3">
+                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/[0.06] text-xs font-semibold text-white/78">
+                          {avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={avatarUrl} alt={`${entry.display_name || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
+                          ) : initials}
+                          {entry.is_online ? <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#0c1018] bg-emerald-300" aria-label="Active now" /> : null}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-white">{entry.display_name}</p>
+                            {entry.trusted_contributor ? <span className="text-[10px] font-semibold text-cyan-100/66">Trusted</span> : null}
+                          </div>
+                          <p className="mt-1 truncate text-xs text-white/44">{memberContext || "Queer Atlas member"}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {homeMembers.length === 0 ? (
+                    <div className="py-8">
+                      <p className="text-sm text-white/52">Member recommendations will appear here.</p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid border-t border-white/[0.08] sm:grid-cols-3">
+              <div className="px-5 py-5 sm:px-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Opportunity</p>
+                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeJob?.title || "Queer jobs across the network"}</h3>
+                <p className="mt-1 line-clamp-1 text-xs text-white/44">{homeJob ? [homeJob.organizationName, homeJob.city, homeJob.locationMode].filter(Boolean).join(" · ") : "Discover member-posted roles and collaborations."}</p>
+                <button type="button" onClick={() => setActiveCommunityPanel("jobs")} className="mt-4 min-h-11 text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">Explore jobs →</button>
+              </div>
+              <div className="border-t border-white/[0.08] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">From Voices</p>
+                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeVoice?.payload?.title || "Stories from the community"}</h3>
+                <p className="mt-1 line-clamp-1 text-xs text-white/44">Local perspective, personal stories, and member guides.</p>
+                <Link href="/now/voices" className="mt-4 inline-flex min-h-11 items-center text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">Read Voices →</Link>
+              </div>
+              <div className="border-t border-white/[0.08] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Build with us</p>
+                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeIdea?.text || "Help shape what comes next"}</h3>
+                <p className="mt-1 line-clamp-1 text-xs text-white/44">Suggest, vote, and follow ideas for Queer Atlas.</p>
+                <button type="button" onClick={() => setActiveCommunityPanel("improve")} className="mt-4 min-h-11 text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">Open ideas →</button>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {isDiscoveryPanel ? (
-        <section aria-labelledby="community-discovery-heading" className="qa-premium-card animate-rise-in mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.18),transparent_30%),radial-gradient(circle_at_88%_8%,rgba(244,114,182,0.18),transparent_32%),radial-gradient(circle_at_48%_100%,rgba(251,191,36,0.10),transparent_28%),linear-gradient(180deg,rgba(17,20,29,0.97),rgba(8,8,10,1))] p-4 shadow-[0_34px_110px_rgba(34,211,238,0.10),0_22px_70px_rgba(244,114,182,0.10),0_14px_34px_rgba(0,0,0,0.34)] transition-all duration-300 sm:p-5 lg:p-6">
-          <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr] xl:items-end">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/78">Member Discovery</p>
-              <h2 id="community-discovery-heading" className="mt-2 max-w-2xl text-2xl font-semibold leading-tight text-white sm:text-3xl">Find trusted people in the atlas</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/68">Search by name, city, title, and community signal.</p>
-            </div>
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                {memberDiscoveryStats.map((stat) => (
-                  <div key={stat.label} className={`rounded-2xl border px-3 py-3 ${stat.className}`}>
-                    <p className="text-xl font-semibold leading-none text-white sm:text-2xl">{stat.value}</p>
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-current">{stat.label}</p>
-                  </div>
-                ))}
+          <section
+            aria-labelledby="community-discovery-heading"
+            aria-busy={memberSearchLoading}
+            className="qa-community-section qa-community-section-people animate-rise-in mb-6 overflow-hidden rounded-[28px] border border-white/[0.10] bg-[linear-gradient(155deg,rgba(15,19,28,0.97),rgba(7,9,14,0.99))] shadow-[0_28px_90px_rgba(0,0,0,0.32)] [&_h2]:!text-left [&_h2]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none] sm:rounded-[32px]"
+          >
+            <div className="border-b border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">People</p>
+                  <h2 id="community-discovery-heading" className="mt-2 scroll-mt-28 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">Find people across the atlas.</h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/52">Search by name or place, then connect at your own pace.</p>
+                </div>
+                <p className="text-xs text-white/42" aria-live="polite">
+                  {memberSearchLoading ? "Searching members..." : `${displayedMemberRows.length} members shown${memberSearchHasMore ? " · more available" : ""}`}
+                </p>
               </div>
-            <p className="text-right text-xs text-cyan-100/75" aria-live="polite">
-              {memberSearchLoading
-                ? "Refreshing live member graph..."
-                : `${displayedMemberRows.length} members loaded${memberSearchHasMore ? " - more available" : ""}`}
-            </p>
+
+              <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(12rem,0.75fr)_minmax(11rem,0.65fr)]">
+                <input
+                  value={memberSearchTerm}
+                  onChange={(event) => setMemberSearchTerm(event.target.value)}
+                  placeholder="Search name, city, country, or pronouns"
+                  aria-label="Search community members"
+                  className="min-h-12 w-full rounded-2xl border border-white/12 bg-white/[0.055] px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-100/42 focus:bg-white/[0.075]"
+                />
+                <select
+                  value={memberSearchCity}
+                  onChange={(event) => setMemberSearchCity(event.target.value)}
+                  aria-label="Filter members by city"
+                  className="min-h-12 w-full rounded-2xl border border-white/12 bg-[#11151e] px-4 text-sm text-white/78 outline-none transition focus:border-cyan-100/42"
+                >
+                  <option value="">All cities</option>
+                  {memberDiscoveryCities.map((city) => (
+                    <option key={city.normalized} value={city.raw}>{city.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={memberSearchSort}
+                  onChange={(event) => setMemberSearchSort(event.target.value)}
+                  aria-label="Sort members"
+                  className="min-h-12 w-full rounded-2xl border border-white/12 bg-[#11151e] px-4 text-sm text-white/78 outline-none transition focus:border-cyan-100/42"
+                >
+                  <option value="best">Best match</option>
+                  <option value="active">Recently active</option>
+                  <option value="mutual">Mutual connections</option>
+                </select>
+              </div>
+
+              <div className="mt-3 flex items-center gap-5 border-t border-white/[0.06] pt-3">
+                <button type="button" aria-pressed={memberSearchScope === "all"} onClick={() => setMemberSearchScope("all")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "all" ? "text-white" : "text-white/42 hover:text-white/72"}`}>All people</button>
+                <button type="button" aria-pressed={memberSearchScope === "friends"} onClick={() => setMemberSearchScope("friends")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "friends" ? "text-white" : "text-white/42 hover:text-white/72"}`}>Following</button>
+              </div>
+
+              {memberSearchWarning ? (
+                <p className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/[0.08] px-3 py-2 text-xs text-amber-100">{memberSearchWarning}</p>
+              ) : null}
             </div>
-          </div>
 
-          <div className="mt-5 rounded-[24px] border border-white/12 bg-black/28 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:p-4">
-          <div className="inline-flex rounded-full border border-white/12 bg-white/6 p-1">
-            <button
-              onClick={() => setMemberSearchScope("all")}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${memberSearchScope === "all" ? "bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.12)]" : "text-white/72 hover:text-white"}`}
-            >
-              All members
-            </button>
-            <button
-              onClick={() => setMemberSearchScope("friends")}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${memberSearchScope === "friends" ? "bg-white text-black shadow-[0_8px_24px_rgba(255,255,255,0.12)]" : "text-white/72 hover:text-white"}`}
-            >
-              My friends only
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-3 lg:grid-cols-[1.35fr_1fr_0.85fr_auto]">
-            <input
-              value={memberSearchTerm}
-              onChange={(event) => setMemberSearchTerm(event.target.value)}
-              placeholder="Search member name, city, title, pronouns"
-              className="w-full rounded-2xl border border-white/12 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/38 focus:border-cyan-200/55 focus:bg-white/[0.10]"
-            />
-            <select
-              value={memberSearchCity}
-              onChange={(event) => setMemberSearchCity(event.target.value)}
-              className="w-full rounded-2xl border border-white/12 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200/55 focus:bg-white/[0.10]"
-            >
-              <option value="">All cities</option>
-              {memberDiscoveryCities.map((city) => (
-                <option key={city.normalized} value={city.raw}>
-                  {city.label}
-                </option>
-              ))}
-            </select>
-            <select
-              value={memberSearchSort}
-              onChange={(event) => setMemberSearchSort(event.target.value)}
-              className="w-full rounded-2xl border border-white/12 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200/55 focus:bg-white/[0.10]"
-            >
-              <option value="best">Best match</option>
-              <option value="active">Most active</option>
-              <option value="mutual">Most mutual</option>
-            </select>
-            <button
-              onClick={() => {
-                memberSearchCacheRef.current.clear();
-                queueMicrotask(async () => {
-                  await loadMemberDiscovery({ offset: 0, append: false, force: true });
-                });
-              }}
-              className="qa-action qa-action-strong rounded-2xl border border-cyan-200/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(244,114,182,0.18),rgba(255,255,255,0.08))] px-4 py-3 text-sm font-semibold text-cyan-50 transition hover:border-cyan-100/62"
-            >
-              Refresh
-            </button>
-          </div>
-          </div>
-
-          {memberSearchWarning && (
-            <p className="mt-3 rounded-2xl border border-amber-200/24 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
-              {memberSearchWarning}
-            </p>
-          )}
-
-          <div className="mt-5 max-h-[62vh] overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {displayedMemberRows.map((entry) => {
-              const titleMeta = getMemberTitleMeta(entry.title || "");
-              const busy = Boolean(memberSearchBusyById[entry.user_id]);
-              const avatarUrl = resolveAvatarUrlFromProfile(entry);
-              const initials =
-                String(entry.display_name || "Member")
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((chunk) => chunk.charAt(0).toUpperCase())
-                  .join("") || "M";
-              return (
-                <article key={entry.user_id} className="group rounded-[26px] border border-white/10 bg-[radial-gradient(circle_at_16%_0%,rgba(34,211,238,0.10),transparent_36%),radial-gradient(circle_at_96%_18%,rgba(244,114,182,0.10),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] transition hover:-translate-y-0.5 hover:border-cyan-100/28 hover:bg-white/[0.075] hover:shadow-[0_22px_60px_rgba(34,211,238,0.10),0_16px_44px_rgba(244,114,182,0.08)]">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className="inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] border border-white/14 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(244,114,182,0.14))] text-sm font-semibold text-white shadow-[0_12px_34px_rgba(0,0,0,0.24)]">
-                        {avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatarUrl} alt={`${entry.display_name || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
-                        ) : initials}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-base font-semibold text-white">{entry.display_name}</p>
-                        {entry.trusted_contributor && (
-                          <span className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
-                            Trusted
-                          </span>
-                        )}
+            <div className="divide-y divide-white/[0.08] px-5 sm:px-7">
+              {displayedMemberRows.map((entry) => {
+                const titleMeta = getMemberTitleMeta(entry.title || "");
+                const busy = Boolean(memberSearchBusyById[entry.user_id]);
+                const avatarUrl = resolveAvatarUrlFromProfile(entry);
+                const initials = String(entry.display_name || "Member").split(/\s+/).filter(Boolean).slice(0, 2).map((chunk) => chunk.charAt(0).toUpperCase()).join("") || "M";
+                const location = [entry.home_city ? formatCityLabel(entry.home_city) : "", entry.resident_country].filter(Boolean).join(", ");
+                return (
+                  <article key={entry.user_id} className="group py-5 transition sm:py-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                      <button type="button" onClick={() => openMemberProfile(entry)} className="flex min-w-0 flex-1 items-center gap-4 text-left">
+                        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/[0.06] text-sm font-semibold text-white/78">
+                          {avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={avatarUrl} alt={`${entry.display_name || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
+                          ) : initials}
+                          {entry.is_online ? <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[#0a0d13] bg-emerald-300" title="Active now" /> : null}
                         </div>
-                      <p className="mt-1 text-sm leading-5 text-white/62">
-                          {[entry.home_city, entry.resident_country].filter(Boolean).join(" - ") || "City not set"}
-                      </p>
-                    </div>
-                    </div>
-                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.12em] ${titleMeta.className}`}>
-                      <span>{titleMeta.icon}</span>
-                      {titleMeta.label}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/18 p-3">
-                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Live signal</p>
-                    <div className="flex flex-wrap gap-2">
-                    <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${entry.is_online ? "border-emerald-200/30 bg-emerald-200/14 text-emerald-100" : "border-white/14 bg-white/6 text-white/75"}`}>
-                      {formatMemberSeen(entry.last_seen_at, entry.is_online)}
-                    </span>
-                    {entry.follows_you && (
-                      <span className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100">
-                        Follows you
-                      </span>
-                    )}
-                    {entry.mutual_count > 0 && (
-                      <span className="rounded-full border border-pink-200/26 bg-pink-200/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-pink-100">
-                        {entry.mutual_count} mutual
-                      </span>
-                    )}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-2">
-                    <button
-                      onClick={() => openMemberProfile(entry)}
-                      className="qa-action qa-action-strong rounded-2xl border border-white/18 bg-white px-3 py-2.5 text-sm font-semibold text-black transition hover:border-cyan-100/60 hover:shadow-[0_14px_32px_rgba(255,255,255,0.10)]"
-                    >
-                      Open profile
-                    </button>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => openMemberThread(entry)}
-                        className="qa-action rounded-2xl border border-cyan-200/24 bg-cyan-200/10 px-3 py-2.5 text-xs font-semibold text-cyan-100 transition hover:border-cyan-200/48"
-                      >
-                        Message
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                            <p className="truncate text-base font-semibold text-white transition group-hover:text-cyan-50">{entry.display_name}</p>
+                            {entry.pronouns ? <span className="text-xs text-white/38">{entry.pronouns}</span> : null}
+                            {entry.trusted_contributor ? (
+                              <span title="Recognized for trusted contributions to Queer Atlas" className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-100/70">Trusted contributor</span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-sm text-white/48">{location || "Location not shared"}</p>
+                          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/38">
+                            <span className={entry.is_online ? "text-emerald-200/76" : ""}>{formatMemberSeen(entry.last_seen_at, entry.is_online)}</span>
+                            <span>{titleMeta.icon} {titleMeta.label}</span>
+                            {entry.mutual_count > 0 ? <span>{entry.mutual_count} mutual</span> : null}
+                            {entry.follows_you ? <span>Follows you</span> : null}
+                          </div>
+                        </div>
                       </button>
-                      <button
-                        onClick={() => toggleMemberFollow(entry)}
-                        disabled={busy}
-                        className="qa-action rounded-2xl border border-pink-200/24 bg-pink-200/10 px-3 py-2.5 text-xs font-semibold text-pink-100 transition hover:border-pink-200/48 disabled:cursor-wait disabled:opacity-65"
-                      >
-                        {busy ? "Saving..." : entry.is_following ? "Following" : "Add friend"}
-                      </button>
+
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                        <button type="button" onClick={() => openMemberThread(entry)} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">Message</button>
+                        <button type="button" onClick={() => toggleMemberFollow(entry)} disabled={busy} className={`qa-action min-h-11 rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-60 ${entry.is_following ? "border-cyan-100/24 bg-cyan-100/[0.08] text-cyan-50" : "border-white/16 bg-white text-[#080b11] hover:bg-cyan-50"}`}>
+                          {busy ? "Saving..." : entry.is_following ? "Following" : "Follow"}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-            {!memberSearchLoading && displayedMemberRows.length === 0 && (
-              <div className="rounded-[24px] border border-dashed border-cyan-200/24 bg-white/[0.04] px-4 py-6 text-sm text-white/62 md:col-span-2 xl:col-span-3">
-                No members match this filter yet. Try another city or broaden your search.
-              </div>
-            )}
+                  </article>
+                );
+              })}
+
+              {!memberSearchLoading && displayedMemberRows.length === 0 ? (
+                <div className="py-12">
+                  <p className="text-sm text-white/52">No people match these filters. Try another place or broaden your search.</p>
+                </div>
+              ) : null}
             </div>
-          </div>
-          <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-[11px] text-white/50">
-              Stable paging: {displayedMemberRows.length} members loaded
-            </p>
-            {memberSearchHasMore && (
-              <button
-                onClick={() => {
-                  queueMicrotask(async () => {
-                    await loadMoreMemberDiscovery();
-                  });
-                }}
-                disabled={memberSearchLoading}
-                className="qa-action qa-action-strong rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-[11px] font-semibold text-cyan-50 transition hover:border-cyan-200/56 disabled:opacity-60"
-              >
-                      {memberSearchLoading ? "Loading..." : "Load more members"}
-              </button>
-            )}
-          </div>
-        </section>
+
+            <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
+            <div className="flex items-center justify-between gap-3 border-t border-white/[0.08] px-5 py-4 sm:px-7">
+              <p className="text-[11px] text-white/36">Member visibility follows each person&apos;s profile settings.</p>
+              {memberSearchHasMore ? (
+                <button
+                  type="button"
+                  onClick={() => queueMicrotask(async () => { await loadMoreMemberDiscovery(); })}
+                  disabled={memberSearchLoading}
+                  className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white disabled:opacity-60"
+                >
+                  {memberSearchLoading ? "Loading..." : "Load more"}
+                </button>
+              ) : null}
+            </div>
+          </section>
         ) : null}
 
         {isFeedPanel ? (
@@ -1935,10 +2173,10 @@ export default function CommunityPage() {
               <p className="mt-1 text-xs text-violet-100/70">Personal experience on the left, practical city knowledge on the right.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
+              <button type="button" onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
                 {showStoryForm ? "Close story form" : "Write story"}
               </button>
-              <button onClick={() => setShowGuideForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-violet-300/34 bg-violet-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-violet-100 transition hover:border-violet-200/62">
+              <button type="button" onClick={() => setShowGuideForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-violet-300/34 bg-violet-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-violet-100 transition hover:border-violet-200/62">
                 {showGuideForm ? "Close guide form" : "New guide"}
               </button>
             </div>
@@ -1984,8 +2222,8 @@ export default function CommunityPage() {
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs text-white/62">{story.author} | {timeAgo(story.createdAt)}</p>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
-                        <button onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
+                        <button type="button" onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
+                        <button type="button" onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
                       </div>
                     </div>
                   </article>
@@ -2039,8 +2277,8 @@ export default function CommunityPage() {
                       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs text-white/62">{guide.author} | {timeAgo(guide.createdAt)}</p>
                         <div className="flex items-center gap-2">
-                          <button onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read guide"}</button>
-                          <button onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
+                          <button type="button" onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read guide"}</button>
+                          <button type="button" onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
                         </div>
                       </div>
                     </article>
@@ -2058,250 +2296,236 @@ export default function CommunityPage() {
         ) : null}
 
         {isJobsPanel ? (
-        <section aria-labelledby="community-jobs-heading" className="qa-premium-card animate-rise-in overflow-hidden rounded-[30px] border border-emerald-300/18 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.18),transparent_30%),radial-gradient(circle_at_82%_6%,rgba(244,114,182,0.12),transparent_24%),radial-gradient(circle_at_88%_24%,rgba(34,211,238,0.12),transparent_30%),linear-gradient(180deg,rgba(10,34,28,0.96),rgba(9,10,10,1))] p-5 shadow-[0_34px_110px_rgba(16,185,129,0.14),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
-            <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-emerald-200/80">Community Jobs</p>
-              <h2 id="community-jobs-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Queer jobs from the Atlas network</h2>
-              <p className="mt-1 max-w-2xl text-xs leading-5 text-emerald-100/70">Member-posted opportunities for queer venues, community orgs, events, hospitality, creative teams, and inclusive employers.</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {["Reviewed before public", "SEO-ready job data", "Scam-aware apply links"].map((label) => (
-                  <span key={label} className="rounded-full border border-white/12 bg-white/[0.055] px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-white/68">
-                    {label}
-                  </span>
-                ))}
+          <section aria-labelledby="community-jobs-heading" className="qa-community-section qa-community-section-jobs animate-rise-in [&_h2]:!text-left [&_h2]:[hyphens:none] [&_h3]:!text-left [&_h3]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none]">
+            <div className="flex flex-col gap-5 border-b border-white/[0.10] pb-7 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-100/68">Community workboard</p>
+                <h2 id="community-jobs-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">Work that makes room for you.</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/54">Roles from queer venues, community organizations, events, creative teams, and employers reaching the Atlas network.</p>
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-emerald-200/24 bg-emerald-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100">
-                {publishedJobs.length} live
-              </span>
-              {reviewJobs.length > 0 && (
-                <span className="rounded-full border border-amber-200/28 bg-amber-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-amber-100">
-                  {reviewJobs.length} pending
-                </span>
-              )}
               <button
+                type="button"
                 onClick={() => setShowJobForm((current) => !current)}
-                className="qa-action qa-action-strong rounded-full border border-emerald-300/40 bg-emerald-300/14 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-100 transition hover:border-emerald-200/62"
+                className="qa-action inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-white/70 bg-white px-5 py-2.5 text-sm font-semibold text-[#080b11] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-100 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                {showJobForm ? "Close job form" : "Post a queer job"}
+                <span aria-hidden="true">＋</span>
+                <span>{showJobForm ? "Close form" : "Post a job"}</span>
               </button>
             </div>
-          </div>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(20rem,0.74fr)_minmax(0,1.26fr)] xl:items-start">
-            <div className="qa-premium-card rounded-[28px] border border-emerald-300/20 bg-[radial-gradient(circle_at_top_left,rgba(52,211,153,0.18),transparent_34%),radial-gradient(circle_at_92%_0%,rgba(244,114,182,0.10),transparent_28%),linear-gradient(180deg,rgba(13,45,35,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(16,185,129,0.12)] sm:p-5">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-emerald-100/70">Post opportunity</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Share a job with the community</h3>
-              <p className="mt-2 text-xs leading-5 text-white/58">Posts go through review before they become visible to everyone. No upfront-payment, crypto-task, or WhatsApp-only jobs.</p>
-              <div className="mt-3 rounded-[22px] border border-pink-200/16 bg-pink-200/[0.055] px-3 py-2">
-                <p className="text-xs leading-5 text-pink-50/74">Cute enough to invite people in, strict enough to keep bad listings out.</p>
-              </div>
-
-              {showJobForm ? (
-                <form id="community-job-form" onSubmit={publishJob} className="mt-4 space-y-3">
-                  <Field value={jobForm.title} onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))} placeholder="Job title" />
-                  <Field value={jobForm.organizationName} onChange={(event) => setJobForm((current) => ({ ...current, organizationName: event.target.value }))} placeholder="Organization / employer" />
-                  <Field value={jobForm.organizationUrl} onChange={(event) => setJobForm((current) => ({ ...current, organizationUrl: event.target.value }))} placeholder="Organization website (optional)" />
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Field value={jobForm.city} onChange={(event) => setJobForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
-                    <Field value={jobForm.country} onChange={(event) => setJobForm((current) => ({ ...current, country: event.target.value }))} placeholder="Country" />
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <select
-                      value={jobForm.locationMode}
-                      onChange={(event) => setJobForm((current) => ({ ...current, locationMode: event.target.value }))}
-                      className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
-                    >
-                      {JOB_LOCATION_MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
-                    </select>
-                    <select
-                      value={jobForm.employmentType}
-                      onChange={(event) => setJobForm((current) => ({ ...current, employmentType: event.target.value }))}
-                      className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
-                    >
-                      {JOB_EMPLOYMENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
-                    </select>
-                  </div>
-                  <select
-                    value={jobForm.category}
-                    onChange={(event) => setJobForm((current) => ({ ...current, category: event.target.value }))}
-                    className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
-                  >
-                    {JOB_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
-                  </select>
-                  <Field value={jobForm.compensation} onChange={(event) => setJobForm((current) => ({ ...current, compensation: event.target.value }))} placeholder="Pay range / compensation (recommended)" />
-                  <Field value={jobForm.description} onChange={(event) => setJobForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe the role, workplace, and why it is a good fit for queer community" area />
-                  <Field value={jobForm.requirements} onChange={(event) => setJobForm((current) => ({ ...current, requirements: event.target.value }))} placeholder="Requirements, schedule, language, or access notes (optional)" area />
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <Field value={jobForm.applyUrl} onChange={(event) => setJobForm((current) => ({ ...current, applyUrl: event.target.value }))} placeholder="Apply URL" />
-                    <Field value={jobForm.applyEmail} onChange={(event) => setJobForm((current) => ({ ...current, applyEmail: event.target.value }))} placeholder="Apply email" />
-                  </div>
-                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-emerald-100/65 bg-gradient-to-r from-emerald-200 via-cyan-200 to-lime-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">
-                    {isAdmin ? "Publish job" : "Submit for review"}
-                  </button>
-                </form>
-              ) : (
-                <button
-                  onClick={() => setShowJobForm(true)}
-                  className="qa-action qa-action-strong mt-4 min-h-[44px] w-full rounded-xl border border-emerald-100/55 bg-gradient-to-r from-emerald-200 via-cyan-200 to-lime-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95"
-                >
-                  Post a queer job
-                </button>
-              )}
-
-              <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.035] p-3">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/44">Trust rules</p>
-                <p className="mt-2 text-xs leading-5 text-white/58">Never pay to get paid. Report jobs that ask for upfront fees, crypto deposits, ID documents too early, or suspicious private messaging.</p>
-              </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-white/[0.07] py-4 text-[11px] text-white/42">
+              <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-200" />Member submitted</span>
+              <span>Atlas reviewed before public</span>
+              <span>Applications leave Queer Atlas</span>
+              <span>Listings expire after 45 days</span>
             </div>
 
-            <div className="qa-premium-card rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.13),transparent_34%),radial-gradient(circle_at_10%_0%,rgba(52,211,153,0.10),transparent_30%),linear-gradient(180deg,rgba(12,38,32,0.88),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.24)] sm:p-5">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/70">Browse jobs</p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Live opportunities</h3>
-                  <p className="mt-2 text-xs leading-5 text-white/56">Filter by city or work mode. Each public listing expires after 45 days unless renewed.</p>
+            {showJobForm ? (
+              <form id="community-job-form" onSubmit={publishJob} className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.11] bg-[radial-gradient(circle_at_92%_0%,rgba(110,231,183,0.12),transparent_28%),linear-gradient(150deg,rgba(14,24,24,0.98),rgba(8,10,13,0.99))] p-5 shadow-[0_26px_80px_rgba(0,0,0,0.28)] sm:p-7">
+                <div className="flex flex-col gap-3 border-b border-white/[0.08] pb-5 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-100/62">Post an opportunity</p>
+                    <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-white">Clear work, clear expectations.</h3>
+                  </div>
+                  <p className="max-w-sm text-xs leading-5 text-white/42">Members submit for review. Admin listings publish directly.</p>
+                </div>
+
+                <div className="mt-6 grid gap-5 lg:grid-cols-2">
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">Role and organization</p>
+                    <Field value={jobForm.title} onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))} placeholder="Job title" />
+                    <Field value={jobForm.organizationName} onChange={(event) => setJobForm((current) => ({ ...current, organizationName: event.target.value }))} placeholder="Organization / employer" />
+                    <Field value={jobForm.organizationUrl} onChange={(event) => setJobForm((current) => ({ ...current, organizationUrl: event.target.value }))} placeholder="Organization website (optional)" />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field value={jobForm.city} onChange={(event) => setJobForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                      <Field value={jobForm.country} onChange={(event) => setJobForm((current) => ({ ...current, country: event.target.value }))} placeholder="Country" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <select aria-label="Work mode" value={jobForm.locationMode} onChange={(event) => setJobForm((current) => ({ ...current, locationMode: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
+                        {JOB_LOCATION_MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
+                      </select>
+                      <select aria-label="Employment type" value={jobForm.employmentType} onChange={(event) => setJobForm((current) => ({ ...current, employmentType: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
+                        {JOB_EMPLOYMENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                      </select>
+                    </div>
+                    <select aria-label="Job category" value={jobForm.category} onChange={(event) => setJobForm((current) => ({ ...current, category: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
+                      {JOB_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                    </select>
+                    <div>
+                      <p className="mb-2 text-[11px] text-emerald-100/62">Pay range / compensation — strongly recommended</p>
+                      <Field value={jobForm.compensation} onChange={(event) => setJobForm((current) => ({ ...current, compensation: event.target.value }))} placeholder="Example: €32–38/hour or €48k–55k/year" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">Role details and application</p>
+                    <Field value={jobForm.description} onChange={(event) => setJobForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe the role, workplace, and what makes the opportunity relevant to this community" area />
+                    <Field value={jobForm.requirements} onChange={(event) => setJobForm((current) => ({ ...current, requirements: event.target.value }))} placeholder="Essential requirements, schedule, language, or accessibility notes" area />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field value={jobForm.applyUrl} onChange={(event) => setJobForm((current) => ({ ...current, applyUrl: event.target.value }))} placeholder="Official apply URL" />
+                      <Field value={jobForm.applyEmail} onChange={(event) => setJobForm((current) => ({ ...current, applyEmail: event.target.value }))} placeholder="Apply email" />
+                    </div>
+                    <div className="border-l border-amber-200/24 pl-4">
+                      <p className="text-xs leading-5 text-amber-50/62">No upfront fees, crypto deposits, identity documents before a legitimate hiring stage, or chat-only recruitment.</p>
+                    </div>
+                    <div className="flex justify-end pt-1">
+                      <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-100">
+                        {isAdmin ? "Publish job" : "Submit for review"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            ) : null}
+
+            {reviewJobs.length > 0 ? (
+              <div className="mt-6 border-y border-amber-100/[0.15] py-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/68">Pending review</p>
+                    <p className="mt-1 text-sm text-white/52">{isAdmin ? "Listings waiting in the admin queue." : "Your submissions waiting for review."}</p>
+                  </div>
+                  <span className="text-xs text-amber-100/56">{reviewJobs.length} pending</span>
+                </div>
+                <div className="mt-4 divide-y divide-white/[0.07] border-t border-white/[0.07]">
+                  {reviewJobs.map((job) => (
+                    <article key={`pending-job-${job.id}`} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white/86">{job.title}</p>
+                        <p className="mt-1 text-xs text-white/42">{job.organizationName} · {formatJobLocation(job)} · {formatJobStatus(job.status)}</p>
+                      </div>
+                      {isAdmin ? (
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => updateJobStatus(job, "published")} className="qa-action min-h-10 rounded-full border border-emerald-200/28 px-4 text-xs font-semibold text-emerald-100">Publish</button>
+                          <button type="button" onClick={() => updateJobStatus(job, "rejected")} className="qa-action min-h-10 rounded-full border border-rose-200/24 px-4 text-xs font-semibold text-rose-100">Reject</button>
+                        </div>
+                      ) : null}
+                    </article>
+                  ))}
                 </div>
               </div>
+            ) : null}
 
-              <div className="mb-4 grid gap-3 md:grid-cols-2">
-                <select
-                  value={jobCityFilter}
-                  onChange={(event) => setJobCityFilter(event.target.value)}
-                  className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
-                >
+            <div className="mt-7 rounded-[24px] border border-white/[0.10] bg-white/[0.025] p-3 sm:p-4">
+              <div className="grid gap-2.5 lg:grid-cols-[minmax(14rem,1.35fr)_repeat(3,minmax(10rem,0.72fr))]">
+                <label className="relative">
+                  <span className="sr-only">Search jobs</span>
+                  <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/30">⌕</span>
+                  <input
+                    type="search"
+                    value={jobSearchTerm}
+                    onChange={(event) => { setJobSearchTerm(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }}
+                    placeholder="Role, organization, or keyword"
+                    className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-black/20 pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-emerald-100/42"
+                  />
+                </label>
+                <select aria-label="Filter jobs by city" value={jobCityFilter} onChange={(event) => { setJobCityFilter(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-[#101317] px-4 text-sm text-white/76 outline-none focus:border-emerald-100/42 [&_option]:bg-[#101317]">
                   <option value="">All cities</option>
                   {jobCities.map((city) => <option key={city} value={city}>{formatCityLabel(city)}</option>)}
                 </select>
-                <select
-                  value={jobModeFilter}
-                  onChange={(event) => setJobModeFilter(event.target.value)}
-                  className="w-full rounded-xl border border-emerald-200/20 bg-[#0d211b] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#0d211b]"
-                >
+                <select aria-label="Filter jobs by work mode" value={jobModeFilter} onChange={(event) => { setJobModeFilter(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-[#101317] px-4 text-sm text-white/76 outline-none focus:border-emerald-100/42 [&_option]:bg-[#101317]">
                   <option value="all">All work modes</option>
                   {JOB_LOCATION_MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
                 </select>
+                <select aria-label="Filter jobs by category" value={jobCategoryFilter} onChange={(event) => { setJobCategoryFilter(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-[#101317] px-4 text-sm text-white/76 outline-none focus:border-emerald-100/42 [&_option]:bg-[#101317]">
+                  <option value="all">All categories</option>
+                  {JOB_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
               </div>
-
-              <div className="mb-4 flex flex-wrap gap-2">
-                {jobCities.slice(0, 10).map((city) => {
-                  const active = normalizeMemberKey(jobCityFilter) === normalizeMemberKey(city);
-                  return (
-                    <button
-                      key={`job-city-chip-${city}`}
-                      type="button"
-                      onClick={() => setJobCityFilter(active ? "" : city)}
-                      className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
-                        active
-                          ? "border-emerald-100/55 bg-emerald-200/18 text-emerald-50"
-                          : "border-white/12 bg-white/[0.045] text-white/66 hover:border-emerald-200/32 hover:text-white"
-                      }`}
-                    >
-                      {formatCityLabel(city)}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {reviewJobs.length > 0 && (
-                <div className="mb-4 rounded-[24px] border border-amber-200/22 bg-amber-200/8 p-4">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100">Pending review</p>
-                    <span className="rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-amber-100">
-                      {isAdmin ? "Admin queue" : "Your submissions"}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {reviewJobs.map((job) => (
-                      <article key={`pending-job-${job.id}`} className="rounded-2xl border border-amber-200/18 bg-black/24 p-3">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-white">{job.title}</p>
-                            <p className="mt-1 text-xs text-amber-100/72">{job.organizationName} | {formatJobLocation(job)}</p>
-                          </div>
-                          <span className="rounded-full border border-amber-200/26 bg-amber-200/12 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-amber-100">{formatJobStatus(job.status)}</span>
-                        </div>
-                        {isAdmin && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            <button onClick={() => updateJobStatus(job, "published")} className="qa-action qa-action-strong rounded-full border border-emerald-200/38 bg-emerald-200/14 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:border-emerald-200/60">Publish</button>
-                            <button onClick={() => updateJobStatus(job, "rejected")} className="qa-action rounded-full border border-rose-200/30 bg-rose-200/10 px-3 py-1.5 text-xs font-semibold text-rose-100 transition hover:border-rose-200/52">Reject</button>
-                          </div>
-                        )}
-                      </article>
-                    ))}
-                  </div>
+              {hasActiveJobFilters ? (
+                <div className="mt-3 flex items-center justify-between gap-4 border-t border-white/[0.07] px-1 pt-3">
+                  <p className="text-[11px] text-white/38">Showing a filtered view</p>
+                  <button type="button" onClick={() => { setJobSearchTerm(""); setJobCityFilter(""); setJobModeFilter("all"); setJobCategoryFilter("all"); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="qa-action min-h-9 text-xs font-semibold text-emerald-100/68 transition hover:text-emerald-50">Clear filters</button>
                 </div>
-              )}
-
-              <div className="qa-defer-render max-h-[52rem] space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-                {filteredJobs.map((job) => {
-                  const isExpanded = expandedJobIds.includes(job.id);
-                  const applyHref = normalizeExternalUrl(job.applyUrl) || (normalizeEmail(job.applyEmail) ? `mailto:${normalizeEmail(job.applyEmail)}` : "");
-                  const orgHref = normalizeExternalUrl(job.organizationUrl);
-                  return (
-                    <article key={`job-${job.id}`} itemScope itemType="https://schema.org/JobPosting" className="qa-premium-card animate-rise-in rounded-[24px] border border-emerald-300/20 bg-[linear-gradient(180deg,rgba(14,42,34,0.82),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-emerald-200/34 hover:shadow-[0_24px_60px_rgba(16,185,129,0.14)]">
-                      <meta itemProp="datePosted" content={job.publishedAt || job.createdAt} />
-                      {job.expiresAt && <meta itemProp="validThrough" content={job.expiresAt} />}
-                      <meta itemProp="employmentType" content={job.employmentType} />
-                      <meta itemProp="jobLocationType" content={job.locationMode === "Remote" ? "TELECOMMUTE" : job.locationMode} />
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-100">{job.category}</span>
-                            <span className="rounded-full border border-cyan-200/26 bg-cyan-200/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100">{job.employmentType}</span>
-                            {job.verificationStatus === "admin_verified" && (
-                              <span className="rounded-full border border-lime-200/28 bg-lime-200/12 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-lime-100">Verified</span>
-                            )}
-                          </div>
-                          <h3 itemProp="title" className="mt-3 text-base font-semibold text-white">{job.title}</h3>
-                          <p itemProp="hiringOrganization" itemScope itemType="https://schema.org/Organization" className="mt-1 text-sm text-emerald-100/78">
-                            <meta itemProp="name" content={job.organizationName} />
-                            {orgHref ? (
-                              <a href={orgHref} target="_blank" rel="noreferrer" itemProp="url" className="underline underline-offset-2 transition hover:text-white">{job.organizationName}</a>
-                            ) : job.organizationName}
-                          </p>
-                          <p className="mt-2 text-xs uppercase tracking-[0.12em] text-emerald-100/62">{formatJobLocation(job)}</p>
-                        </div>
-                        <span className="rounded-full border border-white/12 bg-white/7 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/58">{timeAgo(job.publishedAt || job.createdAt)}</span>
-                      </div>
-                      {job.compensation && <p className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white/72">{job.compensation}</p>}
-                      <p itemProp="description" className="mt-3 text-sm leading-6 text-white/78">{job.description}</p>
-                      {isExpanded && job.requirements && <p className="mt-2 text-sm leading-7 text-white/70">{job.requirements}</p>}
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-xs text-white/56">Posted by {job.author} | expires {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "soon"}</p>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {job.requirements && (
-                            <button onClick={() => toggleJobExpanded(job.id)} className="qa-action rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-xs text-emerald-100">
-                              {isExpanded ? "Show less" : "Details"}
-                            </button>
-                          )}
-                          <button onClick={() => reportContent({ targetType: "community-job", targetId: job.id, title: job.title })} className="qa-action rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-xs text-emerald-100">Report</button>
-                          {isAdmin && (
-                            <button onClick={() => updateJobStatus(job, "removed")} className="qa-action rounded-full border border-rose-200/26 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Remove</button>
-                          )}
-                          {applyHref ? (
-                            <a href={applyHref} target={applyHref.startsWith("mailto:") ? undefined : "_blank"} rel={applyHref.startsWith("mailto:") ? undefined : "noreferrer"} className="qa-action qa-action-strong rounded-full border border-emerald-100/55 bg-gradient-to-r from-emerald-200 via-cyan-200 to-lime-200 px-4 py-2 text-xs font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Apply</a>
-                          ) : (
-                            <span className="rounded-full border border-white/12 bg-white/7 px-4 py-2 text-xs text-white/56">Apply details hidden</span>
-                          )}
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
-                {filteredJobs.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-emerald-300/26 px-4 py-8 text-sm text-white/62">
-                    {jobCityFilter
-                      ? `No live jobs in ${formatCityLabel(jobCityFilter)} yet. Clear the city filter or post the first opportunity.`
-                      : "No live jobs match this filter yet. Post the first opportunity or broaden the filters."}
-                  </div>
-                )}
-              </div>
+              ) : null}
             </div>
-          </div>
-        </section>
+
+            <div className="mt-7 flex items-end justify-between gap-4 border-b border-white/[0.10] pb-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">Open roles</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{filteredJobs.length} {filteredJobs.length === 1 ? "opportunity" : "opportunities"}</h3>
+              </div>
+              <p className="text-xs text-white/34">Newest first</p>
+            </div>
+
+            <div className="divide-y divide-white/[0.09]">
+              {displayedJobs.map((job) => {
+                const isExpanded = expandedJobIds.includes(job.id);
+                const applyHref = normalizeExternalUrl(job.applyUrl) || (normalizeEmail(job.applyEmail) ? `mailto:${normalizeEmail(job.applyEmail)}` : "");
+                const orgHref = normalizeExternalUrl(job.organizationUrl);
+                return (
+                  <article key={`job-${job.id}`} itemScope itemType="https://schema.org/JobPosting" className={`group py-6 transition sm:py-7 ${isExpanded ? "bg-white/[0.018]" : ""}`}>
+                    <meta itemProp="datePosted" content={job.publishedAt || job.createdAt} />
+                    {job.expiresAt && <meta itemProp="validThrough" content={job.expiresAt} />}
+                    <meta itemProp="employmentType" content={job.employmentType} />
+                    <meta itemProp="jobLocationType" content={job.locationMode === "Remote" ? "TELECOMMUTE" : job.locationMode} />
+                    <div className="grid gap-5 sm:grid-cols-[3.25rem_minmax(0,1fr)] lg:grid-cols-[3.25rem_minmax(0,1fr)_minmax(12rem,0.34fr)] lg:items-start">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-100/[0.16] bg-[linear-gradient(145deg,rgba(110,231,183,0.12),rgba(103,232,249,0.05))] text-xs font-semibold tracking-[0.08em] text-emerald-50/76 shadow-[0_10px_28px_rgba(0,0,0,0.2)]">
+                        {getOrganizationInitials(job.organizationName)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-100/62">{job.category}</span>
+                          <span className="text-[10px] text-white/28">{timeAgo(job.publishedAt || job.createdAt)}</span>
+                          {job.verificationStatus === "admin_verified" ? <span className="text-[10px] font-medium text-cyan-100/62" title="The listing was reviewed by Queer Atlas. This is not an employer endorsement.">◇ Listing reviewed</span> : null}
+                        </div>
+                        <h3 itemProp="title" className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white sm:text-2xl">{job.title}</h3>
+                        <p itemProp="hiringOrganization" itemScope itemType="https://schema.org/Organization" className="mt-1 text-sm text-white/58">
+                          <meta itemProp="name" content={job.organizationName} />
+                          {orgHref ? <a href={orgHref} target="_blank" rel="noopener noreferrer" itemProp="url" className="underline decoration-white/18 underline-offset-4 transition hover:text-white">{job.organizationName}</a> : job.organizationName}
+                        </p>
+                        <p className="mt-3 text-xs leading-5 text-white/44">{formatJobLocation(job)} · {job.employmentType}</p>
+                        <p itemProp="description" className={`mt-4 max-w-3xl text-sm leading-6 text-white/68 ${isExpanded ? "" : "line-clamp-2"}`}>{job.description}</p>
+                        {isExpanded && job.requirements ? (
+                          <div className="mt-4 border-l border-white/[0.12] pl-4">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/34">Requirements and access notes</p>
+                            <p className="mt-2 text-sm leading-7 text-white/64">{job.requirements}</p>
+                          </div>
+                        ) : null}
+                        {isExpanded ? <p className="mt-4 text-[11px] leading-5 text-white/34">Posted by {job.author} · Expires {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "soon"}. Listing review checks the post, not the employer.</p> : null}
+                      </div>
+                      <div className="sm:col-start-2 lg:col-start-3 lg:row-start-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">Compensation</p>
+                        <p className={`mt-2 text-sm font-semibold leading-5 ${job.compensation ? "text-emerald-50/82" : "text-white/38"}`}>{job.compensation || "Pay not supplied"}</p>
+                        <div className="mt-4 flex flex-wrap gap-2 lg:flex-col">
+                          {applyHref ? (
+                            <a href={applyHref} target={applyHref.startsWith("mailto:") ? undefined : "_blank"} rel={applyHref.startsWith("mailto:") ? undefined : "noopener noreferrer"} className="qa-action inline-flex min-h-11 items-center justify-center rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11] transition hover:bg-emerald-50">Apply externally ↗</a>
+                          ) : <span className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-4 text-xs text-white/38">Application unavailable</span>}
+                          {(job.requirements || job.description) ? <button type="button" onClick={() => toggleJobExpanded(job.id)} className="qa-action min-h-10 rounded-full border border-white/[0.11] px-4 text-xs font-semibold text-white/56 transition hover:border-white/22 hover:text-white">{isExpanded ? "Show less" : "View details"}</button> : null}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex justify-end gap-4 sm:ml-[4.25rem]">
+                      <button type="button" onClick={() => reportContent({ targetType: "community-job", targetId: job.id, title: job.title })} className="qa-action min-h-9 text-[11px] font-semibold text-white/30 transition hover:text-white/68">Report listing</button>
+                      {isAdmin ? <button type="button" onClick={() => updateJobStatus(job, "removed")} className="qa-action min-h-9 text-[11px] font-semibold text-rose-100/42 transition hover:text-rose-100">Remove</button> : null}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            {filteredJobs.length === 0 ? (
+              <div className="border-b border-dashed border-white/[0.13] py-12 text-center">
+                <p className="text-lg font-semibold tracking-[-0.02em] text-white/76">No matching roles yet.</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/42">Clear the filters or help the network by posting a legitimate opportunity.</p>
+                <div className="mt-5 flex flex-wrap justify-center gap-3">
+                  {hasActiveJobFilters ? <button type="button" onClick={() => { setJobSearchTerm(""); setJobCityFilter(""); setJobModeFilter("all"); setJobCategoryFilter("all"); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="qa-action min-h-11 rounded-full border border-white/14 px-5 text-xs font-semibold text-white/68">Clear filters</button> : null}
+                  <button type="button" onClick={() => setShowJobForm(true)} className="qa-action min-h-11 rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11]">Post a job</button>
+                </div>
+              </div>
+            ) : null}
+
+            {displayedJobs.length < filteredJobs.length ? (
+              <div className="flex justify-center border-t border-white/[0.08] pt-6">
+                <button type="button" onClick={() => setVisibleJobCount((current) => current + JOB_VISIBLE_BATCH)} className="qa-action min-h-11 rounded-full border border-white/14 px-5 text-xs font-semibold text-white/62 transition hover:border-white/26 hover:text-white">Show more jobs · {filteredJobs.length - displayedJobs.length} remaining</button>
+              </div>
+            ) : null}
+
+            <div className="mt-8 flex items-start gap-3 border-t border-white/[0.08] pt-5">
+              <span aria-hidden="true" className="mt-0.5 text-amber-100/58">◇</span>
+              <p className="max-w-3xl text-xs leading-5 text-white/38">Never pay to get paid. Be cautious if a recruiter requests money, crypto, banking details, or identity documents before a legitimate hiring stage. Report suspicious listings to Queer Atlas.</p>
+            </div>
+          </section>
         ) : null}
 
         {false && isFeedPanel ? (
@@ -2313,19 +2537,19 @@ export default function CommunityPage() {
               <p className="mt-1 text-xs text-violet-100/70">Switch between all posts, stories, or guides without leaving the flow.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
+              <button type="button" onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
                 {showStoryForm ? "Close story form" : "Write story"}
               </button>
-              <button onClick={() => setShowGuideForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-violet-300/34 bg-violet-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-violet-100 transition hover:border-violet-200/62">
+              <button type="button" onClick={() => setShowGuideForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-violet-300/34 bg-violet-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-violet-100 transition hover:border-violet-200/62">
                 {showGuideForm ? "Close guide form" : "New guide"}
               </button>
             </div>
           </div>
 
           <div className="mb-4 inline-flex rounded-full border border-white/16 bg-black/35 p-1">
-            <button onClick={() => setCommunityFeedMode("all")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "all" ? "bg-white/16 text-white" : "text-white/72 hover:text-white"}`}>All</button>
-            <button onClick={() => setCommunityFeedMode("stories")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "stories" ? "bg-rose-300/22 text-rose-50" : "text-white/72 hover:text-white"}`}>Stories</button>
-            <button onClick={() => setCommunityFeedMode("guides")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "guides" ? "bg-violet-300/22 text-violet-50" : "text-white/72 hover:text-white"}`}>Guides</button>
+            <button type="button" aria-pressed={communityFeedMode === "all"} onClick={() => setCommunityFeedMode("all")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "all" ? "bg-white/16 text-white" : "text-white/72 hover:text-white"}`}>All</button>
+            <button type="button" aria-pressed={communityFeedMode === "stories"} onClick={() => setCommunityFeedMode("stories")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "stories" ? "bg-rose-300/22 text-rose-50" : "text-white/72 hover:text-white"}`}>Stories</button>
+            <button type="button" aria-pressed={communityFeedMode === "guides"} onClick={() => setCommunityFeedMode("guides")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "guides" ? "bg-violet-300/22 text-violet-50" : "text-white/72 hover:text-white"}`}>Guides</button>
           </div>
 
           {showStoryForm && (
@@ -2384,8 +2608,8 @@ export default function CommunityPage() {
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-xs text-white/62">{story.author} · {timeAgo(story.createdAt)}</p>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
-                        <button onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
+                        <button type="button" onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
+                        <button type="button" onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
                       </div>
                     </div>
                   </article>
@@ -2406,8 +2630,8 @@ export default function CommunityPage() {
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs text-white/62">{guide.author} · {timeAgo(guide.createdAt)}</p>
                     <div className="flex items-center gap-2">
-                      <button onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read more"}</button>
-                      <button onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
+                      <button type="button" onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read more"}</button>
+                      <button type="button" onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
                     </div>
                   </div>
                 </article>
@@ -2423,175 +2647,223 @@ export default function CommunityPage() {
         ) : null}
 
         {isChatPanel ? (
-        <section aria-labelledby="community-chat-heading" className="qa-premium-card animate-rise-in mt-6 rounded-[30px] border border-cyan-400/15 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.18),transparent_28%),radial-gradient(circle_at_12%_0%,rgba(59,130,246,0.12),transparent_30%),linear-gradient(180deg,rgba(8,28,38,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(34,211,238,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:p-6">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-cyan-300">Live Chat Lounge</p>
-              <h2 id="community-chat-heading" className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Rooms and real-time signal</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-cyan-100/70">Ask locals, coordinate tonight, and share fresh community context in focused rooms.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-cyan-100">
-                {visibleTopics.length} rooms
-              </span>
-              <span className="rounded-full border border-sky-200/22 bg-sky-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-sky-100">
-                {Object.values(messages || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0)} messages
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  const node = document.getElementById("community-topic-form");
-                  if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
-                }}
-                className="qa-action qa-action-strong rounded-full border border-cyan-200/42 bg-cyan-200/16 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/62"
-              >
-                Start topic
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[minmax(20rem,0.82fr)_minmax(0,1.18fr)] xl:items-stretch">
-            <div className="qa-premium-card flex flex-col rounded-[28px] border border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.13),transparent_34%),linear-gradient(180deg,rgba(8,31,39,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(34,211,238,0.10)] sm:p-5 xl:h-[52rem]">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-100/70">Rooms</p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Choose a room</h3>
-                  <p className="mt-2 text-xs leading-5 text-white/56">Focused conversations for tonight, questions, safety, and local signal.</p>
-                </div>
-                {busiestTopic ? (
-                  <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
-                    Trending
-                  </span>
-                ) : null}
-              </div>
-
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-                {visibleTopics.map((topic) => {
-                  const replies = (messages[topic.id] || []).length;
-                  const active = activeTopic?.id === topic.id;
-                  return (
-                    <article key={topic.id} className={`qa-premium-card w-full rounded-[22px] border p-3.5 text-left transition ${active ? "border-cyan-200/46 bg-cyan-300/14 shadow-[0_14px_34px_rgba(34,211,238,0.16)]" : "border-white/8 bg-[linear-gradient(180deg,rgba(8,30,38,0.74),rgba(11,11,11,0.95))] hover:border-cyan-300/30"} animate-rise-in`}>
-                      <button onClick={() => setTopicId(topic.id)} className="w-full text-left">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <h3 className="truncate text-sm font-semibold text-white">{topic.name}</h3>
-                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{topic.description}</p>
-                          </div>
-                          <span className="shrink-0 rounded-full border border-cyan-200/20 bg-cyan-300/10 px-2 py-1 text-[10px] uppercase tracking-[0.11em] text-cyan-100">{topic.mood}</span>
-                        </div>
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/58">
-                          <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5">{replies} replies</span>
-                          {busiestTopic?.id === topic.id ? (
-                            <span className="rounded-full border border-emerald-200/18 bg-emerald-200/10 px-2 py-0.5 text-emerald-100">Most active</span>
-                          ) : null}
-                        </div>
-                      </button>
-                      {canDeleteTopic(topic) && (
-                        <div className="mt-3 flex justify-end">
-                          <button
-                            onClick={() => deleteTopic(topic)}
-                            className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
-                          >
-                            Delete topic
-                          </button>
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
-                {visibleTopics.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-cyan-200/18 px-4 py-8 text-sm text-white/62">
-                    No rooms yet. Start the first topic.
+          <section
+            aria-labelledby="community-chat-heading"
+            className="qa-community-section qa-community-section-rooms animate-rise-in [&_h2]:!text-left [&_h2]:[hyphens:none] [&_h3]:!text-left [&_h3]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none]"
+          >
+            {!mobileRoomOpen ? (
+              <>
+                <div className="flex flex-col gap-5 border-b border-white/[0.10] pb-7 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-100/64">Rooms</p>
+                    <h2 id="community-chat-heading" className="mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">
+                      Find the conversation that fits the moment.
+                    </h2>
+                    <p className="mt-3 max-w-xl text-sm leading-6 text-white/54">
+                      Drop into a city, make a plan around an event, or ask people who know the place.
+                    </p>
                   </div>
-                )}
-              </div>
-
-              <form id="community-topic-form" onSubmit={createTopic} className="mt-4 rounded-[24px] border border-cyan-400/20 bg-cyan-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Start a topic</p>
-                <div className="mt-3 grid gap-3">
-                  <Field value={topicForm.name} onChange={(event) => setTopicForm((current) => ({ ...current, name: event.target.value }))} placeholder="Topic name" />
-                  <Field value={topicForm.mood} onChange={(event) => setTopicForm((current) => ({ ...current, mood: event.target.value }))} placeholder="Mood" />
-                  <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder="What should people discuss here?" area />
-                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Create topic</button>
+                  <button
+                    type="button"
+                    onClick={() => setShowTopicForm((current) => !current)}
+                    className="qa-action inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-white/70 bg-white px-5 py-2.5 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  >
+                    <span aria-hidden="true">＋</span>
+                    <span>{showTopicForm ? "Close" : "Start a conversation"}</span>
+                  </button>
                 </div>
-              </form>
-            </div>
 
-            <div className="qa-premium-card flex flex-col rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.13),transparent_34%),linear-gradient(180deg,rgba(8,30,38,0.90),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(14,165,233,0.10)] sm:p-5 xl:h-[52rem]">
-              {activeTopic ? (
-                <>
-                  <div className="border-b border-white/10 pb-4">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                {showTopicForm ? (
+                  <form id="community-topic-form" onSubmit={createTopic} className="mt-6 rounded-[26px] border border-white/[0.11] bg-white/[0.035] p-5 sm:p-6">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-300">{activeTopic.mood}</p>
-                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{activeTopic.name}</h3>
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/66">{activeTopic.description}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">New conversation</p>
+                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Give the room one clear purpose.</h3>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] text-cyan-100">
-                          {activeMessages.length} messages
-                        </span>
-                        {canDeleteTopic(activeTopic) && (
+                      <p className="text-xs text-white/38">City, event, or local question</p>
+                    </div>
+                    <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_0.62fr]">
+                      <Field value={topicForm.name} onChange={(event) => setTopicForm((current) => ({ ...current, name: event.target.value }))} placeholder="Room title" />
+                      <select value={topicForm.mood} onChange={(event) => setTopicForm((current) => ({ ...current, mood: event.target.value }))} aria-label="Room category" className="min-h-12 w-full rounded-xl border border-white/14 bg-[#11151e] px-4 text-sm text-white outline-none transition focus:border-cyan-200/45">
+                        {ROOM_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                      </select>
+                      <div className="lg:col-span-2">
+                        <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder="What should people discuss here?" area />
+                      </div>
+                      <button type="submit" className="qa-action min-h-11 rounded-xl border border-white/70 bg-white px-5 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50 lg:col-start-2">Create room</button>
+                    </div>
+                  </form>
+                ) : null}
+
+                <div className="mt-7 flex gap-2 overflow-x-auto pb-2" aria-label="Filter rooms">
+                  {ROOM_FILTERS.map((filter) => {
+                    const active = roomFilter === filter.id;
+                    const count = filter.id === "all" ? roomCards.length : roomCards.filter((room) => room.kind === filter.id).length;
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setRoomFilter(filter.id)}
+                        className={`qa-action min-h-11 shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100 ${active ? "border-cyan-100/42 bg-cyan-100/[0.12] text-cyan-50" : "border-white/[0.11] bg-white/[0.025] text-white/52 hover:border-white/22 hover:text-white/80"}`}
+                      >
+                        {filter.label} <span className="ml-1 text-white/34">{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {featuredRoom ? (
+                  <div className="mt-5 grid gap-7 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)] xl:items-start">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTopicId(featuredRoom.id);
+                        setMobileRoomOpen(true);
+                      }}
+                      className={`group relative min-h-[286px] overflow-hidden rounded-[26px] border border-white/[0.11] p-5 text-left shadow-[0_30px_90px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100 sm:min-h-[330px] sm:rounded-[30px] sm:p-8 ${ROOM_KIND_META[featuredRoom.kind].wash}`}
+                    >
+                      <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full border border-white/[0.07]" />
+                      <div className="pointer-events-none absolute -right-7 -top-9 h-40 w-40 rounded-full border border-white/[0.06]" />
+                      <div className="relative flex h-full min-h-[244px] flex-col justify-between sm:min-h-[266px]">
+                        <div className="flex items-center justify-between gap-4">
+                          <span className={`text-[10px] font-semibold uppercase tracking-[0.2em] ${ROOM_KIND_META[featuredRoom.kind].accent}`}>{ROOM_KIND_META[featuredRoom.kind].kicker}</span>
+                          <span className="inline-flex items-center gap-2 text-[11px] text-white/46"><span className={`h-1.5 w-1.5 rounded-full ${ROOM_KIND_META[featuredRoom.kind].dot}`} />{featuredRoom.latestActivity ? timeAgo(featuredRoom.latestActivity) : "New"}</span>
+                        </div>
+                        <div className="max-w-xl py-8 sm:py-10">
+                          <p className="text-xs font-medium text-white/48">{ROOM_KIND_META[featuredRoom.kind].label} · {featuredRoom.cityLabel}</p>
+                          <h3 className="mt-3 text-2xl font-semibold leading-tight tracking-[-0.04em] text-white sm:text-4xl">{featuredRoom.name}</h3>
+                          <p className="mt-4 max-w-lg text-sm leading-6 text-white/60">{featuredRoom.description}</p>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 border-t border-white/[0.09] pt-5">
+                          <span className="text-xs text-white/42">{getRoomActivityLabel(featuredRoom.latestActivity)} · {featuredRoom.participants || 0} {featuredRoom.participants === 1 ? "voice" : "voices"}</span>
+                          <span className="inline-flex items-center gap-3 text-sm font-semibold text-white">Enter room <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></span>
+                        </div>
+                      </div>
+                    </button>
+
+                    <div>
+                      <div className="flex items-end justify-between gap-4 border-b border-white/[0.10] pb-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Explore</p>
+                          <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">More rooms</h3>
+                        </div>
+                        <span className="text-xs text-white/34">{filteredRoomCards.length} found</span>
+                      </div>
+                      <div className="divide-y divide-white/[0.09]">
+                        {roomList.map((room) => (
                           <button
-                            onClick={() => deleteTopic(activeTopic)}
-                            className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40"
+                            key={room.id}
+                            type="button"
+                            onClick={() => {
+                              setTopicId(room.id);
+                              setMobileRoomOpen(true);
+                            }}
+                            className="group flex min-h-[112px] w-full items-center gap-4 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-100"
                           >
-                            Delete topic
+                            <span className={`h-10 w-1 shrink-0 rounded-full opacity-75 ${ROOM_KIND_META[room.kind].dot}`} />
+                            <span className="min-w-0 flex-1">
+                              <span className={`block text-[10px] font-semibold uppercase tracking-[0.16em] ${ROOM_KIND_META[room.kind].accent}`}>{ROOM_KIND_META[room.kind].label}</span>
+                              <span className="mt-1.5 block truncate text-sm font-semibold text-white/86 transition group-hover:text-white">{room.name}</span>
+                              <span className="mt-1.5 block truncate text-xs text-white/38">{room.cityLabel} · {getRoomActivityLabel(room.latestActivity)}</span>
+                              {room.latestMessage?.text ? <span className="mt-1 block line-clamp-1 text-xs text-white/48">“{room.latestMessage.text}”</span> : null}
+                            </span>
+                            <span aria-hidden="true" className="text-white/24 transition group-hover:translate-x-1 group-hover:text-white/68">→</span>
                           </button>
-                        )}
+                        ))}
+                        {roomList.length === 0 ? <p className="py-8 text-sm leading-6 text-white/44">This is the only room in this view. Start a conversation or choose another filter.</p> : null}
                       </div>
                     </div>
-                    <p className="mt-3 rounded-2xl border border-cyan-200/12 bg-cyan-200/[0.055] px-3 py-2 text-[11px] leading-5 text-cyan-100/72">
-                      Keep it kind. Report unsafe, harmful, or private-identifying content.
+                  </div>
+                ) : (
+                  <div className="mt-6 border-y border-dashed border-white/[0.13] py-12 text-center">
+                    <p className="text-base font-semibold text-white/72">No rooms in this view yet.</p>
+                    <p className="mt-2 text-sm text-white/42">Start the first focused conversation.</p>
+                  </div>
+                )}
+
+                <div className="mt-10 grid gap-5 border-t border-white/[0.10] pt-7 md:grid-cols-3">
+                  {[
+                    ["city", "City lounges", "Ongoing local conversation without sharing anyone's exact position."],
+                    ["event", "Event rooms", "Make plans around a real event and keep the conversation in context."],
+                    ["ask", "Ask locals", "Useful questions and answers that are easier to find again."],
+                  ].map(([kind, title, description]) => (
+                    <button key={kind} type="button" onClick={() => setRoomFilter(kind)} className="group min-h-[116px] border-l border-white/[0.11] pl-5 text-left transition hover:border-white/26 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100">
+                      <span className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${ROOM_KIND_META[kind].accent}`}>{ROOM_KIND_META[kind].kicker}</span>
+                      <span className="mt-2 block text-base font-semibold text-white/82 group-hover:text-white">{title}</span>
+                      <span className="mt-2 block text-xs leading-5 text-white/42">{description}</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : activeTopic ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setMobileRoomOpen(false)}
+                  className="qa-action inline-flex min-h-11 items-center gap-2 rounded-full border border-white/[0.12] px-4 py-2 text-xs font-semibold text-white/60 transition hover:border-white/24 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100"
+                >
+                  <span aria-hidden="true">←</span> All rooms
+                </button>
+
+                <div className={`relative mt-5 overflow-hidden rounded-[30px] border border-white/[0.11] px-5 py-7 shadow-[0_30px_90px_rgba(0,0,0,0.28)] sm:px-8 sm:py-9 ${activeRoomMeta.wash}`}>
+                  <div className="pointer-events-none absolute -right-14 -top-24 h-72 w-72 rounded-full border border-white/[0.07]" />
+                  <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="max-w-3xl">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className={`inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] ${activeRoomMeta.accent}`}><span className={`h-1.5 w-1.5 rounded-full ${activeRoomMeta.dot}`} />{activeRoomMeta.label}</span>
+                        <span className="text-xs text-white/38">{getRoomCity(activeTopic)}</span>
+                      </div>
+                      <h2 id="community-chat-heading" className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.045em] text-white sm:text-5xl">{activeTopic.name}</h2>
+                      <p className="mt-4 max-w-2xl text-sm leading-6 text-white/58 sm:text-base">{activeTopic.description}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="inline-flex min-h-11 items-center rounded-full border border-white/[0.11] bg-black/15 px-4 text-xs text-white/52">{activeMessages.length} {activeMessages.length === 1 ? "message" : "messages"}</span>
+                      {canDeleteTopic(activeTopic) ? (
+                        <button type="button" onClick={() => deleteTopic(activeTopic)} className="qa-action min-h-11 rounded-full border border-rose-200/15 px-4 text-xs font-semibold text-rose-100/60 transition hover:border-rose-200/30 hover:text-rose-100">Delete room</button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mx-auto mt-6 max-w-3xl">
+                  <div className="flex items-start gap-3 border-b border-white/[0.09] pb-5">
+                    <span aria-hidden="true" className="mt-0.5 text-sm text-emerald-200/72">◇</span>
+                    <p className="text-xs leading-5 text-white/44">
+                      {activeRoomKind === "event" ? "Coordinate the plan, not people's live locations. Share only what feels safe." : activeRoomKind === "ask" ? "Keep answers practical and kind. Helpful local context should be easy to find again." : "A low-pressure city conversation. Never share another person's identifying information."}
                     </p>
                   </div>
 
-                  <div ref={chatMessagesRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto py-4 pr-1 [scrollbar-gutter:stable]">
-                    {activeMessages.length === 0 && (
-                      <div className="rounded-[24px] border border-dashed border-cyan-200/18 bg-white/[0.025] px-4 py-8 text-sm text-white/60">This room is quiet. Start the signal.</div>
-                    )}
-                    {activeMessages.map((message) => {
+                  <div ref={chatMessagesRef} className="min-h-[20rem] space-y-4 py-7">
+                    {activeMessages.length === 0 ? (
+                      <div className="py-12 text-center">
+                        <p className="text-base font-semibold text-white/70">The room is quiet.</p>
+                        <p className="mt-2 text-sm text-white/42">Start with one useful question or plan.</p>
+                      </div>
+                    ) : null}
+                    {activeMessages.map((message, messageIndex) => {
                       const isMine = message.author === (memberName || "Member");
+                      const rankMeta = getAuthorIdentityMeta(message.author);
+                      const messageDay = formatMessageDay(message.createdAt);
+                      const previousMessageDay = messageIndex > 0 ? formatMessageDay(activeMessages[messageIndex - 1]?.createdAt) : "";
                       return (
-                        <div key={message.id} className={`flex gap-2 sm:gap-3 ${isMine ? "justify-end" : "justify-start"}`}>
-                          {!isMine && (
-                            <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 text-xs font-semibold text-cyan-100">
-                              {message.author.slice(0, 1).toUpperCase()}
+                        <div key={message.id}>
+                          {messageDay !== previousMessageDay ? (
+                            <div className="mb-4 flex items-center gap-3" aria-label={messageDay}>
+                              <span className="h-px flex-1 bg-white/[0.07]" />
+                              <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/28">{messageDay}</span>
+                              <span className="h-px flex-1 bg-white/[0.07]" />
                             </div>
-                          )}
-                          <div className={`max-w-[92%] rounded-[22px] px-3.5 py-3 shadow-[0_12px_30px_rgba(0,0,0,0.18)] sm:max-w-[82%] ${isMine ? "border border-cyan-200/34 bg-cyan-200/16" : "border border-white/10 bg-black/35"}`}>
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <p className="text-[11px] font-semibold text-white/78">
-                                {(() => {
-                                  const rankMeta = getAuthorIdentityMeta(message.author);
-                                  return (
-                                    <span className="inline-flex items-center gap-1.5">
-                                      {rankMeta?.icon ? (
-                                        <span className={rankMeta.iconClass} title={rankMeta.label} aria-label={rankMeta.label}>
-                                          {rankMeta.icon}
-                                        </span>
-                                      ) : null}
-                                      <span>{message.author}</span>
-                                    </span>
-                                  );
-                                })()}
-                              </p>
-                              <span className="text-[10px] text-white/45">{timeAgo(message.createdAt)}</span>
-                            </div>
-                            <p className="mt-2 text-sm leading-6 text-white/84">{message.text}</p>
-                            <div className="mt-2 flex justify-end">
-                              <button
-                                onClick={() =>
-                                  reportContent({
-                                    targetType: "community-message",
-                                    targetId: message.id,
-                                    title: activeTopic?.name || "Community message",
-                                  })
-                                }
-                                className="qa-action rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/54 transition hover:text-white"
-                              >
-                                Report
-                              </button>
+                          ) : null}
+                          <div className={`flex gap-3 ${isMine ? "justify-end" : "justify-start"}`}>
+                            {!isMine ? <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-xs font-semibold text-white/68 shadow-[0_8px_22px_rgba(0,0,0,0.2)]">{message.author.slice(0, 1).toUpperCase()}</div> : null}
+                            <div className={`max-w-[88%] rounded-[22px] border px-4 py-3.5 sm:max-w-[76%] ${isMine ? "border-cyan-100/20 bg-[linear-gradient(145deg,rgba(103,232,249,0.12),rgba(103,232,249,0.055))]" : "border-white/[0.09] bg-white/[0.035]"}`}>
+                              <div className="flex flex-wrap items-center justify-between gap-4">
+                                <p className="text-[11px] font-semibold text-white/68"><span className="inline-flex items-center gap-1.5">{rankMeta?.icon ? <span className={rankMeta.iconClass} title={rankMeta.label}>{rankMeta.icon}</span> : null}<span>{isMine ? "You" : message.author}</span></span></p>
+                                <span className="text-[10px] text-white/32">{timeAgo(message.createdAt)}</span>
+                              </div>
+                              <p className="mt-2 text-sm leading-6 text-white/78">{message.text}</p>
+                              <button type="button" onClick={() => reportContent({ targetType: "community-message", targetId: message.id, title: activeTopic.name || "Community message" })} className="mt-2 min-h-8 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/28 transition hover:text-white/68">Report</button>
                             </div>
                           </div>
                         </div>
@@ -2599,170 +2871,160 @@ export default function CommunityPage() {
                     })}
                   </div>
 
-                  <div className="border-t border-white/10 pt-4">
-                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                      {[
-                        "Anyone around this area tonight?",
-                        "Best low-key spot for first-time visitors?",
-                        "How's the vibe this weekend?",
-                      ].map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => setMessageForm({ text: preset })}
-                          className="qa-action rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-[11px] text-cyan-100/90 transition hover:border-cyan-200/40"
-                        >
-                          {preset}
-                        </button>
+                  <div className="border-t border-white/[0.10] pb-2 pt-5">
+                    <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                      {(activeRoomKind === "event"
+                        ? ["Anyone else going solo?", "Where should we meet?", "What time are people arriving?"]
+                        : activeRoomKind === "ask"
+                          ? ["Any local context?", "What should visitors know?", "Is this still current?"]
+                          : ["What feels good this week?", "Any low-key recommendations?", "How is the city tonight?"]
+                      ).map((preset) => (
+                        <button key={preset} type="button" onClick={() => setMessageForm({ text: preset })} className="qa-action min-h-10 shrink-0 rounded-full border border-white/10 px-3.5 text-[11px] text-white/48 transition hover:border-white/20 hover:text-white/76">{preset}</button>
                       ))}
                     </div>
-                    <form onSubmit={sendMessage} className="grid gap-2.5 md:grid-cols-[1fr_auto] md:gap-3">
-                      <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder="Write a message to the room" />
-                      <button type="submit" className="qa-action qa-action-strong min-h-[44px] rounded-xl border border-cyan-100/65 bg-gradient-to-r from-cyan-200 via-sky-200 to-teal-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Send</button>
+                    <form onSubmit={sendMessage} className="grid gap-2.5 sm:grid-cols-[1fr_auto]">
+                      <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder={activeRoomKind === "event" ? "Add to the plan" : activeRoomKind === "ask" ? "Share local knowledge" : "Write a message"} />
+                      <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50">Send</button>
                     </form>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <p className="text-[11px] text-cyan-100/60">Messages auto-scroll when this room updates.</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const node = chatMessagesRef.current;
-                          if (!node) return;
-                          node.scrollTo({ top: node.scrollHeight, behavior: "smooth" });
-                        }}
-                        className="qa-action rounded-full border border-cyan-200/22 bg-cyan-200/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/45"
-                      >
-                        Jump to latest
-                      </button>
-                    </div>
                   </div>
-                </>
-              ) : (
-                <div className="flex min-h-[28rem] items-center justify-center rounded-[24px] border border-dashed border-cyan-200/18 px-4 py-8 text-center text-sm text-white/58">
-                  Choose or create a room to start chatting.
                 </div>
-              )}
-            </div>
-          </div>
-        </section>
+              </div>
+            ) : (
+              <div className="py-16 text-center"><p className="text-sm text-white/48">This room is no longer available.</p></div>
+            )}
+          </section>
         ) : null}
 
         {isImprovePanel ? (
-        <section aria-labelledby="community-ideas-heading-lab" className="qa-premium-card animate-rise-in mt-6 rounded-[30px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),radial-gradient(circle_at_88%_10%,rgba(167,139,250,0.12),transparent_30%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:p-6">
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Improve Queer Atlas</p>
-              <h2 id="community-ideas-heading-lab" className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">Atlas Improvement Lab</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-100/70">Suggest what we should build, fix, research, or polish next together.</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-amber-200/24 bg-amber-200/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-amber-100">
-                {sortedIdeas.length} ideas
-              </span>
-              <span className="rounded-full border border-violet-200/20 bg-violet-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-violet-100">
-                Top vote {sortedIdeas[0]?.votes || 0}
-              </span>
-              <span className="rounded-full border border-white/12 bg-white/7 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/64">
-                Community powered
-              </span>
-            </div>
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-[minmax(20rem,0.78fr)_minmax(0,1.22fr)] xl:items-start">
-            <div className="qa-premium-card rounded-[28px] border border-amber-300/18 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_34%),linear-gradient(180deg,rgba(48,33,12,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(251,191,36,0.10)] sm:p-5">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-amber-100/70">Submit an idea</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Help shape the atlas</h3>
-              <p className="mt-2 text-xs leading-5 text-white/56">Tell us what would make the app safer, smarter, prettier, or more useful.</p>
-
-              <form id="community-idea-form-lab" onSubmit={publishIdea} className="mt-4 space-y-3">
-                <select
-                  value={ideaForm.category}
-                  onChange={(event) => setIdeaForm((current) => ({ ...current, category: event.target.value }))}
-                  className="w-full rounded-xl border border-amber-200/20 bg-[#1c160d] px-4 py-3 text-sm text-white outline-none transition focus:border-amber-200/50 [&_option]:bg-[#1c160d]"
-                >
-                  <option value="Feature">Feature</option>
-                  <option value="Bug / Fix">Bug / Fix</option>
-                  <option value="City data">City data</option>
-                  <option value="Safety">Safety</option>
-                  <option value="Design">Design</option>
-                </select>
-                <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What should we improve in the app?" area />
-                <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
-              </form>
-
-              <div className="mt-4 rounded-[22px] border border-white/10 bg-white/[0.035] p-3">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/44">How it helps</p>
-                <p className="mt-2 text-xs leading-5 text-white/58">High-vote ideas help us choose roadmap priorities. Clear city-data and safety reports make updates faster.</p>
+          <section aria-labelledby="community-ideas-heading" className="qa-community-section qa-community-section-build animate-rise-in [&_h2]:!text-left [&_h2]:[hyphens:none] [&_h3]:!text-left [&_h3]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none]">
+            <div className="flex flex-col gap-5 border-b border-white/[0.10] pb-7 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-fuchsia-100/68">Build with us</p>
+                <h2 id="community-ideas-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">Help shape the next Queer Atlas.</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/54">Share one clear improvement, support the ideas that matter, and give the team a stronger signal about what members need.</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowIdeaForm((current) => !current)}
+                aria-expanded={showIdeaForm}
+                aria-controls="community-idea-form"
+                className="qa-action inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-white/70 bg-white px-5 py-2.5 text-sm font-semibold text-[#080b11] transition hover:bg-fuchsia-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                <span aria-hidden="true">＋</span>
+                <span>{showIdeaForm ? "Close form" : "Suggest an idea"}</span>
+              </button>
             </div>
 
-            <div className="qa-premium-card rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(167,139,250,0.12),transparent_34%),linear-gradient(180deg,rgba(34,25,12,0.86),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.24)] sm:p-5">
-              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-violet-100/70">Community roadmap</p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Most wanted improvements</h3>
-                  <p className="mt-2 text-xs leading-5 text-white/56">Vote on what matters. Report unsafe or irrelevant entries.</p>
+            <div className="grid border-b border-white/[0.07] sm:grid-cols-3">
+              {[
+                ["01", "Suggest", "Describe the need, not only the solution."],
+                ["02", "Support", "Votes show shared interest across members."],
+                ["03", "Review", "Signals inform decisions; they are not delivery promises."],
+              ].map(([number, title, description], index) => (
+                <div key={title} className={`py-4 ${index > 0 ? "border-t border-white/[0.07] sm:border-l sm:border-t-0 sm:pl-5" : "sm:pr-5"}`}>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-[10px] font-semibold tracking-[0.16em] text-fuchsia-100/42">{number}</span>
+                    <p className="text-xs font-semibold text-white/72">{title}</p>
+                  </div>
+                  <p className="mt-1 pl-8 text-[11px] leading-5 text-white/34">{description}</p>
+                </div>
+              ))}
+            </div>
+
+            {showIdeaForm ? (
+              <form id="community-idea-form" onSubmit={publishIdea} className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.11] bg-[radial-gradient(circle_at_92%_0%,rgba(232,121,249,0.10),transparent_30%),linear-gradient(150deg,rgba(22,16,27,0.98),rgba(8,10,13,0.99))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.26)] sm:p-6">
+                <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(12rem,0.34fr)_minmax(0,1fr)_auto] lg:items-end">
+                  <label>
+                    <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Area</span>
+                    <select
+                      value={ideaForm.category}
+                      onChange={(event) => setIdeaForm((current) => ({ ...current, category: event.target.value }))}
+                      className="min-h-12 w-full rounded-xl border border-white/[0.12] bg-[#151119] px-4 text-sm text-white outline-none transition focus:border-fuchsia-100/46 [&_option]:bg-[#151119]"
+                    >
+                      {IDEA_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Your idea</span>
+                    <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What problem should Queer Atlas solve, and who would it help?" />
+                  </label>
+                  <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-fuchsia-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100">Share idea</button>
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-white/34">Avoid personal or sensitive information. Related ideas may be combined during review.</p>
+              </form>
+            ) : null}
+
+            <div className="mt-7 flex flex-col gap-4 border-b border-white/[0.10] pb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">Member ideas</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{filteredIdeas.length} {filteredIdeas.length === 1 ? "idea" : "ideas"}</h3>
+              </div>
+              <div className="flex flex-col gap-2 sm:items-end">
+                <div className="flex flex-wrap gap-x-4 gap-y-1" aria-label="Filter ideas by category">
+                  {["all", ...IDEA_CATEGORIES].map((category) => (
+                    <button key={category} type="button" aria-pressed={ideaCategoryFilter === category} onClick={() => { setIdeaCategoryFilter(category); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-9 text-[11px] font-semibold transition ${ideaCategoryFilter === category ? "text-fuchsia-100" : "text-white/38 hover:text-white/70"}`}>
+                      {category === "all" ? "All" : category}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className="text-white/30">Sort</span>
+                  <button type="button" aria-pressed={ideaSort === "top"} onClick={() => { setIdeaSort("top"); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-8 font-semibold ${ideaSort === "top" ? "text-white" : "text-white/36 hover:text-white/68"}`}>Most supported</button>
+                  <button type="button" aria-pressed={ideaSort === "newest"} onClick={() => { setIdeaSort("newest"); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-8 font-semibold ${ideaSort === "newest" ? "text-white" : "text-white/36 hover:text-white/68"}`}>Newest</button>
                 </div>
               </div>
-
-              <div className="qa-defer-render max-h-[52rem] space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-                {sortedIdeas.map((idea, index) => {
-                  const statusLabel =
-                    index === 0 && Number(idea.votes || 0) > 1
-                      ? "Most wanted"
-                      : index < 3
-                        ? "Community pick"
-                        : isWithinDays(idea.createdAt, 7)
-                          ? "Fresh"
-                          : "Needs review";
-                  const statusClass =
-                    statusLabel === "Most wanted"
-                      ? "border-amber-200/34 bg-amber-200/14 text-amber-100"
-                      : statusLabel === "Community pick"
-                        ? "border-violet-200/28 bg-violet-200/12 text-violet-100"
-                        : statusLabel === "Fresh"
-                          ? "border-emerald-200/24 bg-emerald-200/10 text-emerald-100"
-                          : "border-white/14 bg-white/7 text-white/66";
-                  return (
-                    <article key={idea.id} className="qa-premium-card animate-rise-in rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(46,31,10,0.78),rgba(11,11,11,0.96))] p-4 transition hover:-translate-y-[1px] hover:border-amber-200/30 hover:shadow-[0_24px_60px_rgba(251,191,36,0.14)]">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${statusClass}`}>
-                            {statusLabel}
-                          </span>
-                          <p className="mt-3 text-sm leading-6 text-white/78">{idea.text}</p>
-                          <p className="mt-2 text-xs text-white/60">{idea.author} | {timeAgo(idea.createdAt)}</p>
-                        </div>
-                        <button onClick={() => upvoteIdea(idea.id)} className="qa-action shrink-0 rounded-[18px] border border-amber-300/34 bg-amber-300/12 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">
-                          <span className="block text-base leading-none">{idea.votes}</span>
-                          <span className="mt-1 block text-[10px] uppercase tracking-[0.11em]">Vote +1</span>
-                        </button>
-                      </div>
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          onClick={() =>
-                            reportContent({
-                              targetType: "community-idea",
-                              targetId: idea.id,
-                              title: idea.text.slice(0, 80),
-                            })
-                          }
-                          className="qa-action rounded-full border border-amber-200/22 bg-amber-200/10 px-3 py-1 text-xs text-amber-100 transition hover:border-amber-200/37"
-                        >
-                          Report
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-                {sortedIdeas.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-amber-300/26 px-4 py-8 text-sm text-white/62">
-                    No ideas yet. Suggest the first improvement for Queer Atlas.
-                  </div>
-                )}
-              </div>
             </div>
-          </div>
-        </section>
+
+            <div className="divide-y divide-white/[0.09]">
+              {displayedIdeas.map((idea) => {
+                const parsedIdea = parseIdeaText(idea.text);
+                return (
+                  <article key={idea.id} className="group grid gap-4 py-5 sm:grid-cols-[4.25rem_minmax(0,1fr)_auto] sm:items-start sm:py-6">
+                    <button
+                      type="button"
+                      onClick={() => upvoteIdea(idea.id)}
+                      aria-label={`Support idea with ${idea.votes} current votes`}
+                      className="qa-action flex min-h-12 w-[4.25rem] shrink-0 flex-row items-center justify-center gap-2 rounded-2xl border border-white/[0.12] bg-white/[0.035] text-fuchsia-100/72 transition hover:border-fuchsia-100/30 hover:bg-fuchsia-100/[0.07] sm:flex-col sm:gap-0 sm:py-2"
+                    >
+                      <span aria-hidden="true" className="text-sm leading-none">↑</span>
+                      <span className="text-sm font-semibold leading-none">{idea.votes}</span>
+                    </button>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.15em] text-fuchsia-100/62">{parsedIdea.category}</span>
+                        <span className="text-[10px] text-white/28">{timeAgo(idea.createdAt)}</span>
+                      </div>
+                      <p className="mt-2 max-w-3xl text-sm leading-6 text-white/76 sm:text-[15px]">{parsedIdea.content}</p>
+                      <p className="mt-2 text-[11px] text-white/36">Suggested by {idea.author}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => reportContent({ targetType: "community-idea", targetId: idea.id, title: parsedIdea.content.slice(0, 80) })}
+                      className="qa-action min-h-9 w-fit text-[11px] font-semibold text-white/28 transition hover:text-white/64 sm:justify-self-end"
+                    >
+                      Report
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+
+            {filteredIdeas.length === 0 ? (
+              <div className="border-b border-dashed border-white/[0.13] py-12 text-center">
+                <p className="text-lg font-semibold tracking-[-0.02em] text-white/76">No ideas in this area yet.</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/42">Choose another category or suggest the first thoughtful improvement.</p>
+                <button type="button" onClick={() => setShowIdeaForm(true)} className="qa-action mt-5 min-h-11 rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11]">Suggest an idea</button>
+              </div>
+            ) : null}
+
+            {displayedIdeas.length < filteredIdeas.length ? (
+              <div className="flex justify-center border-t border-white/[0.08] pt-6">
+                <button type="button" onClick={() => setVisibleIdeaCount((current) => current + IDEA_VISIBLE_BATCH)} className="qa-action min-h-11 rounded-full border border-white/14 px-5 text-xs font-semibold text-white/62 transition hover:border-white/26 hover:text-white">Show more ideas · {filteredIdeas.length - displayedIdeas.length} remaining</button>
+              </div>
+            ) : null}
+
+            <p className="mt-8 border-t border-white/[0.08] pt-5 text-xs leading-5 text-white/34">Community votes are one signal among safety, accessibility, editorial quality, technical effort, and member impact. A popular idea is not automatically scheduled.</p>
+          </section>
         ) : null}
 
         {false && isImprovePanel ? (
@@ -2774,6 +3036,7 @@ export default function CommunityPage() {
               <p className="mt-1 text-xs text-amber-100/70">Propose what we should build next together.</p>
             </div>
             <button
+              type="button"
               onClick={() => setShowIdeaForm((current) => !current)}
               aria-expanded={showIdeaForm}
               aria-controls="community-idea-form"
@@ -2798,6 +3061,7 @@ export default function CommunityPage() {
                     <p className="text-sm leading-6 text-white/74">{idea.text}</p>
                     <p className="mt-2 text-xs text-white/60">{idea.author} · {timeAgo(idea.createdAt)}</p>
                     <button
+                      type="button"
                       onClick={() =>
                         reportContent({
                           targetType: "community-idea",
@@ -2810,7 +3074,7 @@ export default function CommunityPage() {
                       Report
                     </button>
                   </div>
-                  <button onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">? {idea.votes}</button>
+                  <button type="button" onClick={() => upvoteIdea(idea.id)} className="qa-action rounded-full border border-amber-300/34 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:border-amber-200 hover:bg-amber-300/16 hover:text-white">? {idea.votes}</button>
                 </div>
               </div>
             ))}
@@ -2826,10 +3090,10 @@ export default function CommunityPage() {
       {reportModal.open && (
         <div className="fixed inset-0 z-[92] overflow-y-auto bg-black/70 px-4 py-4 backdrop-blur-sm sm:py-6">
           <div className="flex min-h-full items-center justify-center">
-            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-cyan-200/22 bg-[linear-gradient(165deg,rgba(8,30,38,0.9),rgba(10,10,10,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
+            <div role="dialog" aria-modal="true" aria-labelledby="community-report-title" className="w-full max-w-xl overflow-hidden rounded-[28px] border border-cyan-200/22 bg-[linear-gradient(165deg,rgba(8,30,38,0.9),rgba(10,10,10,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
               <div className="border-b border-white/10 px-5 py-4">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">Safety report</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Report content</h3>
+                <h3 id="community-report-title" className="mt-2 text-xl font-semibold text-white">Report content</h3>
                 <p className="mt-1 line-clamp-1 text-sm text-white/70">{reportModal.title}</p>
               </div>
 
@@ -2843,6 +3107,8 @@ export default function CommunityPage() {
                         <button
                           key={item.value}
                           type="button"
+                          aria-pressed={active}
+                          autoFocus={item.value === "1"}
                           onClick={() => setReportModal((current) => ({ ...current, reasonKey: item.value }))}
                           className={`rounded-2xl border px-3 py-2 text-left transition ${
                             active
@@ -2863,6 +3129,7 @@ export default function CommunityPage() {
                   </label>
                   <textarea
                     id="community-report-details"
+                    maxLength={1000}
                     value={reportModal.details}
                     onChange={(event) => setReportModal((current) => ({ ...current, details: event.target.value }))}
                     placeholder="Share context to help moderators act faster."

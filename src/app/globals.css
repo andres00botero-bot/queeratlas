@@ -946,6 +946,176 @@ body > div:first-child {
     0 0 0 5px rgba(236, 72, 153, 0.18);
 }
 
+/* ---------------- COMMUNITY · QUEER CONSTELLATION ---------------- */
+.qa-community-page {
+  --qa-community-accent: 103 232 249;
+  --qa-community-accent-2: 232 121 249;
+  --qa-community-warm: 253 186 116;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 8% 17%, rgb(var(--qa-community-accent) / 0.11), transparent 31rem),
+    radial-gradient(ellipse at 92% 24%, rgb(var(--qa-community-accent-2) / 0.10), transparent 34rem),
+    linear-gradient(180deg, #050611 0%, #080914 48%, #05050a 100%);
+  transition: background-color 420ms var(--qa-ease-standard);
+}
+
+.qa-community-page[data-community-section="discovery"] {
+  --qa-community-accent: 125 211 252;
+  --qa-community-accent-2: 165 180 252;
+  --qa-community-warm: 253 164 175;
+}
+
+.qa-community-page[data-community-section="chat"] {
+  --qa-community-accent: 196 181 253;
+  --qa-community-accent-2: 249 168 212;
+  --qa-community-warm: 125 211 252;
+}
+
+.qa-community-page[data-community-section="jobs"] {
+  --qa-community-accent: 110 231 183;
+  --qa-community-accent-2: 103 232 249;
+  --qa-community-warm: 253 224 71;
+}
+
+.qa-community-page[data-community-section="improve"] {
+  --qa-community-accent: 240 171 252;
+  --qa-community-accent-2: 251 113 133;
+  --qa-community-warm: 253 186 116;
+}
+
+.qa-community-page::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 23rem -14rem auto;
+  height: 58rem;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 17% 24%, rgb(var(--qa-community-accent) / 0.14), transparent 34%),
+    radial-gradient(ellipse at 82% 35%, rgb(var(--qa-community-accent-2) / 0.12), transparent 36%),
+    radial-gradient(ellipse at 52% 76%, rgb(var(--qa-community-warm) / 0.055), transparent 31%);
+  filter: blur(44px);
+}
+
+.qa-community-page::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 31rem 0 auto;
+  height: 44rem;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image: radial-gradient(circle, rgb(255 255 255 / 0.34) 0 1px, transparent 1.5px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(90deg, transparent, black 20%, black 80%, transparent);
+}
+
+.qa-community-hero {
+  border-color: rgb(var(--qa-community-accent) / 0.22);
+  box-shadow:
+    0 34px 100px rgb(0 0 0 / 0.43),
+    0 18px 64px rgb(var(--qa-community-accent) / 0.075),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+
+.qa-community-hero h1 span:last-child {
+  color: transparent;
+  background: linear-gradient(100deg, #ffffff 8%, #bff7f1 46%, #e9c8ff 78%, #ffd1d9 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.qa-community-hero .qa-cta-primary {
+  border-color: rgb(255 255 255 / 0.54);
+  background: linear-gradient(110deg, #bdf7ee 0%, #bfe8ff 50%, #f1c8ff 100%);
+  box-shadow:
+    0 14px 38px rgb(0 0 0 / 0.28),
+    0 8px 30px rgb(103 232 249 / 0.15),
+    inset 0 1px 0 rgb(255 255 255 / 0.72);
+}
+
+.qa-community-hero .qa-cta-primary:hover {
+  background: linear-gradient(110deg, #d0fff7 0%, #d4efff 50%, #f7ddff 100%);
+}
+
+.qa-community-dock {
+  border-color: rgb(var(--qa-community-accent) / 0.24) !important;
+  background:
+    radial-gradient(circle at 10% 0%, rgb(var(--qa-community-accent) / 0.15), transparent 34%),
+    radial-gradient(circle at 92% 110%, rgb(var(--qa-community-accent-2) / 0.13), transparent 36%),
+    linear-gradient(180deg, rgb(16 18 29 / 0.94), rgb(8 9 16 / 0.96)) !important;
+  box-shadow:
+    0 22px 62px rgb(0 0 0 / 0.40),
+    0 10px 34px rgb(var(--qa-community-accent) / 0.10),
+    inset 0 1px 0 rgb(255 255 255 / 0.09) !important;
+}
+
+.qa-community-control-active {
+  position: relative;
+  overflow: hidden;
+  border-color: rgb(var(--qa-community-accent) / 0.58) !important;
+  color: rgb(255 255 255 / 0.98) !important;
+  background:
+    linear-gradient(135deg, rgb(var(--qa-community-accent) / 0.27), rgb(var(--qa-community-accent-2) / 0.17)),
+    rgb(255 255 255 / 0.07) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.22),
+    inset 0 -2px 0 rgb(var(--qa-community-accent) / 0.72),
+    0 10px 28px rgb(var(--qa-community-accent) / 0.16) !important;
+}
+
+.qa-community-control-active::after {
+  content: "";
+  position: absolute;
+  right: 0.7rem;
+  top: 0.48rem;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.88);
+  box-shadow:
+    -0.45rem 0.55rem 0 -1px rgb(var(--qa-community-warm) / 0.72),
+    0 0 0.75rem rgb(var(--qa-community-accent) / 0.72);
+}
+
+.qa-community-section {
+  position: relative;
+  isolation: isolate;
+}
+
+.qa-community-section-home,
+.qa-community-section-people {
+  border-color: rgb(var(--qa-community-accent) / 0.19) !important;
+  background-image:
+    radial-gradient(ellipse at 94% 0%, rgb(var(--qa-community-accent) / 0.10), transparent 31%),
+    radial-gradient(ellipse at 4% 100%, rgb(var(--qa-community-accent-2) / 0.065), transparent 34%),
+    linear-gradient(155deg, rgb(15 19 29 / 0.97), rgb(7 9 15 / 0.99)) !important;
+}
+
+.qa-community-section-jobs,
+.qa-community-section-rooms,
+.qa-community-section-build {
+  width: calc(100% - clamp(0rem, 2.8vw, 2rem));
+  min-width: 0;
+  max-width: 74rem;
+  margin: 0 auto 1.5rem;
+  padding: clamp(1.25rem, 2.4vw, 2rem) clamp(0.25rem, 1.6vw, 1rem) clamp(2rem, 3.2vw, 2.75rem);
+  background: transparent;
+}
+
+.qa-community-section-jobs::before,
+.qa-community-section-rooms::before,
+.qa-community-section-build::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgb(var(--qa-community-accent) / 0.34) 18%, rgb(255 255 255 / 0.13) 50%, rgb(var(--qa-community-accent-2) / 0.24) 82%, transparent);
+}
+
 /* ---------------- GLOBAL TEXT RHYTHM ---------------- */
 /* App-wide defaults with low specificity so utility classes can still override. */
 :where(p, li) {
