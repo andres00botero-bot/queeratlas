@@ -229,6 +229,7 @@ export default function FloatingHomeButton() {
             label: "Messages",
             icon: MessageCircle,
             accent: "sky",
+            mobile: true,
           },
         ]
       : []),
