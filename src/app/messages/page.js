@@ -54,6 +54,12 @@ function dateKey(value) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
+function threadActivityLabel(message, currentUserId, unreadCount = 0) {
+  if (!message) return "No messages yet";
+  if (String(message.senderId || "") === String(currentUserId || "")) return "You sent a message";
+  return Number(unreadCount || 0) > 0 ? "New message" : "Last message received";
+}
+
 function formatMessageDay(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -251,8 +257,7 @@ export default function MessagesPage() {
       if (filter === "unread" && Number(thread.unreadCount || 0) <= 0) return false;
       if (filter === "active" && !isActiveNow(thread.presence)) return false;
       if (!query) return true;
-      return String(thread.displayName || "").toLowerCase().includes(query)
-        || String(thread.preview || "").toLowerCase().includes(query);
+      return String(thread.displayName || "").toLowerCase().includes(query);
     });
   }, [conversationSearch, filter, threads]);
 
@@ -536,7 +541,7 @@ export default function MessagesPage() {
           lastMessage,
           unreadCount,
           presence,
-          preview: String(lastMessage?.body || "No messages in this thread yet.").trim(),
+          preview: threadActivityLabel(lastMessage, userId, unreadCount),
           sortTs: new Date(lastMessage?.createdAt || thread.lastMessageAt || thread.updatedAt || thread.createdAt || 0).getTime(),
         };
       })
@@ -1182,7 +1187,7 @@ export default function MessagesPage() {
               createdAt: sentMessage.createdAt,
               senderId: sentMessage.senderId,
             },
-            preview: String(sentMessage.body || "").trim() || thread.preview,
+            preview: "You sent a message",
             sortTs: new Date(sentMessage.createdAt || thread.lastMessageAt || 0).getTime(),
           };
         });
@@ -1620,7 +1625,7 @@ export default function MessagesPage() {
                 createdAt: messageRow.createdAt,
                 senderId: messageRow.senderId,
               },
-              preview: String(messageRow.body || "").trim() || thread.preview,
+              preview: threadActivityLabel(messageRow, userId, unreadCount),
               unreadCount,
               sortTs: new Date(messageRow.createdAt || thread.lastMessageAt || 0).getTime(),
             };
