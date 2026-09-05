@@ -7,6 +7,8 @@ const PLACES_FALLBACK_SELECT_WITH_INTEL =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location, venue_intel, vibe_tags, updated_at, seo_indexable, seo_quality_status";
 const PLACES_FALLBACK_SELECT =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
+const NEWS_TRENDING_SELECT =
+  "id, name, type, city, review_count, avg_rating";
 const SUPABASE_PAGE_SIZE = 1000;
 let skipPlacesWithStatsView = false;
 
@@ -228,6 +230,51 @@ export async function fetchPlacesForAtlas({ client = supabase, filters } = {}) {
   const normalizedRows = normalizePlaceStats(baseRows, reviewStatsByPlaceId);
   return {
     data: normalizedRows,
+    error: placesRes?.error ?? null,
+    count: placesRes?.count ?? null,
+    source: "places",
+  };
+}
+
+export async function fetchTrendingPlacesForNews({ client = supabase, limit = 6 } = {}) {
+  const boundedLimit = Math.min(Math.max(Number(limit) || 6, 1), 12);
+
+  if (!skipPlacesWithStatsView) {
+    const statsRes = await client
+      .from("places_with_stats")
+      .select(NEWS_TRENDING_SELECT)
+      .order("review_count", { ascending: false, nullsFirst: false })
+      .limit(boundedLimit);
+
+    if (!statsRes?.error) {
+      return {
+        data: normalizePlaceStats(normalizeRows(statsRes.data), new Map()),
+        error: null,
+        count: statsRes.count ?? null,
+        source: "places_with_stats",
+      };
+    }
+
+    if (!shouldFallbackFromPlacesWithStats(statsRes.error)) {
+      return {
+        data: [],
+        error: statsRes.error,
+        count: statsRes.count ?? null,
+        source: "places_with_stats",
+      };
+    }
+
+    skipPlacesWithStatsView = true;
+  }
+
+  const placesRes = await client
+    .from("places")
+    .select("id, name, type, city, updated_at")
+    .order("updated_at", { ascending: false, nullsFirst: false })
+    .limit(boundedLimit);
+
+  return {
+    data: normalizePlaceStats(normalizeRows(placesRes?.data), new Map()),
     error: placesRes?.error ?? null,
     count: placesRes?.count ?? null,
     source: "places",

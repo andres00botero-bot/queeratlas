@@ -1,11 +1,11 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
-import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
 import { citySelectionPath } from "@/lib/cityRouting";
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
@@ -38,17 +38,20 @@ import {
 import { ATLAS_COLLECTION_FILTERS, ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
-import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
+import { fetchTrendingPlacesForNews } from "@/lib/placesDataApi";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { createContentSubmission } from "@/lib/contentSubmissions";
 import { formatDateShort, toDateInputValue } from "@/lib/dateDisplay";
 import { slugifyEntityName } from "@/lib/seo/entitySlug";
+import { safeJsonLd } from "@/lib/seo/safeJsonLd";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import BrandMark from "@/components/ui/BrandMark";
 import EmptyState from "@/components/ui/EmptyState";
 import PageControls from "@/components/ui/PageControls";
-import DataReportsNowSection from "@/components/reports/DataReportsNowSection";
-import VoicesEditorialPanel from "@/components/now/VoicesEditorialPanel";
+import NewsroomFeed from "@/components/now/NewsroomFeed";
+
+const DataReportsNowSection = dynamic(() => import("@/components/reports/DataReportsNowSection"));
+const VoicesEditorialPanel = dynamic(() => import("@/components/now/VoicesEditorialPanel"));
 
 function isThisWeek(value, now) {
   const date = new Date(value);
@@ -192,7 +195,7 @@ const NOW_NEWS_IMAGE_BUCKET = "qa-now-news";
 const NOW_NEWS_IMAGE_MAX_BYTES = 6 * 1024 * 1024;
 const NOW_NEWS_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const NOW_RANKING_LIMIT = 10;
-const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v1";
+const NOW_PULSE_CACHE_KEY = "qa_now_pulse_v2";
 const NOW_PULSE_CACHE_TTL_MS = 2 * 60 * 1000;
 const NOW_EDITORIAL_CACHE_KEY = "qa_now_editorial_v1";
 const NOW_EDITORIAL_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -526,14 +529,15 @@ function PulseSkeletonCard({ tone = "orange" }) {
 export default function NowPage({ initialSection = "mixed" }) {
   const router = useRouter();
   const { isMember, memberName, user, memberProfile } = useAuth();
-  const [ready, setReady] = useState(false);
-  const [today, setToday] = useState(null);
+  const [ready, setReady] = useState(true);
+  const [today, setToday] = useState(() => new Date());
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
   const [selectedCity, setSelectedCity] = useState("all");
   const [loadError, setLoadError] = useState("");
   const [syncWarning, setSyncWarning] = useState("");
   const [expandedNewsId, setExpandedNewsId] = useState(null);
+  const [selectedNewsMode, setSelectedNewsMode] = useState("latest");
   const [selectedNewsCategory, setSelectedNewsCategory] = useState("all");
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
   const [selectedSafetyRankingYear, setSelectedSafetyRankingYear] = useState("2026");
@@ -600,6 +604,10 @@ export default function NowPage({ initialSection = "mixed" }) {
 
   const loadPulseData = useCallback(async ({ forceRefresh = false } = {}) => {
     const now = new Date();
+    const windowEnd = new Date(now);
+    windowEnd.setDate(windowEnd.getDate() + 7);
+    const todayKey = now.toISOString().slice(0, 10);
+    const windowEndKey = windowEnd.toISOString().slice(0, 10);
     setToday(now);
     setLoadError("");
     setReady((prev) => (prev ? prev : false));
@@ -621,8 +629,11 @@ export default function NowPage({ initialSection = "mixed" }) {
         supabase
           .from("events")
           .select("id, city, name, description, date, start_date, end_date, link, vibe, vibe_tags, location, lat, lng")
-          .order("date", { ascending: true }),
-        fetchPlacesForAtlas(),
+          .gte("date", todayKey)
+          .lte("date", windowEndKey)
+          .order("date", { ascending: true })
+          .limit(36),
+        fetchTrendingPlacesForNews({ limit: 6 }),
       ]);
       const placesData = placesRes?.data || [];
       const placesError = placesRes?.error || null;
@@ -631,7 +642,7 @@ export default function NowPage({ initialSection = "mixed" }) {
         setLoadError("Live pulse could not fully load. Showing available data.");
       }
 
-      const nextEvents = await mergeSeedEventsAsync(eventsData || []);
+      const nextEvents = eventsData || [];
       const nextPlaces = placesData;
       setEvents(nextEvents);
       setPlaces(nextPlaces);
@@ -646,10 +657,22 @@ export default function NowPage({ initialSection = "mixed" }) {
   }, []);
 
   useEffect(() => {
-    queueMicrotask(async () => {
-      await loadPulseData();
-    });
-  }, [loadPulseData]);
+    if (activeNowSection !== "mixed") return undefined;
+
+    const load = () => {
+      queueMicrotask(async () => {
+        await loadPulseData();
+      });
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(load, { timeout: 900 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = window.setTimeout(load, 180);
+    return () => window.clearTimeout(timeoutId);
+  }, [activeNowSection, loadPulseData]);
 
   const loadEditorialData = useCallback(async ({ forceRefresh = false } = {}) => {
     const cached = forceRefresh
@@ -775,7 +798,9 @@ export default function NowPage({ initialSection = "mixed" }) {
       if (nowTs - lastBackgroundRefreshAtRef.current < NOW_FOCUS_REFRESH_COOLDOWN_MS) return;
       lastBackgroundRefreshAtRef.current = nowTs;
       queueMicrotask(async () => {
-        await Promise.all([loadPulseData(), loadEditorialData()]);
+        const refreshTasks = [loadEditorialData()];
+        if (activeNowSection === "mixed") refreshTasks.push(loadPulseData());
+        await Promise.all(refreshTasks);
       });
     };
 
@@ -795,7 +820,7 @@ export default function NowPage({ initialSection = "mixed" }) {
       window.removeEventListener("focus", refreshOnFocus);
       document.removeEventListener("visibilitychange", refreshOnVisibility);
     };
-  }, [loadEditorialData, loadPulseData]);
+  }, [activeNowSection, loadEditorialData, loadPulseData]);
 
   const cityOptions = useMemo(
     () => [...new Set(events.concat(places).map((item) => item.city?.toLowerCase()).filter(Boolean))].sort(),
@@ -921,7 +946,7 @@ export default function NowPage({ initialSection = "mixed" }) {
     return base;
   }, []);
   const mixedFeedCategories = useMemo(
-    () => PULSE_CATEGORIES.filter((item) => item.key !== "all"),
+    () => PULSE_CATEGORIES,
     []
   );
 
@@ -1016,7 +1041,7 @@ export default function NowPage({ initialSection = "mixed" }) {
         itemListElement: topItems.map((item, index) => ({
           "@type": "ListItem",
           position: index + 1,
-          url: `${baseUrl}/now/news#${String(item.id || `story-${index + 1}`)}`,
+          url: `${baseUrl}/now/news/${encodeURIComponent(String(item.id || `story-${index + 1}`))}`,
           item: {
             "@type": "NewsArticle",
             headline: clampSeoText(item.title, 110),
@@ -1240,12 +1265,9 @@ export default function NowPage({ initialSection = "mixed" }) {
   const openNewsArticle = useCallback((item) => {
     if (!item) return;
     const itemId = String(item.id || "");
-    if (adminNewsIdSet.has(itemId)) {
-      router.push(`/now/news/${encodeURIComponent(itemId)}`);
-      return;
-    }
-    setReadingNewsItem(item);
-  }, [adminNewsIdSet, router]);
+    if (!itemId) return;
+    router.push(`/now/news/${encodeURIComponent(itemId)}`);
+  }, [router]);
 
   const openEditNewsComposer = useCallback((item) => {
     if (!item) return;
@@ -2045,15 +2067,15 @@ export default function NowPage({ initialSection = "mixed" }) {
       <main className="qa-page min-h-screen bg-black px-6 py-8 text-white">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowTravelRankingJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(nowTravelRankingJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowSafetyRankingJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(nowSafetyRankingJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowCollectionsJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(nowCollectionsJsonLd) }}
         />
         <section className="sr-only" aria-label="Queer Atlas ranking index">
           <h1>{heroContent.title}</h1>
@@ -2122,7 +2144,7 @@ export default function NowPage({ initialSection = "mixed" }) {
   }
 
   return (
-    <main className="qa-page qa-now min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(56,189,248,0.11),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_28%),linear-gradient(180deg,#030305_0%,#060813_46%,#030305_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
+    <main className="qa-page qa-now min-h-screen overflow-x-hidden bg-[radial-gradient(ellipse_at_10%_4%,rgba(34,211,238,0.10),transparent_36%),radial-gradient(ellipse_at_92%_9%,rgba(217,70,239,0.09),transparent_34%),linear-gradient(180deg,#030507_0%,#070711_48%,#030305_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
       <nav aria-label="Internal now crawl links" className="sr-only">
         <Link href="/now/news">Now</Link>
         <Link href="/cities">Cities</Link>
@@ -2155,21 +2177,59 @@ export default function NowPage({ initialSection = "mixed" }) {
       <div className="qa-shell">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowNewsJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(nowNewsJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowTravelRankingJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(nowTravelRankingJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowSafetyRankingJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(nowSafetyRankingJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(nowCollectionsJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(nowCollectionsJsonLd) }}
         />
-        {!isDataSection ? <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
+        {isMixedSection ? (
+          <header className="relative border-b border-white/12 px-1 pb-5 pt-1 sm:pb-6 sm:pt-2">
+            <div className="relative z-10 max-w-4xl">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100/68">
+                  Queer Atlas · World desk
+                </p>
+                <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
+                  Live editorial desk
+                </div>
+              </div>
+              <h1 className="qa-display mt-3 text-[clamp(2.7rem,4.6vw,4.5rem)] font-semibold leading-[0.92] tracking-[-0.055em] text-[#f7f4ee]">
+                Queer World News
+              </h1>
+              <p className="mt-3 max-w-[62ch] text-sm leading-6 text-white/60 sm:text-base sm:leading-7">
+                Essential queer stories, local shifts and cultural signals from across the atlas.
+              </p>
+            </div>
+            {loadError ? (
+              <div className="relative z-10 mt-5 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
+                <span>{loadError}</span>
+                <button
+                  onClick={() => loadPulseData({ forceRefresh: true })}
+                  className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : null}
+            {syncWarning ? (
+              <div className="relative z-10 mt-3 inline-flex items-center rounded-xl border border-yellow-300/25 bg-yellow-300/10 px-3 py-2 text-xs text-yellow-100">
+                {syncWarning}
+              </div>
+            ) : null}
+          </header>
+        ) : null}
+
+        {!isDataSection && !isMixedSection ? <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/now/queer-atlas-news-events-global-network-hero.png"
@@ -2224,6 +2284,30 @@ export default function NowPage({ initialSection = "mixed" }) {
               </Link>
             ))}
           </nav>
+        ) : isMixedSection ? (
+          <nav
+            aria-label="Now sections"
+            className="qa-news-scrollrail mb-4 flex gap-5 overflow-x-auto border-b border-white/10 px-1 pb-2 sm:gap-7"
+          >
+            {nowSections.map((section) => {
+              const isCurrent = section.id === activeNowSection;
+              return (
+                <Link
+                  key={`newsroom-nav-${section.id}`}
+                  href={section.href}
+                  aria-current={isCurrent ? "page" : undefined}
+                  className={`relative inline-flex min-h-11 shrink-0 items-center py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 sm:text-xs ${
+                    isCurrent ? "text-[#f7f4ee]" : "text-white/42 hover:text-white/76"
+                  }`}
+                >
+                  {section.id === "mixed" ? "News" : section.label}
+                  {isCurrent ? (
+                    <span className="absolute -bottom-[9px] left-0 h-px w-full bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-transparent" />
+                  ) : null}
+                </Link>
+              );
+            })}
+          </nav>
         ) : <PageControls
           className="mb-6 transition-all duration-300"
           controlsRef={nowControlsRef}
@@ -2251,14 +2335,32 @@ export default function NowPage({ initialSection = "mixed" }) {
         <section className="mb-6">
           <div className="grid min-w-0 items-stretch gap-6">
             {isMixedSection && (
-            <section className="qa-now-news-feed relative flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden p-0">
-              <div className="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
-              <div className="pointer-events-none absolute -right-20 bottom-10 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
-              <div className="relative z-10 mb-5 overflow-hidden rounded-[28px] border border-cyan-200/16 bg-[radial-gradient(circle_at_14%_0%,rgba(34,211,238,0.13),transparent_34%),radial-gradient(circle_at_88%_10%,rgba(244,114,182,0.10),transparent_30%),linear-gradient(180deg,rgba(14,19,28,0.78),rgba(8,10,15,0.88))] p-4 shadow-[0_22px_70px_rgba(0,0,0,0.28)] sm:p-5">
-                <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/80">News feed</p>
-                    <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">What is new in the queer world</h2>
+            <section className="qa-now-news-feed relative flex h-full min-w-0 w-full max-w-full flex-col p-0">
+              <div className="relative z-10 mb-5 border-b border-white/10 pb-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">Browse the desk</p>
+                    <h2 className="sr-only">Filter queer world news</h2>
+                    <div className="flex items-center gap-4" role="group" aria-label="Choose news feed">
+                      {[
+                        { id: "latest", label: "Latest" },
+                        { id: "following", label: "Following" },
+                      ].map((mode) => {
+                        const isActive = selectedNewsMode === mode.id;
+                        return (
+                          <button
+                            key={mode.id}
+                            type="button"
+                            aria-pressed={isActive}
+                            onClick={() => setSelectedNewsMode(mode.id)}
+                            className={`relative min-h-9 text-sm font-semibold transition focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${isActive ? "text-[#f7f4ee]" : "text-white/42 hover:text-white/76"}`}
+                          >
+                            {mode.label}
+                            {isActive ? <span className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-cyan-200" aria-hidden="true" /> : null}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                   {isAdmin && (
                     <button
@@ -2282,7 +2384,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                     </button>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-2">
+                {selectedNewsMode === "latest" ? <div className="qa-news-scrollrail flex gap-2 overflow-x-auto pb-1">
                   {mixedFeedCategories.map((category) => {
                     const isActive = selectedNewsCategory === category.key;
                     const toneClassByCategory =
@@ -2310,13 +2412,14 @@ export default function NowPage({ initialSection = "mixed" }) {
                         key={category.key}
                         type="button"
                         onClick={() => setSelectedNewsCategory(category.key)}
-                        className={`rounded-full border px-3.5 py-2 text-xs uppercase tracking-[0.1em] transition sm:px-3 sm:py-1.5 sm:text-[11px] sm:tracking-[0.14em] ${toneClassByCategory}`}
+                        aria-pressed={isActive}
+                        className={`min-h-9 shrink-0 rounded-full border px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.12em] transition sm:text-[10px] ${toneClassByCategory}`}
                       >
                         {categoryLabels[category.key] || category.label}
                       </button>
                     );
                   })}
-                </div>
+                </div> : null}
 
               {isAdmin && showAdminForm && (
                 <form ref={adminComposerRef} onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
@@ -2446,13 +2549,28 @@ export default function NowPage({ initialSection = "mixed" }) {
                 </form>
               )}
 
-                <p className="mt-4 text-[11px] uppercase tracking-[0.15em] text-white/50">
-                Showing {displayedNewsItems.length} stories
-                {selectedNewsCategory === "all" ? " across all categories" : ` in ${categoryLabels[selectedNewsCategory] || "selected category"}`}
-              </p>
+                {selectedNewsMode === "latest" ? <p role="status" aria-live="polite" aria-atomic="true" className="mt-3 text-[10px] uppercase tracking-[0.14em] text-white/34">
+                    {displayedNewsItems.length} stories
+                    {selectedNewsCategory === "all" ? " across all desks" : ` · ${categoryLabels[selectedNewsCategory] || "selected desk"}`}
+                  </p> : <p role="status" aria-live="polite" aria-atomic="true" className="mt-3 text-[10px] uppercase tracking-[0.14em] text-white/34">Only cities and topics you choose</p>}
               </div>
 
-              {leadNewsItem ? (
+              <NewsroomFeed
+                key={`${selectedNewsMode}-${selectedNewsCategory}`}
+                items={displayedNewsItems}
+                allItems={mixedFeedItems}
+                feedMode={selectedNewsMode}
+                onSelectLatest={() => setSelectedNewsMode("latest")}
+                availableTopics={mixedFeedCategories.filter((category) => category.key !== "all")}
+                categoryLabels={categoryLabels}
+                adminNewsIds={adminNewsIdSet}
+                isAdmin={isAdmin}
+                onOpen={openNewsArticle}
+                onEdit={openEditNewsComposer}
+                onDelete={deleteFeedItem}
+              />
+
+              {false && leadNewsItem ? (
                 <article
                   role="button"
                   tabIndex={0}
@@ -2569,6 +2687,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                 </article>
               ) : null}
 
+              {false && (
               <div className="qa-defer-render relative z-10 grid min-h-0 min-w-0 w-full max-w-full flex-1 content-start gap-3 overflow-visible pr-0 md:gap-4 md:overflow-y-auto md:pr-1 md:grid-cols-2 md:[grid-auto-rows:1fr]">
                 {secondaryNewsItems.length > 0 ? (
                   secondaryNewsItems.map((item, itemIndex) => {
@@ -2735,6 +2854,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                   />
                 ) : null}
               </div>
+              )}
             </section>
             )}
 

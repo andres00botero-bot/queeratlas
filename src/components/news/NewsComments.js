@@ -186,7 +186,7 @@ export default function NewsComments({ articleId, articleTitle = "this article" 
             Comments <span className="text-white/45">{visibleCount}</span>
           </h2>
         </div>
-        <Link href="/community-policy" className="text-xs text-cyan-100/75 underline decoration-cyan-200/30 underline-offset-4 transition hover:text-cyan-100">
+        <Link href="/community-policy" className="rounded text-xs text-cyan-100/75 underline decoration-cyan-200/30 underline-offset-4 transition hover:text-cyan-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">
           Community guidelines
         </Link>
       </div>
@@ -198,7 +198,7 @@ export default function NewsComments({ articleId, articleTitle = "this article" 
       {!isAuthLoading && !isMember ? (
         <div className="mt-5 rounded-2xl border border-fuchsia-200/20 bg-fuchsia-200/[0.07] p-4">
           <p className="text-sm text-white/78">Only Queer Atlas members can comment.</p>
-          <button type="button" onClick={openSignIn} className="mt-3 rounded-full border border-fuchsia-100/45 bg-fuchsia-200/14 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-fuchsia-50 transition hover:border-fuchsia-100/70 hover:bg-fuchsia-200/20">
+          <button type="button" onClick={openSignIn} className="mt-3 inline-flex min-h-11 items-center rounded-full border border-fuchsia-100/45 bg-fuchsia-200/14 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-fuchsia-50 transition hover:border-fuchsia-100/70 hover:bg-fuchsia-200/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/65">
             Sign in to comment
           </button>
         </div>
@@ -217,11 +217,11 @@ export default function NewsComments({ articleId, articleTitle = "this article" 
             rows={4}
             placeholder="Add to the conversation..."
             disabled={submitting}
-            className="mt-3 w-full resize-y rounded-xl border border-white/12 bg-black/35 px-3 py-3 text-sm leading-6 text-white outline-none placeholder:text-white/35 focus:border-cyan-200/45 disabled:opacity-55"
+            className="mt-3 w-full resize-y rounded-xl border border-white/12 bg-black/35 px-3 py-3 text-sm leading-6 text-white outline-none placeholder:text-white/35 focus:border-cyan-200/45 focus-visible:ring-2 focus-visible:ring-cyan-200/45 disabled:opacity-55"
           />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <span className="text-xs text-white/42">{body.length} / {MAX_COMMENT_LENGTH}</span>
-            <button type="submit" disabled={submitting || !body.trim()} className="inline-flex items-center gap-2 rounded-full border border-fuchsia-100/55 bg-[linear-gradient(135deg,rgba(244,114,182,0.92),rgba(168,85,247,0.9))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="submit" disabled={submitting || !body.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-fuchsia-100/55 bg-[linear-gradient(135deg,rgba(244,114,182,0.92),rgba(168,85,247,0.9))] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/65 disabled:cursor-not-allowed disabled:opacity-50">
               <Send size={14} aria-hidden="true" />
               {submitting ? "Publishing..." : "Post comment"}
             </button>
@@ -247,7 +247,7 @@ export default function NewsComments({ articleId, articleTitle = "this article" 
 
       <div className="mt-6 space-y-3" aria-busy={loading}>
         {loading ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-sm text-white/50">Loading comments...</div>
+          <div role="status" aria-live="polite" className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-5 text-sm text-white/50">Loading comments...</div>
         ) : comments.length > 0 ? (
           comments.map((comment) => {
             const removed = comment.status === "removed";

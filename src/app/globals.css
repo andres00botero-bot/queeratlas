@@ -1245,3 +1245,14 @@ body > div:first-child {
 .qa-trust-rail::-webkit-scrollbar {
   display: none;
 }
+/* Editorial rails stay touch-scrollable without adding a second visual control. */
+.qa-news-scrollrail {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.qa-news-scrollrail::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
