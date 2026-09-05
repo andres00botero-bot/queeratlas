@@ -9,12 +9,11 @@ import {
   PenLine,
   Search,
   ShieldCheck,
-  Sparkles,
   UsersRound,
 } from "lucide-react";
 
 const VOICE_FILTERS = [
-  { id: "all", label: "Featured" },
+  { id: "all", label: "All voices" },
   { id: "story", label: "Member stories" },
   { id: "guide", label: "Local guides" },
   { id: "report", label: "Field reports" },
@@ -51,25 +50,72 @@ function dateLabel(value = "") {
   return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(parsed);
 }
 
+function voiceBody(item = {}) {
+  const summary = String(item.summary || "").trim();
+  const body = String(item.whyItMatters || "").trim();
+  return body && body !== summary ? body : "";
+}
+
 function readTime(item = {}) {
-  const words = `${item.summary || ""} ${item.whyItMatters || ""}`.trim().split(/\s+/).filter(Boolean).length;
+  const words = `${item.summary || ""} ${voiceBody(item)}`.trim().split(/\s+/).filter(Boolean).length;
   return `${Math.max(2, Math.ceil(words / 180))} min read`;
 }
 
-function TypeMark({ item, compact = false }) {
+function contentId(item = {}) {
+  return `voice-content-${String(item.id || "item").replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
+function TypeMark({ item }) {
   const type = voiceType(item);
   const Icon = type === "guide" ? BookOpenText : type === "report" ? ShieldCheck : MessageCircleHeart;
-  const classes = type === "guide"
-    ? "border-violet-200/24 bg-violet-200/10 text-violet-50"
-    : type === "report"
-      ? "border-amber-200/24 bg-amber-200/10 text-amber-50"
-      : "border-rose-200/24 bg-rose-200/10 text-rose-50";
+  const classes = type === "guide" ? "text-violet-100" : type === "report" ? "text-amber-100" : "text-rose-100";
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border font-semibold uppercase tracking-[0.14em] ${compact ? "px-2.5 py-1 text-[9px]" : "px-3 py-1.5 text-[10px]"} ${classes}`}>
-      <Icon size={compact ? 11 : 12} aria-hidden="true" />
+    <span className={`inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.16em] ${classes}`}>
+      <Icon size={12} aria-hidden="true" />
       {voiceLabel(item)}
     </span>
+  );
+}
+
+function VoiceMeta({ item, showDate = true }) {
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] leading-4 text-white/42">
+      <span className="font-semibold text-white/66">{voiceAuthor(item)}</span>
+      <span aria-hidden="true">·</span>
+      <span>{cityLabel(item.city)}</span>
+      {showDate ? <><span aria-hidden="true">·</span><span>{dateLabel(item.date || item.createdAt)}</span></> : null}
+      <span aria-hidden="true">·</span>
+      <span>{readTime(item)}</span>
+    </p>
+  );
+}
+
+function ReadToggle({ item, expanded, onToggle, compact = false }) {
+  if (!voiceBody(item)) return null;
+  const noun = voiceType(item) === "guide" ? "guide" : voiceType(item) === "report" ? "report" : "story";
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      aria-controls={contentId(item)}
+      className={`qa-action inline-flex items-center gap-1.5 font-bold text-cyan-100 transition hover:text-white ${compact ? "text-[10px] uppercase tracking-[0.12em]" : "border-b border-cyan-100/35 pb-1 text-sm"}`}
+    >
+      {expanded ? "Close" : `Read ${noun}`}
+      <ArrowUpRight size={compact ? 12 : 14} className={expanded ? "rotate-90" : ""} aria-hidden="true" />
+    </button>
+  );
+}
+
+function ExpandedVoice({ item, expanded }) {
+  if (!expanded || !voiceBody(item)) return null;
+  return (
+    <div id={contentId(item)} className="mt-4 border-t border-white/10 pt-4">
+      <p className="qa-copy-justify whitespace-pre-line text-sm leading-7 text-white/72">{voiceBody(item)}</p>
+      <p className="mt-4 inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-emerald-100/62"><ShieldCheck size={12} aria-hidden="true" /> Reviewed before publication</p>
+    </div>
   );
 }
 
@@ -102,141 +148,123 @@ export default function VoicesEditorialPanel({
       if (filter !== "all" && voiceType(item) !== filter) return false;
       if (city && cityLabel(item.city) !== city) return false;
       if (!normalizedQuery) return true;
-      return `${item.title || ""} ${item.summary || ""} ${item.whyItMatters || ""} ${item.city || ""} ${item.sourceName || ""}`
-        .toLowerCase()
-        .includes(normalizedQuery);
+      return `${item.title || ""} ${item.summary || ""} ${item.whyItMatters || ""} ${item.city || ""} ${item.sourceName || ""}`.toLowerCase().includes(normalizedQuery);
     });
   }, [city, filter, items, query]);
 
   const featured = visibleItems[0] || null;
   const secondary = visibleItems.slice(1, 3);
   const feed = visibleItems.slice(3);
+  const hasActiveDiscovery = filter !== "all" || Boolean(city) || Boolean(query.trim());
 
   const toggleExpanded = (id) => {
     const key = String(id);
     setExpandedIds((current) => current.includes(key) ? current.filter((value) => value !== key) : [...current, key]);
   };
 
+  const clearDiscovery = () => {
+    setFilter("all");
+    setCity("");
+    setQuery("");
+  };
+
   return (
-    <div className="mt-8 space-y-5">
-      <section className="qa-premium-card relative overflow-hidden rounded-[34px] border border-fuchsia-200/18 bg-[radial-gradient(circle_at_6%_0%,rgba(244,114,182,0.19),transparent_30%),radial-gradient(circle_at_90%_4%,rgba(56,189,248,0.16),transparent_32%),radial-gradient(circle_at_50%_110%,rgba(139,92,246,0.15),transparent_38%),linear-gradient(155deg,rgba(28,14,40,0.98),rgba(8,17,25,0.98)_52%,rgba(7,7,10,1))] p-4 shadow-[0_36px_120px_rgba(0,0,0,0.42),0_18px_70px_rgba(217,70,239,0.1)] sm:p-7">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.1] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.07)_1px,transparent_1px)] [background-size:54px_54px]" />
-        <div className="relative">
-          <div className="grid gap-6 xl:grid-cols-[1fr_auto] xl:items-end">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-100/20 bg-fuchsia-200/[0.08] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-50/86">
-                <Sparkles size={12} aria-hidden="true" /> First-person queer intelligence
-              </div>
-              <h2 className="qa-display mt-4 max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-5xl">
-                Stories worth carrying with you.
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/64 sm:text-base">
-                Stories, practical guides and lived experience from queer people around the world — reviewed before publication.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={onComposeStory} className="qa-action qa-cta-primary inline-flex items-center gap-2 rounded-full border border-rose-100/38 bg-rose-200/14 px-4 py-2.5 text-xs font-semibold text-rose-50 transition hover:border-rose-100/62 hover:bg-rose-200/20">
-                <PenLine size={14} aria-hidden="true" /> {isMember ? "Write a story" : "Join to write"}
-              </button>
-              <button type="button" onClick={onComposeGuide} className="qa-action inline-flex items-center gap-2 rounded-full border border-violet-100/30 bg-violet-200/10 px-4 py-2.5 text-xs font-semibold text-violet-50 transition hover:border-violet-100/52 hover:bg-violet-200/17">
-                <BookOpenText size={14} aria-hidden="true" /> Create a guide
-              </button>
-            </div>
+    <div className="mt-5">
+      <header className="relative overflow-hidden border-y border-white/10 py-7 sm:py-9">
+        <div className="pointer-events-none absolute -left-24 top-0 h-52 w-52 rounded-full bg-fuchsia-300/10 blur-3xl" aria-hidden="true" />
+        <div className="pointer-events-none absolute right-[8%] top-0 h-40 w-40 rounded-full bg-cyan-300/8 blur-3xl" aria-hidden="true" />
+        <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="max-w-3xl">
+            <p className="text-[10px] font-bold uppercase tracking-[0.23em] text-fuchsia-100/68">Member-authored · Editor reviewed</p>
+            <h1 className="qa-display mt-3 text-4xl font-semibold leading-[0.96] tracking-[-0.05em] text-[#f7f4ee] sm:text-5xl lg:text-[3.5rem]">Voices from the Atlas</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-6 text-white/62 sm:text-base sm:leading-7">First-person stories and practical local guides from queer people who know the place beyond the pin.</p>
+            <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.13em] text-white/34">Lived experience · Specific places · Reviewed before publication</p>
           </div>
-
-          <div className="mt-6 grid grid-cols-3 gap-2 sm:max-w-xl">
-            <div className="rounded-2xl border border-white/10 bg-black/22 px-3 py-3"><p className="text-xl font-semibold text-white">{counts.story}</p><p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-rose-100/56">Stories</p></div>
-            <div className="rounded-2xl border border-white/10 bg-black/22 px-3 py-3"><p className="text-xl font-semibold text-white">{counts.guide}</p><p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-violet-100/56">Guides</p></div>
-            <div className="rounded-2xl border border-white/10 bg-black/22 px-3 py-3"><p className="text-xl font-semibold text-white">{cities.length}</p><p className="mt-1 text-[9px] uppercase tracking-[0.16em] text-cyan-100/56">Cities</p></div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={onComposeStory} className="qa-action inline-flex min-h-11 items-center gap-2 rounded-full bg-[#f3eee5] px-5 text-xs font-bold text-[#0a0c11] transition hover:bg-white"><PenLine size={14} aria-hidden="true" /> {isMember ? "Write a story" : "Join to write"}</button>
+            <button type="button" onClick={onComposeGuide} className="qa-action inline-flex min-h-11 items-center gap-2 rounded-full border border-violet-100/28 px-5 text-xs font-bold text-violet-50 transition hover:border-violet-100/52 hover:bg-violet-100/[0.07]"><BookOpenText size={14} aria-hidden="true" /> Create a guide</button>
           </div>
         </div>
-      </section>
+        <dl className="relative mt-7 flex flex-wrap gap-x-8 gap-y-3 border-t border-white/9 pt-4">
+          {[["Stories", counts.story], ["Guides", counts.guide], ["Cities", cities.length]].map(([term, value]) => <div key={term} className="flex items-baseline gap-2"><dd className="text-lg font-bold text-white/86">{value}</dd><dt className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/36">{term}</dt></div>)}
+        </dl>
+      </header>
 
-      {composer}
+      {composer ? <div className="mt-5">{composer}</div> : null}
 
-      <section aria-label="Voice discovery controls" className="qa-premium-card rounded-[26px] border border-white/10 bg-[linear-gradient(145deg,rgba(17,21,29,0.96),rgba(8,8,11,0.98))] p-3 shadow-[0_20px_70px_rgba(0,0,0,0.28)]">
-        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {VOICE_FILTERS.map((option) => (
-            <button key={option.id} type="button" onClick={() => setFilter(option.id)} aria-pressed={filter === option.id} className={`qa-action shrink-0 rounded-full border px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${filter === option.id ? "border-cyan-100/40 bg-[linear-gradient(110deg,rgba(34,211,238,0.18),rgba(217,70,239,0.16))] text-white" : "border-white/9 bg-white/[0.035] text-white/52 hover:border-white/18 hover:text-white/78"}`}>
-              {option.label} <span className="ml-1 text-white/36">{counts[option.id]}</span>
-            </button>
-          ))}
+      <section aria-labelledby="voice-discovery-heading" className="border-b border-white/10 py-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100/56">Browse perspectives</p>
+            <h2 id="voice-discovery-heading" className="sr-only">Find stories and guides</h2>
+          </div>
+          <p aria-live="polite" className="text-xs text-white/42">{visibleItems.length} {visibleItems.length === 1 ? "voice" : "voices"}</p>
         </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_13rem]">
-          <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/22 px-3 py-2.5">
+        <div className="mt-3 flex gap-5 overflow-x-auto border-b border-white/8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {VOICE_FILTERS.map((option) => {
+            const active = filter === option.id;
+            return <button key={option.id} type="button" onClick={() => setFilter(option.id)} aria-pressed={active} className={`qa-action relative min-h-11 shrink-0 pb-3 text-[10px] font-bold uppercase tracking-[0.12em] transition ${active ? "text-[#f7f4ee]" : "text-white/42 hover:text-white/72"}`}>{option.label}<span className="ml-1.5 text-white/30">{counts[option.id]}</span>{active ? <span className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-transparent" aria-hidden="true" /> : null}</button>;
+          })}
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_14rem_auto]">
+          <label className="flex min-h-12 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3">
             <Search size={14} className="text-cyan-100/58" aria-hidden="true" />
             <span className="sr-only">Search voices</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search stories, guides or contributors" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/30" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search stories, guides or contributors" className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/30 sm:text-sm" />
           </label>
-          <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/22 px-3 py-2.5 text-xs text-white/64">
+          <label className="flex min-h-12 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 text-xs text-white/64">
             <MapPin size={14} className="text-fuchsia-100/58" aria-hidden="true" />
             <span className="sr-only">Filter by city</span>
-            <select value={city} onChange={(event) => setCity(event.target.value)} className="min-w-0 flex-1 bg-transparent text-white outline-none [&>option]:bg-[#0b0e14]">
-              <option value="">Everywhere</option>
-              {cities.map((name) => <option key={name} value={name}>{name}</option>)}
-            </select>
+            <select value={city} onChange={(event) => setCity(event.target.value)} className="min-w-0 flex-1 bg-transparent text-white outline-none [&>option]:bg-[#0b0e14]"><option value="">Everywhere</option>{cities.map((name) => <option key={name} value={name}>{name}</option>)}</select>
           </label>
+          {hasActiveDiscovery ? <button type="button" onClick={clearDiscovery} className="qa-action min-h-12 rounded-xl border border-white/12 px-4 text-[10px] font-bold uppercase tracking-[0.12em] text-white/58 transition hover:border-white/28 hover:text-white">Clear</button> : null}
         </div>
       </section>
 
       {featured ? (
-        <section aria-label="Featured community voices" className="grid gap-4 xl:grid-cols-[1.12fr_0.88fr]">
-          <article className="qa-premium-card relative min-h-[350px] overflow-hidden rounded-[32px] border border-fuchsia-200/18 bg-[radial-gradient(circle_at_78%_8%,rgba(34,211,238,0.17),transparent_34%),radial-gradient(circle_at_8%_6%,rgba(244,114,182,0.2),transparent_38%),linear-gradient(145deg,rgba(50,20,59,0.94),rgba(8,22,31,0.98)_62%,rgba(7,8,12,1))] p-5 shadow-[0_30px_90px_rgba(217,70,239,0.12)] sm:p-8">
-            <div className="relative flex h-full flex-col">
-              <div className="flex flex-wrap items-center justify-between gap-2"><TypeMark item={featured} /><span className="text-[10px] uppercase tracking-[0.14em] text-white/42">Editor&apos;s lead</span></div>
-              <div className="mt-10">
-                <p className="flex items-center gap-2 text-xs uppercase tracking-[0.15em] text-white/50"><MapPin size={13} aria-hidden="true" /> {cityLabel(featured.city)} <span className="text-white/20">•</span> {dateLabel(featured.date || featured.createdAt)}</p>
-                <h3 className="mt-3 max-w-[22ch] text-2xl font-semibold leading-tight tracking-[-0.03em] text-white sm:text-4xl">{featured.title}</h3>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-white/68">{featured.summary}</p>
-                {expandedIds.includes(String(featured.id)) && featured.whyItMatters ? <p className="mt-3 max-w-2xl border-l border-fuchsia-100/28 pl-4 text-sm leading-7 text-white/64">{featured.whyItMatters}</p> : null}
-              </div>
-              <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-8">
-                <div><p className="text-sm font-semibold text-white">{voiceAuthor(featured)}</p><p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-white/40">Reviewed by Queer Atlas · {readTime(featured)}</p></div>
-                <button type="button" onClick={() => toggleExpanded(featured.id)} className="qa-action inline-flex items-center gap-2 rounded-full border border-cyan-100/30 bg-cyan-200/10 px-4 py-2 text-xs text-cyan-50 transition hover:border-cyan-100/52">{expandedIds.includes(String(featured.id)) ? "Close" : voiceType(featured) === "guide" ? "Read guide" : "Read story"}<ArrowUpRight size={13} aria-hidden="true" /></button>
-              </div>
-            </div>
-          </article>
+        <section aria-labelledby="voices-featured-heading" className="pt-6">
+          <h2 id="voices-featured-heading" className="sr-only">Featured community voices</h2>
+          <div className="grid gap-5 xl:grid-cols-[1.16fr_0.84fr]">
+            <article className="relative overflow-hidden rounded-[28px] border border-fuchsia-100/18 bg-[radial-gradient(circle_at_86%_6%,rgba(34,211,238,0.15),transparent_31%),radial-gradient(circle_at_4%_0%,rgba(244,114,182,0.18),transparent_36%),linear-gradient(145deg,rgba(35,18,42,0.97),rgba(8,17,24,0.99)_62%,rgba(7,8,12,1))] p-5 shadow-[0_28px_85px_rgba(0,0,0,0.24)] sm:p-8">
+              <div className="flex flex-wrap items-center justify-between gap-3"><TypeMark item={featured} /><span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/34">Editor&apos;s lead</span></div>
+              <h3 className="mt-8 max-w-[23ch] text-3xl font-semibold leading-[1.06] tracking-[-0.04em] text-[#f7f4ee] sm:text-4xl">{featured.title}</h3>
+              <p className="qa-copy-justify mt-4 max-w-2xl text-sm leading-7 text-white/68">{featured.summary}</p>
+              <ExpandedVoice item={featured} expanded={expandedIds.includes(String(featured.id))} />
+              <div className="mt-8 flex flex-wrap items-end justify-between gap-4 border-t border-white/10 pt-4"><VoiceMeta item={featured} /><ReadToggle item={featured} expanded={expandedIds.includes(String(featured.id))} onToggle={() => toggleExpanded(featured.id)} /></div>
+            </article>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            {secondary.map((item) => (
-              <article key={item.id} className="qa-premium-card rounded-[28px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.065),rgba(255,255,255,0.025))] p-5 transition hover:-translate-y-0.5 hover:border-cyan-100/24">
-                <div className="flex items-center justify-between gap-2"><TypeMark item={item} compact /><span className="text-[9px] uppercase tracking-[0.13em] text-white/38">{cityLabel(item.city)}</span></div>
-                <h3 className="mt-4 text-xl font-semibold leading-snug tracking-[-0.02em] text-white">{item.title}</h3>
-                <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/60">{item.summary}</p>
-                {expandedIds.includes(String(item.id)) && item.whyItMatters ? <p className="mt-3 border-t border-white/8 pt-3 text-sm leading-6 text-white/62">{item.whyItMatters}</p> : null}
-                <div className="mt-5 flex items-center justify-between gap-2"><span className="text-[10px] text-white/42">{voiceAuthor(item)} · {readTime(item)}</span><button type="button" onClick={() => toggleExpanded(item.id)} className="qa-action rounded-full border border-white/12 bg-white/[0.045] px-3 py-1.5 text-[10px] text-white/68">{expandedIds.includes(String(item.id)) ? "Close" : "Read"}</button></div>
-              </article>
-            ))}
+            <ul className="grid gap-0 border-y border-white/10 sm:grid-cols-2 xl:grid-cols-1">
+              {secondary.map((item, index) => {
+                const expanded = expandedIds.includes(String(item.id));
+                return <li key={item.id} className={`${index > 0 ? "border-t sm:border-l sm:border-t-0 xl:border-l-0 xl:border-t" : ""} border-white/10`}><article className="flex h-full flex-col px-1 py-5 sm:px-5 xl:px-5"><div className="flex items-center justify-between gap-3"><TypeMark item={item} /><span className="text-[9px] uppercase tracking-[0.12em] text-white/34">{dateLabel(item.date || item.createdAt)}</span></div><h3 className="mt-4 text-xl font-semibold leading-snug tracking-[-0.025em] text-[#f7f4ee]">{item.title}</h3><p className="qa-copy-justify mt-3 line-clamp-3 text-sm leading-6 text-white/58">{item.summary}</p><ExpandedVoice item={item} expanded={expanded} /><div className="mt-auto flex items-end justify-between gap-3 pt-5"><VoiceMeta item={item} showDate={false} /><ReadToggle item={item} expanded={expanded} onToggle={() => toggleExpanded(item.id)} compact /></div></article></li>;
+              })}
+            </ul>
           </div>
         </section>
       ) : (
-        <section className="qa-premium-card rounded-[30px] border border-dashed border-white/14 bg-white/[0.025] px-5 py-12 text-center">
+        <section className="border-b border-white/10 py-12 text-center">
           <BookOpenText className="mx-auto text-violet-100/58" size={26} aria-hidden="true" />
           <h3 className="mt-4 text-xl font-semibold text-white">No voices match this view yet.</h3>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-white/52">Clear the filters or help shape the first story or guide in this part of the atlas.</p>
+          {hasActiveDiscovery ? <button type="button" onClick={clearDiscovery} className="mt-5 rounded-full bg-[#f3eee5] px-4 py-2 text-xs font-bold text-[#0a0c11]">Clear filters</button> : null}
         </section>
       )}
 
       {feed.length > 0 ? (
-        <section aria-labelledby="voices-latest-heading" className="qa-premium-card rounded-[30px] border border-white/10 bg-[linear-gradient(160deg,rgba(14,17,24,0.98),rgba(7,8,11,1))] p-4 sm:p-6">
-          <div className="flex items-end justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[0.2em] text-cyan-100/62">More perspectives</p><h3 id="voices-latest-heading" className="mt-2 text-2xl font-semibold text-white">Latest from the community</h3></div><span className="text-xs text-white/38">{feed.length} more</span></div>
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            {feed.map((item) => (
-              <article key={item.id} className="rounded-[24px] border border-white/9 bg-white/[0.035] p-4 transition hover:border-fuchsia-100/22 hover:bg-white/[0.055]">
-                <div className="flex items-center justify-between gap-2"><TypeMark item={item} compact /><span className="text-[9px] uppercase tracking-[0.12em] text-white/36">{dateLabel(item.date || item.createdAt)}</span></div>
-                <h3 className="mt-3 text-lg font-semibold text-white">{item.title}</h3><p className="mt-2 line-clamp-2 text-sm leading-6 text-white/58">{item.summary}</p>
-                <div className="mt-4 flex items-center justify-between gap-2"><span className="text-[10px] text-white/40">{cityLabel(item.city)} · {voiceAuthor(item)}</span><button type="button" onClick={() => toggleExpanded(item.id)} className="qa-action text-[10px] uppercase tracking-[0.12em] text-cyan-100/68 hover:text-cyan-50">{expandedIds.includes(String(item.id)) ? "Close" : "Read"}</button></div>
-                {expandedIds.includes(String(item.id)) && item.whyItMatters ? <p className="mt-3 border-t border-white/8 pt-3 text-sm leading-6 text-white/62">{item.whyItMatters}</p> : null}
-                {canDelete?.(item) ? <button type="button" onClick={() => onDelete?.(item.id)} className="mt-3 text-[10px] uppercase tracking-[0.12em] text-rose-100/54 hover:text-rose-100">Delete</button> : null}
-              </article>
-            ))}
-          </div>
+        <section aria-labelledby="voices-latest-heading" className="pt-9">
+          <div className="flex items-end justify-between gap-3 border-b border-white/10 pb-4"><div><p className="text-[10px] font-bold uppercase tracking-[0.19em] text-cyan-100/56">More perspectives</p><h2 id="voices-latest-heading" className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-[#f7f4ee]">Latest from the community</h2></div><span className="text-xs text-white/36">{feed.length} more</span></div>
+          <ul className="grid md:grid-cols-2 md:gap-x-7">
+            {feed.map((item) => {
+              const expanded = expandedIds.includes(String(item.id));
+              return <li key={item.id} className="border-b border-white/9"><article className="flex h-full flex-col py-5"><div className="flex items-center justify-between gap-3"><TypeMark item={item} /><span className="text-[9px] uppercase tracking-[0.12em] text-white/32">{dateLabel(item.date || item.createdAt)}</span></div><h3 className="mt-3 text-lg font-semibold leading-snug text-[#f7f4ee]">{item.title}</h3><p className="qa-copy-justify mt-2 line-clamp-3 text-sm leading-6 text-white/56">{item.summary}</p><ExpandedVoice item={item} expanded={expanded} /><div className="mt-auto flex items-end justify-between gap-3 pt-4"><VoiceMeta item={item} showDate={false} /><ReadToggle item={item} expanded={expanded} onToggle={() => toggleExpanded(item.id)} compact /></div>{canDelete?.(item) ? <button type="button" onClick={() => onDelete?.(item.id)} className="mt-3 self-start text-[9px] font-semibold uppercase tracking-[0.12em] text-rose-100/52 hover:text-rose-100">Delete</button> : null}</article></li>;
+            })}
+          </ul>
         </section>
       ) : null}
 
-      <section className="qa-premium-card flex flex-col gap-4 rounded-[28px] border border-cyan-200/14 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.12),transparent_32%),linear-gradient(145deg,rgba(8,24,31,0.96),rgba(8,9,13,1))] p-5 sm:flex-row sm:items-center sm:justify-between">
-        <div><p className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/68"><UsersRound size={13} aria-hidden="true" /> The member hub</p><h3 className="mt-2 text-xl font-semibold text-white">Want to meet the people behind the signal?</h3><p className="mt-1 text-sm text-white/54">Find members, jobs and live conversations inside Community.</p></div>
-        <button type="button" onClick={onOpenCommunity} className="qa-action shrink-0 rounded-full border border-cyan-100/28 bg-cyan-200/10 px-4 py-2.5 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/50">Open Community</button>
+      <section className="mt-9 flex flex-col gap-4 border-y border-white/10 bg-[linear-gradient(90deg,rgba(34,211,238,0.055),rgba(244,114,182,0.045),transparent)] py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div><p className="inline-flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.18em] text-cyan-100/62"><UsersRound size={13} aria-hidden="true" /> Continue into Community</p><h2 className="mt-2 text-xl font-semibold text-[#f7f4ee]">Meet the people behind the signal.</h2><p className="mt-1 text-sm text-white/50">Find members, rooms, jobs and live conversations.</p></div>
+        <button type="button" onClick={onOpenCommunity} className="qa-action shrink-0 self-start border-b border-cyan-100/35 pb-1 text-sm font-bold text-cyan-100 transition hover:text-white sm:self-auto">Open Community <span aria-hidden="true">→</span></button>
       </section>
     </div>
   );

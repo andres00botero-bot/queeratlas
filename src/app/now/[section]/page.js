@@ -58,8 +58,9 @@ export async function generateMetadata({ params }) {
   };
 }
 
-export default async function NowSectionPage({ params }) {
+export default async function NowSectionPage({ params, searchParams }) {
   const { section } = await params;
+  const query = await searchParams;
   const config = NOW_SECTIONS[section];
   if (!config) notFound();
 
@@ -90,7 +91,17 @@ export default async function NowSectionPage({ params }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <NowPage initialSection={config.sectionId} />
+      <NowPage
+        initialSection={config.sectionId}
+        initialDataQuery={section === "data" ? {
+          q: typeof query?.q === "string" ? query.q : "",
+          country: typeof query?.country === "string" ? query.country : "all",
+          metric: typeof query?.metric === "string" ? query.metric : "overall",
+          coverage: typeof query?.coverage === "string" ? query.coverage : "all",
+          sort: typeof query?.sort === "string" ? query.sort : "overall",
+          view: typeof query?.view === "string" ? query.view : "table",
+        } : {}}
+      />
     </>
   );
 }

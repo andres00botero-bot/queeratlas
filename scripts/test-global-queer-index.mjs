@@ -152,16 +152,19 @@ const reportPageSource = readFileSync(new URL("../src/app/reports/[slug]/page.js
 const methodologyReportSource = readFileSync(new URL("../src/components/reports/GlobalQueerCityIndexMethodologyReport.js", import.meta.url), "utf8");
 
 assert(nowSource.includes('href: "/now/data"'), "Now navigation must expose Data & Reports");
-assert(nowSource.includes("<DataReportsNowSection />"), "the Data & Reports section must render");
-assert(nowSource.includes('title: "Queer Data & Reports"'), "the Data section must have a matching visible hero title");
+assert(nowSource.includes("<DataReportsNowSection"), "the Data & Reports section must render");
 assert(nowSource.includes("if ((!ready || !today) && !isDataSection)"), "static research content must render without waiting for client data");
 assert(sectionSource.includes('title: "Global Queer Safety & Culture Index 2026 | Queer Atlas"'), "the flagship section needs index-first SEO metadata");
-assert(componentSource.includes("Global Queer Safety"), "the flagship index must lead the Data & Reports page");
-assert(componentSource.includes("Flagship index · 2026"), "the flagship status must be immediately visible");
-assert(componentSource.includes("See the 2026 ranking"), "the flagship page must lead readers directly to the ranking");
-assert(componentSource.includes("<GlobalQueerSafetyCultureRanking />"), "the flagship page must render the actual index results");
-assert(componentSource.includes("What the index measures"), "the score architecture must be easy to find");
-assert(componentSource.includes("Other Queer Atlas indexes &amp; reports"), "supporting reports must be visually secondary");
+assert(componentSource.includes("Atlas Data"), "the evidence explorer must lead the Data & Reports page");
+assert(componentSource.includes("Explore the evidence"), "the Data page must identify its primary exploration task");
+assert(componentSource.includes("Search city or country"), "the Data explorer must support destination search");
+assert(componentSource.includes("All countries"), "the Data explorer must support country filtering");
+assert(componentSource.includes("Evidence coverage"), "the Data explorer must expose evidence coverage");
+assert(componentSource.includes("Choose data view"), "the Data explorer must expose its table and bar views accessibly");
+assert(componentSource.includes("<table"), "the Data explorer must retain a semantic table view");
+assert(componentSource.includes("Compare destinations"), "the Data explorer must support direct destination comparison");
+assert(componentSource.includes("Download CSV"), "the Data explorer must provide downloadable data");
+assert(componentSource.includes("national context"), "city rows must identify the geography of their score context");
 assert(componentSource.includes('const INDEX_ROUTE = "/reports/global-queer-safety-culture-index-methodology"'), "the discovery page must link to the canonical methodology report");
 assert(sitemapSource.includes('"/now/data"'), "the Data & Reports discovery URL must be in the sitemap");
 assert(reportsIndexSource.includes('slug: "global-queer-safety-culture-index-methodology"'), "the canonical methodology report must be registered");

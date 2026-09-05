@@ -1,4 +1,5 @@
 import Link from "next/link";
+import NowSectionNav from "@/components/now/NowSectionNav";
 import { ATLAS_COLLECTIONS, ATLAS_COLLECTION_FILTERS } from "@/lib/atlasCollections";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 
@@ -16,47 +17,89 @@ export const metadata = {
   },
 };
 
+const NOW_SECTIONS = [
+  { id: "mixed", label: "News", href: "/now/news" },
+  { id: "voices", label: "Voices", href: "/now/voices" },
+  { id: "rankings", label: "Rankings", href: "/now/rankings" },
+  { id: "data", label: "Data & Reports", href: "/now/data" },
+  { id: "collections", label: "Atlas Collections", href: "/now/collections" },
+];
+
+const PRIMARY_FILTER_IDS = new Set(["all", "nightlife", "beach", "women", "solo", "events"]);
+
 const COLLECTION_STYLES = {
-  cyan: { art: "from-cyan-300/28 via-sky-400/10 to-transparent", line: "bg-cyan-200/75", dot: "bg-cyan-200", text: "text-cyan-100", card: "border-cyan-200/14 bg-[linear-gradient(180deg,rgba(10,24,31,0.98),rgba(8,10,15,0.99))] hover:border-cyan-200/30", link: "text-cyan-50 decoration-cyan-200/40" },
-  amber: { art: "from-amber-300/26 via-orange-400/10 to-transparent", line: "bg-amber-200/75", dot: "bg-amber-200", text: "text-amber-100", card: "border-amber-200/14 bg-[linear-gradient(180deg,rgba(28,21,12,0.98),rgba(10,10,13,0.99))] hover:border-amber-200/30", link: "text-amber-50 decoration-amber-200/40" },
-  fuchsia: { art: "from-fuchsia-300/25 via-pink-400/10 to-transparent", line: "bg-fuchsia-200/75", dot: "bg-fuchsia-200", text: "text-fuchsia-100", card: "border-fuchsia-200/14 bg-[linear-gradient(180deg,rgba(28,13,29,0.98),rgba(10,9,14,0.99))] hover:border-fuchsia-200/30", link: "text-fuchsia-50 decoration-fuchsia-200/40" },
-  rose: { art: "from-rose-300/25 via-orange-400/10 to-transparent", line: "bg-rose-200/75", dot: "bg-rose-200", text: "text-rose-100", card: "border-rose-200/14 bg-[linear-gradient(180deg,rgba(29,14,20,0.98),rgba(11,9,12,0.99))] hover:border-rose-200/30", link: "text-rose-50 decoration-rose-200/40" },
-  violet: { art: "from-violet-300/27 via-fuchsia-400/10 to-transparent", line: "bg-violet-200/75", dot: "bg-violet-200", text: "text-violet-100", card: "border-violet-200/14 bg-[linear-gradient(180deg,rgba(22,16,34,0.98),rgba(9,9,14,0.99))] hover:border-violet-200/30", link: "text-violet-50 decoration-violet-200/40" },
-  emerald: { art: "from-emerald-300/25 via-cyan-400/10 to-transparent", line: "bg-emerald-200/75", dot: "bg-emerald-200", text: "text-emerald-100", card: "border-emerald-200/14 bg-[linear-gradient(180deg,rgba(10,27,24,0.98),rgba(8,11,13,0.99))] hover:border-emerald-200/30", link: "text-emerald-50 decoration-emerald-200/40" },
+  cyan: { wash: "from-cyan-300/24 via-sky-300/8 to-transparent", line: "from-cyan-200 via-sky-300 to-transparent", label: "text-cyan-100", border: "hover:border-cyan-100/34" },
+  amber: { wash: "from-amber-300/24 via-orange-300/8 to-transparent", line: "from-amber-200 via-orange-300 to-transparent", label: "text-amber-100", border: "hover:border-amber-100/34" },
+  fuchsia: { wash: "from-fuchsia-300/22 via-pink-300/8 to-transparent", line: "from-fuchsia-200 via-pink-300 to-transparent", label: "text-fuchsia-100", border: "hover:border-fuchsia-100/34" },
+  rose: { wash: "from-rose-300/22 via-orange-300/8 to-transparent", line: "from-rose-200 via-orange-300 to-transparent", label: "text-rose-100", border: "hover:border-rose-100/34" },
+  violet: { wash: "from-violet-300/23 via-fuchsia-300/8 to-transparent", line: "from-violet-200 via-fuchsia-300 to-transparent", label: "text-violet-100", border: "hover:border-violet-100/34" },
+  emerald: { wash: "from-emerald-300/22 via-teal-300/8 to-transparent", line: "from-emerald-200 via-teal-300 to-transparent", label: "text-emerald-100", border: "hover:border-emerald-100/34" },
 };
 
-function buildFilterHref(filter, query) {
+function buildDiscoveryHref({ filter = "all", query = "", sort = "curated" }) {
   const params = new URLSearchParams();
   if (filter && filter !== "all") params.set("type", filter);
   if (query) params.set("q", query);
+  if (sort && sort !== "curated") params.set("sort", sort);
   const value = params.toString();
-  return value ? `/now/collections?${value}` : "/now/collections";
+  return value ? `/now/collections?${value}#discover-collections` : "/now/collections#discover-collections";
 }
 
-function CollectionArtwork({ collection, index, compact = false }) {
+function collectionTimestamp(collection) {
+  const timestamp = Date.parse(collection.updatedAt || collection.updated || "");
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function CollectionCover({ collection, index, lead = false }) {
   const style = COLLECTION_STYLES[collection.accent] || COLLECTION_STYLES.cyan;
+  const cityLine = collection.cities.slice(0, lead ? 4 : 3).join(" · ");
+
   return (
-    <div className={`relative overflow-hidden bg-[linear-gradient(145deg,#1b2a3f,#0e1520)] ${compact ? "h-28" : "min-h-72"}`} aria-hidden="true">
-      <div className={`absolute inset-0 bg-gradient-to-br ${style.art}`} />
-      <div className="absolute -right-12 -top-16 h-52 w-52 rounded-full border border-white/10" />
-      <div className="absolute -right-2 -top-6 h-36 w-36 rounded-full border border-white/10" />
-      <div className="absolute bottom-0 left-0 right-0 grid grid-cols-6 opacity-40">
-        {Array.from({ length: 12 }).map((_, itemIndex) => (
-          <span key={itemIndex} className="aspect-square border-r border-t border-white/8" />
-        ))}
+    <div className={`relative overflow-hidden border-b border-white/10 bg-[#0b0e15] ${lead ? "min-h-64 sm:min-h-72" : "min-h-40"}`} aria-hidden="true">
+      <div className={`absolute inset-0 bg-gradient-to-br ${style.wash}`} />
+      <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.24)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.24)_1px,transparent_1px)] [background-size:42px_42px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]" />
+      <div className="absolute -right-12 -top-16 h-56 w-56 rounded-full border border-white/10" />
+      <div className="absolute right-8 top-8 h-28 w-28 rounded-full border border-white/10" />
+      <div className="absolute inset-x-5 top-4 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.18em] text-white/48 sm:inset-x-6">
+        <span>Atlas field edit</span>
+        <span>{String(index + 1).padStart(2, "0")}</span>
       </div>
-      <div className="absolute inset-x-4 top-3 flex items-center justify-between text-[9px] font-semibold uppercase tracking-[0.2em] text-white/52">
-        <span>Queer Atlas / Edit {String(index + 1).padStart(2, "0")}</span>
-        <span>{collection.cities.length} cities</span>
-      </div>
-      <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-4">
-        <div>
-          <span className={`block h-1.5 w-1.5 rounded-full ${style.dot}`} />
-          <span className={`mt-3 block h-px w-16 ${style.line}`} />
-        </div>
-        <span className="max-w-36 text-right text-[10px] font-medium uppercase leading-4 tracking-[0.16em] text-white/54">{collection.mood}</span>
+      <div className="absolute inset-x-5 bottom-5 sm:inset-x-6">
+        <div className={`h-px w-24 bg-gradient-to-r ${style.line}`} />
+        <p className="mt-3 max-w-[85%] text-[10px] font-medium uppercase leading-4 tracking-[0.14em] text-white/58">{cityLine}</p>
       </div>
     </div>
+  );
+}
+
+function CollectionCard({ collection, index }) {
+  const style = COLLECTION_STYLES[collection.accent] || COLLECTION_STYLES.cyan;
+
+  return (
+    <article className={`group flex h-full flex-col overflow-hidden rounded-[24px] border border-white/11 bg-[linear-gradient(180deg,rgba(15,18,27,0.98),rgba(8,10,15,0.99))] shadow-[0_18px_55px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_75px_rgba(0,0,0,0.30)] ${style.border}`}>
+      <CollectionCover collection={collection} index={index} />
+      <div className="flex flex-1 flex-col p-5">
+        <p className={`text-[10px] font-bold uppercase tracking-[0.17em] ${style.label}`}>{collection.eyebrow}</p>
+        <h3 className="mt-2 text-[1.32rem] font-bold leading-[1.12] tracking-[-0.035em] text-[#f7f4ee]">{collection.title}</h3>
+        <p className="mt-3 line-clamp-3 text-[13px] leading-5 text-white/58">{collection.summary}</p>
+        <dl className="mt-5 grid grid-cols-2 gap-x-4 border-y border-white/9 py-3">
+          <div>
+            <dt className="text-[9px] font-semibold uppercase tracking-[0.13em] text-white/34">Inside</dt>
+            <dd className="mt-1 text-xs text-white/72">{collection.items.length} picks</dd>
+          </div>
+          <div>
+            <dt className="text-[9px] font-semibold uppercase tracking-[0.13em] text-white/34">Verified</dt>
+            <dd className="mt-1 text-xs text-white/72">{collection.updated}</dd>
+          </div>
+        </dl>
+        <div className="mt-auto flex items-end justify-between gap-4 pt-4">
+          <p className="line-clamp-2 text-[11px] leading-4 text-white/42">Best for {collection.bestFor.toLowerCase()}</p>
+          <Link href={collection.href} className={`shrink-0 border-b border-current/35 pb-1 text-sm font-bold transition hover:border-current ${style.label}`} aria-label={`Open ${collection.title}`}>
+            Open edit <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+      </div>
+    </article>
   );
 }
 
@@ -65,21 +108,28 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
   const activeFilter = String(resolvedParams?.type || "all").trim().toLowerCase();
   const query = String(resolvedParams?.q || "").trim();
   const normalizedQuery = query.toLowerCase();
+  const requestedSort = String(resolvedParams?.sort || "curated").trim().toLowerCase();
   const validFilter = ATLAS_COLLECTION_FILTERS.some((filter) => filter.id === activeFilter) ? activeFilter : "all";
+  const validSort = ["curated", "verified", "az"].includes(requestedSort) ? requestedSort : "curated";
   const activeFilterLabel = ATLAS_COLLECTION_FILTERS.find((filter) => filter.id === validFilter)?.label || "All collections";
 
-  const visibleCollections = ATLAS_COLLECTIONS.filter((collection) => {
-    if (validFilter !== "all" && collection.filter !== validFilter) return false;
-    if (!normalizedQuery) return true;
-    return [collection.title, collection.summary, collection.bestFor, collection.mood, ...collection.tags, ...collection.cities, ...collection.items]
-      .join(" ")
-      .toLowerCase()
-      .includes(normalizedQuery);
-  });
+  const visibleCollections = ATLAS_COLLECTIONS
+    .filter((collection) => {
+      if (validFilter !== "all" && collection.filter !== validFilter) return false;
+      if (!normalizedQuery) return true;
+      return [collection.title, collection.summary, collection.bestFor, collection.mood, ...collection.tags, ...collection.cities, ...collection.items].join(" ").toLowerCase().includes(normalizedQuery);
+    })
+    .sort((left, right) => {
+      if (validSort === "verified") return collectionTimestamp(right) - collectionTimestamp(left);
+      if (validSort === "az") return left.title.localeCompare(right.title);
+      return ATLAS_COLLECTIONS.indexOf(left) - ATLAS_COLLECTIONS.indexOf(right);
+    });
 
   const uniqueCities = new Set(ATLAS_COLLECTIONS.flatMap((collection) => collection.cities)).size;
   const totalPicks = ATLAS_COLLECTIONS.reduce((total, collection) => total + collection.items.length, 0);
-  const hasActiveDiscovery = validFilter !== "all" || Boolean(query);
+  const hasActiveDiscovery = validFilter !== "all" || Boolean(query) || validSort !== "curated";
+  const leadCollection = visibleCollections[0] || null;
+  const remainingCollections = visibleCollections.slice(1);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -89,7 +139,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
         "@id": `${QA_SITE_URL}/now/collections`,
         url: `${QA_SITE_URL}/now/collections`,
         name: "Atlas Collections",
-        description: "Editorially researched queer travel collections for stays, honeymoons, affordable city breaks, sapphic travel, events, wellness, food, nightlife, beaches, and solo travel.",
+        description: "Editorially researched queer travel collections for stays, events, culture, nightlife, beaches, and solo travel.",
         isPartOf: { "@id": QA_WEBSITE_ID },
         publisher: { "@id": QA_ORGANIZATION_ID },
         mainEntity: {
@@ -110,138 +160,108 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
   };
 
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_0%,rgba(56,189,248,0.10),transparent_28%),radial-gradient(circle_at_88%_4%,rgba(192,132,252,0.08),transparent_25%),linear-gradient(180deg,#05070b_0%,#080a10_48%,#050609_100%)] px-4 py-6 text-white sm:px-6 sm:py-9">
+    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_7%_0%,rgba(45,212,191,0.09),transparent_25%),radial-gradient(circle_at_91%_3%,rgba(251,191,36,0.07),transparent_24%),linear-gradient(180deg,#07090e_0%,#090b11_48%,#06070a_100%)] px-4 py-6 text-white sm:px-6 sm:py-9">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-7xl">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42 sm:text-xs">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38 sm:text-xs">
           <Link href="/now/news" className="transition hover:text-white">Now</Link>
           <span aria-hidden="true">/</span>
-          <span className="text-white/68">Atlas Collections</span>
+          <span className="text-white/64">Atlas Collections</span>
         </nav>
 
-        <section className="mt-5 overflow-hidden rounded-[28px] border border-cyan-100/22 bg-[radial-gradient(circle_at_12%_18%,rgba(103,232,249,0.22),transparent_40%),radial-gradient(circle_at_88%_14%,rgba(192,132,252,0.17),transparent_38%),linear-gradient(145deg,#1d334a,#17263a_56%,#291a34)] shadow-[0_30px_90px_rgba(0,0,0,0.30),0_0_0_1px_rgba(255,255,255,0.035)] sm:rounded-[34px]">
-          <div className="grid lg:grid-cols-[1.12fr_0.88fr]">
-            <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-11">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-100/66">Queer Atlas editorial</p>
-              <h1 className="mt-4 max-w-2xl text-4xl font-black leading-[1.02] tracking-[-0.045em] text-white sm:text-5xl lg:text-[3.6rem]">
-                Atlas Collections
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-white/72 sm:text-lg">
-                Curated ways into a city: the right dance floor, a softer first night, a beach with a real social rhythm, or a room built around performance.
-              </p>
-              <div className="mt-7 flex flex-wrap items-center gap-3">
-                <a href="#discover-collections" className="inline-flex min-h-11 items-center rounded-full border border-cyan-100/70 bg-cyan-100 px-5 text-xs font-bold uppercase tracking-[0.11em] text-slate-950 shadow-[0_10px_28px_rgba(103,232,249,0.16)] transition hover:border-white hover:bg-white">
-                  Explore the edits
-                </a>
-                <Link href="/sources-and-reviews" className="inline-flex min-h-11 items-center px-2 text-xs font-semibold text-white/58 transition hover:text-white">
-                  How we choose places
-                </Link>
-              </div>
-              <p className="mt-8 text-[10px] uppercase tracking-[0.14em] text-white/34">
-                {ATLAS_COLLECTIONS.length} edits &nbsp;·&nbsp; {uniqueCities} city signals &nbsp;·&nbsp; {totalPicks} considered picks
-              </p>
+        <header className="relative mt-5 overflow-hidden border-y border-white/10 py-7 sm:py-9">
+          <div className="pointer-events-none absolute -left-28 top-0 h-52 w-52 rounded-full bg-emerald-300/9 blur-3xl" aria-hidden="true" />
+          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div className="max-w-3xl">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-100/66">Queer Atlas field desk</p>
+              <h1 className="mt-3 text-4xl font-black leading-none tracking-[-0.045em] text-[#f7f4ee] sm:text-5xl">Atlas Collections</h1>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-white/62 sm:text-base sm:leading-7">Researched routes for the kind of trip you actually want—from a softer first night to a serious dance floor.</p>
             </div>
+            <dl className="flex flex-wrap gap-x-7 gap-y-3 border-l-0 border-white/10 lg:border-l lg:pl-7">
+              {[["Edits", ATLAS_COLLECTIONS.length], ["City signals", uniqueCities], ["Picks", totalPicks]].map(([term, value]) => (
+                <div key={term}>
+                  <dt className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/34">{term}</dt>
+                  <dd className="mt-1 text-lg font-bold text-white/86">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </header>
 
-            <div className="relative hidden min-h-[25rem] border-l border-cyan-100/18 bg-[radial-gradient(circle_at_72%_18%,rgba(103,232,249,0.38),transparent_33%),radial-gradient(circle_at_24%_78%,rgba(216,180,254,0.30),transparent_35%),linear-gradient(145deg,#1b3a55,#352043_58%,#172432)] lg:block" aria-hidden="true">
-              <div className="absolute left-[16%] top-[16%] w-[58%] rotate-[-7deg] rounded-2xl border border-cyan-100/28 bg-[linear-gradient(145deg,#203a52,#17283b)] p-4 shadow-[0_28px_70px_rgba(0,0,0,0.38),0_0_44px_rgba(34,211,238,0.14)]">
-                <div className="h-24 rounded-xl bg-[linear-gradient(135deg,rgba(103,232,249,0.34),rgba(129,140,248,0.14),rgba(255,255,255,0.04))]" />
-                <div className="mt-4 h-2 w-20 rounded-full bg-white/18" />
-                <div className="mt-2 h-2 w-36 rounded-full bg-white/8" />
-              </div>
-              <div className="absolute bottom-[13%] right-[12%] w-[58%] rotate-[5deg] rounded-2xl border border-fuchsia-100/28 bg-[linear-gradient(145deg,#3a2546,#241a31)] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.42),0_0_46px_rgba(217,70,239,0.14)]">
-                <div className="flex items-center justify-between text-[8px] uppercase tracking-[0.18em] text-white/42"><span>Field note</span><span>06 / 26</span></div>
-                <div className="mt-5 h-px bg-gradient-to-r from-fuchsia-200/60 to-transparent" />
-                <p className="mt-5 text-xl font-semibold leading-tight tracking-[-0.03em] text-white/86">Chosen for how the place fits the night.</p>
-              </div>
+        <NowSectionNav sections={NOW_SECTIONS} activeId="collections" className="mt-4" />
+
+        <section id="discover-collections" className="scroll-mt-24 pt-6 sm:scroll-mt-8 sm:pt-8" aria-labelledby="collections-discovery-heading">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-100/58">Browse the field desk</p>
+              <h2 id="collections-discovery-heading" className="mt-2 text-2xl font-black tracking-[-0.04em] text-[#f7f4ee] sm:text-3xl">Find an edit for this trip</h2>
             </div>
-          </div>
-        </section>
-
-        <section id="discover-collections" className="scroll-mt-24 pt-8 sm:scroll-mt-8 sm:pt-10">
-          <div className="max-w-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-100/58">Find your way in</p>
-            <h2 className="mt-2 text-[1.75rem] font-black leading-[1.05] tracking-[-0.04em] text-white sm:text-4xl">What kind of trip are you planning?</h2>
-            <p className="mt-3 text-sm leading-6 text-white/52">Choose one theme or search by city, mood, venue, or kind of night.</p>
+            <p aria-live="polite" className="text-xs text-white/46">{visibleCollections.length} {visibleCollections.length === 1 ? "collection" : "collections"}{validFilter !== "all" ? ` · ${activeFilterLabel}` : ""}{query ? ` · “${query}”` : ""}</p>
           </div>
 
-          <div className="mt-5 rounded-[20px] border border-cyan-100/10 bg-[linear-gradient(145deg,rgba(14,20,29,0.98),rgba(11,12,18,0.99))] p-2.5 shadow-[0_18px_55px_rgba(0,0,0,0.20)] sm:mt-6 sm:rounded-[24px] sm:p-4">
-            <form action="/now/collections" className="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
-              {validFilter !== "all" && <input type="hidden" name="type" value={validFilter} />}
-              <label htmlFor="collection-search" className="sr-only">Search Atlas Collections</label>
-              <input id="collection-search" name="q" type="search" defaultValue={query} placeholder="Try Berlin, beaches, solo travel..." className="col-span-2 min-h-12 min-w-0 w-full flex-1 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-base text-white outline-none placeholder:text-white/30 focus:border-cyan-200/32 sm:col-span-1 sm:text-sm" />
-              <button type="submit" className={`${hasActiveDiscovery ? "" : "col-span-2"} min-h-12 rounded-2xl border border-cyan-100/60 bg-cyan-100 px-4 text-xs font-bold uppercase tracking-[0.1em] text-slate-950 transition hover:border-white hover:bg-white sm:col-span-1 sm:px-6`}>
-                <span className="sm:hidden">Search</span>
-                <span className="hidden sm:inline">Search collections</span>
-              </button>
-              {hasActiveDiscovery && (
-                <Link href="/now/collections#discover-collections" className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-white/14 px-4 text-xs font-bold uppercase tracking-[0.1em] text-white/68 transition hover:border-white/30 hover:bg-white/[0.06] hover:text-white sm:px-5">
-                  Reset
-                </Link>
-              )}
-            </form>
-            <div aria-label="Collection filters" className="mt-3 flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain pb-1 pr-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {ATLAS_COLLECTION_FILTERS.map((filter) => {
-                const isActive =
-                  validFilter === filter.id &&
-                  (filter.id !== "all" || !query);
-                return (
-                  <Link key={filter.id} href={filter.id === "all" ? "/now/collections#discover-collections" : buildFilterHref(filter.id, query)} aria-current={isActive ? "page" : undefined} className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${isActive ? "border-white/34 bg-white/12 text-white" : "border-white/9 text-white/48 hover:border-white/20 hover:text-white/76"}`}>
-                    {filter.label}
-                  </Link>
-                );
-              })}
+          <form action="/now/collections" className="mt-5 grid gap-2 border-y border-white/9 py-4 sm:grid-cols-[minmax(0,1fr)_11rem_auto] sm:items-center">
+            {validFilter !== "all" && <input type="hidden" name="type" value={validFilter} />}
+            <label htmlFor="collection-search" className="sr-only">Search Atlas Collections</label>
+            <input id="collection-search" name="q" type="search" defaultValue={query} placeholder="Search a city, place, or kind of trip" className="min-h-12 w-full rounded-xl border border-white/11 bg-white/[0.045] px-4 text-base text-white outline-none placeholder:text-white/30 focus:border-cyan-100/38 focus:ring-2 focus:ring-cyan-100/10 sm:text-sm" />
+            <label htmlFor="collection-sort" className="sr-only">Sort collections</label>
+            <select id="collection-sort" name="sort" defaultValue={validSort} className="min-h-12 rounded-xl border border-white/11 bg-[#10131b] px-3 text-sm text-white/74 outline-none focus:border-cyan-100/38">
+              <option value="curated">Curated order</option>
+              <option value="verified">Recently verified</option>
+              <option value="az">A–Z</option>
+            </select>
+            <div className="grid grid-cols-2 gap-2 sm:flex">
+              <button type="submit" className={`${hasActiveDiscovery ? "" : "col-span-2"} min-h-12 rounded-xl bg-[#f3eee5] px-5 text-xs font-bold uppercase tracking-[0.1em] text-[#0a0c11] transition hover:bg-white sm:col-span-1`}>Apply</button>
+              {hasActiveDiscovery && <Link href="/now/collections#discover-collections" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/13 px-4 text-xs font-bold uppercase tracking-[0.1em] text-white/62 transition hover:border-white/28 hover:text-white">Clear</Link>}
             </div>
+          </form>
+
+          <div aria-label="Primary collection filters" className="mt-3 flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain pb-1 pr-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {ATLAS_COLLECTION_FILTERS.filter((filter) => PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => {
+              const isActive = validFilter === filter.id;
+              return <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort })} aria-current={isActive ? "page" : undefined} className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${isActive ? "border-emerald-100/36 bg-emerald-100/12 text-emerald-50" : "border-white/9 text-white/46 hover:border-white/20 hover:text-white/76"}`}>{filter.label}</Link>;
+            })}
           </div>
 
-          <div className="mt-5 flex min-h-8 flex-wrap items-center justify-between gap-2 sm:mt-6 sm:gap-3">
-            <p aria-live="polite" className="text-[13px] text-white/48 sm:text-sm">
-              {visibleCollections.length} {visibleCollections.length === 1 ? "collection" : "collections"}
-              {validFilter !== "all" ? ` in ${activeFilterLabel}` : ""}
-              {query ? ` matching “${query}”` : ""}
-            </p>
-            {hasActiveDiscovery && <Link href="/now/collections#discover-collections" className="text-xs font-semibold text-cyan-100/68 transition hover:text-cyan-50">Clear filters</Link>}
+          <details className="group mt-2 sm:hidden">
+            <summary className="inline-flex min-h-10 cursor-pointer list-none items-center text-[10px] font-bold uppercase tracking-[0.12em] text-white/48 transition hover:text-white/76">More filters <span className="ml-2 transition group-open:rotate-45" aria-hidden="true">+</span></summary>
+            <div className="flex flex-wrap gap-2 pb-2">
+              {ATLAS_COLLECTION_FILTERS.filter((filter) => !PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort })} aria-current={validFilter === filter.id ? "page" : undefined} className={`rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] ${validFilter === filter.id ? "border-amber-100/38 bg-amber-100/10 text-amber-50" : "border-white/9 text-white/48"}`}>{filter.label}</Link>)}
+            </div>
+          </details>
+
+          <div className="mt-2 hidden flex-wrap gap-2 sm:flex" aria-label="More collection filters">
+            {ATLAS_COLLECTION_FILTERS.filter((filter) => !PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort })} aria-current={validFilter === filter.id ? "page" : undefined} className={`rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${validFilter === filter.id ? "border-amber-100/38 bg-amber-100/10 text-amber-50" : "border-white/9 text-white/40 hover:border-white/20 hover:text-white/70"}`}>{filter.label}</Link>)}
           </div>
 
-          {visibleCollections.length > 0 ? (
-            <ul className="mt-4 grid gap-5 md:grid-cols-2">
-              {visibleCollections.map((collection) => {
-                const originalIndex = ATLAS_COLLECTIONS.findIndex((item) => item.id === collection.id);
-                const style = COLLECTION_STYLES[collection.accent] || COLLECTION_STYLES.cyan;
-                return (
-                  <li key={collection.id}>
-                    <article className={`group h-full overflow-hidden rounded-[26px] border transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_80px_rgba(0,0,0,0.34)] ${style.card}`}>
-                      <CollectionArtwork collection={collection} index={originalIndex} compact />
-                      <div className="flex flex-col p-4">
-                        <p className={`text-[10px] font-bold uppercase tracking-[0.18em] ${style.text}`}>{collection.eyebrow}</p>
-                        <h3 className="mt-2 text-xl font-bold leading-tight tracking-[-0.035em] text-white sm:text-[1.35rem]">{collection.title}</h3>
-                        <p className="mt-2 line-clamp-2 text-[13px] leading-5 text-white/62">{collection.summary}</p>
-                        <p className="mt-3 border-t border-white/9 pt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/48">
-                          {collection.items.length} picks <span className="mx-1.5 text-white/22">·</span> {collection.cities.length} cities
-                        </p>
-                        <div className="mt-auto flex items-end justify-between gap-4 pt-3">
-                          <p className="text-[10px] uppercase tracking-[0.1em] text-white/36">Updated {collection.updated}</p>
-                          <Link href={collection.href} className={`group/edit inline-flex shrink-0 items-center gap-2 border-b pb-1 text-sm font-bold underline-offset-4 transition hover:border-white/70 hover:text-white ${style.link}`} aria-label={`Open ${collection.title}`}>
-                            <span>View edit</span>
-                            <span className="flex h-5 w-5 items-center justify-center rounded-full border border-current/30 text-[11px] transition-transform duration-200 group-hover/edit:translate-x-0.5" aria-hidden="true">→</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </article>
-                  </li>
-                );
-              })}
-            </ul>
+          {leadCollection ? (
+            <>
+              <article className="mt-6 overflow-hidden rounded-[28px] border border-white/12 bg-[linear-gradient(145deg,rgba(18,22,31,0.99),rgba(9,11,17,1))] shadow-[0_28px_90px_rgba(0,0,0,0.28)] lg:grid lg:grid-cols-[0.86fr_1.14fr]">
+                <CollectionCover collection={leadCollection} index={ATLAS_COLLECTIONS.indexOf(leadCollection)} lead />
+                <div className="flex flex-col justify-center p-5 sm:p-7 lg:p-9">
+                  <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em]"><span className="text-emerald-100/76">Lead edit</span><span className="text-white/20">/</span><span className="text-white/42">{leadCollection.items.length} picks · {leadCollection.cities.length} cities</span></div>
+                  <h3 className="mt-3 max-w-2xl text-3xl font-black leading-[1.04] tracking-[-0.045em] text-[#f7f4ee] sm:text-4xl">{leadCollection.title}</h3>
+                  <p className="mt-4 max-w-2xl text-sm leading-6 text-white/64 sm:text-base sm:leading-7">{leadCollection.summary}</p>
+                  <p className="mt-5 border-l border-amber-100/36 pl-4 text-sm italic leading-6 text-white/52">{leadCollection.editorialNote || `Best for ${leadCollection.bestFor.toLowerCase()}.`}</p>
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/9 pt-5">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-white/38">Verified {leadCollection.updated}</p>
+                    <Link href={leadCollection.href} className="inline-flex min-h-11 items-center rounded-full bg-[#f3eee5] px-5 text-xs font-bold uppercase tracking-[0.1em] text-[#0a0c11] transition hover:bg-white">Open the edit <span className="ml-2" aria-hidden="true">→</span></Link>
+                  </div>
+                </div>
+              </article>
+
+              {remainingCollections.length > 0 && <ul className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{remainingCollections.map((collection) => <li key={collection.id}><CollectionCard collection={collection} index={ATLAS_COLLECTIONS.indexOf(collection)} /></li>)}</ul>}
+            </>
           ) : (
-            <div className="mt-4 rounded-[24px] border border-white/10 bg-[#0d0f14] p-8 text-center">
+            <div className="mt-7 border-y border-white/10 py-12 text-center">
               <h3 className="text-xl font-bold text-white">No exact match yet</h3>
-              <p className="mt-2 text-sm text-white/50">Try a broader mood, city, or collection type.</p>
-              <Link href="/now/collections#discover-collections" className="mt-5 inline-flex rounded-full bg-white px-4 py-2 text-xs font-bold text-black">Reset discovery</Link>
+              <p className="mt-2 text-sm text-white/50">Try a broader city, place, or kind of trip.</p>
+              <Link href="/now/collections#discover-collections" className="mt-5 inline-flex rounded-full bg-[#f3eee5] px-4 py-2 text-xs font-bold text-[#0a0c11]">Reset discovery</Link>
             </div>
           )}
         </section>
 
         <footer className="mt-12 flex flex-col gap-4 border-t border-white/9 py-7 sm:flex-row sm:items-center sm:justify-between">
-          <p className="max-w-2xl text-xs leading-5 text-white/40">Every edit separates dedicated queer spaces from recurring events and records when the selection was last reviewed.</p>
+          <p className="max-w-2xl text-xs leading-5 text-white/40">Every edit distinguishes dedicated queer spaces from recurring events and records when its selections were last reviewed.</p>
           <div className="flex gap-4 text-xs font-semibold text-white/54">
             <Link href="/editorial-policy" className="hover:text-white">Editorial policy</Link>
             <Link href="/sources-and-reviews" className="hover:text-white">Sources & reviews</Link>

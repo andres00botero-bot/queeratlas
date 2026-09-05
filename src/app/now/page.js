@@ -49,6 +49,7 @@ import BrandMark from "@/components/ui/BrandMark";
 import EmptyState from "@/components/ui/EmptyState";
 import PageControls from "@/components/ui/PageControls";
 import NewsroomFeed from "@/components/now/NewsroomFeed";
+import NowSectionNav from "@/components/now/NowSectionNav";
 
 const DataReportsNowSection = dynamic(() => import("@/components/reports/DataReportsNowSection"));
 const VoicesEditorialPanel = dynamic(() => import("@/components/now/VoicesEditorialPanel"));
@@ -526,7 +527,7 @@ function PulseSkeletonCard({ tone = "orange" }) {
   );
 }
 
-export default function NowPage({ initialSection = "mixed" }) {
+export default function NowPage({ initialSection = "mixed", initialDataQuery = {} }) {
   const router = useRouter();
   const { isMember, memberName, user, memberProfile } = useAuth();
   const [ready, setReady] = useState(true);
@@ -541,6 +542,7 @@ export default function NowPage({ initialSection = "mixed" }) {
   const [selectedNewsCategory, setSelectedNewsCategory] = useState("all");
   const [selectedRankingYear, setSelectedRankingYear] = useState("2026");
   const [selectedSafetyRankingYear, setSelectedSafetyRankingYear] = useState("2026");
+  const [activeRankingKind, setActiveRankingKind] = useState("travel");
   const [activeNowSection, setActiveNowSection] = useState(initialSection);
   const [activeCollectionFilter, setActiveCollectionFilter] = useState("all");
   const [showCollectionNominationForm, setShowCollectionNominationForm] = useState(false);
@@ -2229,7 +2231,7 @@ export default function NowPage({ initialSection = "mixed" }) {
           </header>
         ) : null}
 
-        {!isDataSection && !isMixedSection ? <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
+        {!isDataSection && !isMixedSection && !isRankingSection && !isVoicesSection ? <div className="qa-panel relative mb-8 overflow-hidden rounded-[30px] border border-fuchsia-200/24 bg-[#0a1022] p-7 shadow-[0_34px_130px_rgba(232,121,249,0.16)] sm:p-8">
           <div className="pointer-events-none absolute inset-0">
             <Image
               src="/now/queer-atlas-news-events-global-network-hero.png"
@@ -2271,43 +2273,8 @@ export default function NowPage({ initialSection = "mixed" }) {
           )}
         </div> : null}
 
-        {isDataSection ? (
-          <nav aria-label="Now sections" className="mb-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {nowSections.map((section) => (
-              <Link
-                key={`data-nav-${section.id}`}
-                href={section.href}
-                aria-current={section.id === "data" ? "page" : undefined}
-                className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${section.id === "mixed" ? "border-amber-100/38 bg-[linear-gradient(135deg,rgba(251,191,36,0.2),rgba(244,114,182,0.16))] px-4 text-amber-50 shadow-[0_10px_30px_rgba(244,114,182,0.12)] hover:-translate-y-0.5 hover:border-amber-50/60 hover:bg-[linear-gradient(135deg,rgba(251,191,36,0.28),rgba(244,114,182,0.23))]" : section.id === "data" ? "border-cyan-100/30 bg-cyan-100/12 text-cyan-50" : "border-white/12 bg-white/[0.035] text-white/54 hover:border-white/22 hover:text-white/78"}`}
-              >
-                {section.id === "mixed" ? "← Back to news feed" : section.label}
-              </Link>
-            ))}
-          </nav>
-        ) : isMixedSection ? (
-          <nav
-            aria-label="Now sections"
-            className="qa-news-scrollrail mb-4 flex gap-5 overflow-x-auto border-b border-white/10 px-1 pb-2 sm:gap-7"
-          >
-            {nowSections.map((section) => {
-              const isCurrent = section.id === activeNowSection;
-              return (
-                <Link
-                  key={`newsroom-nav-${section.id}`}
-                  href={section.href}
-                  aria-current={isCurrent ? "page" : undefined}
-                  className={`relative inline-flex min-h-11 shrink-0 items-center py-1 text-[11px] font-semibold uppercase tracking-[0.14em] transition focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 sm:text-xs ${
-                    isCurrent ? "text-[#f7f4ee]" : "text-white/42 hover:text-white/76"
-                  }`}
-                >
-                  {section.id === "mixed" ? "News" : section.label}
-                  {isCurrent ? (
-                    <span className="absolute -bottom-[9px] left-0 h-px w-full bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-transparent" />
-                  ) : null}
-                </Link>
-              );
-            })}
-          </nav>
+        {isDataSection || isMixedSection || isRankingSection || isVoicesSection ? (
+          <NowSectionNav sections={nowSections} activeId={activeNowSection} className="mb-4" />
         ) : <PageControls
           className="mb-6 transition-all duration-300"
           controlsRef={nowControlsRef}
@@ -2859,22 +2826,31 @@ export default function NowPage({ initialSection = "mixed" }) {
             )}
 
             {isRankingSection && (
-            <section className="qa-panel relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/14 bg-[linear-gradient(180deg,rgba(18,22,34,0.92),rgba(9,11,18,0.97),rgba(7,8,12,1))] p-6 shadow-[0_24px_64px_rgba(2,6,23,0.35)]">
-              <div className="pointer-events-none absolute -left-16 top-10 h-44 w-44 rounded-full bg-white/5 blur-3xl" />
-              <div className="pointer-events-none absolute -right-14 bottom-16 h-40 w-40 rounded-full bg-white/4 blur-3xl" />
-              <div className="mb-4 rounded-2xl border border-white/12 bg-white/[0.03] px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-white/60">Ranking brief</p>
-                <h2 className="qa-h2 mt-1 text-xl font-semibold text-white">
-                  Queer Atlas city rankings {selectedRankingYear}
-                </h2>
-                <p className="qa-copy-justify mt-1 text-sm leading-6 text-white/74">
-                  {rankingSeoSummaryText.travel} {rankingSeoSummaryText.safety}
-                </p>
+            <section className="relative min-w-0">
+              <header className="relative overflow-hidden border-b border-white/12 px-1 pb-7 pt-4 sm:pb-9 sm:pt-7">
+                <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-amber-200/7 blur-3xl" />
+                <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                  <div className="max-w-4xl">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/68">Queer Atlas · Annual desk</p>
+                    <h1 className="qa-display mt-3 text-[clamp(2.65rem,5.5vw,5.6rem)] font-semibold leading-[0.9] tracking-[-0.06em] text-[#f7f4ee]">City Rankings<span className="text-amber-100">.</span></h1>
+                    <p className="mt-4 max-w-[66ch] text-sm leading-6 text-white/60 sm:text-base sm:leading-7">Evidence-led views of queer travel depth and practical safety — ranked separately so one score never pretends to answer every question.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-x-5 gap-y-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/42 lg:max-w-sm lg:justify-end lg:text-right"><span>2026 edition</span><span>Two independent models</span><span>Methods published</span></div>
+                </div>
+              </header>
+
+              <div className="flex items-end justify-between gap-4 border-b border-white/10 py-5">
+                <div className="flex gap-6" role="tablist" aria-label="Choose ranking">
+                  {[{ id: "travel", label: "Travel" }, { id: "safety", label: "Safety" }].map((tab) => {
+                    const active = activeRankingKind === tab.id;
+                    return <button key={tab.id} id={`ranking-tab-${tab.id}`} type="button" role="tab" aria-selected={active} aria-controls={`ranking-panel-${tab.id}`} onClick={() => setActiveRankingKind(tab.id)} className={`relative min-h-11 px-1 text-sm font-semibold transition focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${active ? "text-white" : "text-white/42 hover:text-white/76"}`}>{tab.label}{active ? <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-amber-100" /> : null}</button>;
+                  })}
+                </div>
+                <Link href={activeRankingKind === "travel" ? "/now/data?sort=overall" : "/now/data?sort=legal"} className="hidden min-h-10 items-center text-xs font-semibold text-cyan-100/68 transition hover:text-cyan-50 sm:inline-flex">Explore all data →</Link>
               </div>
-              <div className="grid h-full gap-4 xl:grid-cols-2">
-              <div className="relative min-h-0 rounded-2xl border border-cyan-200/26 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(56,189,248,0.08),rgba(2,6,23,0.55))] p-4">
-              <div className="pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full bg-cyan-300/16 blur-2xl" />
-              <div className="pointer-events-none absolute -right-10 bottom-8 h-24 w-24 rounded-full bg-sky-300/12 blur-2xl" />
+
+              <div className="min-w-0">
+              <div id="ranking-panel-travel" role="tabpanel" aria-labelledby="ranking-tab-travel" hidden={activeRankingKind !== "travel"} className="relative min-h-0 border-t border-cyan-200/18 pt-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/75">Ranking</p>
@@ -2884,6 +2860,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                   </div>
                 </div>
                 <select
+                  aria-label="Travel ranking year"
                   value={selectedRankingYear}
                   onChange={(event) => {
                     const year = event.target.value;
@@ -2960,7 +2937,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                 </div>
               )}
               {!isRankingEditorOpen && (
-                <div className="mt-5 grid gap-3">
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
                   {[0, 1, 2].map((index) => {
                     const item = rankingRenderItems[index] || { city: "", country: "", signal: "" };
                     const cityKey = String(item.city || "").toLowerCase();
@@ -2981,7 +2958,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                           if (!cityExists) return;
                           router.push(`/${citySlug}`);
                         }}
-                        className={`group relative overflow-hidden rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 text-left transition ${
+                        className={`group relative overflow-hidden rounded-[22px] border bg-[linear-gradient(155deg,rgba(255,255,255,0.075),rgba(255,255,255,0.018))] p-4 text-left transition ${
                           cityExists
                             ? "hover:-translate-y-[1px] hover:border-cyan-200/45 hover:shadow-[0_20px_52px_rgba(34,211,238,0.14)]"
                             : "opacity-70"
@@ -3024,10 +3001,10 @@ export default function NowPage({ initialSection = "mixed" }) {
                   return (
                     <div
                       key={`${selectedRankingYear}-${index + 1}`}
-                      className={`grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border px-3 py-2 transition ${
+                      className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b px-1 py-3.5 transition ${
                         isRankingEditorOpen
                           ? "border-white/10 bg-black/25"
-                          : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] hover:border-cyan-200/32"
+                          : "border-white/10 hover:bg-cyan-100/[0.025]"
                       }`}
                     >
                       <p className={`text-xs font-semibold ${index < 5 ? "text-cyan-100" : "text-cyan-200/90"}`}>#{index + 1}</p>
@@ -3114,7 +3091,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                               : "border border-white/10 bg-white/5 text-white/35"
                           }`}
                         >
-                          {cityExists ? "Focus" : "Soon"}
+                          {cityExists ? "City guide" : "Unavailable"}
                         </button>
                       )}
                     </div>
@@ -3122,9 +3099,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                 })}
               </div>
               </div>
-              <div className="relative min-h-0 rounded-2xl border border-emerald-200/28 bg-[linear-gradient(180deg,rgba(16,185,129,0.14),rgba(45,212,191,0.08),rgba(2,20,16,0.58))] p-4">
-              <div className="pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full bg-emerald-300/16 blur-2xl" />
-              <div className="pointer-events-none absolute -right-10 bottom-8 h-24 w-24 rounded-full bg-teal-300/14 blur-2xl" />
+              <div id="ranking-panel-safety" role="tabpanel" aria-labelledby="ranking-tab-safety" hidden={activeRankingKind !== "safety"} className="relative min-h-0 border-t border-emerald-200/18 pt-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-emerald-100/80">Safety ranking</p>
@@ -3134,6 +3109,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                   </div>
                 </div>
                 <select
+                  aria-label="Safety ranking year"
                   value={selectedSafetyRankingYear}
                   onChange={(event) => {
                     const year = event.target.value;
@@ -3206,7 +3182,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                 </div>
               )}
               {!isSafetyRankingEditorOpen && (
-                <div className="mt-5 grid gap-3">
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
                   {[0, 1, 2].map((index) => {
                     const item = safetyRankingRenderItems[index] || { city: "", country: "", signal: "" };
                     const cityKey = String(item.city || "").toLowerCase();
@@ -3227,7 +3203,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                           if (!cityExists) return;
                           router.push(`/${citySlug}`);
                         }}
-                        className={`group relative overflow-hidden rounded-2xl border bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 text-left transition ${
+                        className={`group relative overflow-hidden rounded-[22px] border bg-[linear-gradient(155deg,rgba(255,255,255,0.075),rgba(255,255,255,0.018))] p-4 text-left transition ${
                           cityExists
                             ? "hover:-translate-y-[1px] hover:border-emerald-200/45 hover:shadow-[0_20px_52px_rgba(16,185,129,0.18)]"
                             : "opacity-70"
@@ -3270,10 +3246,10 @@ export default function NowPage({ initialSection = "mixed" }) {
                   return (
                     <div
                       key={`safety-${selectedSafetyRankingYear}-${index + 1}`}
-                      className={`grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-xl border px-3 py-2 transition ${
+                      className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 border-b px-1 py-3.5 transition ${
                         isSafetyRankingEditorOpen
                           ? "border-white/10 bg-black/25"
-                          : "border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] hover:border-emerald-200/32"
+                          : "border-white/10 hover:bg-emerald-100/[0.025]"
                       }`}
                     >
                       <p className={`text-xs font-semibold ${index < 5 ? "text-emerald-100" : "text-emerald-200/90"}`}>#{index + 1}</p>
@@ -3360,7 +3336,7 @@ export default function NowPage({ initialSection = "mixed" }) {
                               : "border border-white/10 bg-white/5 text-white/35"
                           }`}
                         >
-                          {cityExists ? "Focus" : "Soon"}
+                          {cityExists ? "City guide" : "Unavailable"}
                         </button>
                       )}
                     </div>
@@ -3375,7 +3351,7 @@ export default function NowPage({ initialSection = "mixed" }) {
         </section>
         )}
 
-        {isDataSection && <DataReportsNowSection />}
+        {isDataSection && <DataReportsNowSection initialQuery={initialDataQuery} />}
 
         {isCollectionsSection && (
         <section id="atlas-collections" aria-labelledby="atlas-collections-heading" className="mt-8 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_8%_4%,rgba(34,211,238,0.16),transparent_28%),radial-gradient(circle_at_48%_-4%,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_92%_10%,rgba(190,242,100,0.10),transparent_26%),radial-gradient(circle_at_76%_90%,rgba(167,139,250,0.12),transparent_34%),linear-gradient(180deg,rgba(8,11,23,0.98),rgba(8,9,15,0.99),rgba(4,4,7,1))] p-5 shadow-[0_34px_120px_rgba(2,6,23,0.46)] sm:p-6">
@@ -3936,7 +3912,7 @@ export default function NowPage({ initialSection = "mixed" }) {
           />
         ) : null}
 
-        <section className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-[11px] text-white/74">
+        {!isVoicesSection ? <section className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-[11px] text-white/74">
           <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">Discover paths</p>
           <p className="mt-1 text-xs leading-6 text-white/66">
             Shortcut routes plus citation sources in one low-noise layer.
@@ -3972,7 +3948,7 @@ export default function NowPage({ initialSection = "mixed" }) {
               Moderation policy
             </Link>
           </div>
-        </section>
+        </section> : null}
 
         {readingNewsItem ? (
           <div
