@@ -58,7 +58,7 @@
     "seed:city-reviews": "node scripts/seed-city-reviews.mjs"
   },
   "dependencies": {
-    "@sentry/nextjs": "^10.48.0",
+    "@sentry/nextjs": "^10.57.0",
     "@supabase/supabase-js": "^2.100.1",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
