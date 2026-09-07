@@ -11,10 +11,6 @@ const COMMUNITY_PANELS = [
   { id: "improve", label: "Build with us" },
 ];
 
-const ACTIVE_THEMES = Object.fromEntries(
-  COMMUNITY_PANELS.map(({ id }) => [id, { className: "qa-community-control-active" }]),
-);
-
 export function CommunityHero({ memberName, onExplore }) {
   return (
     <header className="qa-community-hero relative mb-6 flex min-h-[390px] overflow-hidden rounded-[28px] border border-white/[0.11] bg-[#05060a] shadow-[0_34px_100px_rgba(0,0,0,0.42)] sm:min-h-[420px] sm:rounded-[34px]">
@@ -69,13 +65,12 @@ export function CommunityNavigation({
   return (
     <section className="mb-6" aria-label="Community navigation">
       <PageControls
-        className="qa-community-dock sticky top-3 z-20"
+        className="border-b border-white/10"
         controlsRef={controlsRef}
         controlButtonsRef={controlButtonsRef}
-        variant="community-luxe"
+        variant="editorial-rail"
         ariaLabel="Community sections"
         mobileLabelsById={{ improve: "Build" }}
-        activeButtonThemeById={ACTIVE_THEMES}
         buttons={COMMUNITY_PANELS}
         activeId={activePanel}
         onSelect={onSelect}

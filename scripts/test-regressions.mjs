@@ -957,6 +957,33 @@ function testSearchRanksExplicitCityAndVenueTypeFirst() {
   );
 }
 
+function testMemberPageControlsUseEditorialRail() {
+  const communitySource = readFileSync(
+    new URL("../src/components/community/CommunityChrome.js", import.meta.url),
+    "utf8",
+  );
+  const favoritesSource = readFileSync(
+    new URL("../src/app/favorites/page.js", import.meta.url),
+    "utf8",
+  );
+  const controlsSource = readFileSync(
+    new URL("../src/components/ui/PageControls.js", import.meta.url),
+    "utf8",
+  );
+
+  assert(
+    communitySource.includes('variant="editorial-rail"') &&
+      favoritesSource.includes('variant="editorial-rail"'),
+    "member navigation: Community and Favorites should share the Events/News editorial rail",
+  );
+  assert(
+    !communitySource.includes("qa-community-control-active") &&
+      !favoritesSource.includes('variant="favorites-desktop-luxe"') &&
+      controlsSource.includes('variant === "editorial-rail" || variant === "events-compact"'),
+    "member navigation: legacy glass-panel control treatments should not return",
+  );
+}
+
 function run() {
   testCheckinMarkersUseSafeMatching();
   testCheckinFocusUsesMarkerCoordinates();
@@ -986,6 +1013,7 @@ function run() {
   testNowNewsFeedFitsMobileViewport();
   testCityTopicsRemainCrawlableWithoutVisualNoise();
   testSearchRanksExplicitCityAndVenueTypeFirst();
+  testMemberPageControlsUseEditorialRail();
 
   if (failures.length > 0) {
     console.error("Regression test failed:");

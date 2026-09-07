@@ -3696,7 +3696,7 @@ export default function FavoritesPage() {
           {!isReadOnlyPublicProfileView ? (
             <div className="relative z-10 mt-4 sm:mt-5">
               <PageControls
-                variant="favorites-desktop-luxe"
+                variant="editorial-rail"
                 controlsRef={favoritesControlsRef}
                 controlButtonsRef={favoritesControlButtonsRef}
                 buttons={profileTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
@@ -3708,24 +3708,6 @@ export default function FavoritesPage() {
                   map: "Map",
                   trips: "Trips",
                   calendar: "Calendar",
-                }}
-                activeButtonThemeById={{
-                  about: {
-                    className:
-                      "sm:bg-[#A855F7] sm:text-white",
-                  },
-                  map: {
-                    className:
-                      "sm:bg-violet-300 sm:text-[#0d1230]",
-                  },
-                  trips: {
-                    className:
-                      "sm:bg-[#8B5CF6] sm:text-white",
-                  },
-                  calendar: {
-                    className:
-                      "sm:bg-fuchsia-300 sm:text-[#2b0c15]",
-                  },
                 }}
                 activeId={activeProfileTab}
                 onSelect={(tabId) => setActiveProfileTab(tabId)}
