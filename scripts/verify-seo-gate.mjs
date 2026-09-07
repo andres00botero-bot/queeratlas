@@ -153,7 +153,7 @@ ensureContains(
 const reportDetailSource = read("src/app/reports/[slug]/page.js");
 ensureContains(
   reportDetailSource,
-  /const title = report\.title/,
+  /const title = report\.reportType[\s\S]*?: report\.title/,
   "src/app/reports/[slug]/page.js: report title must rely on the root brand template",
   failures
 );
@@ -256,7 +256,7 @@ ensureContains(
 );
 ensureContains(
   cityTopicSource,
-  /const shouldIndex = copyReady && contentQuality\.indexable/,
+  /const shouldIndex = config\.seoIndexable !== false && copyReady && contentQuality\.indexable/,
   `${cityTopicPath}: indexability must require both editorial copy and live result quality`,
   failures
 );

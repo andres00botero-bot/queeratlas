@@ -13,7 +13,9 @@ const MAX_BODY_BYTES = 8192;
 const requestRateWindow = new Map();
 
 function shouldCaptureSeoTelemetry() {
-  return process.env.QA_SEO_TELEMETRY === "1";
+  if (process.env.QA_SEO_TELEMETRY === "0") return false;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  return Boolean(supabaseUrl && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
 function getClientIp(request) {

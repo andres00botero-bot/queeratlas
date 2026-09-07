@@ -1,26 +1,18 @@
 import { formatDateLong } from "../../lib/dateDisplay.js";
+import {
+  normalizeEventRange as normalizeCanonicalEventRange,
+  normalizeIsoDate,
+} from "../events/eventFormatUtils.js";
+import { isEventStatusDiscoverable } from "../events/eventStatus.js";
 
 export function formatDate(value) {
   return formatDateLong(value);
 }
 
-export function normalizeIsoDate(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const iso = raw.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : "";
-}
+export { normalizeIsoDate };
 
 export function normalizeEventRange(event = {}) {
-  const startDate = normalizeIsoDate(event.startDate || event.start_date || event.date);
-  const endDateRaw = normalizeIsoDate(event.endDate || event.end_date || event.date);
-  const endDate = endDateRaw && endDateRaw >= startDate ? endDateRaw : startDate;
-  return {
-    ...event,
-    startDate,
-    endDate: endDate || startDate,
-    date: startDate,
-  };
+  return normalizeCanonicalEventRange(event);
 }
 
 export function formatEventDateLabel(event = {}) {
@@ -52,7 +44,7 @@ export function formatEventDateLabel(event = {}) {
 
 export function isEventVisibleOnCityPage(event) {
   const normalized = normalizeEventRange(event || {});
-  if (!normalized.startDate) return false;
+  if (!isEventStatusDiscoverable(normalized) || !normalized.startDate) return false;
 
   const parsedEnd = new Date(normalized.endDate || normalized.startDate);
   if (Number.isNaN(parsedEnd.getTime())) return true;

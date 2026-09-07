@@ -75,6 +75,7 @@ import {
 } from "@/features/city/cityModalStateUtils";
 import { getQualityToastConfig, resolveQualityUpdate } from "@/features/city/qualityModalFeature";
 import { formatDate, formatEventDateLabel, isEventVisibleOnCityPage, normalizeEventRange, normalizeIsoDate } from "@/features/city/eventRailFeature";
+import { eventStatusSchemaUrl } from "@/features/events/eventStatus";
 import {
   selectCityEventById,
   selectCityEventsAll,
@@ -1240,7 +1241,7 @@ export default function CityPage() {
           name: String(event?.name || "Event"),
           startDate: String(event?.date || ""),
           eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-          eventStatus: "https://schema.org/EventScheduled",
+          eventStatus: eventStatusSchemaUrl(event),
           location: {
             "@type": "Place",
             name: String(event?.location || cityName),

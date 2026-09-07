@@ -7535,7 +7535,7 @@ export const seedPlaces = [
     vibe: "men-only two-level cruise club in fortitude valley",
     description: "The Den is a long-running men-focused cruise club and adult shop in Fortitude Valley, with private cabins, maze areas, slings, showers, and themed community nights across two levels.",
     hours: "Daily 09:00-00:00; later event hours may apply.",
-    link: "https://www.travelgay.com/venue/den-mens-club",
+    link: "https://www.instagram.com/thedenfortitudevalley/",
     location: "187 Brunswick Street, Fortitude Valley QLD 4006, Australia",
     lat: -27.456205,
     lng: 153.03179,

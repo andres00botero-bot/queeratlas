@@ -7,6 +7,7 @@ import {
 } from "./vibeTaxonomy.js";
 import { getIntentSignalBoost, inferSearchIntent } from "./searchIntent.js";
 import { normalizeIsoDate } from "../features/events/eventFormatUtils.js";
+import { isEventStatusDiscoverable } from "../features/events/eventStatus.js";
 
 const QUERY_CONNECTORS = new Set(["a", "an", "at", "for", "in", "me", "near", "of", "the", "to"]);
 const SEARCH_BLOCKED_QUALITY_STATUSES = new Set([
@@ -159,10 +160,12 @@ export function isPublishedForSearch(entity = {}, targetType = "") {
   if (qualityStatus && SEARCH_BLOCKED_QUALITY_STATUSES.has(qualityStatus)) return false;
 
   if (targetType === "event") {
-    const eventStatus = normalizeValue(
-      entity?.event_status || entity?.moderation_status || entity?.approval_status || entity?.status || ""
+    const explicitEventStatus = entity?.event_status || entity?.eventStatus;
+    if (explicitEventStatus && !isEventStatusDiscoverable(entity)) return false;
+    const legacyEventStatus = normalizeValue(
+      entity?.moderation_status || entity?.approval_status || entity?.status || ""
     ).replace(/\s+/g, "_");
-    if (eventStatus && SEARCH_BLOCKED_EVENT_STATUSES.has(eventStatus)) return false;
+    if (legacyEventStatus && SEARCH_BLOCKED_EVENT_STATUSES.has(legacyEventStatus)) return false;
   }
 
   return !hasSearchContentContamination(entity);
@@ -184,10 +187,12 @@ export function isVisibleInCatalogSearch(entity = {}, targetType = "") {
   if (CATALOG_BLOCKED_LIFECYCLE_STATUSES.has(qualityStatus)) return false;
 
   if (targetType === "event") {
-    const eventStatus = normalizeValue(
-      entity?.event_status || entity?.moderation_status || entity?.approval_status || entity?.status || ""
+    const explicitEventStatus = entity?.event_status || entity?.eventStatus;
+    if (explicitEventStatus && !isEventStatusDiscoverable(entity)) return false;
+    const legacyEventStatus = normalizeValue(
+      entity?.moderation_status || entity?.approval_status || entity?.status || ""
     ).replace(/\s+/g, "_");
-    if (eventStatus && SEARCH_BLOCKED_EVENT_STATUSES.has(eventStatus)) return false;
+    if (legacyEventStatus && SEARCH_BLOCKED_EVENT_STATUSES.has(legacyEventStatus)) return false;
   }
 
   return !hasSearchContentContamination(entity);

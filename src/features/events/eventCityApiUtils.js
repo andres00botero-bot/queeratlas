@@ -30,6 +30,9 @@ export async function updateCityEventRecord(eventId, payload) {
   const missingTicketUrl =
     errorText.includes("ticket_url") &&
     (errorText.includes("column") || errorText.includes("schema cache"));
+  const missingEventStatus =
+    errorText.includes("event_status") &&
+    (errorText.includes("column") || errorText.includes("schema cache"));
 
   let fallbackPayload = { ...payload };
   if (missingVibeColumn) {
@@ -51,6 +54,10 @@ export async function updateCityEventRecord(eventId, payload) {
 
   if (missingTicketUrl) {
     delete fallbackPayload.ticket_url;
+  }
+
+  if (missingEventStatus) {
+    delete fallbackPayload.event_status;
   }
 
   attempt = await tryUpdate(fallbackPayload);

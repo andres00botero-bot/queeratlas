@@ -5,6 +5,7 @@ import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
+import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityLifecycle";
 import { cityNameFromConfig } from "@/features/city/checkinFeature";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { evaluateServiceSeoQuality } from "@/lib/seo/entityIndexing";
@@ -82,7 +83,13 @@ export async function generateMetadata({ params }) {
 export default async function CityServiceDetailPage({ params }) {
   const resolved = await params;
   const { city, service, coreConfig } = await findServiceByParams(resolved?.city, resolved?.slug);
-  if (!service || !coreConfig) notFound();
+  if (!coreConfig) notFound();
+  if (!service) {
+    const sourcePath = normalizeLifecyclePath(`/${resolved?.city}/services/${resolved?.slug}`);
+    const lifecycle = await getEntityLifecycle(sourcePath);
+    if (lifecycle?.lifecycleStatus === "redirected") permanentRedirect(lifecycle.destinationPath);
+    notFound();
+  }
 
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildServicePath(city, service);

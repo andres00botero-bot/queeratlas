@@ -1,6 +1,7 @@
 ﻿import { MODULAR_CITY_SLUGS, modularSeedPlaces } from "./seed/regions/emergingLatinAndBalkans.js";
 
 import { PLACE_COORDINATE_OVERRIDES } from "./placeCoordinateOverrides.js";
+import { SEED_VENUE_INTEL } from "./seedVenueIntel.js";
 import { BOLOGNA_CITY_SLUGS, bolognaSeedPlaces } from "./seed/regions/bologna.js";
 import { CRETE_CITY_SLUGS, creteSeedPlaces } from "./seed/regions/crete.js";
 import { CYPRUS_CITY_SLUGS, cyprusSeedPlaces } from "./seed/regions/cyprus.js";
@@ -240,9 +241,9 @@ const OFFICIAL_VENUE_LINKS = {
 
 function normalizeSeedKey(value = "") {
   return String(value)
-    .replace(/[Ã¸Ã˜]/g, "o")
-    .replace(/[Ã¦Ã†]/g, "ae")
-    .replace(/[Ã¥Ã…]/g, "a")
+    .replace(/[øØ]/g, "o")
+    .replace(/[æÆ]/g, "ae")
+    .replace(/[åÅ]/g, "a")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
@@ -360,6 +361,10 @@ function applyVenueOverride(place = {}) {
   return {
     ...place,
     ...(coordinateOverride || {}),
+    venue_intel:
+      place?.venue_intel && Object.keys(place.venue_intel).length > 0
+        ? place.venue_intel
+        : SEED_VENUE_INTEL[String(place.id || "")] || {},
     hours:
       (override?.hours && isVagueHours(rawHours) ? String(override.hours).trim() : rawHours) ||
       "Hours vary by night. Check official channels before going.",
@@ -1920,7 +1925,7 @@ export const seedPlaces = [
     name: "Sauna Club 55",
     type: "sauna",
     vibe: "clean central sauna with afternoon heat",
-    description: "Sauna Club 55 is the sleeker sauna option in Medellin: more polished than the cityâ€™s rougher spots, but still very much about action rather than wellness branding. The crowd is mixed, the layout is designed for movement, and the earlier closing time makes it especially good for an afternoon-to-evening detour before dinner, drinks, or a second round somewhere darker later on.",
+    description: "Sauna Club 55 is the sleeker sauna option in Medellin: more polished than the city’s rougher spots, but still very much about action rather than wellness branding. The crowd is mixed, the layout is designed for movement, and the earlier closing time makes it especially good for an afternoon-to-evening detour before dinner, drinks, or a second round somewhere darker later on.",
     hours: "Daily 14:00-21:30.",
     lat: 6.251,
     lng: -75.5658,
@@ -1942,7 +1947,7 @@ export const seedPlaces = [
     name: "Club Sillon Rojo",
     type: "cruise_club",
     vibe: "labyrinth-video-room downtown edge",
-    description: "Club Sillon Rojo is for the nights when Medellin needs to feel less polished and much more coded. Labyrinth, video room, gloryholes, lockers, and that central-city after-dark edge give it a more underground adult tone than the cityâ€™s terrace and cocktail scene. It is not trying to seduce you with pretty branding; it is there for people who prefer their queer nightlife more direct and more unapologetically physical.",
+    description: "Club Sillon Rojo is for the nights when Medellin needs to feel less polished and much more coded. Labyrinth, video room, gloryholes, lockers, and that central-city after-dark edge give it a more underground adult tone than the city’s terrace and cocktail scene. It is not trying to seduce you with pretty branding; it is there for people who prefer their queer nightlife more direct and more unapologetically physical.",
     hours: "Fri-Sat 22:00-05:00, Sun 20:00-03:00, Mon-Thu closed.",
     lat: 6.2353,
     lng: -75.5839,
@@ -2019,7 +2024,7 @@ export const seedPlaces = [
     name: "Factory Club",
     type: "cruise_club",
     vibe: "industrial cruise maze and dark-room heat",
-    description: "Factory Club is for the nights when Prague needs to feel less postcard-pretty and much more raw. Industrial styling, maze energy, dark corners, and a crowd that is usually there with very clear intentions give it a harder adult edge than the cityâ€™s social bars. It is direct, coded, and firmly in the after-dark category, best treated as a deliberate move rather than an accidental add-on.",
+    description: "Factory Club is for the nights when Prague needs to feel less postcard-pretty and much more raw. Industrial styling, maze energy, dark corners, and a crowd that is usually there with very clear intentions give it a harder adult edge than the city’s social bars. It is direct, coded, and firmly in the after-dark category, best treated as a deliberate move rather than an accidental add-on.",
     hours: "Daily 21:00-05:00.",
     lat: 50.075,
     lng: 14.4302,
@@ -2030,7 +2035,7 @@ export const seedPlaces = [
     name: "Sauna Babylonia",
     type: "sauna",
     vibe: "central jacuzzi-steam reset with action",
-    description: "Sauna Babylonia is one of Pragueâ€™s most useful adult institutions because it balances practicality and heat so well. Steam room, sauna, whirlpool, cabins, and a steady mixed crowd make it easy to use either as a recovery move or as the main plan. It is more polished than the roughest options, but still very much about live chemistry rather than wellness marketing.",
+    description: "Sauna Babylonia is one of Prague’s most useful adult institutions because it balances practicality and heat so well. Steam room, sauna, whirlpool, cabins, and a steady mixed crowd make it easy to use either as a recovery move or as the main plan. It is more polished than the roughest options, but still very much about live chemistry rather than wellness marketing.",
     hours: "Daily 15:00-23:00.",
     lat: 50.0841,
     lng: 14.4272,
@@ -2063,7 +2068,7 @@ export const seedPlaces = [
     name: "freedj",
     type: "bar",
     vibe: "tiny loud marais warm-up",
-    description: "freedj is smaller, tighter, and a little more mischievous than the bars that photograph better. It works when you want Le Marais to feel cheeky, close, and socially active from the first drink instead of only after midnight. The room tends to run on proximity, pop energy, and people leaning into each otherâ€™s plans fast, which makes it a very good place to either start a crawl or accidentally derail one in the best way.",
+    description: "freedj is smaller, tighter, and a little more mischievous than the bars that photograph better. It works when you want Le Marais to feel cheeky, close, and socially active from the first drink instead of only after midnight. The room tends to run on proximity, pop energy, and people leaning into each other’s plans fast, which makes it a very good place to either start a crawl or accidentally derail one in the best way.",
     hours: "Daily 17:00-02:00.",
     lat: 48.857,
     lng: 2.3572,
@@ -2306,10 +2311,10 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-berlin-baerenhoehle",
     city: "berlin",
-    name: "BÃ¤renhÃ¶hle",
+    name: "Bärenhöhle",
     type: "bar",
     vibe: "cozy bear-social local lane",
-    description: "BÃ¤renhÃ¶hle runs on that warm Berlin bear-bar chemistry where everyone clocks each other fast, then settles into real neighborhood momentum. It is less tourist showcase, more loyal local room with a playful, masculine-but-soft social tone that rewards staying longer than one drink.",
+    description: "Bärenhöhle runs on that warm Berlin bear-bar chemistry where everyone clocks each other fast, then settles into real neighborhood momentum. It is less tourist showcase, more loyal local room with a playful, masculine-but-soft social tone that rewards staying longer than one drink.",
     hours: "Mon-Fri 18:00-03:00, Sat 20:00-03:00.",
     link: "https://baerenhoehle-berlin.de/",
     lat: 52.5474,
@@ -2345,7 +2350,7 @@ export const seedPlaces = [
     name: "Der neue Oldtimer",
     type: "bar",
     vibe: "traditional camp local room",
-    description: "Der neue Oldtimer is classic SchÃ¶neberg continuity: camp touches, mature regulars, and that old-school Berlin comfort where everyone seems to already know the room. Less trend chase, more enduring neighborhood identity with strong regular-to-visitor crossover.",
+    description: "Der neue Oldtimer is classic Schöneberg continuity: camp touches, mature regulars, and that old-school Berlin comfort where everyone seems to already know the room. Less trend chase, more enduring neighborhood identity with strong regular-to-visitor crossover.",
     hours: "Daily 14:00/16:00-02:00/05:00.",
     link: "https://www.instagram.com/der_neue_oldtimer",
     lat: 52.4997,
@@ -2357,7 +2362,7 @@ export const seedPlaces = [
     name: "ILOsBAR",
     type: "bar",
     vibe: "polished dance-room social hub",
-    description: "ILOsBAR balances polished cocktails with real late-night Berlin movement: early social elegance, then a stronger dance-room pull on weekend hours. It works well as a bridge between SchÃ¶neberg bar-crawl mode and a more club-coded second chapter.",
+    description: "ILOsBAR balances polished cocktails with real late-night Berlin movement: early social elegance, then a stronger dance-room pull on weekend hours. It works well as a bridge between Schöneberg bar-crawl mode and a more club-coded second chapter.",
     hours: "Tue-Thu 19:00-02:00, Fri-Sat 19:00-04:00.",
     link: "https://ilosbar.de/",
     lat: 52.4979,
@@ -2417,7 +2422,7 @@ export const seedPlaces = [
     name: "SilverFuture",
     type: "bar",
     vibe: "queer-inclusive neukolln social lane",
-    description: "SilverFuture brings NeukÃ¶lln queer politics and nightlife into one room: mixed crowd, sharper social edge, and a community-first atmosphere that still turns fun and flirty fast. Great for travelers who want Berlin beyond rainbow-window dressing.",
+    description: "SilverFuture brings Neukölln queer politics and nightlife into one room: mixed crowd, sharper social edge, and a community-first atmosphere that still turns fun and flirty fast. Great for travelers who want Berlin beyond rainbow-window dressing.",
     hours: "Mon-Tue 17:00-01:00, Wed-Thu 17:00-02:00, Fri-Sat 17:00-03:00.",
     link: "https://www.silverfuture.net/",
     lat: 52.4866,
@@ -2746,10 +2751,10 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-zurich-maennerzone",
     city: "zurich",
-    name: "MÃ¤nnerzone",
+    name: "Männerzone",
     type: "cruise_club",
     vibe: "weekend bear-fetish bar with dark side",
-    description: "MÃ¤nnerzone gives Zurich one of its clearest bear-and-fetish signals. It starts as a cruise-minded bar with leather and friends energy, then slides toward something more coded as the night thickens. Bears, admirers, gear, and themed events give it a strong subculture identity that keeps Zurich from feeling too neat around the edges.",
+    description: "Männerzone gives Zurich one of its clearest bear-and-fetish signals. It starts as a cruise-minded bar with leather and friends energy, then slides toward something more coded as the night thickens. Bears, admirers, gear, and themed events give it a strong subculture identity that keeps Zurich from feeling too neat around the edges.",
     hours: "Fri 21:00-03:00, Sat 21:00-02:00, Sun-Thu closed.",
     lat: 47.3772,
     lng: 8.5297,
@@ -4408,7 +4413,7 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-munich-cafenil",
     city: "munich",
-    name: "CafÃ© NiL",
+    name: "Café NiL",
     type: "bar",
     vibe: "legendary glockenbach social room",
     description: "A long-running Munich queer landmark with laid-back seating, strong regular scene traffic, and a social rhythm that works for both early starts and longer nights.",
@@ -4650,7 +4655,7 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-budapest-habrolo",
     city: "budapest",
-    name: "HabrolÃ³",
+    name: "Habroló",
     type: "bar",
     vibe: "cozy local queer room",
     description: "A compact local gay bar with friendly atmosphere, central location, and reliable nightly social flow.",
@@ -4683,10 +4688,10 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-valencia-trapezzio",
     city: "valencia",
-    name: "TRAPEZZIO CafÃ©",
+    name: "TRAPEZZIO Café",
     type: "cafe",
     vibe: "el-carme terrace social hub",
-    description: "A gay-friendly cafÃ©-bar with terrace life at the center of old-town Valencia's queer social flow.",
+    description: "A gay-friendly café-bar with terrace life at the center of old-town Valencia's queer social flow.",
     hours: "Mon-Wed 18:00-00:00, Thu-Sat 18:00-02:00, Sun 18:00-00:00.",
     lat: 39.4762,
     lng: -0.3786,
@@ -4719,7 +4724,7 @@ export const seedPlaces = [
     name: "Mentiroso",
     type: "bar",
     vibe: "metropol social cafe-bar crossover",
-    description: "A modern queer-popular cafÃ© bar near Metropol Parasol that shifts from relaxed daytime/evening social to livelier late nights.",
+    description: "A modern queer-popular café bar near Metropol Parasol that shifts from relaxed daytime/evening social to livelier late nights.",
     hours: "Daily 16:30-03:00.",
     lat: 37.3934,
     lng: -5.9918,
@@ -5504,7 +5509,7 @@ export const seedPlaces = [
   createPlace({
     id: "seed-place-london-rvt",
     city: "london",
-    name: "RVT â€“ Royal Vauxhall Tavern",
+    name: "RVT – Royal Vauxhall Tavern",
     type: "club",
     vibe: "historic queer cabaret institution",
     description: "RVT is a cornerstone of UK queer nightlife history: cabaret, comedy, drag, activism, and dance-floor culture under one iconic roof. It feels both legendary and still very alive, especially on peak event nights.",
@@ -7494,7 +7499,7 @@ export const seedPlaces = [
     vibe: "men-only two-level cruise club in fortitude valley",
     description: "The Den is a long-running men-focused cruise club and adult shop in Fortitude Valley, with private cabins, maze areas, slings, showers, and themed community nights across two levels.",
     hours: "Daily 09:00-00:00; later event hours may apply.",
-    link: "https://www.travelgay.com/venue/den-mens-club",
+    link: "https://www.instagram.com/thedenfortitudevalley/",
     location: "187 Brunswick Street, Fortitude Valley QLD 4006, Australia",
     lat: -27.456205,
     lng: 153.03179,
@@ -8168,10 +8173,10 @@ export const seedPlaces = [
     name: "APOLLO Male Entertainment & KTV Bar",
     type: "club",
     vibe: "cabaret-scale male entertainment",
-    description: "Large ParaÃ±aque entertainment club with dance, drag, and cabaret-style shows, known for high-output late-night programming.",
+    description: "Large Parañaque entertainment club with dance, drag, and cabaret-style shows, known for high-output late-night programming.",
     hours: "Mon-Thu 20:00-05:00, Fri-Sat 20:00-06:00, Sun 20:00-05:00",
     link: "https://www.facebook.com/apolloktvbar",
-    location: "717-B Roxas Boulevard, Baclaran, ParaÃ±aque, Manila, Philippines",
+    location: "717-B Roxas Boulevard, Baclaran, Parañaque, Manila, Philippines",
     lat: 14.523746861506664,
     lng: 120.9939360613198,
   }),
@@ -8184,7 +8189,7 @@ export const seedPlaces = [
     description: "Compact Poblacion club with younger crowd pull, queer crossover nights, and local-DJ-led underground programming.",
     hours: "Mon-Tue closed, Wed-Sat 21:00-04:00, Sun closed",
     link: "",
-    location: "G/F White Rabbit Bldg. 5672 DoÃ±a Carmen St, Poblacion, Makati, Manila, Philippines",
+    location: "G/F White Rabbit Bldg. 5672 Doña Carmen St, Poblacion, Makati, Manila, Philippines",
     lat: 14.563423512649305,
     lng: 121.03345289014853,
   }),

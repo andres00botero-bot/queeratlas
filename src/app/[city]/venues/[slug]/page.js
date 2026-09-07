@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
+import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityLifecycle";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import {
@@ -245,7 +246,12 @@ export default async function CityVenueDetailPage({ params }) {
     notFound();
   }
 
-  if (!place) notFound();
+  if (!place) {
+    const sourcePath = normalizeLifecyclePath(`/${resolved?.city}/venues/${resolved?.slug}`);
+    const lifecycle = await getEntityLifecycle(sourcePath);
+    if (lifecycle?.lifecycleStatus === "redirected") permanentRedirect(lifecycle.destinationPath);
+    notFound();
+  }
 
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildVenuePath(city, place);

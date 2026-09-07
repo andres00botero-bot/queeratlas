@@ -1,5 +1,6 @@
 import DateInput from "@/components/ui/DateInput";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import { EVENT_STATUS_OPTIONS } from "@/features/events/eventStatus";
 
 export default function GlobalEventForm({
   open,
@@ -50,6 +51,18 @@ export default function GlobalEventForm({
       <p className="text-[11px] text-white/50 md:col-span-2">
         Use a single-day event by leaving <span className="font-medium text-white/70">To</span> empty.
       </p>
+      <label className="md:col-span-2">
+        <span className="mb-1 block text-[11px] uppercase tracking-[0.12em] text-white/55">Event status</span>
+        <select
+          value={globalForm.eventStatus || "scheduled"}
+          onChange={(event) => setGlobalForm((current) => ({ ...current, eventStatus: event.target.value }))}
+          className="w-full rounded-2xl border border-white/10 bg-[#0b0b0d] px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300/30"
+        >
+          {EVENT_STATUS_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      </label>
       <input
         value={globalForm.location}
         onChange={(event) => setGlobalForm((current) => ({ ...current, location: event.target.value }))}

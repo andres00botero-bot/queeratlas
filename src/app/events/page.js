@@ -201,6 +201,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
     description: "",
     link: "",
     ticket_url: "",
+    eventStatus: "scheduled",
   });
   const [blockedItems, setBlockedItems] = useState(() => getBlockedItems());
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -839,6 +840,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
       description: String(event?.description || ""),
       link: String(event?.link || ""),
       ticket_url: String(event?.ticket_url || event?.ticketUrl || ""),
+      eventStatus: String(event?.event_status || event?.eventStatus || "scheduled"),
     });
     setCityEditOpen(true);
   };
@@ -883,6 +885,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
       description: cityEditDraft.description || null,
       link: cityEditDraft.link || null,
       ticket_url: String(cityEditDraft.ticket_url || "").trim() || null,
+      event_status: cityEditDraft.eventStatus || "scheduled",
     };
 
     const { data, error } = await updateCityEventRecord(cityEditDraft.id, payload);

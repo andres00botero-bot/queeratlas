@@ -14,9 +14,9 @@ import { buildEventIntelFallback } from "./intelFallbacks.js";
 
 function normalizeSeedKey(value = "") {
   return String(value)
-    .replace(/[Ã¸Ã˜]/g, "o")
-    .replace(/[Ã¦Ã†]/g, "ae")
-    .replace(/[Ã¥Ã…]/g, "a")
+    .replace(/[øØ]/g, "o")
+    .replace(/[æÆ]/g, "ae")
+    .replace(/[åÅ]/g, "a")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
@@ -393,7 +393,7 @@ export const seedEvents = [
   createEvent({
     id: "seed-event-munich-csd",
     city: "munich",
-    name: "Munich Pride (CSD MÃ¼nchen)",
+    name: "Munich Pride (CSD München)",
     description: "A polished but high-energy citywide pride run with strong community presence and major weekend dance-floor spillover.",
     link: "",
     lat: 48.1374,

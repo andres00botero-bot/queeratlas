@@ -14,6 +14,9 @@ function buildFallbackPayload(payload, error) {
   const missingTicketUrl =
     errorText.includes("ticket_url") &&
     (errorText.includes("column") || errorText.includes("schema cache"));
+  const missingEventStatus =
+    errorText.includes("event_status") &&
+    (errorText.includes("column") || errorText.includes("schema cache"));
 
   let fallbackPayload = { ...payload };
   if (missingVibeColumn) {
@@ -35,6 +38,10 @@ function buildFallbackPayload(payload, error) {
 
   if (missingTicketUrl) {
     delete fallbackPayload.ticket_url;
+  }
+
+  if (missingEventStatus) {
+    delete fallbackPayload.event_status;
   }
 
   return fallbackPayload;

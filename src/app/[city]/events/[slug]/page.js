@@ -2,10 +2,12 @@ import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
+import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityLifecycle";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
+import { eventStatusLabel, eventStatusSchemaUrl } from "@/features/events/eventStatus";
 import {
   buildEntitySlug,
   buildEventPath,
@@ -122,7 +124,7 @@ function buildEventJsonLd({ event, city, cityName }) {
     startDate: String(normalizedEvent.startDate || ""),
     endDate: String(normalizedEvent.endDate || normalizedEvent.startDate || ""),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    eventStatus: "https://schema.org/EventScheduled",
+    eventStatus: eventStatusSchemaUrl(normalizedEvent),
     url: canonicalUrl,
     mainEntityOfPage: {
       "@type": "WebPage",
@@ -247,6 +249,11 @@ export default async function CityEventDetailPage({ params }) {
   );
 
   if (!event || !coreConfig) {
+    if (coreConfig) {
+      const sourcePath = normalizeLifecyclePath(`/${resolved?.city}/events/${resolved?.slug}`);
+      const lifecycle = await getEntityLifecycle(sourcePath);
+      if (lifecycle?.lifecycleStatus === "redirected") permanentRedirect(lifecycle.destinationPath);
+    }
     notFound();
   }
 
@@ -309,6 +316,11 @@ export default async function CityEventDetailPage({ params }) {
             {cityName} event intelligence with schedule context, vibe signal, and safer routing.
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/65">
+            {normalizedEvent.eventStatus !== "scheduled" ? (
+              <span className="rounded-full border border-amber-200/22 bg-amber-200/9 px-3 py-1 text-amber-100">
+                {eventStatusLabel(normalizedEvent)}
+              </span>
+            ) : null}
             <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">
               Start: {normalizedEvent.startDate || "TBA"}
             </span>

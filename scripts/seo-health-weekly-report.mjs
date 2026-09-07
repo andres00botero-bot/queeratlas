@@ -2,6 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL && typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
 const DEFAULT_OUT = "reports/seo-health-weekly-latest.md";
 const WINDOW_DAYS = 7;
 

@@ -1,4 +1,5 @@
 import { normalizeEventRange, normalizeIsoDate } from "@/features/events/eventFormatUtils";
+import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { formatDateLong } from "../../lib/dateDisplay.js";
 
 export function formatDateLabel(value) {
@@ -35,13 +36,13 @@ export function formatEventDateLabel(event = {}) {
 export function eventOverlapsDate(event = {}, targetDate = "") {
   const normalized = normalizeEventRange(event);
   const date = normalizeIsoDate(targetDate);
-  if (!normalized.startDate || !date) return false;
+  if (!isEventStatusDiscoverable(normalized) || !normalized.startDate || !date) return false;
   return date >= normalized.startDate && date <= (normalized.endDate || normalized.startDate);
 }
 
 export function eventOverlapsMonth(event = {}, year, month) {
   const normalized = normalizeEventRange(event);
-  if (!normalized.startDate) return false;
+  if (!isEventStatusDiscoverable(normalized) || !normalized.startDate) return false;
   const monthStart = `${year}-${String(month + 1).padStart(2, "0")}-01`;
   const monthEnd = `${year}-${String(month + 1).padStart(2, "0")}-${String(new Date(year, month + 1, 0).getDate()).padStart(2, "0")}`;
   const end = normalized.endDate || normalized.startDate;

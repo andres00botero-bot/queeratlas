@@ -8,6 +8,7 @@ import {
   NEARBY_RESULT_LIMIT,
   toNearbyCoordinate,
 } from "@/lib/nearby";
+import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ function normalizeVenue(row = {}, origin) {
 
 function normalizeEvent(row = {}, origin) {
   const distanceKm = distanceKmBetween(origin, row);
-  if (!Number.isFinite(distanceKm) || distanceKm > NEARBY_RADIUS_KM || !isCurrentOrUpcomingEvent(row)) return null;
+  if (!isEventStatusDiscoverable(row) || !Number.isFinite(distanceKm) || distanceKm > NEARBY_RADIUS_KM || !isCurrentOrUpcomingEvent(row)) return null;
   return {
     id: row.id,
     entityType: "event",
@@ -49,7 +50,26 @@ function normalizeEvent(row = {}, origin) {
     lat: Number(row.lat),
     lng: Number(row.lng),
     distanceKm,
+    eventStatus: row.event_status || "scheduled",
   };
+}
+
+async function fetchNearbyEvents(bounds) {
+  const buildQuery = (select) => supabase
+    .from("events")
+    .select(select)
+    .not("lat", "is", null)
+    .not("lng", "is", null)
+    .gte("lat", bounds.minLat)
+    .lte("lat", bounds.maxLat)
+    .gte("lng", bounds.minLng)
+    .lte("lng", bounds.maxLng)
+    .range(0, 999);
+
+  const current = await buildQuery("id, name, city, location, date, start_date, end_date, event_status, lat, lng");
+  const message = `${current.error?.code || ""} ${current.error?.message || ""}`.toLowerCase();
+  if (!current.error || !message.includes("event_status")) return current;
+  return buildQuery("id, name, city, location, date, start_date, end_date, lat, lng");
 }
 
 export async function POST(request) {
@@ -79,16 +99,7 @@ export async function POST(request) {
       .gte("lng", bounds.minLng)
       .lte("lng", bounds.maxLng)
       .range(0, 999);
-    const eventRequest = supabase
-      .from("events")
-      .select("id, name, city, location, date, start_date, end_date, lat, lng")
-      .not("lat", "is", null)
-      .not("lng", "is", null)
-      .gte("lat", bounds.minLat)
-      .lte("lat", bounds.maxLat)
-      .gte("lng", bounds.minLng)
-      .lte("lng", bounds.maxLng)
-      .range(0, 999);
+    const eventRequest = fetchNearbyEvents(bounds);
 
     const [venuesResponse, eventsResponse] = await Promise.all([venueRequest, eventRequest]);
     if (venuesResponse.error || eventsResponse.error) {

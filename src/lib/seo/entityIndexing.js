@@ -1,3 +1,5 @@
+import { isEventStatusIndexable } from "../../features/events/eventStatus.js";
+
 const BLOCKED_QUALITY_STATUSES = new Set(["hold", "rejected", "blocked", "draft"]);
 const WEAK_RESEARCH_STATUSES = new Set([
   "generated_practical_fallback",
@@ -125,6 +127,9 @@ export function resolveEventEndDate(entity = {}) {
 export function evaluateEventSeoQuality(entity = {}, todayIso = new Date().toISOString().slice(0, 10)) {
   const result = baseQuality(entity, "event", 80);
   const endDate = resolveEventEndDate(entity);
+  if (!isEventStatusIndexable(entity, { hasDate: /^\d{4}-\d{2}-\d{2}$/.test(endDate) })) {
+    result.reasons.push("inactive-event-status");
+  }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) result.reasons.push("missing-date");
   else if (endDate < todayIso) result.reasons.push("expired-event");
   return { ...result, indexable: result.reasons.length === 0 };

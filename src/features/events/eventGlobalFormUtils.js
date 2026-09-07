@@ -1,5 +1,6 @@
 import { normalizeEventRange, normalizeIsoDate } from "@/features/events/eventFormatUtils";
 import { buildVibeDualWriteFields, inferVibeTagsFromLegacyVibe, normalizeVibeTags } from "@/lib/vibeTaxonomy";
+import { EVENT_STATUS, normalizeEventStatus } from "@/features/events/eventStatus";
 
 export const EMPTY_GLOBAL_FORM = {
   name: "",
@@ -13,6 +14,7 @@ export const EMPTY_GLOBAL_FORM = {
   ticket_url: "",
   source: "",
   lastChecked: "",
+  eventStatus: EVENT_STATUS.SCHEDULED,
 };
 
 export function buildGlobalFormFromEvent(event = {}) {
@@ -36,6 +38,7 @@ export function buildGlobalFormFromEvent(event = {}) {
     ticket_url: String(event?.ticket_url || event?.ticketUrl || ""),
     source: String(event?.source || ""),
     lastChecked: String(event?.lastChecked || ""),
+    eventStatus: normalizeEventStatus(event),
   };
 }
 
@@ -64,6 +67,7 @@ export function buildGlobalEventPayloadFromForm(globalForm = {}) {
       ticket_url: String(globalForm.ticket_url || "").trim() || null,
       source: globalForm.source || null,
       last_checked: globalForm.lastChecked || null,
+      event_status: normalizeEventStatus(globalForm.eventStatus, { hasDate: Boolean(startDate) }),
     },
   };
 }

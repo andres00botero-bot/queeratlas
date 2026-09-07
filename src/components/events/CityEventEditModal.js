@@ -1,5 +1,6 @@
 import DateInput from "@/components/ui/DateInput";
 import VibeTagPicker from "@/components/ui/VibeTagPicker";
+import { EVENT_STATUS_OPTIONS } from "@/features/events/eventStatus";
 
 export default function CityEventEditModal({
   open,
@@ -51,6 +52,19 @@ export default function CityEventEditModal({
                 />
               </div>
             </div>
+
+            <label className="block">
+              <span className="mb-1 block text-[11px] uppercase tracking-[0.12em] text-white/55">Event status</span>
+              <select
+                value={draft.eventStatus || "scheduled"}
+                onChange={(event) => setDraft((current) => ({ ...current, eventStatus: event.target.value }))}
+                className="w-full rounded-2xl border border-white/10 bg-[#0b0b0d] px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-300/30"
+              >
+                {EVENT_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
 
             <input
               value={draft.location}

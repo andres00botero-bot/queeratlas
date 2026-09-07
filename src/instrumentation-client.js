@@ -18,7 +18,7 @@ export function reportWebVitals(metric) {
 
   appendWebVitalSample(payload);
 
-  if (process.env.NEXT_PUBLIC_ENABLE_SEO_TELEMETRY === "1" && typeof navigator !== "undefined") {
+  if (typeof navigator !== "undefined") {
     try {
       const body = JSON.stringify(payload);
       if (typeof navigator.sendBeacon === "function") {

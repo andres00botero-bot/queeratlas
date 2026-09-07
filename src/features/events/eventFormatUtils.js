@@ -1,3 +1,5 @@
+import { normalizeEventStatus } from "./eventStatus.js";
+
 export function splitLegacyVibe(description = "") {
   const raw = String(description || "");
   const match = raw.match(/^\[Vibe:\s*([^\]]+)\]\s*(?:\n\n)?([\s\S]*)$/i);
@@ -59,11 +61,14 @@ export function normalizeEventRange(event = {}) {
   const startDate = normalizeIsoDate(event.startDate || event.start_date || event.date);
   const endDateRaw = normalizeIsoDate(event.endDate || event.end_date || event.date);
   const endDate = endDateRaw && endDateRaw >= startDate ? endDateRaw : startDate;
+  const eventStatus = normalizeEventStatus(event, { hasDate: Boolean(startDate) });
 
   return {
     ...event,
     startDate,
     endDate,
+    event_status: eventStatus,
+    eventStatus,
     // Backward-compatible key still used in some views/components.
     date: startDate,
   };

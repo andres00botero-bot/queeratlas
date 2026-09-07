@@ -38,6 +38,7 @@ export function mapGlobalEventRow(row) {
     description: parsed.description || "",
     link: row.link || "",
     ticket_url: row.ticket_url || "",
+    event_status: row.event_status || row.eventStatus || "",
     source: row.source || "",
     lastChecked: row.last_checked || "",
     city: "Global",

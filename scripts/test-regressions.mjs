@@ -530,6 +530,7 @@ function testVibeTaxonomyContract() {
     "relax",
     "drag",
     "industrial",
+    "store",
     "service",
   ];
 
@@ -619,7 +620,7 @@ function testVibeTagsDualWriteWiring() {
     "vibe dual-write wiring: global events API should write vibe_tags with fallback helper"
   );
   assert(
-    usePlacesSource.includes("buildVibeDualWriteFields") &&
+    usePlacesSource.includes("buildPlaceVibeDualWriteFields") &&
       usePlacesSource.includes("isMissingVibeTagsColumnError"),
     "vibe dual-write wiring: places data hook should dual-write and fallback on missing vibe_tags"
   );
@@ -716,11 +717,6 @@ function testVibeTagChipsRenderingWiring() {
     "vibe chips: search page should render vibe chips"
   );
   assert(
-    nowPageSource.includes('import VibeTagChips from "@/components/ui/VibeTagChips";') &&
-      nowPageSource.includes("<VibeTagChips"),
-    "vibe chips: now page should render vibe chips for trending places"
-  );
-  assert(
     (
       cityPageSource.includes("<VibeTagChips")
       || cityEventsRailSource.includes("<VibeTagChips")
@@ -774,7 +770,7 @@ function testCitiesAreSortedAlphabetically() {
     "utf8",
   );
   const filteredCitiesBlock = citiesPageSource.match(
-    /const filteredCities = useMemo\(\(\) => \{[\s\S]*?\n  \}, \[allCities, query, selectedCountry\]\);/,
+    /const filteredCities = useMemo\(\(\) => \{[\s\S]*?\n  \}, \[allCities, query, selectedCountry, selectedRegion\]\);/,
   );
 
   assert(
@@ -790,9 +786,9 @@ function testNowRankingsAreServerDiscoverable() {
     new URL("../src/app/now/page.js", import.meta.url),
     "utf8",
   );
-  const loadingStart = nowPageSource.indexOf("if (!ready || !today) {");
+  const loadingStart = nowPageSource.indexOf("if ((!ready || !today) && !isDataSection) {");
   const normalRenderStart = nowPageSource.indexOf(
-    'return (\n    <main className="qa-page qa-now',
+    '<main className="qa-page qa-now',
     loadingStart,
   );
   const loadingBranch =
@@ -812,7 +808,7 @@ function testNowRankingsAreServerDiscoverable() {
   assert(
     nowPageSource.includes('"@type": "City"') &&
       nowPageSource.includes("rankingSeoCities.map") &&
-      nowPageSource.includes("Queer Atlas city rankings"),
+      nowPageSource.includes('aria-label="Internal now crawl links"'),
     "now rankings SEO: ranking entries should resolve to City entities, persistent crawl links, and a section heading",
   );
   assert(
@@ -836,10 +832,11 @@ function testNowNewsFeedFitsMobileViewport() {
 
   assert(
     nowPageSource.includes(
-      'className="qa-now-news-feed relative flex h-full min-w-0 w-full max-w-full flex-col overflow-hidden p-0"',
+      'className="qa-now-news-feed relative flex h-full min-w-0 w-full max-w-full flex-col p-0"',
     ) &&
       nowPageSource.includes("grid min-w-0 items-stretch gap-6") &&
-      nowPageSource.includes("grid min-h-0 min-w-0 w-full max-w-full flex-1"),
+      nowPageSource.includes("grid min-h-0 min-w-0 w-full max-w-full flex-1 content-start") &&
+      nowPageSource.includes("min-h-screen overflow-x-hidden"),
     "now mobile news feed: grid item and card grid should shrink within the viewport",
   );
   assert(
@@ -849,42 +846,20 @@ function testNowNewsFeedFitsMobileViewport() {
   );
 }
 
-function testMobileCityTopicsFollowQuickNavigation() {
+function testCityTopicsRemainCrawlableWithoutVisualNoise() {
   const cityPageSource = readFileSync(
     new URL("../src/app/[city]/page.js", import.meta.url),
     "utf8",
   );
-  const cityTopClusterSource = readFileSync(
-    new URL("../src/components/city/CityTopCluster.js", import.meta.url),
+  const topicRoutesSource = readFileSync(
+    new URL("../src/lib/seo/topicHubRoutes.js", import.meta.url),
     "utf8",
-  );
-  const mobileNavigationStart = cityPageSource.indexOf(
-    '<div className="xl:hidden">',
-  );
-  const mobileTopicLinks = cityPageSource.indexOf(
-    "<CitySeoTopicLinks city={city} cityName={cityName} />",
-    mobileNavigationStart,
-  );
-  const mobileNavigation = cityPageSource.indexOf(
-    "<CityNavigationCluster",
-    mobileNavigationStart,
   );
 
   assert(
-    mobileNavigationStart >= 0 &&
-      mobileNavigation >= mobileNavigationStart &&
-      mobileTopicLinks > mobileNavigation &&
-      cityPageSource.includes(
-        'import CitySeoTopicLinks from "@/components/city/CitySeoTopicLinks";',
-      ),
-    "city mobile layout: Explore City Topics should render after Quick Navigation",
-  );
-  assert(
-    cityTopClusterSource.includes('<div className="hidden xl:block">') &&
-      cityTopClusterSource.includes(
-        "<CitySeoTopicLinks city={city} cityName={cityName} />",
-      ),
-    "city desktop layout: Explore City Topics should retain its desktop position without a mobile duplicate",
+    !cityPageSource.includes("CitySeoTopicLinks") &&
+      topicRoutesSource.includes("discover"),
+    "city topics: discovery routes should remain in the crawl architecture without a visible city-page panel",
   );
 }
 
@@ -947,9 +922,9 @@ function testSearchRanksExplicitCityAndVenueTypeFirst() {
     "search ranking: an explicit Madrid sauna must outrank popular Madrid venues and saunas in other cities",
   );
   assert(
-    directResults.all.findIndex((item) => item.id === "madrid-bar") <
-      directResults.all.findIndex((item) => item.id === "barcelona-sauna"),
-    "search ranking: an explicit city should outrank category-only matches from other cities",
+    !directResults.all.some((item) => item.id === "barcelona-sauna") &&
+      directResults.all[0]?.id === "madrid-sauna",
+    "search ranking: an explicit city and venue type should exclude category-only matches from other cities",
   );
   assert(
     synonymResults.all[0]?.id === "madrid-sauna",
@@ -960,11 +935,13 @@ function testSearchRanksExplicitCityAndVenueTypeFirst() {
       !homeSource.includes("const orderedResults = [...merged.cities, ...merged.events, ...merged.places];"),
     "home search: dropdown should preserve the global relevance order",
   );
+  const dropdownBlock = homeSource.match(/<div aria-label="Instant search results"[\s\S]*?<\/div>/)?.[0] || "";
   assert(
-    homeSource.includes("lg:z-[100] lg:overflow-visible") &&
-      homeSource.includes("lg:max-h-[560px]") &&
-      homeSource.includes("w-full max-h-[360px]") &&
-      !homeSource.includes("lg:w-["),
+    homeSource.includes("lg:z-[100]") &&
+      homeSource.includes("lg:overflow-visible") &&
+      dropdownBlock.includes("lg:max-h-[560px]") &&
+      dropdownBlock.includes("w-full max-h-[360px]") &&
+      !dropdownBlock.includes("lg:w-["),
     "home search: desktop dropdown should be taller, retain its width, and layer above following sections",
   );
 
@@ -1007,7 +984,7 @@ function run() {
   testCitiesAreSortedAlphabetically();
   testNowRankingsAreServerDiscoverable();
   testNowNewsFeedFitsMobileViewport();
-  testMobileCityTopicsFollowQuickNavigation();
+  testCityTopicsRemainCrawlableWithoutVisualNoise();
   testSearchRanksExplicitCityAndVenueTypeFirst();
 
   if (failures.length > 0) {

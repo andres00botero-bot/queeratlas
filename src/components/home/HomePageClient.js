@@ -14,6 +14,7 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
 import { Search, Sparkles } from "lucide-react";
 import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
+import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v2";
@@ -651,7 +652,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     const todayTimestamp = getDayStartTimestamp(nowTimestamp);
     return [...events]
       .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
-      .filter((event) => event.__ts > 0 && event.__ts >= todayTimestamp)
+      .filter((event) => isEventStatusDiscoverable(event) && event.__ts > 0 && event.__ts >= todayTimestamp)
       .sort((a, b) => a.__ts - b.__ts);
   }, [events, nowTick]);
 

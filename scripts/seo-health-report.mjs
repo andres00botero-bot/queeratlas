@@ -1,5 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL && typeof process.loadEnvFile === "function") {
+  try {
+    process.loadEnvFile(".env.local");
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+}
+
 const DEFAULT_MAX_SNAPSHOT_AGE_HOURS = 48;
 
 function parseArgs(argv) {

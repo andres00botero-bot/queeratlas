@@ -81,6 +81,14 @@ const proxySource = readFileSync("src/proxy.js", "utf8");
 assert.match(proxySource, /event\.waitUntil/);
 assert.match(proxySource, /\(\?!api\//);
 
+const clientInstrumentation = readFileSync("src/instrumentation-client.js", "utf8");
+assert.match(clientInstrumentation, /navigator\.sendBeacon/);
+assert.doesNotMatch(clientInstrumentation, /NEXT_PUBLIC_ENABLE_SEO_TELEMETRY/);
+
+const webVitalsRoute = readFileSync("src/app/api/telemetry/web-vitals/route.js", "utf8");
+assert.match(webVitalsRoute, /SUPABASE_SERVICE_ROLE_KEY/);
+assert.match(webVitalsRoute, /QA_SEO_TELEMETRY === "0"/);
+
 const snapshotSource = readFileSync("src/lib/telemetry/seoHealthSnapshot.js", "utf8");
 assert.match(snapshotSource, /normalizeComparableUrl\(canonical\)/);
 assert.match(snapshotSource, /latestDayAgeDays/);

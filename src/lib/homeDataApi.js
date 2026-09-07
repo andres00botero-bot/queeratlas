@@ -7,6 +7,7 @@ import { buildEventIntelFallback } from "@/lib/intelFallbacks";
 import { normalizeVenueIntel } from "@/lib/venueIntel";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { listCityRegistry } from "@/lib/server/cityRegistry";
+import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
@@ -93,6 +94,7 @@ export function mapGlobalEventForSearch(row = {}) {
     date: startDate,
     start_date: startDate,
     end_date: endDate || startDate,
+    event_status: row.event_status || "scheduled",
     location: String(row.location || "").trim(),
     link: String(row.link || "").trim(),
     isGlobal: true,
@@ -168,7 +170,7 @@ export async function fetchHomeDataPayload() {
     ? globalRes.data.map(mapGlobalEventForSearch).filter((event) => event.name)
     : [];
 
-  const events = [...mergedEvents, ...globalEvents];
+  const events = [...mergedEvents, ...globalEvents].filter((event) => isEventStatusDiscoverable(event));
   const places = Array.isArray(placesRes?.data) ? placesRes.data : [];
   const worldNews = Array.isArray(newsRes?.data) ? newsRes.data : [];
   const featuredVenue = pickFeaturedVenue(places);
