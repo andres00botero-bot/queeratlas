@@ -6,7 +6,7 @@ import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entity
 export const metadata = {
   title: "Atlas Collections | Best Queer Travel, Stays, Events & Culture",
   description: "Explore researched LGBTQ+ travel collections for queer-owned stays, honeymoons, affordable city breaks, sapphic travel, events, wellness, food, nightlife, and beaches.",
-  keywords: ["queer travel collections", "best LGBTQ honeymoon destinations", "queer owned hotels", "affordable LGBTQ city breaks", "sapphic travel destinations", "gay bear weeks", "queer wellness retreats", "LGBTQ owned restaurants"],
+  keywords: ["queer travel collections", "best LGBTQ honeymoon destinations", "queer owned hotels", "affordable LGBTQ city breaks", "sapphic solo travel", "gay travel over 40", "body positive gay destinations", "LGBTQ weekend trips", "queer nightlife without techno"],
   alternates: { canonical: "/now/collections" },
   robots: { index: true, follow: true },
   openGraph: {
