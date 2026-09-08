@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --use-system-ca node_modules/next/dist/bin/next dev",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "node --use-system-ca node_modules/next/dist/bin/next start",
     "lint": "eslint",
     "test:smoke": "node scripts/test-smoke.mjs",
     "test:e2e-smoke": "node scripts/test-e2e-smoke.mjs",
@@ -45,8 +45,9 @@
     "test:regressions": "node scripts/test-regressions.mjs",
     "test:map-guard-smoke": "node scripts/test-map-guard-smoke.mjs",
     "test:stability-foundation": "node scripts/test-stability-foundation.mjs",
+    "test:quality": "npm run test:seo-phase2 && npm run test:city-hero-copy && npm run test:gsc-indexing && npm run test:venue-structured-data && npm run test:image-seo && npm run test:traffic-analytics && npm run test:nightlife-index && npm run test:safety-index && npm run test:global-queer-index && npm run test:report-lists && npm run test:qari-phase1 && npm run test:qari-countries && npm run test:favorites-helpers",
     "audit:content-integrity": "node --use-system-ca --env-file=.env.local scripts/audit-content-integrity.mjs",
-    "verify:release": "npm run lint && npm run test:search-trust && npm run test:place-database-source && npm run test:entity-reserved-tags && npm run test:stability-foundation && npm run build && npm run test:smoke && npm run test:e2e-smoke && npm run test:regressions && npm run test:map-guard-smoke && npm run test:internal-link-depth && npm run test:discovery-indexing && npm run test:entity-consistency && npm run test:seo-telemetry && npm run test:indexnow && npm run test:seo-phase1 && npm run analyze:bundle && node scripts/verify-bundle-budget.mjs && node scripts/verify-seo-gate.mjs && npm run seo:health-report && npm run seo:health-weekly-report",
+    "verify:release": "npm run lint && npm run test:search-trust && npm run test:place-database-source && npm run test:entity-reserved-tags && npm run test:stability-foundation && npm run test:smoke && npm run test:e2e-smoke && npm run test:regressions && npm run test:map-guard-smoke && npm run test:internal-link-depth && npm run test:discovery-indexing && npm run test:entity-consistency && npm run test:seo-telemetry && npm run test:indexnow && npm run test:seo-phase1 && npm run test:quality && npm run analyze:bundle && node scripts/verify-bundle-budget.mjs && node scripts/verify-seo-gate.mjs && npm run seo:health-report && npm run seo:health-weekly-report",
     "analyze:bundle": "node scripts/analyze-bundle.mjs",
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "push:safe": "npm run verify:release && git push",
@@ -64,15 +65,15 @@
     "@vercel/speed-insights": "^2.0.0",
     "lucide-react": "^1.7.0",
     "mapbox-gl": "^2.15.0",
-    "next": "16.2.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "next": "16.3.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.6",
+    "@next/bundle-analyzer": "16.3.4",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "16.2.1",
+    "eslint-config-next": "16.3.4",
     "playwright": "^1.60.0",
     "tailwindcss": "^4"
   },

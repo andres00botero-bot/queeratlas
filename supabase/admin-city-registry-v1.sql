@@ -98,6 +98,65 @@ as $$
     and char_length(btrim(coalesce(place_row.venue_intel ->> 'staff_inclusivity', place_row.venue_intel ->> 'staffInclusivity', ''))) >= 24;
 $$;
 
+create or replace function public.qa_service_qualifies_for_city_index(service_row public.services)
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select
+    nullif(btrim(service_row.name), '') is not null
+    and nullif(btrim(service_row.city), '') is not null
+    and nullif(btrim(service_row.type), '') is not null
+    and char_length(btrim(coalesce(service_row.description, ''))) >= 90
+    and btrim(coalesce(nullif(service_row.link, ''), service_row.booking_link, '')) ~* '^https?://'
+    and (
+      char_length(btrim(coalesce(service_row.location, ''))) >= 4
+      or char_length(btrim(coalesce(service_row.provider_name, ''))) >= 2
+      or (
+        service_row.lat between -90 and 90
+        and service_row.lng between -180 and 180
+      )
+    )
+    and coalesce(service_row.seo_indexable, true) = true
+    and lower(coalesce(service_row.seo_quality_status, 'pending')) not in ('hold', 'rejected', 'blocked', 'draft')
+    and jsonb_typeof(coalesce(service_row.service_intel, '{}'::jsonb)) = 'object'
+    and char_length(btrim(coalesce(service_row.service_intel ->> 'booking_lead_time', service_row.service_intel ->> 'bookingLeadTime', ''))) >= 24
+    and char_length(btrim(coalesce(service_row.service_intel ->> 'best_time', service_row.service_intel ->> 'bestTime', ''))) >= 24
+    and char_length(btrim(coalesce(service_row.service_intel ->> 'client_mix', service_row.service_intel ->> 'clientMix', ''))) >= 24
+    and char_length(btrim(coalesce(service_row.service_intel ->> 'preparation', ''))) >= 24
+    and char_length(btrim(coalesce(service_row.service_intel ->> 'provider_inclusivity', service_row.service_intel ->> 'providerInclusivity', ''))) >= 24;
+$$;
+
+create or replace function public.qa_event_qualifies_for_city_index(event_row public.events)
+returns boolean
+language sql
+stable
+set search_path = public
+as $$
+  select
+    nullif(btrim(event_row.name), '') is not null
+    and nullif(btrim(event_row.city), '') is not null
+    and char_length(btrim(coalesce(event_row.description, ''))) >= 80
+    and btrim(coalesce(nullif(event_row.link, ''), event_row.ticket_url, '')) ~* '^https?://'
+    and (
+      char_length(btrim(coalesce(event_row.location, ''))) >= 4
+      or (
+        event_row.lat between -90 and 90
+        and event_row.lng between -180 and 180
+      )
+    )
+    and coalesce(nullif(event_row.start_date::text, ''), nullif(event_row.date::text, '')) is not null
+    and coalesce(event_row.seo_indexable, true) = true
+    and lower(coalesce(event_row.seo_quality_status, 'pending')) not in ('hold', 'rejected', 'blocked', 'draft')
+    and jsonb_typeof(coalesce(event_row.event_intel, '{}'::jsonb)) = 'object'
+    and char_length(btrim(coalesce(event_row.event_intel ->> 'entry_wait', event_row.event_intel ->> 'entryWait', ''))) >= 24
+    and char_length(btrim(coalesce(event_row.event_intel ->> 'best_arrival', event_row.event_intel ->> 'bestArrival', ''))) >= 24
+    and char_length(btrim(coalesce(event_row.event_intel ->> 'crowd_mix', event_row.event_intel ->> 'crowdMix', ''))) >= 24
+    and char_length(btrim(coalesce(event_row.event_intel ->> 'dress_code', event_row.event_intel ->> 'dressCode', ''))) >= 24
+    and char_length(btrim(coalesce(event_row.event_intel ->> 'host_inclusivity', event_row.event_intel ->> 'hostInclusivity', ''))) >= 24;
+$$;
+
 create or replace function public.qa_refresh_city_seo_status(target_slug text)
 returns public.qa_cities
 language plpgsql
@@ -106,6 +165,9 @@ set search_path = public
 as $$
 declare
   city_row public.qa_cities;
+  qualified_place_count integer := 0;
+  qualified_event_count integer := 0;
+  qualified_service_count integer := 0;
   qualified_count integer := 0;
   has_identity boolean;
   has_map boolean;
@@ -123,10 +185,22 @@ begin
 
   if not found then return null; end if;
 
-  select count(*)::integer into qualified_count
+  select count(*)::integer into qualified_place_count
   from public.places p
   where public.qa_city_slug(p.city) = city_row.slug
     and public.qa_place_qualifies_for_city_index(p);
+
+  select count(*)::integer into qualified_service_count
+  from public.services s
+  where public.qa_city_slug(s.city) = city_row.slug
+    and public.qa_service_qualifies_for_city_index(s);
+
+  select count(*)::integer into qualified_event_count
+  from public.events e
+  where public.qa_city_slug(e.city) = city_row.slug
+    and public.qa_event_qualifies_for_city_index(e);
+
+  qualified_count := qualified_place_count + qualified_event_count + qualified_service_count;
 
   has_identity := nullif(btrim(city_row.name), '') is not null
     and nullif(btrim(city_row.country), '') is not null
@@ -171,6 +245,9 @@ begin
         'safetyContext', has_safety,
         'qariProfile', has_qari,
         'verifiedPlaces', qualified_count,
+        'qualifiedVenues', qualified_place_count,
+        'qualifiedEvents', qualified_event_count,
+        'qualifiedServices', qualified_service_count,
         'minimumVerifiedPlaces', 3
       ),
       indexable_at = case
@@ -266,6 +343,18 @@ after insert or delete or update of city, name, type, description, link, locatio
 on public.places
 for each row execute function public.qa_places_refresh_city();
 
+drop trigger if exists qa_services_refresh_city on public.services;
+create trigger qa_services_refresh_city
+after insert or delete or update of city, name, type, provider_name, description, link, booking_link, location, lat, lng, service_intel, verified, seo_indexable, seo_quality_status
+on public.services
+for each row execute function public.qa_places_refresh_city();
+
+drop trigger if exists qa_events_refresh_city on public.events;
+create trigger qa_events_refresh_city
+after insert or delete or update of city, name, description, link, ticket_url, location, lat, lng, date, start_date, end_date, event_intel, seo_indexable, seo_quality_status
+on public.events
+for each row execute function public.qa_places_refresh_city();
+
 do $$
 declare
   city_record record;
@@ -299,6 +388,8 @@ grant select on public.qa_cities to anon, authenticated;
 grant insert, update, delete on public.qa_cities to authenticated;
 grant execute on function public.qa_city_slug(text) to anon, authenticated;
 grant execute on function public.qa_place_qualifies_for_city_index(public.places) to authenticated;
+grant execute on function public.qa_service_qualifies_for_city_index(public.services) to authenticated;
+grant execute on function public.qa_event_qualifies_for_city_index(public.events) to authenticated;
 grant execute on function public.qa_refresh_city_seo_status(text) to authenticated;
 
 commit;

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { seedPlaces } from "../src/lib/seedContent.js";
+import { seedPlaces } from "../src/lib/seedPlacesContent.js";
 
 const DEFAULT_CITY_ALIASES = [
   "sofia",

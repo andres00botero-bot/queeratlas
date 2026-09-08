@@ -1,4 +1,4 @@
-import { withSentryConfig } from "@sentry/nextjs";
+import { withSentryConfig } from "@sentry/nextjs/config";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import bundleAnalyzer from "@next/bundle-analyzer";
@@ -24,14 +24,6 @@ const securityHeaders = [
 const nextConfig = {
   turbopack: {
     root: __dirname,
-  },
-  typescript: {
-    // Source is JavaScript-only; skip Next's TS worker phase to avoid Windows spawn EPERM failures.
-    ignoreBuildErrors: true,
-  },
-  experimental: {
-    // Stabilize Windows builds by limiting static worker fan-out.
-    cpus: 1,
   },
   images: {
     qualities: [75, 90],

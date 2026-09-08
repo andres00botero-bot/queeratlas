@@ -1,4 +1,5 @@
-import { seedEvents, seedPlaces } from "../src/lib/seedContent.js";
+import { seedEvents } from "../src/lib/seedEventsContent.js";
+import { seedPlaces } from "../src/lib/seedPlacesContent.js";
 
 function normalize(value = "") {
   return String(value || "")

@@ -698,8 +698,7 @@ function testVibeTagChipsRenderingWiring() {
   const cityPageSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
   const cityEventsRailSource = readFileSync(new URL("../src/components/city/CityEventsRailSection.js", import.meta.url), "utf8");
   const placeGuideCardSource = readFileSync(new URL("../src/components/city/PlaceGuideCard.js", import.meta.url), "utf8");
-  const savedPlacesPanelSource = readFileSync(new URL("../src/components/favorites/SavedPlacesPanel.js", import.meta.url), "utf8");
-  const savedEventsPanelSource = readFileSync(new URL("../src/components/favorites/SavedEventsPanel.js", import.meta.url), "utf8");
+  const favoritesProfileSource = readFileSync(new URL("../src/components/favorites/FavoritesProfileHome.js", import.meta.url), "utf8");
 
   assert(
     vibeDisplaySource.includes("resolveVibeTagsForEntity") &&
@@ -728,9 +727,8 @@ function testVibeTagChipsRenderingWiring() {
     "vibe chips: city experience should render vibe chips for both events and places"
   );
   assert(
-    savedPlacesPanelSource.includes("<VibeTagChips") &&
-      savedEventsPanelSource.includes("<VibeTagChips"),
-    "vibe chips: favorites panels should render vibe chips"
+    favoritesProfileSource.includes("vibeChips.slice(0, 4).map"),
+    "vibe chips: the active favorites profile should render normalized vibe chips"
   );
 }
 

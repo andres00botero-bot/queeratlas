@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import "../signal-motion.css";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { cityConfig } from "@/lib/cities";
+import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 import {
   addReport,

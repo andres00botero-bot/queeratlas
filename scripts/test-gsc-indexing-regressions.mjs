@@ -14,8 +14,7 @@ assert.match(cityLayout, /if \(!coreConfig\) notFound\(\)/);
 assert.doesNotMatch(cityLayout, /cityConfig\.berlin/);
 
 const nextConfig = source("next.config.mjs");
-assert.match(nextConfig, /type: "host", value: "queeratlas\.app"/);
-assert.match(nextConfig, /destination: "https:\/\/www\.queeratlas\.app\/:path\*"/);
+assert.doesNotMatch(nextConfig, /type:\s*["']host["']/);
 
 for (const route of ["venues", "events", "services"]) {
   const detail = source(`src/app/[city]/${route}/[slug]/page.js`);

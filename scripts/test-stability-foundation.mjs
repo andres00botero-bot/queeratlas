@@ -10,7 +10,6 @@ import { normalizeEventRange } from "../src/features/events/eventFormatUtils.js"
 import { normalizeLifecyclePath } from "../src/lib/entityLifecyclePath.js";
 
 const sourceFiles = [
-  "src/lib/seedContent.js",
   "src/lib/seedPlacesContent.js",
   "src/lib/seedEventsContent.js",
 ];

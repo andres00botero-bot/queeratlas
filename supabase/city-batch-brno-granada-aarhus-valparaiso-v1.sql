@@ -53,10 +53,10 @@ with src as (
 ]
 $qa_places$) p(name text,city text,type text,description text,hours text,link text,location text,lat double precision,lng double precision,vibe text,intel jsonb)
 ), upd as (
- update public.places t set type=p.type,description=p.description,hours=p.hours,link=p.link,location=p.location,lat=p.lat,lng=p.lng,vibe=p.vibe,vibe_tags=array[]::text[],venue_intel=p.intel,verified=true,seo_indexable=true,seo_quality_status='approved',updated_at=timezone('utc',now()) from src p where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)) returning t.id
+ update public.places t set type=p.type,description=p.description,hours=p.hours,link=p.link,location=p.location,lat=p.lat,lng=p.lng,vibe=p.vibe,vibe_tags=array[]::text[],venue_intel=p.intel,seo_indexable=true,seo_quality_status='approved',updated_at=timezone('utc',now()) from src p where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)) returning t.id
 )
-insert into public.places(name,city,type,description,hours,link,location,lat,lng,vibe,vibe_tags,venue_intel,verified,seo_indexable,seo_quality_status,updated_at)
-select name,city,type,description,hours,link,location,lat,lng,vibe,array[]::text[],intel,true,true,'approved',timezone('utc',now()) from src p where not exists(select 1 from public.places t where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)));
+insert into public.places(name,city,type,description,hours,link,location,lat,lng,vibe,vibe_tags,venue_intel,seo_indexable,seo_quality_status,updated_at)
+select name,city,type,description,hours,link,location,lat,lng,vibe,array[]::text[],intel,true,'approved',timezone('utc',now()) from src p where not exists(select 1 from public.places t where lower(trim(t.city))=p.city and lower(trim(t.name))=lower(trim(p.name)));
 
 with src as (
  select * from jsonb_to_recordset($qa_events$

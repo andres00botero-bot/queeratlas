@@ -2,7 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { Bookmark, CalendarDays, LockKeyhole, MapPin, Pencil, Plus, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Bookmark, CalendarDays, LockKeyhole, MapPin, Newspaper, Pencil, Plus, Sparkles, X } from "lucide-react";
+import useNewsPreferences from "@/features/news/useNewsPreferences";
 
 function initialsFor(name = "") {
   return String(name || "M").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "M";
@@ -53,6 +55,10 @@ export default function FavoritesProfileHome({
   onMessage,
   onReport,
 }) {
+  const router = useRouter();
+  const { preferences: newsPreferences, loading: newsPreferencesLoading, togglePreference } = useNewsPreferences({ enabled: !isReadOnly });
+  const savedStories = newsPreferences.filter((item) => item.preferenceType === "story");
+  const followedNews = newsPreferences.filter((item) => item.preferenceType === "city" || item.preferenceType === "topic");
   const visibleLocation = locationLabel && locationLabel !== "Location not set" ? locationLabel : "";
 
   return (
@@ -136,6 +142,58 @@ export default function FavoritesProfileHome({
               </div>
             ) : <p className="mt-3 text-sm text-white/48">Save a venue or event and it will appear here.</p>}
           </div>
+        ) : null}
+
+        {!isReadOnly ? (
+          <section className="mt-8 border-t border-white/10 pt-7" aria-labelledby="saved-news-heading">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/66">Your newsroom</p>
+                <h3 id="saved-news-heading" className="mt-1 text-xl font-semibold text-white">Saved stories</h3>
+              </div>
+              <Newspaper className="h-5 w-5 text-cyan-100/46" aria-hidden="true" />
+            </div>
+
+            {newsPreferencesLoading ? (
+              <p className="mt-3 text-sm text-white/48">Loading your stories…</p>
+            ) : savedStories.length > 0 ? (
+              <div className="mt-4 divide-y divide-white/10 border-y border-white/10">
+                {savedStories.slice(0, 5).map((story) => {
+                  const metadata = story.metadata || {};
+                  const href = metadata.href || `/now/news/${encodeURIComponent(story.targetId)}`;
+                  return (
+                    <article key={`saved-news-${story.targetId}`} className="flex items-center gap-3 py-3.5">
+                      <button type="button" onClick={() => router.push(href)} className="min-w-0 flex-1 text-left focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-cyan-100/60">
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.13em] text-fuchsia-100/62">{metadata.storyType || "Queer news"}{metadata.city ? ` · ${metadata.city}` : ""}</span>
+                        <span className="mt-1.5 block line-clamp-2 text-sm font-semibold leading-5 text-white/88">{metadata.title || "Saved story"}</span>
+                        <span className="mt-1 block text-[10px] text-white/38">{metadata.sourceName || "Queer Atlas desk"}</span>
+                      </button>
+                      <button type="button" onClick={() => togglePreference({ preferenceType: "story", targetId: story.targetId, metadata })} aria-label={`Remove saved story: ${metadata.title || "story"}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 text-white/42 transition hover:border-rose-200/30 hover:text-rose-100 focus-visible:outline-2 focus-visible:outline-rose-100/60">
+                        <X size={14} aria-hidden="true" />
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-white/48">Save a story from Queer World News and it will appear here.</p>
+            )}
+
+            {followedNews.length > 0 ? (
+              <div className="mt-5">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">Following</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {followedNews.map((item) => (
+                    <button key={`followed-news-${item.preferenceType}-${item.targetId}`} type="button" onClick={() => togglePreference({ preferenceType: item.preferenceType, targetId: item.targetId, metadata: item.metadata })} className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] px-3 text-[11px] text-white/68 transition hover:border-white/26 hover:text-white focus-visible:outline-2 focus-visible:outline-cyan-100/60">
+                      {item.preferenceType === "city" ? <MapPin size={12} aria-hidden="true" /> : <Bookmark size={12} aria-hidden="true" />}
+                      {item.metadata?.label || item.targetId.replaceAll("_", " ")}
+                      <X size={11} aria-hidden="true" className="ml-0.5 text-white/38" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </section>
         ) : null}
 
         <div className="mt-8 border-t border-white/10 pt-7">

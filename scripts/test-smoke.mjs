@@ -33,10 +33,10 @@ function checkNoDesktopMirrorFiles() {
   const mirroredPaths = [
     "Desktop/Websida/gay-guide/.qa_temp_clone/src/components/planner/TripPlannerV2.js",
     "Desktop/Websida/gay-guide/.qa_temp_clone/src/lib/cities.js",
-    "Desktop/Websida/gay-guide/.qa_temp_clone/src/lib/seedContent.js",
+    "Desktop/Websida/gay-guide/.qa_temp_clone/src/lib/seedPlacesContent.js",
     "Desktop/Websida/gay-guide/src/components/planner/TripPlannerV2.js",
     "Desktop/Websida/gay-guide/src/lib/cities.js",
-    "Desktop/Websida/gay-guide/src/lib/seedContent.js",
+    "Desktop/Websida/gay-guide/src/lib/seedPlacesContent.js",
   ];
   const mirrored = mirroredPaths.filter((p) => fs.existsSync(path.join(root, p)));
   assert(
@@ -87,12 +87,12 @@ function checkCityEventsIndexRedirect() {
 
 function run() {
   checkNoMergeMarkers("package.json");
-  checkNoMergeMarkers("src/lib/seedContent.js");
+  checkNoMergeMarkers("src/lib/seedPlacesContent.js");
   checkNoMergeMarkers("src/lib/cities.js");
   checkNoMergeMarkers("src/app/events/page.js");
   checkNoMergeMarkers("src/app/[city]/page.js");
 
-  checkNoTravelGay("src/lib/seedContent.js");
+  checkNoTravelGay("src/lib/seedPlacesContent.js");
   checkNoTravelGay("scripts/verified-city-venues.json");
 
   checkNoDesktopMirrorFiles();
