@@ -2737,6 +2737,7 @@ export default function CityPage() {
       mounted = false;
       map.off("load", setupClusters);
       map.off("zoom", syncDomMarkerVisibility);
+      if (mapRef.current !== map) return;
       if (!map.getStyle()) return;
       if (map.getLayer(clusterLayerId)) map.off("click", clusterLayerId, expandCluster);
       if (map.getLayer(pointLayerId)) map.off("click", pointLayerId, openClusterPoint);
