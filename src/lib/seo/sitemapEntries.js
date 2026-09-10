@@ -87,7 +87,7 @@ export async function getPageSitemapEntries() {
     "/gay-guide",
     "/queer-guide",
     "/hbtq-guide",
-    "/compass",
+    "/dictionary",
     "/topics",
     "/reports",
     "/terms",
@@ -105,7 +105,7 @@ export async function getPageSitemapEntries() {
   const staticEntries = staticRoutes.map((route) => ({
     url: `${QA_SITE_URL}${route}`,
     changeFrequency: route === "" || route === "/now/news" ? "daily" : "weekly",
-    priority: route === "" ? 1 : route === "/now/news" ? 0.95 : ["/cities", "/events/calendar"].includes(route) ? 0.9 : route === "/compass" ? 0.82 : 0.75,
+    priority: route === "" ? 1 : route === "/now/news" ? 0.95 : ["/cities", "/events/calendar"].includes(route) ? 0.9 : route === "/dictionary" ? 0.82 : 0.75,
   }));
 
   const cityEntries = cityKeys.map((city) => entryWithDate({

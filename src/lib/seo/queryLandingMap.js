@@ -44,8 +44,9 @@ export const queryLandingMap = {
     ],
   },
   compassIntent: {
-    landing: "/compass",
+    landing: "/dictionary",
     queries: [
+      "queer dictionary",
       "lgbtqia terms",
       "queer terminology",
       "lgbtq glossary",

@@ -278,16 +278,16 @@ export default function CompassClient() {
           <nav aria-label="Breadcrumb" className="mb-5 flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-white/34">
             <Link href="/" className="transition hover:text-white/68">Home</Link>
             <span aria-hidden="true">/</span>
-            <span aria-current="page" className="text-white/58">Queer Compass</span>
+            <span aria-current="page" className="text-white/58">Queer Dictionary</span>
           </nav>
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/66">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-cyan-100/16 bg-cyan-100/[0.06] text-cyan-100/75">
               <Compass size={16} strokeWidth={1.8} aria-hidden="true" />
             </span>
-            Queer Compass · Learn without judgement
+            Queer Dictionary · Learn without judgement
           </div>
           <h1 className="qa-display mt-6 max-w-4xl text-[2.75rem] font-semibold leading-[0.94] tracking-[-0.055em] text-[#fff8fc] sm:text-6xl lg:text-7xl">
-            What would you like to understand?
+            Queer Dictionary
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-white/58 sm:text-base">
             Clear, caring explanations of identities, language and community context — with sources, nuance and practical ways to show respect.
@@ -306,7 +306,7 @@ export default function CompassClient() {
           >
             <label className="flex min-w-0 flex-1 items-center gap-3">
               <Search size={18} className="shrink-0 text-cyan-100/68" aria-hidden="true" />
-              <span className="sr-only">Search the Queer Compass</span>
+              <span className="sr-only">Search the Queer Dictionary</span>
               <input
                 type="search"
                 value={query}
@@ -339,7 +339,7 @@ export default function CompassClient() {
             <p role="status" aria-live="polite" className="text-xs text-white/38">{filteredTerms.length} {filteredTerms.length === 1 ? "entry" : "entries"}</p>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2" aria-label="Filter Compass by theme">
+          <div className="mt-5 flex flex-wrap gap-2" aria-label="Filter Queer Dictionary by theme">
             {COMPASS_CATEGORIES.map((item) => (
               <button
                 key={item.key}
@@ -383,7 +383,7 @@ export default function CompassClient() {
                 <div ref={emptyRef} tabIndex={-1} className="sm:col-span-2 scroll-mt-24 rounded-[22px] border border-dashed border-white/14 bg-white/[0.02] p-7 text-center outline-none">
                   <BookOpenText size={22} className="mx-auto text-white/34" aria-hidden="true" />
                   <h3 className="mt-3 text-base font-semibold text-white/80">No matching entry yet</h3>
-                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/44">Try another spelling or clear your search. Compass will grow through careful review, not automatic bulk publishing.</p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-white/44">Try another spelling or clear your search. The dictionary will grow through careful review, not automatic bulk publishing.</p>
                   <button type="button" onClick={() => { setQuery(""); setCategory("all"); }} className="mt-4 rounded-full border border-white/14 px-4 py-2 text-xs text-white/62 transition hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">Clear search</button>
                 </div>
               ) : null}
@@ -400,7 +400,7 @@ export default function CompassClient() {
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/58">Language keeps moving</p>
               <h2 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">A guide, never a verdict.</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">Meanings can vary between people, cultures and regions. Queer Compass uses named sources, visible review dates and plain language — while each person keeps the right to define themself.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/50">Meanings can vary between people, cultures and regions. Queer Dictionary uses named sources, visible review dates and plain language — while each person keeps the right to define themself.</p>
             </div>
             <Link href="/corrections" className="inline-flex items-center justify-center gap-2 rounded-full border border-amber-100/22 bg-amber-100/[0.06] px-4 py-2.5 text-xs font-semibold text-amber-50/78 transition hover:border-amber-100/40 hover:text-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/45">
               Suggest a correction <ArrowUpRight size={13} aria-hidden="true" />

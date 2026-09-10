@@ -27,7 +27,7 @@ assert.equal(isAllowedIndexNowUrl("/berlin"), true);
 assert.equal(isAllowedIndexNowUrl("/berlin/discover/queer-techno-clubs"), true);
 assert.equal(isAllowedIndexNowUrl("/paris/discover/queer-techno-clubs"), false);
 assert.equal(isAllowedIndexNowUrl("/topics/nightlife"), true);
-assert.equal(isAllowedIndexNowUrl("/compass"), true);
+assert.equal(isAllowedIndexNowUrl("/dictionary"), true);
 assert.equal(isAllowedIndexNowUrl("/topics/not-a-topic"), false);
 assert.equal(isAllowedIndexNowUrl("/admin"), false);
 assert.equal(isAllowedIndexNowUrl("/api/admin/indexnow"), false);

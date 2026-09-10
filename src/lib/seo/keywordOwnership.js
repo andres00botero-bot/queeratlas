@@ -44,9 +44,10 @@ export const keywordOwnership = {
     ownerPage: "/hbtq-guide",
   },
   compass: {
-    path: "/compass",
-    primary: "lgbtqia terms",
+    path: "/dictionary",
+    primary: "queer dictionary",
     secondary: [
+      "lgbtqia terms",
       "queer terminology",
       "lgbtq glossary",
       "pronouns explained",
@@ -55,7 +56,7 @@ export const keywordOwnership = {
       "hbtqi begrepp",
     ],
     searchIntent: "queer language and identity education",
-    ownerPage: "/compass",
+    ownerPage: "/dictionary",
   },
   cities: {
     path: "/cities",
