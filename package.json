@@ -18,6 +18,7 @@
     "test:indexnow": "node scripts/test-indexnow.mjs",
     "test:seo-phase1": "node scripts/test-seo-phase1.mjs",
     "test:seo-phase2": "node scripts/test-seo-phase2.mjs",
+    "test:compass-seo": "node scripts/test-compass-seo.mjs",
     "test:city-hero-copy": "node scripts/test-city-hero-copy.mjs",
     "test:gsc-indexing": "node scripts/test-gsc-indexing-regressions.mjs",
     "test:place-database-source": "node scripts/test-place-database-source.mjs",

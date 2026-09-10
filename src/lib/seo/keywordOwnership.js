@@ -43,6 +43,20 @@ export const keywordOwnership = {
     searchIntent: "regional-language guide intent",
     ownerPage: "/hbtq-guide",
   },
+  compass: {
+    path: "/compass",
+    primary: "lgbtqia terms",
+    secondary: [
+      "queer terminology",
+      "lgbtq glossary",
+      "pronouns explained",
+      "non-binary meaning",
+      "flinta meaning",
+      "hbtqi begrepp",
+    ],
+    searchIntent: "queer language and identity education",
+    ownerPage: "/compass",
+  },
   cities: {
     path: "/cities",
     primary: "gay travel cities",

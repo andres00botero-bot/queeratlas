@@ -12,6 +12,7 @@ const QA_PRIMARY_HUB_PATHS = [
   "/gay-guide",
   "/queer-guide",
   "/hbtq-guide",
+  "/compass",
   "/about",
   "/editorial-policy",
   "/verification",

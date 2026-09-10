@@ -68,6 +68,7 @@ async function buildCanonicalCoverageCheck(baseUrl) {
     "/gay-guide",
     "/queer-guide",
     "/hbtq-guide",
+    "/compass",
     "/berlin",
     "/topics",
     "/reports",

@@ -24,6 +24,7 @@ const STATIC_PATHS = new Set([
   "/gay-guide",
   "/queer-guide",
   "/hbtq-guide",
+  "/compass",
   "/topics",
   "/reports",
   "/terms",

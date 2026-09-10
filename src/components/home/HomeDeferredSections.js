@@ -180,6 +180,38 @@ function ParticipationStrip({ actions = [] }) {
   );
 }
 
+function CompassPreview({ onOpen }) {
+  return (
+    <section id="home-compass" data-home-section="compass" className="qa-defer-render mt-7 scroll-mt-20">
+      <Link
+        href="/compass"
+        onClick={() => onOpen?.("/compass")}
+        className="group relative block overflow-hidden border-y border-white/9 bg-[linear-gradient(90deg,rgba(167,139,250,0.035),rgba(45,212,191,0.02),transparent)] px-1 py-3.5 transition duration-300 hover:border-violet-100/20 hover:bg-[linear-gradient(90deg,rgba(167,139,250,0.065),rgba(45,212,191,0.035),transparent)] focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/40 sm:px-2 sm:py-4"
+      >
+        <span className="pointer-events-none absolute inset-y-3 left-0 w-px bg-gradient-to-b from-transparent via-violet-200/70 to-transparent" />
+        <span className="pointer-events-none absolute left-0 top-0 h-px w-2/5 bg-gradient-to-r from-violet-200/28 to-transparent" />
+        <div className="relative flex items-center gap-3 sm:gap-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-violet-100/18 bg-[linear-gradient(145deg,rgba(167,139,250,0.11),rgba(45,212,191,0.055))] text-violet-100/78 shadow-[0_10px_26px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)] sm:h-11 sm:w-11">
+            <Compass size={19} strokeWidth={1.75} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-5">
+            <span className="block shrink-0">
+              <span className="block text-[8px] font-semibold uppercase tracking-[0.19em] text-cyan-100/50">New · Queer Compass</span>
+              <span className="qa-display mt-1 block text-[17px] font-semibold tracking-[-0.025em] text-white sm:text-xl">Understand the words.</span>
+            </span>
+            <span className="mt-1 block truncate text-center text-xs font-medium leading-5 text-white/62 sm:mt-0 sm:flex-1 sm:text-sm sm:text-white/58">Identities, pronouns and community language — with sources and nuance.</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2 rounded-full border border-violet-100/20 bg-violet-100/[0.075] py-2 pl-3 pr-2.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-violet-50/75 shadow-[0_8px_22px_rgba(0,0,0,0.18)] transition group-hover:border-cyan-100/30 group-hover:bg-cyan-100/[0.08] group-hover:text-cyan-50">
+            <span className="sm:hidden">Open</span>
+            <span className="hidden sm:inline">Open Compass</span>
+            <ArrowUpRight size={12} className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+          </span>
+        </div>
+      </Link>
+    </section>
+  );
+}
+
 function TrustSupportStrip({ onAction, contactSlot }) {
   return (
     <section id="home-editorial-trust" data-home-section="editorial_trust" className="qa-defer-render mt-8 scroll-mt-20" aria-label="Queer Atlas trust and support">
@@ -256,6 +288,8 @@ export default function HomeDeferredSections({
         </div>
       </section>
 
+      <CompassPreview onOpen={onEditorialAction} />
+
       <ParticipationStrip actions={participationActions} />
 
       {livePulseCards.length > 0 ? (
@@ -308,6 +342,7 @@ export default function HomeDeferredSections({
             <Link href="/gay-guide" className="rounded-full border border-fuchsia-200/14 bg-fuchsia-200/[0.05] px-2.5 py-1 text-fuchsia-100/70 transition hover:border-fuchsia-200/30 hover:text-fuchsia-100">Gay Guide</Link>
             <Link href="/queer-guide" className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100">Queer Guide</Link>
             <Link href="/hbtq-guide" className="rounded-full border border-amber-200/14 bg-amber-200/[0.05] px-2.5 py-1 text-amber-100/70 transition hover:border-amber-200/30 hover:text-amber-100">HBTQ Guide</Link>
+            <Link href="/compass" className="rounded-full border border-violet-200/14 bg-violet-200/[0.05] px-2.5 py-1 text-violet-100/70 transition hover:border-violet-200/30 hover:text-violet-100">Queer Compass</Link>
             <Link href="/topics/nightlife" className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100">Nightlife hub</Link>
             <Link href="/topics/safety" className="rounded-full border border-cyan-200/14 bg-cyan-200/[0.05] px-2.5 py-1 text-cyan-100/70 transition hover:border-cyan-200/30 hover:text-cyan-100">Safety hub</Link>
             <Link href="/berlin/discover/queer-techno-clubs" className="rounded-full border border-white/14 bg-white/[0.04] px-2.5 py-1 text-white/70 transition hover:border-white/24 hover:text-white/90">Berlin techno</Link>

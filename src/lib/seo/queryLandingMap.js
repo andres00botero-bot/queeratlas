@@ -43,6 +43,17 @@ export const queryLandingMap = {
       "inclusive nightlife events",
     ],
   },
+  compassIntent: {
+    landing: "/compass",
+    queries: [
+      "lgbtqia terms",
+      "queer terminology",
+      "lgbtq glossary",
+      "pronouns explained",
+      "non-binary meaning",
+      "flinta meaning",
+    ],
+  },
   nowIntent: {
     landing: "/now",
     queries: [
