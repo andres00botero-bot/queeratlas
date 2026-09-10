@@ -1,5 +1,6 @@
 import { cityCoreConfig } from "@/lib/cityCore";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
+import { listCityRegistry } from "@/lib/server/cityRegistry";
 import { supabase } from "@/lib/supabase";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import {
@@ -12,7 +13,7 @@ import {
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const validCities = new Set(Object.keys(cityCoreConfig));
+const staticCityKeys = new Set(Object.keys(cityCoreConfig));
 
 let cachedInventory = null;
 let cachedAt = 0;
@@ -44,8 +45,20 @@ async function fetchAllRows(table) {
   }
 }
 
-function inSupportedCity(entity = {}) {
-  return validCities.has(normalizeCitySlug(entity?.city));
+function inSupportedCity(entity = {}, supportedCityKeys = staticCityKeys) {
+  return supportedCityKeys.has(normalizeCitySlug(entity?.city));
+}
+
+async function loadSupportedCityKeys() {
+  try {
+    const registry = await listCityRegistry();
+    return new Set([
+      ...staticCityKeys,
+      ...registry.map((city) => normalizeCitySlug(city?.key)).filter(Boolean),
+    ]);
+  } catch {
+    return staticCityKeys;
+  }
 }
 
 function dedupeByPathIdentity(rows = []) {
@@ -61,19 +74,24 @@ function dedupeByPathIdentity(rows = []) {
 }
 
 async function buildInventory() {
-  const [placesResult, eventsResult, servicesResult] = await Promise.all([
+  const [placesResult, eventsResult, servicesResult, supportedCityKeys] = await Promise.all([
     fetchAllRows("places"),
     fetchAllRows("events"),
     fetchAllRows("services"),
+    loadSupportedCityKeys(),
   ]);
 
   const allVenues = dedupeByPathIdentity(
-    placesResult.rows.filter(inSupportedCity),
+    placesResult.rows.filter((row) => inSupportedCity(row, supportedCityKeys)),
   );
   const allEvents = dedupeByPathIdentity(
-    (await mergeSeedEventsAsync(eventsResult.rows)).filter(inSupportedCity),
+    (await mergeSeedEventsAsync(eventsResult.rows)).filter((row) =>
+      inSupportedCity(row, supportedCityKeys),
+    ),
   );
-  const allServices = dedupeByPathIdentity(servicesResult.rows.filter(inSupportedCity));
+  const allServices = dedupeByPathIdentity(
+    servicesResult.rows.filter((row) => inSupportedCity(row, supportedCityKeys)),
+  );
 
   const venues = excludeDuplicateEntityCopy(allVenues).filter(
     (row) => evaluateVenueSeoQuality(row).indexable,

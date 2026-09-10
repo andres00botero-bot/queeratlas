@@ -25,6 +25,14 @@ for (const path of runtimePlaceSources) {
   );
 }
 
+const entityInventory = source("src/lib/seo/entityInventory.js");
+assert.match(
+  entityInventory,
+  /listCityRegistry\(\)/,
+  "SEO inventory must include published dynamic cities, not only bundled city keys",
+);
+assert.match(entityInventory, /supportedCityKeys/);
+
 const cityPage = source("src/app/[city]/page.js");
 assert.match(cityPage, /String\(place\.legacy_seed_id \|\| ""\) === String\(placeId\)/);
 assert.match(cityPage, /\.delete\(\)[\s\S]*\.select\("id"\)[\s\S]*\.maybeSingle\(\)/);
