@@ -7,10 +7,6 @@
     {
       "path": "/api/cron/calendar-reminders",
       "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/cron/google-search-console",
-      "schedule": "15 */6 * * *"
     }
   ]
 }

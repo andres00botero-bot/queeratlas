@@ -10,7 +10,6 @@ import {
   readWebVitalSamples,
   summarizeWebVitalSamples,
 } from "@/lib/telemetry/webVitalsStore";
-import GoogleSearchConsolePanel from "@/components/admin/GoogleSearchConsolePanel";
 
 const CORE_WEB_VITAL_TARGETS = {
   lcpP75: { label: "LCP p75", good: 2500, unit: "ms" },
@@ -372,8 +371,6 @@ export default function SeoObservabilityPage() {
             <p className="mt-3 text-xs text-amber-300">{dbNotice}</p>
           ) : null}
         </header>
-
-        <GoogleSearchConsolePanel session={session} />
 
         <section className="rounded-2xl border border-white/12 bg-white/[0.03] p-5">
           <h2 className="text-lg font-semibold">Core Web Vitals by Route (p75)</h2>
