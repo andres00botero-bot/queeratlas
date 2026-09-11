@@ -16,6 +16,7 @@
     "test:entity-consistency": "node scripts/test-entity-consistency.mjs",
     "test:seo-telemetry": "node scripts/test-seo-telemetry.mjs",
     "test:indexnow": "node scripts/test-indexnow.mjs",
+    "test:google-search-console": "node scripts/test-google-search-console.mjs",
     "test:seo-phase1": "node scripts/test-seo-phase1.mjs",
     "test:seo-phase2": "node scripts/test-seo-phase2.mjs",
     "test:compass-seo": "node scripts/test-compass-seo.mjs",
