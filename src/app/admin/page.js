@@ -906,13 +906,6 @@ export default function AdminPage() {
               </button>
               <button
                 type="button"
-                onClick={() => router.push("/admin/seo-observability")}
-                className="rounded-full border border-emerald-200/25 bg-emerald-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
-              >
-                SEO health
-              </button>
-              <button
-                type="button"
                 onClick={async () => {
                   await Promise.all([loadAdminState(), loadMemberDirectory(), loadTrafficData(trafficDays), refreshPendingSubmissions()]);
                 }}

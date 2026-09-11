@@ -43,13 +43,6 @@ Defined in `scripts/verify-seo-gate.mjs`.
 - Robots baseline checks
 - Structured data presence checks for city/news/guide surfaces
 
-## SEO Observability Output
-- `seo:health-report` provides current snapshot/crawler/CWV health summary.
-- `seo:health-weekly-report` generates `reports/seo-health-weekly-latest.md` for trend tracking.
-- If Supabase env vars are missing, both commands skip safely and do not fail release gate.
-- Release Verify workflow uploads `reports/seo-health-weekly-latest.md` as artifact `seo-health-weekly-report` when available.
-- Release Verify workflow also exports `reports/seo-health-latest.json` and uploads artifact `seo-health-json-snapshot`.
-
 ## Failure Handling
 1. Fix root cause (no temporary patching).
 2. Re-run `npm run verify:release`.

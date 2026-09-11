@@ -1,6 +1,5 @@
 import "server-only";
 
-import { timingSafeEqual } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 let serviceClient = null;
@@ -16,12 +15,6 @@ function getPublicSupabaseKey() {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
       ""
   ).trim();
-}
-
-function secureEqual(left = "", right = "") {
-  const leftBuffer = Buffer.from(String(left));
-  const rightBuffer = Buffer.from(String(right));
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
 
 export function getTelemetryServiceClient() {
@@ -44,15 +37,7 @@ export function getTelemetryServiceClient() {
   return serviceClient;
 }
 
-export function hasValidTelemetryKey(request) {
-  const expected = String(process.env.QA_SEO_TELEMETRY_KEY || "").trim();
-  const received = String(request.headers.get("x-qa-telemetry-key") || "").trim();
-  return Boolean(expected && received && secureEqual(received, expected));
-}
-
 export async function hasAuthorizedSeoAdminRequest(request) {
-  if (hasValidTelemetryKey(request)) return true;
-
   const authorization = String(request.headers.get("authorization") || "");
   const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
   const url = getSupabaseUrl();
