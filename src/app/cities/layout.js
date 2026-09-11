@@ -1,4 +1,6 @@
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
+import { CityIndexDirectory } from "@/components/city/CityGuideLinks";
+import { listCityRegistry } from "@/lib/server/cityRegistry";
 
 export const metadata = {
   title: "Gay Friendly Cities & LGBTQ Safety Map 2026",
@@ -35,6 +37,13 @@ export const metadata = {
   },
 };
 
-export default function CitiesLayout({ children }) {
-  return children;
+export default async function CitiesLayout({ children }) {
+  const cities = await listCityRegistry({ indexableOnly: true });
+
+  return (
+    <>
+      {children}
+      <CityIndexDirectory cities={cities} />
+    </>
+  );
 }

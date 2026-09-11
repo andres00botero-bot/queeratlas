@@ -1,4 +1,5 @@
 import { cityGuideConfig } from "@/lib/cityGuides";
+import { cityCoreConfig } from "@/lib/cityCore";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getCityGuideResearch } from "@/lib/cityGuideResearch";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
@@ -6,6 +7,7 @@ import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
 import CityEntityCrawlSection from "@/components/city/CityEntityCrawlSection";
+import { CityRelatedGuides } from "@/components/city/CityGuideLinks";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { isEventVisibleOnCityPage } from "@/features/city/eventRailFeature";
 import { notFound } from "next/navigation";
@@ -75,6 +77,11 @@ export default async function CityLayout({ children, params }) {
     ? staticGuideResearch
     : coreConfig.guideResearch || { checkedAt: "", sources: [] };
   const inventory = await loadSeoEntityInventory();
+  const indexableCities = Object.entries(cityCoreConfig).map(([key, value]) => ({
+    key,
+    ...value,
+    seoIndexable: true,
+  }));
   const normalizedCity = normalizeCitySlug(city);
   const matchesCity = (item) => normalizeCitySlug(item?.city) === normalizedCity;
   const countEntities = (items, sourceAvailable) => {
@@ -107,6 +114,7 @@ export default async function CityLayout({ children, params }) {
         cityName={String(coreConfig.title || city).replace(/^Queer\s+/i, "").trim()}
         inventory={inventory}
       />
+      <CityRelatedGuides currentCity={routeConfig} cities={indexableCities} />
     </CityRouteConfigProvider>
   );
 }
