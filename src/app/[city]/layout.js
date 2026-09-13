@@ -32,7 +32,10 @@ export async function generateMetadata({ params }) {
   const canonical = `/${city}`;
   const ownership = getCityKeywordOwnership(cityName);
   const title = `Queer ${cityName} Guide 2026: Bars, Events & Safety`;
-  const description = `${cityName}, ${country}: ${ownership.primary}, trusted queer venues, live events, and route-smart safety context${vibe ? ` with a ${vibe} city vibe` : ""}. Updated for 2026.`;
+  const detailedDescription = `${cityName}, ${country}: ${ownership.primary}, trusted queer venues, live events, and route-smart safety context${vibe ? ` with a ${vibe} city vibe` : ""}. Updated for 2026.`;
+  const description = detailedDescription.length <= 160
+    ? detailedDescription
+    : `${cityName}, ${country}: discover trusted queer venues, live events, nightlife and practical safety context. Updated for 2026.`;
 
   return {
     title: title,
