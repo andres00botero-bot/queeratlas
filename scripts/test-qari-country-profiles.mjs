@@ -6,10 +6,10 @@ import { QARI_COUNTRY_PROFILES, QARI_GENERATED_COUNTRY_PROFILES } from "../src/l
 import { QARI_PILOT_PROFILES } from "../src/lib/qariPilotProfiles.js";
 
 const atlasCountries = [...new Set(Object.values(cityCoreConfig).map((city) => city.country))].sort();
-assert.equal(atlasCountries.length, 83);
+assert.equal(atlasCountries.length, 84);
 assert.equal(QARI_GENERATED_COUNTRY_PROFILES.length, 73);
-assert.equal(QARI_COUNTRY_PROFILES.length, 83);
-assert.equal(new Set(QARI_COUNTRY_PROFILES.map((profile) => profile.destinationKey)).size, 83);
+assert.equal(QARI_COUNTRY_PROFILES.length, 84);
+assert.equal(new Set(QARI_COUNTRY_PROFILES.map((profile) => profile.destinationKey)).size, 84);
 assert.deepEqual(QARI_COUNTRY_PROFILES.map((profile) => profile.country).sort(), atlasCountries);
 
 for (const profile of QARI_COUNTRY_PROFILES) {
@@ -38,8 +38,10 @@ const almatySql = fs.readFileSync(new URL("../supabase/city-almaty-v1.sql", impo
 assert.match(almatySql, /'country:kazakhstan'/);
 const ulaanbaatarSql = fs.readFileSync(new URL("../supabase/city-ulaanbaatar-v1.sql", import.meta.url), "utf8");
 assert.match(ulaanbaatarSql, /'country:mongolia'/);
+const kathmanduSql = fs.readFileSync(new URL("../supabase/city-kathmandu-v1.sql", import.meta.url), "utf8");
+assert.match(kathmanduSql, /'country:nepal'/);
 for (const profile of QARI_GENERATED_COUNTRY_PROFILES) {
   assert.ok(sql.includes(`'${profile.destinationKey}'`), `${profile.country}: missing from SQL`);
 }
 
-console.log("QARI 83-country coverage checks passed.");
+console.log("QARI 84-country coverage checks passed.");

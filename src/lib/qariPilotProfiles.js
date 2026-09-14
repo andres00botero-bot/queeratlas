@@ -178,6 +178,24 @@ const RAW_PILOT_PROFILES = [
       { axis: "digital", label: "The Advocates for Human Rights · Mongolia", url: "https://www.theadvocatesforhumanrights.org/International_Submissions/A/Index?id=536" },
     ],
   },
+  {
+    destinationKey: "country:nepal",
+    scopeType: "country",
+    country: "Nepal",
+    legalRisk: 26,
+    socialRisk: 32,
+    digitalRisk: 20,
+    qariScore: 27,
+    confidence: "high",
+    summary: "Nepal combines legal same-sex relations, constitutional protection, gender recognition and a 2026 marriage-equality order with unusually positive opinion data. Sector-level protection and consistent implementation still lag behind the constitutional framework.",
+    reviewedAt: "2026-09-14",
+    sources: [
+      { axis: "legal", label: "Equaldex · Nepal", url: "https://www.equaldex.com/region/nepal" },
+      { axis: "social", label: "Equaldex · Nepal public opinion", url: "https://www.equaldex.com/region/nepal" },
+      { axis: "digital", label: "Human Rights Watch · Legal gender recognition", url: "https://www.hrw.org/news/2024/07/31/nepal-supreme-court-recognizes-trans-woman-woman" },
+      { axis: "social", label: "Mitini Nepal · LBT community support", url: "https://mitininepal.org.np/mitini-nepal-kathmandu/" },
+    ],
+  },
 ];
 
 export const QARI_PILOT_PROFILES = RAW_PILOT_PROFILES.map((profile) =>

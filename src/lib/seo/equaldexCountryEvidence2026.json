@@ -341,14 +341,6 @@
       "opinion": 11
     },
     {
-      "country": "Mongolia",
-      "url": "https://www.equaldex.com/region/mongolia",
-      "status": 200,
-      "equality": 39,
-      "legal": 60,
-      "opinion": 17
-    },
-    {
       "country": "Latvia",
       "url": "https://www.equaldex.com/region/latvia",
       "status": 200,
@@ -397,6 +389,14 @@
       "opinion": 57
     },
     {
+      "country": "Mongolia",
+      "url": "https://www.equaldex.com/region/mongolia",
+      "status": 200,
+      "equality": 39,
+      "legal": 60,
+      "opinion": 17
+    },
+    {
       "country": "Montenegro",
       "url": "https://www.equaldex.com/region/montenegro",
       "status": 200,
@@ -419,6 +419,14 @@
       "equality": 42,
       "legal": 51,
       "opinion": 33
+    },
+    {
+      "country": "Nepal",
+      "url": "https://www.equaldex.com/region/nepal",
+      "status": 200,
+      "equality": 71,
+      "legal": 74,
+      "opinion": 68
     },
     {
       "country": "Netherlands",

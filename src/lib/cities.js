@@ -2104,6 +2104,19 @@ export const cityConfig = {
       cost: "Everyday food and app-based rides can be good value, while imported drinks, club entry and international hotels widen the budget sharply. Traffic makes distance more expensive in time than kilometres suggest. Winter adds real equipment and transport costs; in the coldest months, choosing a central hotel and pre-booked rides is a safety decision as much as a comfort upgrade.",
     }),
   },
+  kathmandu: {
+    center: [85.3240, 27.7172],
+    title: "Queer Kathmandu",
+    country: "Nepal",
+    vibe: "Himalayan capital with landmark queer activism and a compact Thamel scene",
+    guide: buildGuide({
+      about: "Kathmandu layers courtyards, stupas, palace squares and a hard-charging modern capital into one dense valley. Nepal's queer history is unusually consequential for South Asia: court victories, third-gender recognition, constitutional protection and community organisations sit beside a nightlife map that remains genuinely small. PINK Tiffany, founded by trans activist Meghna Lama, is the everyday social anchor; public Pride and advocacy supply much of the wider scene.",
+      district: "Thamel is the simplest queer-night route. PINK Tiffany and Fire Club sit around Chaksibari Marg, while Aloft is a short walk through the same tourist-heavy grid. Naxal gives the Marriott and a calmer polished base east of the palace area. Blue Diamond Society operates in Dhumbarahi, Mitini Nepal in Bhatbhateni and Queer Youth Group across the river in Patandhoka, Lalitpur; contact organisations before visiting rather than treating offices as drop-in attractions.",
+      safety: "Same-sex relations are legal, Nepal's constitution prohibits discrimination against sexual minorities, legal gender recognition exists and the Supreme Court ordered equal marriage rights in June 2026. Practice still trails the legal headline: employment, housing and hate-crime protections remain incomplete, trans people report administrative barriers, and comfort varies sharply by family and setting. Keep affection low-key outside trusted rooms, meet app contacts in staffed public places and protect local people's identities.",
+      nightlife: "Begin at PINK Tiffany for food, drinks and a direct connection to the local community. On Friday, Fire Club's recurring gay night supplies the larger dance floor; on other nights it is a mainstream club. Kathmandu's best queer gatherings are often calendar-led—Pride, trans-led marches, art programmes and organiser events—so one current post is worth more than a long inherited list of bars.",
+      cost: "Local meals and app-based rides can be inexpensive, while Thamel cocktails, club entry and international hotels quickly shift the budget. Traffic makes short map distances slow, especially between Thamel, Dhumbarahi, Patan and the airport. Budget for direct late-night transport and leave generous transfer time; a central stay can save more energy than a cheaper room across the valley.",
+    }),
+  },
   gothenburg: {
     center: [11.9746, 57.7089],
     title: "Queer Gothenburg",

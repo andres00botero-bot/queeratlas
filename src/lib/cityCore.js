@@ -1459,6 +1459,12 @@ export const cityCoreConfig = {
     "country": "Mongolia",
     "vibe": "high-altitude capital with a brave close-knit queer pulse"
   },
+  "kathmandu": {
+    "center": [85.3240, 27.7172],
+    "title": "Queer Kathmandu",
+    "country": "Nepal",
+    "vibe": "Himalayan capital with landmark queer activism and a compact Thamel scene"
+  },
   "gothenburg": {
     "center": [
       11.9746,

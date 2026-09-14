@@ -321,6 +321,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-09-14",
   },
+  Nepal: {
+    legal: "good",
+    rights: "good",
+    safety: "mixed",
+    whatThisMeans:
+      "Same-sex relations are legal, constitutional equality protection and gender recognition are established, and the Supreme Court ordered equal marriage rights in June 2026. Implementation remains uneven, with gaps in employment, housing and hate-crime law and documented discrimination in everyday services.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "Marriage equality ordered by the Supreme Court in June 2026",
+      genderRecognition: "Legal, including third-gender recognition; implementation can require court action",
+      antiDiscrimination: "Constitutional protection, but important sector-specific gaps remain",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/nepal",
+      rights: "https://www.hrw.org/news/2024/07/31/nepal-supreme-court-recognizes-trans-woman-woman",
+      safety: "https://mitininepal.org.np/mitini-nepal-kathmandu/",
+    },
+    confidence: "high",
+    updatedAt: "2026-09-14",
+  },
   Serbia: {
     legal: "good",
     rights: "risk",
