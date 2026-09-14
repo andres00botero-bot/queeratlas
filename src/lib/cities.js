@@ -2117,6 +2117,19 @@ export const cityConfig = {
       cost: "Local meals and app-based rides can be inexpensive, while Thamel cocktails, club entry and international hotels quickly shift the budget. Traffic makes short map distances slow, especially between Thamel, Dhumbarahi, Patan and the airport. Budget for direct late-night transport and leave generous transfer time; a central stay can save more energy than a cheaper room across the valley.",
     }),
   },
+  colombo: {
+    center: [79.8612, 6.9271],
+    title: "Queer Colombo",
+    country: "Sri Lanka",
+    vibe: "oceanfront capital with discreet queer networks and a bold creative pulse",
+    guide: buildGuide({
+      about: "Colombo is a humid Indian Ocean capital of seafront towers, tropical modernism, temples, markets and an unusually strong creative class. Queer life exists, but permanent rainbow-fronted nightlife does not. EQUAL GROUND and Colombo Pride provide the public spine; mixed rooms such as Love Bar and Barefoot become useful through programme, crowd and trust rather than formal LGBTQ+ branding.",
+      district: "Colombo 3 links Galle Road, Barefoot, Cinnamon Grand and the sea-facing corridor. Colombo 7 brings Love Bar, Cinnamon Gardens, museums and Jetwing Colombo Seven into a greener, more residential circuit. Galle Face and Colombo 2 hold Shangri-La and the largest international-hotel footprint. Distances look small but heat and traffic matter; use a known ride and confirm the exact destination before leaving.",
+      safety: "Sections 365 and 365A still criminalise consensual same-sex intimacy, despite court support for repeal and years of reform advocacy. Relationship recognition is absent, police abuse against LGBTQ+ people has been documented, and only 25% in the 2024 Gallup measure called their area a good place for gay and lesbian people. Avoid public affection, keep dating-app meetings in staffed public spaces, protect local contacts and use EQUAL GROUND or a trusted legal contact if trouble develops.",
+      nightlife: "Colombo works through selective mixed spaces and private or event-led gatherings. Love Bar has a queer-following signal in Colombo 7; Barefoot is the daylight cultural option for books, art and jazz. Pride month changes the calendar through EQUAL GROUND, while other parties may circulate privately. Verify the current organiser and never turn an old social post into a permanent venue claim.",
+      cost: "Local food and tuk-tuk journeys can be inexpensive, while cocktails and seafront hotels price for an international market. App-based or hotel-arranged rides reduce negotiation and confusion after dark. Build airport time generously—the airport is well north of central Colombo—and treat a staffed central hotel as part of the safety budget when discretion matters.",
+    }),
+  },
   gothenburg: {
     center: [11.9746, 57.7089],
     title: "Queer Gothenburg",

@@ -1465,6 +1465,12 @@ export const cityCoreConfig = {
     "country": "Nepal",
     "vibe": "Himalayan capital with landmark queer activism and a compact Thamel scene"
   },
+  "colombo": {
+    "center": [79.8612, 6.9271],
+    "title": "Queer Colombo",
+    "country": "Sri Lanka",
+    "vibe": "oceanfront capital with discreet queer networks and a bold creative pulse"
+  },
   "gothenburg": {
     "center": [
       11.9746,

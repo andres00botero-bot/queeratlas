@@ -589,6 +589,14 @@
       "opinion": 67
     },
     {
+      "country": "Sri Lanka",
+      "url": "https://www.equaldex.com/region/sri-lanka",
+      "status": 200,
+      "equality": 28,
+      "legal": 21,
+      "opinion": 34
+    },
+    {
       "country": "Sweden",
       "url": "https://www.equaldex.com/region/sweden",
       "status": 200,

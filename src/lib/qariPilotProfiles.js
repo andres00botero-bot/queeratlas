@@ -196,6 +196,25 @@ const RAW_PILOT_PROFILES = [
       { axis: "social", label: "Mitini Nepal · LBT community support", url: "https://mitininepal.org.np/mitini-nepal-kathmandu/" },
     ],
   },
+  {
+    destinationKey: "country:sri-lanka",
+    scopeType: "country",
+    country: "Sri Lanka",
+    legalRisk: 88,
+    socialRisk: 72,
+    digitalRisk: 45,
+    riskFloor: 70,
+    qariScore: 71,
+    confidence: "high",
+    summary: "Same-sex intimacy remains criminalised, with no relationship recognition and only narrow protection from discrimination. Colombo has active advocacy and Pride infrastructure, but low acceptance and documented police abuse make discretion essential.",
+    reviewedAt: "2026-09-14",
+    sources: [
+      { axis: "legal", label: "Equaldex · Sri Lanka", url: "https://www.equaldex.com/region/sri-lanka" },
+      { axis: "social", label: "Equaldex · Sri Lanka public opinion", url: "https://www.equaldex.com/region/sri-lanka" },
+      { axis: "digital", label: "Human Rights Watch · Sri Lanka", url: "https://www.hrw.org/world-report/2024/country-chapters/sri-lanka" },
+      { axis: "social", label: "EQUAL GROUND · Community and counselling", url: "https://www.equal-ground.org/our-work/" },
+    ],
+  },
 ];
 
 export const QARI_PILOT_PROFILES = RAW_PILOT_PROFILES.map((profile) =>

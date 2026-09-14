@@ -38,6 +38,7 @@ const COUNTRY_TIME_ZONES = Object.freeze({
   Kazakhstan: "Asia/Almaty",
   Mongolia: "Asia/Ulaanbaatar",
   Nepal: "Asia/Kathmandu",
+  "Sri Lanka": "Asia/Colombo",
   Namibia: "Africa/Windhoek",
   Netherlands: "Europe/Amsterdam",
   Norway: "Europe/Oslo",

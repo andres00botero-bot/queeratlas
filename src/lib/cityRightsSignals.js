@@ -341,6 +341,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-09-14",
   },
+  "Sri Lanka": {
+    legal: "risk",
+    rights: "risk",
+    safety: "risk",
+    whatThisMeans:
+      "Consensual same-sex intimacy remains criminalised under Penal Code sections 365 and 365A. Repeal has judicial support but has not become law; relationship recognition and broad sector protections are absent, while police abuse and discrimination remain documented.",
+    details: {
+      sameSexRelations: "Criminalised; imprisonment remains in statute",
+      unions: "No legal recognition",
+      genderRecognition: "Available with a medical diagnosis and administrative process",
+      antiDiscrimination: "Limited contexts only; no broad employment or housing protection",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/sri-lanka",
+      rights: "https://www.hrw.org/world-report/2024/country-chapters/sri-lanka",
+      safety: "https://www.hrw.org/report/2016/08/16/all-five-fingers-are-not-same/discrimination-grounds-gender-identity-and-sexual",
+    },
+    confidence: "high",
+    updatedAt: "2026-09-14",
+  },
   Serbia: {
     legal: "good",
     rights: "risk",
