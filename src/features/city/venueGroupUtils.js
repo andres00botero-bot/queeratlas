@@ -9,7 +9,7 @@ export function selectVisiblePlaceGroups(groupedPlaces = [], activeVenueFilterVa
 
 export function buildVenueJumpGroups(groupedPlaces = []) {
   return (Array.isArray(groupedPlaces) ? groupedPlaces : [])
-    .filter((group) => (Array.isArray(group?.items) && group.items.length > 0) || group?.value === "store")
+    .filter((group) => Array.isArray(group?.items) && group.items.length > 0)
     .map((group) => ({
       value: String(group?.value || ""),
       label: String(group?.label || group?.value || "Venues"),
