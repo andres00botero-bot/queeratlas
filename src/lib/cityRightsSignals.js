@@ -301,6 +301,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-09-13",
   },
+  Mongolia: {
+    legal: "good",
+    rights: "mixed",
+    safety: "risk",
+    whatThisMeans:
+      "Same-sex relations are legal and parts of criminal and labour law protect sexual orientation and gender identity. Relationship recognition is absent, legal gender change requires surgery, and documented discrimination plus weak enforcement make discretion important beyond trusted venues.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Legal, but surgery required",
+      antiDiscrimination: "Partial criminal, housing and employment protections",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/mongolia",
+      rights: "https://outrightinternational.org/our-work/asia/mongolia",
+      safety: "https://www.theadvocatesforhumanrights.org/International_Submissions/A/Index?id=536",
+    },
+    confidence: "high",
+    updatedAt: "2026-09-14",
+  },
   Serbia: {
     legal: "good",
     rights: "risk",

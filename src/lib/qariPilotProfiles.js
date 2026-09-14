@@ -160,6 +160,24 @@ const RAW_PILOT_PROFILES = [
       { axis: "digital", label: "Outright International · Kazakhstan", url: "https://outrightinternational.org/our-work/europe-and-central-asia/kazakhstan" },
     ],
   },
+  {
+    destinationKey: "country:mongolia",
+    scopeType: "country",
+    country: "Mongolia",
+    legalRisk: 45,
+    socialRisk: 82,
+    digitalRisk: 38,
+    qariScore: 58,
+    confidence: "high",
+    summary: "Same-sex relations are legal and targeted criminal and employment protections exist, but no couple recognition, surgery-based gender recognition, low public acceptance and inconsistent enforcement keep practical risk elevated.",
+    reviewedAt: "2026-09-14",
+    sources: [
+      { axis: "legal", label: "Equaldex · Mongolia", url: "https://www.equaldex.com/region/mongolia" },
+      { axis: "social", label: "Equaldex · Mongolia public opinion", url: "https://www.equaldex.com/region/mongolia" },
+      { axis: "legal", label: "Outright International · Mongolia", url: "https://outrightinternational.org/our-work/asia/mongolia" },
+      { axis: "digital", label: "The Advocates for Human Rights · Mongolia", url: "https://www.theadvocatesforhumanrights.org/International_Submissions/A/Index?id=536" },
+    ],
+  },
 ];
 
 export const QARI_PILOT_PROFILES = RAW_PILOT_PROFILES.map((profile) =>

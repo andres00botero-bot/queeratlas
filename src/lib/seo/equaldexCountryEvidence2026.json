@@ -341,6 +341,14 @@
       "opinion": 11
     },
     {
+      "country": "Mongolia",
+      "url": "https://www.equaldex.com/region/mongolia",
+      "status": 200,
+      "equality": 39,
+      "legal": 60,
+      "opinion": 17
+    },
+    {
       "country": "Latvia",
       "url": "https://www.equaldex.com/region/latvia",
       "status": 200,

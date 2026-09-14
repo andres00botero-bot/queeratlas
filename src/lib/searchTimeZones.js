@@ -36,6 +36,7 @@ const COUNTRY_TIME_ZONES = Object.freeze({
   Mexico: "America/Mexico_City",
   Montenegro: "Europe/Podgorica",
   Kazakhstan: "Asia/Almaty",
+  Mongolia: "Asia/Ulaanbaatar",
   Namibia: "Africa/Windhoek",
   Netherlands: "Europe/Amsterdam",
   Norway: "Europe/Oslo",

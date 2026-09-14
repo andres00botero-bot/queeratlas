@@ -1450,6 +1450,15 @@ export const cityCoreConfig = {
     "country": "Kazakhstan",
     "vibe": "mountain city with a discreet creative underground"
   },
+  "ulaanbaatar": {
+    "center": [
+      106.9057,
+      47.9189
+    ],
+    "title": "Queer Ulaanbaatar",
+    "country": "Mongolia",
+    "vibe": "high-altitude capital with a brave close-knit queer pulse"
+  },
   "gothenburg": {
     "center": [
       11.9746,

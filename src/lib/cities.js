@@ -2091,6 +2091,19 @@ export const cityConfig = {
       cost: "Almaty ranges from inexpensive local cafés and ride-hailing to international five-star pricing at Esentai and Rixos. The metro is useful by day, but budgeting for direct late-night rides improves both comfort and discretion. Mountain trips, spas and premium bars can quickly exceed the everyday city budget, so separate those splurges from the compact central route.",
     }),
   },
+  ulaanbaatar: {
+    center: [106.9057, 47.9189],
+    title: "Queer Ulaanbaatar",
+    country: "Mongolia",
+    vibe: "high-altitude capital with a brave close-knit queer pulse",
+    guide: buildGuide({
+      about: "Ulaanbaatar concentrates almost half of Mongolia into one fierce, fast-changing capital: Buddhist monasteries, Soviet blocks, contemporary art, traffic, mountain horizons and nights that refuse to end early. Its queer community is small but visible through the LGBT Centre, Equality & Pride Days, drag and a handful of dedicated rooms. Names and locations evolve quickly, so current local information matters more than inherited travel-guide certainty.",
+      district: "The most useful first route crosses central Sukhbaatar and Chingeltei districts: Tourist Street for C.U.M, the 1st Khoroo bar grid for Cortez and the square for museums, cafés and international hotels. DIEX sits east in Bayanzurkh, while Melody/Hanzo is southwest near the railway station. These are separate journeys in heavy traffic and winter cold; save the exact destination offline and use a direct ride after dark.",
+      safety: "Same-sex relations are legal, and criminal and labour law contain some sexual-orientation and gender-identity protections. Mongolia still offers no recognition for same-sex couples, legal gender change requires surgery, enforcement is inconsistent and only 10% in a 2024 Gallup measure described their area as a good place for gay and lesbian people. Keep public affection restrained, confirm unfamiliar entrances with the venue, protect local people's identities and meet app contacts first in a staffed public place.",
+      nightlife: "C.U.M is the intimate gay-bar opener, with queer art, house music and Wednesday drag. Cortez is women-owned and lesbian-centred but mixed in practice. DIEX/Black w60 supplies the larger Friday and Saturday dance floor and drag shows. Melody carries the long-running Hanzo lineage into karaoke near the railway station. All four can shift schedules or branding quickly; a same-week social post or direct message is part of the plan, not an optional extra.",
+      cost: "Everyday food and app-based rides can be good value, while imported drinks, club entry and international hotels widen the budget sharply. Traffic makes distance more expensive in time than kilometres suggest. Winter adds real equipment and transport costs; in the coldest months, choosing a central hotel and pre-booked rides is a safety decision as much as a comfort upgrade.",
+    }),
+  },
   gothenburg: {
     center: [11.9746, 57.7089],
     title: "Queer Gothenburg",
