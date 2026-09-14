@@ -1441,6 +1441,15 @@ export const cityCoreConfig = {
     "country": "Montenegro",
     "vibe": "coastal country route"
   },
+  "almaty": {
+    "center": [
+      76.8897,
+      43.2389
+    ],
+    "title": "Queer Almaty",
+    "country": "Kazakhstan",
+    "vibe": "mountain city with a discreet creative underground"
+  },
   "gothenburg": {
     "center": [
       11.9746,

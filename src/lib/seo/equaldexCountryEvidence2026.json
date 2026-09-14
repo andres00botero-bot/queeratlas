@@ -333,6 +333,14 @@
       "opinion": 50
     },
     {
+      "country": "Kazakhstan",
+      "url": "https://www.equaldex.com/region/kazakhstan",
+      "status": 200,
+      "equality": 23,
+      "legal": 35,
+      "opinion": 11
+    },
+    {
       "country": "Latvia",
       "url": "https://www.equaldex.com/region/latvia",
       "status": 200,

@@ -142,6 +142,24 @@ const RAW_PILOT_PROFILES = [
       { axis: "digital", label: "UK travel advice · Russia", url: "https://www.gov.uk/foreign-travel-advice/russia/safety-and-security" },
     ],
   },
+  {
+    destinationKey: "country:kazakhstan",
+    scopeType: "country",
+    country: "Kazakhstan",
+    legalRisk: 65,
+    socialRisk: 88,
+    digitalRisk: 85,
+    qariScore: 79,
+    confidence: "high",
+    summary: "Same-sex relations are legal, but absent relationship and anti-discrimination protections combine with extremely low reported acceptance and a 2026 censorship law carrying fines or detention. Public, organizational and digital visibility require substantial care.",
+    reviewedAt: "2026-09-13",
+    sources: [
+      { axis: "legal", label: "Equaldex · Kazakhstan", url: "https://www.equaldex.com/region/kazakhstan" },
+      { axis: "social", label: "Equaldex · Kazakhstan public opinion", url: "https://www.equaldex.com/region/kazakhstan" },
+      { axis: "digital", label: "Human Rights Watch · World Report 2026", url: "https://www.hrw.org/world-report/2026/country-chapters/kazakhstan" },
+      { axis: "digital", label: "Outright International · Kazakhstan", url: "https://outrightinternational.org/our-work/europe-and-central-asia/kazakhstan" },
+    ],
+  },
 ];
 
 export const QARI_PILOT_PROFILES = RAW_PILOT_PROFILES.map((profile) =>

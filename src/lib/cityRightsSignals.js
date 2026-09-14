@@ -281,6 +281,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-06-16",
   },
+  Kazakhstan: {
+    legal: "risk",
+    rights: "risk",
+    safety: "risk",
+    whatThisMeans:
+      "Consensual same-sex relations are legal, but same-sex relationships receive no recognition and Kazakhstan has no explicit national LGBTQ+ anti-discrimination protection. Public and online expression faces additional risk under the 2026 censorship law, while Almaty's community spaces often rely on discretion and screening.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Restricted; surgery required",
+      antiDiscrimination: "No explicit protection",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/kazakhstan",
+      rights: "https://outrightinternational.org/our-work/europe-and-central-asia/kazakhstan",
+      safety: "https://www.hrw.org/world-report/2026/country-chapters/kazakhstan",
+    },
+    confidence: "high",
+    updatedAt: "2026-09-13",
+  },
   Serbia: {
     legal: "good",
     rights: "risk",

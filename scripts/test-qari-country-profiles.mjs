@@ -6,10 +6,10 @@ import { QARI_COUNTRY_PROFILES, QARI_GENERATED_COUNTRY_PROFILES } from "../src/l
 import { QARI_PILOT_PROFILES } from "../src/lib/qariPilotProfiles.js";
 
 const atlasCountries = [...new Set(Object.values(cityCoreConfig).map((city) => city.country))].sort();
-assert.equal(atlasCountries.length, 81);
+assert.equal(atlasCountries.length, 82);
 assert.equal(QARI_GENERATED_COUNTRY_PROFILES.length, 73);
-assert.equal(QARI_COUNTRY_PROFILES.length, 81);
-assert.equal(new Set(QARI_COUNTRY_PROFILES.map((profile) => profile.destinationKey)).size, 81);
+assert.equal(QARI_COUNTRY_PROFILES.length, 82);
+assert.equal(new Set(QARI_COUNTRY_PROFILES.map((profile) => profile.destinationKey)).size, 82);
 assert.deepEqual(QARI_COUNTRY_PROFILES.map((profile) => profile.country).sort(), atlasCountries);
 
 for (const profile of QARI_COUNTRY_PROFILES) {
@@ -34,8 +34,10 @@ for (const pilot of QARI_PILOT_PROFILES) {
 
 const sql = fs.readFileSync(new URL("../supabase/qari-country-profiles-2026.sql", import.meta.url), "utf8");
 assert.match(sql, /Expected after the Phase 0\/1 pilot plus this expansion: 81 published profiles/);
+const almatySql = fs.readFileSync(new URL("../supabase/city-almaty-v1.sql", import.meta.url), "utf8");
+assert.match(almatySql, /'country:kazakhstan'/);
 for (const profile of QARI_GENERATED_COUNTRY_PROFILES) {
   assert.ok(sql.includes(`'${profile.destinationKey}'`), `${profile.country}: missing from SQL`);
 }
 
-console.log("QARI 81-country expansion checks passed.");
+console.log("QARI 82-country coverage checks passed.");

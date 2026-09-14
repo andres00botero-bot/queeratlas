@@ -4294,6 +4294,13 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "almaty": [
+    { "title": "About", "text": "Almaty is Kazakhstan's cultural powerhouse: tree-lined streets, ambitious food and art, experimental electronic music and the Tian Shan rising behind it all. Its queer life is real but deliberately discreet. Community happens through trusted networks, screened spaces and event-led rooms; the city should never be sold as having an open gay district.", "extra": "" },
+    { "title": "Districts", "text": "Use the central Golden Quarter around Abay, Dostyk and Panfilov for cafés, museums and an easy first base. Nazarbayev Avenue adds Kumäno and polished bar movement, while bULt sits farther west on Gagarin Avenue and only makes sense for a confirmed event. Esentai and Al-Farabi offer high-comfort hotels and skyline drinks; book a direct ride for late returns instead of improvising long walks.", "extra": "" },
+    { "title": "Safety", "text": "Consensual same-sex relations are legal, but Kazakhstan offers no relationship recognition or specific national protection from discrimination based on sexual orientation or gender identity. A 2025 law restricting so-called 'propaganda of non-traditional sexual orientation' took effect in 2026, raising the risk around public advocacy and online or public visibility. Avoid conspicuous affection, protect local contacts, never disclose a screened venue address, and use dating apps with identity and meeting-place safeguards.", "extra": "" },
+    { "title": "Nightlife", "text": "Amirovka and Chernika are reported closed, and no current permanent public gay bar can be responsibly mapped. The useful layer is mixed and programme-led: bULt for experimental rave culture, Kumäno for cocktails and selectors, and selected hotel bars for a calmer international room. Confirm the same-week programme; a venue's crowd can change completely with the promoter.", "extra": "" },
+    { "title": "Cost", "text": "Almaty ranges from inexpensive local cafés and ride-hailing to international five-star pricing at Esentai and Rixos. The metro is useful by day, but budgeting for direct late-night rides improves both comfort and discretion. Mountain trips, spas and premium bars can quickly exceed the everyday city budget, so separate those splurges from the compact central route.", "extra": "" }
+  ],
   "zagreb": [
     {
       "title": "About",
