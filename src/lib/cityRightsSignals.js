@@ -361,6 +361,26 @@ const COUNTRY_RIGHTS_SNAPSHOTS = {
     confidence: "high",
     updatedAt: "2026-09-14",
   },
+  Armenia: {
+    legal: "good",
+    rights: "risk",
+    safety: "risk",
+    whatThisMeans:
+      "Consensual same-sex relations are legal, but Armenia provides no relationship recognition or comprehensive LGBTQ+-specific anti-discrimination protection. Documented violence, family abuse, extortion and discrimination make practical safety substantially weaker than the legal baseline.",
+    details: {
+      sameSexRelations: "Legal",
+      unions: "No legal recognition",
+      genderRecognition: "Restricted; a medical document is required for a legal marker change",
+      antiDiscrimination: "Limited or none; no comprehensive SOGI-specific law",
+    },
+    sources: {
+      legal: "https://www.equaldex.com/region/armenia",
+      rights: "https://www.hrw.org/world-report/2026/country-chapters/armenia",
+      safety: "https://pinkarmenia.org/en/",
+    },
+    confidence: "high",
+    updatedAt: "2026-09-14",
+  },
   Serbia: {
     legal: "good",
     rights: "risk",

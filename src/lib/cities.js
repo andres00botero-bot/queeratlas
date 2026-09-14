@@ -2130,6 +2130,19 @@ export const cityConfig = {
       cost: "Local food and tuk-tuk journeys can be inexpensive, while cocktails and seafront hotels price for an international market. App-based or hotel-arranged rides reduce negotiation and confusion after dark. Build airport time generously—the airport is well north of central Colombo—and treat a staffed central hotel as part of the safety budget when discretion matters.",
     }),
   },
+  yerevan: {
+    center: [44.5152, 40.1872],
+    title: "Queer Yerevan",
+    country: "Armenia",
+    vibe: "pink-stone capital with intimate queer rooms and resilient community networks",
+    guide: buildGuide({
+      about: "Yerevan compresses rose-coloured stone, Soviet modernism, café terraces and a serious contemporary arts scene into a highly walkable centre. Its queer life is small but not imaginary: Relokant provides the clearest current nightlife anchor, while Pink Armenia and Right Side sustain legal, psychosocial and community support. The useful guide is built from those live signals, not from closed bars preserved in old lists.",
+      district: "Kentron is the practical first map. Republic Square, Abovyan Street and Pushkin Street hold the main hotels and Calumet; the Opera and Cascade side leads to Sarmen Street and Esthetic Joys Embassy. Relokant's current entrance should be confirmed directly rather than broadcast from an inherited listing. Distances in the centre are short, but steep Cascade-side streets and late-hour gaps still make a direct ride useful.",
+      safety: "Consensual same-sex relations are legal, but Armenia offers no recognition for same-sex couples and no comprehensive LGBTQ+-specific anti-discrimination law. Human Rights Watch reports violence, family abuse, extortion, employment discrimination and abuse by law enforcement; gender-marker changes remain medically conditioned. Keep public affection measured, meet app contacts first in a staffed public room, avoid sharing local people's identities and save Pink Armenia's +374 33 522533 hotline before the night begins.",
+      nightlife: "Relokant is the clearest queer-led stop, strongest when a current party or karaoke night is posted. Esthetic Joys Embassy brings a mixed art-and-jazz crowd with occasional queer programming; Calumet is a relaxed gay-friendly lounge, not a dedicated venue. Yerevan has no broad public gay strip, and community events can move or stay deliberately private. Follow the organiser and date as carefully as the address.",
+      cost: "Central cafés, wine and app-based rides can be good value, while imported drinks and international hotels rise quickly toward European-capital pricing. Kentron's compact layout saves transport by day. Budget for a direct ride after late events, carry a payment backup and book airport transfer or a trusted app rather than negotiating at the curb when discretion matters.",
+    }),
+  },
   gothenburg: {
     center: [11.9746, 57.7089],
     title: "Queer Gothenburg",

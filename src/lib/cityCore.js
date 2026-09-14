@@ -1471,6 +1471,12 @@ export const cityCoreConfig = {
     "country": "Sri Lanka",
     "vibe": "oceanfront capital with discreet queer networks and a bold creative pulse"
   },
+  "yerevan": {
+    "center": [44.5152, 40.1872],
+    "title": "Queer Yerevan",
+    "country": "Armenia",
+    "vibe": "pink-stone capital with intimate queer rooms and resilient community networks"
+  },
   "gothenburg": {
     "center": [
       11.9746,

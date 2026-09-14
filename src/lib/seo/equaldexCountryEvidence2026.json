@@ -1,7 +1,7 @@
 {
   "source": "Equaldex Equality Index",
   "methodologyUrl": "https://www.equaldex.com/equality-index",
-  "retrievedAt": "2026-08-22T08:18:12.360Z",
+  "retrievedAt": "2026-08-22T08:18:12.36Z",
   "terms": "Published with source credit and direct country links; values are frozen for this Queer Atlas edition.",
   "records": [
     {
@@ -19,6 +19,14 @@
       "equality": 75,
       "legal": 89,
       "opinion": 61
+    },
+    {
+      "country": "Armenia",
+      "url": "https://www.equaldex.com/region/armenia",
+      "status": 200,
+      "equality": 26,
+      "legal": 46,
+      "opinion": 5
     },
     {
       "country": "Australia",

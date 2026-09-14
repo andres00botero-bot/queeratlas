@@ -14,6 +14,7 @@ import { ALMATY_CITY_SLUGS, almatySeedEvents } from "./seed/regions/almaty.js";
 import { ULAANBAATAR_CITY_SLUGS, ulaanbaatarSeedEvents } from "./seed/regions/ulaanbaatar.js";
 import { KATHMANDU_CITY_SLUGS, kathmanduSeedEvents } from "./seed/regions/kathmandu.js";
 import { COLOMBO_CITY_SLUGS, colomboSeedEvents } from "./seed/regions/colombo.js";
+import { YEREVAN_CITY_SLUGS, yerevanSeedEvents } from "./seed/regions/yerevan.js";
 import { buildEventIntelFallback } from "./intelFallbacks.js";
 
 function normalizeSeedKey(value = "") {
@@ -1884,7 +1885,8 @@ export function mergeSeedEvents(databaseEvents = []) {
       !ALMATY_CITY_SLUGS.has(String(event.city || "")) &&
       !ULAANBAATAR_CITY_SLUGS.has(String(event.city || "")) &&
       !KATHMANDU_CITY_SLUGS.has(String(event.city || "")) &&
-      !COLOMBO_CITY_SLUGS.has(String(event.city || "")),
+      !COLOMBO_CITY_SLUGS.has(String(event.city || "")) &&
+      !YEREVAN_CITY_SLUGS.has(String(event.city || "")),
   );
   const effectiveSeedEvents = [
     ...baseSeedEvents,
@@ -1902,6 +1904,7 @@ export function mergeSeedEvents(databaseEvents = []) {
     ...ulaanbaatarSeedEvents,
     ...kathmanduSeedEvents,
     ...colomboSeedEvents,
+    ...yerevanSeedEvents,
     ...bolognaSeedEvents,
   ];
   const seenIds = new Set(databaseEvents.map((event) => String(event.id)));

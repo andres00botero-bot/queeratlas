@@ -215,6 +215,24 @@ const RAW_PILOT_PROFILES = [
       { axis: "social", label: "EQUAL GROUND · Community and counselling", url: "https://www.equal-ground.org/our-work/" },
     ],
   },
+  {
+    destinationKey: "country:armenia",
+    scopeType: "country",
+    country: "Armenia",
+    legalRisk: 58,
+    socialRisk: 84,
+    digitalRisk: 52,
+    qariScore: 67,
+    confidence: "high",
+    summary: "Same-sex relations are legal, but Armenia has no couple recognition or comprehensive SOGI protection. Low acceptance and documented violence, extortion, family abuse and discrimination make visibility and dating context-sensitive.",
+    reviewedAt: "2026-09-14",
+    sources: [
+      { axis: "legal", label: "Equaldex · Armenia", url: "https://www.equaldex.com/region/armenia" },
+      { axis: "social", label: "Equaldex · Armenia public opinion", url: "https://www.equaldex.com/region/armenia" },
+      { axis: "digital", label: "Human Rights Watch · World Report 2026", url: "https://www.hrw.org/world-report/2026/country-chapters/armenia" },
+      { axis: "social", label: "Pink Armenia · Community support", url: "https://pinkarmenia.org/en/" },
+    ],
+  },
 ];
 
 export const QARI_PILOT_PROFILES = RAW_PILOT_PROFILES.map((profile) =>
