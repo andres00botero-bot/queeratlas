@@ -556,6 +556,88 @@ const BARCELONA_QUEER_AREAS = [{
   id: "barcelona-gaixample", name: "Gaixample", type: "Landmark LGBTQ+ district", bestFor: "First-time visits, bars, clubs, shopping and a walkable central night", summary: "Gaixample is Barcelona's central LGBTQ+ area in Eixample, with a concentrated mix of bars, venues and businesses.", practicalNote: "Use Casanova, Aragó and Diputació as practical anchors; it is compact enough to explore on foot.", sourceLabel: "Turisme de Barcelona: Gaixample", sourceUrl: "https://bid.barcelonaturisme.com/wv3/es/page/393/gaixample.html", color: "#f5a9c6", center: [2.155,41.385], bounds: [[2.14,41.376],[2.171,41.394]], geometry:{type:"Polygon",coordinates:[[[2.142,41.377],[2.165,41.376],[2.171,41.384],[2.166,41.392],[2.148,41.394],[2.14,41.386],[2.142,41.377]]]}
 }];
 
+const GRAN_CANARIA_QUEER_AREAS = [
+  {
+    id: "gran-canaria-yumbo-playa-del-ingles",
+    name: "Yumbo & Playa del Inglés",
+    type: "Queer resort nightlife hub",
+    bestFor: "Year-round nightlife, bars, clubs and a first Gran Canaria base",
+    summary: "Yumbo Centre in Playa del Inglés is Gran Canaria's most established queer nightlife anchor, within the wider Maspalomas resort area.",
+    practicalNote: "Use Yumbo as the evening anchor. The shade is an orientation area, not a claim that every nearby street or beach is a queer venue.",
+    sourceLabel: "Gran Canaria Tourism: Gay-friendly leisure",
+    sourceUrl: "https://www.grancanaria.com/turismo/en/gay-friendly/leisure/?MP=250-3327",
+    color: "#f5a9c6",
+    center: [-15.5757, 27.758],
+    bounds: [[-15.59, 27.747], [-15.56, 27.77]],
+    geometry: { type: "Polygon", coordinates: [[[-15.588, 27.748], [-15.568, 27.747], [-15.56, 27.756], [-15.566, 27.767], [-15.579, 27.77], [-15.59, 27.761], [-15.588, 27.748]]] },
+  },
+];
+
+const VIENNA_QUEER_AREAS = [
+  {
+    id: "vienna-naschmarkt-fourth-sixth",
+    name: "Naschmarkt & the 4th/6th districts",
+    type: "Queer nightlife & community area",
+    bestFor: "Bars, cafés, a central evening and community-led events",
+    summary: "Vienna's LGBTQIA+ scene is citywide, with a lively concentration around Naschmarkt and the adjoining fourth and sixth districts.",
+    practicalNote: "This is a useful scene anchor rather than a formal gay district. Confirm a venue or event before travelling across the city.",
+    sourceLabel: "Vienna Pride: travel information",
+    sourceUrl: "https://viennapride.at/en/travel-info/",
+    color: "#88d9d4",
+    center: [16.356, 48.198],
+    bounds: [[16.342, 48.191], [16.37, 48.205]],
+    geometry: { type: "Polygon", coordinates: [[[16.344, 48.192], [16.362, 48.191], [16.37, 48.197], [16.366, 48.203], [16.352, 48.205], [16.342, 48.199], [16.344, 48.192]]] },
+  },
+];
+
+const PRAGUE_QUEER_AREAS = [
+  {
+    id: "prague-vinohrady",
+    name: "Vinohrady",
+    type: "Queer nightlife & venue area",
+    bestFor: "Bars, cafés, clubs and an easy central route",
+    summary: "Prague's queer scene is venue- and event-led, with Vinohrady a practical anchor for LGBTQIA+ nightlife and community listings.",
+    practicalNote: "This is an orientation area, not an official gay district. Check current venue programmes before making a late-night plan.",
+    sourceLabel: "Prague City Tourism: Q Prague",
+    sourceUrl: "https://prague.eu/en/q-prague/",
+    color: "#c4b5fd",
+    center: [14.438, 50.08],
+    bounds: [[14.416, 50.065], [14.46, 50.094]],
+    geometry: { type: "Polygon", coordinates: [[[14.418, 50.067], [14.447, 50.065], [14.46, 50.077], [14.454, 50.09], [14.434, 50.094], [14.416, 50.082], [14.418, 50.067]]] },
+  },
+];
+
+const COPENHAGEN_QUEER_AREAS = [
+  {
+    id: "copenhagen-studiestraede",
+    name: "Studiestræde & central Copenhagen",
+    type: "Queer nightlife corridor",
+    bestFor: "Historic LGBTQ+ bars, drag, clubs and a compact central night",
+    summary: "Studiestræde is a practical central queer nightlife corridor, with several established LGBTQ+ venues close together in Copenhagen's inner city.",
+    practicalNote: "This is a venue-led corridor, not a fixed boundary. Start on Studiestræde, then use live listings to decide where the evening continues.",
+    sourceLabel: "VisitCopenhagen: LGBTQ+ venues on Studiestræde",
+    sourceUrl: "https://www.visitcopenhagen.com/copenhagen/planning/masken-bar-gdk655853",
+    color: "#f5a9c6",
+    center: [12.5692, 55.676],
+    bounds: [[12.56, 55.67], [12.579, 55.6815]],
+    geometry: { type: "Polygon", coordinates: [[[12.561, 55.671], [12.575, 55.67], [12.579, 55.675], [12.575, 55.681], [12.564, 55.6815], [12.56, 55.676], [12.561, 55.671]]] },
+  },
+  {
+    id: "copenhagen-christiania-bossehuset",
+    name: "Christiania & Bøssehuset",
+    type: "Queer culture & event area",
+    bestFor: "Community culture, performances, exhibitions and events",
+    summary: "Bøssehuset in Christiania is an LGBTQ+ cultural meeting place for performances, exhibitions, talks and parties.",
+    practicalNote: "Use this as a cultural destination rather than a nightlife district, and check the programme before going.",
+    sourceLabel: "VisitCopenhagen: Bøssehuset",
+    sourceUrl: "https://www.visitcopenhagen.com/copenhagen/planning/bossehuset-gdk494171",
+    color: "#88d9d4",
+    center: [12.6, 55.673],
+    bounds: [[12.585, 55.662], [12.617, 55.683]],
+    geometry: { type: "Polygon", coordinates: [[[12.587, 55.663], [12.608, 55.662], [12.617, 55.671], [12.611, 55.681], [12.594, 55.683], [12.585, 55.674], [12.587, 55.663]]] },
+  },
+];
+
 const AREAS_BY_CITY = {
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
@@ -571,6 +653,10 @@ const AREAS_BY_CITY = {
   sao_paulo: SAO_PAULO_QUEER_AREAS,
   buenos_aires: BUENOS_AIRES_QUEER_AREAS,
   barcelona: BARCELONA_QUEER_AREAS,
+  gran_canaria: GRAN_CANARIA_QUEER_AREAS,
+  vienna: VIENNA_QUEER_AREAS,
+  prague: PRAGUE_QUEER_AREAS,
+  copenhagen: COPENHAGEN_QUEER_AREAS,
 };
 
 export function getQueerAreasForCity(city) {
