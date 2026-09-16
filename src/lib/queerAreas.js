@@ -447,6 +447,99 @@ const MONTREAL_QUEER_AREAS = [
   },
 ];
 
+const LOS_ANGELES_QUEER_AREAS = [
+  {
+    id: "los-angeles-rainbow-district",
+    name: "West Hollywood: Rainbow District",
+    type: "Landmark LGBTQ+ district",
+    bestFor: "First-time visits, nightlife, drag, queer businesses and Pride energy",
+    summary: "West Hollywood's Rainbow District is LA's clearest LGBTQ+ anchor: a walkable Santa Monica Boulevard stretch packed with queer nightlife, culture and community life.",
+    practicalNote: "The core runs along Santa Monica Boulevard between La Cienega and Doheny. It is unusually walkable for LA; use the local shuttle or rideshare for wider city connections.",
+    sourceLabel: "Visit West Hollywood: Rainbow District",
+    sourceUrl: "https://www.visitwesthollywood.com/neighborhoods/rainbow-district/",
+    color: "#f5a9c6",
+    center: [-118.378, 34.0834],
+    bounds: [[-118.39, 34.077], [-118.366, 34.0905]],
+    geometry: { type: "Polygon", coordinates: [[[-118.389, 34.078], [-118.371, 34.077], [-118.366, 34.083], [-118.371, 34.089], [-118.383, 34.0905], [-118.39, 34.085], [-118.389, 34.078]]] },
+  },
+  {
+    id: "los-angeles-silver-lake",
+    name: "Silver Lake",
+    type: "Historic queer culture area",
+    bestFor: "Queer history, independent bars, daytime culture and a less polished LA route",
+    summary: "Silver Lake is a historic LGBTQ+ haven with sites including the Black Cat and Mattachine Steps, plus a more neighbourhood-led queer social energy.",
+    practicalNote: "Silver Lake is dispersed and car-oriented. Choose a confirmed venue or cultural stop, then build a deliberate route rather than relying on a short walkable strip.",
+    sourceLabel: "Discover Los Angeles: LGBTQ+ history in LA",
+    sourceUrl: "https://www.discoverlosangeles.com/things-to-do/discover-lgbtq-history-in-los-angeles",
+    color: "#88d9d4",
+    center: [-118.2675, 34.086],
+    bounds: [[-118.286, 34.071], [-118.248, 34.101]],
+    geometry: { type: "Polygon", coordinates: [[[-118.282, 34.073], [-118.258, 34.071], [-118.248, 34.084], [-118.255, 34.098], [-118.273, 34.101], [-118.286, 34.09], [-118.282, 34.073]]] },
+  },
+];
+
+const TORONTO_QUEER_AREAS = [
+  {
+    id: "toronto-church-wellesley",
+    name: "Church-Wellesley Village",
+    type: "Landmark 2SLGBTQ+ village",
+    bestFor: "First-time visits, community history, drag, clubs and Pride-season energy",
+    summary: "Church-Wellesley Village is Toronto's central 2SLGBTQ+ district, with year-round community life, nightlife, events and the city's deepest queer history.",
+    practicalNote: "Use Church and Wellesley as the centre. The Village is compact and transit-connected, making it a strong base for a first Toronto queer itinerary.",
+    sourceLabel: "Destination Toronto: Church-Wellesley Village",
+    sourceUrl: "https://www.destinationtoronto.com/neighbourhoods/city-centre/church-wellesley-village/",
+    color: "#f5a9c6",
+    center: [-79.3815, 43.6651],
+    bounds: [[-79.391, 43.655], [-79.37, 43.674]],
+    geometry: { type: "Polygon", coordinates: [[[-79.389, 43.656], [-79.375, 43.655], [-79.37, 43.664], [-79.375, 43.672], [-79.384, 43.674], [-79.391, 43.666], [-79.389, 43.656]]] },
+  },
+  {
+    id: "toronto-queer-west",
+    name: "Queer West",
+    type: "West-end queer culture area",
+    bestFor: "Independent culture, Queen Street energy and a broader west-side route",
+    summary: "Toronto's Queen Street West corridor, from Trinity Bellwoods toward Roncesvalles, is known as Queer West and expands the city's queer geography beyond the Village.",
+    practicalNote: "This is a long corridor rather than one compact district. Pick a neighbourhood stop or event first, then use transit or rideshare between the western stretches.",
+    sourceLabel: "Destination Toronto: 2SLGBTQ+ itinerary",
+    sourceUrl: "https://www.destinationtoronto.com/travel-trade/tools-resources/itineraries/2slgbtq/",
+    color: "#88d9d4",
+    center: [-79.425, 43.6415],
+    bounds: [[-79.468, 43.631], [-79.388, 43.65]],
+    geometry: { type: "Polygon", coordinates: [[[-79.465, 43.632], [-79.404, 43.631], [-79.388, 43.64], [-79.4, 43.648], [-79.445, 43.65], [-79.468, 43.641], [-79.465, 43.632]]] },
+  },
+];
+
+const BOGOTA_QUEER_AREAS = [
+  {
+    id: "bogota-chapinero",
+    name: "Chapinero",
+    type: "Landmark LGBTQ+ district",
+    bestFor: "Large-scale nightlife, bars, clubs and a clear first orientation",
+    summary: "Chapinero is Bogotá's central LGBTQ+ district, with a dense concentration of bars, clubs and community spaces and a major role in the city's queer nightlife.",
+    practicalNote: "Choose a specific venue and use trusted transport for late travel. Chapinero is large, so do not treat the whole district as one walkable nightlife strip.",
+    sourceLabel: "Bogotá.gov.co: LGBTIQ+ Pride guide",
+    sourceUrl: "https://bogota.gov.co/en/international/celebrate-pride-month-bogota-top-places-events-june",
+    color: "#f5a9c6",
+    center: [-74.0635, 4.655],
+    bounds: [[-74.083, 4.628], [-74.043, 4.68]],
+    geometry: { type: "Polygon", coordinates: [[[-74.08, 4.63], [-74.053, 4.628], [-74.043, 4.649], [-74.05, 4.673], [-74.068, 4.68], [-74.083, 4.658], [-74.08, 4.63]]] },
+  },
+  {
+    id: "bogota-la-playa",
+    name: "La Playa Creative & Diverse District",
+    type: "Queer culture and nightlife area",
+    bestFor: "Culture, community events and the Theatron orbit",
+    summary: "La Playa is a designated creative and diverse district in Chapinero, linking cultural spaces, Parque de los Hippies and one of Bogotá's major LGBTQ+ nightlife anchors.",
+    practicalNote: "This is a focused part of wider Chapinero. It works best around a confirmed event, with a clear ride plan for the end of the night.",
+    sourceLabel: "Bogotá.gov.co: La Playa Creative & Diverse District",
+    sourceUrl: "https://bogota.gov.co/en/node/207244",
+    color: "#88d9d4",
+    center: [-74.0667, 4.6475],
+    bounds: [[-74.075, 4.641], [-74.057, 4.654]],
+    geometry: { type: "Polygon", coordinates: [[[-74.073, 4.642], [-74.061, 4.641], [-74.057, 4.647], [-74.061, 4.653], [-74.069, 4.654], [-74.075, 4.649], [-74.073, 4.642]]] },
+  },
+];
+
 const AREAS_BY_CITY = {
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
@@ -456,6 +549,9 @@ const AREAS_BY_CITY = {
   new_york: NEW_YORK_QUEER_AREAS,
   mexico_city: MEXICO_CITY_QUEER_AREAS,
   montreal: MONTREAL_QUEER_AREAS,
+  los_angeles: LOS_ANGELES_QUEER_AREAS,
+  toronto: TORONTO_QUEER_AREAS,
+  bogota: BOGOTA_QUEER_AREAS,
 };
 
 export function getQueerAreasForCity(city) {

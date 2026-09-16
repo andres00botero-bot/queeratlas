@@ -125,6 +125,7 @@ import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 import { getQueerAreasForCity } from "@/lib/queerAreas";
 
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
+const QUEER_AREA_MARKER_ZOOM = 12;
 
 export default function CityPage() {
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -435,6 +436,17 @@ export default function CityPage() {
     if (!isDesktop) scrollToSection(mapWrapperRef);
     if (!map || !bounds || bounds.length !== 2) return;
 
+    const ensureMarkerZoom = () => {
+      if (map.getZoom() >= QUEER_AREA_MARKER_ZOOM) return;
+      map.easeTo({
+        center: area.center,
+        zoom: QUEER_AREA_MARKER_ZOOM,
+        duration: 320,
+        essential: true,
+      });
+    };
+
+    map.once("moveend", ensureMarkerZoom);
     map.fitBounds(bounds, {
       padding: isDesktop ? { top: 92, right: 72, bottom: 92, left: 72 } : { top: 72, right: 48, bottom: 72, left: 48 },
       maxZoom: 14,
@@ -2695,7 +2707,7 @@ export default function CityPage() {
     const clusterLayerId = "qa-city-cluster-bubbles";
     const clusterCountLayerId = "qa-city-cluster-count";
     const pointLayerId = "qa-city-cluster-points";
-    const clusterZoomThreshold = 12;
+    const clusterZoomThreshold = QUEER_AREA_MARKER_ZOOM;
     const entitiesByKey = new Map();
     const features = [];
 
