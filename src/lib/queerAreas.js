@@ -788,6 +788,136 @@ const ROME_QUEER_AREAS = [
   },
 ];
 
+const MILANO_QUEER_AREAS = [
+  {
+    id: "milano-porta-venezia",
+    name: "Porta Venezia",
+    type: "Landmark LGBTQIA+ district",
+    bestFor: "Queer nightlife, community culture, design, dining and Pride energy",
+    summary: "Porta Venezia is Milan's rainbow district, centred on a lively mix of LGBTQIA+ culture, nightlife and community around Corso Buenos Aires and Via Lecco.",
+    practicalNote: "Use Porta Venezia station and Via Lecco as practical anchors. It is walkable, but confirm individual venues and events before building a late-night route.",
+    sourceLabel: "VisitMilano: Porta Venezia",
+    sourceUrl: "https://visitmilano.org/eng/sightseeing/must-see-cool-districts/porta-venezia/",
+    color: "#f5a9c6",
+    center: [9.207, 45.477],
+    bounds: [[9.193, 45.468], [9.222, 45.486]],
+    geometry: { type: "Polygon", coordinates: [[[9.195, 45.469], [9.215, 45.468], [9.222, 45.475], [9.217, 45.483], [9.203, 45.486], [9.193, 45.478], [9.195, 45.469]]] },
+  },
+];
+
+const AMSTERDAM_QUEER_AREAS = [
+  {
+    id: "amsterdam-reguliersdwarsstraat",
+    name: "Reguliersdwarsstraat",
+    type: "Landmark LGBTQI+ street",
+    bestFor: "Bars, clubs, cocktails and a high-energy central night",
+    summary: "Reguliersdwarsstraat is Amsterdam's de facto gay street and one of the city's most established LGBTQI+ nightlife concentrations.",
+    practicalNote: "The core is compact, close to Rembrandtplein and easy to explore on foot. Check the individual venue programme before choosing a late stop.",
+    sourceLabel: "I amsterdam: LGBTQI+ neighbourhoods",
+    sourceUrl: "https://www.iamsterdam.com/en/whats-on/lgbtqi-areas-of-amsterdam",
+    color: "#f5a9c6",
+    center: [4.8932, 52.3658],
+    bounds: [[4.885, 52.361], [4.902, 52.37]],
+    geometry: { type: "Polygon", coordinates: [[[4.886, 52.362], [4.898, 52.361], [4.902, 52.365], [4.898, 52.369], [4.89, 52.37], [4.885, 52.366], [4.886, 52.362]]] },
+  },
+  {
+    id: "amsterdam-zeedijk-warmoesstraat",
+    name: "Zeedijk & Warmoesstraat",
+    type: "Historic LGBTQI+ nightlife hub",
+    bestFor: "Historic venues, bars, Old Centre exploring and late-night options",
+    summary: "The Zeedijk and Warmoesstraat area remains one of Amsterdam's concentrated hubs for LGBTQI+-friendly shops and nightlife.",
+    practicalNote: "This sits within the busy Old Centre. Use a specific listing as the destination, then move on foot rather than treating the shaded area as a strict boundary.",
+    sourceLabel: "I amsterdam: LGBTQI+ neighbourhoods",
+    sourceUrl: "https://www.iamsterdam.com/en/whats-on/lgbtqi-areas-of-amsterdam",
+    color: "#88d9d4",
+    center: [4.899, 52.374],
+    bounds: [[4.89, 52.369], [4.908, 52.379]],
+    geometry: { type: "Polygon", coordinates: [[[4.891, 52.37], [4.904, 52.369], [4.908, 52.374], [4.903, 52.378], [4.895, 52.379], [4.89, 52.375], [4.891, 52.37]]] },
+  },
+];
+
+const LISBON_QUEER_AREAS = [
+  {
+    id: "lisbon-principe-real-bairro-alto",
+    name: "Príncipe Real & Bairro Alto",
+    type: "Queer nightlife & culture area",
+    bestFor: "Bars, late-night energy, viewpoints and a central evening route",
+    summary: "Príncipe Real and Bairro Alto form Lisbon's best-known queer-friendly nightlife area, blending a relaxed daytime neighbourhood feel with bars and clubs after dark.",
+    practicalNote: "The streets are steep and the scene is dispersed. Start in Príncipe Real or Bairro Alto, choose a confirmed venue, and leave time for walking between stops.",
+    sourceLabel: "Lisbon Portugal Tourism: Príncipe Real",
+    sourceUrl: "https://www.lisbonportugaltourism.com/guide/principe-real.html",
+    color: "#c4b5fd",
+    center: [-9.151, 38.715],
+    bounds: [[-9.164, 38.706], [-9.14, 38.723]],
+    geometry: { type: "Polygon", coordinates: [[[-9.162, 38.707], [-9.145, 38.706], [-9.14, 38.714], [-9.145, 38.722], [-9.156, 38.723], [-9.164, 38.716], [-9.162, 38.707]]] },
+  },
+];
+
+const GLASGOW_QUEER_AREAS = [
+  {
+    id: "glasgow-merchant-city",
+    name: "Merchant City",
+    type: "Landmark LGBTQ+ district",
+    bestFor: "Bars, drag, cabaret, dining and a walkable city-centre night",
+    summary: "Merchant City is Glasgow's LGBTQ+ district, bringing together established gay bars, performance venues and the city's dense central nightlife.",
+    practicalNote: "The core is compact and walkable. Start near Virginia Street and Candleriggs, then check current stage shows and bar hours before your visit.",
+    sourceLabel: "Visit Glasgow: LGBTQ+ guide",
+    sourceUrl: "https://www.visitglasgow.com/explore-by-interest/lgbtqplus-glasgow/lgbtqplus-guide/",
+    color: "#f5a9c6",
+    center: [-4.244, 55.858],
+    bounds: [[-4.254, 55.851], [-4.234, 55.865]],
+    geometry: { type: "Polygon", coordinates: [[[-4.252, 55.852], [-4.239, 55.851], [-4.234, 55.857], [-4.239, 55.864], [-4.249, 55.865], [-4.254, 55.859], [-4.252, 55.852]]] },
+  },
+];
+
+const ATLANTA_QUEER_AREAS = [
+  {
+    id: "atlanta-midtown-piedmont-tenth",
+    name: "Midtown: Piedmont & 10th",
+    type: "Landmark LGBTQ+ city hub",
+    bestFor: "Bars, culture, Pride history, Piedmont Park and a first Atlanta base",
+    summary: "Midtown is the core of Atlanta's LGBTQ+ life, with the Piedmont Avenue and 10th Street intersection serving as a visible community landmark.",
+    practicalNote: "Use Piedmont Park, the rainbow crosswalk and Midtown MARTA as anchors. Choose specific venues from current listings; the scene extends beyond one short block.",
+    sourceLabel: "Discover Atlanta: LGBTQ+ guide to Midtown",
+    sourceUrl: "https://discoveratlanta.com/stories/things-to-do/a-travelers-lgbtq-guide-to-midtown-atlanta/",
+    color: "#88d9d4",
+    center: [-84.3635, 33.781],
+    bounds: [[-84.383, 33.769], [-84.345, 33.794]],
+    geometry: { type: "Polygon", coordinates: [[[-84.381, 33.77], [-84.355, 33.769], [-84.345, 33.779], [-84.351, 33.79], [-84.369, 33.794], [-84.383, 33.784], [-84.381, 33.77]]] },
+  },
+];
+
+const CHICAGO_QUEER_AREAS = [
+  {
+    id: "chicago-northalsted",
+    name: "Northalsted (Boystown)",
+    type: "Official LGBTQ+ neighbourhood",
+    bestFor: "Drag, clubs, LGBTQ+ history, Pride and a high-energy weekend",
+    summary: "Northalsted is Chicago's landmark LGBTQ+ neighbourhood and the United States' oldest officially recognised gay neighbourhood, centred on North Halsted Street.",
+    practicalNote: "Use Halsted between Belmont and Grace as the anchor. The Legacy Walk and rainbow pylons make it easy to navigate on foot; check individual show times before going.",
+    sourceLabel: "Choose Chicago: Northalsted",
+    sourceUrl: "https://www.choosechicago.com/neighborhoods/boystown/",
+    color: "#f5a9c6",
+    center: [-87.649, 41.9405],
+    bounds: [[-87.663, 41.927], [-87.635, 41.953]],
+    geometry: { type: "Polygon", coordinates: [[[-87.661, 41.928], [-87.642, 41.927], [-87.635, 41.938], [-87.641, 41.949], [-87.654, 41.953], [-87.663, 41.942], [-87.661, 41.928]]] },
+  },
+  {
+    id: "chicago-andersonville",
+    name: "Andersonville",
+    type: "Neighbourhood queer community area",
+    bestFor: "Independent shops, dining, a calmer social route and community culture",
+    summary: "Andersonville is a north-side neighbourhood with one of Chicago's largest LGBTQ+ populations and a welcoming, community-led scene along Clark Street.",
+    practicalNote: "This is a broader neighbourhood rather than a club strip. Use Clark Street as the route anchor and check current events for the strongest queer focus.",
+    sourceLabel: "Choose Chicago: LGBTQ+ neighbourhood guide",
+    sourceUrl: "https://www.choosechicago.com/articles/lgbtq-plus/the-ultimate-lgbtq-chicago-guide/",
+    color: "#c4b5fd",
+    center: [-87.669, 41.98],
+    bounds: [[-87.682, 41.968], [-87.657, 41.993]],
+    geometry: { type: "Polygon", coordinates: [[[-87.68, 41.969], [-87.663, 41.968], [-87.657, 41.979], [-87.663, 41.99], [-87.675, 41.993], [-87.682, 41.983], [-87.68, 41.969]]] },
+  },
+];
+
 const AREAS_BY_CITY = {
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
@@ -815,6 +945,12 @@ const AREAS_BY_CITY = {
   athens: ATHENS_QUEER_AREAS,
   hong_kong: HONG_KONG_QUEER_AREAS,
   rome: ROME_QUEER_AREAS,
+  milano: MILANO_QUEER_AREAS,
+  amsterdam: AMSTERDAM_QUEER_AREAS,
+  lisbon: LISBON_QUEER_AREAS,
+  glasgow: GLASGOW_QUEER_AREAS,
+  atlanta: ATLANTA_QUEER_AREAS,
+  chicago: CHICAGO_QUEER_AREAS,
 };
 
 export function getQueerAreasForCity(city) {
