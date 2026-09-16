@@ -540,6 +540,22 @@ const BOGOTA_QUEER_AREAS = [
   },
 ];
 
+const SAO_PAULO_QUEER_AREAS = [{
+  id: "sao-paulo-frei-caneca", name: "Frei Caneca & Consolação", type: "Queer nightlife corridor", bestFor: "Bars, nightlife, shopping and a central starting point",
+  summary: "Frei Caneca and nearby Consolação are a practical central anchor for São Paulo's queer nightlife and social scene.", practicalNote: "São Paulo is vast: choose a confirmed venue and use rideshare for late journeys rather than treating the corridor as a complete night out.",
+  sourceLabel: "Brazil Ministry of Tourism: LGBT+ Turismo Expo in São Paulo", sourceUrl: "https://www.gov.br/turismo/pt-br/assuntos/noticias/ministro-do-turismo-visita-a-5a-lgbt-turismo-expo-2026", color: "#f5a9c6", center: [-46.652, -23.554], bounds: [[-46.665, -23.566], [-46.639, -23.543]],
+  geometry: { type: "Polygon", coordinates: [[[-46.663,-23.564],[-46.645,-23.566],[-46.639,-23.555],[-46.646,-23.544],[-46.658,-23.543],[-46.665,-23.553],[-46.663,-23.564]]] },
+}];
+
+const BUENOS_AIRES_QUEER_AREAS = [
+  { id: "buenos-aires-palermo", name: "Palermo", type: "Queer nightlife & culture area", bestFor: "Bars, dining, nightlife and a flexible all-evening route", summary: "Palermo is a broad cultural and nightlife area that works well as part of Buenos Aires' citywide LGBTQ+ scene.", practicalNote: "Choose a confirmed venue or event first: Palermo is expansive and the best route varies greatly by night.", sourceLabel: "Visit Buenos Aires LGBT", sourceUrl: "https://visitbuenosaires.lgbt/en/", color: "#f5a9c6", center: [-58.425, -34.582], bounds: [[-58.447,-34.595],[-58.402,-34.566]], geometry:{type:"Polygon",coordinates:[[[-58.445,-34.593],[-58.414,-34.595],[-58.402,-34.583],[-58.41,-34.569],[-58.431,-34.566],[-58.447,-34.579],[-58.445,-34.593]]]} },
+  { id: "buenos-aires-san-telmo", name: "San Telmo", type: "Historic queer culture area", bestFor: "Bohemian culture, historic streets and a more local night", summary: "San Telmo adds a historic, bohemian cultural layer to Buenos Aires' wider LGBTQ+ city experience.", practicalNote: "Use it as a culture-and-dinner route or an event-led night, rather than assuming a compact gay district.", sourceLabel: "Buenos Aires Tourism: San Telmo", sourceUrl: "https://turismo.buenosaires.gob.ar/es/barrios/san-telmo", color: "#88d9d4", center: [-58.373, -34.621], bounds: [[-58.386,-34.632],[-58.36,-34.61]], geometry:{type:"Polygon",coordinates:[[[-58.384,-34.63],[-58.366,-34.632],[-58.36,-34.62],[-58.366,-34.611],[-58.379,-34.61],[-58.386,-34.62],[-58.384,-34.63]]] } },
+];
+
+const BARCELONA_QUEER_AREAS = [{
+  id: "barcelona-gaixample", name: "Gaixample", type: "Landmark LGBTQ+ district", bestFor: "First-time visits, bars, clubs, shopping and a walkable central night", summary: "Gaixample is Barcelona's central LGBTQ+ area in Eixample, with a concentrated mix of bars, venues and businesses.", practicalNote: "Use Casanova, Aragó and Diputació as practical anchors; it is compact enough to explore on foot.", sourceLabel: "Turisme de Barcelona: Gaixample", sourceUrl: "https://bid.barcelonaturisme.com/wv3/es/page/393/gaixample.html", color: "#f5a9c6", center: [2.155,41.385], bounds: [[2.14,41.376],[2.171,41.394]], geometry:{type:"Polygon",coordinates:[[[2.142,41.377],[2.165,41.376],[2.171,41.384],[2.166,41.392],[2.148,41.394],[2.14,41.386],[2.142,41.377]]]}
+}];
+
 const AREAS_BY_CITY = {
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
@@ -552,6 +568,9 @@ const AREAS_BY_CITY = {
   los_angeles: LOS_ANGELES_QUEER_AREAS,
   toronto: TORONTO_QUEER_AREAS,
   bogota: BOGOTA_QUEER_AREAS,
+  sao_paulo: SAO_PAULO_QUEER_AREAS,
+  buenos_aires: BUENOS_AIRES_QUEER_AREAS,
+  barcelona: BARCELONA_QUEER_AREAS,
 };
 
 export function getQueerAreasForCity(city) {
