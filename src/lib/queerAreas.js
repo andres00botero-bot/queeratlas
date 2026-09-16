@@ -720,6 +720,74 @@ const BRIGHTON_QUEER_AREAS = [
   },
 ];
 
+const WARSAW_QUEER_AREAS = [
+  {
+    id: "warsaw-srodmiescie-queer-culture",
+    name: "Śródmieście queer culture circuit",
+    type: "Queer culture & event area",
+    bestFor: "Drag, ballroom, independent culture and event-led evenings",
+    summary: "Warsaw's queer life is spread across the city, with a strong concentration of LGBTQ+ nightlife, drag, ballroom and cultural venues in central Śródmieście.",
+    practicalNote: "This is an event-led orientation area, not a formal gay district. Choose a current listing first and check its own accessibility and safer-space guidance.",
+    sourceLabel: "City of Warsaw: safer spaces map",
+    sourceUrl: "https://um.warszawa.pl/documents/46187514/93088346/EN_map%2Bwarsaw%2Bsafer%2Bspaces.pdf/be19371f-e372-d774-4e82-7e6810879544?t=1741252671234",
+    color: "#c4b5fd",
+    center: [21.0125, 52.229],
+    bounds: [[20.985, 52.215], [21.04, 52.245]],
+    geometry: { type: "Polygon", coordinates: [[[20.988, 52.216], [21.027, 52.215], [21.04, 52.227], [21.032, 52.241], [21.005, 52.245], [20.985, 52.233], [20.988, 52.216]]] },
+  },
+];
+
+const ATHENS_QUEER_AREAS = [
+  {
+    id: "athens-gazi-kerameikos",
+    name: "Gazi & Kerameikos",
+    type: "Landmark LGBTQ+ nightlife area",
+    bestFor: "Clubs, late nights, queer culture and an alternative Athens route",
+    summary: "Gazi is Athens' central LGBTQ+ clubbing area, combining queer-friendly nightlife with post-industrial culture around Kerameikos and Technopolis.",
+    practicalNote: "Use Kerameikos metro and the main square as anchors. It is a nightlife area with different rhythms by day and night, so confirm venue programming before going.",
+    sourceLabel: "This is Athens: LGBT+ hotspots",
+    sourceUrl: "https://www.thisisathens.org/nightlife/clubs/lgbt-gay-friendly-bars-clubs",
+    color: "#f5a9c6",
+    center: [23.345, 37.9795],
+    bounds: [[23.328, 37.969], [23.362, 37.989]],
+    geometry: { type: "Polygon", coordinates: [[[23.33, 37.97], [23.354, 37.969], [23.362, 37.977], [23.357, 37.987], [23.342, 37.989], [23.328, 37.98], [23.33, 37.97]]] },
+  },
+];
+
+const HONG_KONG_QUEER_AREAS = [
+  {
+    id: "hong-kong-central-sheung-wan",
+    name: "Central, SoHo & Sheung Wan",
+    type: "Queer nightlife & venue area",
+    bestFor: "Bars, clubs, dining and an accessible Hong Kong Island night",
+    summary: "Hong Kong's queer nightlife is venue-led, with Central, SoHo and nearby Sheung Wan providing a practical cluster for bars, clubs and late-night socialising.",
+    practicalNote: "This is not an official gay district. Start around SoHo or Hollywood Road, then use current listings to choose the next stop and confirm opening hours.",
+    sourceLabel: "Hong Kong Tourism Board: SoHo",
+    sourceUrl: "https://www.discoverhongkong.com/eng/place-to-go/travel.guide-soho.html",
+    color: "#88d9d4",
+    center: [114.1515, 22.2835],
+    bounds: [[114.136, 22.274], [114.166, 22.291]],
+    geometry: { type: "Polygon", coordinates: [[[114.138, 22.275], [114.158, 22.274], [114.166, 22.281], [114.161, 22.289], [114.148, 22.291], [114.136, 22.284], [114.138, 22.275]]] },
+  },
+];
+
+const ROME_QUEER_AREAS = [
+  {
+    id: "rome-gay-street-laterano",
+    name: "Gay Street: Via di San Giovanni in Laterano",
+    type: "Official LGBTQ+ meeting street",
+    bestFor: "Central evening drinks, queer history, drag and a Colosseum-side route",
+    summary: "Via di San Giovanni in Laterano is Rome's officially named Gay Street: a short pedestrian-friendly LGBTQ+ meeting corridor between the Colosseum and Lateran.",
+    practicalNote: "The core is compact and works best as an evening stop. Check live listings before relying on a particular bar, show or late-night programme.",
+    sourceLabel: "Visit Lazio: Rome's Gay Street",
+    sourceUrl: "https://www.visitlazio.com/en/the-gay-street-of-rome/",
+    color: "#f5a9c6",
+    center: [12.5015, 41.8875],
+    bounds: [[12.491, 41.881], [12.512, 41.894]],
+    geometry: { type: "Polygon", coordinates: [[[12.492, 41.882], [12.506, 41.881], [12.512, 41.887], [12.507, 41.893], [12.497, 41.894], [12.491, 41.888], [12.492, 41.882]]] },
+  },
+];
+
 const AREAS_BY_CITY = {
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
@@ -743,6 +811,10 @@ const AREAS_BY_CITY = {
   hamburg: HAMBURG_QUEER_AREAS,
   frankfurt: FRANKFURT_QUEER_AREAS,
   brighton: BRIGHTON_QUEER_AREAS,
+  warsaw: WARSAW_QUEER_AREAS,
+  athens: ATHENS_QUEER_AREAS,
+  hong_kong: HONG_KONG_QUEER_AREAS,
+  rome: ROME_QUEER_AREAS,
 };
 
 export function getQueerAreasForCity(city) {
