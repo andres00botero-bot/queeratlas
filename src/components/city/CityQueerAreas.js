@@ -17,7 +17,7 @@ export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
           </p>
         </div>
         <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-100/85">
-          Berlin pilot
+          {cityName} pilot
         </span>
       </div>
 
