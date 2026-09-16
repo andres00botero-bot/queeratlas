@@ -187,9 +187,73 @@ const SAN_FRANCISCO_QUEER_AREAS = [
   },
 ];
 
+const MADRID_QUEER_AREAS = [
+  {
+    id: "madrid-chueca",
+    name: "Chueca",
+    type: "Landmark LGBTQ+ district",
+    bestFor: "First-time visits, bars, terraces, shopping and late nights",
+    summary:
+      "Chueca is Madrid's practical and symbolic LGBTQ+ centre, built around Plaza de Chueca, Plaza de Pedro Zerolo and the nearby streets of Hortaleza and Fuencarral.",
+    practicalNote:
+      "Start at Plaza de Chueca, then explore outward on foot. Madrid nights start late, so confirm venue hours and leave room for the evening to build.",
+    sourceLabel: "Tourism Madrid: Chueca",
+    sourceUrl: "https://www.esmadrid.com/en/madrid-neighbourhoods/chueca",
+    color: "#f5a9c6",
+    center: [-3.7009, 40.4224],
+    bounds: [
+      [-3.7108, 40.4167],
+      [-3.6934, 40.4283],
+    ],
+    geometry: {
+      type: "Polygon",
+      coordinates: [[
+        [-3.7093, 40.4178],
+        [-3.6994, 40.4167],
+        [-3.6934, 40.4207],
+        [-3.6955, 40.4269],
+        [-3.7033, 40.4283],
+        [-3.7108, 40.424],
+        [-3.7093, 40.4178],
+      ]],
+    },
+  },
+  {
+    id: "madrid-lavapies",
+    name: "Lavapiés",
+    type: "Alternative queer culture area",
+    bestFor: "Alternative culture, community-led nights and a less concentrated scene",
+    summary:
+      "Lavapiés is an alternative cultural area with a recognised gay and lesbian scene, offering a different rhythm to Chueca's more concentrated LGBTQ+ core.",
+    practicalNote:
+      "Think of Lavapiés as a complementary cultural stop rather than a second Chueca. Check individual events and venues before crossing the city for the night.",
+    sourceLabel: "Tourism Madrid: a beacon of tolerance and diversity",
+    sourceUrl: "https://www.esmadrid.com/en/madrid-beacon-of-tolerance-diversity",
+    color: "#88d9d4",
+    center: [-3.7019, 40.4089],
+    bounds: [
+      [-3.7116, 40.4027],
+      [-3.6935, 40.4156],
+    ],
+    geometry: {
+      type: "Polygon",
+      coordinates: [[
+        [-3.7096, 40.4035],
+        [-3.6993, 40.4027],
+        [-3.6935, 40.4077],
+        [-3.6954, 40.4144],
+        [-3.7041, 40.4156],
+        [-3.7116, 40.4108],
+        [-3.7096, 40.4035],
+      ]],
+    },
+  },
+];
+
 const AREAS_BY_CITY = {
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
+  madrid: MADRID_QUEER_AREAS,
 };
 
 export function getQueerAreasForCity(city) {
