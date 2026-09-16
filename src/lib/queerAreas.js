@@ -638,6 +638,88 @@ const COPENHAGEN_QUEER_AREAS = [
   },
 ];
 
+const COLOGNE_QUEER_AREAS = [
+  {
+    id: "cologne-schaafenstrasse",
+    name: "Schaafenstraße & Rudolfplatz",
+    type: "Landmark LGBTQIA+ nightlife corridor",
+    bestFor: "Dense bar-hopping, clubs, saunas and an easy first Cologne night",
+    summary: "Schaafenstraße is Cologne's compact LGBTQIA+ nightlife hotspot, with a high concentration of bars and party venues close to Rudolfplatz.",
+    practicalNote: "The core street is short and walkable. Use Rudolfplatz as the transit anchor, then confirm individual venue hours before a late night.",
+    sourceLabel: "Cologne Tourist Board: Schaafenstraße",
+    sourceUrl: "https://willkommen.koelntourismus.de/en/poi/schaafenstrasse",
+    color: "#f5a9c6",
+    center: [6.9403, 50.9397],
+    bounds: [[6.931, 50.9345], [6.949, 50.9445]],
+    geometry: { type: "Polygon", coordinates: [[[6.932, 50.935], [6.944, 50.9345], [6.949, 50.939], [6.945, 50.9438], [6.936, 50.9445], [6.931, 50.9402], [6.932, 50.935]]] },
+  },
+];
+
+const HAMBURG_QUEER_AREAS = [
+  {
+    id: "hamburg-st-georg-lange-reihe",
+    name: "St. Georg & Lange Reihe",
+    type: "Historic queer neighbourhood",
+    bestFor: "Bars, restaurants, community life and a central neighbourhood route",
+    summary: "St. Georg, especially around Lange Reihe, is Hamburg's best-known long-standing queer neighbourhood and a practical central scene anchor.",
+    practicalNote: "The area is close to Hauptbahnhof and works well on foot. It is a lived-in diverse neighbourhood, so use venue listings rather than treating every street as nightlife.",
+    sourceLabel: "Hamburg.de: St. Georg",
+    sourceUrl: "https://www.hamburg.de/leben-in-hamburg/bezirke-hamburg/stadtteile-bezirk-hamburg-mitte/st-georg-373908",
+    color: "#f5a9c6",
+    center: [10.012, 53.5575],
+    bounds: [[9.996, 53.548], [10.028, 53.566]],
+    geometry: { type: "Polygon", coordinates: [[[9.998, 53.549], [10.02, 53.548], [10.028, 53.555], [10.023, 53.563], [10.009, 53.566], [9.996, 53.558], [9.998, 53.549]]] },
+  },
+  {
+    id: "hamburg-st-pauli",
+    name: "St. Pauli",
+    type: "Queer nightlife & culture area",
+    bestFor: "Late nights, clubs, queer events and a more alternative city route",
+    summary: "St. Pauli is a major part of Hamburg's broader LGBTQIA+ nightlife and cultural scene, with a more event-led character than St. Georg.",
+    practicalNote: "This is a broad entertainment area, not a compact gay district. Choose a current venue or event first and plan travel home before the night ends.",
+    sourceLabel: "Hamburg Tourism: LGBTQIA+ hotspots",
+    sourceUrl: "https://www.hamburg-tourism.de/das-ist-hamburg/hamburg-fuer/lgbtq/html.api",
+    color: "#88d9d4",
+    center: [9.964, 53.55],
+    bounds: [[9.947, 53.538], [9.981, 53.56]],
+    geometry: { type: "Polygon", coordinates: [[[9.949, 53.539], [9.973, 53.538], [9.981, 53.547], [9.976, 53.557], [9.959, 53.56], [9.947, 53.551], [9.949, 53.539]]] },
+  },
+];
+
+const FRANKFURT_QUEER_AREAS = [
+  {
+    id: "frankfurt-bermuda-triangle-alte-gasse",
+    name: "Bermuda Triangle & Alte Gasse",
+    type: "Queer nightlife & community hub",
+    bestFor: "Central bars, community resources and a compact city-centre route",
+    summary: "Frankfurt's LGBTQ+ community is anchored by the city-centre Bermuda Triangle, with Alte Gasse a key meeting and support-point corridor.",
+    practicalNote: "Use Konstablerwache and Alte Gasse as navigation anchors. The scene is venue- and event-led, so check current programming before setting out.",
+    sourceLabel: "Visit Frankfurt: LGBTQ+ community",
+    sourceUrl: "https://www.visitfrankfurt.travel/en/frankfurt-tips/lgbtq-community",
+    color: "#c4b5fd",
+    center: [8.6909, 50.1157],
+    bounds: [[8.681, 50.11], [8.701, 50.121]],
+    geometry: { type: "Polygon", coordinates: [[[8.682, 50.111], [8.696, 50.11], [8.701, 50.115], [8.696, 50.1205], [8.686, 50.121], [8.681, 50.116], [8.682, 50.111]]] },
+  },
+];
+
+const BRIGHTON_QUEER_AREAS = [
+  {
+    id: "brighton-kemptown-st-james-street",
+    name: "Kemptown & St James's Street",
+    type: "Landmark LGBTQIA+ quarter",
+    bestFor: "Bars, clubs, independent shops, seafront stays and Pride energy",
+    summary: "Kemptown is the bustling heart of Brighton's LGBTQIA+ community, with St James's Street providing a compact, walkable nightlife and community corridor.",
+    practicalNote: "Start around St James's Street and Old Steine, then continue on foot. Check individual venue programmes, especially around Pride and other major weekends.",
+    sourceLabel: "Visit Brighton: LGBTQIA+ and Kemptown",
+    sourceUrl: "https://www.visitbrighton.com/plan-your-visit/about-the-area/lgbtqia",
+    color: "#f5a9c6",
+    center: [-0.1298, 50.821],
+    bounds: [[-0.146, 50.813], [-0.113, 50.829]],
+    geometry: { type: "Polygon", coordinates: [[[-0.144, 50.814], [-0.12, 50.813], [-0.113, 50.82], [-0.119, 50.827], [-0.134, 50.829], [-0.146, 50.822], [-0.144, 50.814]]] },
+  },
+];
+
 const AREAS_BY_CITY = {
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
@@ -657,6 +739,10 @@ const AREAS_BY_CITY = {
   vienna: VIENNA_QUEER_AREAS,
   prague: PRAGUE_QUEER_AREAS,
   copenhagen: COPENHAGEN_QUEER_AREAS,
+  cologne: COLOGNE_QUEER_AREAS,
+  hamburg: HAMBURG_QUEER_AREAS,
+  frankfurt: FRANKFURT_QUEER_AREAS,
+  brighton: BRIGHTON_QUEER_AREAS,
 };
 
 export function getQueerAreasForCity(city) {
