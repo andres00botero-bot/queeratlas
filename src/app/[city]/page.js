@@ -122,6 +122,7 @@ import {
 } from "@/features/city/cityPageConstants";
 import styles from "./page.module.css";
 import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
+import { getQueerAreasForCity } from "@/lib/queerAreas";
 
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 
@@ -142,6 +143,7 @@ export default function CityPage() {
   }, [cityParam, pathname]);
 
   const cityName = cityNameFromConfig(config, city);
+  const queerAreas = useMemo(() => getQueerAreasForCity(city), [city]);
   const cityHero = getCityHeroCopy(city) || {
     hook: config?.localMood,
     status: config?.queerStatus,
@@ -424,6 +426,22 @@ export default function CityPage() {
       block: "start",
     });
   }, []);
+
+  const focusQueerArea = useCallback((area) => {
+    const bounds = Array.isArray(area?.bounds) ? area.bounds : null;
+    const map = mapRef.current;
+    const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
+
+    if (!isDesktop) scrollToSection(mapWrapperRef);
+    if (!map || !bounds || bounds.length !== 2) return;
+
+    map.fitBounds(bounds, {
+      padding: isDesktop ? { top: 92, right: 72, bottom: 92, left: 72 } : { top: 72, right: 48, bottom: 72, left: 48 },
+      maxZoom: 14,
+      duration: 700,
+      essential: true,
+    });
+  }, [scrollToSection]);
 
   const goToMobileSection = useCallback((sectionKey, ref) => {
     setActiveCitySection(String(sectionKey || "guide"));
@@ -2603,13 +2621,81 @@ export default function CityPage() {
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !isMapReady || queerAreas.length === 0) return undefined;
+
+    const sourceId = "qa-queer-pulse";
+    const layerId = "qa-queer-pulse-heat";
+    const features = [];
+    const addListing = (listing, kind) => {
+      const lat = Number(listing?.lat);
+      const lng = Number(listing?.lng);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      features.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [lng, lat] },
+        properties: { kind, weight: kind === "event" ? 0.7 : 1 },
+      });
+    };
+
+    cityPlaces.forEach((listing) => addListing(listing, "venue"));
+    cityEvents.forEach((listing) => addListing(listing, "event"));
+    cityServices.forEach((listing) => addListing(listing, "community"));
+    const data = { type: "FeatureCollection", features };
+    let mounted = true;
+
+    const setupPulse = () => {
+      if (!mounted || !map.getStyle()) return;
+      const existingSource = map.getSource(sourceId);
+      if (existingSource?.setData) {
+        existingSource.setData(data);
+        return;
+      }
+
+      map.addSource(sourceId, { type: "geojson", data });
+      map.addLayer({
+        id: layerId,
+        type: "heatmap",
+        source: sourceId,
+        maxzoom: 15,
+        paint: {
+          "heatmap-weight": ["coalesce", ["get", "weight"], 1],
+          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 8, 0.55, 13, 1.25, 15, 1.55],
+          "heatmap-color": [
+            "interpolate", ["linear"], ["heatmap-density"],
+            0, "rgba(49, 190, 255, 0)",
+            0.18, "rgba(66, 211, 255, 0.36)",
+            0.42, "rgba(168, 104, 255, 0.56)",
+            0.62, "rgba(247, 81, 176, 0.72)",
+            0.8, "rgba(255, 183, 77, 0.84)",
+            1, "rgba(255, 88, 88, 0.9)",
+          ],
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 8, 26, 12, 44, 15, 60],
+          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0.82, 15, 0],
+        },
+      });
+    };
+
+    if (map.isStyleLoaded()) setupPulse();
+    else map.once("load", setupPulse);
+
+    return () => {
+      mounted = false;
+      map.off("load", setupPulse);
+      if (mapRef.current !== map || !map.getStyle()) return;
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+    };
+  }, [cityEvents, cityPlaces, cityServices, isMapReady, queerAreas.length]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map) return undefined;
 
     const sourceId = "qa-city-clusters";
     const clusterLayerId = "qa-city-cluster-bubbles";
     const clusterCountLayerId = "qa-city-cluster-count";
     const pointLayerId = "qa-city-cluster-points";
-    const clusterZoomThreshold = 14;
+    const clusterZoomThreshold = 12;
     const entitiesByKey = new Map();
     const features = [];
 
@@ -4945,6 +5031,8 @@ export default function CityPage() {
                 onToggleAddService={onToggleAddService}
                 showHero={effectiveDesktopContentSection === "home"}
                 showContributionActions={false}
+                queerAreas={queerAreas}
+                onFocusQueerArea={focusQueerArea}
                 mobileDiscovery={
                   <>
                     <CityMapSection

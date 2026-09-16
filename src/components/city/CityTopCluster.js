@@ -2,6 +2,7 @@
 
 import CityContributionStack from "@/components/city/CityContributionStack";
 import CityHeroCard from "@/components/city/CityHeroCard";
+import CityQueerAreas from "@/components/city/CityQueerAreas";
 
 export default function CityTopCluster({
   cityName,
@@ -22,6 +23,8 @@ export default function CityTopCluster({
   showContribution = true,
   showContributionActions = true,
   mobileDiscovery = null,
+  queerAreas = [],
+  onFocusQueerArea,
 }) {
   return (
     <>
@@ -38,6 +41,8 @@ export default function CityTopCluster({
           />
         </>
       ) : null}
+
+      {showHero ? <CityQueerAreas cityName={cityName} areas={queerAreas} onFocusArea={onFocusQueerArea} /> : null}
 
       {showContribution ? (
         <CityContributionStack
