@@ -37,8 +37,20 @@ const venue = {
 
 assert(evaluateVenueSeoQuality(venue).indexable, "complete, sourced venue should be indexable");
 assert(
+  evaluateVenueSeoQuality({
+    ...venue,
+    description: "Concise venue summary.",
+    seo_indexable: false,
+  }).indexable,
+  "complete venue intelligence must be indexable even when a stale noindex flag or concise introduction exists",
+);
+assert(
   !evaluateVenueSeoQuality({ ...venue, venue_intel: {} }).indexable,
   "venue without practical intelligence must be noindex",
+);
+assert(
+  !evaluateVenueSeoQuality({ ...venue, seo_quality_status: "rejected" }).indexable,
+  "explicitly rejected venue must remain noindex",
 );
 
 const event = {

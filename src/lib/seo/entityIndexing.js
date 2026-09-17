@@ -67,7 +67,6 @@ function resolveSourceUrls(entity = {}, kind = "venue") {
 }
 
 function isExplicitlyBlocked(entity = {}) {
-  if (entity?.seo_indexable === false) return true;
   const qualityStatus = cleanText(entity?.seo_quality_status).toLowerCase();
   return BLOCKED_QUALITY_STATUSES.has(qualityStatus);
 }
@@ -96,14 +95,21 @@ function resolvePrimaryLink(entity = {}, kind = "venue") {
 function baseQuality(entity = {}, kind = "venue", minimumDescriptionLength = 90) {
   const reasons = [];
   const description = cleanText(entity?.description);
+  const meaningfulIntel = countMeaningfulIntel(entity, kind);
+  const requiredIntelFields = (INTEL_FIELDS[kind] || []).length;
+  const hasSubstantiveDetailContent = meaningfulIntel >= requiredIntelFields;
 
   if (isExplicitlyBlocked(entity)) reasons.push("editorial-block");
   if (!cleanText(entity?.id)) reasons.push("missing-id");
   if (!cleanText(entity?.name)) reasons.push("missing-name");
   if (!cleanText(entity?.city)) reasons.push("missing-city");
-  if (description.length < minimumDescriptionLength) reasons.push("thin-description");
+  // A concise editorial introduction is still index-worthy when the detail
+  // page contains every required, source-backed practical intelligence field.
+  if (description.length < minimumDescriptionLength && !hasSubstantiveDetailContent) {
+    reasons.push("thin-description");
+  }
   if (!isHttpUrl(resolvePrimaryLink(entity, kind))) reasons.push("missing-source-link");
-  if (countMeaningfulIntel(entity, kind) < 5) reasons.push("incomplete-intelligence");
+  if (meaningfulIntel < requiredIntelFields) reasons.push("incomplete-intelligence");
   if (!isResearchBacked(entity, kind)) reasons.push("unverified-intelligence");
 
   return { indexable: reasons.length === 0, reasons };
