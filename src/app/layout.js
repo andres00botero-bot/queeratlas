@@ -2,13 +2,18 @@ import "./globals.css"; //
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { headers } from "next/headers";
 import { buildPrimaryEntityGraph, QA_SITE_URL } from "@/lib/seo/entityAuthority";
 import DeferredGlobalChrome from "@/components/ui/DeferredGlobalChrome";
 import DevErrorProbe from "@/components/ui/DevErrorProbe";
+import LocaleProvider from "@/components/i18n/LocaleProvider";
+import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/i18n/locales";
+import { getClientMessages } from "@/lib/i18n/messages";
+import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 const baseUrl = QA_SITE_URL;
 
-export const metadata = {
+const baseMetadata = {
   metadataBase: new URL(baseUrl),
   title: {
     default: "Queer Atlas - Global Queer Guide, Events & Venues",
@@ -94,20 +99,55 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
-  const jsonLd = buildPrimaryEntityGraph();
+export async function generateMetadata() {
+  const requestHeaders = await headers();
+  const locale = normalizeLocale(requestHeaders.get("x-qa-locale"), DEFAULT_LOCALE);
+  const pathname = requestHeaders.get("x-qa-pathname") || "/";
+  const isSpanish = locale === "es";
+  const title = isSpanish ? "Queer Atlas - Guía queer global, eventos y lugares" : baseMetadata.title;
+  const description = isSpanish
+    ? "Atlas global de viajes queer con lugares LGBTQ+ seguros, vida nocturna inclusiva, eventos y señales comunitarias de confianza."
+    : baseMetadata.description;
+
+  return {
+    ...baseMetadata,
+    title,
+    description,
+    alternates: localizedAlternates(pathname, locale),
+    openGraph: {
+      ...baseMetadata.openGraph,
+      title: isSpanish ? "Queer Atlas - Guía queer global, eventos y lugares" : baseMetadata.openGraph.title,
+      description: isSpanish ? "Encuentra ciudades LGBTQ+ acogedoras, vida nocturna queer segura, eventos y señales locales de confianza." : baseMetadata.openGraph.description,
+      url: localizedOpenGraphUrl(pathname, locale),
+      locale: isSpanish ? "es_ES" : "en_US",
+      images: baseMetadata.openGraph.images.map((image) => ({ ...image, alt: isSpanish ? "Queer Atlas" : image.alt })),
+    },
+    twitter: {
+      ...baseMetadata.twitter,
+      title: isSpanish ? "Queer Atlas - Guía queer global, eventos y lugares" : baseMetadata.twitter.title,
+      description: isSpanish ? "Viajes LGBTQ+, vida nocturna inclusiva, eventos y señales locales de confianza." : baseMetadata.twitter.description,
+    },
+  };
+}
+
+export default async function RootLayout({ children }) {
+  const requestHeaders = await headers();
+  const locale = normalizeLocale(requestHeaders.get("x-qa-locale"), DEFAULT_LOCALE);
+  const jsonLd = buildPrimaryEntityGraph(locale);
 
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         <AuthProvider>
-          <DevErrorProbe />
-          {children}
-          <DeferredGlobalChrome />
+          <LocaleProvider locale={locale} messages={getClientMessages(locale)}>
+            <DevErrorProbe />
+            {children}
+            <DeferredGlobalChrome />
+          </LocaleProvider>
         </AuthProvider>
         <Analytics />
         <SpeedInsights />

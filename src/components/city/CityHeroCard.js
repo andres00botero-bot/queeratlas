@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function CityHeroCard({
   cityName,
@@ -11,30 +12,31 @@ export default function CityHeroCard({
   mobileDiscovery = null,
   showOnLargerScreens = true,
 }) {
+  const { t } = useLocale();
   const introCopy =
     String(heroIntro || "").trim() ||
-    `${cityName}'s queer nightlife, trusted spots, and live city signal in one view.`;
+    t("city.fallbackIntro", "{city}'s queer nightlife, trusted spots, and live city signal in one view.").replace("{city}", cityName);
   const highlights = [
     {
-      label: "Local mood",
+      label: t("city.localMood", "Local mood"),
       value: cityHero?.hook,
       tone: "bg-[#f5a9c6]/10 text-[#f5a9c6]",
     },
     {
-      label: "Queer status",
+      label: t("city.queerStatus", "Queer status"),
       value: cityHero?.status,
       tone: "bg-[#88d9d4]/10 text-[#88d9d4]",
     },
     {
-      label: "Crowd",
+      label: t("city.crowd", "Crowd"),
       value: cityHero?.crowd,
       tone: "bg-[#d8b678]/10 text-[#d8b678]",
     },
   ].filter((item) => String(item.value || "").trim());
   const stats = [
-    { label: "Venues", value: placesChipLabel, dot: "bg-[#88d9d4]" },
-    { label: "Events", value: eventsChipLabel, dot: "bg-[#b7a0f7]" },
-    { label: "Signal", value: "Live", dot: "bg-[#d8b678]" },
+    { label: t("city.venues", "Venues"), value: placesChipLabel, dot: "bg-[#88d9d4]" },
+    { label: t("city.events", "Events"), value: eventsChipLabel, dot: "bg-[#b7a0f7]" },
+    { label: t("city.signal", "Signal"), value: t("city.live", "Live"), dot: "bg-[#d8b678]" },
   ];
 
   return (
@@ -65,13 +67,13 @@ export default function CityHeroCard({
           </div>
           <span className="inline-flex items-center gap-2 rounded-full border border-[#d8b678]/20 bg-[#d8b678]/[0.07] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#ead09b] sm:text-[10px]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#d8b678] shadow-[0_0_12px_rgba(216,182,120,0.8)]" aria-hidden="true" />
-            Live city guide
+            {t("city.liveCityGuide", "Live city guide")}
           </span>
         </div>
 
         <div className="max-w-4xl">
           <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#f5a9c6]">
-            Your queer guide to
+            {t("city.yourQueerGuideTo", "Your queer guide to")}
           </p>
           <h1 className="max-w-3xl text-4xl font-bold leading-[0.98] tracking-[-0.035em] text-[#fff8fc] sm:text-5xl lg:text-6xl">
             {cityName}
@@ -99,7 +101,7 @@ export default function CityHeroCard({
         {highlights.length > 0 ? (
           <div className="overflow-hidden rounded-[22px] border border-white/[0.09] bg-white/[0.035]">
             <div className="border-b border-white/[0.07] px-4 py-3 sm:px-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">Know before you go</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">{t("city.knowBeforeYouGo", "Know before you go")}</p>
             </div>
             {highlights.map((item, index) => (
               <div

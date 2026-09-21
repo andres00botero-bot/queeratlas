@@ -1,4 +1,8 @@
-export const metadata = {
+import { headers } from "next/headers";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+
+const metadata = {
   title: "Queer News, Rankings & Atlas Collections",
   description:
     "Daily queer news plus Queer Safety Index, Top Queer Destinations rankings, and Atlas Collections for LGBTQ nightlife, beaches, drag venues, lesbian bars, and hidden cafes.",
@@ -62,6 +66,32 @@ export const metadata = {
     images: ["/queer-atlas-logo.png"],
   },
 };
+
+export async function generateMetadata() {
+  const requestHeaders = await headers();
+  const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
+  if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: "en_US" } };
+
+  return {
+    ...metadata,
+    alternates: localizedAlternates("/now", locale),
+    title: "Noticias queer, clasificaciones y colecciones Atlas",
+    description: "Noticias queer diarias, el Índice de seguridad queer, clasificaciones de destinos y colecciones Atlas para vida nocturna, playas, drag, bares lésbicos y cafeterías LGBTQ.",
+    openGraph: {
+      ...metadata.openGraph,
+      url: localizedOpenGraphUrl("/now", locale),
+      locale: "es_ES",
+      title: "Noticias queer, clasificaciones y colecciones Atlas | Queer Atlas",
+      description: "Sigue las noticias queer del mundo, las clasificaciones de destinos y seguridad, y las colecciones Atlas seleccionadas para descubrir viajes LGBTQ.",
+      images: metadata.openGraph.images.map((image) => ({ ...image, alt: "Queer Atlas Now - noticias queer" })),
+    },
+    twitter: {
+      ...metadata.twitter,
+      title: "Noticias queer, clasificaciones y colecciones Atlas | Queer Atlas",
+      description: "Noticias queer diarias con clasificaciones y colecciones Atlas seleccionadas para vida nocturna, playas, drag, bares lésbicos y cafeterías.",
+    },
+  };
+}
 
 export default function NowLayout({ children }) {
   return children;

@@ -15,17 +15,25 @@ function isoDate(value) {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
+function alternateLinks(languages = {}) {
+  return Object.entries(languages)
+    .filter(([, url]) => Boolean(url))
+    .map(([language, url]) => `<xhtml:link rel="alternate" hreflang="${escapeXml(language)}" href="${escapeXml(url)}"/>`)
+    .join("");
+}
+
 export function buildUrlSetXml(entries = []) {
   const urls = entries.map((entry) => {
     const lastModified = isoDate(entry?.lastModified);
     const parts = [`<loc>${escapeXml(entry?.url)}</loc>`];
+    if (entry?.languages) parts.push(alternateLinks(entry.languages));
     if (lastModified) parts.push(`<lastmod>${lastModified}</lastmod>`);
     if (entry?.changeFrequency) parts.push(`<changefreq>${escapeXml(entry.changeFrequency)}</changefreq>`);
     if (Number.isFinite(Number(entry?.priority))) parts.push(`<priority>${Number(entry.priority).toFixed(2)}</priority>`);
     return `<url>${parts.join("")}</url>`;
   });
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join("")}</urlset>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">${urls.join("")}</urlset>`;
 }
 
 export function buildSitemapIndexXml(paths = []) {

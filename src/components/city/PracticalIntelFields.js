@@ -1,6 +1,9 @@
 "use client";
 
+import { useLocale } from "@/components/i18n/LocaleProvider";
+
 export default function PracticalIntelFields({ title, description, fields = [], tone = "emerald" }) {
+  const { t } = useLocale();
   const toneClasses = tone === "violet"
     ? "border-violet-200/18 bg-violet-200/[0.05] text-violet-100"
     : tone === "cyan"
@@ -26,7 +29,7 @@ export default function PracticalIntelFields({ title, description, fields = [], 
           </label>
         ))}
       </div>
-      <p className="mt-3 text-[11px] text-white/45">Community ratings are calculated from member feedback and cannot be entered here.</p>
+      <p className="mt-3 text-[11px] text-white/45">{t("city.communityRatingsNotice", "Community ratings are calculated from member feedback and cannot be entered here.")}</p>
     </section>
   );
 }

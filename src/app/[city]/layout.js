@@ -11,8 +11,12 @@ import { CityRelatedGuides } from "@/components/city/CityGuideLinks";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { isEventVisibleOnCityPage } from "@/features/city/eventRailFeature";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolvedParams = await params;
   const city = normalizeCityKey(resolvedParams?.city);
   const config = await getCityRegistryEntry(city);
@@ -50,9 +54,7 @@ export async function generateMetadata({ params }) {
       `queer friendly places ${cityName}`,
       `safe queer nightlife ${cityName}`,
     ],
-    alternates: {
-      canonical,
-    },
+    alternates: localizedAlternates(canonical, locale),
     robots: {
       index: config.seoIndexable !== false,
       follow: true,
@@ -60,7 +62,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      url: canonical,
+      url: localizedOpenGraphUrl(canonical, locale),
+      locale: locale === "es" ? "es_ES" : "en_US",
       type: "website",
     },
   };

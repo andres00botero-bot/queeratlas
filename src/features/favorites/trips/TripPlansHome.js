@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowDown, ArrowUp, CalendarDays, ChevronDown, MapPinned, Navigation, Pencil, Plus, RotateCcw, Save, Sparkles, Trash2, X } from "lucide-react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 function parsePlanDate(value) {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return null;
@@ -9,10 +10,10 @@ function parsePlanDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function formatPlanDate(value) {
+function formatPlanDate(value, locale, undecidedLabel) {
   const date = parsePlanDate(value);
-  if (!date) return "Dates undecided";
-  return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  if (!date) return undecidedLabel;
+  return date.toLocaleDateString(locale === "es" ? "es" : "en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 function groupPlans(plans = []) {
@@ -45,6 +46,7 @@ function isPlanToday(plan) {
 }
 
 function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRemove, onUpdate }) {
+  const { locale, t } = useLocale();
   const stops = Array.isArray(plan?.stops) ? plan.stops : [];
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -122,13 +124,13 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-white/42">
-            {featured ? <span className="text-[#9ce9e3]">Up next</span> : null}
-            <span>{plan.city || "City undecided"}</span>
+            {featured ? <span className="text-[#9ce9e3]">{t("favorites.upNext", "Up next")}</span> : null}
+            <span>{plan.city || t("favorites.cityUndecided", "City undecided")}</span>
           </span>
-          <span className="mt-1 block truncate text-base font-semibold text-[#fff8fc] sm:text-lg">{plan.title || "Untitled trip"}</span>
+          <span className="mt-1 block truncate text-base font-semibold text-[#fff8fc] sm:text-lg">{plan.title || t("favorites.untitledTrip", "Untitled trip")}</span>
           <span className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#bcaeb9]">
-            <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} aria-hidden="true" />{formatPlanDate(plan.date)}</span>
-            <span>{planStopCount(plan)} {planStopCount(plan) === 1 ? "stop" : "stops"}</span>
+            <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} aria-hidden="true" />{formatPlanDate(plan.date, locale, t("favorites.datesUndecided", "Dates undecided"))}</span>
+            <span>{planStopCount(plan)} {planStopCount(plan) === 1 ? t("favorites.stop", "stop") : t("favorites.stops", "stops")}</span>
           </span>
         </span>
         <ChevronDown size={18} aria-hidden="true" className={`flex-none text-white/42 transition ${expanded ? "rotate-180" : ""}`} />
@@ -138,17 +140,17 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
         <div className="border-t border-white/8 px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
           {featured && isPlanToday(plan) && stops[0] ? (
             <div className="mb-3 rounded-[18px] border border-[#88d9d4]/18 bg-[#88d9d4]/8 p-3.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#9ce9e3]">Up next</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#9ce9e3]">{t("favorites.upNext", "Up next")}</p>
               <div className="mt-1.5 flex items-center justify-between gap-3">
-                <div className="min-w-0"><p className="truncate text-sm font-semibold text-white">{stops[0].name}</p><p className="mt-0.5 text-xs text-white/48">{stops[0].time || "Time open"} · {stops[0].city || plan.city}</p></div>
-                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${stops[0].name || ""}, ${stops[0].city || plan.city || ""}`)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 flex-none items-center gap-2 rounded-full bg-[#88d9d4] px-4 text-xs font-semibold text-[#102421]"><Navigation size={14} aria-hidden="true" />Directions</a>
+                <div className="min-w-0"><p className="truncate text-sm font-semibold text-white">{stops[0].name}</p><p className="mt-0.5 text-xs text-white/48">{stops[0].time || t("favorites.timeOpen", "Time open")} · {stops[0].city || plan.city}</p></div>
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${stops[0].name || ""}, ${stops[0].city || plan.city || ""}`)}`} target="_blank" rel="noreferrer" className="inline-flex min-h-11 flex-none items-center gap-2 rounded-full bg-[#88d9d4] px-4 text-xs font-semibold text-[#102421]"><Navigation size={14} aria-hidden="true" />{t("favorites.directions", "Directions")}</a>
               </div>
             </div>
           ) : null}
           {isEditing ? (
             <div className="mb-4 space-y-3 rounded-[18px] border border-[#f5a9c6]/14 bg-black/20 p-3.5 sm:p-4">
               <label className="block text-xs font-medium text-white/62">
-                Trip name
+                {t("favorites.tripName", "Trip name")}
                 <input
                   value={draft.title}
                   onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
@@ -156,7 +158,7 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
                 />
               </label>
               <label className="block text-xs font-medium text-white/62">
-                Start date
+                {t("favorites.startDate", "Start date")}
                 <input
                   type="date"
                   value={draft.date || ""}
@@ -165,12 +167,12 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
                 />
               </label>
               <label className="block text-xs font-medium text-white/62">
-                Note
+                {t("favorites.note", "Note")}
                 <textarea
                   value={draft.note}
                   onChange={(event) => setDraft((current) => ({ ...current, note: event.target.value }))}
                   rows={3}
-                  placeholder="What do you want to remember?"
+                  placeholder={t("favorites.tripNotePlaceholder", "What do you want to remember?")}
                   className="mt-1.5 w-full resize-y rounded-[13px] border border-white/12 bg-[#17121b] px-3 py-2.5 text-sm leading-5 text-white outline-none transition placeholder:text-white/28 focus:border-[#88d9d4]/50 focus:ring-2 focus:ring-[#88d9d4]/12"
                 />
               </label>
@@ -186,8 +188,8 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
                 >
                   <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full border border-white/10 bg-black/20 text-[10px] font-semibold text-white/58">{index + 1}</span>
                   <button type="button" disabled={isEditing} onClick={() => onOpenStop?.({ ...stop, itemType: stop.type === "event" ? "event" : "place" })} className="min-w-0 flex-1 text-left disabled:cursor-default focus-visible:outline-2 focus-visible:outline-[#88d9d4]">
-                    <span className="block truncate text-sm font-medium text-white/86">{stop.name || "Saved stop"}</span>
-                    <span className="mt-0.5 block truncate text-[11px] text-white/42">{stop.time ? `${stop.time} · ` : ""}{stop.dayLabel || stop.slotLabel || stop.type || "Trip stop"}</span>
+                    <span className="block truncate text-sm font-medium text-white/86">{stop.name || t("favorites.savedStop", "Saved stop")}</span>
+                    <span className="mt-0.5 block truncate text-[11px] text-white/42">{stop.time ? `${stop.time} · ` : ""}{stop.dayLabel || stop.slotLabel || stop.type || t("favorites.tripStop", "Trip stop")}</span>
                   </button>
                   {isEditing ? (
                     <div className="flex flex-none items-center gap-0.5">
@@ -196,26 +198,26 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
                       <button type="button" onClick={() => moveStop(index, 1)} disabled={index === draft.stops.length - 1} aria-label={`Move ${stop.name || "stop"} later`} className="flex h-10 w-8 items-center justify-center rounded-full text-white/52 hover:bg-white/[0.06] disabled:opacity-20"><ArrowDown size={14} aria-hidden="true" /></button>
                       <button type="button" onClick={() => removeStop(index)} aria-label={`Remove ${stop.name || "stop"}`} className="flex h-10 w-8 items-center justify-center rounded-full text-rose-100/60 transition hover:bg-rose-200/[0.08] hover:text-rose-100 focus-visible:outline-2 focus-visible:outline-rose-200"><X size={15} aria-hidden="true" /></button>
                     </div>
-                  ) : <span className="text-[10px] font-semibold text-[#9ce9e3] opacity-70 transition group-hover:opacity-100">Open</span>}
+                  ) : <span className="text-[10px] font-semibold text-[#9ce9e3] opacity-70 transition group-hover:opacity-100">{t("events.open", "Open")}</span>}
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-[16px] border border-dashed border-white/10 px-4 py-5 text-sm text-white/46">This trip is ready for its first venue or event.</div>
+            <div className="rounded-[16px] border border-dashed border-white/10 px-4 py-5 text-sm text-white/46">{t("favorites.tripFirstStop", "This trip is ready for its first venue or event.")}</div>
           )}
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/7 pt-3">
-            {removedStop ? <button type="button" onClick={undoRemoveStop} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs text-[#bff5ef] transition hover:bg-[#88d9d4]/8 focus-visible:outline-2 focus-visible:outline-[#88d9d4]"><RotateCcw size={14} aria-hidden="true" />Undo remove</button> : <p className="text-[11px] text-white/36">Private by default</p>}
+            {removedStop ? <button type="button" onClick={undoRemoveStop} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs text-[#bff5ef] transition hover:bg-[#88d9d4]/8 focus-visible:outline-2 focus-visible:outline-[#88d9d4]"><RotateCcw size={14} aria-hidden="true" />{t("favorites.undoRemove", "Undo remove")}</button> : <p className="text-[11px] text-white/36">{t("favorites.privateDefault", "Private by default")}</p>}
             <div className="flex items-center gap-1">
               {isEditing ? (
                 <>
-                  <button type="button" onClick={cancelEditing} className="min-h-11 rounded-full px-3 text-xs text-white/58 transition hover:bg-white/[0.055] hover:text-white">Cancel</button>
-                  <button type="button" onClick={saveChanges} disabled={isSaving || !draft.title.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#f5a9c6] px-4 text-xs font-semibold text-[#24131d] transition hover:bg-[#ffc0d7] disabled:cursor-not-allowed disabled:opacity-45"><Save size={14} aria-hidden="true" />{isSaving ? "Saving…" : "Save changes"}</button>
+                  <button type="button" onClick={cancelEditing} className="min-h-11 rounded-full px-3 text-xs text-white/58 transition hover:bg-white/[0.055] hover:text-white">{t("favorites.cancel", "Cancel")}</button>
+                  <button type="button" onClick={saveChanges} disabled={isSaving || !draft.title.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#f5a9c6] px-4 text-xs font-semibold text-[#24131d] transition hover:bg-[#ffc0d7] disabled:cursor-not-allowed disabled:opacity-45"><Save size={14} aria-hidden="true" />{isSaving ? t("favorites.saving", "Saving…") : t("favorites.saveChanges", "Save changes")}</button>
                 </>
               ) : (
                 <>
-                  <button type="button" onClick={() => { setDraft({ title: plan.title || "", date: plan.date || "", note: plan.note || "", stops }); setRemovedStop(null); setIsEditing(true); }} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs text-white/68 transition hover:bg-white/[0.055] hover:text-white focus-visible:outline-2 focus-visible:outline-white/50"><Pencil size={14} aria-hidden="true" />Edit trip</button>
-                  <button type="button" onClick={() => onRemove?.(plan.id)} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs text-rose-100/66 transition hover:bg-rose-200/[0.08] hover:text-rose-100 focus-visible:outline-2 focus-visible:outline-rose-200"><Trash2 size={14} aria-hidden="true" />Delete</button>
+                  <button type="button" onClick={() => { setDraft({ title: plan.title || "", date: plan.date || "", note: plan.note || "", stops }); setRemovedStop(null); setIsEditing(true); }} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs text-white/68 transition hover:bg-white/[0.055] hover:text-white focus-visible:outline-2 focus-visible:outline-white/50"><Pencil size={14} aria-hidden="true" />{t("favorites.editTrip", "Edit trip")}</button>
+                  <button type="button" onClick={() => onRemove?.(plan.id)} className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-xs text-rose-100/66 transition hover:bg-rose-200/[0.08] hover:text-rose-100 focus-visible:outline-2 focus-visible:outline-rose-200"><Trash2 size={14} aria-hidden="true" />{t("favorites.delete", "Delete")}</button>
                 </>
               )}
             </div>
@@ -227,19 +229,20 @@ function TripCard({ plan, featured = false, expanded, onToggle, onOpenStop, onRe
 }
 
 export default function TripPlansHome({ plans = [], expandedPlanId, onExpandedPlanChange, onCreateTrip, onOpenStop, onRemovePlan, onUpdatePlan }) {
+  const { t } = useLocale();
   const groups = groupPlans(plans);
   const featured = groups.upcoming[0] || groups.ideas[0] || null;
   const remainingUpcoming = featured && groups.upcoming[0]?.id === featured.id ? groups.upcoming.slice(1) : groups.upcoming;
   const remainingIdeas = featured && groups.ideas[0]?.id === featured.id ? groups.ideas.slice(1) : groups.ideas;
   const sections = [
-    { id: "upcoming", label: "Upcoming", plans: remainingUpcoming },
-    { id: "ideas", label: "Ideas", plans: remainingIdeas },
-    { id: "past", label: "Past", plans: groups.past },
+    { id: "upcoming", label: t("favorites.upcoming", "Upcoming"), plans: remainingUpcoming },
+    { id: "ideas", label: t("favorites.ideas", "Ideas"), plans: remainingIdeas },
+    { id: "past", label: t("favorites.past", "Past"), plans: groups.past },
   ].filter((section) => section.plans.length > 0);
 
   const removeWithConfirmation = (planId) => {
     const plan = plans.find((item) => String(item.id) === String(planId));
-    if (typeof window !== "undefined" && !window.confirm(`Delete ${plan?.title || "this trip"}?`)) return;
+    if (typeof window !== "undefined" && !window.confirm(`${t("favorites.delete", "Delete")} ${plan?.title || t("favorites.thisTrip", "this trip")}?`)) return;
     onRemovePlan?.(planId);
   };
 
@@ -247,13 +250,13 @@ export default function TripPlansHome({ plans = [], expandedPlanId, onExpandedPl
     return (
       <div className="mx-auto flex min-h-[30rem] max-w-xl flex-col items-center justify-center px-4 py-12 text-center">
         <span className="flex h-16 w-16 items-center justify-center rounded-[22px] border border-[#f5a9c6]/18 bg-[#f5a9c6]/8 text-[#ffd8e7] shadow-[0_20px_50px_rgba(0,0,0,0.24)]"><Sparkles size={25} aria-hidden="true" /></span>
-        <h3 className="mt-6 text-2xl font-semibold tracking-[-0.035em] text-[#fff8fc]">Your next queer trip starts here</h3>
-        <p className="mt-3 max-w-md text-sm leading-6 text-[#bcaeb9]">Turn places and events you already love into one calm, usable route.</p>
+        <h3 className="mt-6 text-2xl font-semibold tracking-[-0.035em] text-[#fff8fc]">{t("favorites.tripEmptyTitle", "Your next queer trip starts here")}</h3>
+        <p className="mt-3 max-w-md text-sm leading-6 text-[#bcaeb9]">{t("favorites.tripEmptyText", "Turn places and events you already love into one calm, usable route.")}</p>
         <button type="button" onClick={onCreateTrip} className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-full bg-[#f5a9c6] px-5 text-sm font-semibold text-[#24131d] shadow-[0_14px_34px_rgba(245,169,198,0.20)] transition hover:bg-[#ffc0d7] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#f5a9c6]">
           <Plus size={17} aria-hidden="true" />
-          New trip
+          {t("favorites.newTrip", "New trip")}
         </button>
-        <p className="mt-3 text-xs text-white/36">You can start with saved places or choose a city.</p>
+        <p className="mt-3 text-xs text-white/36">{t("favorites.tripEmptyHint", "You can start with saved places or choose a city.")}</p>
       </div>
     );
   }
@@ -262,12 +265,12 @@ export default function TripPlansHome({ plans = [], expandedPlanId, onExpandedPl
     <div className="mx-auto max-w-4xl">
       <div className="mb-5 flex items-center justify-between gap-4">
         <div>
-          <h3 className="text-xl font-semibold tracking-[-0.025em] text-[#fff8fc]">Your trips</h3>
-          <p className="mt-1 text-sm text-[#bcaeb9]">Open a plan or start somewhere new.</p>
+          <h3 className="text-xl font-semibold tracking-[-0.025em] text-[#fff8fc]">{t("favorites.yourTrips", "Your trips")}</h3>
+          <p className="mt-1 text-sm text-[#bcaeb9]">{t("favorites.tripIntro", "Open a plan or start somewhere new.")}</p>
         </div>
         <button type="button" onClick={onCreateTrip} className="inline-flex min-h-11 flex-none items-center gap-2 rounded-full bg-[#f5a9c6] px-4 text-sm font-semibold text-[#24131d] transition hover:bg-[#ffc0d7] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#f5a9c6]">
           <Plus size={16} aria-hidden="true" />
-          New trip
+          {t("favorites.newTrip", "New trip")}
         </button>
       </div>
 

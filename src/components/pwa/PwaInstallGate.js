@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const INSTALL_CHOICE_KEY = "qa_pwa_install_choice_v1";
 
@@ -12,6 +13,7 @@ function isStandalone() {
 }
 
 export default function PwaInstallGate() {
+  const { t } = useLocale();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -74,9 +76,9 @@ export default function PwaInstallGate() {
   return (
     <div className="fixed inset-x-4 bottom-4 z-[120] sm:inset-x-auto sm:bottom-6 sm:right-6 sm:w-[24rem]">
       <div className="rounded-2xl border border-cyan-300/25 bg-[#05080bcc] p-4 text-white shadow-[0_18px_46px_rgba(0,0,0,0.45)] backdrop-blur">
-        <p className="text-sm font-semibold tracking-[0.12em] text-cyan-200 uppercase">Install Queer Atlas</p>
+        <p className="text-sm font-semibold tracking-[0.12em] text-cyan-200 uppercase">{t("pwa.installQueerAtlas", "Install Queer Atlas")}</p>
         <p className="mt-2 text-sm text-white/85">
-          Add app icon to your home screen for one-tap access and faster launch.
+          {t("pwa.installDescription", "Add app icon to your home screen for one-tap access and faster launch.")}
         </p>
         <div className="mt-3 flex gap-2">
           <button
@@ -84,14 +86,14 @@ export default function PwaInstallGate() {
             onClick={handleInstall}
             className="inline-flex flex-1 items-center justify-center rounded-xl border border-cyan-200/35 bg-cyan-300/20 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/28"
           >
-            Yes, install
+            {t("pwa.install", "Yes, install")}
           </button>
           <button
             type="button"
             onClick={handleDismiss}
             className="inline-flex flex-1 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/16"
           >
-            No, thanks
+            {t("pwa.dismiss", "No, thanks")}
           </button>
         </div>
       </div>

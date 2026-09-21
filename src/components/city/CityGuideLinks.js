@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 function cityName(city) {
   return String(city?.title || city?.name || city?.key || "")
@@ -97,6 +100,7 @@ export function CityRelatedGuides({ currentCity, cities = [] }) {
 }
 
 export function CityIndexDirectory({ cities = [] }) {
+  const { t } = useLocale();
   const indexableCities = cities
     .filter((city) => city?.key && city.seoIndexable !== false)
     .sort((left, right) => cityName(left).localeCompare(cityName(right), "en"));
@@ -115,10 +119,10 @@ export function CityIndexDirectory({ cities = [] }) {
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/62">
-                Complete directory
+                {t("cities.completeDirectory", "Complete directory")}
               </p>
               <h2 id="all-city-guides-title" className="mt-1 text-xl font-semibold tracking-[-0.01em]">
-                Browse all {indexableCities.length} queer city guides A–Z
+                {t("cities.browseAllGuides", `Browse all ${indexableCities.length} queer city guides A–Z`).replace("{count}", indexableCities.length)}
               </h2>
             </div>
             <span aria-hidden="true" className="text-xl text-cyan-100 transition group-open:rotate-45">+</span>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowRight, Bookmark, CalendarDays, Clock3, MapPin, Sparkles } from "lucide-react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import EmptyState from "@/components/ui/EmptyState";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { formatCityLabel, formatEventDateLabel } from "@/features/events/eventDateUtils";
@@ -75,6 +76,7 @@ export default function HappeningSoonPanel({
   onSaveEvent,
   isSaved,
 }) {
+  const { t } = useLocale();
   const [scope, setScope] = useState(() => (["tonight", "weekend", "month"].includes(initialScope) ? initialScope : "month"));
   const [selectedCity, setSelectedCity] = useState("");
   const [visibleCount, setVisibleCount] = useState(5);
@@ -169,34 +171,34 @@ export default function HappeningSoonPanel({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fuchsia-300 opacity-45 motion-reduce:animate-none" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-fuchsia-200" />
               </span>
-              Live event pulse
+              {t("events.livePulse", "Live event pulse")}
             </div>
             <h2 id="happening-soon-title" className="qa-display mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-              Tonight, this weekend, what&apos;s next.
+              {t("events.pulseTitle", "Tonight, this weekend, what's next.")}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62 sm:text-base">
-              A time-first view of the strongest upcoming queer signals across the atlas.
+              {t("events.pulseIntro", "A time-first view of the strongest upcoming queer signals across the atlas.")}
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-2 sm:min-w-[390px]">
             <div className="rounded-2xl border border-fuchsia-200/16 bg-fuchsia-200/[0.07] px-3 py-3 text-center">
               <p className="text-xl font-semibold text-white">{scopeCounts.tonight}</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-fuchsia-100/56">Tonight</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-fuchsia-100/56">{t("events.tonight", "Tonight")}</p>
             </div>
             <div className="rounded-2xl border border-cyan-200/16 bg-cyan-200/[0.055] px-3 py-3 text-center">
               <p className="text-xl font-semibold text-white">{scopeCounts.weekend}</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-cyan-100/56">Weekend</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-cyan-100/56">{t("events.weekend", "Weekend")}</p>
             </div>
             <div className="rounded-2xl border border-white/12 bg-white/[0.045] px-3 py-3 text-center">
               <p className="text-xl font-semibold text-white">{activeCityCount}</p>
-              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-white/48">Cities</p>
+              <p className="mt-1 text-[9px] uppercase tracking-[0.17em] text-white/48">{t("events.cities", "Cities")}</p>
             </div>
           </div>
         </div>
 
         <div className="mt-6 flex flex-col gap-3 rounded-[22px] border border-white/10 bg-black/20 p-2.5 backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between">
-          <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Event time range">
+          <div className="grid grid-cols-3 gap-1.5" role="group" aria-label={t("events.timeRange", "Event time range")}>
             {SCOPE_OPTIONS.map((option) => {
               const isActive = scope === option.id;
               return (
@@ -219,13 +221,13 @@ export default function HappeningSoonPanel({
 
           <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-white/48">
             <MapPin size={14} className="text-cyan-100/68" />
-            <span className="hidden sm:inline">City</span>
+            <span className="hidden sm:inline">{t("events.city", "City")}</span>
             <select
               value={selectedCity}
               onChange={(event) => chooseCity(String(event.target.value || ""))}
               className="min-w-0 flex-1 bg-transparent text-xs normal-case tracking-normal text-white outline-none [&>option]:bg-[#0b0f16]"
             >
-              <option value="">Everywhere</option>
+              <option value="">{t("events.everywhere", "Everywhere")}</option>
               {cityOptions.map((city) => (
                 <option key={city.label} value={city.label}>{city.label} ({city.count})</option>
               ))}
@@ -249,7 +251,7 @@ export default function HappeningSoonPanel({
                 <div className="relative flex h-full flex-col">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <span className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-black/24 px-3 py-1.5 text-[10px] uppercase tracking-[0.18em] text-white/68">
-                      <Sparkles size={12} className="text-fuchsia-100" /> Featured signal
+                      <Sparkles size={12} className="text-fuchsia-100" /> {t("events.featured", "Featured signal")}
                     </span>
                     <span className="rounded-full border border-cyan-100/22 bg-cyan-200/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.16em] text-cyan-50">
                       {getTimingLabel(featuredEvent, todayKey, weekendWindow.startKey, weekendWindow.endKey)}
@@ -267,7 +269,7 @@ export default function HappeningSoonPanel({
                     </h3>
                     <VibeTagChips entity={featuredEvent} tone="fuchsia" className="mt-3" includeMixedFallback />
                     <p className="mt-4 line-clamp-3 max-w-2xl text-sm leading-6 text-white/64">
-                      {featuredEvent.description || "A high-signal queer event coming up across the atlas."}
+                      {featuredEvent.description || t("events.featuredFallback", "A high-signal queer event coming up across the atlas.")}
                     </p>
                   </div>
 
@@ -277,7 +279,7 @@ export default function HappeningSoonPanel({
                       onClick={() => onOpenEvent?.(featuredEvent)}
                       className="qa-action qa-cta-primary inline-flex items-center gap-2 rounded-full border border-cyan-100/42 bg-[linear-gradient(110deg,rgba(34,211,238,0.28),rgba(217,70,239,0.24))] px-5 py-2.5 text-xs font-semibold text-white shadow-[0_12px_34px_rgba(34,211,238,0.13)] transition hover:border-white/54"
                     >
-                      Open event <ArrowRight size={14} />
+                      {t("events.openEvent", "Open event")} <ArrowRight size={14} />
                     </button>
                     {renderSaveButton(featuredEvent, true)}
                   </div>
@@ -309,7 +311,7 @@ export default function HappeningSoonPanel({
                       </div>
 
                       <p className="mt-3 line-clamp-2 border-t border-white/8 pt-3 text-sm leading-6 text-white/52">
-                        {event.description || "Upcoming queer event with useful community signal."}
+                        {event.description || t("events.upcomingFallback", "Upcoming queer event with useful community signal.")}
                       </p>
 
                       <div className="mt-3 flex items-center justify-end gap-2 border-t border-white/8 pt-3">
@@ -320,7 +322,7 @@ export default function HappeningSoonPanel({
                             onClick={() => onOpenEvent?.(event)}
                             className="qa-action inline-flex items-center gap-1.5 rounded-full border border-cyan-100/18 bg-cyan-200/[0.07] px-3 py-1.5 text-[11px] text-cyan-50 transition hover:border-cyan-100/38"
                           >
-                            Open <ArrowRight size={12} />
+                            {t("events.open", "Open")} <ArrowRight size={12} />
                           </button>
                         </div>
                       </div>
@@ -333,7 +335,7 @@ export default function HappeningSoonPanel({
             <div className="mt-5 flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="inline-flex items-center gap-2 text-xs text-white/46">
                 <Clock3 size={14} className="text-cyan-100/54" />
-                Showing {Math.min(scopedEvents.length, visibleCount + 1)} of {scopedEvents.length} events in this pulse.
+                {t("events.showingPulse", "Showing {shown} of {total} events in this pulse.").replace("{shown}", Math.min(scopedEvents.length, visibleCount + 1)).replace("{total}", scopedEvents.length)}
               </p>
               <div className="flex items-center gap-2">
                 {remainingEvents.length > visibleCount && (
@@ -342,7 +344,7 @@ export default function HappeningSoonPanel({
                     onClick={() => setVisibleCount((current) => current + 5)}
                     className="qa-action rounded-full border border-white/14 bg-white/[0.05] px-4 py-2 text-xs text-white/72 transition hover:border-white/28 hover:text-white"
                   >
-                    Show more
+                    {t("events.showMore", "Show more")}
                   </button>
                 )}
                 <button
@@ -350,15 +352,15 @@ export default function HappeningSoonPanel({
                   onClick={onOpenCalendar}
                   className="qa-action rounded-full border border-fuchsia-100/22 bg-fuchsia-200/[0.08] px-4 py-2 text-xs text-fuchsia-50 transition hover:border-fuchsia-100/42"
                 >
-                  Open full calendar
+                  {t("events.openFullCalendar", "Open full calendar")}
                 </button>
               </div>
             </div>
           </>
         ) : (
           <EmptyState
-            title="No events in this time window."
-            description="Try the next 30 days, clear the city filter, or browse the full calendar."
+            title={t("events.noneInWindow", "No events in this time window.")}
+            description={t("events.tryNextMonth", "Try the next 30 days, clear the city filter, or browse the full calendar.")}
             className="mt-5 px-5 py-10"
           >
             <div className="flex flex-wrap justify-center gap-2">
@@ -370,14 +372,14 @@ export default function HappeningSoonPanel({
                 }}
                 className="qa-action rounded-full border border-cyan-100/22 bg-cyan-200/[0.08] px-4 py-2 text-xs text-cyan-50"
               >
-                Show next 30 days
+                {t("events.showNext30", "Show next 30 days")}
               </button>
               <button
                 type="button"
                 onClick={onOpenCalendar}
                 className="qa-action rounded-full border border-white/14 bg-white/[0.05] px-4 py-2 text-xs text-white/72"
               >
-                Open calendar
+                {t("events.openCalendar", "Open calendar")}
               </button>
             </div>
           </EmptyState>

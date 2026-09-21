@@ -9,6 +9,7 @@ import { getSafetyToneClass } from "@/lib/placeSafetySignals";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 import SelectedEntityMiniMap from "@/components/city/SelectedEntityMiniMap";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function SelectedPlaceSummary({
   selectedPlace,
@@ -18,6 +19,7 @@ export default function SelectedPlaceSummary({
   showPlaceOnMap,
   liveSignal = null,
 }) {
+  const { t } = useLocale();
   if (!selectedPlace) return null;
   const addressLabel = getEntityAddressLabel(selectedPlace);
 
@@ -28,7 +30,7 @@ export default function SelectedPlaceSummary({
           {selectedPlace.city || cityName}
         </span>
         <span className="rounded-full border border-fuchsia-100/24 bg-fuchsia-300/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-fuchsia-50">
-          {typeLabels[selectedPlace.type] || "Place"}
+          {typeLabels[selectedPlace.type] || t("city.place", "Place")}
         </span>
       </div>
       <h2 className="mb-3 text-3xl font-bold leading-tight tracking-[-0.025em] text-white">{selectedPlace.name}</h2>
@@ -41,7 +43,7 @@ export default function SelectedPlaceSummary({
       />
       {shouldShowLegacyVibe(selectedPlace) && (
         <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-cyan-100/72">
-          Legacy vibe: {String(selectedPlace.vibe || "").trim()}
+          {t("city.legacyVibe", "Legacy vibe:")} {String(selectedPlace.vibe || "").trim()}
         </p>
       )}
       <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-amber-200 shadow-[0_0_22px_rgba(34,211,238,0.22)]" />
@@ -50,7 +52,7 @@ export default function SelectedPlaceSummary({
           <MapPin className="h-4 w-4" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-50/68">Address</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-50/68">{t("city.address", "Address")}</p>
           <p className="mt-1 text-sm leading-6 text-white/90">{addressLabel}</p>
         </div>
       </div>
@@ -62,9 +64,9 @@ export default function SelectedPlaceSummary({
         </div>
       )}
       <div className="mb-4 rounded-[20px] border border-amber-100/22 bg-amber-300/[0.08] p-4">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-amber-50/72">Opening Hours</p>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-amber-50/72">{t("city.openingHoursLabel", "Opening Hours")}</p>
         <p className="mt-1 text-sm leading-6 text-white/86">
-          {String(selectedPlace.hours || "").trim() || "Hours vary by night. Check official channels before going."}
+          {String(selectedPlace.hours || "").trim() || t("city.hoursVary", "Hours vary by night. Check official channels before going.")}
         </p>
       </div>
       <VenuePracticalIntel place={selectedPlace} compact />
@@ -77,11 +79,11 @@ export default function SelectedPlaceSummary({
       )}
       <div className="mt-3 grid grid-cols-2 gap-2.5">
         <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">Reviews</p>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">{t("city.reviews", "Reviews")}</p>
           <p className="mt-1 text-base font-semibold text-white">{selectedPlace.reviewCount || 0}</p>
         </div>
         <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">Safety</p>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">{t("city.safety", "Safety")}</p>
           {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 ? (
             <p className={`mt-1 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-sm ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
               {getDisplayedSafetyShields(selectedPlaceSafetySignal)}/5
@@ -93,7 +95,9 @@ export default function SelectedPlaceSummary({
       </div>
       {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 && (
         <p className="mt-2 text-[11px] text-white/60">
-          Based on {selectedPlaceSafetySignal.safetyReviewCount} member safety review{selectedPlaceSafetySignal.safetyReviewCount === 1 ? "" : "s"}.
+          {t("city.safetyReviewsBasedOn", "Based on {count} member safety review{suffix}.")
+            .replace("{count}", selectedPlaceSafetySignal.safetyReviewCount)
+            .replace("{suffix}", selectedPlaceSafetySignal.safetyReviewCount === 1 ? "" : "s")}
         </p>
       )}
     </>

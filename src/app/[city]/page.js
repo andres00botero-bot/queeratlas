@@ -51,6 +51,7 @@ import { buildVenueIntelPayload, hasVenueIntel } from "@/lib/venueIntel";
 import { buildEventIntelPayload, buildServiceIntelPayload, hasEventIntel, hasServiceIntel } from "@/lib/entityIntel";
 import ActionToast from "@/components/ui/ActionToast";
 import { useCityRouteConfig } from "@/components/city/CityRouteConfigProvider";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import CityDetailsLayer from "@/components/city/CityDetailsLayer";
 import CityEventsRailSection from "@/components/city/CityEventsRailSection";
 import CityGuideCluster from "@/components/city/CityGuideCluster";
@@ -128,6 +129,7 @@ const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const QUEER_AREA_MARKER_ZOOM = 12;
 
 export default function CityPage() {
+  const { locale } = useLocale();
   const isMapboxStylesReady = useMapboxStylesheet();
   const config = useCityRouteConfig();
   const params = useParams();
@@ -145,7 +147,7 @@ export default function CityPage() {
 
   const cityName = cityNameFromConfig(config, city);
   const queerAreas = useMemo(() => getQueerAreasForCity(city), [city]);
-  const cityHero = getCityHeroCopy(city) || {
+  const cityHero = getCityHeroCopy(city, locale) || {
     hook: config?.localMood,
     status: config?.queerStatus,
     crowd: config?.crowd,

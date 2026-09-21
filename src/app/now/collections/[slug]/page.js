@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { ATLAS_COLLECTIONS, getAtlasCollectionBySlug } from "@/lib/atlasCollections";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
+import { getMessage } from "@/lib/i18n/messages";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import {
   QA_LOGO_URL,
   QA_ORGANIZATION_ID,
@@ -55,6 +59,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const { slug } = await params;
   const collection = getAtlasCollectionBySlug(slug);
   if (!collection) return {};
@@ -62,9 +67,7 @@ export async function generateMetadata({ params }) {
   return {
     title: `${collection.title} | Queer Atlas`,
     description: formatCollectionDescription(collection),
-    alternates: {
-      canonical: collection.href,
-    },
+    alternates: localizedAlternates(collection.href, locale),
     robots: {
       index: true,
       follow: true,
@@ -72,7 +75,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: `${collection.title} | Queer Atlas`,
       description: formatCollectionDescription(collection),
-      url: collection.href,
+      url: localizedOpenGraphUrl(collection.href, locale),
+      locale: locale === "es" ? "es_ES" : "en_US",
       type: "article",
       images: [
         {
@@ -93,6 +97,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function AtlasCollectionDetailPage({ params }) {
+  const requestHeaders = await headers();
+  const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
+  const t = (key, fallback) => getMessage(locale, key, fallback);
   const { slug } = await params;
   const collection = getAtlasCollectionBySlug(slug);
   if (!collection) notFound();
@@ -173,10 +180,10 @@ export default async function AtlasCollectionDetailPage({ params }) {
     <main className="qa-page min-h-screen overflow-hidden bg-[radial-gradient(circle_at_8%_3%,rgba(103,232,249,0.20),transparent_28%),radial-gradient(circle_at_92%_5%,rgba(244,114,182,0.16),transparent_26%),radial-gradient(circle_at_58%_48%,rgba(167,139,250,0.09),transparent_34%),linear-gradient(180deg,#0a1020_0%,#101225_48%,#080b16_100%)] px-4 py-6 text-white sm:px-6 sm:py-9">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-7xl">
-        <nav aria-label="Breadcrumb" className="flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/44 sm:text-xs">
-          <Link href="/now/news" className="transition hover:text-white">Now</Link>
+        <nav aria-label={t("now.breadcrumb", "Breadcrumb")} className="flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/44 sm:text-xs">
+          <Link href="/now/news" className="transition hover:text-white">{t("now.now", "Now")}</Link>
           <span>/</span>
-          <Link href="/now/collections" className="transition hover:text-white">Atlas Collections</Link>
+          <Link href="/now/collections" className="transition hover:text-white">{t("now.collections", "Atlas Collections")}</Link>
           <span>/</span>
           <span className="text-white/72">{collection.title}</span>
         </nav>
@@ -201,17 +208,17 @@ export default async function AtlasCollectionDetailPage({ params }) {
               <div className="absolute bottom-0 left-0 right-0 grid grid-cols-7 opacity-40">
                 {Array.from({ length: 14 }).map((_, index) => <span key={index} className="aspect-square border-r border-t border-white/8" />)}
               </div>
-              <div className="absolute inset-x-6 top-6 flex justify-between text-[9px] uppercase tracking-[0.18em] text-white/42"><span>Atlas field edit</span><span>{collection.items.length} / {collection.cities.length}</span></div>
+              <div className="absolute inset-x-6 top-6 flex justify-between text-[9px] uppercase tracking-[0.18em] text-white/42"><span>{t("now.collectionFieldEdit", "Atlas field edit")}</span><span>{collection.items.length} / {collection.cities.length}</span></div>
               <div className="absolute bottom-5 left-5 right-5 max-w-sm rounded-2xl border border-amber-100/20 bg-[#1a2c31]/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.22)] backdrop-blur-sm">
-                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-amber-100/62">The mood</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-amber-100/62">{t("now.theMood", "The mood")}</p>
                 <p className="mt-1.5 text-xl font-semibold tracking-[-0.03em] text-white/92">{collection.mood}</p>
-                <p className="mt-2 text-xs leading-5 text-white/60">Best for {collection.bestFor.toLowerCase()}.</p>
+                <p className="mt-2 text-xs leading-5 text-white/60">{t("now.bestFor", "Best for")} {collection.bestFor.toLowerCase()}.</p>
               </div>
             </div>
           </div>
 
           <dl className="relative grid border-t border-white/10 bg-white/[0.025] sm:grid-cols-3">
-            {[["Best for", collection.bestFor], ["Price", collection.price], ["Inside", `${collection.items.length} picks · ${collection.cities.length} cities`]].map(([term, value]) => (
+            {[[t("now.bestFor", "Best for"), collection.bestFor], [t("now.price", "Price"), collection.price], [t("now.inside", "Inside"), t("now.picksCities", "{picks} picks · {cities} cities").replace("{picks}", collection.items.length).replace("{cities}", collection.cities.length)]].map(([term, value]) => (
               <div key={term} className="border-b border-white/10 px-5 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
                 <dt className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/42">{term}</dt>
                 <dd className="mt-1 text-xs leading-5 text-white/76">{value}</dd>
@@ -224,11 +231,11 @@ export default async function AtlasCollectionDetailPage({ params }) {
           <div className="rounded-[28px] border border-violet-100/20 bg-[radial-gradient(circle_at_8%_0%,rgba(103,232,249,0.14),transparent_30%),radial-gradient(circle_at_100%_8%,rgba(244,114,182,0.12),transparent_32%),linear-gradient(180deg,rgba(28,39,61,0.98),rgba(20,20,39,0.99))] p-4 shadow-[0_24px_70px_rgba(0,0,0,0.20)] sm:p-6">
             <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/10 pb-4">
               <div>
-                <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${accentStyle.text}`}>The considered edit</p>
-                <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">The picks—and why they belong</h2>
+                <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${accentStyle.text}`}>{t("now.consideredEdit", "The considered edit")}</p>
+                <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">{t("now.picksWhy", "The picks—and why they belong")}</h2>
               </div>
               <span className="rounded-full border border-fuchsia-100/22 bg-fuchsia-100/[0.08] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-fuchsia-50/82">
-                {collection.items.length} curated picks
+                {t("now.curatedPicks", "{count} curated picks").replace("{count}", collection.items.length)}
               </span>
             </div>
             <ol className="mt-4 space-y-3">
@@ -242,12 +249,12 @@ export default async function AtlasCollectionDetailPage({ params }) {
                       <div className="min-w-0">
                         <p className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-white/16 bg-white/[0.07] px-2 text-xs font-bold uppercase tracking-[0.12em] ${accentStyle.text}`}>#{index + 1}</p>
                         <h3 className="mt-2.5 text-xl font-bold tracking-[-0.025em] text-white">{item}</h3>
-                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-white/52">{city || "Global"}</p>
-                        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">{collection.itemNotes?.[index] || "Selected for its relevance to this collection and its usefulness within the wider city route."}</p>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-white/52">{city || t("now.global", "Global")}</p>
+                        <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">{collection.itemNotes?.[index] || t("now.collectionPickFallback", "Selected for its relevance to this collection and its usefulness within the wider city route.")}</p>
                       </div>
                       {hasCity && (
                         <Link href={`/${citySlug}`} className="group/city inline-flex items-center gap-2 rounded-full border border-fuchsia-100/38 bg-[linear-gradient(135deg,rgba(244,114,182,0.24),rgba(167,139,250,0.22))] px-3.5 py-2 text-xs font-bold text-fuchsia-50 shadow-[0_10px_26px_rgba(217,70,239,0.13)] transition hover:-translate-y-0.5 hover:border-fuchsia-50/65 hover:brightness-110">
-                          <span>City guide</span>
+                          <span>{t("now.cityGuide", "City guide")}</span>
                           <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[10px] transition-transform group-hover/city:translate-x-0.5 group-hover/city:-translate-y-0.5" aria-hidden="true">↗</span>
                         </Link>
                       )}
@@ -260,20 +267,20 @@ export default async function AtlasCollectionDetailPage({ params }) {
 
           <div className="space-y-5 lg:sticky lg:top-5">
             <aside className="rounded-[28px] border border-fuchsia-100/18 bg-[radial-gradient(circle_at_top_right,rgba(244,114,182,0.16),transparent_34%),linear-gradient(180deg,rgba(40,29,53,0.98),rgba(20,23,39,0.99))] p-5 shadow-[0_24px_65px_rgba(0,0,0,0.18)] sm:p-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-100/78">How to use this edit</p>
-              <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">Context before checklist</h2>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-100/78">{t("now.howUseEdit", "How to use this edit")}</p>
+              <h2 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">{t("now.contextBeforeChecklist", "Context before checklist")}</h2>
               <p className="mt-3 text-sm leading-7 text-white/74">{collection.methodology}</p>
               <div className="mt-5 space-y-2">
                 <div className="rounded-2xl border border-violet-100/16 bg-violet-100/[0.07] p-3">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-violet-100/62">Last editorial update</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-violet-100/62">{t("now.lastEditorialUpdate", "Last editorial update")}</p>
                   <p className="mt-1 text-sm text-white/84">{collection.updated}</p>
                 </div>
                 <div className="rounded-2xl border border-amber-100/18 bg-amber-100/[0.07] p-3">
-                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-amber-100/68">Before you go</p>
-                  <p className="mt-2 text-xs leading-5 text-white/68">Check the venue or organizer directly. Schedules, access, ticketing, and door context can change.</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-amber-100/68">{t("now.beforeYouGo", "Before you go")}</p>
+                  <p className="mt-2 text-xs leading-5 text-white/68">{t("now.beforeYouGoText", "Check the venue or organizer directly. Schedules, access, ticketing, and door context can change.")}</p>
                 </div>
               </div>
-              <Link href="/sources-and-reviews" className="mt-5 inline-flex text-xs font-semibold text-cyan-50/82 underline decoration-cyan-200/40 underline-offset-4 transition hover:text-white">Read our source and review policy</Link>
+              <Link href="/sources-and-reviews" className="mt-5 inline-flex text-xs font-semibold text-cyan-50/82 underline decoration-cyan-200/40 underline-offset-4 transition hover:text-white">{t("now.readSourcePolicy", "Read our source and review policy")}</Link>
             </aside>
 
             <EditorialDisclosure
@@ -290,8 +297,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
         </section>
 
         <section className="mt-9">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-100/76">Keep exploring</p>
-          <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">Related Atlas Collections</h2>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-fuchsia-100/76">{t("now.keepExploring", "Keep exploring")}</p>
+          <h2 className="mt-2 text-3xl font-black tracking-[-0.04em] text-white">{t("now.relatedCollections", "Related Atlas Collections")}</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             {relatedCollections.map((item, index) => {
               const relatedStyle = RELATED_CARD_STYLES[index % RELATED_CARD_STYLES.length];
@@ -299,8 +306,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
                 <Link key={item.id} href={item.href} className={`group rounded-[24px] border p-5 shadow-[0_14px_40px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:brightness-110 ${relatedStyle.card}`}>
                   <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${relatedStyle.eyebrow}`}>{item.eyebrow}</p>
                   <h3 className="mt-3 text-xl font-bold leading-tight tracking-[-0.03em] text-white">{item.title}</h3>
-                  <p className="mt-3 text-xs leading-5 text-white/58">{item.items.length} picks across {item.cities.length} city signals</p>
-                  <span className={`mt-5 inline-flex text-xs font-bold transition group-hover:text-white ${relatedStyle.action}`}>Open collection <span className="ml-2" aria-hidden="true">→</span></span>
+                  <p className="mt-3 text-xs leading-5 text-white/58">{t("now.picksAcrossCities", "{picks} picks across {cities} city signals").replace("{picks}", item.items.length).replace("{cities}", item.cities.length)}</p>
+                  <span className={`mt-5 inline-flex text-xs font-bold transition group-hover:text-white ${relatedStyle.action}`}>{t("now.openCollection", "Open collection")} <span className="ml-2" aria-hidden="true">→</span></span>
                 </Link>
               );
             })}

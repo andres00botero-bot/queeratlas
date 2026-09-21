@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/components/i18n/LocaleProvider";
+
 export default function CityMapSection({
   mapWrapperRef,
   mapContainerRef,
@@ -10,6 +12,7 @@ export default function CityMapSection({
   onSearchThisArea,
   onContinueInListMode,
 }) {
+  const { t } = useLocale();
   return (
     <div
       ref={mapWrapperRef}
@@ -21,13 +24,13 @@ export default function CityMapSection({
             ref={mapContainerRef}
             className={`absolute inset-0 h-full w-full overflow-hidden transition-opacity duration-500 ${isMapReady ? "opacity-100" : "opacity-35"}`}
             role="region"
-            aria-label="City map view"
+            aria-label={t("city.cityMapView", "City map view")}
           />
           {!isMapReady && !mapError ? (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(245,169,198,0.06),transparent_38%),rgba(11,9,16,0.44)]">
               <div className="flex items-center gap-2 rounded-full border border-white/[0.09] bg-[#17121c]/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55 backdrop-blur">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#88d9d4]" aria-hidden="true" />
-                Mapping the city
+                {t("city.mappingCity", "Mapping the city")}
               </div>
             </div>
           ) : null}
@@ -37,7 +40,7 @@ export default function CityMapSection({
               onClick={onSearchThisArea}
               className="qa-action absolute left-1/2 top-3 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/[0.14] bg-[#17121c]/92 px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#fff8fc] shadow-[0_12px_32px_rgba(0,0,0,0.28)] backdrop-blur-md transition hover:border-[#f5a9c6]/36 hover:bg-[#211925]"
             >
-              {showSearchArea ? "Search this area" : searchAreaLabel}
+              {showSearchArea ? t("city.searchThisArea", "Search this area") : searchAreaLabel}
             </button>
           ) : null}
           {mapError && (
@@ -48,7 +51,7 @@ export default function CityMapSection({
                   onClick={onContinueInListMode}
                   className="qa-action qa-city-cta-secondary mt-4 rounded-full border border-white/20 bg-white/8 px-4 py-2 text-xs text-white/80 transition hover:border-white/32 hover:text-white"
                 >
-                  Continue in list mode
+                  {t("city.continueListMode", "Continue in list mode")}
                 </button>
               </div>
             </div>

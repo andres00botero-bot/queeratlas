@@ -1,6 +1,9 @@
 "use client";
 
+import { useLocale } from "@/components/i18n/LocaleProvider";
+
 export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
+  const { t } = useLocale();
   if (!Array.isArray(areas) || areas.length === 0) return null;
 
   return (
@@ -10,14 +13,14 @@ export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
     >
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-100/70">City orientation</p>
-          <h2 id="city-queer-areas-title" className="mt-2 text-2xl font-semibold tracking-[-0.01em] text-white">Queer areas in {cityName}</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-100/70">{t("city.cityOrientation", "City orientation")}</p>
+          <h2 id="city-queer-areas-title" className="mt-2 text-2xl font-semibold tracking-[-0.01em] text-white">{t("city.queerAreasIn", "Queer areas in {city}").replace("{city}", cityName)}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/64">
-            Tap an area to zoom in. The map’s colour glow shows the concentration of published Atlas venues, events and community listings—not people, live activity or an official boundary.
+            {t("city.queerAreasDescription", "Tap an area to zoom in. The map’s colour glow shows the concentration of published Atlas venues, events and community listings—not people, live activity or an official boundary.")}
           </p>
         </div>
         <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-100/85">
-          {cityName} pilot
+          {t("city.cityPilot", "{city} pilot").replace("{city}", cityName)}
         </span>
       </div>
 
@@ -28,7 +31,7 @@ export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
               type="button"
               onClick={() => onFocusArea?.(area)}
               className="qa-action group w-full text-left outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#15101a]"
-              aria-label={`Zoom to ${area.name} on the map`}
+              aria-label={t("city.zoomToArea", "Zoom to {area} on the map").replace("{area}", area.name)}
             >
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -37,12 +40,12 @@ export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
                     <h3 className="mt-1 text-base font-semibold text-white">{area.name}</h3>
                   </div>
                   <span className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/[0.10] px-3 py-2 text-xs font-semibold text-fuchsia-50 transition group-hover:border-fuchsia-100/55 group-hover:bg-fuchsia-200/[0.17]">
-                    Explore on map
+                    {t("city.exploreOnMap", "Explore on map")}
                   </span>
                 </div>
                 <p className="mt-3 text-sm leading-6 text-white/72">{area.summary}</p>
                 <p className="mt-3 rounded-xl border border-white/[0.08] bg-white/[0.035] px-3 py-2 text-xs leading-5 text-white/58">
-                  <span className="font-semibold text-white/76">Best for: </span>{area.bestFor}
+                  <span className="font-semibold text-white/76">{t("city.bestFor", "Best for:")} </span>{area.bestFor}
                 </p>
                 <p className="mt-2 text-xs leading-5 text-white/52">{area.practicalNote}</p>
               </div>
@@ -53,7 +56,7 @@ export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
               rel="noreferrer"
               className="mt-3 inline-flex text-xs font-medium text-cyan-100/80 underline decoration-cyan-100/30 underline-offset-4 transition hover:text-cyan-50"
             >
-              Source: {area.sourceLabel}
+              {t("city.source", "Source:")} {area.sourceLabel}
             </a>
           </article>
         ))}

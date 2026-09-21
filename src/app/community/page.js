@@ -18,6 +18,7 @@ import { useActionToast } from "@/lib/useActionToast";
 import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { resolveAdminAccess } from "@/lib/adminAccess";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import {
@@ -516,6 +517,7 @@ function resolveAvatarUrlFromProfile(profileLike) {
 
 export default function CommunityPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const [isReady, setIsReady] = useState(false);
   const [authWaitExpired, setAuthWaitExpired] = useState(false);
   const { isMember, memberName, user, isLoading: isAuthLoading } = useAuth();
@@ -1914,13 +1916,13 @@ export default function CommunityPage() {
           >
             <div className="border-b border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7 lg:flex lg:items-end lg:justify-between lg:gap-8">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">Your community</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">{t("community.yourCommunity", "Your community")}</p>
                 <h2 id="community-home-heading" className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">
-                  Start with what is moving now.
+                  {t("community.homeTitle", "Start with what is moving now.")}
                 </h2>
               </div>
               <p className="mt-3 max-w-md text-sm leading-6 text-white/52 lg:mt-0">
-                Conversations, people, and opportunities selected from across the member network.
+                {t("community.homeIntro", "Conversations, people, and opportunities selected from across the member network.")}
               </p>
             </div>
 
@@ -1928,11 +1930,11 @@ export default function CommunityPage() {
               <div className="px-5 py-6 sm:px-7 sm:py-7 lg:border-r lg:border-white/[0.08]">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">Active rooms</p>
-                    <h3 className="mt-2 text-lg font-semibold text-white">Join the conversation</h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">{t("community.activeRooms", "Active rooms")}</p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">{t("community.joinConversation", "Join the conversation")}</h3>
                   </div>
                   <button type="button" onClick={() => setActiveCommunityPanel("chat")} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">
-                    All rooms
+                    {t("community.allRooms", "All rooms")}
                   </button>
                 </div>
 
@@ -1954,14 +1956,14 @@ export default function CommunityPage() {
                           <span className="text-[11px] text-cyan-100/58">{topic.mood}</span>
                         </div>
                         <p className="mt-2 line-clamp-2 text-sm leading-6 text-white/54">{topic.description}</p>
-                        <p className="mt-2 text-xs text-white/38">{topic.replies} {topic.replies === 1 ? "reply" : "replies"}{topic.latestActivity ? ` · ${timeAgo(topic.latestActivity)}` : ""}</p>
+                        <p className="mt-2 text-xs text-white/38">{t("community.replies", "{count} replies").replace("{count}", topic.replies)}{topic.latestActivity ? ` · ${timeAgo(topic.latestActivity)}` : ""}</p>
                       </div>
                       <span aria-hidden="true" className="shrink-0 text-lg text-white/28 transition group-hover:translate-x-1 group-hover:text-cyan-100">→</span>
                     </button>
                   ))}
                   {homeTopics.length === 0 ? (
                     <div className="py-8">
-                      <p className="text-sm text-white/52">No active rooms yet. Start the first conversation.</p>
+                      <p className="text-sm text-white/52">{t("community.noActiveRooms", "No active rooms yet. Start the first conversation.")}</p>
                     </div>
                   ) : null}
                 </div>
@@ -1970,11 +1972,11 @@ export default function CommunityPage() {
               <div className="border-t border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7 lg:border-t-0">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">People to know</p>
-                    <h3 className="mt-2 text-lg font-semibold text-white">Across the atlas</h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">{t("community.peopleToKnow", "People to know")}</p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">{t("community.acrossAtlas", "Across the atlas")}</h3>
                   </div>
                   <button type="button" onClick={() => setActiveCommunityPanel("discovery")} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">
-                    Find people
+                    {t("community.findPeople", "Find people")}
                   </button>
                 </div>
 
@@ -1995,7 +1997,7 @@ export default function CommunityPage() {
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <p className="truncate text-sm font-semibold text-white">{entry.display_name}</p>
-                            {entry.trusted_contributor ? <span className="text-[10px] font-semibold text-cyan-100/66">Trusted</span> : null}
+                            {entry.trusted_contributor ? <span className="text-[10px] font-semibold text-cyan-100/66">{t("community.trusted", "Trusted")}</span> : null}
                           </div>
                           <p className="mt-1 truncate text-xs text-white/44">{memberContext || "Queer Atlas member"}</p>
                         </div>
@@ -2004,7 +2006,7 @@ export default function CommunityPage() {
                   })}
                   {homeMembers.length === 0 ? (
                     <div className="py-8">
-                      <p className="text-sm text-white/52">Member recommendations will appear here.</p>
+                      <p className="text-sm text-white/52">{t("community.memberRecommendations", "Member recommendations will appear here.")}</p>
                     </div>
                   ) : null}
                 </div>
@@ -2013,16 +2015,16 @@ export default function CommunityPage() {
 
             <div className="grid border-t border-white/[0.08] sm:grid-cols-3">
               <div className="px-5 py-5 sm:px-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Opportunity</p>
-                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeJob?.title || "Queer jobs across the network"}</h3>
-                <p className="mt-1 line-clamp-1 text-xs text-white/44">{homeJob ? [homeJob.organizationName, homeJob.city, homeJob.locationMode].filter(Boolean).join(" · ") : "Discover member-posted roles and collaborations."}</p>
-                <button type="button" onClick={() => setActiveCommunityPanel("jobs")} className="mt-4 min-h-11 text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">Explore jobs →</button>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">{t("community.opportunity", "Opportunity")}</p>
+                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeJob?.title || t("community.networkJobs", "Queer jobs across the network")}</h3>
+                <p className="mt-1 line-clamp-1 text-xs text-white/44">{homeJob ? [homeJob.organizationName, homeJob.city, homeJob.locationMode].filter(Boolean).join(" · ") : t("community.discoverRoles", "Discover member-posted roles and collaborations.")}</p>
+                <button type="button" onClick={() => setActiveCommunityPanel("jobs")} className="mt-4 min-h-11 text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">{t("community.exploreJobs", "Explore jobs")} →</button>
               </div>
               <div className="border-t border-white/[0.08] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">From Voices</p>
-                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeVoice?.payload?.title || "Stories from the community"}</h3>
-                <p className="mt-1 line-clamp-1 text-xs text-white/44">Local perspective, personal stories, and member guides.</p>
-                <Link href="/now/voices" className="mt-4 inline-flex min-h-11 items-center text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">Read Voices →</Link>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">{t("community.fromVoices", "From Voices")}</p>
+                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeVoice?.payload?.title || t("community.communityStories", "Stories from the community")}</h3>
+                <p className="mt-1 line-clamp-1 text-xs text-white/44">{t("community.localPerspective", "Local perspective, personal stories, and member guides.")}</p>
+                <Link href="/now/voices" className="mt-4 inline-flex min-h-11 items-center text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">{t("community.readVoices", "Read Voices")} →</Link>
               </div>
               <div className="border-t border-white/[0.08] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Build with us</p>
@@ -2043,12 +2045,12 @@ export default function CommunityPage() {
             <div className="border-b border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">People</p>
-                  <h2 id="community-discovery-heading" className="mt-2 scroll-mt-28 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">Find people across the atlas.</h2>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/52">Search by name or place, then connect at your own pace.</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">{t("community.people", "People")}</p>
+                  <h2 id="community-discovery-heading" className="mt-2 scroll-mt-28 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">{t("community.findAcrossAtlas", "Find people across the atlas.")}</h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/52">{t("community.peopleIntro", "Search by name or place, then connect at your own pace.")}</p>
                 </div>
                 <p className="text-xs text-white/42" aria-live="polite">
-                  {memberSearchLoading ? "Searching members..." : `${displayedMemberRows.length} members shown${memberSearchHasMore ? " · more available" : ""}`}
+                  {memberSearchLoading ? t("community.searchingMembers", "Searching members...") : t("community.membersShown", "{count} members shown").replace("{count}", displayedMemberRows.length) + (memberSearchHasMore ? ` · ${t("community.moreAvailable", "more available")}` : "")}
                 </p>
               </div>
 
@@ -2056,17 +2058,17 @@ export default function CommunityPage() {
                 <input
                   value={memberSearchTerm}
                   onChange={(event) => setMemberSearchTerm(event.target.value)}
-                  placeholder="Search name, city, country, or pronouns"
-                  aria-label="Search community members"
+                  placeholder={t("community.searchMembers", "Search name, city, country, or pronouns")}
+                  aria-label={t("community.searchMembers", "Search community members")}
                   className="min-h-12 w-full rounded-2xl border border-white/12 bg-white/[0.055] px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-100/42 focus:bg-white/[0.075]"
                 />
                 <select
                   value={memberSearchCity}
                   onChange={(event) => setMemberSearchCity(event.target.value)}
-                  aria-label="Filter members by city"
+                  aria-label={t("community.filterMembersCity", "Filter members by city")}
                   className="min-h-12 w-full rounded-2xl border border-white/12 bg-[#11151e] px-4 text-sm text-white/78 outline-none transition focus:border-cyan-100/42"
                 >
-                  <option value="">All cities</option>
+                  <option value="">{t("community.allCities", "All cities")}</option>
                   {memberDiscoveryCities.map((city) => (
                     <option key={city.normalized} value={city.raw}>{city.label}</option>
                   ))}
@@ -2074,18 +2076,18 @@ export default function CommunityPage() {
                 <select
                   value={memberSearchSort}
                   onChange={(event) => setMemberSearchSort(event.target.value)}
-                  aria-label="Sort members"
+                  aria-label={t("community.sortMembers", "Sort members")}
                   className="min-h-12 w-full rounded-2xl border border-white/12 bg-[#11151e] px-4 text-sm text-white/78 outline-none transition focus:border-cyan-100/42"
                 >
-                  <option value="best">Best match</option>
-                  <option value="active">Recently active</option>
-                  <option value="mutual">Mutual connections</option>
+                  <option value="best">{t("community.bestMatch", "Best match")}</option>
+                  <option value="active">{t("community.recentlyActive", "Recently active")}</option>
+                  <option value="mutual">{t("community.mutualConnections", "Mutual connections")}</option>
                 </select>
               </div>
 
               <div className="mt-3 flex items-center gap-5 border-t border-white/[0.06] pt-3">
-                <button type="button" aria-pressed={memberSearchScope === "all"} onClick={() => setMemberSearchScope("all")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "all" ? "text-white" : "text-white/42 hover:text-white/72"}`}>All people</button>
-                <button type="button" aria-pressed={memberSearchScope === "friends"} onClick={() => setMemberSearchScope("friends")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "friends" ? "text-white" : "text-white/42 hover:text-white/72"}`}>Following</button>
+                <button type="button" aria-pressed={memberSearchScope === "all"} onClick={() => setMemberSearchScope("all")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "all" ? "text-white" : "text-white/42 hover:text-white/72"}`}>{t("community.allPeople", "All people")}</button>
+                <button type="button" aria-pressed={memberSearchScope === "friends"} onClick={() => setMemberSearchScope("friends")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "friends" ? "text-white" : "text-white/42 hover:text-white/72"}`}>{t("community.following", "Following")}</button>
               </div>
 
               {memberSearchWarning ? (
@@ -2116,23 +2118,23 @@ export default function CommunityPage() {
                             <p className="truncate text-base font-semibold text-white transition group-hover:text-cyan-50">{entry.display_name}</p>
                             {entry.pronouns ? <span className="text-xs text-white/38">{entry.pronouns}</span> : null}
                             {entry.trusted_contributor ? (
-                              <span title="Recognized for trusted contributions to Queer Atlas" className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-100/70">Trusted contributor</span>
+                              <span title={t("community.trustedTitle", "Recognized for trusted contributions to Queer Atlas")} className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-100/70">{t("community.trustedContributor", "Trusted contributor")}</span>
                             ) : null}
                           </div>
-                          <p className="mt-1 text-sm text-white/48">{location || "Location not shared"}</p>
+                          <p className="mt-1 text-sm text-white/48">{location || t("community.locationNotShared", "Location not shared")}</p>
                           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/38">
                             <span className={entry.is_online ? "text-emerald-200/76" : ""}>{formatMemberSeen(entry.last_seen_at, entry.is_online)}</span>
                             <span>{titleMeta.icon} {titleMeta.label}</span>
-                            {entry.mutual_count > 0 ? <span>{entry.mutual_count} mutual</span> : null}
-                            {entry.follows_you ? <span>Follows you</span> : null}
+                            {entry.mutual_count > 0 ? <span>{t("community.mutualCount", "{count} mutual").replace("{count}", entry.mutual_count)}</span> : null}
+                            {entry.follows_you ? <span>{t("community.followsYou", "Follows you")}</span> : null}
                           </div>
                         </div>
                       </button>
 
                       <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
-                        <button type="button" onClick={() => openMemberThread(entry)} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">Message</button>
+                        <button type="button" onClick={() => openMemberThread(entry)} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">{t("community.message", "Message")}</button>
                         <button type="button" onClick={() => toggleMemberFollow(entry)} disabled={busy} className={`qa-action min-h-11 rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-60 ${entry.is_following ? "border-cyan-100/24 bg-cyan-100/[0.08] text-cyan-50" : "border-white/16 bg-white text-[#080b11] hover:bg-cyan-50"}`}>
-                          {busy ? "Saving..." : entry.is_following ? "Following" : "Follow"}
+                          {busy ? t("community.saving", "Saving...") : entry.is_following ? t("community.following", "Following") : t("community.follow", "Follow")}
                         </button>
                       </div>
                     </div>
@@ -2142,14 +2144,14 @@ export default function CommunityPage() {
 
               {!memberSearchLoading && displayedMemberRows.length === 0 ? (
                 <div className="py-12">
-                  <p className="text-sm text-white/52">No people match these filters. Try another place or broaden your search.</p>
+                  <p className="text-sm text-white/52">{t("community.noPeopleMatch", "No people match these filters. Try another place or broaden your search.")}</p>
                 </div>
               ) : null}
             </div>
 
             <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
             <div className="flex items-center justify-between gap-3 border-t border-white/[0.08] px-5 py-4 sm:px-7">
-              <p className="text-[11px] text-white/36">Member visibility follows each person&apos;s profile settings.</p>
+              <p className="text-[11px] text-white/36">{t("community.memberVisibility", "Member visibility follows each person's profile settings.")}</p>
               {memberSearchHasMore ? (
                 <button
                   type="button"
@@ -2157,7 +2159,7 @@ export default function CommunityPage() {
                   disabled={memberSearchLoading}
                   className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white disabled:opacity-60"
                 >
-                  {memberSearchLoading ? "Loading..." : "Load more"}
+                  {memberSearchLoading ? t("community.loading", "Loading...") : t("community.loadMore", "Load more")}
                 </button>
               ) : null}
             </div>
@@ -2168,16 +2170,16 @@ export default function CommunityPage() {
         <section aria-labelledby="community-feed-heading-premium" className="qa-premium-card rounded-[30px] border border-violet-300/16 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.13),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(180deg,rgba(20,16,34,0.95),rgba(10,10,10,1))] p-5 shadow-[0_34px_110px_rgba(139,92,246,0.12),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3 sm:items-center">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-violet-200/80">Community Library</p>
-              <h2 id="community-feed-heading-premium" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Stories and guides</h2>
-              <p className="mt-1 text-xs text-violet-100/70">Personal experience on the left, practical city knowledge on the right.</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-violet-200/80">{t("community.library", "Community Library")}</p>
+              <h2 id="community-feed-heading-premium" className="mt-2 text-xl font-semibold text-white sm:text-2xl">{t("community.storiesGuides", "Stories and guides")}</h2>
+              <p className="mt-1 text-xs text-violet-100/70">{t("community.libraryIntro", "Personal experience on the left, practical city knowledge on the right.")}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
-                {showStoryForm ? "Close story form" : "Write story"}
+                {showStoryForm ? t("community.closeStoryForm", "Close story form") : t("community.writeStory", "Write story")}
               </button>
               <button type="button" onClick={() => setShowGuideForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-violet-300/34 bg-violet-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-violet-100 transition hover:border-violet-200/62">
-                {showGuideForm ? "Close guide form" : "New guide"}
+                {showGuideForm ? t("community.closeGuideForm", "Close guide form") : t("community.newGuide", "New guide")}
               </button>
             </div>
           </div>
@@ -2186,25 +2188,25 @@ export default function CommunityPage() {
             <div className="rounded-[28px] border border-rose-300/18 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.16),transparent_34%),linear-gradient(180deg,rgba(34,17,28,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(244,63,94,0.10)] sm:p-5">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-rose-100/70">Member Stories</p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Lived experience</h3>
-                  <p className="mt-2 text-xs leading-5 text-white/56">Personal moments, local feeling, and what it was actually like.</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-rose-100/70">{t("community.memberStories", "Member Stories")}</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{t("community.livedExperience", "Lived experience")}</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/56">{t("community.storiesIntro", "Personal moments, local feeling, and what it was actually like.")}</p>
                 </div>
                 <span className="rounded-full border border-rose-200/24 bg-rose-200/12 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100">
-                  {sortedStories.length} stories
+                  {t("community.storiesCount", "{count} stories").replace("{count}", sortedStories.length)}
                 </span>
               </div>
 
               {showStoryForm && (
                 <form id="community-story-form-feed-premium" onSubmit={publishStory} className="mb-4 space-y-3 rounded-2xl border border-rose-400/20 bg-rose-300/6 p-4">
-                  <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Story title" />
+                  <Field value={storyForm.title} onChange={(event) => setStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder={t("community.storyTitle", "Story title")} />
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or venue (optional)" />
-                    <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder="Category" />
+                    <Field value={storyForm.city} onChange={(event) => setStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder={t("community.cityVenueOptional", "City or venue (optional)")} />
+                    <Field value={storyForm.category} onChange={(event) => setStoryForm((current) => ({ ...current, category: event.target.value }))} placeholder={t("community.category", "Category")} />
                     </div>
-                  <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
-                  <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder="Write your experience" area />
-                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
+                  <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder={t("community.shortExcerpt", "Short excerpt")} area />
+                  <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder={t("community.writeExperience", "Write your experience")} area />
+                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">{t("community.publishStory", "Publish story")}</button>
                 </form>
               )}
 
@@ -2230,7 +2232,7 @@ export default function CommunityPage() {
                 ))}
                 {sortedStories.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-rose-200/18 px-4 py-8 text-sm text-white/62">
-                    No stories yet. Be the first to share a local moment.
+                    {t("community.noStories", "No stories yet. Be the first to share a local moment.")}
                   </div>
                 )}
               </div>
@@ -2239,25 +2241,25 @@ export default function CommunityPage() {
             <div className="rounded-[28px] border border-violet-300/18 bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.16),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(23,19,43,0.92),rgba(9,9,11,0.98))] p-4 shadow-[0_22px_64px_rgba(139,92,246,0.10)] sm:p-5">
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-violet-100/70">City Guides</p>
-                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Practical wisdom</h3>
-                  <p className="mt-2 text-xs leading-5 text-white/56">Useful routes, city notes, safety context, and member-made planning help.</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-violet-100/70">{t("community.cityGuides", "City Guides")}</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{t("community.practicalWisdom", "Practical wisdom")}</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/56">{t("community.guidesIntro", "Useful routes, city notes, safety context, and member-made planning help.")}</p>
                 </div>
                 <span className="rounded-full border border-violet-200/24 bg-violet-200/12 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-violet-100">
-                  {sortedGuides.length} guides
+                  {t("community.guidesCount", "{count} guides").replace("{count}", sortedGuides.length)}
                 </span>
               </div>
 
               {showGuideForm && (
                 <form id="community-guide-form-feed-premium" onSubmit={publishGuide} className="mb-4 space-y-3 rounded-2xl border border-violet-400/20 bg-violet-300/6 p-4">
-                  <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" />
+                  <Field value={guideForm.title} onChange={(event) => setGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder={t("community.guideTitle", "Guide title")} />
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Field value={guideForm.city} onChange={(event) => setGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or region" />
-                    <Field value={guideForm.focus} onChange={(event) => setGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder="Focus" />
+                    <Field value={guideForm.city} onChange={(event) => setGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder={t("community.cityRegion", "City or region")} />
+                    <Field value={guideForm.focus} onChange={(event) => setGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder={t("community.focus", "Focus")} />
                   </div>
-                  <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Short summary" area />
-                  <Field value={guideForm.content} onChange={(event) => setGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the guide" area />
-                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
+                  <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder={t("community.shortSummary", "Short summary")} area />
+                  <Field value={guideForm.content} onChange={(event) => setGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder={t("community.writeGuide", "Write the guide")} area />
+                  <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">{t("community.publishGuide", "Publish guide")}</button>
                 </form>
               )}
 
@@ -2266,9 +2268,9 @@ export default function CommunityPage() {
                   const isExpanded = expandedGuideIds.includes(guide.id);
                   return (
                     <article key={`guide-panel-${guide.id}`} className="qa-premium-card rounded-[24px] border border-violet-300/22 bg-[linear-gradient(180deg,rgba(23,19,42,0.78),rgba(11,11,11,0.96))] p-4">
-                      <span className="inline-flex rounded-full border border-violet-200/32 bg-violet-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-100">City Guide</span>
+                      <span className="inline-flex rounded-full border border-violet-200/32 bg-violet-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-violet-100">{t("community.cityGuide", "City Guide")}</span>
                       <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-violet-100/66">
-                        Practical guide | {guide.city}
+                        {t("community.practicalGuide", "Practical guide")} | {guide.city}
                         <span className="hidden sm:inline"> | {guide.focus}</span>
                       </p>
                       <h3 className="mt-3 text-base font-semibold text-white">{guide.title}</h3>
@@ -2277,8 +2279,8 @@ export default function CommunityPage() {
                       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                         <p className="text-xs text-white/62">{guide.author} | {timeAgo(guide.createdAt)}</p>
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read guide"}</button>
-                          <button type="button" onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
+                          <button type="button" onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? t("community.showLess", "Show less") : t("community.readGuide", "Read guide")}</button>
+                          <button type="button" onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{t("community.report", "Report")}</button>
                         </div>
                       </div>
                     </article>
@@ -2286,7 +2288,7 @@ export default function CommunityPage() {
                 })}
                 {sortedGuides.length === 0 && (
                   <div className="rounded-2xl border border-dashed border-violet-200/18 px-4 py-8 text-sm text-white/62">
-                    No guides yet. Add the first practical route or city note.
+                    {t("community.noGuides", "No guides yet. Add the first practical route or city note.")}
                   </div>
                 )}
               </div>
@@ -2299,9 +2301,9 @@ export default function CommunityPage() {
           <section aria-labelledby="community-jobs-heading" className="qa-community-section qa-community-section-jobs animate-rise-in [&_h2]:!text-left [&_h2]:[hyphens:none] [&_h3]:!text-left [&_h3]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none]">
             <div className="flex flex-col gap-5 border-b border-white/[0.10] pb-7 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-100/68">Community workboard</p>
-                <h2 id="community-jobs-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">Work that makes room for you.</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/54">Roles from queer venues, community organizations, events, creative teams, and employers reaching the Atlas network.</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-100/68">{t("community.workboard", "Community workboard")}</p>
+                <h2 id="community-jobs-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">{t("community.jobsTitle", "Work that makes room for you.")}</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/54">{t("community.jobsIntro", "Roles from queer venues, community organizations, events, creative teams, and employers reaching the Atlas network.")}</p>
               </div>
               <button
                 type="button"
@@ -2309,68 +2311,68 @@ export default function CommunityPage() {
                 className="qa-action inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-white/70 bg-white px-5 py-2.5 text-sm font-semibold text-[#080b11] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-100 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 <span aria-hidden="true">＋</span>
-                <span>{showJobForm ? "Close form" : "Post a job"}</span>
+                <span>{showJobForm ? t("community.closeForm", "Close form") : t("community.postJob", "Post a job")}</span>
               </button>
             </div>
 
             <div className="flex flex-wrap gap-x-5 gap-y-2 border-b border-white/[0.07] py-4 text-[11px] text-white/42">
-              <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-200" />Member submitted</span>
-              <span>Atlas reviewed before public</span>
-              <span>Applications leave Queer Atlas</span>
-              <span>Listings expire after 45 days</span>
+              <span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-200" />{t("community.memberSubmitted", "Member submitted")}</span>
+              <span>{t("community.atlasReviewed", "Atlas reviewed before public")}</span>
+              <span>{t("community.applicationsExternal", "Applications leave Queer Atlas")}</span>
+              <span>{t("community.listingExpiry", "Listings expire after 45 days")}</span>
             </div>
 
             {showJobForm ? (
               <form id="community-job-form" onSubmit={publishJob} className="mt-6 overflow-hidden rounded-[28px] border border-white/[0.11] bg-[radial-gradient(circle_at_92%_0%,rgba(110,231,183,0.12),transparent_28%),linear-gradient(150deg,rgba(14,24,24,0.98),rgba(8,10,13,0.99))] p-5 shadow-[0_26px_80px_rgba(0,0,0,0.28)] sm:p-7">
                 <div className="flex flex-col gap-3 border-b border-white/[0.08] pb-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-100/62">Post an opportunity</p>
-                    <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-white">Clear work, clear expectations.</h3>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-100/62">{t("community.postOpportunity", "Post an opportunity")}</p>
+                    <h3 className="mt-2 text-2xl font-semibold tracking-[-0.035em] text-white">{t("community.jobFormTitle", "Clear work, clear expectations.")}</h3>
                   </div>
-                  <p className="max-w-sm text-xs leading-5 text-white/42">Members submit for review. Admin listings publish directly.</p>
+                  <p className="max-w-sm text-xs leading-5 text-white/42">{t("community.jobFormIntro", "Members submit for review. Admin listings publish directly.")}</p>
                 </div>
 
                 <div className="mt-6 grid gap-5 lg:grid-cols-2">
                   <div className="space-y-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">Role and organization</p>
-                    <Field value={jobForm.title} onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))} placeholder="Job title" />
-                    <Field value={jobForm.organizationName} onChange={(event) => setJobForm((current) => ({ ...current, organizationName: event.target.value }))} placeholder="Organization / employer" />
-                    <Field value={jobForm.organizationUrl} onChange={(event) => setJobForm((current) => ({ ...current, organizationUrl: event.target.value }))} placeholder="Organization website (optional)" />
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">{t("community.roleOrganization", "Role and organization")}</p>
+                    <Field value={jobForm.title} onChange={(event) => setJobForm((current) => ({ ...current, title: event.target.value }))} placeholder={t("community.jobTitle", "Job title")} />
+                    <Field value={jobForm.organizationName} onChange={(event) => setJobForm((current) => ({ ...current, organizationName: event.target.value }))} placeholder={t("community.organizationEmployer", "Organization / employer")} />
+                    <Field value={jobForm.organizationUrl} onChange={(event) => setJobForm((current) => ({ ...current, organizationUrl: event.target.value }))} placeholder={t("community.organizationWebsite", "Organization website (optional)")} />
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <Field value={jobForm.city} onChange={(event) => setJobForm((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
-                      <Field value={jobForm.country} onChange={(event) => setJobForm((current) => ({ ...current, country: event.target.value }))} placeholder="Country" />
+                      <Field value={jobForm.city} onChange={(event) => setJobForm((current) => ({ ...current, city: event.target.value }))} placeholder={t("community.city", "City")} />
+                      <Field value={jobForm.country} onChange={(event) => setJobForm((current) => ({ ...current, country: event.target.value }))} placeholder={t("community.country", "Country")} />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <select aria-label="Work mode" value={jobForm.locationMode} onChange={(event) => setJobForm((current) => ({ ...current, locationMode: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
+                      <select aria-label={t("community.workMode", "Work mode")} value={jobForm.locationMode} onChange={(event) => setJobForm((current) => ({ ...current, locationMode: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
                         {JOB_LOCATION_MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
                       </select>
-                      <select aria-label="Employment type" value={jobForm.employmentType} onChange={(event) => setJobForm((current) => ({ ...current, employmentType: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
+                      <select aria-label={t("community.employmentType", "Employment type")} value={jobForm.employmentType} onChange={(event) => setJobForm((current) => ({ ...current, employmentType: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
                         {JOB_EMPLOYMENT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
                       </select>
                     </div>
-                    <select aria-label="Job category" value={jobForm.category} onChange={(event) => setJobForm((current) => ({ ...current, category: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
+                    <select aria-label={t("community.jobCategory", "Job category")} value={jobForm.category} onChange={(event) => setJobForm((current) => ({ ...current, category: event.target.value }))} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#10171a] px-4 text-sm text-white outline-none transition focus:border-emerald-200/50 [&_option]:bg-[#10171a]">
                       {JOB_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                     </select>
                     <div>
-                      <p className="mb-2 text-[11px] text-emerald-100/62">Pay range / compensation — strongly recommended</p>
+                      <p className="mb-2 text-[11px] text-emerald-100/62">{t("community.payRange", "Pay range / compensation — strongly recommended")}</p>
                       <Field value={jobForm.compensation} onChange={(event) => setJobForm((current) => ({ ...current, compensation: event.target.value }))} placeholder="Example: €32–38/hour or €48k–55k/year" />
                     </div>
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">Role details and application</p>
-                    <Field value={jobForm.description} onChange={(event) => setJobForm((current) => ({ ...current, description: event.target.value }))} placeholder="Describe the role, workplace, and what makes the opportunity relevant to this community" area />
-                    <Field value={jobForm.requirements} onChange={(event) => setJobForm((current) => ({ ...current, requirements: event.target.value }))} placeholder="Essential requirements, schedule, language, or accessibility notes" area />
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">{t("community.roleDetails", "Role details and application")}</p>
+                    <Field value={jobForm.description} onChange={(event) => setJobForm((current) => ({ ...current, description: event.target.value }))} placeholder={t("community.describeRole", "Describe the role, workplace, and what makes the opportunity relevant to this community")} area />
+                    <Field value={jobForm.requirements} onChange={(event) => setJobForm((current) => ({ ...current, requirements: event.target.value }))} placeholder={t("community.requirementsPrompt", "Essential requirements, schedule, language, or accessibility notes")} area />
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <Field value={jobForm.applyUrl} onChange={(event) => setJobForm((current) => ({ ...current, applyUrl: event.target.value }))} placeholder="Official apply URL" />
-                      <Field value={jobForm.applyEmail} onChange={(event) => setJobForm((current) => ({ ...current, applyEmail: event.target.value }))} placeholder="Apply email" />
+                      <Field value={jobForm.applyUrl} onChange={(event) => setJobForm((current) => ({ ...current, applyUrl: event.target.value }))} placeholder={t("community.applyUrl", "Official apply URL")} />
+                      <Field value={jobForm.applyEmail} onChange={(event) => setJobForm((current) => ({ ...current, applyEmail: event.target.value }))} placeholder={t("community.applyEmail", "Apply email")} />
                     </div>
                     <div className="border-l border-amber-200/24 pl-4">
-                      <p className="text-xs leading-5 text-amber-50/62">No upfront fees, crypto deposits, identity documents before a legitimate hiring stage, or chat-only recruitment.</p>
+                      <p className="text-xs leading-5 text-amber-50/62">{t("community.jobSafety", "No upfront fees, crypto deposits, identity documents before a legitimate hiring stage, or chat-only recruitment.")}</p>
                     </div>
                     <div className="flex justify-end pt-1">
                       <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-100">
-                        {isAdmin ? "Publish job" : "Submit for review"}
+                        {isAdmin ? t("community.publishJob", "Publish job") : t("community.submitReview", "Submit for review")}
                       </button>
                     </div>
                   </div>
@@ -2382,8 +2384,8 @@ export default function CommunityPage() {
               <div className="mt-6 border-y border-amber-100/[0.15] py-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/68">Pending review</p>
-                    <p className="mt-1 text-sm text-white/52">{isAdmin ? "Listings waiting in the admin queue." : "Your submissions waiting for review."}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/68">{t("community.pendingReview", "Pending review")}</p>
+                    <p className="mt-1 text-sm text-white/52">{isAdmin ? t("community.adminQueue", "Listings waiting in the admin queue.") : t("community.submissionsWaiting", "Your submissions waiting for review.")}</p>
                   </div>
                   <span className="text-xs text-amber-100/56">{reviewJobs.length} pending</span>
                 </div>
@@ -2396,8 +2398,8 @@ export default function CommunityPage() {
                       </div>
                       {isAdmin ? (
                         <div className="flex gap-2">
-                          <button type="button" onClick={() => updateJobStatus(job, "published")} className="qa-action min-h-10 rounded-full border border-emerald-200/28 px-4 text-xs font-semibold text-emerald-100">Publish</button>
-                          <button type="button" onClick={() => updateJobStatus(job, "rejected")} className="qa-action min-h-10 rounded-full border border-rose-200/24 px-4 text-xs font-semibold text-rose-100">Reject</button>
+                          <button type="button" onClick={() => updateJobStatus(job, "published")} className="qa-action min-h-10 rounded-full border border-emerald-200/28 px-4 text-xs font-semibold text-emerald-100">{t("community.publish", "Publish")}</button>
+                          <button type="button" onClick={() => updateJobStatus(job, "rejected")} className="qa-action min-h-10 rounded-full border border-rose-200/24 px-4 text-xs font-semibold text-rose-100">{t("community.reject", "Reject")}</button>
                         </div>
                       ) : null}
                     </article>
@@ -2409,43 +2411,43 @@ export default function CommunityPage() {
             <div className="mt-7 rounded-[24px] border border-white/[0.10] bg-white/[0.025] p-3 sm:p-4">
               <div className="grid gap-2.5 lg:grid-cols-[minmax(14rem,1.35fr)_repeat(3,minmax(10rem,0.72fr))]">
                 <label className="relative">
-                  <span className="sr-only">Search jobs</span>
+                  <span className="sr-only">{t("community.searchJobs", "Search jobs")}</span>
                   <span aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/30">⌕</span>
                   <input
                     type="search"
                     value={jobSearchTerm}
                     onChange={(event) => { setJobSearchTerm(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }}
-                    placeholder="Role, organization, or keyword"
+                    placeholder={t("community.searchJobsPlaceholder", "Role, organization, or keyword")}
                     className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-black/20 pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-emerald-100/42"
                   />
                 </label>
                 <select aria-label="Filter jobs by city" value={jobCityFilter} onChange={(event) => { setJobCityFilter(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-[#101317] px-4 text-sm text-white/76 outline-none focus:border-emerald-100/42 [&_option]:bg-[#101317]">
-                  <option value="">All cities</option>
+                  <option value="">{t("community.allCities", "All cities")}</option>
                   {jobCities.map((city) => <option key={city} value={city}>{formatCityLabel(city)}</option>)}
                 </select>
                 <select aria-label="Filter jobs by work mode" value={jobModeFilter} onChange={(event) => { setJobModeFilter(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-[#101317] px-4 text-sm text-white/76 outline-none focus:border-emerald-100/42 [&_option]:bg-[#101317]">
-                  <option value="all">All work modes</option>
+                  <option value="all">{t("community.allWorkModes", "All work modes")}</option>
                   {JOB_LOCATION_MODES.map((mode) => <option key={mode} value={mode}>{mode}</option>)}
                 </select>
                 <select aria-label="Filter jobs by category" value={jobCategoryFilter} onChange={(event) => { setJobCategoryFilter(event.target.value); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="min-h-12 w-full rounded-xl border border-white/[0.10] bg-[#101317] px-4 text-sm text-white/76 outline-none focus:border-emerald-100/42 [&_option]:bg-[#101317]">
-                  <option value="all">All categories</option>
+                  <option value="all">{t("community.allCategories", "All categories")}</option>
                   {JOB_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                 </select>
               </div>
               {hasActiveJobFilters ? (
                 <div className="mt-3 flex items-center justify-between gap-4 border-t border-white/[0.07] px-1 pt-3">
-                  <p className="text-[11px] text-white/38">Showing a filtered view</p>
-                  <button type="button" onClick={() => { setJobSearchTerm(""); setJobCityFilter(""); setJobModeFilter("all"); setJobCategoryFilter("all"); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="qa-action min-h-9 text-xs font-semibold text-emerald-100/68 transition hover:text-emerald-50">Clear filters</button>
+                  <p className="text-[11px] text-white/38">{t("community.filteredView", "Showing a filtered view")}</p>
+                  <button type="button" onClick={() => { setJobSearchTerm(""); setJobCityFilter(""); setJobModeFilter("all"); setJobCategoryFilter("all"); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="qa-action min-h-9 text-xs font-semibold text-emerald-100/68 transition hover:text-emerald-50">{t("community.clearFilters", "Clear filters")}</button>
                 </div>
               ) : null}
             </div>
 
             <div className="mt-7 flex items-end justify-between gap-4 border-b border-white/[0.10] pb-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">Open roles</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">{t("community.openRoles", "Open roles")}</p>
                 <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{filteredJobs.length} {filteredJobs.length === 1 ? "opportunity" : "opportunities"}</h3>
               </div>
-              <p className="text-xs text-white/34">Newest first</p>
+              <p className="text-xs text-white/34">{t("community.newestFirst", "Newest first")}</p>
             </div>
 
             <div className="divide-y divide-white/[0.09]">
@@ -2478,26 +2480,26 @@ export default function CommunityPage() {
                         <p itemProp="description" className={`mt-4 max-w-3xl text-sm leading-6 text-white/68 ${isExpanded ? "" : "line-clamp-2"}`}>{job.description}</p>
                         {isExpanded && job.requirements ? (
                           <div className="mt-4 border-l border-white/[0.12] pl-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/34">Requirements and access notes</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/34">{t("community.requirementsNotes", "Requirements and access notes")}</p>
                             <p className="mt-2 text-sm leading-7 text-white/64">{job.requirements}</p>
                           </div>
                         ) : null}
                         {isExpanded ? <p className="mt-4 text-[11px] leading-5 text-white/34">Posted by {job.author} · Expires {job.expiresAt ? new Date(job.expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "soon"}. Listing review checks the post, not the employer.</p> : null}
                       </div>
                       <div className="sm:col-start-2 lg:col-start-3 lg:row-start-1">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">Compensation</p>
-                        <p className={`mt-2 text-sm font-semibold leading-5 ${job.compensation ? "text-emerald-50/82" : "text-white/38"}`}>{job.compensation || "Pay not supplied"}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/30">{t("community.compensation", "Compensation")}</p>
+                        <p className={`mt-2 text-sm font-semibold leading-5 ${job.compensation ? "text-emerald-50/82" : "text-white/38"}`}>{job.compensation || t("community.payNotSupplied", "Pay not supplied")}</p>
                         <div className="mt-4 flex flex-wrap gap-2 lg:flex-col">
                           {applyHref ? (
-                            <a href={applyHref} target={applyHref.startsWith("mailto:") ? undefined : "_blank"} rel={applyHref.startsWith("mailto:") ? undefined : "noopener noreferrer"} className="qa-action inline-flex min-h-11 items-center justify-center rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11] transition hover:bg-emerald-50">Apply externally ↗</a>
-                          ) : <span className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-4 text-xs text-white/38">Application unavailable</span>}
-                          {(job.requirements || job.description) ? <button type="button" onClick={() => toggleJobExpanded(job.id)} className="qa-action min-h-10 rounded-full border border-white/[0.11] px-4 text-xs font-semibold text-white/56 transition hover:border-white/22 hover:text-white">{isExpanded ? "Show less" : "View details"}</button> : null}
+                            <a href={applyHref} target={applyHref.startsWith("mailto:") ? undefined : "_blank"} rel={applyHref.startsWith("mailto:") ? undefined : "noopener noreferrer"} className="qa-action inline-flex min-h-11 items-center justify-center rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11] transition hover:bg-emerald-50">{t("community.applyExternally", "Apply externally")} ↗</a>
+                          ) : <span className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-4 text-xs text-white/38">{t("community.applicationUnavailable", "Application unavailable")}</span>}
+                          {(job.requirements || job.description) ? <button type="button" onClick={() => toggleJobExpanded(job.id)} className="qa-action min-h-10 rounded-full border border-white/[0.11] px-4 text-xs font-semibold text-white/56 transition hover:border-white/22 hover:text-white">{isExpanded ? t("community.showLess", "Show less") : t("community.viewDetails", "View details")}</button> : null}
                         </div>
                       </div>
                     </div>
                     <div className="mt-4 flex justify-end gap-4 sm:ml-[4.25rem]">
-                      <button type="button" onClick={() => reportContent({ targetType: "community-job", targetId: job.id, title: job.title })} className="qa-action min-h-9 text-[11px] font-semibold text-white/30 transition hover:text-white/68">Report listing</button>
-                      {isAdmin ? <button type="button" onClick={() => updateJobStatus(job, "removed")} className="qa-action min-h-9 text-[11px] font-semibold text-rose-100/42 transition hover:text-rose-100">Remove</button> : null}
+                      <button type="button" onClick={() => reportContent({ targetType: "community-job", targetId: job.id, title: job.title })} className="qa-action min-h-9 text-[11px] font-semibold text-white/30 transition hover:text-white/68">{t("community.reportListing", "Report listing")}</button>
+                      {isAdmin ? <button type="button" onClick={() => updateJobStatus(job, "removed")} className="qa-action min-h-9 text-[11px] font-semibold text-rose-100/42 transition hover:text-rose-100">{t("community.remove", "Remove")}</button> : null}
                     </div>
                   </article>
                 );
@@ -2506,11 +2508,11 @@ export default function CommunityPage() {
 
             {filteredJobs.length === 0 ? (
               <div className="border-b border-dashed border-white/[0.13] py-12 text-center">
-                <p className="text-lg font-semibold tracking-[-0.02em] text-white/76">No matching roles yet.</p>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/42">Clear the filters or help the network by posting a legitimate opportunity.</p>
+                <p className="text-lg font-semibold tracking-[-0.02em] text-white/76">{t("community.noMatchingRoles", "No matching roles yet.")}</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/42">{t("community.noMatchingRolesHint", "Clear the filters or help the network by posting a legitimate opportunity.")}</p>
                 <div className="mt-5 flex flex-wrap justify-center gap-3">
-                  {hasActiveJobFilters ? <button type="button" onClick={() => { setJobSearchTerm(""); setJobCityFilter(""); setJobModeFilter("all"); setJobCategoryFilter("all"); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="qa-action min-h-11 rounded-full border border-white/14 px-5 text-xs font-semibold text-white/68">Clear filters</button> : null}
-                  <button type="button" onClick={() => setShowJobForm(true)} className="qa-action min-h-11 rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11]">Post a job</button>
+                  {hasActiveJobFilters ? <button type="button" onClick={() => { setJobSearchTerm(""); setJobCityFilter(""); setJobModeFilter("all"); setJobCategoryFilter("all"); setVisibleJobCount(JOB_VISIBLE_BATCH); }} className="qa-action min-h-11 rounded-full border border-white/14 px-5 text-xs font-semibold text-white/68">{t("community.clearFilters", "Clear filters")}</button> : null}
+                  <button type="button" onClick={() => setShowJobForm(true)} className="qa-action min-h-11 rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11]">{t("community.postJob", "Post a job")}</button>
                 </div>
               </div>
             ) : null}
@@ -2655,12 +2657,12 @@ export default function CommunityPage() {
               <>
                 <div className="flex flex-col gap-5 border-b border-white/[0.10] pb-7 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-100/64">Rooms</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-cyan-100/64">{t("community.rooms", "Rooms")}</p>
                     <h2 id="community-chat-heading" className="mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">
-                      Find the conversation that fits the moment.
+                      {t("community.roomsTitle", "Find the conversation that fits the moment.")}
                     </h2>
                     <p className="mt-3 max-w-xl text-sm leading-6 text-white/54">
-                      Drop into a city, make a plan around an event, or ask people who know the place.
+                      {t("community.roomsIntro", "Drop into a city, make a plan around an event, or ask people who know the place.")}
                     </p>
                   </div>
                   <button
@@ -2669,7 +2671,7 @@ export default function CommunityPage() {
                     className="qa-action inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-white/70 bg-white px-5 py-2.5 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                   >
                     <span aria-hidden="true">＋</span>
-                    <span>{showTopicForm ? "Close" : "Start a conversation"}</span>
+                    <span>{showTopicForm ? t("community.close", "Close") : t("community.startConversation", "Start a conversation")}</span>
                   </button>
                 </div>
 
@@ -2677,25 +2679,25 @@ export default function CommunityPage() {
                   <form id="community-topic-form" onSubmit={createTopic} className="mt-6 rounded-[26px] border border-white/[0.11] bg-white/[0.035] p-5 sm:p-6">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">New conversation</p>
-                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Give the room one clear purpose.</h3>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/42">{t("community.newConversation", "New conversation")}</p>
+                        <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{t("community.roomPurpose", "Give the room one clear purpose.")}</h3>
                       </div>
-                      <p className="text-xs text-white/38">City, event, or local question</p>
+                      <p className="text-xs text-white/38">{t("community.roomTypes", "City, event, or local question")}</p>
                     </div>
                     <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_0.62fr]">
-                      <Field value={topicForm.name} onChange={(event) => setTopicForm((current) => ({ ...current, name: event.target.value }))} placeholder="Room title" />
-                      <select value={topicForm.mood} onChange={(event) => setTopicForm((current) => ({ ...current, mood: event.target.value }))} aria-label="Room category" className="min-h-12 w-full rounded-xl border border-white/14 bg-[#11151e] px-4 text-sm text-white outline-none transition focus:border-cyan-200/45">
+                      <Field value={topicForm.name} onChange={(event) => setTopicForm((current) => ({ ...current, name: event.target.value }))} placeholder={t("community.roomTitle", "Room title")} />
+                      <select value={topicForm.mood} onChange={(event) => setTopicForm((current) => ({ ...current, mood: event.target.value }))} aria-label={t("community.roomCategory", "Room category")} className="min-h-12 w-full rounded-xl border border-white/14 bg-[#11151e] px-4 text-sm text-white outline-none transition focus:border-cyan-200/45">
                         {ROOM_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
                       </select>
                       <div className="lg:col-span-2">
-                        <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder="What should people discuss here?" area />
+                        <Field value={topicForm.description} onChange={(event) => setTopicForm((current) => ({ ...current, description: event.target.value }))} placeholder={t("community.roomPrompt", "What should people discuss here?")} area />
                       </div>
-                      <button type="submit" className="qa-action min-h-11 rounded-xl border border-white/70 bg-white px-5 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50 lg:col-start-2">Create room</button>
+                      <button type="submit" className="qa-action min-h-11 rounded-xl border border-white/70 bg-white px-5 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50 lg:col-start-2">{t("community.createRoom", "Create room")}</button>
                     </div>
                   </form>
                 ) : null}
 
-                <div className="mt-7 flex gap-2 overflow-x-auto pb-2" aria-label="Filter rooms">
+                <div className="mt-7 flex gap-2 overflow-x-auto pb-2" aria-label={t("community.filterRooms", "Filter rooms")}>
                   {ROOM_FILTERS.map((filter) => {
                     const active = roomFilter === filter.id;
                     const count = filter.id === "all" ? roomCards.length : roomCards.filter((room) => room.kind === filter.id).length;
@@ -2737,7 +2739,7 @@ export default function CommunityPage() {
                         </div>
                         <div className="flex items-center justify-between gap-4 border-t border-white/[0.09] pt-5">
                           <span className="text-xs text-white/42">{getRoomActivityLabel(featuredRoom.latestActivity)} · {featuredRoom.participants || 0} {featuredRoom.participants === 1 ? "voice" : "voices"}</span>
-                          <span className="inline-flex items-center gap-3 text-sm font-semibold text-white">Enter room <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></span>
+                          <span className="inline-flex items-center gap-3 text-sm font-semibold text-white">{t("community.enterRoom", "Enter room")} <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span></span>
                         </div>
                       </div>
                     </button>
@@ -2745,10 +2747,10 @@ export default function CommunityPage() {
                     <div>
                       <div className="flex items-end justify-between gap-4 border-b border-white/[0.10] pb-4">
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">Explore</p>
-                          <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">More rooms</h3>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">{t("community.explore", "Explore")}</p>
+                          <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{t("community.moreRooms", "More rooms")}</h3>
                         </div>
-                        <span className="text-xs text-white/34">{filteredRoomCards.length} found</span>
+                        <span className="text-xs text-white/34">{t("community.roomsFound", "{count} found").replace("{count}", filteredRoomCards.length)}</span>
                       </div>
                       <div className="divide-y divide-white/[0.09]">
                         {roomList.map((room) => (
@@ -2803,7 +2805,7 @@ export default function CommunityPage() {
                   onClick={() => setMobileRoomOpen(false)}
                   className="qa-action inline-flex min-h-11 items-center gap-2 rounded-full border border-white/[0.12] px-4 py-2 text-xs font-semibold text-white/60 transition hover:border-white/24 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100"
                 >
-                  <span aria-hidden="true">←</span> All rooms
+                  <span aria-hidden="true">←</span> {t("community.allRooms", "All rooms")}
                 </button>
 
                 <div className={`relative mt-5 overflow-hidden rounded-[30px] border border-white/[0.11] px-5 py-7 shadow-[0_30px_90px_rgba(0,0,0,0.28)] sm:px-8 sm:py-9 ${activeRoomMeta.wash}`}>
@@ -2818,9 +2820,9 @@ export default function CommunityPage() {
                       <p className="mt-4 max-w-2xl text-sm leading-6 text-white/58 sm:text-base">{activeTopic.description}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="inline-flex min-h-11 items-center rounded-full border border-white/[0.11] bg-black/15 px-4 text-xs text-white/52">{activeMessages.length} {activeMessages.length === 1 ? "message" : "messages"}</span>
+                      <span className="inline-flex min-h-11 items-center rounded-full border border-white/[0.11] bg-black/15 px-4 text-xs text-white/52">{t("community.messagesCount", "{count} messages").replace("{count}", activeMessages.length)}</span>
                       {canDeleteTopic(activeTopic) ? (
-                        <button type="button" onClick={() => deleteTopic(activeTopic)} className="qa-action min-h-11 rounded-full border border-rose-200/15 px-4 text-xs font-semibold text-rose-100/60 transition hover:border-rose-200/30 hover:text-rose-100">Delete room</button>
+                        <button type="button" onClick={() => deleteTopic(activeTopic)} className="qa-action min-h-11 rounded-full border border-rose-200/15 px-4 text-xs font-semibold text-rose-100/60 transition hover:border-rose-200/30 hover:text-rose-100">{t("community.deleteRoom", "Delete room")}</button>
                       ) : null}
                     </div>
                   </div>
@@ -2837,8 +2839,8 @@ export default function CommunityPage() {
                   <div ref={chatMessagesRef} className="min-h-[20rem] space-y-4 py-7">
                     {activeMessages.length === 0 ? (
                       <div className="py-12 text-center">
-                        <p className="text-base font-semibold text-white/70">The room is quiet.</p>
-                        <p className="mt-2 text-sm text-white/42">Start with one useful question or plan.</p>
+                        <p className="text-base font-semibold text-white/70">{t("community.roomQuiet", "The room is quiet.")}</p>
+                        <p className="mt-2 text-sm text-white/42">{t("community.roomQuietIntro", "Start with one useful question or plan.")}</p>
                       </div>
                     ) : null}
                     {activeMessages.map((message, messageIndex) => {
@@ -2859,11 +2861,11 @@ export default function CommunityPage() {
                             {!isMine ? <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.055] text-xs font-semibold text-white/68 shadow-[0_8px_22px_rgba(0,0,0,0.2)]">{message.author.slice(0, 1).toUpperCase()}</div> : null}
                             <div className={`max-w-[88%] rounded-[22px] border px-4 py-3.5 sm:max-w-[76%] ${isMine ? "border-cyan-100/20 bg-[linear-gradient(145deg,rgba(103,232,249,0.12),rgba(103,232,249,0.055))]" : "border-white/[0.09] bg-white/[0.035]"}`}>
                               <div className="flex flex-wrap items-center justify-between gap-4">
-                                <p className="text-[11px] font-semibold text-white/68"><span className="inline-flex items-center gap-1.5">{rankMeta?.icon ? <span className={rankMeta.iconClass} title={rankMeta.label}>{rankMeta.icon}</span> : null}<span>{isMine ? "You" : message.author}</span></span></p>
+                                <p className="text-[11px] font-semibold text-white/68"><span className="inline-flex items-center gap-1.5">{rankMeta?.icon ? <span className={rankMeta.iconClass} title={rankMeta.label}>{rankMeta.icon}</span> : null}<span>{isMine ? t("community.you", "You") : message.author}</span></span></p>
                                 <span className="text-[10px] text-white/32">{timeAgo(message.createdAt)}</span>
                               </div>
                               <p className="mt-2 text-sm leading-6 text-white/78">{message.text}</p>
-                              <button type="button" onClick={() => reportContent({ targetType: "community-message", targetId: message.id, title: activeTopic.name || "Community message" })} className="mt-2 min-h-8 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/28 transition hover:text-white/68">Report</button>
+                              <button type="button" onClick={() => reportContent({ targetType: "community-message", targetId: message.id, title: activeTopic.name || t("community.message", "Community message") })} className="mt-2 min-h-8 text-[10px] font-semibold uppercase tracking-[0.1em] text-white/28 transition hover:text-white/68">{t("community.report", "Report")}</button>
                             </div>
                           </div>
                         </div>
@@ -2883,14 +2885,14 @@ export default function CommunityPage() {
                       ))}
                     </div>
                     <form onSubmit={sendMessage} className="grid gap-2.5 sm:grid-cols-[1fr_auto]">
-                      <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder={activeRoomKind === "event" ? "Add to the plan" : activeRoomKind === "ask" ? "Share local knowledge" : "Write a message"} />
-                      <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50">Send</button>
+                      <Field value={messageForm.text} onChange={(event) => setMessageForm({ text: event.target.value })} placeholder={activeRoomKind === "event" ? t("community.addPlan", "Add to the plan") : activeRoomKind === "ask" ? t("community.shareLocalKnowledge", "Share local knowledge") : t("community.writeMessage", "Write a message")} />
+                      <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-cyan-50">{t("community.send", "Send")}</button>
                     </form>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="py-16 text-center"><p className="text-sm text-white/48">This room is no longer available.</p></div>
+              <div className="py-16 text-center"><p className="text-sm text-white/48">{t("community.roomUnavailable", "This room is no longer available.")}</p></div>
             )}
           </section>
         ) : null}
@@ -2899,9 +2901,9 @@ export default function CommunityPage() {
           <section aria-labelledby="community-ideas-heading" className="qa-community-section qa-community-section-build animate-rise-in [&_h2]:!text-left [&_h2]:[hyphens:none] [&_h3]:!text-left [&_h3]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none]">
             <div className="flex flex-col gap-5 border-b border-white/[0.10] pb-7 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-fuchsia-100/68">Build with us</p>
-                <h2 id="community-ideas-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">Help shape the next Queer Atlas.</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/54">Share one clear improvement, support the ideas that matter, and give the team a stronger signal about what members need.</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-fuchsia-100/68">{t("community.buildWithUs", "Build with us")}</p>
+                <h2 id="community-ideas-heading" className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.045em] text-white sm:text-4xl">{t("community.ideasTitle", "Help shape the next Queer Atlas.")}</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-white/54">{t("community.ideasIntro", "Share one clear improvement, support the ideas that matter, and give the team a stronger signal about what members need.")}</p>
               </div>
               <button
                 type="button"
@@ -2911,7 +2913,7 @@ export default function CommunityPage() {
                 className="qa-action inline-flex min-h-11 w-fit items-center gap-2 rounded-full border border-white/70 bg-white px-5 py-2.5 text-sm font-semibold text-[#080b11] transition hover:bg-fuchsia-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 <span aria-hidden="true">＋</span>
-                <span>{showIdeaForm ? "Close form" : "Suggest an idea"}</span>
+                <span>{showIdeaForm ? t("community.closeForm", "Close form") : t("community.suggestIdea", "Suggest an idea")}</span>
               </button>
             </div>
 
@@ -2935,7 +2937,7 @@ export default function CommunityPage() {
               <form id="community-idea-form" onSubmit={publishIdea} className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.11] bg-[radial-gradient(circle_at_92%_0%,rgba(232,121,249,0.10),transparent_30%),linear-gradient(150deg,rgba(22,16,27,0.98),rgba(8,10,13,0.99))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.26)] sm:p-6">
                 <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(12rem,0.34fr)_minmax(0,1fr)_auto] lg:items-end">
                   <label>
-                    <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Area</span>
+                    <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">{t("community.area", "Area")}</span>
                     <select
                       value={ideaForm.category}
                       onChange={(event) => setIdeaForm((current) => ({ ...current, category: event.target.value }))}
@@ -2945,32 +2947,32 @@ export default function CommunityPage() {
                     </select>
                   </label>
                   <label>
-                    <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Your idea</span>
-                    <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What problem should Queer Atlas solve, and who would it help?" />
+                    <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">{t("community.yourIdea", "Your idea")}</span>
+                    <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder={t("community.ideaPrompt", "What problem should Queer Atlas solve, and who would it help?")} />
                   </label>
-                  <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-fuchsia-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100">Share idea</button>
+                  <button type="submit" className="qa-action min-h-12 rounded-xl border border-white/70 bg-white px-6 py-3 text-sm font-semibold text-[#080b11] transition hover:bg-fuchsia-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100">{t("community.shareIdea", "Share idea")}</button>
                 </div>
-                <p className="mt-3 text-[11px] leading-5 text-white/34">Avoid personal or sensitive information. Related ideas may be combined during review.</p>
+                <p className="mt-3 text-[11px] leading-5 text-white/34">{t("community.ideaPrivacy", "Avoid personal or sensitive information. Related ideas may be combined during review.")}</p>
               </form>
             ) : null}
 
             <div className="mt-7 flex flex-col gap-4 border-b border-white/[0.10] pb-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">Member ideas</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{filteredIdeas.length} {filteredIdeas.length === 1 ? "idea" : "ideas"}</h3>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">{t("community.memberIdeas", "Member ideas")}</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{t("community.ideasCount", "{count} ideas").replace("{count}", filteredIdeas.length)}</h3>
               </div>
               <div className="flex flex-col gap-2 sm:items-end">
-                <div className="flex flex-wrap gap-x-4 gap-y-1" aria-label="Filter ideas by category">
+                <div className="flex flex-wrap gap-x-4 gap-y-1" aria-label={t("community.filterIdeas", "Filter ideas by category")}>
                   {["all", ...IDEA_CATEGORIES].map((category) => (
                     <button key={category} type="button" aria-pressed={ideaCategoryFilter === category} onClick={() => { setIdeaCategoryFilter(category); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-9 text-[11px] font-semibold transition ${ideaCategoryFilter === category ? "text-fuchsia-100" : "text-white/38 hover:text-white/70"}`}>
-                      {category === "all" ? "All" : category}
+                      {category === "all" ? t("community.all", "All") : category}
                     </button>
                   ))}
                 </div>
                 <div className="flex items-center gap-3 text-[11px]">
-                  <span className="text-white/30">Sort</span>
-                  <button type="button" aria-pressed={ideaSort === "top"} onClick={() => { setIdeaSort("top"); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-8 font-semibold ${ideaSort === "top" ? "text-white" : "text-white/36 hover:text-white/68"}`}>Most supported</button>
-                  <button type="button" aria-pressed={ideaSort === "newest"} onClick={() => { setIdeaSort("newest"); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-8 font-semibold ${ideaSort === "newest" ? "text-white" : "text-white/36 hover:text-white/68"}`}>Newest</button>
+                  <span className="text-white/30">{t("community.sort", "Sort")}</span>
+                  <button type="button" aria-pressed={ideaSort === "top"} onClick={() => { setIdeaSort("top"); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-8 font-semibold ${ideaSort === "top" ? "text-white" : "text-white/36 hover:text-white/68"}`}>{t("community.mostSupported", "Most supported")}</button>
+                  <button type="button" aria-pressed={ideaSort === "newest"} onClick={() => { setIdeaSort("newest"); setVisibleIdeaCount(IDEA_VISIBLE_BATCH); }} className={`qa-action min-h-8 font-semibold ${ideaSort === "newest" ? "text-white" : "text-white/36 hover:text-white/68"}`}>{t("community.newest", "Newest")}</button>
                 </div>
               </div>
             </div>

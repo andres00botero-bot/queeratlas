@@ -9,6 +9,7 @@ import { polishVenueDescription } from "@/features/city/liveVibeFeature";
 import { getSafetyToneClass } from "@/lib/placeSafetySignals";
 import { getDisplayedSafetyShields, getSafetyIconToneClass } from "@/features/city/placeSafetyUi";
 import { buildVenuePath } from "@/lib/seo/entitySlug";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function PlaceGuideCard({
   place,
@@ -30,6 +31,7 @@ export default function PlaceGuideCard({
   cityName,
   safetySignal,
 }) {
+  const { t } = useLocale();
   const style = typeStyles[place.type] || typeStyles.bar;
   const isSelected = String(selectedPlaceId) === String(place.id);
   const isHovered = String(hoveredPlaceId) === String(place.id);
@@ -50,7 +52,7 @@ export default function PlaceGuideCard({
       role="button"
       tabIndex={0}
       aria-pressed={isSelected}
-      aria-label={`Open place details for ${place.name}`}
+      aria-label={t("city.openPlaceDetails", "Open place details for {place}").replace("{place}", place.name)}
       onMouseEnter={() => setHoveredPlaceId(String(place.id))}
       onMouseLeave={() => setHoveredPlaceId(null)}
       onKeyDown={(keyEvent) => {
@@ -78,11 +80,11 @@ export default function PlaceGuideCard({
           <h3 className="text-lg font-semibold leading-tight tracking-[-0.015em] text-white">{place.name}</h3>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className={`rounded-full border border-white/14 bg-white/[0.055] px-3 py-1 text-[11px] uppercase tracking-[0.15em] ${style.label}`}>
-              {typeLabels[place.type] || "Place"}
+              {typeLabels[place.type] || t("city.place", "Place")}
             </span>
             {isSelected && (
               <span className="rounded-full border border-cyan-200/35 bg-cyan-200/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100">
-                Selected
+                {t("city.selected", "Selected")}
               </span>
             )}
             <VibeTagChips entity={place} tone="cyan" className="" includeTypeFallback includeMixedFallback />
@@ -99,16 +101,16 @@ export default function PlaceGuideCard({
             className="qa-action qa-action-strong inline-flex items-center gap-2 rounded-full border border-fuchsia-100/48 bg-[linear-gradient(135deg,rgba(244,114,182,0.30),rgba(139,92,246,0.22),rgba(34,211,238,0.16))] px-5 py-2.5 text-[12px] font-bold uppercase tracking-[0.15em] text-white shadow-[0_14px_34px_rgba(244,114,182,0.20)] transition hover:border-fuchsia-100/70 hover:shadow-[0_18px_42px_rgba(244,114,182,0.28)]"
           >
             <MousePointerClick className="h-3.5 w-3.5" aria-hidden="true" />
-            Open
+            {t("city.open", "Open")}
           </button>
 
           <span className={`rounded-full border border-white/14 bg-black/45 px-3 py-1 text-xs font-semibold ${style.label}`}>
-            Rating {place.avgRating?.toFixed(1) || "-"}
+            {t("city.rating", "Rating {rating}").replace("{rating}", place.avgRating?.toFixed(1) || "-")}
           </span>
           {safetySignal && Number(safetySignal.safetyReviewCount || 0) > 0 && (
             <span
               className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${getSafetyToneClass(safetySignal.tone)}`}
-              aria-label={`Safety ${getDisplayedSafetyShields(safetySignal)} out of 5`}
+              aria-label={t("city.safetyOutOfFive", "Safety {score} out of 5").replace("{score}", getDisplayedSafetyShields(safetySignal))}
             >
               <Shield
                 className={`h-3.5 w-3.5 ${getSafetyIconToneClass(safetySignal.tone)}`}
@@ -132,15 +134,15 @@ export default function PlaceGuideCard({
 
       <div className="mb-4 grid grid-cols-1 gap-2.5">
         <div className="rounded-2xl border border-cyan-100/20 bg-cyan-300/[0.08] p-3">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-50/70">Opening hours</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-cyan-50/70">{t("city.openingHoursLabel", "Opening hours")}</p>
           <p className="mt-1 text-xs leading-6 text-white/84">
-            {String(place.hours || "").trim() || "Hours vary by night. Check official channels before going."}
+            {String(place.hours || "").trim() || t("city.hoursVary", "Hours vary by night. Check official channels before going.")}
           </p>
         </div>
         <div className="flex items-start gap-2.5 rounded-2xl border border-fuchsia-100/18 bg-fuchsia-300/[0.07] px-3 py-2.5">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-100" aria-hidden="true" />
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-50/68">Location</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-50/68">{t("city.location", "Location")}</p>
             <p className="mt-0.5 line-clamp-1 text-xs leading-5 text-white/82">
             {String(place.location || "").trim() || cityName}
             </p>
@@ -157,7 +159,7 @@ export default function PlaceGuideCard({
             className="qa-action qa-action-strong inline-flex items-center gap-2 rounded-full border border-cyan-100/42 bg-[linear-gradient(135deg,rgba(34,211,238,0.24),rgba(244,114,182,0.16),rgba(255,255,255,0.09))] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_12px_30px_rgba(34,211,238,0.14)] transition hover:border-cyan-100/64 hover:shadow-[0_16px_38px_rgba(34,211,238,0.20)]"
           >
             <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            Official link
+            {t("city.officialLink", "Official link")}
           </a>
         </div>
       )}
@@ -173,10 +175,10 @@ export default function PlaceGuideCard({
               ? "border-pink-100/52 bg-[linear-gradient(135deg,rgba(244,114,182,0.26),rgba(168,85,247,0.18))] text-pink-50 shadow-[0_12px_30px_rgba(244,114,182,0.18)]"
               : "border-amber-100/36 bg-[linear-gradient(135deg,rgba(251,191,36,0.18),rgba(244,114,182,0.12))] text-amber-50 hover:border-amber-100/58 hover:bg-amber-200/[0.16]"
           }`}
-          aria-label={isFavorite ? `Remove ${place.name} from favorites` : `Save ${place.name} to favorites`}
+          aria-label={isFavorite ? t("city.removeFavorite", "Remove {place} from favorites").replace("{place}", place.name) : t("city.saveFavorite", "Save {place} to favorites").replace("{place}", place.name)}
           aria-pressed={isFavorite}
         >
-          {isFavorite ? "Saved" : "Save place"}
+          {isFavorite ? t("city.saved", "Saved") : t("city.savePlace", "Save place")}
         </button>
         <Link
           href={detailPath}
@@ -184,14 +186,14 @@ export default function PlaceGuideCard({
           className="qa-action inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[10px] uppercase tracking-[0.13em] text-white/54 transition hover:border-white/20 hover:text-white/78"
           aria-label={`Open dedicated venue page for ${place.name}`}
         >
-          Details
+          {t("city.details", "Details")}
           <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
         </Link>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
         <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-          {place.reviewCount || 0} reviews
+          {t("city.reviewsCount", "{count} reviews").replace("{count}", place.reviewCount || 0)}
         </span>
         <div className="flex items-center gap-2">
           {canRefreshQuality ? (

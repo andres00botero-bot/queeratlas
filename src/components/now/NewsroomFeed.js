@@ -5,15 +5,16 @@ import Image from "next/image";
 import { Bookmark, MapPin, Tags, X } from "lucide-react";
 import { formatDateShort } from "@/lib/dateDisplay";
 import useNewsPreferences from "@/features/news/useNewsPreferences";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const INITIAL_STORY_COUNT = 10;
 const STORY_BATCH_SIZE = 8;
 
-function storyMeta(item) {
+function storyMeta(item, t) {
   return {
-    city: item.city || "Global",
+    city: item.city || t("now.global", "Global"),
     date: formatDateShort(item.createdAt || item.date),
-    source: item.sourceName || "Queer Atlas desk",
+    source: item.sourceName || t("now.queerAtlasDesk", "Queer Atlas desk"),
   };
 }
 
@@ -40,16 +41,17 @@ function storyHeadingId(item, lane) {
   return `news-${lane}-${itemId}`;
 }
 
-function storyFollowReason(item, followedPreferences, categoryLabels) {
+function storyFollowReason(item, followedPreferences, categoryLabels, t) {
   const cityId = normalizeFollowTarget(item.city);
   const cityMatch = followedPreferences.find((preference) => preference.preferenceType === "city" && preference.targetId === cityId);
-  if (cityMatch) return cityMatch.metadata?.label || item.city || "Followed city";
+  if (cityMatch) return cityMatch.metadata?.label || item.city || t("now.followedCity", "Followed city");
   const topicMatch = followedPreferences.find((preference) => preference.preferenceType === "topic" && preference.targetId === String(item.category || ""));
-  if (topicMatch) return topicMatch.metadata?.label || categoryLabels[item.category] || "Followed topic";
+  if (topicMatch) return topicMatch.metadata?.label || categoryLabels[item.category] || t("now.followedTopic", "Followed topic");
   return "";
 }
 
 function StoryImage({ item, priority = false, sizes, className = "" }) {
+  const { t } = useLocale();
   if (!item.imageUrl) {
     return (
       <div
@@ -59,7 +61,7 @@ function StoryImage({ item, priority = false, sizes, className = "" }) {
         <div className="absolute inset-x-[12%] bottom-[18%] h-px bg-gradient-to-r from-transparent via-cyan-100/35 to-transparent" />
         <div className="absolute right-[18%] top-[24%] h-2 w-2 rounded-full bg-fuchsia-200/75 shadow-[0_0_24px_rgba(244,114,182,0.75)]" />
         <span className="absolute bottom-4 left-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/48 sm:bottom-5 sm:left-5">
-          Atlas signal · World desk
+          {t("now.atlasSignalWorldDesk", "Atlas signal · World desk")}
         </span>
       </div>
     );
@@ -69,7 +71,7 @@ function StoryImage({ item, priority = false, sizes, className = "" }) {
     <div className={`relative overflow-hidden ${className}`}>
       <Image
         src={item.imageUrl}
-        alt={item.imageAlt || item.title || "Queer Atlas editorial news image"}
+        alt={item.imageAlt || item.title || t("now.editorialNewsImage", "Queer Atlas editorial news image")}
         fill
         priority={priority}
         sizes={sizes}
@@ -86,6 +88,7 @@ function StoryImage({ item, priority = false, sizes, className = "" }) {
 }
 
 function AdminActions({ item, canEdit, onEdit, onDelete }) {
+  const { t } = useLocale();
   if (!onDelete) return null;
   return (
     <div className="flex items-center gap-2 pt-3">
@@ -95,7 +98,7 @@ function AdminActions({ item, canEdit, onEdit, onDelete }) {
           onClick={() => onEdit(item)}
           className="inline-flex min-h-8 items-center rounded-full border border-cyan-200/20 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"
         >
-          Edit
+          {t("now.edit", "Edit")}
         </button>
       ) : null}
       <button
@@ -103,25 +106,26 @@ function AdminActions({ item, canEdit, onEdit, onDelete }) {
         onClick={() => onDelete(item.id)}
         className="inline-flex min-h-8 items-center rounded-full border border-rose-200/20 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/60"
       >
-        Delete
+        {t("now.delete", "Delete")}
       </button>
     </div>
   );
 }
 
 function SaveStoryButton({ item, saved, onToggle, compact = false }) {
+  const { t } = useLocale();
   return (
     <button
       type="button"
       aria-pressed={saved}
-      aria-label={`${saved ? "Remove saved story" : "Save story"}: ${item.title}`}
+      aria-label={`${saved ? t("now.removeSavedStory", "Remove saved story") : t("now.saveStory", "Save story")}: ${item.title}`}
       onClick={() => onToggle(item)}
       className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${
         compact ? "h-8 w-8" : "min-h-9 px-3 text-[10px] font-semibold"
       } ${saved ? "border-cyan-100/45 bg-cyan-100/14 text-cyan-50" : "border-white/12 bg-white/[0.035] text-white/48 hover:border-white/26 hover:text-white/78"}`}
     >
       <Bookmark size={13} aria-hidden="true" fill={saved ? "currentColor" : "none"} />
-      {!compact ? (saved ? "Saved" : "Save") : null}
+      {!compact ? (saved ? t("now.saved", "Saved") : t("now.save", "Save")) : null}
     </button>
   );
 }
@@ -139,6 +143,7 @@ export default function NewsroomFeed({
   onEdit,
   onDelete,
 }) {
+  const { t } = useLocale();
   const [visibleCount, setVisibleCount] = useState(INITIAL_STORY_COUNT);
   const [feedAnnouncement, setFeedAnnouncement] = useState("");
   const { preferences, loading: preferencesLoading, isMember, hasPreference, requestSignIn, togglePreference } = useNewsPreferences();
@@ -148,8 +153,8 @@ export default function NewsroomFeed({
   );
   const feedItems = useMemo(() => {
     if (feedMode !== "following") return items;
-    return allItems.filter((item) => storyFollowReason(item, followedPreferences, categoryLabels));
-  }, [allItems, categoryLabels, feedMode, followedPreferences, items]);
+    return allItems.filter((item) => storyFollowReason(item, followedPreferences, categoryLabels, t));
+  }, [allItems, categoryLabels, feedMode, followedPreferences, items, t]);
   const visibleItems = useMemo(() => feedItems.slice(0, visibleCount), [feedItems, visibleCount]);
   const lead = visibleItems[0] || null;
   const latest = visibleItems.slice(1, 5);
@@ -159,7 +164,7 @@ export default function NewsroomFeed({
   const loadMoreStories = () => {
     const next = Math.min(visibleCount + STORY_BATCH_SIZE, feedItems.length);
     setVisibleCount(next);
-    setFeedAnnouncement(`${next - visibleCount} more stories loaded. ${next} of ${feedItems.length} stories shown.`);
+    setFeedAnnouncement(t("now.moreStoriesLoaded", "{count} more stories loaded. {shown} of {total} stories shown.").replace("{count}", next - visibleCount).replace("{shown}", next).replace("{total}", feedItems.length));
   };
 
   const toggleFollow = (preference) => togglePreference({
@@ -172,7 +177,7 @@ export default function NewsroomFeed({
     if (feedMode === "following" && preferencesLoading) {
       return (
         <div className="border-y border-white/10 py-12 text-center" role="status">
-          <p className="text-sm text-white/52">Loading your followed news…</p>
+          <p className="text-sm text-white/52">{t("now.loadingFollowed", "Loading your followed news…")}</p>
         </div>
       );
     }
@@ -180,11 +185,11 @@ export default function NewsroomFeed({
     if (feedMode === "following" && !isMember) {
       return (
         <div className="mx-auto max-w-xl border-y border-white/10 py-12 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/72">Member news</p>
-          <p className="qa-display mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#f7f4ee]">Your news, on your terms.</p>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/52">Sign in to follow cities and topics. Queer Atlas only uses the interests you choose for this feed.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/72">{t("now.memberNews", "Member news")}</p>
+          <p className="qa-display mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#f7f4ee]">{t("now.yourNews", "Your news, on your terms.")}</p>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-white/52">{t("now.signinFollow", "Sign in to follow cities and topics. Queer Atlas only uses the interests you choose for this feed.")}</p>
           <button type="button" onClick={requestSignIn} className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full border border-cyan-100/34 bg-cyan-100/[0.09] px-5 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/58 hover:bg-cyan-100/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">
-            Sign in to personalize
+            {t("now.signinPersonalize", "Sign in to personalize")}
           </button>
         </div>
       );
@@ -193,10 +198,10 @@ export default function NewsroomFeed({
     if (feedMode === "following" && followedPreferences.length === 0) {
       return (
         <div className="mx-auto max-w-2xl border-y border-white/10 py-12 text-center">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-200/72">First step</p>
-          <p className="qa-display mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#f7f4ee]">Choose what you want to follow.</p>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-white/52">Pick a news desk below. You can also follow a city from any article and manage everything later in Your Atlas.</p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2" aria-label="Topics to follow">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-200/72">{t("now.firstStep", "First step")}</p>
+          <p className="qa-display mt-3 text-3xl font-semibold tracking-[-0.035em] text-[#f7f4ee]">{t("now.chooseFollow", "Choose what you want to follow.")}</p>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-white/52">{t("now.pickNewsDesk", "Pick a news desk below. You can also follow a city from any article and manage everything later in Your Atlas.")}</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2" aria-label={t("now.topicsToFollow", "Topics to follow")}>
             {availableTopics.map((topic) => (
               <button
                 key={topic.key}
@@ -216,10 +221,10 @@ export default function NewsroomFeed({
     if (feedMode === "following") {
       return (
         <div className="mx-auto max-w-xl border-y border-white/10 py-12 text-center">
-          <p className="qa-display text-3xl font-semibold tracking-[-0.035em] text-[#f7f4ee]">You’re caught up.</p>
-          <p className="mt-3 text-sm leading-6 text-white/52">There are no current stories matching your followed cities or topics.</p>
+          <p className="qa-display text-3xl font-semibold tracking-[-0.035em] text-[#f7f4ee]">{t("now.caughtUp", "You’re caught up.")}</p>
+          <p className="mt-3 text-sm leading-6 text-white/52">{t("now.noFollowedStories", "There are no current stories matching your followed cities or topics.")}</p>
           <button type="button" onClick={onSelectLatest} className="mt-6 min-h-11 rounded-full border border-white/16 px-5 text-xs font-semibold text-white/72 transition hover:border-white/32 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">
-            Browse latest news
+            {t("now.browseLatest", "Browse latest news")}
           </button>
         </div>
       );
@@ -227,26 +232,26 @@ export default function NewsroomFeed({
 
     return (
       <div className="border-y border-white/10 py-12 text-center">
-        <p className="qa-display text-2xl font-semibold text-[#f7f4ee]">No stories in this desk yet.</p>
-        <p className="mt-2 text-sm text-white/48">Try another category or check back after the next newsroom update.</p>
+        <p className="qa-display text-2xl font-semibold text-[#f7f4ee]">{t("now.noStories", "No stories in this desk yet.")}</p>
+        <p className="mt-2 text-sm text-white/48">{t("now.noStoriesHint", "Try another category or check back after the next newsroom update.")}</p>
       </div>
     );
   }
 
-  const leadMeta = storyMeta(lead);
-  const leadFollowReason = feedMode === "following" ? storyFollowReason(lead, followedPreferences, categoryLabels) : "";
+  const leadMeta = storyMeta(lead, t);
+  const leadFollowReason = feedMode === "following" ? storyFollowReason(lead, followedPreferences, categoryLabels, t) : "";
   const canEditLead = adminNewsIds.has(String(lead.id));
   const toggleStory = (item) => togglePreference({
     preferenceType: "story",
     targetId: String(item.id),
     metadata: {
       title: item.title,
-      city: item.city || "Global",
+      city: item.city || t("now.global", "Global"),
       category: item.category || "culture_tip",
-      storyType: categoryLabels[item.category] || "Queer news",
+      storyType: categoryLabels[item.category] || t("now.queerNews", "Queer news"),
       date: item.createdAt || item.date || "",
       imageUrl: item.imageUrl || "",
-      sourceName: item.sourceName || "Queer Atlas desk",
+      sourceName: item.sourceName || t("now.queerAtlasDesk", "Queer Atlas desk"),
       href: `/now/news/${encodeURIComponent(String(item.id))}`,
     },
   });
@@ -255,8 +260,8 @@ export default function NewsroomFeed({
     <div className="relative z-10 min-w-0">
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{feedAnnouncement}</p>
       {feedMode === "following" && followedPreferences.length > 0 ? (
-        <section className="mb-7 flex min-w-0 items-center gap-3 border-b border-white/10 pb-4" aria-label="Followed news interests">
-          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Following</span>
+        <section className="mb-7 flex min-w-0 items-center gap-3 border-b border-white/10 pb-4" aria-label={t("now.followedNewsInterests", "Followed news interests")}>
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">{t("now.following", "Following")}</span>
           <div className="qa-news-scrollrail flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
             {followedPreferences.map((preference) => {
               const label = preference.metadata?.label || preference.targetId.replaceAll("_", " ");
@@ -266,7 +271,7 @@ export default function NewsroomFeed({
                   key={`${preference.preferenceType}-${preference.targetId}`}
                   type="button"
                   onClick={() => toggleFollow(preference)}
-                  aria-label={`Unfollow ${label}`}
+                  aria-label={`${t("now.unfollow", "Unfollow")} ${label}`}
                   className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-white/12 px-3.5 text-xs text-white/62 transition hover:border-rose-200/32 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"
                 >
                   <Icon size={13} aria-hidden="true" className="text-cyan-200/72" />
@@ -297,11 +302,11 @@ export default function NewsroomFeed({
           <div className="pt-4 sm:pt-5">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.16em]">
               <span className={categoryAccent(lead.category)}>
-                {categoryLabels[lead.category] || "News"}
+                {categoryLabels[lead.category] || t("now.news", "News")}
               </span>
               <span className="text-white/38">{leadMeta.city}</span>
               <span className="text-white/38">{leadMeta.date}</span>
-              {leadFollowReason ? <span className="text-cyan-100/70">Following {leadFollowReason}</span> : null}
+              {leadFollowReason ? <span className="text-cyan-100/70">{t("now.followingReason", "Following {reason}").replace("{reason}", leadFollowReason)}</span> : null}
             </div>
             <h2 id={storyHeadingId(lead, "lead")} className="qa-display mt-3 max-w-4xl text-[clamp(1.75rem,4vw,3.65rem)] font-semibold leading-[0.98] tracking-[-0.045em] text-[#f7f4ee]">
               <button
@@ -318,14 +323,14 @@ export default function NewsroomFeed({
             <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-white/42">
               <span>{leadMeta.source}</span>
               <span aria-hidden="true">·</span>
-              <span>Lead story</span>
+              <span>{t("now.leadStory", "Lead story")}</span>
               <SaveStoryButton item={lead} saved={hasPreference("story", String(lead.id))} onToggle={toggleStory} />
               <button
                 type="button"
                 onClick={() => onOpen(lead)}
                 className="ml-auto inline-flex min-h-12 items-center px-1 text-sm font-semibold text-cyan-100 transition hover:text-white focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"
               >
-                Read story →
+                {t("now.readStory", "Read story")} →
               </button>
             </div>
           </div>
@@ -342,20 +347,20 @@ export default function NewsroomFeed({
         <aside className="min-w-0 border-t border-white/12 pt-5 lg:col-span-4 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0" aria-labelledby="latest-news-heading">
           <div className="mb-2 flex items-end justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-200/75">Live desk</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-200/75">{t("now.liveDesk", "Live desk")}</p>
               <h2 id="latest-news-heading" className="qa-display mt-1 text-2xl font-semibold tracking-[-0.03em] text-[#f7f4ee]">
-                Latest
+                {t("now.latest", "Latest")}
               </h2>
             </div>
             <span className="mb-1 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] text-white/38">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_10px_rgba(110,231,183,0.8)]" />
-              Updating
+              {t("now.updating", "Updating")}
             </span>
           </div>
           <div className="divide-y divide-white/10">
             {latest.map((item) => {
-              const meta = storyMeta(item);
-              const followReason = feedMode === "following" ? storyFollowReason(item, followedPreferences, categoryLabels) : "";
+              const meta = storyMeta(item, t);
+              const followReason = feedMode === "following" ? storyFollowReason(item, followedPreferences, categoryLabels, t) : "";
               const canEdit = adminNewsIds.has(String(item.id));
               return (
                 <article key={item.id} className="py-4 first:pt-3" aria-labelledby={storyHeadingId(item, "latest")}>
@@ -371,7 +376,7 @@ export default function NewsroomFeed({
                     </button>
                     <div className="min-w-0 flex-1">
                       <p className={`text-[9px] font-semibold uppercase tracking-[0.14em] ${categoryAccent(item.category)}`}>
-                        {categoryLabels[item.category] || "News"}
+                        {categoryLabels[item.category] || t("now.news", "News")}
                       </p>
                       <h3 id={storyHeadingId(item, "latest")} className="mt-1 text-sm font-semibold leading-[1.28] text-[#f7f4ee]">
                         <button
@@ -382,7 +387,7 @@ export default function NewsroomFeed({
                           {item.title}
                         </button>
                       </h3>
-                      <p className="mt-1.5 text-[10px] text-white/38">{meta.city} · {meta.date}{followReason ? ` · Following ${followReason}` : ""}</p>
+                      <p className="mt-1.5 text-[10px] text-white/38">{meta.city} · {meta.date}{followReason ? ` · ${t("now.followingReason", "Following {reason}").replace("{reason}", followReason)}` : ""}</p>
                       <div className="mt-2">
                         <SaveStoryButton item={item} saved={hasPreference("story", String(item.id))} onToggle={toggleStory} compact />
                       </div>
@@ -400,17 +405,17 @@ export default function NewsroomFeed({
         <section id="more-news-stories" className="pt-8" aria-labelledby="more-news-heading">
           <div className="mb-5 flex items-end justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-200/70">Across the atlas</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-fuchsia-200/70">{t("now.acrossAtlas", "Across the atlas")}</p>
               <h2 id="more-news-heading" className="qa-display mt-1 text-2xl font-semibold tracking-[-0.03em] text-[#f7f4ee] sm:text-3xl">
-                More stories
+                {t("now.moreStories", "More stories")}
               </h2>
             </div>
-            <span className="text-[10px] uppercase tracking-[0.14em] text-white/34">{items.length} stories</span>
+            <span className="text-[10px] uppercase tracking-[0.14em] text-white/34">{t("now.storyCount", "{count} stories").replace("{count}", items.length)}</span>
           </div>
           <div className="grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {supporting.map((item) => {
-              const meta = storyMeta(item);
-              const followReason = feedMode === "following" ? storyFollowReason(item, followedPreferences, categoryLabels) : "";
+              const meta = storyMeta(item, t);
+              const followReason = feedMode === "following" ? storyFollowReason(item, followedPreferences, categoryLabels, t) : "";
               const canEdit = adminNewsIds.has(String(item.id));
               return (
                 <article key={item.id} className="group min-w-0 border-t border-white/12 pt-4" aria-labelledby={storyHeadingId(item, "more")}>
@@ -425,7 +430,7 @@ export default function NewsroomFeed({
                   </button>
                   <div className="pt-3.5">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[9px] font-semibold uppercase tracking-[0.14em]">
-                      <span className={categoryAccent(item.category)}>{categoryLabels[item.category] || "News"}</span>
+                      <span className={categoryAccent(item.category)}>{categoryLabels[item.category] || t("now.news", "News")}</span>
                       <span className="text-white/35">{meta.city}</span>
                     </div>
                     <h3 id={storyHeadingId(item, "more")} className="mt-2 text-lg font-semibold leading-[1.16] tracking-[-0.02em] text-[#f7f4ee]">
@@ -439,7 +444,7 @@ export default function NewsroomFeed({
                     </h3>
                     <p className="mt-2 line-clamp-2 text-sm leading-5 text-white/58">{item.summary}</p>
                     <div className="mt-3 flex items-center justify-between gap-3">
-                      <p className="text-[10px] text-white/34">{followReason ? `Following ${followReason} · ` : ""}{meta.date} · {meta.source}</p>
+                      <p className="text-[10px] text-white/34">{followReason ? `${t("now.followingReason", "Following {reason}").replace("{reason}", followReason)} · ` : ""}{meta.date} · {meta.source}</p>
                       <SaveStoryButton item={item} saved={hasPreference("story", String(item.id))} onToggle={toggleStory} compact />
                     </div>
                   </div>
@@ -459,7 +464,7 @@ export default function NewsroomFeed({
             aria-controls="more-news-stories"
             className="rounded-full border border-cyan-100/30 bg-cyan-100/[0.07] px-6 py-3 text-xs font-semibold text-cyan-50 transition hover:-translate-y-0.5 hover:border-cyan-100/55 hover:bg-cyan-100/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/55"
           >
-            Load more stories
+            {t("now.loadMoreStories", "Load more stories")}
           </button>
         </div>
       ) : null}

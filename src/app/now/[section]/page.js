@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import NowPage from "../page";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 const NOW_SECTIONS = {
   news: {
@@ -29,25 +32,40 @@ const NOW_SECTIONS = {
   },
 };
 
+const SPANISH_SECTION_METADATA = {
+  news: { title: "Noticias queer | Viajes, cultura y comunidad LGBTQ", name: "Noticias de Queer Atlas", description: "Sigue las historias actuales de viajes queer, vida nocturna, cultura, derechos y comunidad seleccionadas por Queer Atlas." },
+  rankings: { title: "Clasificaciones de ciudades queer | Índice de seguridad y vida nocturna 2026", name: "Clasificaciones de Queer Atlas", description: "Explora clasificaciones de ciudades queer basadas en evidencia, incluidos los índices de seguridad y vida nocturna, con métodos y fuentes transparentes." },
+  data: { title: "Índice global de seguridad y cultura queer 2026 | Queer Atlas", name: "Índice global de seguridad y cultura queer", description: "Explora el Índice global de seguridad y cultura queer 2026: una comparación transparente entre ciudades sobre seguridad LGBTQ, inclusión, comunidad, vida nocturna y cultura." },
+  voices: { title: "Voces queer, historias de miembros y guías locales | Queer Atlas", name: "Voces del Atlas", description: "Lee historias moderadas de miembros, guías locales prácticas, informes de campo y perspectivas queer vividas de destinos de todo el mundo." },
+};
+
+function sectionMetadata(section, locale) {
+  const base = NOW_SECTIONS[section];
+  return locale === "es" ? { ...base, ...SPANISH_SECTION_METADATA[section] } : base;
+}
+
 export function generateStaticParams() {
   return Object.keys(NOW_SECTIONS).map((section) => ({ section }));
 }
 
 export async function generateMetadata({ params }) {
   const { section } = await params;
-  const config = NOW_SECTIONS[section];
+  const requestHeaders = await headers();
+  const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
+  const config = sectionMetadata(section, locale);
   if (!config) return {};
   const canonical = `/now/${section}`;
 
   return {
     title: config.title,
     description: config.description,
-    alternates: { canonical },
+    alternates: localizedAlternates(canonical, locale),
     robots: { index: true, follow: true },
     openGraph: {
       title: config.title,
       description: config.description,
-      url: canonical,
+      url: localizedOpenGraphUrl(canonical, locale),
+      locale: locale === "es" ? "es_ES" : "en_US",
       type: "website",
     },
     twitter: {
@@ -61,7 +79,8 @@ export async function generateMetadata({ params }) {
 export default async function NowSectionPage({ params, searchParams }) {
   const { section } = await params;
   const query = await searchParams;
-  const config = NOW_SECTIONS[section];
+  const requestHeaders = await headers();
+  const config = sectionMetadata(section, normalizeLocale(requestHeaders.get("x-qa-locale")));
   if (!config) notFound();
 
   const url = `${QA_SITE_URL}/now/${section}`;

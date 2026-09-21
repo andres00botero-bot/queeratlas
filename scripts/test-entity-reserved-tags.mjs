@@ -41,7 +41,6 @@ const emptyStoreGroup = { value: "store", label: "Stores", items: [] };
 const populatedBarGroup = { value: "bar", label: "Bars", items: [{ id: 1 }] };
 assert.deepEqual(buildVenueJumpGroups([populatedBarGroup, emptyStoreGroup]), [
   { value: "bar", label: "Bars", count: 1 },
-  { value: "store", label: "Stores", count: 0 },
 ]);
 assert.deepEqual(selectVisiblePlaceGroups([populatedBarGroup, emptyStoreGroup], ["store"]), [emptyStoreGroup]);
 

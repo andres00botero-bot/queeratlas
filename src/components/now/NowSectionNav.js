@@ -1,9 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function NowSectionNav({ sections, activeId, className = "" }) {
+  const { t } = useLocale();
   return (
     <nav
-      aria-label="Now sections"
+      aria-label={t("now.sections", "Now sections")}
       className={`qa-news-scrollrail flex gap-5 overflow-x-auto border-b border-white/10 px-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-7 ${className}`}
     >
       {sections.map((section) => {
@@ -17,7 +21,7 @@ export default function NowSectionNav({ sections, activeId, className = "" }) {
               isCurrent ? "text-[#f7f4ee]" : "text-white/42 hover:text-white/76"
             }`}
           >
-            {section.id === "mixed" ? "News" : section.label}
+            {section.id === "mixed" ? t("now.news", "News") : section.label}
             {isCurrent ? (
               <span
                 aria-hidden="true"

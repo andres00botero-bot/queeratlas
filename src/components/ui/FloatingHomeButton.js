@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDays, Home, LocateFixed, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
+import { CalendarDays, Globe2, Home, LocateFixed, MapPinned, MessageCircle, Newspaper, Search, Star, Users } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { supabase } from "@/lib/supabase";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { getPublishedLocales } from "@/lib/i18n/locales";
+import { toLocalePath } from "@/lib/i18n/localeRouting";
 
 function isMissingTableError(error) {
   if (!error) return false;
@@ -18,6 +21,7 @@ function isMissingTableError(error) {
 export default function FloatingHomeButton() {
   const pathname = usePathname();
   const { isMember, user } = useAuth();
+  const { locale, t } = useLocale();
   const [unreadCount, setUnreadCount] = useState(0);
   const [vipRequestCount, setVipRequestCount] = useState(0);
   const [pendingSubmissionCount, setPendingSubmissionCount] = useState(0);
@@ -147,11 +151,12 @@ export default function FloatingHomeButton() {
     unreadCount > 0 ? "fuchsia" : vipRequestCount > 0 ? "cyan" : pendingSubmissionCount > 0 ? "amber" : "none";
   const messageSignalLayers = [unreadCount > 0, vipRequestCount > 0, pendingSubmissionCount > 0].filter(Boolean)
     .length;
+  const languagePath = toLocalePath(pathname, locale);
 
   const navItems = [
     {
       href: "/",
-      label: "Home",
+      label: t("global.home", "Home"),
       icon: Home,
       accent: "fuchsia",
       mobile: true,
@@ -159,7 +164,7 @@ export default function FloatingHomeButton() {
     },
     {
       href: "/search",
-      label: "Search",
+      label: t("global.search", "Search"),
       icon: Search,
       accent: "violet",
       desktopOnly: true,
@@ -167,7 +172,7 @@ export default function FloatingHomeButton() {
     },
     {
       href: "/nearby",
-      label: "Nearby",
+      label: t("global.nearby", "Nearby"),
       icon: LocateFixed,
       accent: "violet",
       mobile: true,
@@ -176,7 +181,7 @@ export default function FloatingHomeButton() {
     },
     {
       href: "/events",
-      label: "Events",
+      label: t("global.events", "Events"),
       icon: CalendarDays,
       accent: "cyan",
       mobile: true,
@@ -184,14 +189,14 @@ export default function FloatingHomeButton() {
     },
     {
       href: "/cities",
-      label: "Cities",
+      label: t("global.cities", "Cities"),
       icon: MapPinned,
       accent: "emerald",
       mobile: true,
       isActive: (route) => {
         if (route === "/cities" || route.startsWith("/cities/")) return true;
         const reservedRoots = new Set([
-          "about", "admin", "api", "cities", "community", "community-policy", "contact",
+          "about", "admin", "api", "cities", "community", "community-policy", "compass", "contact",
           "contribute", "contributors", "corrections", "editorial-policy", "events", "favorites",
           "gay-guide", "hbtq-guide", "join", "manifest.webmanifest", "messages", "moderation",
           "nearby", "now", "offline.html", "press", "privacy", "queer-guide", "reports", "robots.txt",
@@ -204,7 +209,7 @@ export default function FloatingHomeButton() {
     },
     {
       href: "/favorites",
-      label: "Atlas",
+      label: t("global.atlas", "Atlas"),
       icon: Star,
       accent: "amber",
       mobile: true,
@@ -212,7 +217,7 @@ export default function FloatingHomeButton() {
     },
     {
       href: "/now",
-      label: "News",
+      label: t("global.news", "News"),
       icon: Newspaper,
       accent: "rose",
     },
@@ -220,13 +225,13 @@ export default function FloatingHomeButton() {
       ? [
           {
             href: "/community",
-            label: "Community",
+            label: t("global.community", "Community"),
             icon: Users,
             accent: "violet",
           },
           {
             href: "/messages",
-            label: "Messages",
+            label: t("global.messages", "Messages"),
             icon: MessageCircle,
             accent: "sky",
             mobile: true,
@@ -238,13 +243,33 @@ export default function FloatingHomeButton() {
   return (
     <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] w-[min(96vw,30rem)] -translate-x-1/2 px-2 md:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:left-auto md:w-auto md:translate-x-0 md:px-0 md:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
       <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(56,189,248,0.22),rgba(244,114,182,0.16),transparent_72%)] blur-xl" />
-      <div className="mb-1.5 hidden justify-center md:mb-2 md:flex md:justify-end">
+      <div className="mb-1.5 flex items-center justify-center gap-2 md:mb-2 md:justify-end">
         <span className="inline-flex h-5 items-center rounded-full border border-cyan-100/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(244,114,182,0.14),rgba(0,0,0,0.72))] px-2.5 text-[10px] font-bold uppercase text-white shadow-[0_8px_22px_rgba(34,211,238,0.16),0_8px_20px_rgba(0,0,0,0.34)] ring-1 ring-white/10">
-          Navigate
+          {t("global.navigate", "Navigate")}
         </span>
+        <label className="inline-flex h-6 items-center gap-1.5 rounded-full border border-white/16 bg-black/45 px-2 text-[10px] font-semibold text-white/84 shadow-[0_8px_20px_rgba(0,0,0,0.24)]">
+          <Globe2 className="h-3 w-3 text-cyan-100/85" aria-hidden="true" />
+          <span className="sr-only">{t("global.language", "Language")}</span>
+          <select
+            aria-label={t("global.language", "Language")}
+            value={locale}
+            onChange={(event) => {
+              const nextLocale = event.target.value;
+              if (nextLocale === locale) return;
+              window.location.assign(toLocalePath(languagePath, nextLocale));
+            }}
+            className="cursor-pointer appearance-none bg-transparent pr-0.5 text-[10px] font-semibold text-white outline-none"
+          >
+            {getPublishedLocales().map((language) => (
+              <option key={language.code} value={language.code} className="bg-slate-950 text-white">
+                {language.nativeName}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
       <nav
-        aria-label="Quick navigation"
+        aria-label={t("global.quickNavigation", "Quick navigation")}
         className="relative flex w-full items-center justify-center gap-1 rounded-[22px] border border-white/28 bg-[linear-gradient(135deg,rgba(6,9,18,0.98),rgba(20,21,36,0.97),rgba(8,8,8,0.99))] px-1.5 py-1.5 shadow-[0_18px_48px_rgba(2,6,20,0.62),0_0_0_1px_rgba(255,255,255,0.09)] backdrop-blur-xl md:w-auto md:gap-1.5 md:rounded-full md:px-2 md:py-2"
       >
         <span

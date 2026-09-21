@@ -7,6 +7,7 @@ import VibeTagChips from "@/components/ui/VibeTagChips";
 import { qualityPillClass } from "@/features/city/adminDrawerFeature";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function CityEventsRailSection({
   sectionRef,
@@ -33,6 +34,7 @@ export default function CityEventsRailSection({
   openEventContribution,
   redirectToJoin,
 }) {
+  const { t } = useLocale();
   return (
     <div
       ref={sectionRef}
@@ -42,7 +44,7 @@ export default function CityEventsRailSection({
       <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
       <div className="pointer-events-none absolute -right-16 bottom-8 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
       <h2 className="sticky top-[66px] z-10 -mx-2 mb-4 border-b border-white/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-white backdrop-blur">
-        Events
+        {t("city.events", "Events")}
       </h2>
       {eventsLoadError && (
         <div className="mb-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
@@ -51,13 +53,13 @@ export default function CityEventsRailSection({
             onClick={fetchEvents}
             className="qa-action qa-city-cta-tertiary mt-3 rounded-full border border-rose-200/25 bg-rose-200/10 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-200/40"
           >
-            Retry
+            {t("city.retry", "Retry")}
           </button>
         </div>
       )}
       {eventsLoading && (
         <div className="mb-4 rounded-2xl border border-violet-200/10 bg-violet-200/[0.03] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">Curated event calendar</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-violet-100/60">{t("city.curatedEventCalendar", "Curated event calendar")}</p>
           <SectionSkeleton tone="violet" rows={2} />
         </div>
       )}
@@ -74,13 +76,13 @@ export default function CityEventsRailSection({
 
           return (
             <div className="mb-4">
-              <h3 className="mb-2 text-sm text-purple-400">Featured upcoming</h3>
+              <h3 className="mb-2 text-sm text-purple-400">{t("city.featuredUpcoming", "Featured upcoming")}</h3>
               <div
                 onClick={() => openEvent(featuredEvent)}
                 role="button"
                 tabIndex={0}
                 aria-pressed={String(selectedEvent?.id) === String(featuredEvent.id)}
-                aria-label={`Open event details for ${featuredEvent.name}`}
+                aria-label={t("city.openEventDetails", "Open event details for {event}").replace("{event}", featuredEvent.name)}
                 onMouseEnter={() => setHoveredEventId(String(featuredEvent.id))}
                 onMouseLeave={() => setHoveredEventId(null)}
                 onKeyDown={(keyEvent) => {
@@ -115,7 +117,7 @@ export default function CityEventsRailSection({
                 </p>
                 <VibeTagChips entity={featuredEvent} tone="amber" className="mb-2" includeMixedFallback />
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-purple-200/90">Next notable event in this city</p>
+                  <p className="text-xs text-purple-200/90">{t("city.nextNotableEvent", "Next notable event in this city")}</p>
                   {canRefreshQuality ? (
                     <button
                       onClick={(clickEvent) =>
@@ -125,7 +127,7 @@ export default function CityEventsRailSection({
                         )
                       }
                       className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(featuredEventQualityStatus.tone)}`}
-                      aria-label={`Update quality status for event ${featuredEvent.name}`}
+                      aria-label={t("city.updateEventQuality", "Update quality status for event {event}").replace("{event}", featuredEvent.name)}
                     >
                       {featuredEventQualityStatus.label}
                     </button>
@@ -137,7 +139,7 @@ export default function CityEventsRailSection({
                 </div>
                 {featuredEventQuality.lastChecked && (
                   <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                    Checked {formatDate(featuredEventQuality.lastChecked)}
+                    {t("city.checked", "Checked {date}").replace("{date}", formatDate(featuredEventQuality.lastChecked))}
                   </p>
                 )}
                 <div className="mt-3 h-1.5 w-28 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-orange-200" />
@@ -164,7 +166,7 @@ export default function CityEventsRailSection({
               role="button"
               tabIndex={0}
               aria-pressed={String(selectedEvent?.id) === String(event.id)}
-              aria-label={`Open event details for ${event.name}`}
+              aria-label={t("city.openEventDetails", "Open event details for {event}").replace("{event}", event.name)}
               onMouseEnter={() => setHoveredEventId(String(event.id))}
               onMouseLeave={() => setHoveredEventId(null)}
               onKeyDown={(keyEvent) => {
@@ -200,7 +202,7 @@ export default function CityEventsRailSection({
               </p>
               <VibeTagChips entity={event} tone="amber" className="mb-2" includeMixedFallback />
               <div className="flex items-center justify-between gap-2">
-                <p className="text-xs text-purple-400">Community event</p>
+                <p className="text-xs text-purple-400">{t("city.communityEvent", "Community event")}</p>
                 {canRefreshQuality ? (
                   <button
                     onClick={(clickEvent) =>
@@ -210,7 +212,7 @@ export default function CityEventsRailSection({
                       )
                     }
                     className={`rounded-full border px-2 py-0.5 text-[10px] transition hover:opacity-90 ${qualityPillClass(qualityStatus.tone)}`}
-                    aria-label={`Update quality status for event ${event.name}`}
+                    aria-label={t("city.updateEventQuality", "Update quality status for event {event}").replace("{event}", event.name)}
                   >
                     {qualityStatus.label}
                   </button>
@@ -222,7 +224,7 @@ export default function CityEventsRailSection({
               </div>
               {quality.lastChecked && (
                 <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                  Checked {formatDate(quality.lastChecked)}
+                  {t("city.checked", "Checked {date}").replace("{date}", formatDate(quality.lastChecked))}
                 </p>
               )}
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import PlaceGuideCard from "@/components/city/PlaceGuideCard";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function CityPlacesSection({
   placesLoading,
@@ -28,14 +29,15 @@ export default function CityPlacesSection({
   cityName,
   safetySignalsByPlaceId,
 }) {
+  const { t } = useLocale();
   return (
     <>
       {!placesLoading && !hasAnyPlaces && (
         <div className="qa-city-section qa-city-content-section qa-city-tone-venues mb-10 rounded-[28px] border border-dashed p-8 text-center">
-          <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">Venue signal</p>
-          <h3 className="mt-2 text-lg font-semibold text-white">Venue map is taking shape</h3>
+          <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/70">{t("city.venueSignal", "Venue signal")}</p>
+          <h3 className="mt-2 text-lg font-semibold text-white">{t("city.venueMapTakingShape", "Venue map is taking shape")}</h3>
           <p className="mx-auto mt-2 max-w-xl text-sm text-white/65">
-            We&apos;re curating trusted drops for this city. Explore the guide lane now, or add a venue locals can rely on.
+            {t("city.venueMapDescription", "We’re curating trusted drops for this city. Explore the guide lane now, or add a venue locals can rely on.")}
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             <button
@@ -43,7 +45,7 @@ export default function CityPlacesSection({
               onClick={onReadGuide}
               className="qa-action qa-city-cta-secondary rounded-full border border-white/18 bg-white/7 px-4 py-2 text-xs text-white/82 hover:border-white/30 hover:text-white"
             >
-              Read guide lane
+              {t("city.readGuideLane", "Read guide lane")}
             </button>
             {canPublish ? (
               <button
@@ -51,7 +53,7 @@ export default function CityPlacesSection({
                 onClick={onPublishFirstVenue}
                 className="qa-action qa-action-strong qa-city-cta-primary rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
               >
-                Publish first venue
+                {t("city.publishFirstVenue", "Publish first venue")}
               </button>
             ) : (
               <button
@@ -59,7 +61,7 @@ export default function CityPlacesSection({
                 onClick={onJoinToPublish}
                 className="qa-action qa-action-strong qa-city-cta-primary rounded-full border border-emerald-200/28 bg-emerald-200/12 px-4 py-2 text-xs text-emerald-100 hover:border-emerald-200/45"
               >
-                Join to publish
+                {t("city.joinToPublish", "Join to publish")}
               </button>
             )}
           </div>
@@ -90,11 +92,11 @@ export default function CityPlacesSection({
             style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
           >
             <div className="mb-7">
-              <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-white/48">Venue category</p>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-white/48">{t("city.venueCategory", "Venue category")}</p>
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">{group.label}</h2>
                 <span className="inline-flex items-center rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-cyan-100/86">
-                  {items.length} venues
+                  {t("city.venuesCount", "{count} venues").replace("{count}", items.length)}
                 </span>
               </div>
               <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,#4de1ff,#ff7ac3,transparent)] opacity-60" />

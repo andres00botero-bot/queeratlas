@@ -802,6 +802,15 @@ export const cityCoreConfig = {
     "country": "Germany",
     "vibe": "finance after dark"
   },
+  "dusseldorf": {
+    "center": [
+      6.7735,
+      51.2277
+    ],
+    "title": "Queer Düsseldorf",
+    "country": "Germany",
+    "vibe": "polished carnival pulse"
+  },
   "chicago": {
     "center": [
       -87.6298,

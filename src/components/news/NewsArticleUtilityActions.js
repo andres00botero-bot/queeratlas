@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { Check, Link2, Share2 } from "lucide-react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function NewsArticleUtilityActions({ title, url, compact = false }) {
+  const { t } = useLocale();
   const [copied, setCopied] = useState(false);
   const [copyStatus, setCopyStatus] = useState("");
 
@@ -11,14 +13,14 @@ export default function NewsArticleUtilityActions({ title, url, compact = false 
     try {
       await navigator.clipboard.writeText(url || window.location.href);
       setCopied(true);
-      setCopyStatus("Article link copied.");
+      setCopyStatus(t("now.articleLinkCopied", "Article link copied."));
       window.setTimeout(() => {
         setCopied(false);
         setCopyStatus("");
       }, 1800);
     } catch {
       setCopied(false);
-      setCopyStatus("Article link could not be copied.");
+      setCopyStatus(t("now.articleLinkCopyFailed", "Article link could not be copied."));
     }
   };
 
@@ -40,22 +42,22 @@ export default function NewsArticleUtilityActions({ title, url, compact = false 
       <button
         type="button"
         onClick={share}
-        aria-label="Share article"
-        title="Share article"
+        aria-label={t("now.shareArticle", "Share article")}
+        title={t("now.shareArticle", "Share article")}
         className={compact ? "inline-flex size-10 items-center justify-center rounded-full text-white/52 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60" : "inline-flex min-h-11 items-center gap-2 rounded-full border border-white/14 bg-white/[0.04] px-4 text-xs font-semibold text-white/76 transition hover:border-cyan-100/35 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"}
       >
         <Share2 size={14} aria-hidden="true" />
-        {compact ? null : "Share"}
+        {compact ? null : t("now.share", "Share")}
       </button>
       <button
         type="button"
         onClick={copyLink}
-        aria-label={copied ? "Link copied" : "Copy article link"}
-        title={copied ? "Link copied" : "Copy article link"}
+        aria-label={copied ? t("now.linkCopied", "Link copied") : t("now.copyArticleLink", "Copy article link")}
+        title={copied ? t("now.linkCopied", "Link copied") : t("now.copyArticleLink", "Copy article link")}
         className={compact ? "inline-flex size-10 items-center justify-center rounded-full text-white/52 transition hover:bg-white/[0.05] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60" : "inline-flex min-h-11 items-center gap-2 rounded-full border border-white/14 bg-white/[0.04] px-4 text-xs font-semibold text-white/76 transition hover:border-cyan-100/35 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"}
       >
         {copied ? <Check size={14} aria-hidden="true" /> : <Link2 size={14} aria-hidden="true" />}
-        {compact ? null : copied ? "Copied" : "Copy link"}
+        {compact ? null : copied ? t("now.copied", "Copied") : t("now.copyLink", "Copy link")}
       </button>
     </div>
   );

@@ -50,6 +50,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageControls from "@/components/ui/PageControls";
 import NewsroomFeed from "@/components/now/NewsroomFeed";
 import NowSectionNav from "@/components/now/NowSectionNav";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const DataReportsNowSection = dynamic(() => import("@/components/reports/DataReportsNowSection"));
 const VoicesEditorialPanel = dynamic(() => import("@/components/now/VoicesEditorialPanel"));
@@ -529,6 +530,7 @@ function PulseSkeletonCard({ tone = "orange" }) {
 
 export default function NowPage({ initialSection = "mixed", initialDataQuery = {} }) {
   const router = useRouter();
+  const { t } = useLocale();
   const { isMember, memberName, user, memberProfile } = useAuth();
   const [ready, setReady] = useState(true);
   const [today, setToday] = useState(() => new Date());
@@ -1214,13 +1216,13 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
   );
   const nowSections = useMemo(
     () => [
-      { id: "mixed", label: "News feed", href: "/now/news", tone: "cyan", count: displayedNewsItems.length },
-      { id: "voices", label: "Voices", href: "/now/voices", tone: "fuchsia", count: communityStories.length },
-      { id: "rankings", label: "Rankings", href: "/now/rankings", tone: "emerald", count: rankingItems.length },
-      { id: "data", label: "Data & Reports", href: "/now/data", tone: "fuchsia" },
-      { id: "collections", label: "Atlas Collections", href: "/now/collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
+      { id: "mixed", label: t("now.newsFeed", "News feed"), href: "/now/news", tone: "cyan", count: displayedNewsItems.length },
+      { id: "voices", label: t("now.voices", "Voices"), href: "/now/voices", tone: "fuchsia", count: communityStories.length },
+      { id: "rankings", label: t("now.rankings", "Rankings"), href: "/now/rankings", tone: "emerald", count: rankingItems.length },
+      { id: "data", label: t("now.dataReports", "Data & Reports"), href: "/now/data", tone: "fuchsia" },
+      { id: "collections", label: t("now.collections", "Atlas Collections"), href: "/now/collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
     ],
-    [communityStories.length, displayedNewsItems.length, rankingItems.length]
+    [communityStories.length, displayedNewsItems.length, rankingItems.length, t]
   );
   const crawlClusterTopics = useMemo(
     () => TIER1_TOPIC_KEYS.filter((topicKey) => Boolean(listCityClusterTopics().find((topic) => topic.key === topicKey))),
@@ -2041,20 +2043,20 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
   const isVoicesSection = activeNowSection === "voices";
   const heroContent = isVoicesSection
     ? {
-        eyebrow: "First-person queer intelligence",
-        title: "Voices from the Atlas",
-        description: "Stories, local guides, and lived experience from queer people around the world - reviewed before publication.",
+        eyebrow: t("now.voicesEyebrow", "First-person queer intelligence"),
+        title: t("now.voicesTitle", "Voices from the Atlas"),
+        description: t("now.voicesIntro", "Stories, local guides, and lived experience from queer people around the world - reviewed before publication."),
       }
     : isDataSection
       ? {
-        eyebrow: "Original Research + Open Methodology",
-        title: "Queer Data & Reports",
-        description: "Citation-ready queer city research, transparent index methods, and frozen evidence snapshots.",
+        eyebrow: t("now.dataEyebrow", "Original Research + Open Methodology"),
+        title: t("now.dataTitle", "Queer Data & Reports"),
+        description: t("now.dataIntro", "Citation-ready queer city research, transparent index methods, and frozen evidence snapshots."),
       }
     : {
-        eyebrow: "Live Discovery + Editorial Signal",
-        title: "Queer World News",
-        description: "Real-time queer signal across discovery, rights, and community narratives - curated in one premium flow.",
+        eyebrow: t("now.newsEyebrow", "Live Discovery + Editorial Signal"),
+        title: t("now.newsTitle", "Queer World News"),
+        description: t("now.newsIntro", "Real-time queer signal across discovery, rights, and community narratives - curated in one premium flow."),
       };
   useEffect(() => {
     if (activeNowSection === "policy") {
@@ -2147,11 +2149,11 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
 
   return (
     <main className="qa-page qa-now min-h-screen overflow-x-hidden bg-[radial-gradient(ellipse_at_10%_4%,rgba(34,211,238,0.10),transparent_36%),radial-gradient(ellipse_at_92%_9%,rgba(217,70,239,0.09),transparent_34%),linear-gradient(180deg,#030507_0%,#070711_48%,#030305_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
-      <nav aria-label="Internal now crawl links" className="sr-only">
-        <Link href="/now/news">Now</Link>
-        <Link href="/cities">Cities</Link>
-        <Link href="/events/calendar">Events</Link>
-        <Link href="/topics">Topics</Link>
+      <nav aria-label={t("now.internalLinks", "Internal now crawl links")} className="sr-only">
+        <Link href="/now/news">{t("now.now", "Now")}</Link>
+        <Link href="/cities">{t("now.cities", "Cities")}</Link>
+        <Link href="/events/calendar">{t("now.events", "Events")}</Link>
+        <Link href="/topics">{t("now.topics", "Topics")}</Link>
         {topicHubKeys.map((topicKey) => (
           <Link key={`now-topic-hub-${topicKey}`} href={`/topics/${topicKey}`}>
             {topicKey}
@@ -2166,10 +2168,10 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
         )}
         {rankingSeoCities.map((city) => (
           <Link key={`now-ranking-city-${city.slug}`} href={`/${city.slug}`}>
-            Queer guide to {city.label}
+            {t("now.queerGuideTo", "Queer guide to")} {city.label}
           </Link>
         ))}
-        <Link href="/now/collections">Atlas Collections</Link>
+        <Link href="/now/collections">{t("now.collections", "Atlas Collections")}</Link>
         {ATLAS_COLLECTIONS.map((collection) => (
           <Link key={`now-crawl-collection-${collection.id}`} href={collection.href}>
             {collection.title}
@@ -2198,18 +2200,18 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
             <div className="relative z-10 max-w-4xl">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100/68">
-                  Queer Atlas · World desk
+                  {t("now.worldDesk", "Queer Atlas · World desk")}
                 </p>
                 <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.8)]" />
-                  Live editorial desk
+                  {t("now.liveEditorialDesk", "Live editorial desk")}
                 </div>
               </div>
               <h1 className="qa-display mt-3 text-[clamp(2.7rem,4.6vw,4.5rem)] font-semibold leading-[0.92] tracking-[-0.055em] text-[#f7f4ee]">
-                Queer World News
+                {t("now.newsTitle", "Queer World News")}
               </h1>
               <p className="mt-3 max-w-[62ch] text-sm leading-6 text-white/60 sm:text-base sm:leading-7">
-                Essential queer stories, local shifts and cultural signals from across the atlas.
+                {t("now.newsFeedIntro", "Essential queer stories, local shifts and cultural signals from across the atlas.")}
               </p>
             </div>
             {loadError ? (
@@ -2219,7 +2221,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   onClick={() => loadPulseData({ forceRefresh: true })}
                   className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
                 >
-                  Retry
+                  {t("favorites.retry", "Retry")}
                 </button>
               </div>
             ) : null}
@@ -2262,7 +2264,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 onClick={() => loadPulseData({ forceRefresh: true })}
                 className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
               >
-                Retry
+                {t("favorites.retry", "Retry")}
               </button>
             </div>
           )}
@@ -2280,17 +2282,17 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
           controlsRef={nowControlsRef}
           controlButtonsRef={nowControlButtonsRef}
           buttons={nowSections.map((section) => ({ id: section.id, label: section.label, href: section.href }))}
-          ariaLabel="Queer World News sections"
+          ariaLabel={t("now.sections", "Now sections")}
           mobileCompact
           mobileLayout="fit"
           mobilePrimaryIds={["mixed", "voices", "rankings"]}
           mobileLabelsById={{
-            mixed: "News",
-            rankings: "Rankings",
-            data: "Data",
-            collections: "Collections",
-            voices: "Voices",
-            happening: "Soon",
+            mixed: t("now.news", "News"),
+            rankings: t("now.rankings", "Rankings"),
+            data: t("now.data", "Data"),
+            collections: t("now.collections", "Collections"),
+            voices: t("now.voices", "Voices"),
+            happening: t("now.soon", "Soon"),
           }}
           activeId={activeNowSection}
           onSelect={(sectionId) => {
@@ -2306,12 +2308,12 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               <div className="relative z-10 mb-5 border-b border-white/10 pb-3">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">Browse the desk</p>
-                    <h2 className="sr-only">Filter queer world news</h2>
-                    <div className="flex items-center gap-4" role="group" aria-label="Choose news feed">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/42">{t("now.browseDesk", "Browse the desk")}</p>
+                    <h2 className="sr-only">{t("now.filterNews", "Filter queer world news")}</h2>
+                    <div className="flex items-center gap-4" role="group" aria-label={t("now.chooseFeed", "Choose news feed")}>
                       {[
-                        { id: "latest", label: "Latest" },
-                        { id: "following", label: "Following" },
+                        { id: "latest", label: t("now.latest", "Latest") },
+                        { id: "following", label: t("favorites.following", "Following") },
                       ].map((mode) => {
                         const isActive = selectedNewsMode === mode.id;
                         return (
@@ -2347,7 +2349,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                       }}
                       className="rounded-full border border-cyan-300/28 bg-cyan-300/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/45"
                     >
-                      {showAdminForm ? "Close admin composer" : "Admin publish"}
+                      {showAdminForm ? t("now.closeAdminComposer", "Close admin composer") : t("now.adminPublish", "Admin publish")}
                     </button>
                   )}
                 </div>
@@ -2391,19 +2393,19 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               {isAdmin && showAdminForm && (
                 <form ref={adminComposerRef} onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-300/[0.05] p-4 md:grid-cols-2">
                   <p className="md:col-span-2 text-xs uppercase tracking-[0.14em] text-cyan-100/85">
-                    {isEditingNews ? "Edit admin news" : "Publish admin news"}
+                    {isEditingNews ? t("now.editAdminNews", "Edit admin news") : t("now.publishAdminNews", "Publish admin news")}
                   </p>
                   <input
                     value={adminForm.title}
                     onChange={(event) => setAdminForm((current) => ({ ...current, title: event.target.value }))}
-                    placeholder="News title"
+                    placeholder={t("now.adminNewsTitle", "News title")}
                     className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                     required
                   />
                   <input
                     value={adminForm.city}
                     onChange={(event) => setAdminForm((current) => ({ ...current, city: event.target.value }))}
-                    placeholder="City (optional, or Global)"
+                    placeholder={t("now.cityOptionalGlobal", "City (optional, or Global)")}
                     className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                   />
                   <select
@@ -2426,20 +2428,20 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   <textarea
                     value={adminForm.summary}
                     onChange={(event) => setAdminForm((current) => ({ ...current, summary: event.target.value }))}
-                    placeholder="Summary"
+                    placeholder={t("now.summary", "Summary")}
                     className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                     required
                   />
                   <textarea
                     value={adminForm.whyItMatters}
                     onChange={(event) => setAdminForm((current) => ({ ...current, whyItMatters: event.target.value }))}
-                    placeholder="Why this matters"
+                    placeholder={t("now.whyItMatters", "Why this matters")}
                     className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                     required
                   />
                   <div className="grid gap-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3 md:col-span-2">
                     <p className="text-[11px] uppercase tracking-[0.14em] text-cyan-100/85">
-                      Article image (Supabase storage)
+                      {t("now.articleImage", "Article image (Supabase storage)")}
                     </p>
                     <input
                       type="file"
@@ -2460,11 +2462,11 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                         onChange={(event) => setRemoveAdminImage(event.target.checked)}
                         className="h-4 w-4 rounded border-white/30 bg-black/40"
                       />
-                      Remove current image on save
+                      {t("now.removeCurrentImage", "Remove current image on save")}
                     </label>
                     {adminImageFile ? (
                       <p className="text-xs text-cyan-100/82">
-                        New file: {adminImageFile.name}
+                        {t("now.newFile", "New file")}: {adminImageFile.name}
                       </p>
                     ) : null}
                   </div>
@@ -2472,14 +2474,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     <input
                       value={adminForm.imageAlt}
                       onChange={(event) => setAdminForm((current) => ({ ...current, imageAlt: event.target.value }))}
-                      placeholder="Describe what is visible in the image"
-                      aria-label="Image alt text"
+                      placeholder={t("now.describeImage", "Describe what is visible in the image")}
+                      aria-label={t("now.imageAltText", "Image alt text")}
                       className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                     />
                     <input
                       value={adminForm.imageCredit}
                       onChange={(event) => setAdminForm((current) => ({ ...current, imageCredit: event.target.value }))}
-                      placeholder="Image credit (optional)"
+                      placeholder={t("now.imageCreditOptional", "Image credit (optional)")}
                       className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                     />
                   </div>
@@ -2490,7 +2492,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                       rel="noreferrer"
                       className="rounded-xl border border-cyan-200/25 bg-cyan-200/8 px-4 py-3 text-xs text-cyan-100 transition hover:border-cyan-200/45 md:col-span-2"
                     >
-                      Open current image
+                      {t("now.openCurrentImage", "Open current image")}
                     </a>
                   ) : null}
                   <button
@@ -2500,26 +2502,26 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   >
                     {isPublishingNews
                       ? isEditingNews
-                        ? "Updating..."
-                        : "Publishing..."
+                        ? t("now.updating", "Updating...")
+                        : t("now.publishing", "Publishing...")
                       : isEditingNews
-                        ? "Update news"
-                        : "Publish news"}
+                        ? t("now.updateNews", "Update news")
+                        : t("now.publishNews", "Publish news")}
                   </button>
                   <button
                     type="button"
                     onClick={resetAdminNewsComposer}
                     className="rounded-xl border border-white/16 bg-black/30 px-4 py-3 text-sm text-white/82 transition hover:border-white/28 md:col-span-2"
                   >
-                    Cancel
+                    {t("now.cancel", "Cancel")}
                   </button>
                 </form>
               )}
 
                 {selectedNewsMode === "latest" ? <p role="status" aria-live="polite" aria-atomic="true" className="mt-3 text-[10px] uppercase tracking-[0.14em] text-white/34">
-                    {displayedNewsItems.length} stories
-                    {selectedNewsCategory === "all" ? " across all desks" : ` · ${categoryLabels[selectedNewsCategory] || "selected desk"}`}
-                  </p> : <p role="status" aria-live="polite" aria-atomic="true" className="mt-3 text-[10px] uppercase tracking-[0.14em] text-white/34">Only cities and topics you choose</p>}
+                    {t("now.storyCount", "{count} stories").replace("{count}", displayedNewsItems.length)}
+                    {selectedNewsCategory === "all" ? t("now.acrossAllDesks", " across all desks") : ` · ${categoryLabels[selectedNewsCategory] || t("now.selectedDesk", "selected desk")}`}
+                  </p> : <p role="status" aria-live="polite" aria-atomic="true" className="mt-3 text-[10px] uppercase tracking-[0.14em] text-white/34">{t("now.onlyChosenFeeds", "Only cities and topics you choose")}</p>}
               </div>
 
               <NewsroomFeed
@@ -2555,7 +2557,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                       <div className="relative h-32 w-full sm:h-36">
                         <Image
                           src={leadNewsItem.imageUrl}
-                          alt={leadNewsItem.imageAlt || leadNewsItem.title || "Queer Atlas editorial news image"}
+                          alt={leadNewsItem.imageAlt || leadNewsItem.title || t("now.editorialNewsImage", "Queer Atlas editorial news image")}
                           fill
                           loading="eager"
                           fetchPriority="high"
@@ -2567,7 +2569,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                           <div className="pointer-events-none absolute bottom-2 left-2 right-2 flex flex-wrap items-center justify-between gap-2">
                             {leadNewsItem.imageCredit ? (
                               <span className="rounded-full border border-white/18 bg-black/45 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80">
-                                Photo: {leadNewsItem.imageCredit}
+                                {t("now.photo", "Photo")}: {leadNewsItem.imageCredit}
                               </span>
                             ) : null}
                           </div>
@@ -2587,10 +2589,10 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   <div className="mb-3 h-1.5 w-20 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-transparent sm:mb-4 sm:w-14" />
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full border border-cyan-200/34 bg-cyan-200/12 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100 sm:px-2.5 sm:text-[10px] sm:tracking-[0.12em]">
-                      Lead story
+                      {t("now.leadStory", "Lead story")}
                     </span>
                     <span className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72 sm:px-2.5 sm:text-[10px] sm:tracking-[0.12em]">
-                      {leadNewsItem.city || "Global"}
+                      {leadNewsItem.city || t("now.global", "Global")}
                     </span>
                     <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] text-white/72 sm:px-2.5 sm:text-[10px]">
                       {formatDateShort(leadNewsItem.createdAt || leadNewsItem.date)}
@@ -2602,7 +2604,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   </p>
                   {leadNewsItem.whyItMatters ? (
                     <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:mt-3">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">Why it matters</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">{t("now.whyItMatters", "Why it matters")}</p>
                       <p className="qa-copy-justify mt-2 text-sm leading-6 text-white/72 line-clamp-2 sm:line-clamp-2">{leadNewsItem.whyItMatters}</p>
                     </div>
                   ) : null}
@@ -2721,7 +2723,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                             <div className={`mb-3 h-1.5 w-20 rounded-full bg-gradient-to-r transition-all duration-300 group-hover:w-28 sm:mb-4 sm:w-24 sm:group-hover:w-32 ${tone.accentBar}`} />
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex items-center gap-2">
-                                <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">{item.city || "Global"}</p>
+                                <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">{item.city || t("now.global", "Global")}</p>
                                 <span className={`rounded-full border px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] ${tone.categoryBadge}`}>
                                   {categoryLabels[item.category] || "News"}
                                 </span>
@@ -2740,7 +2742,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                                 {item.summary}
                               </p>
                               <div className="mt-4 rounded-xl border border-white/8 bg-black/20 p-3">
-                                <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Why it matters</p>
+                                <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">{t("now.whyItMatters", "Why it matters")}</p>
                                 <p
                                   className={`qa-copy-justify mt-2 text-sm leading-6 text-white/62 transition-all ${
                                     isExpanded ? "" : "line-clamp-2"
@@ -2761,12 +2763,12 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                                   }}
                                   className="rounded-full border border-fuchsia-100/65 bg-[linear-gradient(135deg,rgba(244,114,182,0.94),rgba(217,70,239,0.9))] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-white shadow-[0_10px_24px_rgba(217,70,239,0.3)] transition hover:-translate-y-[1px] hover:brightness-110"
                                 >
-                                  Open article
+                                  {t("now.openArticle", "Open article")}
                                 </button>
                                 <span className="text-[11px] text-white/36">
                                   {isExpanded
                                     ? item.sourceName || QA_SOURCE_CONFIDENCE.atlasSignal
-                                    : "Tap to expand"}
+                                    : t("now.tapToExpand", "Tap to expand")}
                                 </span>
                                 {isAdmin && (
                                   <>
@@ -2779,7 +2781,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                                         }}
                                         className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/38"
                                       >
-                                        Edit
+                                        {t("now.edit", "Edit")}
                                       </button>
                                     )}
                                     <button
@@ -2790,7 +2792,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                                       }}
                                       className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
                                     >
-                                      Delete
+                                      {t("now.delete", "Delete")}
                                     </button>
                                   </>
                                 )}
@@ -2831,36 +2833,36 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-amber-200/7 blur-3xl" />
                 <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                   <div className="max-w-4xl">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/68">Queer Atlas · Annual desk</p>
-                    <h1 className="qa-display mt-3 text-[clamp(2.65rem,5.5vw,5.6rem)] font-semibold leading-[0.9] tracking-[-0.06em] text-[#f7f4ee]">City Rankings<span className="text-amber-100">.</span></h1>
-                    <p className="mt-4 max-w-[66ch] text-sm leading-6 text-white/60 sm:text-base sm:leading-7">Evidence-led views of queer travel depth and practical safety — ranked separately so one score never pretends to answer every question.</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-amber-100/68">{t("now.annualDesk", "Queer Atlas · Annual desk")}</p>
+                    <h1 className="qa-display mt-3 text-[clamp(2.65rem,5.5vw,5.6rem)] font-semibold leading-[0.9] tracking-[-0.06em] text-[#f7f4ee]">{t("now.cityRankings", "City Rankings")}<span className="text-amber-100">.</span></h1>
+                    <p className="mt-4 max-w-[66ch] text-sm leading-6 text-white/60 sm:text-base sm:leading-7">{t("now.rankingsIntro", "Evidence-led views of queer travel depth and practical safety — ranked separately so one score never pretends to answer every question.")}</p>
                   </div>
-                  <div className="flex flex-wrap gap-x-5 gap-y-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/42 lg:max-w-sm lg:justify-end lg:text-right"><span>2026 edition</span><span>Two independent models</span><span>Methods published</span></div>
+                  <div className="flex flex-wrap gap-x-5 gap-y-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/42 lg:max-w-sm lg:justify-end lg:text-right"><span>{t("now.edition2026", "2026 edition")}</span><span>{t("now.twoIndependentModels", "Two independent models")}</span><span>{t("now.methodsPublished", "Methods published")}</span></div>
                 </div>
               </header>
 
               <div className="flex items-end justify-between gap-4 border-b border-white/10 py-5">
-                <div className="flex gap-6" role="tablist" aria-label="Choose ranking">
-                  {[{ id: "travel", label: "Travel" }, { id: "safety", label: "Safety" }].map((tab) => {
+                  <div className="flex gap-6" role="tablist" aria-label={t("now.chooseRanking", "Choose ranking")}>
+                  {[{ id: "travel", label: t("now.travel", "Travel") }, { id: "safety", label: t("now.safety", "Safety") }].map((tab) => {
                     const active = activeRankingKind === tab.id;
                     return <button key={tab.id} id={`ranking-tab-${tab.id}`} type="button" role="tab" aria-selected={active} aria-controls={`ranking-panel-${tab.id}`} onClick={() => setActiveRankingKind(tab.id)} className={`relative min-h-11 px-1 text-sm font-semibold transition focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 ${active ? "text-white" : "text-white/42 hover:text-white/76"}`}>{tab.label}{active ? <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-cyan-200 via-fuchsia-200 to-amber-100" /> : null}</button>;
                   })}
                 </div>
-                <Link href={activeRankingKind === "travel" ? "/now/data?sort=overall" : "/now/data?sort=legal"} className="hidden min-h-10 items-center text-xs font-semibold text-cyan-100/68 transition hover:text-cyan-50 sm:inline-flex">Explore all data →</Link>
+                <Link href={activeRankingKind === "travel" ? "/now/data?sort=overall" : "/now/data?sort=legal"} className="hidden min-h-10 items-center text-xs font-semibold text-cyan-100/68 transition hover:text-cyan-50 sm:inline-flex">{t("now.exploreAllData", "Explore all data")} →</Link>
               </div>
 
               <div className="min-w-0">
               <div id="ranking-panel-travel" role="tabpanel" aria-labelledby="ranking-tab-travel" hidden={activeRankingKind !== "travel"} className="relative min-h-0 border-t border-cyan-200/18 pt-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/75">Ranking</p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">Top 10 Queer Travel Destinations</h3>
+                  <p className="text-xs uppercase tracking-[0.22em] text-cyan-100/75">{t("now.ranking", "Ranking")}</p>
+                  <h3 className="mt-1 text-lg font-semibold text-white">{t("now.topTravelDestinations", "Top 10 Queer Travel Destinations")}</h3>
                   <div className="mt-2 inline-flex items-center rounded-full border border-cyan-200/26 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/90">
-                    {evidenceBackedRanking ? `Evidence model ${NIGHTLIFE_INDEX_2026.methodologyVersion}` : "Atlas ranking editorial"}
+                    {evidenceBackedRanking ? `${t("now.evidenceModel", "Evidence model")} ${NIGHTLIFE_INDEX_2026.methodologyVersion}` : t("now.atlasRankingEditorial", "Atlas ranking editorial")}
                   </div>
                 </div>
                 <select
-                  aria-label="Travel ranking year"
+                  aria-label={t("now.travelRankingYear", "Travel ranking year")}
                   value={selectedRankingYear}
                   onChange={(event) => {
                     const year = event.target.value;
@@ -2894,7 +2896,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   href="/reports/queer-nightlife-index-2026"
                   className="mt-3 inline-flex rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-200/20"
                 >
-                  Open scores + methodology
+                  {t("now.openScoresMethod", "Open scores + methodology")}
                 </Link>
               ) : null}
 
@@ -2914,7 +2916,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     }}
                     className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1.5 text-xs text-cyan-100 transition hover:border-cyan-200/45"
                   >
-                    {isRankingEditorOpen ? "Close ranking edit" : "Edit ranking"}
+                    {isRankingEditorOpen ? t("now.closeRankingEdit", "Close ranking edit") : t("now.editRanking", "Edit ranking")}
                   </button>
                   {isRankingEditorOpen && (
                     <>
@@ -2923,14 +2925,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                         onClick={saveRankingDraft}
                         className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-3 py-1.5 text-xs text-emerald-100 transition hover:border-emerald-200/45"
                       >
-                        Save ranking
+                        {t("now.saveRanking", "Save ranking")}
                       </button>
                       <button
                         type="button"
                         onClick={resetRankingYear}
                         className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1.5 text-xs text-rose-100 transition hover:border-rose-200/40"
                       >
-                        Reset year
+                        {t("now.resetYear", "Reset year")}
                       </button>
                     </>
                   )}
@@ -3013,20 +3015,20 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                           <input
                             value={item.city || ""}
                             onChange={(event) => updateRankingDraftField(index, "city", event.target.value)}
-                            placeholder="city_name"
+                            placeholder={t("now.cityName", "city_name")}
                             className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
                           />
                           <div className="grid grid-cols-2 gap-1">
                             <input
                               value={item.country || ""}
                               onChange={(event) => updateRankingDraftField(index, "country", event.target.value)}
-                              placeholder="country"
+                              placeholder={t("now.country", "country")}
                               className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
                             />
                             <input
                               value={item.signal || ""}
                               onChange={(event) => updateRankingDraftField(index, "signal", event.target.value)}
-                              placeholder="signal line"
+                              placeholder={t("now.signalLine", "signal line")}
                               className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
                             />
                           </div>
@@ -3059,7 +3061,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                             onClick={() => moveRankingDraftItem(index, -1)}
                             className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
                           >
-                            Up
+                            {t("now.up", "Up")}
                           </button>
                           <button
                             type="button"
@@ -3067,14 +3069,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                             onClick={() => moveRankingDraftItem(index, 1)}
                             className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
                           >
-                            Down
+                            {t("now.down", "Down")}
                           </button>
                           <button
                             type="button"
                             onClick={() => clearRankingDraftItem(index)}
                             className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
                           >
-                            Clear
+                            {t("now.clear", "Clear")}
                           </button>
                         </div>
                       ) : (
@@ -3091,7 +3093,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                               : "border border-white/10 bg-white/5 text-white/35"
                           }`}
                         >
-                          {cityExists ? "City guide" : "Unavailable"}
+                          {cityExists ? t("now.cityGuide", "City guide") : t("now.unavailable", "Unavailable")}
                         </button>
                       )}
                     </div>
@@ -3102,14 +3104,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               <div id="ranking-panel-safety" role="tabpanel" aria-labelledby="ranking-tab-safety" hidden={activeRankingKind !== "safety"} className="relative min-h-0 border-t border-emerald-200/18 pt-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-emerald-100/80">Safety ranking</p>
-                  <h3 className="mt-1 text-lg font-semibold text-white">Top 10 Queer Safety Destinations</h3>
+                  <p className="text-xs uppercase tracking-[0.22em] text-emerald-100/80">{t("now.safetyRanking", "Safety ranking")}</p>
+                  <h3 className="mt-1 text-lg font-semibold text-white">{t("now.topSafetyDestinations", "Top 10 Queer Safety Destinations")}</h3>
                   <div className="mt-2 inline-flex items-center rounded-full border border-emerald-200/26 bg-emerald-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-100/90">
-                    {evidenceBackedSafetyRanking ? `Evidence model ${SAFETY_INDEX_2026.methodologyVersion}` : "Atlas safety editorial"}
+                    {evidenceBackedSafetyRanking ? `${t("now.evidenceModel", "Evidence model")} ${SAFETY_INDEX_2026.methodologyVersion}` : t("now.atlasSafetyEditorial", "Atlas safety editorial")}
                   </div>
                 </div>
                 <select
-                  aria-label="Safety ranking year"
+                  aria-label={t("now.safetyRankingYear", "Safety ranking year")}
                   value={selectedSafetyRankingYear}
                   onChange={(event) => {
                     const year = event.target.value;
@@ -3139,7 +3141,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
 
               {evidenceBackedSafetyRanking ? (
                 <Link href="/reports/safest-queer-cities-2026" className="mt-3 inline-flex rounded-full border border-emerald-200/28 bg-emerald-200/12 px-3 py-1.5 text-xs font-semibold text-emerald-100 transition hover:bg-emerald-200/20">
-                  Open scores + methodology
+                  {t("now.openScoresMethod", "Open scores + methodology")}
                 </Link>
               ) : null}
 
@@ -3159,7 +3161,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     }}
                     className="rounded-full border border-emerald-200/28 bg-emerald-200/12 px-3 py-1.5 text-xs text-emerald-100 transition hover:border-emerald-200/45"
                   >
-                    {isSafetyRankingEditorOpen ? "Close safety edit" : "Edit safety ranking"}
+                    {isSafetyRankingEditorOpen ? t("now.closeSafetyEdit", "Close safety edit") : t("now.editSafetyRanking", "Edit safety ranking")}
                   </button>
                   {isSafetyRankingEditorOpen && (
                     <>
@@ -3168,14 +3170,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                         onClick={saveSafetyRankingDraft}
                         className="rounded-full border border-emerald-200/30 bg-emerald-200/12 px-3 py-1.5 text-xs text-emerald-100 transition hover:border-emerald-200/45"
                       >
-                        Save ranking
+                        {t("now.saveRanking", "Save ranking")}
                       </button>
                       <button
                         type="button"
                         onClick={resetSafetyRankingYear}
                         className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1.5 text-xs text-rose-100 transition hover:border-rose-200/40"
                       >
-                        Reset year
+                        {t("now.resetYear", "Reset year")}
                       </button>
                     </>
                   )}
@@ -3258,20 +3260,20 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                           <input
                             value={item.city || ""}
                             onChange={(event) => updateSafetyRankingDraftField(index, "city", event.target.value)}
-                            placeholder="city_name"
+                            placeholder={t("now.cityName", "city_name")}
                             className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
                           />
                           <div className="grid grid-cols-2 gap-1">
                             <input
                               value={item.country || ""}
                               onChange={(event) => updateSafetyRankingDraftField(index, "country", event.target.value)}
-                              placeholder="country"
+                              placeholder={t("now.country", "country")}
                               className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
                             />
                             <input
                               value={item.signal || ""}
                               onChange={(event) => updateSafetyRankingDraftField(index, "signal", event.target.value)}
-                              placeholder="signal line"
+                              placeholder={t("now.signalLine", "signal line")}
                               className="rounded-md border border-white/10 bg-black/35 px-2 py-1 text-[11px] text-white outline-none"
                             />
                           </div>
@@ -3304,7 +3306,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                             onClick={() => moveSafetyRankingDraftItem(index, -1)}
                             className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
                           >
-                            Up
+                            {t("now.up", "Up")}
                           </button>
                           <button
                             type="button"
@@ -3312,14 +3314,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                             onClick={() => moveSafetyRankingDraftItem(index, 1)}
                             className="rounded-full border border-white/16 bg-white/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/80 transition hover:border-white/30 disabled:opacity-35"
                           >
-                            Down
+                            {t("now.down", "Down")}
                           </button>
                           <button
                             type="button"
                             onClick={() => clearSafetyRankingDraftItem(index)}
                             className="rounded-full border border-rose-200/20 bg-rose-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/38"
                           >
-                            Clear
+                            {t("now.clear", "Clear")}
                           </button>
                         </div>
                       ) : (
@@ -3336,7 +3338,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                               : "border border-white/10 bg-white/5 text-white/35"
                           }`}
                         >
-                          {cityExists ? "City guide" : "Unavailable"}
+                          {cityExists ? t("now.cityGuide", "City guide") : t("now.unavailable", "Unavailable")}
                         </button>
                       )}
                     </div>
@@ -3357,12 +3359,12 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
         <section id="atlas-collections" aria-labelledby="atlas-collections-heading" className="mt-8 overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_8%_4%,rgba(34,211,238,0.16),transparent_28%),radial-gradient(circle_at_48%_-4%,rgba(244,114,182,0.13),transparent_30%),radial-gradient(circle_at_92%_10%,rgba(190,242,100,0.10),transparent_26%),radial-gradient(circle_at_76%_90%,rgba(167,139,250,0.12),transparent_34%),linear-gradient(180deg,rgba(8,11,23,0.98),rgba(8,9,15,0.99),rgba(4,4,7,1))] p-5 shadow-[0_34px_120px_rgba(2,6,23,0.46)] sm:p-6">
           <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/76">Atlas Collections</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/76">{t("now.collections", "Atlas Collections")}</p>
               <h2 id="atlas-collections-heading" className="qa-h2 mt-2 text-2xl font-semibold text-white sm:text-3xl">
-                Curated queer lists built for discovery
+                {t("now.collectionsTitle", "Curated queer lists built for discovery")}
               </h2>
               <p className="mt-3 text-sm leading-6 text-white/70">
-                Hand-picked lists for nights out, beach days, first stops, drag rooms, lesbian bars, and softer daytime finds.
+                {t("now.collectionsIntro", "Hand-picked lists for nights out, beach days, first stops, drag rooms, lesbian bars, and softer daytime finds.")}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
@@ -3374,7 +3376,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 }}
                 className="motion-safe:animate-pulse rounded-full border border-white/45 bg-gradient-to-r from-fuchsia-300 via-cyan-200 to-lime-200 px-5 py-3 text-xs font-black uppercase tracking-[0.14em] text-black shadow-[0_0_42px_rgba(34,211,238,0.35)] transition hover:scale-[1.02] hover:shadow-[0_0_62px_rgba(244,114,182,0.38)]"
               >
-                {showCollectionNominationForm ? "Close" : "Suggest a collection"}
+                {showCollectionNominationForm ? t("favorites.close", "Close") : t("now.suggestCollection", "Suggest a collection")}
               </button>
               <Link
                 href="/now/collections"
@@ -3414,7 +3416,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                       <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${featuredCollectionStyle.poster}`} />
                       <p className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${featuredCollectionStyle.number}`}>#{index + 1}</p>
                       <p className="mt-2 text-sm font-semibold text-white">{item}</p>
-                      <p className="mt-1 text-xs text-white/54">{featuredCollection.cities[index] || "Global"}</p>
+                      <p className="mt-1 text-xs text-white/54">{featuredCollection.cities[index] || t("now.global", "Global")}</p>
                     </div>
                   ))}
                 </div>
@@ -3438,13 +3440,13 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-cyan-300/18 blur-2xl" />
               <div className="absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-fuchsia-300/20 blur-2xl" />
               <div className="relative">
-              <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-100/62">How it works</p>
-              <h3 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">Three tiny steps</h3>
+              <p className="text-xs uppercase tracking-[0.22em] text-fuchsia-100/62">{t("now.howItWorks", "How it works")}</p>
+              <h3 className="mt-2 text-xl font-black tracking-[-0.03em] text-white">{t("now.threeSteps", "Three tiny steps")}</h3>
               <div className="mt-5 grid gap-3">
                 {[
-                  ["Idea", "Send a list idea or one place worth adding."],
-                  ["Check", "Atlas reviews vibe, city, safety, and usefulness."],
-                  ["Publish", "The strongest picks become a collection."],
+                  [t("now.idea", "Idea"), t("now.ideaStep", "Send a list idea or one place worth adding.")],
+                  [t("now.check", "Check"), t("now.checkStep", "Atlas reviews vibe, city, safety, and usefulness.")],
+                  [t("now.publish", "Publish"), t("now.publishStep", "The strongest picks become a collection.")],
                 ].map(([step, text]) => (
                   <div key={`collection-method-${step}`} className="rounded-2xl border border-white/13 bg-white/[0.075] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.12)] transition hover:-translate-y-[1px] hover:border-fuchsia-100/28 hover:bg-white/[0.095]">
                     <span className="inline-flex rounded-full bg-gradient-to-r from-fuchsia-200 to-cyan-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-slate-950">
@@ -3461,13 +3463,13 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
           {showCollectionNominationForm && (
             <form onSubmit={submitCollectionNomination} className="mt-5 grid gap-3 rounded-[26px] border border-cyan-200/16 bg-[linear-gradient(180deg,rgba(34,211,238,0.08),rgba(255,255,255,0.03))] p-4 md:grid-cols-[1fr_0.7fr]">
               <div className="md:col-span-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/74">Suggest a collection</p>
-                <p className="mt-1 text-sm text-white/62">Share one strong idea for a future list.</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/74">{t("now.suggestCollection", "Suggest a collection")}</p>
+                <p className="mt-1 text-sm text-white/62">{t("now.collectionIdeaIntro", "Share one strong idea for a future list.")}</p>
               </div>
               <input
                 value={collectionNominationForm.title}
                 onChange={(event) => setCollectionNominationForm((current) => ({ ...current, title: event.target.value }))}
-                placeholder="Example: Best queer saunas in Europe"
+                placeholder={t("now.collectionExample", "Example: Best queer saunas in Europe")}
                 className="rounded-xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/45"
               />
               <select
@@ -3475,18 +3477,18 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 onChange={(event) => setCollectionNominationForm((current) => ({ ...current, category: event.target.value }))}
                 className="rounded-xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/45"
               >
-                <option value="Nightlife">Nightlife</option>
-                <option value="Beaches">Beaches</option>
-                <option value="Cruising">Cruising</option>
-                <option value="Women-led">Women-led</option>
-                <option value="Food & cafes">Food & cafes</option>
-                <option value="Hidden gems">Hidden gems</option>
-                <option value="Safety">Safety</option>
+                <option value="Nightlife">{t("now.categoryNightlife", "Nightlife")}</option>
+                <option value="Beaches">{t("now.categoryBeaches", "Beaches")}</option>
+                <option value="Cruising">{t("now.categoryCruising", "Cruising")}</option>
+                <option value="Women-led">{t("now.categoryWomenLed", "Women-led")}</option>
+                <option value="Food & cafes">{t("now.categoryFoodCafes", "Food & cafes")}</option>
+                <option value="Hidden gems">{t("now.categoryHiddenGems", "Hidden gems")}</option>
+                <option value="Safety">{t("now.categorySafety", "Safety")}</option>
               </select>
               <textarea
                 value={collectionNominationForm.reason}
                 onChange={(event) => setCollectionNominationForm((current) => ({ ...current, reason: event.target.value }))}
-                placeholder="Why would this be useful?"
+                placeholder={t("now.collectionReason", "Why would this be useful?")}
                 className="min-h-[96px] rounded-xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/45 md:col-span-2"
               />
               <div className="flex flex-wrap items-center gap-2 md:col-span-2">
@@ -3495,10 +3497,10 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   disabled={isSubmittingCollectionNomination}
                   className="rounded-full border border-cyan-100/45 bg-gradient-to-r from-cyan-200 via-sky-200 to-violet-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-black transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isSubmittingCollectionNomination ? "Saving..." : "Save idea"}
+                  {isSubmittingCollectionNomination ? t("now.saving", "Saving...") : t("now.saveIdea", "Save idea")}
                 </button>
                 <button type="button" onClick={resetCollectionNominationForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/68 transition hover:border-white/28 hover:text-white">
-                  Cancel
+                  {t("now.cancel", "Cancel")}
                 </button>
                 {collectionNominationNotice && <p className="text-xs text-cyan-100/80">{collectionNominationNotice}</p>}
               </div>
@@ -3555,7 +3557,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                       ))}
                     </div>
                     <div className="mt-4 rounded-2xl border border-white/10 bg-black/24 p-3">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-white/42">Preview picks</p>
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-white/42">{t("now.previewPicks", "Preview picks")}</p>
                       <ol className="mt-2 space-y-1.5">
                         {collection.items.slice(0, 3).map((item, index) => (
                           <li key={`${collection.id}-pick-${item}`} className="grid grid-cols-[auto_1fr] gap-2 text-xs leading-5 text-white/70">
@@ -3567,7 +3569,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     </div>
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                       <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">
-                        {collection.cities.length} cities
+                        {t("now.citiesCount", "{count} cities").replace("{count}", collection.cities.length)}
                       </p>
                       <Link
                         href={collection.href}
@@ -3588,8 +3590,8 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
         <section className="mt-8 rounded-[28px] border border-rose-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.16),transparent_34%),radial-gradient(circle_at_90%_22%,rgba(251,191,36,0.11),transparent_36%),linear-gradient(180deg,rgba(42,20,30,0.95),rgba(18,12,18,0.98),rgba(10,10,10,1))] p-6 shadow-[0_26px_88px_rgba(244,63,94,0.10)]">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-            <p className="text-xs uppercase tracking-[0.25em] text-rose-100/90">Laws & rights updates</p>
-            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">Policy and safety watch</h2>
+            <p className="text-xs uppercase tracking-[0.25em] text-rose-100/90">{t("now.lawsRights", "Laws & rights updates")}</p>
+            <h2 className="qa-h2 mt-2 text-2xl font-semibold text-white">{t("now.policySafety", "Policy and safety watch")}</h2>
             </div>
             {isAdmin && (
               <button
@@ -3612,7 +3614,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 }}
                 className="rounded-full border border-rose-200/35 bg-rose-200/12 px-4 py-2 text-xs text-rose-100 transition hover:border-rose-100/60"
               >
-                {showPolicyAdminForm ? "Close policy composer" : "Publish policy update"}
+                {showPolicyAdminForm ? t("now.closePolicyComposer", "Close policy composer") : t("now.publishPolicyUpdate", "Publish policy update")}
               </button>
             )}
           </div>
@@ -3620,19 +3622,19 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
           {isAdmin && showPolicyAdminForm && (
             <form onSubmit={publishAdminNews} className="mb-5 grid gap-3 rounded-2xl border border-rose-200/20 bg-rose-200/[0.06] p-4 md:grid-cols-2">
               <p className="md:col-span-2 text-xs uppercase tracking-[0.14em] text-rose-100/90">
-                {isEditingNews ? "Edit policy update" : "Publish policy update"}
+                {isEditingNews ? t("now.editPolicyUpdate", "Edit policy update") : t("now.publishPolicyUpdate", "Publish policy update")}
               </p>
               <input
                 value={adminForm.title}
                 onChange={(event) => setAdminForm((current) => ({ ...current, title: event.target.value }))}
-                placeholder="Policy headline"
+                placeholder={t("now.policyHeadline", "Policy headline")}
                 className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                 required
               />
               <input
                 value={adminForm.city}
                 onChange={(event) => setAdminForm((current) => ({ ...current, city: event.target.value }))}
-                placeholder="City or country scope (optional)"
+                placeholder={t("now.policyScope", "City or country scope (optional)")}
                 className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
               />
               <input
@@ -3642,25 +3644,25 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
               />
               <div className="rounded-xl border border-rose-200/18 bg-rose-200/10 px-4 py-3 text-xs uppercase tracking-[0.14em] text-rose-100/90">
-                Category: Rights & safety
+                {t("now.policyCategory", "Category: Rights & safety")}
               </div>
               <textarea
                 value={adminForm.summary}
                 onChange={(event) => setAdminForm((current) => ({ ...current, summary: event.target.value }))}
-                placeholder="What changed?"
+                placeholder={t("now.whatChanged", "What changed?")}
                 className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                 required
               />
               <textarea
                 value={adminForm.whyItMatters}
                 onChange={(event) => setAdminForm((current) => ({ ...current, whyItMatters: event.target.value }))}
-                placeholder="Why this matters for queer travelers/community"
+                placeholder={t("now.whyPolicyMatters", "Why this matters for queer travelers/community")}
                 className="min-h-[90px] rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none md:col-span-2"
                 required
               />
               <div className="grid gap-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3 md:col-span-2">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-rose-100/90">
-                  Policy image (Supabase storage)
+                  {t("now.policyImage", "Policy image (Supabase storage)")}
                 </p>
                 <input
                   type="file"
@@ -3681,11 +3683,11 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     onChange={(event) => setRemoveAdminImage(event.target.checked)}
                     className="h-4 w-4 rounded border-white/30 bg-black/40"
                   />
-                  Remove current image on save
+                  {t("now.removeCurrentImage", "Remove current image on save")}
                 </label>
                 {adminImageFile ? (
                   <p className="text-xs text-rose-100/85">
-                    New file: {adminImageFile.name}
+                    {t("now.newFile", "New file")}: {adminImageFile.name}
                   </p>
                 ) : null}
               </div>
@@ -3693,14 +3695,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 <input
                   value={adminForm.imageAlt}
                   onChange={(event) => setAdminForm((current) => ({ ...current, imageAlt: event.target.value }))}
-                  placeholder="Describe what is visible in the image"
-                  aria-label="Image alt text"
+                  placeholder={t("now.describeImage", "Describe what is visible in the image")}
+                  aria-label={t("now.imageAltText", "Image alt text")}
                   className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                 />
                 <input
                   value={adminForm.imageCredit}
                   onChange={(event) => setAdminForm((current) => ({ ...current, imageCredit: event.target.value }))}
-                  placeholder="Image credit (optional)"
+                  placeholder={t("now.imageCreditOptional", "Image credit (optional)")}
                   className="rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm outline-none"
                 />
               </div>
@@ -3711,7 +3713,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   rel="noreferrer"
                   className="rounded-xl border border-rose-200/25 bg-rose-200/8 px-4 py-3 text-xs text-rose-100 transition hover:border-rose-200/45 md:col-span-2"
                 >
-                  Open current image
+                  {t("now.openCurrentImage", "Open current image")}
                 </a>
               ) : null}
               <button
@@ -3721,18 +3723,18 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               >
                 {isPublishingNews
                   ? isEditingNews
-                    ? "Updating..."
-                    : "Publishing..."
+                    ? t("now.updating", "Updating...")
+                    : t("now.publishing", "Publishing...")
                   : isEditingNews
-                    ? "Update policy"
-                    : "Publish policy"}
+                    ? t("now.updatePolicy", "Update policy")
+                    : t("now.publishPolicy", "Publish policy")}
               </button>
               <button
                 type="button"
                 onClick={resetAdminNewsComposer}
                 className="rounded-xl border border-white/16 bg-black/30 px-4 py-3 text-sm text-white/82 transition hover:border-white/28 md:col-span-2"
               >
-                Cancel
+                {t("now.cancel", "Cancel")}
               </button>
             </form>
           )}
@@ -3761,12 +3763,12 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 className="cursor-pointer rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-left transition hover:-translate-y-[1px] hover:border-rose-200/38 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200/45"
               >
                 <p className="text-xs uppercase tracking-[0.14em] text-rose-100/82">
-                  {item.city || "Global"} | {formatDateShort(item.date || item.createdAt)}
+                  {item.city || t("now.global", "Global")} | {formatDateShort(item.date || item.createdAt)}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-white">{item.title}</p>
                 {item.summary ? (
                   <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-white/50">Summary</p>
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-white/50">{t("now.summary", "Summary")}</p>
                     <p
                       className={`mt-1 text-xs leading-5 text-white/70 ${
                         String(expandedNewsId) === String(item.id) ? "" : "line-clamp-2"
@@ -3778,7 +3780,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 ) : null}
                 {item.whyItMatters ? (
                   <div className="mt-2 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.05] px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.12em] text-rose-100/80">Why it matters</p>
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-rose-100/80">{t("now.whyItMatters", "Why it matters")}</p>
                     <p
                       className={`mt-1 text-sm leading-6 text-white/72 ${
                         String(expandedNewsId) === String(item.id) ? "" : "line-clamp-2"
@@ -3793,7 +3795,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     {item.sourceName || QA_SOURCE_CONFIDENCE.atlasSignal}
                   </span>
                   <span className="text-[11px] text-rose-100/80">
-                    {String(expandedNewsId) === String(item.id) ? "Tap to collapse" : "Tap to expand"}
+                    {String(expandedNewsId) === String(item.id) ? t("now.tapToCollapse", "Tap to collapse") : t("now.tapToExpand", "Tap to expand")}
                   </span>
                   {isAdmin && (
                     <div className="flex items-center gap-2">
@@ -3806,7 +3808,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                           }}
                           className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/42"
                         >
-                          Edit
+                          {t("now.edit", "Edit")}
                         </button>
                       )}
                       <button
@@ -3817,7 +3819,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                         }}
                         className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] text-fuchsia-100 transition hover:border-fuchsia-200/40"
                       >
-                        Delete
+                        {t("now.delete", "Delete")}
                       </button>
                     </div>
                   )}
@@ -3827,8 +3829,8 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
             })}
             {rightsUpdates.length === 0 && (
               <EmptyState
-                title="No rights updates in this view yet."
-                description="Rights & safety updates will appear here when published."
+                title={t("now.noRightsUpdates", "No rights updates in this view yet.")}
+                description={t("now.rightsUpdatesHint", "Rights & safety updates will appear here when published.")}
                 className="md:col-span-2 px-4 py-8"
               />
             )}
@@ -3874,33 +3876,33 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               <div className="grid gap-4 lg:grid-cols-2">
                 {showCommunityStoryForm ? (
                   <form onSubmit={submitCommunityStory} className="rounded-[28px] border border-rose-200/18 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.13),transparent_34%),linear-gradient(160deg,rgba(32,16,27,0.96),rgba(9,9,12,1))] p-4 sm:p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-100/72">Submit a member story</p>
-                    <h3 className="mt-2 text-xl font-semibold text-white">Share lived experience</h3>
-                    <p className="mt-1 text-xs leading-5 text-white/50">Every story is reviewed before it appears publicly.</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-100/72">{t("now.submitMemberStory", "Submit a member story")}</p>
+                    <h3 className="mt-2 text-xl font-semibold text-white">{t("now.shareLivedExperience", "Share lived experience")}</h3>
+                    <p className="mt-1 text-xs leading-5 text-white/50">{t("now.storyReviewNote", "Every story is reviewed before it appears publicly.")}</p>
                     <div className="mt-4 grid gap-3">
                       <select value={communityStoryForm.storyType} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, storyType: event.target.value }))} className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45">
                         {COMMUNITY_STORY_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                       </select>
-                      <input value={communityStoryForm.city} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder="City (optional)" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
-                      <input required value={communityStoryForm.title} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder="Headline" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
-                      <textarea required value={communityStoryForm.summary} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Tell us what happened and where." className="min-h-[100px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
-                      <textarea required value={communityStoryForm.whyItMatters} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, whyItMatters: event.target.value }))} placeholder="Why will this perspective help someone else?" className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
-                      <div className="flex flex-wrap gap-2"><button type="submit" disabled={isSubmittingCommunityStory} className="rounded-full border border-rose-100/42 bg-rose-200/16 px-4 py-2 text-xs font-semibold text-rose-50 disabled:opacity-60">{isSubmittingCommunityStory ? "Submitting..." : "Submit for review"}</button><button type="button" onClick={resetCommunityStoryForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs text-white/70">Cancel</button></div>
+                      <input value={communityStoryForm.city} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, city: event.target.value }))} placeholder={t("now.cityOptional", "City (optional)")} className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <input required value={communityStoryForm.title} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, title: event.target.value }))} placeholder={t("now.headline", "Headline")} className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <textarea required value={communityStoryForm.summary} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, summary: event.target.value }))} placeholder={t("now.storyWhatHappened", "Tell us what happened and where.")} className="min-h-[100px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <textarea required value={communityStoryForm.whyItMatters} onChange={(event) => setCommunityStoryForm((current) => ({ ...current, whyItMatters: event.target.value }))} placeholder={t("now.storyWhyHelp", "Why will this perspective help someone else?")} className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-rose-200/45" />
+                      <div className="flex flex-wrap gap-2"><button type="submit" disabled={isSubmittingCommunityStory} className="rounded-full border border-rose-100/42 bg-rose-200/16 px-4 py-2 text-xs font-semibold text-rose-50 disabled:opacity-60">{isSubmittingCommunityStory ? t("now.submitting", "Submitting...") : t("now.submitReview", "Submit for review")}</button><button type="button" onClick={resetCommunityStoryForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs text-white/70">{t("now.cancel", "Cancel")}</button></div>
                     </div>
                   </form>
                 ) : null}
 
                 {showCommunityGuideForm ? (
                   <form onSubmit={submitCommunityGuide} className="rounded-[28px] border border-violet-200/18 bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.14),transparent_34%),linear-gradient(160deg,rgba(23,18,42,0.96),rgba(9,9,12,1))] p-4 sm:p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-100/72">Submit a local guide</p>
-                    <h3 className="mt-2 text-xl font-semibold text-white">Turn local knowledge into a route</h3>
-                    <p className="mt-1 text-xs leading-5 text-white/50">Useful, specific guidance is reviewed before publication.</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-violet-100/72">{t("now.submitLocalGuide", "Submit a local guide")}</p>
+                    <h3 className="mt-2 text-xl font-semibold text-white">{t("now.turnKnowledgeRoute", "Turn local knowledge into a route")}</h3>
+                    <p className="mt-1 text-xs leading-5 text-white/50">{t("now.guideReviewNote", "Useful, specific guidance is reviewed before publication.")}</p>
                     <div className="mt-4 grid gap-3">
-                      <div className="grid gap-3 sm:grid-cols-2"><input required value={communityGuideForm.city} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder="City or region" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" /><input required value={communityGuideForm.focus} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder="Focus, e.g. solo weekend" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" /></div>
-                      <input required value={communityGuideForm.title} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder="Guide title" className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
-                      <textarea required value={communityGuideForm.summary} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="A concise promise of what this guide helps with." className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
-                      <textarea required value={communityGuideForm.content} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the route, local context, useful stops, and practical advice." className="min-h-[130px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
-                      <div className="flex flex-wrap gap-2"><button type="submit" disabled={isSubmittingCommunityGuide} className="rounded-full border border-violet-100/42 bg-violet-200/16 px-4 py-2 text-xs font-semibold text-violet-50 disabled:opacity-60">{isSubmittingCommunityGuide ? "Submitting..." : "Submit guide for review"}</button><button type="button" onClick={resetCommunityGuideForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs text-white/70">Cancel</button></div>
+                      <div className="grid gap-3 sm:grid-cols-2"><input required value={communityGuideForm.city} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, city: event.target.value }))} placeholder={t("now.cityOrRegion", "City or region")} className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" /><input required value={communityGuideForm.focus} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, focus: event.target.value }))} placeholder={t("now.guideFocus", "Focus, e.g. solo weekend")} className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" /></div>
+                      <input required value={communityGuideForm.title} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, title: event.target.value }))} placeholder={t("now.guideTitle", "Guide title")} className="rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
+                      <textarea required value={communityGuideForm.summary} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder={t("now.guidePromise", "A concise promise of what this guide helps with.")} className="min-h-[90px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
+                      <textarea required value={communityGuideForm.content} onChange={(event) => setCommunityGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder={t("now.guideContent", "Write the route, local context, useful stops, and practical advice.")} className="min-h-[130px] rounded-xl border border-white/12 bg-black/35 px-4 py-3 text-sm text-white outline-none focus:border-violet-200/45" />
+                      <div className="flex flex-wrap gap-2"><button type="submit" disabled={isSubmittingCommunityGuide} className="rounded-full border border-violet-100/42 bg-violet-200/16 px-4 py-2 text-xs font-semibold text-violet-50 disabled:opacity-60">{isSubmittingCommunityGuide ? t("now.submitting", "Submitting...") : t("now.submitGuideReview", "Submit guide for review")}</button><button type="button" onClick={resetCommunityGuideForm} className="rounded-full border border-white/14 bg-white/[0.045] px-4 py-2 text-xs text-white/70">{t("now.cancel", "Cancel")}</button></div>
                     </div>
                   </form>
                 ) : null}
@@ -3913,9 +3915,9 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
         ) : null}
 
         {!isVoicesSection ? <section className="mt-8 rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-[11px] text-white/74">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">Discover paths</p>
+          <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-100/78">{t("now.discoverPaths", "Discover paths")}</p>
           <p className="mt-1 text-xs leading-6 text-white/66">
-            Shortcut routes plus citation sources in one low-noise layer.
+            {t("now.discoverPathsIntro", "Shortcut routes plus citation sources in one low-noise layer.")}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {topicHubKeys.slice(0, 5).map((topicKey) => (
@@ -3939,13 +3941,13 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               ))
             )}
             <Link href="/reports" className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/[0.08] px-3 py-1 text-fuchsia-100/88 transition hover:border-fuchsia-100/45 hover:text-fuchsia-100">
-              Open reports
+              {t("now.openReports", "Open reports")}
             </Link>
             <Link href="/topics" className="rounded-full border border-cyan-200/24 bg-cyan-200/[0.08] px-3 py-1 text-cyan-100/88 transition hover:border-cyan-100/45 hover:text-cyan-100">
-              Open topic hubs
+              {t("now.openTopicHubs", "Open topic hubs")}
             </Link>
             <Link href="/community-policy" className="rounded-full border border-white/16 bg-white/[0.04] px-3 py-1 text-white/82 transition hover:border-white/30 hover:text-white">
-              Moderation policy
+              {t("now.moderationPolicy", "Moderation policy")}
             </Link>
           </div>
         </section> : null}
@@ -3968,14 +3970,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               >
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-white/10 bg-black/55 px-4 py-3 backdrop-blur-md sm:px-6">
                   <p className="text-[11px] uppercase tracking-[0.15em] text-white/70">
-                    {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                    {readingNewsItem.city || t("now.global", "Global")} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
                   </p>
                   <button
                     type="button"
                     onClick={closeNewsReader}
                     className="rounded-full border border-white/24 bg-white/10 px-3 py-1 text-xs text-white/90 transition hover:border-white/40"
                   >
-                    Close
+                    {t("now.close", "Close")}
                   </button>
                 </div>
                 <div className="max-h-[calc(100vh-3.2rem)] overflow-y-auto sm:max-h-[calc(94vh-3.2rem)]">
@@ -3983,7 +3985,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     <div className="relative h-56 w-full overflow-hidden border-b border-white/10 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.16),rgba(10,10,10,0.98)_62%)] sm:h-80">
                       <Image
                         src={readingNewsItem.imageUrl}
-                        alt={readingNewsItem.imageAlt || readingNewsItem.title || "Queer Atlas editorial news image"}
+                        alt={readingNewsItem.imageAlt || readingNewsItem.title || t("now.editorialNewsImage", "Queer Atlas editorial news image")}
                         fill
                         sizes="(max-width: 640px) 100vw, 75vw"
                         className="object-contain"
@@ -3992,7 +3994,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                   ) : null}
                   <div className="p-4 sm:p-6">
                     <p className="text-[11px] uppercase tracking-[0.15em] text-white/58">
-                      {readingNewsItem.city || "Global"} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
+                      {readingNewsItem.city || t("now.global", "Global")} · {formatDateShort(readingNewsItem.createdAt || readingNewsItem.date)}
                     </p>
                     <h3 id="now-news-reader-title" className="mt-3 text-2xl font-semibold leading-tight text-white sm:text-3xl">
                       {readingNewsItem.title}
@@ -4000,13 +4002,13 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                     <p className="mt-4 text-[15px] leading-8 text-white/86">{readingNewsItem.summary}</p>
                     {readingNewsItem.whyItMatters ? (
                       <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/55">Why it matters</p>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-white/55">{t("now.whyItMatters", "Why it matters")}</p>
                         <p className="mt-2 text-[15px] leading-8 text-white/82">{readingNewsItem.whyItMatters}</p>
                       </div>
                     ) : null}
                     <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-4 text-xs text-white/62">
                       <span>{readingNewsItem.sourceName || QA_SOURCE_CONFIDENCE.atlasSignal}</span>
-                      {readingNewsItem.imageCredit ? <span>Photo: {readingNewsItem.imageCredit}</span> : null}
+                      {readingNewsItem.imageCredit ? <span>{t("now.photo", "Photo")}: {readingNewsItem.imageCredit}</span> : null}
                     </div>
                   </div>
                 </div>

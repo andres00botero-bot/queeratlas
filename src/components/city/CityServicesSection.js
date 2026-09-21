@@ -2,6 +2,7 @@
 
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import ServiceGuideCard from "@/components/city/ServiceGuideCard";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function CityServicesSection({
   sectionRef,
@@ -17,6 +18,7 @@ export default function CityServicesSection({
   serviceTypeLabels,
   serviceTypeStyles,
 }) {
+  const { t } = useLocale();
   return (
     <div
       ref={sectionRef}
@@ -24,11 +26,11 @@ export default function CityServicesSection({
       style={{ animationDelay: "270ms" }}
     >
       <div className="mb-7">
-        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-emerald-100/58">Local services</p>
+        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-emerald-100/58">{t("city.localServices", "Local services")}</p>
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">Services</h2>
+          <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">{t("city.servicesLower", "Services")}</h2>
           <span className="inline-flex items-center rounded-full border border-emerald-200/20 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/86">
-            {servicesLoading ? "Curated services" : `${cityServiceCount} listed`}
+            {servicesLoading ? t("city.curatedServices", "Curated services") : t("city.listed", "{count} listed").replace("{count}", cityServiceCount)}
           </span>
         </div>
         <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,#34d399,#4de1ff,transparent)] opacity-60" />
@@ -59,14 +61,14 @@ export default function CityServicesSection({
 
       {servicesLoading && (
         <div className="mb-4 rounded-2xl border border-emerald-200/10 bg-emerald-200/[0.03] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-emerald-100/60">Local service guide</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-emerald-100/60">{t("city.localServiceGuide", "Local service guide")}</p>
           <SectionSkeleton tone="emerald" rows={2} />
         </div>
       )}
 
       {!servicesLoading && !hasAnyServices && (
         <div className="rounded-2xl border border-dashed border-emerald-200/20 bg-emerald-200/[0.04] px-4 py-8 text-sm text-emerald-100/75">
-          No service signal yet for this city. Add trusted providers from Contribute to unlock this lane.
+          {t("city.noServiceSignal", "No service signal yet for this city. Add trusted providers from Contribute to unlock this lane.")}
         </div>
       )}
 

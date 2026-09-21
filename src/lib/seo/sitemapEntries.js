@@ -14,6 +14,7 @@ import {
   loadIndexableTopicHubRoutes,
 } from "@/lib/seo/topicHubRoutes";
 import { QA_SITE_URL } from "@/lib/seo/sitemapXml";
+import { localePath } from "@/lib/seo/localizedSeo";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
 import { supabase } from "@/lib/supabase";
@@ -52,6 +53,17 @@ function canonicalEntries(entries = []) {
     } catch {
       return false;
     }
+  });
+}
+
+function withLanguageAlternates(entries = []) {
+  return entries.flatMap((entry) => {
+    const englishUrl = String(entry.url || "");
+    if (!englishUrl.startsWith(QA_SITE_URL)) return [];
+    const path = englishUrl.slice(QA_SITE_URL.length) || "/";
+    const spanishUrl = `${QA_SITE_URL}${localePath(path, "es")}`;
+    const languages = { en: englishUrl, es: spanishUrl, "x-default": englishUrl };
+    return [{ ...entry, languages }, { ...entry, url: spanishUrl, languages }];
   });
 }
 
@@ -179,7 +191,7 @@ export async function getPageSitemapEntries() {
     )
   );
 
-  return canonicalEntries([
+  return canonicalEntries(withLanguageAlternates([
     ...staticEntries,
     ...cityEntries,
     ...cityClusterEntries,
@@ -187,7 +199,7 @@ export async function getPageSitemapEntries() {
     ...reportEntries,
     ...collectionEntries,
     ...newsArticleEntries,
-  ]);
+  ]));
 }
 
 export async function getVenueSitemapEntries() {
@@ -196,11 +208,11 @@ export async function getVenueSitemapEntries() {
     listCityRegistry({ indexableOnly: true }),
   ]);
   const indexableCities = new Set(registryCities.map((city) => city.key));
-  return canonicalEntries(venues.filter((venue) => indexableCities.has(normalizeCitySlug(venue?.city))).map((venue) => entryWithDate({
+  return canonicalEntries(withLanguageAlternates(venues.filter((venue) => indexableCities.has(normalizeCitySlug(venue?.city))).map((venue) => entryWithDate({
     url: `${QA_SITE_URL}${buildVenuePath(venue.city, venue)}`,
     changeFrequency: "monthly",
     priority: 0.72,
-  }, resolveEntityLastModified(venue))));
+  }, resolveEntityLastModified(venue)))));
 }
 
 export async function getEventSitemapEntries() {
@@ -209,11 +221,11 @@ export async function getEventSitemapEntries() {
     listCityRegistry({ indexableOnly: true }),
   ]);
   const indexableCities = new Set(registryCities.map((city) => city.key));
-  return canonicalEntries(events.filter((event) => indexableCities.has(normalizeCitySlug(event?.city))).map((event) => entryWithDate({
+  return canonicalEntries(withLanguageAlternates(events.filter((event) => indexableCities.has(normalizeCitySlug(event?.city))).map((event) => entryWithDate({
     url: `${QA_SITE_URL}${buildEventPath(event.city, event)}`,
     changeFrequency: "daily",
     priority: 0.76,
-  }, resolveEntityLastModified(event))));
+  }, resolveEntityLastModified(event)))));
 }
 
 export async function getServiceSitemapEntries() {
@@ -222,9 +234,9 @@ export async function getServiceSitemapEntries() {
     listCityRegistry({ indexableOnly: true }),
   ]);
   const indexableCities = new Set(registryCities.map((city) => city.key));
-  return canonicalEntries(services.filter((service) => indexableCities.has(normalizeCitySlug(service?.city))).map((service) => entryWithDate({
+  return canonicalEntries(withLanguageAlternates(services.filter((service) => indexableCities.has(normalizeCitySlug(service?.city))).map((service) => entryWithDate({
     url: `${QA_SITE_URL}${buildServicePath(service.city, service)}`,
     changeFrequency: "monthly",
     priority: 0.68,
-  }, resolveEntityLastModified(service))));
+  }, resolveEntityLastModified(service)))));
 }

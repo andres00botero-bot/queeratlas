@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import PageControls from "@/components/ui/PageControls";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const COMMUNITY_PANELS = [
   { id: "home", label: "Home" },
@@ -12,6 +13,7 @@ const COMMUNITY_PANELS = [
 ];
 
 export function CommunityHero({ memberName, onExplore }) {
+  const { t } = useLocale();
   return (
     <header className="qa-community-hero relative mb-6 flex min-h-[390px] overflow-hidden rounded-[28px] border border-white/[0.11] bg-[#05060a] shadow-[0_34px_100px_rgba(0,0,0,0.42)] sm:min-h-[420px] sm:rounded-[34px]">
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -31,14 +33,14 @@ export function CommunityHero({ memberName, onExplore }) {
       <div className="relative z-10 flex w-full items-center px-6 py-10 sm:px-10 lg:px-14">
         <div className="max-w-3xl">
           <p className="!text-left text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100/72 [hyphens:none]">
-            Welcome back, {memberName || "member"}
+            {t("community.welcomeBack", "Welcome back")}, {memberName || t("community.member", "member")}
           </p>
           <h1 className="qa-display mt-4 !text-left text-[2.75rem] font-semibold leading-[0.93] tracking-[-0.05em] text-white [hyphens:none] sm:text-6xl lg:text-[4.55rem]">
-            <span className="block">Community,</span>
-            <span className="block text-white/90">wherever you land.</span>
+            <span className="block">{t("community.heroTitle", "Community,")}</span>
+            <span className="block text-white/90">{t("community.heroTitleRest", "wherever you land.")}</span>
           </h1>
           <p className="mt-5 max-w-xl !text-left text-sm leading-6 text-white/68 [hyphens:none] sm:text-base sm:leading-7">
-            Meet members, exchange local knowledge, and find queer opportunities across the atlas.
+            {t("community.heroIntro", "Meet members, exchange local knowledge, and find queer opportunities across the atlas.")}
           </p>
           <div className="mt-7">
             <button
@@ -46,7 +48,7 @@ export function CommunityHero({ memberName, onExplore }) {
               onClick={onExplore}
               className="qa-action qa-cta-primary inline-flex min-h-11 items-center gap-3 rounded-full border border-white/70 bg-white px-5 py-2.5 text-sm font-semibold text-[#070a10] shadow-[0_14px_38px_rgba(0,0,0,0.25)] transition hover:border-cyan-100 hover:bg-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
-              <span>Find your people</span>
+              <span>{t("community.findPeople", "Find your people")}</span>
               <span aria-hidden="true" className="text-base leading-none text-cyan-700">→</span>
             </button>
           </div>
@@ -62,16 +64,18 @@ export function CommunityNavigation({
   controlsRef,
   controlButtonsRef,
 }) {
+  const { t } = useLocale();
+  const panels = COMMUNITY_PANELS.map((panel) => ({ ...panel, label: t(`community.nav.${panel.id}`, panel.label) }));
   return (
-    <section className="mb-6" aria-label="Community navigation">
+    <section className="mb-6" aria-label={t("community.navigation", "Community navigation")}>
       <PageControls
         className="border-b border-white/10"
         controlsRef={controlsRef}
         controlButtonsRef={controlButtonsRef}
         variant="editorial-rail"
-        ariaLabel="Community sections"
-        mobileLabelsById={{ improve: "Build" }}
-        buttons={COMMUNITY_PANELS}
+        ariaLabel={t("community.sections", "Community sections")}
+        mobileLabelsById={{ improve: t("community.navBuild", "Build") }}
+        buttons={panels}
         activeId={activePanel}
         onSelect={onSelect}
       />

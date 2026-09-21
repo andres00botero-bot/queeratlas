@@ -59,6 +59,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import ActionToast from "@/components/ui/ActionToast";
 import PageControls from "@/components/ui/PageControls";
 import VibeTagChips from "@/components/ui/VibeTagChips";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 function getLocalDateKey() {
   const now = new Date();
@@ -156,6 +157,7 @@ function normalizeEventVibeKeys(event) {
 
 export default function EventsPage({ initialSection = "calendar" }) {
   const router = useRouter();
+  const { locale, t } = useLocale();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
   const { toast, showToast } = useActionToast();
   const overviewSectionRef = useRef(null);
@@ -593,7 +595,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const monthName = currentDate.toLocaleString("default", {
+  const monthName = currentDate.toLocaleString(locale === "es" ? "es" : "en", {
     month: "long",
   });
   const displayMonthName = titleCaseWords(monthName);
@@ -960,12 +962,12 @@ export default function EventsPage({ initialSection = "calendar" }) {
 
   const eventSectionButtons = useMemo(
     () => ([
-      { id: "calendar", label: "Calendar", href: "/events/calendar" },
-      { id: "offgrid", label: "Off-grid events", href: "/events/off-grid" },
-      { id: "search", label: "Search", href: "/events/search" },
-      { id: "happening", label: "Happening soon", href: "/events/happening-soon" },
+      { id: "calendar", label: t("events.calendar", "Calendar"), href: "/events/calendar" },
+      { id: "offgrid", label: t("events.offGrid", "Off-grid events"), href: "/events/off-grid" },
+      { id: "search", label: t("events.search", "Search"), href: "/events/search" },
+      { id: "happening", label: t("events.happeningSoon", "Happening soon"), href: "/events/happening-soon" },
     ]),
-    []
+    [t]
   );
 
   const scrollToEventsSection = useCallback((sectionId) => {
@@ -997,16 +999,16 @@ export default function EventsPage({ initialSection = "calendar" }) {
             <div className="pointer-events-none absolute -left-24 top-0 h-40 w-80 rounded-full bg-cyan-400/[0.055] blur-3xl" />
             <div className="relative">
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/52">Queer Atlas</p>
-              <h1 className="qa-display mt-2 text-[2.8rem] font-semibold leading-[0.92] tracking-[-0.055em] text-white sm:text-7xl">Events</h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-white/58 sm:mt-4 sm:text-lg">What&apos;s happening in queer cities now and next.</p>
+              <h1 className="qa-display mt-2 text-[2.8rem] font-semibold leading-[0.92] tracking-[-0.055em] text-white sm:text-7xl">{t("events.title", "Events")}</h1>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/58 sm:mt-4 sm:text-lg">{t("events.hero", "What's happening in queer cities now and next.")}</p>
 
               <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
-                <button type="button" onClick={() => router.push("/events/happening-soon?scope=tonight")} className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black transition hover:bg-cyan-100">Tonight</button>
-                <button type="button" onClick={() => router.push("/events/happening-soon?scope=weekend")} className="rounded-full border border-white/16 bg-white/[0.045] px-4 py-2 text-xs font-semibold text-white/76 transition hover:border-white/30 hover:text-white">This weekend</button>
-                <button type="button" onClick={() => router.push("/events/search")} className="rounded-full border border-white/16 bg-transparent px-4 py-2 text-xs font-semibold text-white/58 transition hover:border-cyan-200/34 hover:text-cyan-50">Choose city</button>
+                <button type="button" onClick={() => router.push("/events/happening-soon?scope=tonight")} className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-black transition hover:bg-cyan-100">{t("events.tonight", "Tonight")}</button>
+                <button type="button" onClick={() => router.push("/events/happening-soon?scope=weekend")} className="rounded-full border border-white/16 bg-white/[0.045] px-4 py-2 text-xs font-semibold text-white/76 transition hover:border-white/30 hover:text-white">{t("events.thisWeekend", "This weekend")}</button>
+                <button type="button" onClick={() => router.push("/events/search")} className="rounded-full border border-white/16 bg-transparent px-4 py-2 text-xs font-semibold text-white/58 transition hover:border-cyan-200/34 hover:text-cyan-50">{t("events.chooseCity", "Choose city")}</button>
               </div>
 
-              {loadError ? <p className="mt-3 text-xs text-rose-100/68">Event data is temporarily unavailable.</p> : null}
+              {loadError ? <p className="mt-3 text-xs text-rose-100/68">{t("events.dataUnavailable", "Event data is temporarily unavailable.")}</p> : null}
             </div>
           </section>
 
@@ -1017,10 +1019,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
               buttons={eventSectionButtons}
               activeId={activeEventsSection}
               onSelect={scrollToEventsSection}
-              ariaLabel="Event sections"
+              ariaLabel={t("events.sections", "Event sections")}
               mobileCompact
               mobileLayout="fit"
-              mobileLabelsById={{ offgrid: "Off-grid", happening: "Soon" }}
+              mobileLabelsById={{ offgrid: t("events.offGridShort", "Off-grid"), happening: t("events.soon", "Soon") }}
               variant="events-compact"
             />
           </section>
@@ -1046,9 +1048,9 @@ export default function EventsPage({ initialSection = "calendar" }) {
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/58">Search</p>
+                <p className="text-xs uppercase tracking-[0.26em] text-cyan-100/58">{t("events.search", "Search")}</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-                  Find events by date, city, or vibe
+                  {t("events.findBy", "Find events by date, city, or vibe")}
                 </h2>
               </div>
             </div>
@@ -1056,7 +1058,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
             <div className="mt-6 rounded-[22px] border border-white/[0.09] bg-black/20 p-3 sm:p-4">
               <div className="grid gap-3 md:grid-cols-4">
                 <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-white/62">
-                  Date
+                  {t("events.date", "Date")}
                   <input
                     type="date"
                     value={searchDate}
@@ -1068,7 +1070,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   />
                 </label>
                 <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-white/62">
-                  City
+                  {t("events.city", "City")}
                   <select
                     value={searchCity}
                     onChange={(event) => {
@@ -1077,7 +1079,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     }}
                     className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55 [&>option]:bg-[#0b0f14] [&>option]:text-white"
                   >
-                    <option value="">All cities</option>
+                    <option value="">{t("events.allCities", "All cities")}</option>
                     {searchCityOptions.map((cityOption) => (
                       <option key={`city-option-${cityOption.label}`} value={cityOption.label}>
                         {cityOption.label} ({cityOption.count})
@@ -1086,7 +1088,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                   </select>
                 </label>
                 <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-white/62">
-                  Vibe
+                  {t("events.vibe", "Vibe")}
                   <select
                     value={searchVibe}
                     onChange={(event) => {
@@ -1095,7 +1097,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     }}
                     className="rounded-xl border border-white/16 bg-white/6 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-200/55 [&>option]:bg-[#0b0f14] [&>option]:text-white"
                   >
-                    <option value="">All vibes</option>
+                    <option value="">{t("events.allVibes", "All vibes")}</option>
                     {searchVibeOptions.map((vibeOption) => (
                       <option key={`vibe-option-${vibeOption.key}`} value={vibeOption.key}>
                         {vibeOption.label} ({vibeOption.count})
@@ -1115,25 +1117,25 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     disabled={!hasActiveSearchFilter}
                     className="w-full rounded-xl border border-white/16 bg-white/8 px-4 py-2 text-sm text-white/80 transition hover:border-white/28 hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    Clear filters
+                    {t("events.clearFilters", "Clear filters")}
                   </button>
                 </div>
               </div>
 
               {hasActiveSearchFilter ? (
-                <div className="mt-3 flex flex-wrap gap-2 border-t border-white/[0.07] pt-3" aria-label="Active filters">
-                  {searchDate ? <span className="rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] text-cyan-50">Date · {formatDateLabel(searchDate)}</span> : null}
-                  {searchCity ? <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/[0.08] px-3 py-1 text-[11px] text-fuchsia-50">City · {searchCity}</span> : null}
-                  {searchVibe ? <span className="rounded-full border border-amber-200/20 bg-amber-200/[0.08] px-3 py-1 text-[11px] text-amber-50">Vibe · {titleCaseWords(searchVibe.replaceAll("_", " "))}</span> : null}
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-white/[0.07] pt-3" aria-label={t("events.activeFilters", "Active filters")}>
+                  {searchDate ? <span className="rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] text-cyan-50">{t("events.date", "Date")} · {formatDateLabel(searchDate)}</span> : null}
+                  {searchCity ? <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/[0.08] px-3 py-1 text-[11px] text-fuchsia-50">{t("events.city", "City")} · {searchCity}</span> : null}
+                  {searchVibe ? <span className="rounded-full border border-amber-200/20 bg-amber-200/[0.08] px-3 py-1 text-[11px] text-amber-50">{t("events.vibe", "Vibe")} · {titleCaseWords(searchVibe.replaceAll("_", " "))}</span> : null}
                 </div>
               ) : null}
 
               <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-3">
                 <p className="text-sm text-white/70">
-                  {searchResults.length} {searchResults.length === 1 ? "event match" : "event matches"}
+                  {searchResults.length} {searchResults.length === 1 ? t("events.eventMatch", "event match") : t("events.eventMatches", "event matches")}
                 </p>
                 <p className="text-xs text-white/50">
-                  {searchCityOptions.length} cities | {searchVibeOptions.length} vibes
+                  {searchCityOptions.length} {t("events.cities", "cities")} | {searchVibeOptions.length} {t("events.vibes", "vibes")}
                 </p>
               </div>
             </div>
@@ -1141,8 +1143,8 @@ export default function EventsPage({ initialSection = "calendar" }) {
             <div className="qa-defer-render mt-4 space-y-3">
               {searchResults.length === 0 ? (
                 <EmptyState
-                  title="No events found."
-                  description="Try another date, city, or vibe."
+                  title={t("events.noEventsFound", "No events found.")}
+                  description={t("events.tryAnother", "Try another date, city, or vibe.")}
                   className="px-5 py-7"
                 />
               ) : (
@@ -1162,10 +1164,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                       </span>
                       <span className="mt-1 block text-base font-semibold text-white transition group-hover:text-cyan-50">{event.name}</span>
                       <span className="mt-1 line-clamp-1 block text-sm text-white/48">
-                        {event.description || event.location || "Open event details"}
+                        {event.description || event.location || t("events.openDetails", "Open event details")}
                       </span>
                     </span>
-                    <span className="hidden shrink-0 text-xs font-medium text-cyan-100/65 transition group-hover:translate-x-0.5 group-hover:text-cyan-50 sm:inline">View →</span>
+                    <span className="hidden shrink-0 text-xs font-medium text-cyan-100/65 transition group-hover:translate-x-0.5 group-hover:text-cyan-50 sm:inline">{t("events.view", "View")} →</span>
                   </button>
                 ))
               )}
@@ -1176,7 +1178,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     onClick={() => setSearchVisibleLimit((current) => current + 8)}
                     className="rounded-full border border-cyan-200/22 bg-cyan-200/[0.08] px-5 py-2.5 text-sm font-medium text-cyan-50 transition hover:border-cyan-200/38 hover:bg-cyan-200/[0.13]"
                   >
-                    Show more results
+                    {t("events.showMoreResults", "Show more results")}
                   </button>
                   <p className="text-[11px] text-white/38">Showing {Math.min(searchVisibleLimit, searchResults.length)} of {searchResults.length}</p>
                 </div>
@@ -1203,7 +1205,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     {displayMonthName} {year}
                   </h2>
                   <p className="mt-2 text-xs text-white/52">
-                    {eventsThisMonth} {eventsThisMonth === 1 ? "event" : "events"} this month
+                    {eventsThisMonth} {eventsThisMonth === 1 ? t("events.event", "event") : t("events.events", "events")} {t("events.thisMonth", "this month")}
                   </p>
                 </div>
 
@@ -1218,23 +1220,23 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     aria-pressed={isViewingCurrentMonth && selectedDate === todayDateKey}
                     className="rounded-full border border-white/14 bg-white/[0.055] px-4 py-2 text-sm text-white/72 transition hover:border-white/26 hover:bg-white/[0.09] hover:text-white"
                   >
-                    Today
+                    {t("events.today", "Today")}
                   </button>
                   <button
                     type="button"
-                    aria-label="Previous month"
+                    aria-label={t("events.previousMonth", "Previous month")}
                     onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
                     className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/10 px-4 py-2 text-sm text-fuchsia-100/85 transition hover:border-fuchsia-200/35 hover:bg-fuchsia-200/16 hover:text-white"
                   >
-                    <span aria-hidden="true">←</span><span className="sr-only">Previous month</span>
+                    <span aria-hidden="true">←</span><span className="sr-only">{t("events.previousMonth", "Previous month")}</span>
                   </button>
                   <button
                     type="button"
-                    aria-label="Next month"
+                    aria-label={t("events.nextMonth", "Next month")}
                     onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
                     className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-sm text-cyan-100/85 transition hover:border-cyan-200/35 hover:bg-cyan-200/16 hover:text-white"
                   >
-                    <span aria-hidden="true">→</span><span className="sr-only">Next month</span>
+                    <span aria-hidden="true">→</span><span className="sr-only">{t("events.nextMonth", "Next month")}</span>
                   </button>
                 </div>
               </div>
@@ -1248,7 +1250,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                       : "border-white/14 bg-white/8 text-white/72 hover:border-white/22 hover:text-white"
                   }`}
                 >
-                  All dates
+                  {t("events.allDates", "All dates")}
                 </button>
 
                 {selectedDate && (
@@ -1259,7 +1261,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
               </div>
 
               <div className="mt-5 grid grid-cols-7 gap-1 text-[9px] uppercase tracking-[0.08em] text-white/35 sm:mt-8 sm:gap-2 sm:text-[11px] sm:tracking-[0.2em]">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                {[t("events.sun", "Sun"), t("events.mon", "Mon"), t("events.tue", "Tue"), t("events.wed", "Wed"), t("events.thu", "Thu"), t("events.fri", "Fri"), t("events.sat", "Sat")].map((day) => (
                   <div key={day} className="rounded-lg border border-white/6 bg-white/[0.03] px-1 py-1.5 text-center sm:rounded-xl sm:px-2 sm:py-2">
                     {day}
                   </div>
@@ -1319,7 +1321,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     Event list
                   </p>
                   <h2 className="mt-2 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-2xl font-semibold tracking-[-0.03em] text-transparent">
-                    {selectedDate ? `Events on ${formatDateLabel(selectedDate)}` : "All events"}
+                    {selectedDate ? t("events.onDate", "Events on {date}").replace("{date}", formatDateLabel(selectedDate)) : t("events.allEvents", "All events")}
                   </h2>
                   <p className="mt-2 text-xs text-white/48">
                     {filteredEvents.length} {filteredEvents.length === 1 ? "event" : "events"} across {sortedCities.length} {sortedCities.length === 1 ? "city" : "cities"}
@@ -1404,10 +1406,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                                     : "border-emerald-200/20 bg-emerald-200/8 text-emerald-100/90 hover:border-emerald-200/34 hover:bg-emerald-200/14"
                                 }`}
                               >
-                                {favoriteIdSet.has(`event-${String(event.id)}`) ? "Saved" : "Save event"}
+                                {favoriteIdSet.has(`event-${String(event.id)}`) ? t("events.saved", "Saved") : t("events.saveEvent", "Save event")}
                               </button>
                               <span className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.07] px-3 py-1.5 text-[11px] font-medium text-cyan-50/88 transition group-hover:border-cyan-200/30 group-hover:bg-cyan-200/[0.1]">
-                                View details →
+                                {t("events.viewDetails", "View details")} →
                               </span>
                             </div>
                           </div>
@@ -1425,7 +1427,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                       onClick={() => setAgendaVisibleLimit((current) => current + 5)}
                       className="rounded-full border border-cyan-200/22 bg-cyan-200/[0.08] px-5 py-2.5 text-sm font-medium text-cyan-50 transition hover:border-cyan-200/38 hover:bg-cyan-200/[0.13]"
                     >
-                      Show more events
+                      {t("events.showMoreEvents", "Show more events")}
                     </button>
                     <p className="text-[11px] text-white/38">
                       Showing {Math.min(agendaVisibleLimit, agendaEvents.length)} of {agendaEvents.length}
@@ -1435,8 +1437,8 @@ export default function EventsPage({ initialSection = "calendar" }) {
 
                 {!isLoading && sortedCities.length === 0 && (
                   <EmptyState
-                    title="No events match this date yet."
-                    description="Try all dates or add a new off-grid entry."
+                    title={t("events.noneOnDate", "No events match this date yet.")}
+                    description={t("events.tryAllDates", "Try all dates or add a new off-grid entry.")}
                     className="rounded-[28px]"
                   >
                     <div className="flex flex-wrap items-center justify-center gap-2">
@@ -1444,7 +1446,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                         onClick={clearCalendarDate}
                         className="rounded-full border border-white/15 bg-white/6 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
                       >
-                        Show all dates
+                        {t("events.showAllDates", "Show all dates")}
                       </button>
                       <button
                         onClick={() => {
@@ -1454,7 +1456,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                         disabled={!isMember}
                         className="qa-action rounded-full border border-cyan-200/20 bg-cyan-200/10 px-4 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/32 disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        {isMember ? "Add off-grid event" : "Members only"}
+                        {isMember ? t("events.addOffGrid", "Add off-grid event") : t("events.membersOnly", "Members only")}
                       </button>
                     </div>
                   </EmptyState>
@@ -1473,13 +1475,13 @@ export default function EventsPage({ initialSection = "calendar" }) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.26em] text-emerald-100/58">
-                  Discover off-grid
+                  {t("events.discoverOffGrid", "Discover off-grid")}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white sm:text-3xl">
-                  Queer events beyond city limits
+                  {t("events.offGridTitle", "Queer events beyond city limits")}
                 </h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-white/62 sm:text-base">
-                  Cruises, ski weekends, destination pop-ups, and nomadic formats—all in one focused feed.
+                  {t("events.offGridIntro", "Cruises, ski weekends, destination pop-ups, and nomadic formats—all in one focused feed.")}
                 </p>
               </div>
 
@@ -1494,17 +1496,17 @@ export default function EventsPage({ initialSection = "calendar" }) {
                 disabled={!isMember}
                 className="qa-action rounded-full border border-cyan-300/24 bg-cyan-300/10 px-4 py-2.5 text-sm font-medium text-cyan-100 transition hover:border-cyan-300/38 hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                {showGlobalForm ? "Close form" : "Add off-grid event"}
+                {showGlobalForm ? t("events.closeForm", "Close form") : t("events.addOffGrid", "Add off-grid event")}
               </button>
             </div>
 
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
               <div className="rounded-[18px] border border-white/[0.08] bg-white/[0.035] px-4 py-3">
-                <p className="text-xs font-medium text-white/72">{globalEvents.length} off-grid {globalEvents.length === 1 ? "event" : "events"}</p>
-                <p className="mt-1 text-xs leading-5 text-white/42">Use this feed when the experience travels or does not belong to one Atlas city.</p>
+                <p className="text-xs font-medium text-white/72">{globalEvents.length} {t("events.offGridShort", "Off-grid").toLowerCase()} {globalEvents.length === 1 ? t("events.event", "event") : t("events.events", "events")}</p>
+                <p className="mt-1 text-xs leading-5 text-white/42">{t("events.offGridHelp", "Use this feed when the experience travels or does not belong to one Atlas city.")}</p>
               </div>
               {!isMember ? (
-                <p className="px-2 text-xs text-white/44">Members can suggest new events.</p>
+                <p className="px-2 text-xs text-white/44">{t("events.membersSuggest", "Members can suggest new events.")}</p>
               ) : null}
             </div>
 
@@ -1532,10 +1534,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
                 </div>
               ) : globalEvents.length === 0 ? (
                 <EmptyState
-                  title="No off-grid events yet."
-                  description="Add cruises, ski weekends, and destination events here."
+                  title={t("events.noOffGrid", "No off-grid events yet.")}
+                  description={t("events.addOffGridHint", "Add cruises, ski weekends, and destination events here.")}
                   className="px-5 py-7"
-                  primaryActionLabel={isMember ? "Add off-grid event" : "Open all events"}
+                  primaryActionLabel={isMember ? t("events.addOffGrid", "Add off-grid event") : t("events.openAll", "Open all events")}
                   onPrimaryAction={() => {
                     if (isMember) {
                       setShowGlobalForm(true);
@@ -1586,19 +1588,19 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           onClick={(clickEvent) => startEditGlobalEvent(event, clickEvent)}
                           className="rounded-full border border-emerald-200/22 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium text-emerald-100/88 transition hover:border-emerald-200/40 hover:bg-emerald-200/14"
                         >
-                          Edit
+                          {t("events.edit", "Edit")}
                         </button>
                       )}
                       <button
                         onClick={(clickEvent) => handleReport(event, clickEvent)}
                         className="rounded-full border border-rose-200/20 bg-rose-200/[0.07] px-3 py-1 text-[11px] font-medium text-rose-100/82 transition hover:border-rose-200/38 hover:bg-rose-200/12"
                       >
-                        Report
+                        {t("events.report", "Report")}
                       </button>
                     </div> : null}
                     {isFocused && quality.lastChecked && (
                       <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-white/50">
-                        Checked {formatDateLabel(quality.lastChecked)}
+                        {t("events.checked", "Checked")} {formatDateLabel(quality.lastChecked)}
                       </p>
                     )}
                     <p className="mt-2 text-xs uppercase tracking-[0.18em] text-cyan-200/72">
@@ -1616,7 +1618,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           rel="noreferrer"
                           className="inline-flex rounded-xl border border-cyan-200/24 bg-cyan-200/10 px-3 py-2 text-xs text-cyan-100 transition hover:border-cyan-200/36 hover:bg-cyan-200/14"
                         >
-                          Open official link
+                          {t("events.openOfficial", "Open official link")}
                         </a>
                       )}
                       {isFocused && (event.ticket_url || event.ticketUrl) && (
@@ -1626,7 +1628,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           rel="noreferrer"
                           className="inline-flex rounded-xl border border-emerald-200/24 bg-emerald-200/10 px-3 py-2 text-xs text-emerald-100 transition hover:border-emerald-200/36 hover:bg-emerald-200/16"
                         >
-                          Get tickets
+                          {t("events.getTickets", "Get tickets")}
                         </a>
                       )}
                       {isFocused && isAdmin && (
@@ -1635,7 +1637,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           disabled={deletingGlobalEventId === String(event.id || "")}
                           className="inline-flex rounded-xl border border-rose-300/24 bg-rose-300/10 px-3 py-2 text-xs text-rose-100 transition hover:border-rose-300/40 hover:bg-rose-300/16 disabled:cursor-not-allowed disabled:opacity-55"
                         >
-                          {deletingGlobalEventId === String(event.id || "") ? "Deleting..." : "Delete event"}
+                          {deletingGlobalEventId === String(event.id || "") ? t("events.deleting", "Deleting...") : t("events.deleteEvent", "Delete event")}
                         </button>
                       )}
                       <button
@@ -1647,7 +1649,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                             : "border-emerald-200/20 bg-emerald-200/[0.08] text-emerald-100/88 hover:border-emerald-200/34"
                         }`}
                       >
-                        {favoriteIdSet.has(`event-${String(event.id)}`) ? "Saved" : "Save"}
+                        {favoriteIdSet.has(`event-${String(event.id)}`) ? t("events.saved", "Saved") : t("events.save", "Save")}
                       </button>
                       {!isFocused ? (
                         <button
@@ -1655,7 +1657,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                           onClick={() => openEvent(event)}
                           className="rounded-full border border-cyan-200/22 bg-cyan-200/[0.08] px-3.5 py-2 text-xs font-medium text-cyan-50 transition hover:border-cyan-200/38 hover:bg-cyan-200/[0.13]"
                         >
-                          View details →
+                          {t("events.viewDetails", "View details")} →
                         </button>
                       ) : null}
                     </div>
@@ -1671,7 +1673,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
                     onClick={() => setOffgridVisibleLimit((current) => current + 6)}
                     className="rounded-full border border-emerald-200/22 bg-emerald-200/[0.08] px-5 py-2.5 text-sm font-medium text-emerald-50 transition hover:border-emerald-200/38 hover:bg-emerald-200/[0.13]"
                   >
-                    Show more off-grid events
+                    {t("events.showMoreOffGrid", "Show more off-grid events")}
                   </button>
                   <p className="text-[11px] text-white/38">Showing {Math.min(offgridVisibleLimit, globalEvents.length)} of {globalEvents.length}</p>
                 </div>

@@ -31,6 +31,7 @@ import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
 import EmptyState from "@/components/ui/EmptyState";
 import BrandMark from "@/components/ui/BrandMark";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const COUNTRY_TONES = [
   {
@@ -288,6 +289,21 @@ function createCountryRightsDraft(country, profile = null) {
 }
 
 export default function CitiesPage() {
+  const { t } = useLocale();
+  const regionLabel = (region) => {
+    if (region === "All regions") return t("cities.allRegions", "All regions");
+    if (region === "North & Central America") return t("cities.northCentralAmerica", "North & Central America");
+    if (region === "South America") return t("cities.southAmerica", "South America");
+    if (region === "Europe") return t("cities.europe", "Europe");
+    if (region === "Africa") return t("cities.africa", "Africa");
+    if (region === "Asia") return t("cities.asia", "Asia");
+    if (region === "Oceania") return t("cities.oceania", "Oceania");
+    return region;
+  };
+  const riskLabel = (tier, fallback) => {
+    const key = tier === "open" ? "lowerRisk" : tier === "steady" ? "lowerContext" : tier === "watch" ? "moderate" : tier === "caution" ? "highRisk" : tier === "restricted" ? "extremeHighRisk" : "moderate";
+    return t(`cities.${key}`, fallback);
+  };
   const router = useRouter();
   const { user, isMember, isLoading: isAuthLoading } = useAuth();
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -1135,18 +1151,18 @@ export default function CitiesPage() {
           </div>
           <div className="relative z-10 max-w-3xl">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-cyan-100/62 sm:text-xs">
-              Explore the queer world
+              {t("cities.eyebrow", "Explore the queer world")}
             </p>
             <h1 className="qa-display mt-3 inline-flex items-center gap-3 text-[2.5rem] font-semibold leading-none tracking-[-0.045em] text-white sm:mt-4 sm:gap-4 sm:text-6xl">
               <BrandMark iconOnly className="h-9 w-9 shrink-0 sm:h-14 sm:w-14" />
-              Cities
+              {t("cities.title", "Cities")}
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-6 text-white/64 sm:mt-5 sm:text-base sm:leading-7">
-              Find the places, scenes and local signal that fit your trip.
+              {t("cities.intro", "Find the places, scenes and local signal that fit your trip.")}
             </p>
 
             <div className="mt-6 flex flex-col gap-2.5 sm:mt-7 sm:flex-row sm:items-start">
-              <label htmlFor="hero-city-search" className="sr-only">Search city or country</label>
+              <label htmlFor="hero-city-search" className="sr-only">{t("cities.search", "Search city or country")}</label>
               <div ref={citySearchRef} className="group min-w-0 flex-1">
                 <div className="relative">
                   <svg
@@ -1171,7 +1187,7 @@ export default function CitiesPage() {
                     onKeyDown={(event) => {
                       if (event.key === "Escape") setSearchSuggestionsOpen(false);
                     }}
-                    placeholder="Search city or country"
+                    placeholder={t("cities.search", "Search city or country")}
                     role="combobox"
                     aria-autocomplete="list"
                     aria-expanded={searchSuggestionsOpen && Boolean(query.trim())}
@@ -1185,7 +1201,7 @@ export default function CitiesPage() {
                         setQuery("");
                         setSearchSuggestionsOpen(false);
                       }}
-                      aria-label="Clear city search"
+                      aria-label={t("cities.clearSearch", "Clear city search")}
                       className="absolute right-2.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-lg text-white/42 transition hover:bg-white/10 hover:text-white"
                     >
                       ×
@@ -1197,14 +1213,14 @@ export default function CitiesPage() {
                   <div
                     id="city-search-suggestions"
                     role="listbox"
-                    aria-label="Matching Atlas cities"
+                    aria-label={t("cities.matchingCities", "Matching Atlas cities")}
                     className="mt-2 overflow-hidden rounded-[18px] border border-white/14 bg-[#111521]/96 p-1.5 shadow-[0_24px_70px_rgba(0,0,0,0.46)] backdrop-blur-xl"
                   >
                     {countrySearchSuggestions.length || citySearchSuggestions.length ? (
                       <>
                         {countrySearchSuggestions.length ? (
-                          <div role="group" aria-label="Matching countries">
-                            <p className="px-3.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/34">Countries</p>
+                          <div role="group" aria-label={t("cities.matchingCountries", "Matching countries")}>
+                            <p className="px-3.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/34">{t("cities.countries", "Countries")}</p>
                             {countrySearchSuggestions.map(({ country, cityCount }) => (
                               <button
                                 key={`country-search-${country}`}
@@ -1221,10 +1237,10 @@ export default function CitiesPage() {
                               >
                                 <span className="min-w-0">
                                   <span className="block truncate text-sm font-semibold text-white group-hover/result:text-cyan-50">{country}</span>
-                                  <span className="mt-0.5 block text-xs text-white/46">Browse the country collection</span>
+                                  <span className="mt-0.5 block text-xs text-white/46">{t("cities.browseCountry", "Browse the country collection")}</span>
                                 </span>
                                 <span className="flex shrink-0 items-center gap-2 text-[10px] text-white/42">
-                                  <span>{cityCount} {cityCount === 1 ? "city" : "cities"}</span>
+                                  <span>{cityCount} {cityCount === 1 ? t("cities.city", "city") : t("cities.cities", "cities")}</span>
                                   <span aria-hidden="true" className="text-cyan-100/70">↓</span>
                                 </span>
                               </button>
@@ -1234,7 +1250,7 @@ export default function CitiesPage() {
 
                         {citySearchSuggestions.length ? (
                           <div role="group" aria-label="Matching cities" className={countrySearchSuggestions.length ? "mt-1 border-t border-white/[0.07] pt-1" : ""}>
-                            <p className="px-3.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/34">Cities</p>
+                            <p className="px-3.5 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-white/34">{t("cities.title", "Cities")}</p>
                             {citySearchSuggestions.map(({ city, cityName }) => (
                               <Link
                                 key={`city-search-${city.key}`}
@@ -1249,7 +1265,7 @@ export default function CitiesPage() {
                                   <span className="mt-0.5 block truncate text-xs capitalize text-white/46">{city.country} · {String(city.vibe || "mixed").replaceAll("_", " ")}</span>
                                 </span>
                                 <span className="flex shrink-0 items-center gap-2 text-[10px] text-white/42">
-                                  <span>{city.placeCount} places</span>
+                                  <span>{city.placeCount} {t("cities.places", "places").toLowerCase()}</span>
                                   <span aria-hidden="true" className="text-cyan-100/70">→</span>
                                 </span>
                               </Link>
@@ -1258,7 +1274,7 @@ export default function CitiesPage() {
                         ) : null}
                       </>
                     ) : (
-                      <p className="px-3.5 py-4 text-sm text-white/52">No Atlas cities or countries match “{query.trim()}”.</p>
+                      <p className="px-3.5 py-4 text-sm text-white/52">{t("cities.noSearchMatch", `No Atlas cities or countries match “${query.trim()}”.`).replace("{query}", query.trim())}</p>
                     )}
                   </div>
                 ) : null}
@@ -1269,20 +1285,20 @@ export default function CitiesPage() {
                 disabled={isLocating}
                 className="qa-action min-h-13 shrink-0 rounded-[18px] border border-cyan-200/24 bg-cyan-200/[0.09] px-5 text-sm font-semibold text-cyan-50 transition hover:border-cyan-100/42 hover:bg-cyan-200/[0.14] disabled:cursor-wait disabled:opacity-60 sm:hidden"
               >
-                {isLocating ? "Finding city…" : "Near me"}
+                {isLocating ? t("cities.findingCity", "Finding city…") : t("cities.nearMe", "Near me")}
               </button>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 text-[11px] text-white/44 sm:text-xs">
-              <span><strong className="font-semibold tabular-nums text-white/78">{totalCities}</strong> cities</span>
+              <span><strong className="font-semibold tabular-nums text-white/78">{totalCities}</strong> {t("cities.cities", "cities")}</span>
               <span aria-hidden="true" className="text-white/20">·</span>
-              <span><strong className="font-semibold tabular-nums text-white/78">{totalCountries}</strong> countries</span>
+              <span><strong className="font-semibold tabular-nums text-white/78">{totalCountries}</strong> {t("cities.countries", "countries").toLowerCase()}</span>
               <span aria-hidden="true" className="text-white/20">·</span>
-              <span><strong className="font-semibold tabular-nums text-white/78">{isLoading ? "—" : totalPlaces}</strong> places</span>
+              <span><strong className="font-semibold tabular-nums text-white/78">{isLoading ? "—" : totalPlaces}</strong> {t("cities.places", "places").toLowerCase()}</span>
               {(query || selectedCountry !== "All") ? (
                 <>
                   <span aria-hidden="true" className="text-white/20">·</span>
-                  <span className="text-cyan-100/72">{visibleCityCount} shown</span>
+                  <span className="text-cyan-100/72">{visibleCityCount} {t("cities.shown", "shown")}</span>
                 </>
               ) : null}
               <button
@@ -1292,7 +1308,7 @@ export default function CitiesPage() {
                 className="ml-1 hidden items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.055] px-3 py-1.5 font-medium text-white/66 transition hover:border-cyan-200/28 hover:bg-cyan-200/[0.08] hover:text-white disabled:cursor-wait disabled:opacity-55 sm:inline-flex"
               >
                 <span aria-hidden="true" className="text-cyan-100/72">⌖</span>
-                {isLocating ? "Locating…" : "My position"}
+                {isLocating ? t("cities.locating", "Locating…") : t("cities.myPosition", "My position")}
               </button>
               {lastExploredCityRecord && (
                 <button
@@ -1300,7 +1316,7 @@ export default function CitiesPage() {
                   onClick={() => router.push(`/${lastExploredCityRecord.key}`)}
                   className="ml-1 inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.055] px-3 py-1.5 font-medium text-white/66 transition hover:border-white/24 hover:bg-white/[0.09] hover:text-white"
                 >
-                  Continue {lastExploredCityRecord.title.replace(/^Queer\s+/i, "")}
+                  {t("cities.continue", "Continue")} {lastExploredCityRecord.title.replace(/^Queer\s+/i, "")}
                   <span aria-hidden="true">→</span>
                 </button>
               )}
@@ -1316,9 +1332,9 @@ export default function CitiesPage() {
             <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 border-b border-white/[0.07] bg-[#0a0d13]/88 px-4 py-3 sm:px-5">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.23em] text-cyan-100/65">
-                  Safety atlas
+                  {t("cities.safetyAtlas", "Safety atlas")}
                 </p>
-                <p className="mt-0.5 hidden text-[11px] text-white/35 sm:block">Select a country to explore its cities</p>
+                <p className="mt-0.5 hidden text-[11px] text-white/35 sm:block">{t("cities.selectCountry", "Select a country to explore its cities")}</p>
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 {Object.entries(MAP_RISK_PALETTE)
@@ -1329,7 +1345,7 @@ export default function CitiesPage() {
                     className="inline-flex items-center gap-1.5 text-[9px] font-medium uppercase tracking-[0.1em] text-white/52"
                   >
                     <span className="h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor]" style={{ backgroundColor: item.color, color: item.color }} />
-                    {item.label}
+                    {riskLabel(key, item.label)}
                   </span>
                   ))}
               </div>
@@ -1340,7 +1356,7 @@ export default function CitiesPage() {
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-20 bg-gradient-to-t from-[#07090e]/52 to-transparent" aria-hidden="true" />
               <div className="absolute bottom-3 right-3 z-10 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4 sm:flex-row">
                 <label className="relative w-40 sm:w-48">
-                  <span className="sr-only">Filter cities by region</span>
+                  <span className="sr-only">{t("cities.filterRegion", "Filter cities by region")}</span>
                   <select
                     value={selectedRegion}
                     onChange={(event) => {
@@ -1352,13 +1368,13 @@ export default function CitiesPage() {
                     }}
                     className="min-h-11 w-full appearance-none rounded-[14px] border border-white/18 bg-[#0b0e16]/92 px-3.5 pr-8 text-xs font-medium text-white shadow-[0_12px_34px_rgba(0,0,0,0.38)] outline-none backdrop-blur-xl transition hover:border-white/30 focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/16"
                   >
-                    {REGION_OPTIONS.map((region) => <option key={region} value={region} className="bg-[#111218]">{region}</option>)}
+                    {REGION_OPTIONS.map((region) => <option key={region} value={region} className="bg-[#111218]">{regionLabel(region)}</option>)}
                   </select>
                   <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/45">⌄</span>
                 </label>
 
                 <label className="relative w-40 sm:w-48">
-                  <span className="sr-only">Filter cities by country</span>
+                  <span className="sr-only">{t("cities.filterCountry", "Filter cities by country")}</span>
                   <select
                     value={selectedCountry}
                     onChange={(event) => {
@@ -1369,7 +1385,7 @@ export default function CitiesPage() {
                     }}
                     className="min-h-11 w-full appearance-none rounded-[14px] border border-white/18 bg-[#0b0e16]/92 px-3.5 pr-8 text-xs font-medium text-white shadow-[0_12px_34px_rgba(0,0,0,0.38)] outline-none backdrop-blur-xl transition hover:border-white/30 focus:border-cyan-200/50 focus:ring-2 focus:ring-cyan-200/16"
                   >
-                    <option value="All" className="bg-[#111218]">All countries</option>
+                    <option value="All" className="bg-[#111218]">{t("cities.allCountries", "All countries")}</option>
                     {countriesForSelectedRegion.map((country) => <option key={country} value={country} className="bg-[#111218]">{country}</option>)}
                   </select>
                   <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-white/45">⌄</span>
@@ -1390,7 +1406,7 @@ export default function CitiesPage() {
         <div className="relative space-y-8">
           {isLoading && (
             <section className="qa-premium-card rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
-              <p className="mb-4 text-xs uppercase tracking-[0.2em] text-white/45">Loading city signal</p>
+              <p className="mb-4 text-xs uppercase tracking-[0.2em] text-white/45">{t("cities.loading", "Loading city signal")}</p>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, index) => (
                   <div
@@ -1411,8 +1427,8 @@ export default function CitiesPage() {
           {!isLoading && visibleCountries.length === 0 && (
             <section className="qa-premium-card rounded-[32px] border border-white/10 bg-[linear-gradient(180deg,rgba(18,18,18,0.96),rgba(10,10,10,0.99))] p-10 text-center shadow-[0_24px_90px_rgba(0,0,0,0.28)]">
               <EmptyState
-                title="No cities match this filter yet."
-                description="Try resetting search and country to reopen the atlas."
+                title={t("cities.noMatch", "No cities match this filter yet.")}
+                description={t("cities.resetHint", "Try resetting search and country to reopen the atlas.")}
               >
                 <button
                   onClick={() => {
@@ -1421,7 +1437,7 @@ export default function CitiesPage() {
                   }}
                   className="qa-action rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/70 transition hover:border-white/25 hover:text-white"
                 >
-                  Reset filters
+                  {t("cities.resetFilters", "Reset filters")}
                 </button>
               </EmptyState>
             </section>
@@ -1449,7 +1465,7 @@ export default function CitiesPage() {
                   <div className="mb-6 flex items-end gap-4 border-b border-white/[0.09] pb-5 sm:gap-6">
                     <div className="min-w-0 shrink-0">
                       <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-white/38 sm:text-[10px]">
-                        Country
+                        {t("cities.country", "Country")}
                       </p>
                       <h2
                         id={countryHeadingId}
@@ -1461,7 +1477,7 @@ export default function CitiesPage() {
                     <div className={`mb-1.5 hidden h-px flex-1 bg-gradient-to-r ${tone.divider} via-white/[0.07] to-transparent sm:block`} />
                     <p className="mb-0.5 ml-auto shrink-0 text-right text-[10px] uppercase tracking-[0.16em] text-white/42 sm:mb-1">
                       <span className="mr-1.5 font-semibold tabular-nums text-white/72">{countryCityCount}</span>
-                      {countryCityCount === 1 ? "city" : "cities"}
+                      {countryCityCount === 1 ? t("cities.city", "city") : t("cities.cities", "cities")}
                     </p>
                     {isAdmin && (
                       <button
@@ -1469,7 +1485,7 @@ export default function CitiesPage() {
                         onClick={() => openCountryEditor(country)}
                         className="rounded-full border border-cyan-200/28 bg-cyan-300/12 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-100/88 transition hover:border-cyan-200/45 hover:text-white"
                       >
-                        Edit rights
+                        {t("cities.editRights", "Edit rights")}
                       </button>
                     )}
                   </div>
@@ -1568,32 +1584,32 @@ export default function CitiesPage() {
                               <p className={`text-xl font-semibold tabular-nums leading-none ${tone.primary}`}>
                                 {isLoading ? "—" : city.placeCount}
                               </p>
-                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">Places</p>
+                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">{t("cities.places", "Places")}</p>
                             </div>
                             <div className="h-8 w-px bg-white/[0.09]" aria-hidden="true" />
                             <div>
                               <p className={`text-xl font-semibold tabular-nums leading-none ${tone.secondary}`}>
                                 {isEventsLoading ? "—" : city.eventCount}
                               </p>
-                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">Events</p>
+                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">{t("cities.events", "Events")}</p>
                             </div>
                           </div>
 
                           <div className="mt-4 min-h-[3.25rem]">
                             <p className="qa-clamp-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">
-                              {String(city.vibe || "mixed").replaceAll("_", " ")} atmosphere
+                              {String(city.vibe || "mixed").replaceAll("_", " ")} {t("cities.atmosphere", "atmosphere")}
                             </p>
                             <p className="qa-clamp-1 mt-1.5 text-sm text-white/57">
                               {city.topPlace
-                                ? `Known for ${city.topPlace}`
-                                : "Ready for more local discoveries"}
+                                ? `${t("cities.knownFor", "Known for")} ${city.topPlace}`
+                                : t("cities.ready", "Ready for more local discoveries")}
                             </p>
                           </div>
 
                           <div className="mt-5 flex items-center justify-between pt-1">
                             <div className={`h-px w-14 bg-gradient-to-r ${tone.line} to-transparent transition-all duration-300 group-hover:w-24`} />
                             <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.17em] text-white/42 transition group-hover:text-white/78">
-                              Explore
+                              {t("cities.explore", "Explore")}
                               <span aria-hidden="true" className={`${tone.arrow} transition-transform duration-300 group-hover:translate-x-1`}>→</span>
                             </span>
                           </div>

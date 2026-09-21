@@ -1,9 +1,9 @@
 import { readFileSync, existsSync } from "node:fs";
 
 const reports = [
-  ".next/analyze/client.html",
-  ".next/analyze/nodejs.html",
-  ".next/analyze/edge.html",
+  ".next-analyze/analyze/client.html",
+  ".next-analyze/analyze/nodejs.html",
+  ".next-analyze/analyze/edge.html",
 ];
 
 const clientBudgets = {

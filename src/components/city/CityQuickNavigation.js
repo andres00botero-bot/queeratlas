@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { BookOpen, CalendarDays, ChevronDown, HeartHandshake, Map, MapPin } from "lucide-react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function CityQuickNavigation({
   onGoHome,
@@ -19,6 +20,7 @@ export default function CityQuickNavigation({
   onAddService,
   variant = "default",
 }) {
+  const { t } = useLocale();
   const [showVenuePicker, setShowVenuePicker] = useState(false);
   const isPhoneVariant = variant === "phone";
   const isDesktopVariant = variant === "desktop";
@@ -39,8 +41,8 @@ export default function CityQuickNavigation({
     {
       key: "home",
       onClick: onGoHome,
-      label: "Home",
-      eyebrow: "City overview",
+      label: t("global.home", "Home"),
+      eyebrow: t("city.cityOverview", "City overview"),
       Icon: BookOpen,
       className:
         "border-[#f5a9c6]/20 bg-[#f5a9c6]/[0.075] text-[#ffd2e3] hover:border-[#f5a9c6]/42 hover:bg-[#f5a9c6]/[0.12]",
@@ -48,8 +50,8 @@ export default function CityQuickNavigation({
     {
       key: "map",
       onClick: onGoMap,
-      label: "Map",
-      eyebrow: "Explore nearby",
+      label: t("city.map", "Map"),
+      eyebrow: t("city.exploreNearby", "Explore nearby"),
       Icon: Map,
       className:
         "border-[#88d9d4]/20 bg-[#88d9d4]/[0.075] text-[#bcebe7] hover:border-[#88d9d4]/42 hover:bg-[#88d9d4]/[0.12]",
@@ -57,8 +59,8 @@ export default function CityQuickNavigation({
     {
       key: "events",
       onClick: onGoEvents,
-      label: "Events",
-      eyebrow: "Tonight and soon",
+      label: t("city.events", "Events"),
+      eyebrow: t("city.tonightAndSoon", "Tonight and soon"),
       Icon: CalendarDays,
       className:
         "border-[#b7a0f7]/20 bg-[#b7a0f7]/[0.075] text-[#d8cdfb] hover:border-[#b7a0f7]/42 hover:bg-[#b7a0f7]/[0.12]",
@@ -66,8 +68,8 @@ export default function CityQuickNavigation({
     {
       key: "guide",
       onClick: onGoGuide,
-      label: "Guide",
-      eyebrow: "City basics",
+      label: t("city.guide", "Guide"),
+      eyebrow: t("city.cityBasics", "City basics"),
       Icon: BookOpen,
       className:
         "border-[#f5a9c6]/20 bg-[#f5a9c6]/[0.075] text-[#ffd2e3] hover:border-[#f5a9c6]/42 hover:bg-[#f5a9c6]/[0.12]",
@@ -75,8 +77,8 @@ export default function CityQuickNavigation({
     {
       key: "services",
       onClick: onGoServices,
-      label: "Services",
-      eyebrow: "Local support",
+      label: t("city.servicesLower", "Services"),
+      eyebrow: t("city.localSupport", "Local support"),
       Icon: HeartHandshake,
       className:
         "border-[#88d9d4]/20 bg-[#88d9d4]/[0.055] text-[#bcebe7] hover:border-[#88d9d4]/42 hover:bg-[#88d9d4]/[0.10]",
@@ -86,7 +88,7 @@ export default function CityQuickNavigation({
       onClick: () => {
         setShowVenuePicker((current) => !current);
       },
-      label: "Venues",
+      label: t("city.venues", "Venues"),
       eyebrow: "Bars and places",
       Icon: MapPin,
       className:

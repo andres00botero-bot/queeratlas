@@ -17,10 +17,20 @@ const failures = [];
 
 const rootLayoutPath = "src/app/layout.js";
 const rootLayout = read(rootLayoutPath);
-ensureContains(rootLayout, /export const metadata\s*=\s*{/, `${rootLayoutPath}: missing metadata export`, failures);
+ensureContains(
+  rootLayout,
+  /(export const metadata\s*=\s*{)|(export async function generateMetadata\s*\()/,
+  `${rootLayoutPath}: missing metadata export`,
+  failures
+);
 ensureContains(rootLayout, /title:\s*{/, `${rootLayoutPath}: missing title metadata`, failures);
 ensureContains(rootLayout, /description:/, `${rootLayoutPath}: missing description metadata`, failures);
-ensureContains(rootLayout, /alternates:\s*{[\s\S]*canonical:/, `${rootLayoutPath}: missing canonical metadata`, failures);
+ensureContains(
+  rootLayout,
+  /(alternates:\s*{[\s\S]*canonical:)|(localizedAlternates\s*\()/,
+  `${rootLayoutPath}: missing canonical metadata`,
+  failures
+);
 ensureContains(rootLayout, /robots:\s*{/, `${rootLayoutPath}: missing robots metadata`, failures);
 const hasInlineWebSiteJsonLd = /"@type":\s*"WebSite"/.test(rootLayout);
 const usesPrimaryEntityGraph = /buildPrimaryEntityGraph\s*\(/.test(rootLayout);
@@ -178,7 +188,12 @@ const cityLayout = read(cityLayoutPath);
 ensureContains(cityLayout, /generateMetadata\s*\(/, `${cityLayoutPath}: missing generateMetadata`, failures);
 ensureContains(cityLayout, /title:/, `${cityLayoutPath}: missing title in generateMetadata`, failures);
 ensureContains(cityLayout, /description:/, `${cityLayoutPath}: missing description in generateMetadata`, failures);
-ensureContains(cityLayout, /alternates:\s*{[\s\S]*canonical/, `${cityLayoutPath}: missing canonical in generateMetadata`, failures);
+ensureContains(
+  cityLayout,
+  /(alternates:\s*{[\s\S]*canonical)|(localizedAlternates\s*\()/,
+  `${cityLayoutPath}: missing canonical in generateMetadata`,
+  failures
+);
 ensureContains(
   cityLayout,
   /Guide 2026: Bars, Events & Safety/,

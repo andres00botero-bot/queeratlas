@@ -128,7 +128,7 @@ function testNowAdminFlowWiring() {
     "now admin flow: news edit entry point should exist"
   );
   assert(
-    source.includes('? "Update news"') && source.includes(': "Publish news"'),
+    source.includes('t("now.updateNews", "Update news")') && source.includes('t("now.publishNews", "Publish news")'),
     "now admin flow: composer should support both create and update labels"
   );
   assert(

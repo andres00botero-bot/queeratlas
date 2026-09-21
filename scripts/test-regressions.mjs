@@ -263,7 +263,7 @@ function testNowNewsAdminControls() {
     "now news admin: admin cards should support opening edit composer"
   );
   assert(
-    source.includes('? "Update news"'),
+    source.includes('t("now.updateNews", "Update news")'),
     "now news admin: composer should support update mode"
   );
   assert(
@@ -806,7 +806,7 @@ function testNowRankingsAreServerDiscoverable() {
   assert(
     nowPageSource.includes('"@type": "City"') &&
       nowPageSource.includes("rankingSeoCities.map") &&
-      nowPageSource.includes('aria-label="Internal now crawl links"'),
+      nowPageSource.includes('t("now.internalLinks", "Internal now crawl links")'),
     "now rankings SEO: ranking entries should resolve to City entities, persistent crawl links, and a section heading",
   );
   assert(
@@ -933,7 +933,7 @@ function testSearchRanksExplicitCityAndVenueTypeFirst() {
       !homeSource.includes("const orderedResults = [...merged.cities, ...merged.events, ...merged.places];"),
     "home search: dropdown should preserve the global relevance order",
   );
-  const dropdownBlock = homeSource.match(/<div aria-label="Instant search results"[\s\S]*?<\/div>/)?.[0] || "";
+  const dropdownBlock = homeSource.match(/<div aria-label=\{t\("home\.instantResults", "Instant search results"\)\}[\s\S]*?<\/div>/)?.[0] || "";
   assert(
     homeSource.includes("lg:z-[100]") &&
       homeSource.includes("lg:overflow-visible") &&

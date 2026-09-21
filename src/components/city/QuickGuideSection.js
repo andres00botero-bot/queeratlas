@@ -2,6 +2,7 @@
 
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import { polishGuideText } from "@/features/city/liveVibeFeature";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function QuickGuideSection({
   sectionRef,
@@ -12,6 +13,7 @@ export default function QuickGuideSection({
   placesLoadError,
   reloadPlaces,
 }) {
+  const { t } = useLocale();
   return (
     <div
       ref={sectionRef}
@@ -19,16 +21,16 @@ export default function QuickGuideSection({
       style={{ animationDelay: "250ms" }}
     >
       <div className="mb-8">
-        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-amber-100/78">City guide</p>
+        <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-amber-100/78">{t("city.cityGuide", "City guide")}</p>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">Essential guide</h2>
+            <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">{t("city.essentialGuide", "Essential guide")}</h2>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-white/58">
-              The fast read before you choose where to stay, go out, and move around.
+              {t("city.essentialGuideDescription", "The fast read before you choose where to stay, go out, and move around.")}
             </p>
           </div>
           <span className="inline-flex items-center rounded-full border border-amber-200/20 bg-amber-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-amber-100/86">
-            {Array.isArray(config?.guide) ? config.guide.length : 0} tips
+            {t("city.tipsCount", "{count} tips").replace("{count}", Array.isArray(config?.guide) ? config.guide.length : 0)}
           </span>
         </div>
         {isAdmin && config?.dynamic && (
@@ -36,14 +38,14 @@ export default function QuickGuideSection({
             href={`/admin?editCity=${encodeURIComponent(config.key)}#city-registry`}
             className="mt-4 inline-flex rounded-full border border-cyan-200/28 bg-cyan-200/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-100/50 hover:bg-cyan-200/15"
           >
-            Edit city guide
+            {t("city.editCityGuide", "Edit city guide")}
           </a>
         )}
         <div className="mt-4 h-px w-full bg-[linear-gradient(90deg,#ffd166,#ff5fb7,#4de1ff,transparent)] opacity-70" />
       </div>
       {placesLoading && (
         <div className="mb-4 rounded-2xl border border-amber-200/10 bg-amber-200/[0.03] p-4">
-          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-amber-100/60">Curated city guide</p>
+          <p className="mb-3 text-xs uppercase tracking-[0.16em] text-amber-100/60">{t("city.curatedCityGuide", "Curated city guide")}</p>
           <SectionSkeleton tone="amber" rows={2} />
         </div>
       )}
@@ -65,24 +67,24 @@ export default function QuickGuideSection({
               ? {
                   card: "border-cyan-100/28 bg-[linear-gradient(135deg,rgba(34,211,238,0.14),rgba(255,255,255,0.06))] hover:border-cyan-100/48 shadow-[0_18px_44px_rgba(34,211,238,0.10)]",
                   index: "text-cyan-50 border-cyan-100/34 bg-cyan-300/16",
-                  label: "Overview",
+                  label: t("city.overview", "Overview"),
                 }
               : index % 4 === 1
                 ? {
                     card: "border-fuchsia-100/28 bg-[linear-gradient(135deg,rgba(244,114,182,0.14),rgba(255,255,255,0.06))] hover:border-fuchsia-100/48 shadow-[0_18px_44px_rgba(217,70,239,0.10)]",
                     index: "text-fuchsia-50 border-fuchsia-100/34 bg-fuchsia-300/16",
-                    label: "Area logic",
+                    label: t("city.areaLogic", "Area logic"),
                   }
                 : index % 4 === 2
                   ? {
                       card: "border-emerald-100/28 bg-[linear-gradient(135deg,rgba(52,211,153,0.13),rgba(255,255,255,0.06))] hover:border-emerald-100/48 shadow-[0_18px_44px_rgba(16,185,129,0.10)]",
                       index: "text-emerald-50 border-emerald-100/34 bg-emerald-300/16",
-                      label: "Safety read",
+                      label: t("city.safetyRead", "Safety read"),
                     }
                   : {
                       card: "border-amber-100/28 bg-[linear-gradient(135deg,rgba(251,191,36,0.14),rgba(255,255,255,0.06))] hover:border-amber-100/48 shadow-[0_18px_44px_rgba(251,191,36,0.10)]",
                       index: "text-amber-50 border-amber-100/34 bg-amber-300/16",
-                      label: "Trip planning",
+                      label: t("city.tripPlanning", "Trip planning"),
                     };
           return (
             <div
@@ -123,7 +125,7 @@ export default function QuickGuideSection({
       {Array.isArray(config?.guideResearch?.sources) && config.guideResearch.sources.length > 0 && (
         <details className="mt-5 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/64">
           <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.16em] text-white/62 marker:hidden">
-            Editorial sources · checked {config.guideResearch.checkedAt}
+            {t("city.editorialSources", "Editorial sources · checked {date}").replace("{date}", config.guideResearch.checkedAt)}
           </summary>
           <div className="mt-3 flex flex-wrap gap-2">
             {config.guideResearch.sources.map((source) => (

@@ -27,7 +27,8 @@ function toAbsoluteUrl(path = "") {
   return `${QA_SITE_URL}${path}`;
 }
 
-export function buildPrimaryEntityGraph() {
+export function buildPrimaryEntityGraph(locale = "en") {
+  const isSpanish = locale === "es";
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -36,8 +37,9 @@ export function buildPrimaryEntityGraph() {
         "@id": QA_ORGANIZATION_ID,
         name: QA_ORGANIZATION_NAME,
         url: QA_SITE_URL,
-        description:
-          "Independent queer travel, nightlife, event, and community guidance with transparent editorial standards.",
+        description: isSpanish
+          ? "Guía independiente sobre viajes queer, vida nocturna, eventos y comunidad con criterios editoriales transparentes."
+          : "Independent queer travel, nightlife, event, and community guidance with transparent editorial standards.",
         email: "admin@queeratlas.app",
         logo: {
           "@type": "ImageObject",
@@ -48,7 +50,7 @@ export function buildPrimaryEntityGraph() {
           contactType: "editorial, corrections and press",
           email: "admin@queeratlas.app",
           url: `${QA_SITE_URL}/contact`,
-          availableLanguage: ["English", "Swedish"],
+          availableLanguage: ["English", "Spanish"],
         },
         publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
         ethicsPolicy: `${QA_SITE_URL}/editorial-policy`,
@@ -59,7 +61,7 @@ export function buildPrimaryEntityGraph() {
         "@id": QA_WEBSITE_ID,
         name: QA_ORGANIZATION_NAME,
         url: QA_SITE_URL,
-        inLanguage: "en",
+        inLanguage: isSpanish ? "es" : "en",
         publisher: {
           "@id": QA_ORGANIZATION_ID,
         },

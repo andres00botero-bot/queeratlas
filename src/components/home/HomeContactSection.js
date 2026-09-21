@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -81,6 +82,12 @@ export default function HomeContactSection({
   embedded = false,
   onAnalyticsEvent,
 }) {
+  const { t } = useLocale();
+  const contactPaths = CONTACT_PATHS.map((path) => ({
+    ...path,
+    title: t(`contact.${path.key}.title`, path.title),
+    description: t(`contact.${path.key}.description`, path.description),
+  }));
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedPathKey, setSelectedPathKey] = useState("");
   const [category, setCategory] = useState("general_feedback");
@@ -96,8 +103,8 @@ export default function HomeContactSection({
 
   const isStandalone = pageContext === "/contact";
   const selectedPath = useMemo(
-    () => CONTACT_PATHS.find((item) => item.key === selectedPathKey) || CONTACT_PATHS[2],
-    [selectedPathKey]
+    () => contactPaths.find((item) => item.key === selectedPathKey) || contactPaths[2],
+    [contactPaths, selectedPathKey]
   );
   const canUseAnonymous = selectedPath.key !== "business";
   const needsEmail = selectedPath.key === "business" || wantsReply;
@@ -145,11 +152,11 @@ export default function HomeContactSection({
     event.preventDefault();
     if (submitting) return;
     if (message.trim().length < 20) {
-      setErrorMessage("Please tell us a little more — at least 20 characters.");
+      setErrorMessage(t("contact.tooShort", "Please tell us a little more — at least 20 characters."));
       return;
     }
     if (needsEmail && !isValidEmail(senderEmail)) {
-      setErrorMessage("Add a valid email address so we can reply.");
+      setErrorMessage(t("contact.invalidEmail", "Add a valid email address so we can reply."));
       return;
     }
 
@@ -178,7 +185,7 @@ export default function HomeContactSection({
 
       const payload = await response.json();
       if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error || "Could not send message.");
+        throw new Error(payload?.error || t("contact.sendFailed", "Could not send message."));
       }
 
       setSuccessRef(String(payload.reference || "").trim());
@@ -187,7 +194,7 @@ export default function HomeContactSection({
       onAnalyticsEvent?.("contact_submitted", { intent: selectedPath.key, category });
     } catch (error) {
       setSubmitting(false);
-      setErrorMessage(error?.message || "Could not send message.");
+      setErrorMessage(error?.message || t("contact.sendFailed", "Could not send message."));
     }
   };
 
@@ -199,10 +206,10 @@ export default function HomeContactSection({
             <CheckCircle2 size={21} strokeWidth={1.8} aria-hidden="true" />
           </span>
           <h3 ref={dialogHeadingRef} tabIndex={-1} className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-white outline-none">
-            Message received.
+            {t("contact.received", "Message received.")}
           </h3>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/58">
-            Keep this reference if you need to follow up.
+            {t("contact.reference", "Keep this reference if you need to follow up.")}
           </p>
           <button
             type="button"
@@ -217,14 +224,14 @@ export default function HomeContactSection({
               onClick={closeForm}
               className="rounded-full border border-white/14 bg-white/[0.05] px-4 py-2 text-xs text-white/72 transition hover:border-white/26 hover:text-white"
             >
-              Done
+              {t("contact.done", "Done")}
             </button>
             <button
               type="button"
               onClick={() => setSuccessRef("")}
               className="rounded-full border border-cyan-100/24 bg-cyan-100/[0.08] px-4 py-2 text-xs text-cyan-50 transition hover:border-cyan-100/42"
             >
-              Send another
+              {t("contact.sendAnother", "Send another")}
             </button>
           </div>
         </div>
@@ -232,7 +239,7 @@ export default function HomeContactSection({
         <form onSubmit={submitContact} noValidate>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-100/56">Contact Queer Atlas</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-100/56">{t("contact.heading", "Contact Queer Atlas")}</p>
               <h3 ref={dialogHeadingRef} tabIndex={-1} className="mt-2 text-2xl font-semibold tracking-[-0.025em] text-white outline-none">
                 {selectedPath.title}
               </h3>
@@ -241,7 +248,7 @@ export default function HomeContactSection({
             <button
               type="button"
               onClick={closeForm}
-              aria-label="Close contact form"
+              aria-label={t("contact.close", "Close contact form")}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.045] text-white/55 transition hover:border-white/25 hover:text-white"
             >
               <X size={16} aria-hidden="true" />
@@ -250,11 +257,11 @@ export default function HomeContactSection({
 
           {selectedPath.key === "feedback" ? (
             <fieldset className="mt-5">
-              <legend className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/52">What kind of message?</legend>
+              <legend className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/52">{t("contact.messageKind", "What kind of message?")}</legend>
               <div className="mt-2 flex gap-2">
                 {[
-                  { value: "general_feedback", label: "Feedback" },
-                  { value: "bug_report", label: "Bug report" },
+                  { value: "general_feedback", label: t("contact.feedbackLabel", "Feedback") },
+                  { value: "bug_report", label: t("contact.bugReport", "Bug report") },
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -275,19 +282,19 @@ export default function HomeContactSection({
 
           {selectedPath.key === "safety" ? (
             <div className="mt-5 rounded-[16px] border border-rose-100/14 bg-rose-200/[0.055] px-3.5 py-3 text-[11px] leading-5 text-rose-50/68">
-              If someone is in immediate danger, contact local emergency services first. Queer Atlas reports are not monitored live.
+              {t("contact.urgentSafety", "If someone is in immediate danger, contact local emergency services first. Queer Atlas reports are not monitored live.")}
             </div>
           ) : null}
 
           <label htmlFor="qa-contact-message" className="mt-5 block text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58">
-            {selectedPath.key === "correction" ? "What needs changing?" : selectedPath.key === "safety" ? "What happened?" : "Your message"}
+            {selectedPath.key === "correction" ? t("contact.whatNeedsChanging", "What needs changing?") : selectedPath.key === "safety" ? t("contact.whatHappened", "What happened?") : t("contact.yourMessage", "Your message")}
           </label>
           <textarea
             id="qa-contact-message"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             className="mt-2 min-h-[118px] w-full resize-y rounded-[18px] border border-white/12 bg-black/20 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-white/28 focus:border-cyan-100/34 focus:ring-2 focus:ring-cyan-300/10"
-            placeholder={selectedPath.key === "correction" ? "Tell us what is wrong and what the correct information should be." : "Share the details that will help us understand."}
+            placeholder={selectedPath.key === "correction" ? t("contact.correctionPlaceholder", "Tell us what is wrong and what the correct information should be.") : t("contact.messagePlaceholder", "Share the details that will help us understand.")}
             maxLength={5000}
             aria-describedby={errorMessage ? "qa-contact-error" : undefined}
             required
@@ -305,7 +312,7 @@ export default function HomeContactSection({
                   }}
                   className="h-4 w-4 rounded border-white/24 bg-black/30"
                 />
-                Send anonymously
+                {t("contact.anonymous", "Send anonymously")}
               </label>
               {!isAnonymous ? (
                 <label className="inline-flex items-center gap-2 text-xs text-white/66">
@@ -315,7 +322,7 @@ export default function HomeContactSection({
                     onChange={(event) => setWantsReply(event.target.checked)}
                     className="h-4 w-4 rounded border-white/24 bg-black/30"
                   />
-                  I want a reply
+                  {t("contact.wantsReply", "I want a reply")}
                 </label>
               ) : null}
             </div>
@@ -338,7 +345,7 @@ export default function HomeContactSection({
                 />
               </label>
               <label htmlFor="qa-contact-name" className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/58">
-                Name <span className="font-normal normal-case tracking-normal text-white/32">(optional)</span>
+                {t("contact.name", "Name")} <span className="font-normal normal-case tracking-normal text-white/32">{t("contact.optional", "(optional)")}</span>
                 <input
                   id="qa-contact-name"
                   autoComplete="name"
@@ -346,7 +353,7 @@ export default function HomeContactSection({
                   value={senderName}
                   onChange={(event) => setSenderName(event.target.value)}
                   className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-white/28 focus:border-cyan-100/34"
-                  placeholder="Your name"
+                  placeholder={t("contact.yourName", "Your name")}
                   maxLength={120}
                 />
               </label>
@@ -354,7 +361,7 @@ export default function HomeContactSection({
           ) : null}
 
           {isAnonymous ? (
-            <p className="mt-3 text-[11px] leading-5 text-white/42">No name, email or member ID will be stored with this message.</p>
+            <p className="mt-3 text-[11px] leading-5 text-white/42">{t("contact.anonymousNotice", "No name, email or member ID will be stored with this message.")}</p>
           ) : null}
 
           {errorMessage ? (
@@ -366,17 +373,17 @@ export default function HomeContactSection({
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-4">
             {isStandalone ? (
               <button type="button" onClick={closeForm} className="inline-flex items-center gap-1.5 text-xs text-white/48 transition hover:text-white/78">
-                <ArrowLeft size={13} aria-hidden="true" /> Contact options
+                <ArrowLeft size={13} aria-hidden="true" /> {t("contact.contactOptions", "Contact options")}
               </button>
             ) : (
-              <p className="text-[11px] text-white/42">Reviewed by the Queer Atlas team.</p>
+              <p className="text-[11px] text-white/42">{t("contact.reviewed", "Reviewed by the Queer Atlas team.")}</p>
             )}
             <button
               type="submit"
               disabled={!canSubmit}
               className="qa-action qa-action-strong rounded-full border border-cyan-100/65 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-5 py-2.5 text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-45"
             >
-              {submitting ? "Sending..." : SUBMIT_LABELS[selectedPath.key]}
+              {submitting ? t("contact.sending", "Sending...") : t(`contact.send${selectedPath.key.charAt(0).toUpperCase()}${selectedPath.key.slice(1)}`, SUBMIT_LABELS[selectedPath.key])}
             </button>
           </div>
         </form>
@@ -401,21 +408,21 @@ export default function HomeContactSection({
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-fuchsia-100/62">
               <MessageCircleMore size={13} strokeWidth={1.8} aria-hidden="true" />
-              Human support
+              {t("home.humanSupport", "Human support")}
             </p>
             {embedded ? (
-              <h3 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[1.75rem]">How can we help?</h3>
+              <h3 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[1.75rem]">{t("contact.helpTitle", "How can we help?")}</h3>
             ) : (
-              <h2 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">How can we help?</h2>
+              <h2 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">{t("contact.helpTitle", "How can we help?")}</h2>
             )}
             <p className="mt-2 hidden max-w-lg text-[13px] leading-5 text-white/55 sm:block sm:text-sm">
-              Report something, suggest a correction or talk to us about working together.
+              {t("home.supportDescription", "Report something, suggest a correction or talk to us about working together.")}
             </p>
-            <p className="mt-3 hidden text-[10px] text-white/36 sm:block">Messages are reviewed by the Queer Atlas team.</p>
+            <p className="mt-3 hidden text-[10px] text-white/36 sm:block">{t("contact.reviewedIntro", "Messages are reviewed by the Queer Atlas team.")}</p>
           </div>
 
           <div className={`grid grid-cols-2 ${embedded ? "gap-2 lg:mt-auto" : "overflow-hidden rounded-[20px] border border-white/10 bg-black/10"}`}>
-            {CONTACT_PATHS.map((path) => {
+            {contactPaths.map((path) => {
               const Icon = path.icon;
               return (
                 <button
@@ -456,7 +463,7 @@ export default function HomeContactSection({
               }}
             >
               <div role="dialog" aria-modal="true" aria-labelledby="qa-contact-dialog-title" className="max-h-[92svh] w-full overflow-y-auto rounded-t-[28px] border border-white/12 bg-[radial-gradient(circle_at_0%_0%,rgba(34,211,238,0.1),transparent_30%),radial-gradient(circle_at_100%_100%,rgba(167,139,250,0.1),transparent_30%),linear-gradient(155deg,#10151d,#0b0a11)] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:max-w-[38rem] sm:rounded-[28px] sm:p-5">
-                <span id="qa-contact-dialog-title" className="sr-only">Contact Queer Atlas</span>
+                <span id="qa-contact-dialog-title" className="sr-only">{t("contact.heading", "Contact Queer Atlas")}</span>
                 {formContent}
               </div>
             </div>,

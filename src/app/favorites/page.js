@@ -11,6 +11,7 @@ import "../signal-motion.css";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { useAuth } from "@/lib/auth";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { addReport, subscribeBlockedItems, syncBlockedItemsFromCloud } from "@/lib/moderation";
@@ -371,6 +372,7 @@ function resolveProfileVibeChips(vibeRaw = "", fallbackVibe = "") {
 }
 
 export default function FavoritesPage() {
+  const { locale, t } = useLocale();
   const router = useRouter();
   const [profileRouteParams, setProfileRouteParams] = useState({
     member: "",
@@ -2459,37 +2461,37 @@ export default function FavoritesPage() {
   const activeProfileVisibility = isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility;
   const profileVisibilityLabel =
     activeProfileVisibility === "public"
-      ? "Visible to all"
+      ? t("favorites.visibleToAll", "Visible to all")
       : activeProfileVisibility === "friends"
-        ? "Visible to friends"
-        : "Visible to members";
+        ? t("favorites.visibleToFriends", "Visible to friends")
+        : t("favorites.visibleToMembers", "Visible to members");
   const profileLocationLabel =
     effectiveHomeCity || effectiveResidentCountry
       ? [effectiveHomeCity, effectiveResidentCountry].filter(Boolean).join(", ")
-      : "Location not set";
+      : t("favorites.locationNotSet", "Location not set");
   const activeJoinedAt = isViewingAnotherMember
     ? String(viewedProfile?.createdAt || "").trim()
     : String(user?.created_at || memberProfile?.createdAt || "").trim();
   const joinedSinceLabel = useMemo(() => {
     const raw = String(activeJoinedAt || "").trim();
-    if (!raw) return "Joined recently";
+    if (!raw) return t("favorites.joinedRecently", "Joined recently");
     const parsed = new Date(raw);
-    if (Number.isNaN(parsed.getTime())) return "Joined recently";
-    return `Joined ${parsed.toLocaleDateString("en-US", {
+    if (Number.isNaN(parsed.getTime())) return t("favorites.joinedRecently", "Joined recently");
+    return t("favorites.joined", "Joined {date}").replace("{date}", parsed.toLocaleDateString(locale === "es" ? "es" : "en-US", {
       year: "numeric",
       month: "short",
-    })}`;
-  }, [activeJoinedAt]);
+    }));
+  }, [activeJoinedAt, locale, t]);
   const publicHighlights = useMemo(() => {
     return [
-      { label: "Top contribution", value: topContributionLabel },
-      { label: "Current level", value: atlasCredLevel },
+      { label: t("favorites.topContribution", "Top contribution"), value: topContributionLabel },
+      { label: t("favorites.currentLevel", "Current level"), value: atlasCredLevel },
       {
-        label: "Joined",
+        label: t("favorites.joinedLabel", "Joined"),
         value: joinedSinceLabel,
       },
     ];
-  }, [atlasCredLevel, joinedSinceLabel, topContributionLabel]);
+  }, [atlasCredLevel, joinedSinceLabel, t, topContributionLabel]);
   const displayInitials = useMemo(() => {
     const parts = String(effectiveDisplayName || "")
       .trim()
@@ -2517,14 +2519,14 @@ export default function FavoritesPage() {
   const profileTabs = useMemo(
     () =>
       isReadOnlyPublicProfileView
-        ? [{ id: "about", label: "Profile Home" }]
+        ? [{ id: "about", label: t("favorites.profileHome", "Profile Home") }]
         : [
-            { id: "about", label: "Home" },
-            { id: "map", label: "My map" },
-            { id: "trips", label: "Plan a trip" },
-            { id: "calendar", label: "My Calendar" },
+            { id: "about", label: t("favorites.home", "Home") },
+            { id: "map", label: t("favorites.myMap", "My map") },
+            { id: "trips", label: t("favorites.planTrip", "Plan a trip") },
+            { id: "calendar", label: t("favorites.myCalendar", "My Calendar") },
           ],
-    [isReadOnlyPublicProfileView]
+    [isReadOnlyPublicProfileView, t]
   );
   useEffect(() => {
     if (!Array.isArray(profileTabs) || profileTabs.length === 0) return;
@@ -3625,8 +3627,8 @@ export default function FavoritesPage() {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
         <PageOpeningState
-          title="Opening your atlas..."
-          subtitle="Loading favorites, plans, and member profile signal."
+          title={t("favorites.opening", "Opening your atlas...")}
+          subtitle={t("favorites.openingSubtitle", "Loading favorites, plans, and member profile signal.")}
           tone="amber"
         />
       </main>
@@ -3663,12 +3665,12 @@ export default function FavoritesPage() {
             </p>
             <h1 className="qa-display qa-h1 mt-3 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold text-transparent sm:mt-4 sm:gap-4 sm:text-6xl">
               <BrandMark iconOnly className="h-10 w-10 sm:h-14 sm:w-14" />
-              {isReadOnlyPublicProfileView ? "Member Profile" : "Your Atlas"}
+              {isReadOnlyPublicProfileView ? t("favorites.memberProfile", "Member Profile") : t("favorites.yourAtlas", "Your Atlas")}
             </h1>
             <p className="qa-lead mt-3 max-w-2xl text-sm text-white/64 sm:mt-5 sm:text-base">
               {isReadOnlyPublicProfileView
-                ? "Public queer signal across identity, vibe, and contributor presence."
-                : "Your saved queer map across cities, places, and events. This is where discovery becomes direction."}
+                ? t("favorites.publicSignal", "Public queer signal across identity, vibe, and contributor presence.")
+                : t("favorites.intro", "Your saved queer map across cities, places, and events. This is where discovery becomes direction.")}
             </p>
             {!isReadOnlyPublicProfileView && isAtlasLoading && (
               <div className="mt-4 max-w-sm animate-pulse" aria-hidden="true">
@@ -3683,7 +3685,7 @@ export default function FavoritesPage() {
                   onClick={loadAtlasData}
                   className="rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
                 >
-                  Retry
+                  {t("favorites.retry", "Retry")}
                 </button>
               </div>
             )}
@@ -3700,14 +3702,14 @@ export default function FavoritesPage() {
                 controlsRef={favoritesControlsRef}
                 controlButtonsRef={favoritesControlButtonsRef}
                 buttons={profileTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
-                ariaLabel="My Atlas sections"
+                ariaLabel={t("favorites.sections", "My Atlas sections")}
                 mobileCompact
                 mobileLayout="fit"
                 mobileLabelsById={{
-                  about: "Home",
-                  map: "Map",
-                  trips: "Trips",
-                  calendar: "Calendar",
+                  about: t("favorites.home", "Home"),
+                  map: t("favorites.map", "Map"),
+                  trips: t("favorites.trips", "Trips"),
+                  calendar: t("favorites.calendar", "Calendar"),
                 }}
                 activeId={activeProfileTab}
                 onSelect={(tabId) => setActiveProfileTab(tabId)}
@@ -4567,7 +4569,7 @@ export default function FavoritesPage() {
         <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,14,22,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.28)] sm:shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">My map</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-fuchsia-100/72">{t("favorites.myMap", "My map")}</p>
               <p className="mt-1 text-sm text-white/82">
                 {myMapView === "checkins" ? `${checkins.length} check-ins` : `${savedPlaces.length} saved places`} | {checkinCities.length} cities
               </p>
@@ -4588,12 +4590,12 @@ export default function FavoritesPage() {
         >
           <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100/72">My queer atlas</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-100/72">{t("favorites.myQueerAtlas", "My queer atlas")}</p>
               <h2 className="qa-h2 mt-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-                My map
+                {t("favorites.myMap", "My map")}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-violet-50/68">
-                Places you love and moments you’ve lived.
+                {t("favorites.mapIntro", "Places you love and moments you’ve lived.")}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-violet-50/58 sm:justify-end">
@@ -4606,9 +4608,9 @@ export default function FavoritesPage() {
           </div>
           <div className="mb-4 inline-flex rounded-full border border-white/16 bg-white/10 p-1 shadow-[0_14px_38px_rgba(72,36,94,0.22)] backdrop-blur-xl">
             {[
-              { id: "saved", label: "Saved" },
-              { id: "checkins", label: "Check-ins" },
-              { id: "trips", label: "Trips" },
+              { id: "saved", label: t("favorites.saved", "Saved") },
+              { id: "checkins", label: t("favorites.checkins", "Check-ins") },
+              { id: "trips", label: t("favorites.trips", "Trips") },
             ].map((view) => {
               const isActive = myMapView === view.id;
               return (
@@ -4685,7 +4687,7 @@ export default function FavoritesPage() {
                   />
                 ) : (
                   <div className="flex h-[360px] items-center justify-center bg-[radial-gradient(circle_at_24%_18%,rgba(244,114,182,0.16),transparent_34%),radial-gradient(circle_at_82%_76%,rgba(52,211,153,0.09),transparent_36%),linear-gradient(145deg,#3a293f,#252b36)] px-7 text-center text-sm text-white/68 sm:h-[430px] xl:h-[570px]">
-                    <span><strong className="block text-lg font-semibold text-white">Your queer world starts here ✦</strong><span className="mt-2 block">Save a venue or check in somewhere you loved. Your map will grow with you.</span></span>
+                    <span><strong className="block text-lg font-semibold text-white">{t("favorites.mapEmptyTitle", "Your queer world starts here ✦")}</strong><span className="mt-2 block">{t("favorites.mapEmptyText", "Save a venue or check in somewhere you loved. Your map will grow with you.")}</span></span>
                   </div>
                 )}
                 {myMapView === "checkins" ? (
@@ -4701,7 +4703,7 @@ export default function FavoritesPage() {
                     }}
                     className="absolute bottom-4 right-4 z-20 rounded-full border border-white/50 bg-[linear-gradient(135deg,#ffd4df,#f3d8ff)] px-4 py-2.5 text-xs font-semibold text-[#38152f] shadow-[0_14px_38px_rgba(28,12,31,0.42)] transition hover:-translate-y-0.5 hover:brightness-105 sm:bottom-5 sm:right-5"
                   >
-                    {isCheckinComposerOpen ? "Close" : "+ Check in"}
+                    {isCheckinComposerOpen ? t("favorites.close", "Close") : `+ ${t("favorites.checkIn", "Check in")}`}
                   </button>
                 ) : null}
               </div>
@@ -4770,11 +4772,11 @@ export default function FavoritesPage() {
                         Add signal
                       </p>
                       <h3 className="mt-1 text-base font-semibold tracking-[-0.01em] text-white">
-                        Check in to your map
+                        {t("favorites.checkInToMap", "Check in to your map")}
                       </h3>
                     </div>
                     <span className="rounded-full border border-white/12 bg-white/[0.06] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-white/56">
-                      {editingCheckinId ? "Editing" : "New pin"}
+                      {editingCheckinId ? t("favorites.editing", "Editing") : t("favorites.newPin", "New pin")}
                     </span>
                   </div>
                   <p className="mt-2 text-xs leading-5 text-white/50">
@@ -4931,7 +4933,7 @@ export default function FavoritesPage() {
                   disabled={isSavingCheckin}
                   className="qa-action qa-action-strong rounded-2xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-rose-200 to-emerald-200 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#34221f] shadow-[0_12px_32px_rgba(251,191,36,0.18)] transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
                 >
-                  {isSavingCheckin ? "Saving check-in..." : editingCheckinId ? "Save check-in changes" : "Check in now"}
+                  {isSavingCheckin ? t("favorites.savingCheckin", "Saving check-in...") : editingCheckinId ? t("favorites.saveCheckinChanges", "Save check-in changes") : t("favorites.checkInNow", "Check in now")}
                 </button>
                 {editingCheckinId ? (
                   <button
@@ -5001,7 +5003,7 @@ export default function FavoritesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-white">
-                    {myMapView === "checkins" ? "Check-ins" : myMapView === "trips" ? "Trip route" : "Saved places"}
+                    {myMapView === "checkins" ? t("favorites.checkins", "Check-ins") : myMapView === "trips" ? t("favorites.tripRoute", "Trip route") : t("favorites.savedPlaces", "Saved places")}
                   </p>
                   <p className="mt-1 text-xs text-white/58">
                     {myMapView === "checkins"
@@ -5022,10 +5024,10 @@ export default function FavoritesPage() {
               <div className="flex min-h-0 flex-1 flex-col">
                 {checkins.length > 4 ? <div className="mt-2 flex flex-wrap gap-1.5">
                   {[
-                    { id: "all", label: "All" },
-                    { id: "places", label: "Places" },
-                    { id: "events", label: "Events" },
-                    { id: "manual", label: "Manual" },
+                    { id: "all", label: t("favorites.all", "All") },
+                    { id: "places", label: t("favorites.places", "Places") },
+                    { id: "events", label: t("favorites.events", "Events") },
+                    { id: "manual", label: t("favorites.manual", "Manual") },
                   ].map((filter) => (
                     <button
                       key={filter.id}
@@ -5060,9 +5062,9 @@ export default function FavoritesPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <p className="text-[11px] uppercase tracking-[0.14em] text-white/45">
-                                {entry.city || "Unknown city"}{entry.country ? ` | ${entry.country}` : ""}
+                                {entry.city || t("favorites.unknownCity", "Unknown city")}{entry.country ? ` | ${entry.country}` : ""}
                               </p>
-                              <p className="mt-1 truncate text-sm font-semibold text-white">{entry.label || "Unnamed check-in"}</p>
+                              <p className="mt-1 truncate text-sm font-semibold text-white">{entry.label || t("favorites.unnamedCheckin", "Unnamed check-in")}</p>
                             </div>
                             <span className="shrink-0 rounded-full border border-white/12 bg-white/[0.06] px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/62">
                               {String(entry.mode).replaceAll("_", " ")}
@@ -5100,7 +5102,7 @@ export default function FavoritesPage() {
                     </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/45">
-                    <div className="mb-2 text-base">No check-ins in this filter yet.</div>
+                    <div className="mb-2 text-base">{t("favorites.noCheckinsFilter", "No check-ins in this filter yet.")}</div>
                     <button
                       type="button"
                       onClick={() => setIsCheckinComposerOpen(true)}

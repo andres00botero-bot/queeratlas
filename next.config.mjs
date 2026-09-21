@@ -22,6 +22,8 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Keep production bundle analysis isolated from the local development server.
+  distDir: process.env.ANALYZE === "true" ? ".next-analyze" : ".next",
   turbopack: {
     root: __dirname,
   },

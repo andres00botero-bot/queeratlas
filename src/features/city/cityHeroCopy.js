@@ -1,5 +1,16 @@
 const hero = (hook, status, crowd, intro = "") => Object.freeze({ hook, status, crowd, intro });
 
+const LOCALIZED_CITY_HERO_COPY = Object.freeze({
+  es: Object.freeze({
+    madrid: hero(
+      "La calidez de las terrazas se convierte rápidamente en una noche ruidosa y coqueta.",
+      "Chueca sigue siendo el corazón visible, con la vida queer integrada en el centro de Madrid.",
+      "Predominan los madrileños sociables; se suman visitantes de fin de semana y habituales internacionales.",
+      "Las copas en las terrazas de Chueca pueden dar paso a drag, pop o baile antes de que la noche arranque de verdad. Sigue el ambiente y mira más allá de las puertas más evidentes."
+    ),
+  }),
+});
+
 // Compact editorial copy written specifically for the three city-hero cards.
 // Keep each field self-contained: the UI shows the same complete text at every breakpoint.
 export const CITY_HERO_COPY = Object.freeze({
@@ -92,6 +103,7 @@ export const CITY_HERO_COPY = Object.freeze({
   hamburg: hero("Harbour grit, red-light glow and polished queer institutions coexist naturally.", "St Georg and St Pauli offer different anchors within a mature city scene.", "Music lovers, leather regulars, sailors, locals and weekend visitors cross paths.", "Lange Reihe offers an easy, sociable beginning; St Pauli turns the night rougher and more music-led. Pick your side of Hamburg first, then let the harbour city's contrasts take over."),
   munich: hero("Bavarian order softens into sociable bars and polished event nights.", "Glockenbachviertel remains the historic centre of a stable, visible community.", "Munich locals, professionals, students and festival visitors keep the mood composed.", "Glockenbachviertel still holds the history, but its queer venues are specific rather than everywhere. Start with the exact bar or party you want, then enjoy the neighbourhood's cafés, beer and late-night ease."),
   frankfurt: hero("Skyline speed and compact geography make the nightlife route highly efficient.", "The Innenstadt scene is established, international and closely connected to Pride culture.", "Finance professionals, local regulars, expats and trade-fair visitors mix after work.", "Slip from the skyline into the Bermuda Triangle for an easy first drink, then consult the party calendar. Frankfurt's permanent bars create familiarity; its changing club nights supply the bigger release."),
+  dusseldorf: hero("Rhineland ease, art-world polish and Carnival energy give nights a sociable lift.", "A small but visible queer scene centres on selected bars, Pride and changing event nights.", "Local regulars, design-minded professionals and weekend visitors keep the mood relaxed and outgoing.", "Start with an Altstadt drink or a programmed queer bar night, then follow the event calendar. Düsseldorf rewards a well-timed plan more than a fixed nightlife district."),
   chicago: hero("Lakefront scale and house-music history give neighbourhood nightlife real muscle.", "Northalsted and Andersonville anchor distinct, deeply rooted queer communities.", "Chicago locals, drag crowds, leather scenes and music faithful fill big rooms.", "Northalsted brings rainbow landmarks, drag and big dance floors within one energetic corridor; Andersonville feels calmer and more independent. Decide which neighbourhood fits before Chicago's scale turns one night into a commute."),
   las_vegas: hero("Neon spectacle removes moderation from pool deck through final after-party.", "Queer nightlife is highly event-driven within the Strip's wider entertainment machine.", "Performers, bachelor groups, festival travellers and local hospitality crews mix intensely.", "The Strip delivers spectacle; the nearby Fruit Loop offers a more recognisably queer bar circuit. Compare the actual event, cover charge and ride before letting Vegas sell you the biggest possible night."),
   san_diego: hero("Coastal ease and Hillcrest sociability make nights approachable without feeling tame.", "Hillcrest provides a visible, walkable hub with strong community continuity.", "Beach-minded locals, military residents, students and weekend visitors mingle casually.", "Black's Beach can hold the daylight; Hillcrest takes over with coffee, community businesses, drag and dancing. Its walkable centre makes trying another room easy without turning the evening into logistics."),
@@ -184,6 +196,8 @@ export const CITY_HERO_COPY = Object.freeze({
   belgrade: hero("Unpolished confidence and very late hours give the compact circuit real force.", "Community organising supports a resilient scene centred on trusted central venues.", "Belgraders, drag audiences, students and Balkan weekend visitors bring direct social energy.", "Dance until morning if the night earns it, but remember that the queer route is narrower than the city's nightlife reputation suggests. Confirm the current organiser, stay aware beyond the room and follow local energy."),
 });
 
-export function getCityHeroCopy(citySlug) {
-  return CITY_HERO_COPY[String(citySlug || "").toLowerCase()] || null;
+export function getCityHeroCopy(citySlug, locale = "en") {
+  const city = String(citySlug || "").toLowerCase();
+  const language = String(locale || "en").toLowerCase().split("-")[0];
+  return LOCALIZED_CITY_HERO_COPY[language]?.[city] || CITY_HERO_COPY[city] || null;
 }

@@ -12,9 +12,10 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
-import { Search, Sparkles } from "lucide-react";
+import { Globe2, Search, Sparkles } from "lucide-react";
 import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v2";
@@ -119,6 +120,7 @@ function scheduleIdleTask(task, timeout = 650) {
 }
 
 export default function HomePageClient({ initialHomeData = null }) {
+  const { locale, t } = useLocale();
   const router = useRouter();
   const initialEvents = useMemo(
     () => (Array.isArray(initialHomeData?.events) ? initialHomeData.events : []),
@@ -788,11 +790,11 @@ export default function HomePageClient({ initialHomeData = null }) {
 
   const discoveryCards = [
     {
-      title: "Cities",
-      description: "Places, safety and local queer life.",
-      shortDescription: "Places, safety and queer life.",
+      title: t("home.cities", "Cities"),
+      description: t("home.citiesDescription", "Places, safety and local queer life."),
+      shortDescription: t("home.citiesShortDescription", "Places, safety and queer life."),
       icon: "Cities",
-      metric: `${cityCountDisplay} cities`,
+      metric: `${cityCountDisplay} ${t("home.cities", "cities").toLowerCase()}`,
       surface: "border-sky-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(56,189,248,0.18),transparent_40%),linear-gradient(150deg,rgba(18,39,75,0.92),rgba(12,24,52,0.95))] hover:border-sky-200/34",
       glow: "bg-sky-300/20",
       accentLine: "from-transparent via-sky-200/70 to-transparent",
@@ -804,11 +806,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       },
     },
     {
-      title: "Events",
-      description: "What’s happening tonight and later.",
-      shortDescription: "What’s on tonight and later.",
+      title: t("home.events", "Events"),
+      description: t("home.eventsDescription", "What’s happening tonight and later."),
+      shortDescription: t("home.eventsShortDescription", "What’s on tonight and later."),
       icon: "Events",
-      metric: `${eventCountDisplay} events`,
+      metric: `${eventCountDisplay} ${t("home.events", "events").toLowerCase()}`,
       surface: "border-rose-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(251,113,133,0.18),transparent_40%),linear-gradient(150deg,rgba(71,27,57,0.94),rgba(42,20,46,0.96))] hover:border-rose-200/34",
       glow: "bg-rose-300/20",
       accentLine: "from-transparent via-amber-200/70 to-transparent",
@@ -820,11 +822,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       },
     },
     {
-      title: "News",
-      description: "Queer news from around the world.",
-      shortDescription: "Queer news from around the world.",
+      title: t("home.news", "News"),
+      description: t("home.newsDescription", "Queer news from around the world."),
+      shortDescription: t("home.newsDescription", "Queer news from around the world."),
       icon: "News",
-      metric: `${homeNewsItems.length || 0} fresh stories`,
+      metric: `${homeNewsItems.length || 0} ${t("home.freshStories", "fresh stories")}`,
       surface: "border-emerald-200/15 bg-[radial-gradient(circle_at_95%_0%,rgba(45,212,191,0.16),transparent_40%),linear-gradient(150deg,rgba(13,55,62,0.94),rgba(12,31,48,0.96))] hover:border-emerald-200/32",
       glow: "bg-teal-300/18",
       accentLine: "from-transparent via-emerald-200/65 to-transparent",
@@ -836,11 +838,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       },
     },
     {
-      title: "Collections",
-      description: "Handpicked places, trips and experiences.",
-      shortDescription: "Handpicked places and trips.",
+      title: t("home.collections", "Collections"),
+      description: t("home.collectionsDescription", "Handpicked places, trips and experiences."),
+      shortDescription: t("home.collectionsShortDescription", "Handpicked places and trips."),
       icon: "Collections",
-      metric: "Editorial picks",
+      metric: t("home.editorialPicks", "Editorial picks"),
       surface: "border-violet-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(192,132,252,0.18),transparent_40%),linear-gradient(150deg,rgba(59,30,81,0.94),rgba(31,22,59,0.96))] hover:border-violet-200/34",
       glow: "bg-violet-300/20",
       accentLine: "from-transparent via-fuchsia-200/66 to-transparent",
@@ -854,9 +856,9 @@ export default function HomePageClient({ initialHomeData = null }) {
   ];
   const participationActions = [
     {
-      title: "Community",
-      label: isMember ? "Members, jobs and live conversations" : "Join members, jobs and live conversations",
-      shortLabel: isMember ? "Open member hub" : "Join the network",
+      title: t("home.community", "Community"),
+      label: locale === "es" ? (isMember ? "Miembros, empleos y conversaciones en directo" : "Únete a miembros, empleos y conversaciones en directo") : (isMember ? "Members, jobs and live conversations" : "Join members, jobs and live conversations"),
+      shortLabel: locale === "es" ? (isMember ? "Abrir espacio de miembros" : "Únete a la red") : (isMember ? "Open member hub" : "Join the network"),
       icon: "Community",
       cardClass: "border-cyan-100/26 bg-[radial-gradient(circle_at_8%_50%,rgba(45,212,191,0.16),transparent_30%),linear-gradient(110deg,rgba(10,35,42,0.96),rgba(10,19,31,0.98))] hover:border-cyan-100/48",
       glowClass: "bg-cyan-300/16",
@@ -875,9 +877,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       },
     },
     {
-      title: "Contribute",
-      label: isMember ? "Add places, events and services" : "Join to add what you know",
-      shortLabel: isMember ? "Add what you know" : "Join & add",
+      title: locale === "es" ? "Contribuir" : "Contribute",
+      label: locale === "es" ? (isMember ? "Añade lugares, eventos y servicios" : "Únete para aportar lo que sabes") : (isMember ? "Add places, events and services" : "Join to add what you know"),
+      shortLabel: locale === "es" ? (isMember ? "Aporta lo que sabes" : "Únete y aporta") : (isMember ? "Add what you know" : "Join & add"),
       icon: "Contribute",
       cardClass: "border-rose-100/26 bg-[radial-gradient(circle_at_8%_50%,rgba(251,113,133,0.17),transparent_30%),linear-gradient(110deg,rgba(49,18,38,0.96),rgba(25,15,31,0.98))] hover:border-rose-100/48",
       glowClass: "bg-fuchsia-300/17",
@@ -899,16 +901,16 @@ export default function HomePageClient({ initialHomeData = null }) {
   const livePulseCards = [
     {
       key: "next-event",
-      subtitle: focusedUpcomingEvent ? `Next in ${formatCityLabel(focusedCity)}` : "Next event",
-      title: nextUpcomingEvent?.name || "No upcoming event signal yet",
+      subtitle: focusedUpcomingEvent ? `${t("home.nextEvent", "Next")} ${formatCityLabel(focusedCity)}` : t("home.nextEvent", "Next event"),
+      title: nextUpcomingEvent?.name || t("home.noUpcomingEvent", "No upcoming event signal yet"),
       description: `${formatCityLabel(nextUpcomingEvent?.city)} - ${
-        nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : "No date available"
+        nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : t("home.noDate", "No date available")
       }.`,
-      meta: focusedUpcomingEvent ? "Your local calendar" : "Next global calendar signal",
+      meta: focusedUpcomingEvent ? t("home.localCalendar", "Your local calendar") : t("home.globalCalendar", "Next global calendar signal"),
       signalLabel: "Event route",
       signalValue: nextUpcomingEvent
         ? `${formatCityLabel(nextUpcomingEvent.city)} · ${formatDateShort(nextUpcomingEvent.date)}`
-        : "Open the events calendar",
+        : t("home.openEventsCalendar", "Open the events calendar"),
       badge: nextEventFreshness.label,
       badgeClass:
         nextEventFreshness.tone === "live"
@@ -920,7 +922,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               : "border-white/22 bg-white/8 text-white/80",
       cardClass:
         "border-amber-200/26 bg-[linear-gradient(180deg,rgba(44,28,14,0.78),rgba(16,12,8,0.94))] hover:border-amber-200/46",
-      ctaLabel: "Open event",
+      ctaLabel: t("home.openEvent", "Open event"),
       onClick: () => {
         trackHomeAction("next_event", nextUpcomingEvent?.id ? "event_detail" : "/events", {
           city: String(nextUpcomingEvent?.city || ""),
@@ -934,17 +936,17 @@ export default function HomePageClient({ initialHomeData = null }) {
     },
     {
       key: "latest-news",
-      subtitle: "Latest news",
-      title: latestPulseNews?.title || "No published news yet",
+      subtitle: t("home.latestNews", "Latest news"),
+      title: latestPulseNews?.title || t("home.noNews", "No published news yet"),
       description: `${formatCityLabel(latestPulseNews?.city)} - Global queer news, verified and fresh.`,
-      meta: latestPulseNews?.city ? `${formatCityLabel(latestPulseNews.city)} signal` : "Editorial desk",
-      signalLabel: "News lane",
-      signalValue: homeNewsItems.length ? `${homeNewsItems.length} fresh stories` : "Open queer world news",
+      meta: latestPulseNews?.city ? `${formatCityLabel(latestPulseNews.city)} signal` : t("home.editorialDesk", "Editorial desk"),
+      signalLabel: t("home.news", "News"),
+      signalValue: homeNewsItems.length ? `${homeNewsItems.length} ${t("home.freshStories", "fresh stories")}` : t("home.newsDescription", "Open queer world news"),
       badge: latestPulseNews ? "Fresh" : "Pending",
       badgeClass: "border-cyan-200/30 bg-cyan-200/12 text-cyan-100/90",
       cardClass:
         "border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] hover:border-cyan-200/44",
-      ctaLabel: "Open story",
+      ctaLabel: t("home.openStory", "Open story"),
       onClick: () => {
         trackHomeAction("latest_news", "/now");
         router.push("/now");
@@ -952,19 +954,19 @@ export default function HomePageClient({ initialHomeData = null }) {
     },
     {
       key: "local-pick",
-      subtitle: focusedCity ? `Local pick · ${formatCityLabel(focusedCity)}` : "Local pick",
-      title: focusedVenue?.name || (focusedCity ? `Explore ${formatCityLabel(focusedCity)}` : "Choose a city to begin"),
+      subtitle: focusedCity ? `${t("home.localPick", "Local pick")} · ${formatCityLabel(focusedCity)}` : t("home.localPick", "Local pick"),
+      title: focusedVenue?.name || (focusedCity ? `${t("home.exploreAtlas", "Explore")} ${formatCityLabel(focusedCity)}` : t("home.chooseCity", "Choose a city to begin")),
       description: focusedVenue
         ? `${focusedCityPlaces.length} places and ${focusedCityEvents.length} events mapped in ${formatCityLabel(focusedCity)}.`
         : "Open the city guide for venues, events, safety, and local context.",
-      meta: focusedVenue?.type ? String(focusedVenue.type).replaceAll("_", " ") : "City guide",
+      meta: focusedVenue?.type ? String(focusedVenue.type).replaceAll("_", " ") : t("home.cityGuide", "City guide"),
       signalLabel: "Local atlas",
       signalValue: `${focusedCityPlaces.length} places · ${focusedCityEvents.length} events`,
       badge: homeFocusSource === "home" ? "Home city" : homeFocusSource === "recent" ? "Recent" : "For you",
       badgeClass: "border-fuchsia-200/24 bg-fuchsia-200/12 text-fuchsia-100/90",
       cardClass:
         "border-fuchsia-200/24 bg-[linear-gradient(180deg,rgba(42,16,36,0.72),rgba(14,10,16,0.92))] hover:border-fuchsia-200/44",
-      ctaLabel: focusedVenue ? "Open place" : "Open city",
+      ctaLabel: focusedVenue ? t("home.openPlace", "Open place") : t("home.openCity", "Open city"),
       onClick: () => {
         trackHomeAction("local_pick", focusedVenue?.id ? "place_detail" : "city_guide", {
           city: String(focusedCity || ""),
@@ -1039,6 +1041,29 @@ export default function HomePageClient({ initialHomeData = null }) {
             </div>
 
             <div className="flex items-center gap-2.5 sm:gap-3">
+              <div aria-label={t("global.language", "Language")} className="flex h-11 shrink-0 items-center gap-1 rounded-full border border-cyan-100/35 bg-[linear-gradient(135deg,rgba(34,211,238,0.2),rgba(168,85,247,0.17),rgba(244,114,182,0.16))] p-1 shadow-[0_10px_30px_rgba(34,211,238,0.14),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#07121d]/88 text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]" aria-hidden="true">
+                  <Globe2 className="h-4 w-4" />
+                </span>
+                {[
+                  { code: "en", label: "EN" },
+                  { code: "es", label: "ES" },
+                ].map(({ code, label }) => (
+                  <button
+                    key={code}
+                    type="button"
+                    aria-pressed={locale === code}
+                    onClick={() => {
+                      if (locale === code) return;
+                      document.cookie = `qa_locale=${code}; path=/; max-age=31536000; samesite=lax`;
+                      window.location.assign(code === "es" ? "/es" : "/");
+                    }}
+                    className={`qa-action inline-flex h-9 min-w-10 items-center justify-center rounded-full px-2.5 text-xs font-extrabold tracking-[0.08em] transition ${locale === code ? "bg-white text-[#0a1320] shadow-[0_5px_16px_rgba(255,255,255,0.25)]" : "text-white/72 hover:bg-white/12 hover:text-white"}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               {isMember && (
                 <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
                   {heroIdentityLabel}
@@ -1048,17 +1073,17 @@ export default function HomePageClient({ initialHomeData = null }) {
               {!isMember ? (
                 <>
                 <p className="qa-display hidden text-[15px] font-semibold tracking-[-0.015em] text-white/92 sm:block lg:text-[16px]">
-                  A living atlas, <span className="bg-gradient-to-r from-cyan-200 via-violet-200 to-pink-200 bg-clip-text text-transparent">built together.</span>
+                  {t("home.livingAtlas", "A living atlas, built together.")}
                 </p>
                 <button
-                  aria-label="Join Queer Atlas for free"
+                  aria-label={t("home.joinFree", "Join Queer Atlas for free")}
                   onClick={() => openSignup("/", "signup", "hero_join")}
                   className="qa-home-join-cta qa-action qa-action-strong group relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full border border-rose-200/78 bg-[linear-gradient(110deg,#f43f5e_0%,#d946ef_52%,#7c3aed_100%)] py-1.5 pl-2 pr-5 text-[15px] font-bold tracking-[-0.01em] text-white shadow-[0_15px_38px_rgba(217,70,239,0.34),0_7px_22px_rgba(244,63,94,0.2),inset_0_1px_0_rgba(255,255,255,0.3)] transition duration-300 hover:-translate-y-0.5 hover:border-white hover:brightness-110 hover:shadow-[0_20px_48px_rgba(217,70,239,0.46),0_9px_26px_rgba(244,63,94,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-100/85"
                 >
                   <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/34 bg-white/16 text-white shadow-[0_6px_16px_rgba(49,18,61,0.24)] transition group-hover:-rotate-6 group-hover:scale-105" aria-hidden="true">
                     <Sparkles size={16} strokeWidth={2.2} />
                   </span>
-                  <span className="relative z-10">Join free</span>
+                  <span className="relative z-10">{t("home.joinFree", "Join free")}</span>
                 </button>
                 </>
               ) : (
@@ -1067,20 +1092,20 @@ export default function HomePageClient({ initialHomeData = null }) {
                   onClick={() => router.push("/favorites")}
                   className="qa-action qa-action-strong inline-flex h-10 items-center justify-center rounded-full border border-fuchsia-200/48 bg-[linear-gradient(135deg,rgba(232,121,249,0.32),rgba(99,102,241,0.22),rgba(14,10,20,0.95))] px-4 text-sm font-semibold text-white transition hover:border-fuchsia-200/70"
                 >
-                  Your Atlas
+                  {t("home.yourAtlas", "Your Atlas")}
                 </button>
                 <button
                   onClick={() => router.push("/community")}
                   className="qa-action hidden h-10 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 text-sm font-medium text-emerald-100/92 backdrop-blur transition hover:border-emerald-200/52 hover:text-emerald-50 sm:inline-flex"
                 >
-                  Community
+                  {t("home.community", "Community")}
                 </button>
                   {isAdmin && (
                   <button
                     onClick={() => router.push("/admin")}
                     className="qa-action hidden h-10 items-center justify-center rounded-full border border-cyan-200/34 bg-cyan-200/14 px-4 text-sm font-medium text-cyan-100 transition hover:border-cyan-200/54 sm:inline-flex"
                   >
-                    Admin
+                  {t("home.admin", "Admin")}
                   </button>
                   )}
                 </>
@@ -1103,7 +1128,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                   }}
                   className="qa-action inline-flex h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.02] px-4 text-sm font-medium text-white/70 transition hover:border-white/28 hover:text-white disabled:cursor-wait disabled:opacity-60"
                 >
-                  {isSigningOut ? "Signing out..." : "Sign out"}
+                  {isSigningOut ? t("home.signingOut", "Signing out...") : t("home.signOut", "Sign out")}
                 </button>
               )}
             </div>
@@ -1129,17 +1154,17 @@ export default function HomePageClient({ initialHomeData = null }) {
               </div>
 
               <p className="qa-eyebrow mt-6 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
-                Wherever you are
+                {t("home.whereverYouAre", "Wherever you are")}
               </p>
               <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[2.85rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
-                Find your queer world.
+                {t("home.findYourQueerWorld", "Find your queer world.")}
               </h1>
               <p className="qa-lead mt-4 max-w-[48ch] !text-left text-[0.95rem] leading-[1.5] tracking-[-0.005em] text-white/76 [hyphens:none] sm:mt-6 sm:text-[1.18rem]">
-                <span className="sm:hidden">Places, events, safety and local queer knowledge — wherever you land.</span>
-                <span className="hidden sm:inline">Know where to go, what&apos;s happening, how it feels, and what locals actually say — wherever you land.</span>
+                <span className="sm:hidden">{t("home.heroShort", "Places, events, safety and local queer knowledge — wherever you land.")}</span>
+                <span className="hidden sm:inline">{t("home.heroLong", "Know where to go, what’s happening, how it feels, and what locals actually say — wherever you land.")}</span>
               </p>
               {isDataLoading && (
-                <p role="status" aria-live="polite" className="mt-3 text-xs text-white/55">Loading live atlas data...</p>
+                <p role="status" aria-live="polite" className="mt-3 text-xs text-white/55">{t("home.loadingLiveData", "Loading live atlas data...")}</p>
               )}
               {dataError && (
                 <div role="alert" className="mt-3 inline-flex items-center gap-3 rounded-xl border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-100">
@@ -1166,7 +1191,7 @@ export default function HomePageClient({ initialHomeData = null }) {
 
                     <input
                       type="search"
-                      aria-label="Search cities, venues, and events"
+                      aria-label={t("home.searchLabel", "Search cities, venues, and events")}
                       autoComplete="off"
                       value={query}
                       onChange={(event) => {
@@ -1179,7 +1204,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                         submitHomeSearch("keyboard");
                       }}
                       onFocus={() => setShowResults(true)}
-                      placeholder="Search a city, venue or event"
+                      placeholder={t("home.searchPlaceholder", "Search a city, venue or event")}
                       className="h-12 w-full rounded-[21px] border border-white/13 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] py-0 pl-11 pr-4 text-[15px] leading-none text-white outline-none backdrop-blur placeholder:text-white/42 focus:border-cyan-300/48 focus:ring-2 focus:ring-cyan-300/22 sm:h-[52px] sm:text-base"
                     />
                   </div>
@@ -1189,12 +1214,12 @@ export default function HomePageClient({ initialHomeData = null }) {
                     onClick={() => submitHomeSearch("button")}
                     className="qa-action qa-action-strong h-12 w-full shrink-0 rounded-full border border-cyan-100/72 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 text-sm font-semibold text-black transition hover:scale-[1.01] sm:h-[52px] sm:w-auto sm:px-5"
                   >
-                    Explore the atlas
+                    {t("home.exploreAtlas", "Explore the atlas")}
                   </button>
                 </div>
 
                   {showResults && results.length > 0 && (
-                    <div aria-label="Instant search results" className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl lg:max-h-[560px]">
+                    <div aria-label={t("home.instantResults", "Instant search results")} className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl lg:max-h-[560px]">
                       {results.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}
@@ -1253,19 +1278,19 @@ export default function HomePageClient({ initialHomeData = null }) {
                 <div className="mt-3 flex items-center divide-x divide-white/10 border-t border-white/10 px-1 pt-3">
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{countryCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Countries</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.countries", "Countries")}</p>
                   </div>
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{cityCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Cities</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.cities", "Cities")}</p>
                   </div>
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{placeCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Places</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.places", "Places")}</p>
                   </div>
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{eventCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">Events</p>
+                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.events", "Events")}</p>
                   </div>
                 </div>
                 </div>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { normalizeExternalUrl, getEntityAddressLabel } from "@/features/city/adminDrawerFeature";
 import { normalizeServiceImageUrls } from "@/features/city/cityPageUtils";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function ServiceGuideCard({
   service,
@@ -14,6 +15,7 @@ export default function ServiceGuideCard({
   serviceTypeStyles,
   serviceTypeLabels,
 }) {
+  const { t } = useLocale();
   const style = serviceTypeStyles[service.type] || serviceTypeStyles.other;
   const bookingUrl = normalizeExternalUrl(service.booking_link || service.link || "");
   const contact = String(service.contact || "").trim();
@@ -50,7 +52,7 @@ export default function ServiceGuideCard({
         <div className="mb-4 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
           <Image
             src={coverImage}
-            alt={`${service.name}${service.city ? ` in ${service.city}` : ""} — ${serviceTypeLabels[service.type] || "queer service"}`}
+            alt={`${service.name}${service.city ? ` in ${service.city}` : ""} — ${serviceTypeLabels[service.type] || t("city.queerService", "queer service")}`}
             width={720}
             height={420}
             unoptimized
@@ -66,7 +68,7 @@ export default function ServiceGuideCard({
           </h3>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className={`rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.15em] ${style.label}`}>
-              {serviceTypeLabels[service.type] || "Service"}
+              {serviceTypeLabels[service.type] || t("city.service", "Service")}
             </span>
             {priceTier && (
               <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-amber-100">
@@ -88,22 +90,22 @@ export default function ServiceGuideCard({
       <div className="grid gap-2 text-xs text-white/62">
         {providerName && (
           <p className="rounded-xl border border-emerald-100/18 bg-emerald-300/[0.07] px-3 py-2">
-            <span className="text-white/48">Provider:</span> {providerName}
+            <span className="text-white/48">{t("city.provider", "Provider:")}</span> {providerName}
           </p>
         )}
         {locationLabel && (
           <p className="rounded-xl border border-cyan-100/18 bg-cyan-300/[0.07] px-3 py-2">
-            <span className="text-white/48">Area:</span> {locationLabel}
+            <span className="text-white/48">{t("city.area", "Area:")}</span> {locationLabel}
           </p>
         )}
         {service.hours && (
           <p className="rounded-xl border border-amber-100/18 bg-amber-300/[0.07] px-3 py-2">
-            <span className="text-white/48">Availability:</span> {String(service.hours)}
+            <span className="text-white/48">{t("city.availability", "Availability:")}</span> {String(service.hours)}
           </p>
         )}
         {contact && (
           <p className="rounded-xl border border-fuchsia-100/18 bg-fuchsia-300/[0.07] px-3 py-2">
-            <span className="text-white/48">Contact:</span> {contact}
+            <span className="text-white/48">{t("city.contact", "Contact:")}</span> {contact}
           </p>
         )}
       </div>
@@ -116,7 +118,7 @@ export default function ServiceGuideCard({
           onClick={(event) => event.stopPropagation()}
           className="qa-action qa-action-strong qa-city-cta-primary mt-4 inline-flex rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
         >
-          Open service
+          {t("city.openService", "Open service")}
         </a>
       )}
       <button
@@ -127,7 +129,7 @@ export default function ServiceGuideCard({
         }}
         className="qa-action qa-city-cta-secondary mt-3 inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30 hover:text-white"
       >
-        View details
+        {t("city.viewDetails", "View details")}
       </button>
     </article>
   );

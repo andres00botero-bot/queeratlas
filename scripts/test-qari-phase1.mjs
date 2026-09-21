@@ -17,8 +17,8 @@ assert.equal(getQariTier(80).key, "high");
 assert.equal(getQariTier(81).key, "extreme");
 assert.equal(getQariTier(null).key, "unknown");
 
-assert.equal(QARI_PILOT_PROFILES.length, 8);
-assert.equal(new Set(QARI_PILOT_PROFILES.map((profile) => profile.destinationKey)).size, 8);
+assert.equal(QARI_PILOT_PROFILES.length, 13);
+assert.equal(new Set(QARI_PILOT_PROFILES.map((profile) => profile.destinationKey)).size, 13);
 const germany = QARI_PILOT_PROFILES.find((profile) => profile.country === "Germany");
 assert.equal(germany?.score, 16);
 assert.equal(germany?.tier.key, "lower");
@@ -26,7 +26,7 @@ assert.equal(germany?.tier.key, "lower");
 for (const profile of QARI_PILOT_PROFILES) {
   assert.equal(profile.score, calculateQari(profile), `${profile.country}: score must match the published formula`);
   assert.ok(profile.summary.length >= 40, `${profile.country}: summary is too short`);
-  assert.equal(profile.sources.length, 3, `${profile.country}: each axis needs a source`);
+  assert.ok(profile.sources.length >= 3, `${profile.country}: each axis needs a source`);
   assert.deepEqual(
     new Set(profile.sources.map((source) => source.axis)),
     new Set(["legal", "social", "digital"]),

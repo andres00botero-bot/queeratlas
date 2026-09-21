@@ -30,6 +30,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import MessageAvatar from "@/components/messaging/MessageAvatar";
 import MessageBubble from "@/components/messaging/MessageBubble";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 const MEMBER_AVATAR_BUCKET = "member-avatars";
 
 function isMissingTableError(error) {
@@ -39,9 +40,9 @@ function isMissingTableError(error) {
   return code === "42P01" || code === "PGRST205" || message.includes("does not exist");
 }
 
-function formatTime(value) {
+function formatTime(value, locale = "en") {
   if (!value) return "";
-  return new Date(value).toLocaleTimeString("en-GB", {
+  return new Date(value).toLocaleTimeString(locale === "es" ? "es-ES" : "en-GB", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -54,32 +55,32 @@ function dateKey(value) {
   return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 }
 
-function threadActivityLabel(message, currentUserId, unreadCount = 0) {
-  if (!message) return "No messages yet";
-  if (String(message.senderId || "") === String(currentUserId || "")) return "You sent a message";
-  return Number(unreadCount || 0) > 0 ? "New message" : "Last message received";
+function threadActivityLabel(message, currentUserId, unreadCount = 0, t = (_key, fallback) => fallback) {
+  if (!message) return t("messages.noMessagesYet", "No messages yet");
+  if (String(message.senderId || "") === String(currentUserId || "")) return t("messages.youSentMessage", "You sent a message");
+  return Number(unreadCount || 0) > 0 ? t("messages.newMessageReceived", "New message") : t("messages.lastMessageReceived", "Last message received");
 }
 
-function formatMessageDay(value) {
+function formatMessageDay(value, locale = "en", t = (_key, fallback) => fallback) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
-  if (dateKey(date) === dateKey(today)) return "Today";
-  if (dateKey(date) === dateKey(yesterday)) return "Yesterday";
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: date.getFullYear() === today.getFullYear() ? undefined : "numeric" });
+  if (dateKey(date) === dateKey(today)) return t("messages.today", "Today");
+  if (dateKey(date) === dateKey(yesterday)) return t("messages.yesterday", "Yesterday");
+  return date.toLocaleDateString(locale === "es" ? "es-ES" : "en-GB", { day: "numeric", month: "short", year: date.getFullYear() === today.getFullYear() ? undefined : "numeric" });
 }
 
-function timeAgo(value) {
-  if (!value) return "Recently";
+function timeAgo(value, t = (_key, fallback) => fallback) {
+  if (!value) return t("messages.recently", "Recently");
   const diffMinutes = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 60000));
-  if (diffMinutes < 1) return "Just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffMinutes < 1) return t("messages.justNow", "Just now");
+  if (diffMinutes < 60) return t("messages.minutesAgo", "{count}m ago").replace("{count}", diffMinutes);
   const diffHours = Math.round(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  return `${Math.round(diffHours / 24)}d ago`;
+  if (diffHours < 24) return t("messages.hoursAgo", "{count}h ago").replace("{count}", diffHours);
+  return t("messages.daysAgo", "{count}d ago").replace("{count}", Math.round(diffHours / 24));
 }
 
 function isActiveNow(presence) {
@@ -149,6 +150,7 @@ function normalizeMemberPickerRow(row) {
 
 export default function MessagesPage() {
   const router = useRouter();
+  const { locale, t } = useLocale();
   const { isMember, isLoading: isAuthLoading, user } = useAuth();
   const userId = String(user?.id || "");
   const { toast, showToast } = useActionToast();
@@ -1684,7 +1686,7 @@ export default function MessagesPage() {
       <main className="qa-page min-h-screen bg-[#050505] pb-10 text-white md:pb-20">
         <div className="qa-shell">
           <PageOpeningState
-            title="Loading Signal Inbox"
+            title={t("messages.loadingInbox", "Loading Signal Inbox")}
             subtitle="Syncing your threads, unread signal, and active friends."
           />
         </div>
@@ -1697,16 +1699,16 @@ export default function MessagesPage() {
       <div className="qa-shell">
         <header className="mb-4 flex flex-col gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="qa-eyebrow text-cyan-100/65">Private member space</p>
+            <p className="qa-eyebrow text-cyan-100/65">{t("messages.privateSpace", "Private member space")}</p>
             <div className="mt-2 flex items-center gap-3">
-              <h1 className="qa-display text-3xl font-bold tracking-[-0.035em] text-[#f7f3ee] sm:text-4xl">Messages</h1>
+              <h1 className="qa-display text-3xl font-bold tracking-[-0.035em] text-[#f7f3ee] sm:text-4xl">{t("messages.title", "Messages")}</h1>
               {metrics.unread > 0 ? (
                 <span className="rounded-full bg-fuchsia-300 px-2.5 py-1 text-[11px] font-bold text-[#160914]">
                   {metrics.unread} unread
                 </span>
               ) : null}
             </div>
-            <p className="mt-2 max-w-xl text-sm text-white/58">Your conversations, requests and local connections in one quiet place.</p>
+            <p className="mt-2 max-w-xl text-sm text-white/58">{t("messages.intro", "Your conversations, requests and local connections in one quiet place.")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isAdminModerator && pendingSubmissionCount > 0 ? (
@@ -1723,7 +1725,7 @@ export default function MessagesPage() {
         {recentlyHiddenThread ? (
           <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-cyan-200/18 bg-cyan-200/[0.06] px-4 py-2.5 text-sm text-white/72">
             <span>Conversation with {recentlyHiddenThread.displayName} hidden.</span>
-            <button type="button" onClick={undoHideThread} className="qa-action min-h-9 rounded-full px-3 font-semibold text-cyan-100 hover:bg-cyan-100/10">Undo</button>
+            <button type="button" onClick={undoHideThread} className="qa-action min-h-9 rounded-full px-3 font-semibold text-cyan-100 hover:bg-cyan-100/10">{t("messages.undo", "Undo")}</button>
           </div>
         ) : null}
 
@@ -1738,17 +1740,17 @@ export default function MessagesPage() {
             <div className="border-b border-white/10 p-4 pb-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/42">Conversations</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/42">{t("messages.conversations", "Conversations")}</p>
                   <p className="mt-1 text-xs text-white/46">{metrics.total} total · {metrics.active} active</p>
                 </div>
-                <button type="button" onClick={openNewMessage} aria-label="Start a new message" className="qa-action inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-100/18 bg-cyan-100/[0.08] text-cyan-100 transition hover:bg-cyan-100/14">
+                <button type="button" onClick={openNewMessage} aria-label={t("messages.startNew", "Start a new message")} className="qa-action inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-100/18 bg-cyan-100/[0.08] text-cyan-100 transition hover:bg-cyan-100/14">
                   <MessageCircleMore className="h-[18px] w-[18px]" aria-hidden="true" />
                 </button>
               </div>
               <label className="relative mt-3 block">
-                <span className="sr-only">Search conversations</span>
+                <span className="sr-only">{t("messages.searchConversations", "Search conversations")}</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" aria-hidden="true" />
-                <input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder="Search conversations" className="min-h-11 w-full rounded-xl border border-white/10 bg-black/25 pl-9 pr-3 text-sm text-white outline-none placeholder:text-white/34 focus:border-cyan-200/32 focus:ring-2 focus:ring-cyan-200/10" />
+                <input value={conversationSearch} onChange={(event) => setConversationSearch(event.target.value)} placeholder={t("messages.searchConversations", "Search conversations")} className="min-h-11 w-full rounded-xl border border-white/10 bg-black/25 pl-9 pr-3 text-sm text-white outline-none placeholder:text-white/34 focus:border-cyan-200/32 focus:ring-2 focus:ring-cyan-200/10" />
               </label>
               <div className="mt-3 flex items-center gap-1 rounded-xl bg-black/20 p-1">
                 <button
@@ -1791,8 +1793,8 @@ export default function MessagesPage() {
               <button type="button" onClick={() => setVipPanelCollapsed(false)} className="qa-action mx-3 mt-3 flex min-h-12 items-center gap-3 rounded-xl border border-fuchsia-200/12 bg-fuchsia-200/[0.055] px-3 text-left transition hover:border-fuchsia-200/25 hover:bg-fuchsia-200/[0.08]">
                 <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-fuchsia-200/10 text-fuchsia-100"><UsersRound className="h-4 w-4" aria-hidden="true" /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-xs font-semibold text-white/88">Requests</span>
-                  <span className="block truncate text-[11px] text-white/45">VIP invitations and host replies</span>
+                  <span className="block text-xs font-semibold text-white/88">{t("messages.requests", "Requests")}</span>
+                  <span className="block truncate text-[11px] text-white/45">{t("messages.vipInvitations", "VIP invitations and host replies")}</span>
                 </span>
                 {pendingHostActions > 0 ? <span className="rounded-full bg-fuchsia-300 px-2 py-0.5 text-[10px] font-bold text-black">{pendingHostActions}</span> : null}
                 <ChevronRight className="h-4 w-4 text-white/34" aria-hidden="true" />
@@ -1826,13 +1828,13 @@ export default function MessagesPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className={`min-w-0 flex-1 truncate text-sm ${thread.unreadCount > 0 ? "font-bold text-white" : "font-semibold text-white/88"}`}>{thread.displayName}</p>
-                            <time className="shrink-0 text-[10px] text-white/38">{formatTime(thread.lastMessage?.createdAt || thread.lastMessageAt)}</time>
+                            <time className="shrink-0 text-[10px] text-white/38">{formatTime(thread.lastMessage?.createdAt || thread.lastMessageAt, locale)}</time>
                           </div>
                           <div className="mt-1 flex items-center gap-2">
-                            <p className={`min-w-0 flex-1 truncate text-xs ${thread.unreadCount > 0 ? "font-medium text-white/76" : "text-white/45"}`}>{thread.preview}</p>
+                            <p className={`min-w-0 flex-1 truncate text-xs ${thread.unreadCount > 0 ? "font-medium text-white/76" : "text-white/45"}`}>{thread.lastMessage?.body || threadActivityLabel(thread.lastMessage, user?.id, thread.unreadCount, t)}</p>
                             {thread.unreadCount > 0 ? <span className="min-w-5 rounded-full bg-fuchsia-300 px-1.5 py-0.5 text-center text-[10px] font-bold text-[#160914]">{thread.unreadCount}</span> : null}
                           </div>
-                          {thread.trustedContributor ? <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-100/54">Trusted contributor</p> : null}
+                          {thread.trustedContributor ? <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-100/54">{t("messages.trustedContributor", "Trusted contributor")}</p> : null}
                         </div>
                       </div>
                     </button>
@@ -1842,9 +1844,9 @@ export default function MessagesPage() {
             ) : (
               <EmptyState
                 tone="violet"
-                title={threads.length === 0 ? "Your inbox is ready" : "No conversations match"}
-                description={threads.length === 0 ? "Start with a friend or find another Queer Atlas member." : "Try another search or show every conversation."}
-                primaryActionLabel={threads.length === 0 ? "Start a message" : "Show all"}
+                title={threads.length === 0 ? t("messages.inboxReady", "Your inbox is ready") : t("messages.noConversationsMatch", "No conversations match")}
+                description={threads.length === 0 ? t("messages.inboxReadyDescription", "Start with a friend or find another Queer Atlas member.") : t("messages.noConversationsDescription", "Try another search or show every conversation.")}
+                primaryActionLabel={threads.length === 0 ? t("messages.startMessage", "Start a message") : t("messages.showAll", "Show all")}
                 onPrimaryAction={threads.length === 0 ? openNewMessage : () => { setConversationSearch(""); setFilter("all"); }}
               />
             )}
@@ -1856,7 +1858,7 @@ export default function MessagesPage() {
                 <div className="relative border-b border-white/10 bg-white/[0.018] px-3 py-3 sm:px-5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
-                      <button type="button" onClick={() => setMobileThreadOpen(false)} aria-label="Back to conversations" className="qa-action inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/68 hover:bg-white/8 lg:hidden">
+                      <button type="button" onClick={() => setMobileThreadOpen(false)} aria-label={t("messages.backToConversations", "Back to conversations")} className="qa-action inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/68 hover:bg-white/8 lg:hidden">
                         <ArrowLeft className="h-5 w-5" aria-hidden="true" />
                       </button>
                       <MessageAvatar name={activeThread.displayName} src={activeThread.avatarUrl} active={isActiveNow(activeThread.presence)} size="lg" statusBorderClassName="border-[#080b10]" />
@@ -1871,8 +1873,8 @@ export default function MessagesPage() {
                       </div>
                       <p className="mt-1 text-[11px] text-white/58">
                         {isActiveNow(activeThread.presence)
-                          ? "Active now"
-                          : `Last active ${timeAgo(activeThread.presence?.lastSeenAt)}`}
+                          ? t("messages.activeNow", "Active now")
+                          : t("messages.lastActive", "Last active {time}").replace("{time}", timeAgo(activeThread.presence?.lastSeenAt, t))}
                       </p>
                     </div>
                     </div>
@@ -1882,9 +1884,9 @@ export default function MessagesPage() {
                       </button>
                       {threadMenuOpen ? (
                         <div className="absolute right-0 top-12 z-30 w-56 overflow-hidden rounded-2xl border border-white/12 bg-[#151921] p-1.5 text-sm shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-                          <button type="button" onClick={() => setReportTarget({ type: "member", id: activeThread.otherUserId, title: activeThread.displayName })} className="qa-action flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-white/72 hover:bg-white/7 hover:text-white"><ShieldAlert className="h-4 w-4" aria-hidden="true" /> Report member</button>
-                          <button type="button" onClick={toggleBlockActiveMember} disabled={isUpdatingBlock} className="qa-action flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-rose-100/78 hover:bg-rose-100/[0.07] hover:text-rose-100"><X className="h-4 w-4" aria-hidden="true" /> {activeThreadBlocked ? "Unblock member" : "Block member"}</button>
-                          <button type="button" onClick={() => { setThreadMenuOpen(false); removeThreadFromInbox(activeThread.id); }} className="qa-action flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-white/58 hover:bg-white/7 hover:text-white"><Inbox className="h-4 w-4" aria-hidden="true" /> Hide conversation</button>
+                          <button type="button" onClick={() => setReportTarget({ type: "member", id: activeThread.otherUserId, title: activeThread.displayName })} className="qa-action flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-white/72 hover:bg-white/7 hover:text-white"><ShieldAlert className="h-4 w-4" aria-hidden="true" /> {t("messages.reportMember", "Report member")}</button>
+                          <button type="button" onClick={toggleBlockActiveMember} disabled={isUpdatingBlock} className="qa-action flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-rose-100/78 hover:bg-rose-100/[0.07] hover:text-rose-100"><X className="h-4 w-4" aria-hidden="true" /> {activeThreadBlocked ? t("messages.unblockMember", "Unblock member") : t("messages.blockMember", "Block member")}</button>
+                          <button type="button" onClick={() => { setThreadMenuOpen(false); removeThreadFromInbox(activeThread.id); }} className="qa-action flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-white/58 hover:bg-white/7 hover:text-white"><Inbox className="h-4 w-4" aria-hidden="true" /> {t("messages.hideConversation", "Hide conversation")}</button>
                         </div>
                       ) : null}
                     </div>
@@ -1893,7 +1895,7 @@ export default function MessagesPage() {
 
                 <div role="log" aria-label={`Conversation with ${activeThread.displayName}`} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5 sm:px-6">
                   {isLoadingMessages ? (
-                    <div className="mx-auto mt-10 max-w-sm space-y-3" aria-label="Loading conversation">
+                    <div className="mx-auto mt-10 max-w-sm space-y-3" aria-label={t("messages.loadingConversation", "Loading conversation")}>
                       <div className="h-12 w-2/3 animate-pulse rounded-2xl bg-white/5" />
                       <div className="ml-auto h-16 w-3/4 animate-pulse rounded-2xl bg-cyan-100/[0.06]" />
                       <div className="h-10 w-1/2 animate-pulse rounded-2xl bg-white/5" />
@@ -1902,7 +1904,7 @@ export default function MessagesPage() {
                     <div className="mx-auto max-w-3xl">
                       {hasOlderMessages ? (
                         <div className="mb-5 flex justify-center">
-                          <button type="button" onClick={loadOlderMessages} disabled={isLoadingOlderMessages} className="qa-action min-h-10 rounded-full border border-white/10 bg-white/[0.035] px-4 text-xs font-semibold text-white/58 hover:border-white/20 hover:text-white disabled:opacity-50">{isLoadingOlderMessages ? "Loading…" : "Load older messages"}</button>
+                          <button type="button" onClick={loadOlderMessages} disabled={isLoadingOlderMessages} className="qa-action min-h-10 rounded-full border border-white/10 bg-white/[0.035] px-4 text-xs font-semibold text-white/58 hover:border-white/20 hover:text-white disabled:opacity-50">{isLoadingOlderMessages ? t("messages.loading", "Loading…") : t("messages.loadOlder", "Load older messages")}</button>
                         </div>
                       ) : null}
                       {messages.map((message, index) => {
@@ -1921,7 +1923,7 @@ export default function MessagesPage() {
                             message={message}
                             mine={mine}
                             startsDay={startsDay}
-                            dayLabel={formatMessageDay(message.createdAt)}
+                            dayLabel={formatMessageDay(message.createdAt, locale, t)}
                             beginsGroup={beginsGroup}
                             endsGroup={endsGroup}
                             isLastOwn={isLastOwn}
@@ -1936,8 +1938,8 @@ export default function MessagesPage() {
                   ) : (
                     <div className="mx-auto mt-16 max-w-sm text-center">
                       <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full border border-cyan-100/12 bg-cyan-100/[0.055] text-cyan-100/70"><MessageCircleMore className="h-6 w-6" aria-hidden="true" /></div>
-                      <h3 className="mt-4 text-lg font-semibold text-[#f7f3ee]">Start something kind</h3>
-                      <p className="mt-2 text-sm leading-6 text-white/45">This is the beginning of your conversation with {activeThread.displayName}.</p>
+                      <h3 className="mt-4 text-lg font-semibold text-[#f7f3ee]">{t("messages.startKind", "Start something kind")}</h3>
+                      <p className="mt-2 text-sm leading-6 text-white/45">{t("messages.conversationBeginning", "This is the beginning of your conversation with {name}.").replace("{name}", activeThread.displayName)}</p>
                     </div>
                   )}
                 </div>
@@ -1952,7 +1954,7 @@ export default function MessagesPage() {
                   {activeThreadBlocked ? (
                     <div className="flex min-h-14 items-center justify-between gap-3 rounded-2xl border border-rose-200/14 bg-rose-200/[0.055] px-4">
                       <p className="text-sm text-rose-100/72">You blocked {activeThread.displayName}. They cannot message you.</p>
-                      <button type="button" onClick={toggleBlockActiveMember} disabled={isUpdatingBlock} className="qa-action min-h-10 shrink-0 rounded-full px-3 text-xs font-semibold text-rose-100 hover:bg-rose-100/10">Unblock</button>
+                      <button type="button" onClick={toggleBlockActiveMember} disabled={isUpdatingBlock} className="qa-action min-h-10 shrink-0 rounded-full px-3 text-xs font-semibold text-rose-100 hover:bg-rose-100/10">{t("messages.unblock", "Unblock")}</button>
                     </div>
                   ) : (
                   <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[22px] border border-white/12 bg-white/[0.045] p-2 pl-4 focus-within:border-cyan-100/24 focus-within:ring-2 focus-within:ring-cyan-100/[0.06]">
@@ -1969,13 +1971,13 @@ export default function MessagesPage() {
                       }}
                       maxLength={2000}
                       rows={1}
-                      placeholder={activeOtherUserId ? `Message ${activeThread.displayName}` : "Write a message"}
+                      placeholder={activeOtherUserId ? t("messages.messageName", "Message {name}").replace("{name}", activeThread.displayName) : t("messages.writeMessage", "Write a message")}
                       className="max-h-32 min-h-10 w-full resize-y bg-transparent py-2 text-sm leading-6 text-white outline-none placeholder:text-white/32"
                     />
                     <button
                       type="submit"
                       disabled={sending || !draft.trim()}
-                      aria-label="Send message"
+                      aria-label={t("messages.sendMessage", "Send message")}
                       className="qa-action qa-action-strong inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#d8f7fb] text-[#071015] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Send className="h-[18px] w-[18px]" aria-hidden="true" />
@@ -1987,9 +1989,9 @@ export default function MessagesPage() {
             ) : (
               <EmptyState
                 tone="amber"
-                title="Select a thread"
+                title={t("messages.selectThread", "Select a thread")}
                 description="Choose a conversation or start a new private message."
-                primaryActionLabel="New message"
+                primaryActionLabel={t("messages.newMessage", "New message")}
                 onPrimaryAction={openNewMessage}
               />
             )}
@@ -2002,10 +2004,10 @@ export default function MessagesPage() {
           <section ref={composePanelRef} role="dialog" aria-modal="true" aria-labelledby="new-message-title" className="flex h-full w-full max-w-[520px] flex-col border-l border-white/12 bg-[#0d1118] shadow-[-30px_0_90px_rgba(0,0,0,0.55)]">
             <header className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-100/54">Private connection</p>
-                <h2 id="new-message-title" className="mt-1 text-xl font-semibold text-[#f7f3ee]">{startCompose && startUserId ? `Message ${startUserName || "member"}` : "New message"}</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-100/54">{t("messages.privateConnection", "Private connection")}</p>
+                <h2 id="new-message-title" className="mt-1 text-xl font-semibold text-[#f7f3ee]">{startCompose && startUserId ? `${t("messages.message", "Message")} ${startUserName || t("messages.member", "member")}` : t("messages.newMessage", "New message")}</h2>
               </div>
-              <button type="button" onClick={closeCompose} aria-label="Close new message" className="qa-action inline-flex h-11 w-11 items-center justify-center rounded-full text-white/56 hover:bg-white/8 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button>
+              <button type="button" onClick={closeCompose} aria-label={t("messages.closeNew", "Close new message")} className="qa-action inline-flex h-11 w-11 items-center justify-center rounded-full text-white/56 hover:bg-white/8 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button>
             </header>
 
             {startCompose && startUserId ? (
@@ -2013,21 +2015,21 @@ export default function MessagesPage() {
                 <div className="rounded-2xl border border-cyan-100/12 bg-cyan-100/[0.045] p-4">
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-cyan-100/10 text-cyan-100"><UserRound className="h-5 w-5" aria-hidden="true" /></span>
-                    <div><p className="font-semibold text-white">{startUserName || "Member"}</p><p className="mt-0.5 text-xs text-white/42">Your first message starts a private thread.</p></div>
+                    <div><p className="font-semibold text-white">{startUserName || t("messages.member", "Member")}</p><p className="mt-0.5 text-xs text-white/42">{t("messages.firstMessage", "Your first message starts a private thread.")}</p></div>
                   </div>
                 </div>
-                <label htmlFor="direct-compose" className="mt-6 text-xs font-semibold text-white/64">Your message</label>
-                <textarea ref={composerInputRef} id="direct-compose" value={directComposeBody} onChange={(event) => setDirectComposeBody(event.target.value)} maxLength={2000} placeholder="Write a friendly introduction…" className="mt-2 min-h-40 resize-y rounded-2xl border border-white/12 bg-black/25 p-4 text-sm leading-6 text-white outline-none placeholder:text-white/30 focus:border-cyan-100/28 focus:ring-2 focus:ring-cyan-100/[0.06]" />
-                <div className="mt-3 flex items-center justify-between gap-3"><p className="text-[11px] text-white/34">{directComposeBody.length}/2000</p><button type="button" onClick={sendDirectComposeMessage} disabled={isDirectComposeSending || !directComposeBody.trim()} className="qa-action qa-action-strong inline-flex min-h-11 items-center gap-2 rounded-full bg-[#d8f7fb] px-5 text-sm font-bold text-[#071015] hover:bg-white disabled:opacity-40"><Send className="h-4 w-4" aria-hidden="true" />{isDirectComposeSending ? "Sending…" : "Send message"}</button></div>
+                <label htmlFor="direct-compose" className="mt-6 text-xs font-semibold text-white/64">{t("messages.yourMessage", "Your message")}</label>
+                <textarea ref={composerInputRef} id="direct-compose" value={directComposeBody} onChange={(event) => setDirectComposeBody(event.target.value)} maxLength={2000} placeholder={t("messages.friendlyIntroduction", "Write a friendly introduction…")} className="mt-2 min-h-40 resize-y rounded-2xl border border-white/12 bg-black/25 p-4 text-sm leading-6 text-white outline-none placeholder:text-white/30 focus:border-cyan-100/28 focus:ring-2 focus:ring-cyan-100/[0.06]" />
+                <div className="mt-3 flex items-center justify-between gap-3"><p className="text-[11px] text-white/34">{directComposeBody.length}/2000</p><button type="button" onClick={sendDirectComposeMessage} disabled={isDirectComposeSending || !directComposeBody.trim()} className="qa-action qa-action-strong inline-flex min-h-11 items-center gap-2 rounded-full bg-[#d8f7fb] px-5 text-sm font-bold text-[#071015] hover:bg-white disabled:opacity-40"><Send className="h-4 w-4" aria-hidden="true" />{isDirectComposeSending ? t("messages.sending", "Sending…") : t("messages.sendMessage", "Send message")}</button></div>
               </div>
             ) : (
               <>
                 <div className="border-b border-white/10 p-4 sm:p-5">
                   <div className="grid grid-cols-2 rounded-xl bg-black/25 p-1">
-                    <button type="button" onClick={() => setComposerTab("friends")} className={`qa-action min-h-10 rounded-lg text-xs font-semibold ${composerTab === "friends" ? "bg-white/10 text-white" : "text-white/46 hover:text-white"}`}>Friends</button>
-                    <button type="button" onClick={() => setComposerTab("members")} className={`qa-action min-h-10 rounded-lg text-xs font-semibold ${composerTab === "members" ? "bg-white/10 text-white" : "text-white/46 hover:text-white"}`}>Members</button>
+                    <button type="button" onClick={() => setComposerTab("friends")} className={`qa-action min-h-10 rounded-lg text-xs font-semibold ${composerTab === "friends" ? "bg-white/10 text-white" : "text-white/46 hover:text-white"}`}>{t("messages.friends", "Friends")}</button>
+                    <button type="button" onClick={() => setComposerTab("members")} className={`qa-action min-h-10 rounded-lg text-xs font-semibold ${composerTab === "members" ? "bg-white/10 text-white" : "text-white/46 hover:text-white"}`}>{t("messages.members", "Members")}</button>
                   </div>
-                  <label className="relative mt-3 block"><span className="sr-only">Search {composerTab}</span><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" aria-hidden="true" /><input ref={composerInputRef} value={composerSearch} onChange={(event) => setComposerSearch(event.target.value)} placeholder={composerTab === "friends" ? "Search your friends" : "Search name, city or country"} className="min-h-12 w-full rounded-xl border border-white/11 bg-black/25 pl-10 pr-3 text-sm text-white outline-none placeholder:text-white/32 focus:border-cyan-100/28" /></label>
+                  <label className="relative mt-3 block"><span className="sr-only">{t("messages.searchPeople", "Search people")}</span><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/34" aria-hidden="true" /><input ref={composerInputRef} value={composerSearch} onChange={(event) => setComposerSearch(event.target.value)} placeholder={t(composerTab === "friends" ? "messages.searchFriends" : "messages.searchMembers", composerTab === "friends" ? "Search your friends" : "Search name, city or country")} className="min-h-12 w-full rounded-xl border border-white/11 bg-black/25 pl-10 pr-3 text-sm text-white outline-none placeholder:text-white/32 focus:border-cyan-100/28" /></label>
                   {composerWarning ? <p className="mt-2 text-xs text-amber-100/70">{composerWarning}</p> : null}
                 </div>
                 <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
@@ -2041,16 +2043,16 @@ export default function MessagesPage() {
                         return (
                           <button key={candidate.userId} type="button" onClick={() => openThreadFromCandidate(candidate.userId)} disabled={busy} className="qa-action group flex min-h-[68px] w-full items-center gap-3 rounded-2xl border border-transparent px-3 text-left transition hover:border-white/9 hover:bg-white/[0.045] disabled:opacity-50">
                             <MessageAvatar name={candidate.displayName} src={candidate.avatarUrl} active={Boolean(candidate.activeNow || candidate.isOnline)} ringClassName="border-white/12" statusBorderClassName="border-[#0d1118]" />
-                            <span className="min-w-0 flex-1"><span className="flex items-center gap-2"><span className="truncate text-sm font-semibold text-white/88">{candidate.displayName}</span>{candidate.trustedContributor ? <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-cyan-100/56">Trusted</span> : null}</span><span className="mt-1 block truncate text-xs text-white/42">{composerTab === "friends" ? (candidate.activeNow ? "Active now" : timeAgo(candidate.lastSeenAt)) : ([candidate.homeCity, candidate.residentCountry].filter(Boolean).join(" · ") || "Member")}</span></span>
-                            <span className="text-xs font-semibold text-cyan-100/65">{busy ? "Opening…" : existingThread ? "Open" : "Message"}</span>
+                            <span className="min-w-0 flex-1"><span className="flex items-center gap-2"><span className="truncate text-sm font-semibold text-white/88">{candidate.displayName}</span>{candidate.trustedContributor ? <span className="text-[9px] font-semibold uppercase tracking-[0.1em] text-cyan-100/56">{t("messages.trusted", "Trusted")}</span> : null}</span><span className="mt-1 block truncate text-xs text-white/42">{composerTab === "friends" ? (candidate.activeNow ? t("messages.activeNow", "Active now") : timeAgo(candidate.lastSeenAt, t)) : ([candidate.homeCity, candidate.residentCountry].filter(Boolean).join(" · ") || t("messages.member", "Member"))}</span></span>
+                            <span className="text-xs font-semibold text-cyan-100/65">{busy ? t("messages.opening", "Opening…") : existingThread ? t("messages.open", "Open") : t("messages.message", "Message")}</span>
                           </button>
                         );
                       })}
                     </div>
                   ) : (
-                    <div className="px-4 py-14 text-center"><UsersRound className="mx-auto h-7 w-7 text-white/24" aria-hidden="true" /><p className="mt-3 text-sm font-semibold text-white/68">No matches yet</p><p className="mt-1 text-xs leading-5 text-white/38">Try another name{composerTab === "members" ? ", city or country" : ""}.</p></div>
+                    <div className="px-4 py-14 text-center"><UsersRound className="mx-auto h-7 w-7 text-white/24" aria-hidden="true" /><p className="mt-3 text-sm font-semibold text-white/68">{t("messages.noMatches", "No matches yet")}</p><p className="mt-1 text-xs leading-5 text-white/38">{t(composerTab === "members" ? "messages.tryAnotherMemberSearch" : "messages.tryAnotherName", composerTab === "members" ? "Try another name, city or country." : "Try another name.")}</p></div>
                   )}
-                  {composerTab === "members" && memberCandidatesHasMore ? <div className="mt-3 flex justify-center"><button type="button" onClick={loadMoreMemberCandidates} disabled={composerLoading} className="qa-action min-h-10 rounded-full border border-white/10 px-4 text-xs font-semibold text-white/58 hover:text-white">Load more</button></div> : null}
+                  {composerTab === "members" && memberCandidatesHasMore ? <div className="mt-3 flex justify-center"><button type="button" onClick={loadMoreMemberCandidates} disabled={composerLoading} className="qa-action min-h-10 rounded-full border border-white/10 px-4 text-xs font-semibold text-white/58 hover:text-white">{t("messages.loadMore", "Load more")}</button></div> : null}
                 </div>
               </>
             )}
@@ -2061,11 +2063,11 @@ export default function MessagesPage() {
       {!vipPanelCollapsed ? (
         <div className="fixed inset-0 z-[80] flex justify-end bg-black/68 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setVipPanelCollapsed(true); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="requests-title" className="flex h-full w-full max-w-[560px] flex-col border-l border-white/12 bg-[#111019] shadow-[-30px_0_90px_rgba(0,0,0,0.55)]">
-            <header className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-100/52">Private events</p><h2 id="requests-title" className="mt-1 text-xl font-semibold text-[#f7f3ee]">Requests</h2><p className="mt-1 text-xs text-white/40">{vipHostResponseSla}</p></div><button type="button" onClick={() => setVipPanelCollapsed(true)} aria-label="Close requests" className="qa-action inline-flex h-11 w-11 items-center justify-center rounded-full text-white/56 hover:bg-white/8 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button></header>
-            <div className="flex flex-wrap gap-1.5 border-b border-white/10 px-4 py-3">{[{ key: "all", label: "All", count: vipInviteCounts.all }, { key: "requested", label: "Pending", count: vipInviteCounts.requested }, { key: "accepted", label: "Accepted", count: vipInviteCounts.accepted }, { key: "host", label: "Hosting", count: vipInviteCounts.host }, { key: "mine", label: "Mine", count: vipInviteCounts.mine }].map((option) => <button key={option.key} type="button" onClick={() => setVipFilter(option.key)} className={`qa-action min-h-9 rounded-full px-3 text-[11px] font-semibold ${vipFilter === option.key ? "bg-fuchsia-100/12 text-fuchsia-100" : "text-white/44 hover:bg-white/5 hover:text-white"}`}>{option.label} · {option.count}</button>)}</div>
+            <header className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-fuchsia-100/52">{t("messages.privateEvents", "Private events")}</p><h2 id="requests-title" className="mt-1 text-xl font-semibold text-[#f7f3ee]">{t("messages.requests", "Requests")}</h2><p className="mt-1 text-xs text-white/40">{vipHostResponseSla}</p></div><button type="button" onClick={() => setVipPanelCollapsed(true)} aria-label={t("messages.closeRequests", "Close requests")} className="qa-action inline-flex h-11 w-11 items-center justify-center rounded-full text-white/56 hover:bg-white/8 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button></header>
+            <div className="flex flex-wrap gap-1.5 border-b border-white/10 px-4 py-3">{[{ key: "all", label: t("messages.all", "All"), count: vipInviteCounts.all }, { key: "requested", label: t("messages.pending", "Pending"), count: vipInviteCounts.requested }, { key: "accepted", label: t("messages.accepted", "Accepted"), count: vipInviteCounts.accepted }, { key: "host", label: t("messages.hosting", "Hosting"), count: vipInviteCounts.host }, { key: "mine", label: t("messages.mine", "Mine"), count: vipInviteCounts.mine }].map((option) => <button key={option.key} type="button" onClick={() => setVipFilter(option.key)} className={`qa-action min-h-9 rounded-full px-3 text-[11px] font-semibold ${vipFilter === option.key ? "bg-fuchsia-100/12 text-fuchsia-100" : "text-white/44 hover:bg-white/5 hover:text-white"}`}>{option.label} · {option.count}</button>)}</div>
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {vipInvitesWarning ? <p className="mb-3 rounded-xl border border-amber-100/14 bg-amber-100/[0.06] p-3 text-xs text-amber-100/72">{vipInvitesWarning}</p> : null}
-              {isLoadingVipInvites ? <div className="space-y-2">{[0, 1, 2].map((item) => <div key={item} className="h-28 animate-pulse rounded-2xl bg-white/[0.045]" />)}</div> : filteredVipInvites.length > 0 ? <div className="space-y-2">{filteredVipInvites.map((item) => <article key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.028] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-white/88">{item.kind === "host_request" ? `${item.requesterAlias} requested access` : item.title}</h3><p className="mt-1 text-xs leading-5 text-white/48">{item.kind === "host_request" ? item.title : `Hosted by ${item.hostAlias}`}{item.city ? ` · ${item.city.replace(/_/g, " ")}` : ""}</p></div><span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-white/56">{inviteStatusLabel(item.status)}</span></div>{item.message ? <p className="mt-3 text-sm leading-6 text-white/62">{item.message}</p> : null}<div className="mt-3 flex flex-wrap items-center gap-2"><span className="mr-auto text-[10px] text-white/30">{formatInviteTimeline({ requestedAt: item.createdAt, decidedAt: item.decidedAt, status: item.status })}</span>{item.kind === "host_request" && item.requesterUserId ? <button type="button" onClick={() => { setVipPanelCollapsed(true); openComposeWithUser(item.requesterUserId, item.requesterAlias); }} className="qa-action min-h-9 rounded-full bg-cyan-100/10 px-3 text-xs font-semibold text-cyan-100">Reply</button> : null}{item.kind === "my_request" && String(item.status).toLowerCase() === "accepted" && item.hostUserId ? <button type="button" onClick={() => { setVipPanelCollapsed(true); openComposeWithUser(item.hostUserId, item.hostAlias); }} className="qa-action min-h-9 rounded-full bg-cyan-100/10 px-3 text-xs font-semibold text-cyan-100">Contact host</button> : null}<button type="button" onClick={() => router.push(cityHref(item.city))} className="qa-action inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white/52 hover:bg-white/6 hover:text-white"><MapPin className="h-3.5 w-3.5" aria-hidden="true" /> City</button></div></article>)}</div> : <div className="py-16 text-center"><UsersRound className="mx-auto h-7 w-7 text-white/22" aria-hidden="true" /><p className="mt-3 text-sm font-semibold text-white/64">No requests here</p><p className="mt-1 text-xs text-white/36">New invite activity will appear in this space.</p></div>}
+              {isLoadingVipInvites ? <div className="space-y-2">{[0, 1, 2].map((item) => <div key={item} className="h-28 animate-pulse rounded-2xl bg-white/[0.045]" />)}</div> : filteredVipInvites.length > 0 ? <div className="space-y-2">{filteredVipInvites.map((item) => <article key={item.id} className="rounded-2xl border border-white/10 bg-white/[0.028] p-4"><div className="flex items-start justify-between gap-3"><div><h3 className="text-sm font-semibold text-white/88">{item.kind === "host_request" ? t("messages.requestedAccess", "{name} requested access").replace("{name}", item.requesterAlias) : item.title}</h3><p className="mt-1 text-xs leading-5 text-white/48">{item.kind === "host_request" ? item.title : t("messages.hostedBy", "Hosted by {name}").replace("{name}", item.hostAlias)}{item.city ? ` · ${item.city.replace(/_/g, " ")}` : ""}</p></div><span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-white/56">{inviteStatusLabel(item.status)}</span></div>{item.message ? <p className="mt-3 text-sm leading-6 text-white/62">{item.message}</p> : null}<div className="mt-3 flex flex-wrap items-center gap-2"><span className="mr-auto text-[10px] text-white/30">{formatInviteTimeline({ requestedAt: item.createdAt, decidedAt: item.decidedAt, status: item.status })}</span>{item.kind === "host_request" && item.requesterUserId ? <button type="button" onClick={() => { setVipPanelCollapsed(true); openComposeWithUser(item.requesterUserId, item.requesterAlias); }} className="qa-action min-h-9 rounded-full bg-cyan-100/10 px-3 text-xs font-semibold text-cyan-100">{t("messages.reply", "Reply")}</button> : null}{item.kind === "my_request" && String(item.status).toLowerCase() === "accepted" && item.hostUserId ? <button type="button" onClick={() => { setVipPanelCollapsed(true); openComposeWithUser(item.hostUserId, item.hostAlias); }} className="qa-action min-h-9 rounded-full bg-cyan-100/10 px-3 text-xs font-semibold text-cyan-100">{t("messages.contactHost", "Contact host")}</button> : null}<button type="button" onClick={() => router.push(cityHref(item.city))} className="qa-action inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white/52 hover:bg-white/6 hover:text-white"><MapPin className="h-3.5 w-3.5" aria-hidden="true" /> {t("messages.city", "City")}</button></div></article>)}</div> : <div className="py-16 text-center"><UsersRound className="mx-auto h-7 w-7 text-white/22" aria-hidden="true" /><p className="mt-3 text-sm font-semibold text-white/64">{t("messages.noRequestsHere", "No requests here")}</p><p className="mt-1 text-xs text-white/36">{t("messages.inviteActivity", "New invite activity will appear in this space.")}</p></div>}
             </div>
           </section>
         </div>
@@ -2074,10 +2076,10 @@ export default function MessagesPage() {
       {reportTarget ? (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/74 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setReportTarget(null); }}>
           <section role="dialog" aria-modal="true" aria-labelledby="report-title" className="w-full max-w-md rounded-[26px] border border-white/12 bg-[#151820] p-5 shadow-[0_30px_100px_rgba(0,0,0,0.7)]">
-            <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-100/54">Community safety</p><h2 id="report-title" className="mt-1 text-xl font-semibold text-[#f7f3ee]">Report {reportTarget.type === "message" ? "message" : "member"}</h2></div><button type="button" onClick={() => setReportTarget(null)} aria-label="Close report" className="qa-action inline-flex h-10 w-10 items-center justify-center rounded-full text-white/48 hover:bg-white/7 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button></div>
-            <label htmlFor="report-reason" className="mt-5 block text-xs font-semibold text-white/64">Reason</label><select id="report-reason" value={reportReason} onChange={(event) => setReportReason(event.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-white/12 bg-black/28 px-3 text-sm text-white outline-none focus:border-rose-100/28"><option>Harassment or hateful conduct</option><option>Sexual content without consent</option><option>Spam or scam</option><option>Threats or safety concern</option><option>Other</option></select>
-            <label htmlFor="report-details" className="mt-4 block text-xs font-semibold text-white/64">Details <span className="font-normal text-white/34">(optional)</span></label><textarea id="report-details" value={reportDetails} onChange={(event) => setReportDetails(event.target.value.slice(0, 1000))} placeholder="Tell the moderation team what happened…" className="mt-2 min-h-28 w-full resize-y rounded-xl border border-white/12 bg-black/28 p-3 text-sm leading-6 text-white outline-none placeholder:text-white/28 focus:border-rose-100/28" />
-            <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setReportTarget(null)} className="qa-action min-h-11 rounded-full px-4 text-sm font-semibold text-white/52 hover:bg-white/6 hover:text-white">Cancel</button><button type="button" onClick={submitReport} className="qa-action min-h-11 rounded-full bg-rose-100 px-5 text-sm font-bold text-[#1a090d] hover:bg-white">Send report</button></div>
+            <div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-100/54">{t("messages.communitySafety", "Community safety")}</p><h2 id="report-title" className="mt-1 text-xl font-semibold text-[#f7f3ee]">{t("messages.report", "Report")} {reportTarget.type === "message" ? t("messages.message", "message") : t("messages.member", "member")}</h2></div><button type="button" onClick={() => setReportTarget(null)} aria-label={t("messages.closeReport", "Close report")} className="qa-action inline-flex h-10 w-10 items-center justify-center rounded-full text-white/48 hover:bg-white/7 hover:text-white"><X className="h-5 w-5" aria-hidden="true" /></button></div>
+            <label htmlFor="report-reason" className="mt-5 block text-xs font-semibold text-white/64">{t("messages.reason", "Reason")}</label><select id="report-reason" value={reportReason} onChange={(event) => setReportReason(event.target.value)} className="mt-2 min-h-11 w-full rounded-xl border border-white/12 bg-black/28 px-3 text-sm text-white outline-none focus:border-rose-100/28"><option>{t("messages.harassment", "Harassment or hateful conduct")}</option><option>{t("messages.nonconsensualSexual", "Sexual content without consent")}</option><option>{t("messages.spamScam", "Spam or scam")}</option><option>{t("messages.threats", "Threats or safety concern")}</option><option>{t("messages.other", "Other")}</option></select>
+            <label htmlFor="report-details" className="mt-4 block text-xs font-semibold text-white/64">{t("messages.details", "Details")} <span className="font-normal text-white/34">({t("messages.optional", "optional")})</span></label><textarea id="report-details" value={reportDetails} onChange={(event) => setReportDetails(event.target.value.slice(0, 1000))} placeholder={t("messages.reportDetailsPrompt", "Tell the moderation team what happened…")} className="mt-2 min-h-28 w-full resize-y rounded-xl border border-white/12 bg-black/28 p-3 text-sm leading-6 text-white outline-none placeholder:text-white/28 focus:border-rose-100/28" />
+            <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setReportTarget(null)} className="qa-action min-h-11 rounded-full px-4 text-sm font-semibold text-white/52 hover:bg-white/6 hover:text-white">{t("messages.cancel", "Cancel")}</button><button type="button" onClick={submitReport} className="qa-action min-h-11 rounded-full bg-rose-100 px-5 text-sm font-bold text-[#1a090d] hover:bg-white">{t("messages.sendReport", "Send report")}</button></div>
           </section>
         </div>
       ) : null}

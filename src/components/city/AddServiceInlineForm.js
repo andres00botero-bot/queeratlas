@@ -4,6 +4,7 @@ import { normalizeServicePriceTierOptions } from "@/features/city/serviceFormUti
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 import { getServiceIntelLabels } from "@/lib/entityIntel";
 import VenueLocationPicker from "@/components/location/VenueLocationPicker";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function AddServiceInlineForm({
   addServiceFormRef,
@@ -48,6 +49,7 @@ export default function AddServiceInlineForm({
   setServiceProviderInclusivity,
   onSaveService,
 }) {
+  const { t } = useLocale();
   const priceTierOptions = normalizeServicePriceTierOptions(servicePriceTierOptions);
   const intelLabels = getServiceIntelLabels(serviceType);
 
@@ -59,13 +61,13 @@ export default function AddServiceInlineForm({
       <input
         value={serviceName}
         onChange={(event) => setServiceName(event.target.value)}
-        placeholder="Service name"
+        placeholder={t("city.serviceName", "Service name")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <textarea
         value={serviceDescription}
         onChange={(event) => setServiceDescription(event.target.value)}
-        placeholder="Description (offer, vibe, experience...)"
+        placeholder={t("city.serviceDescription", "Description (offer, vibe, experience...)")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <div className="grid gap-3 sm:grid-cols-2">
@@ -104,37 +106,37 @@ export default function AddServiceInlineForm({
       <input
         value={serviceHours}
         onChange={(event) => setServiceHours(event.target.value)}
-        placeholder="Availability (for example Daily 11:00-22:00)"
+        placeholder={t("city.availability", "Availability (for example Daily 11:00-22:00)")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <input
         value={serviceProviderName}
         onChange={(event) => setServiceProviderName(event.target.value)}
-        placeholder="Service announcer (provider name)"
+        placeholder={t("city.providerName", "Service announcer (provider name)")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <input
         value={serviceContact}
         onChange={(event) => setServiceContact(event.target.value)}
-        placeholder="Contact (WhatsApp, Telegram, phone, etc.)"
+        placeholder={t("city.contact", "Contact (WhatsApp, Telegram, phone, etc.)")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <input
         value={serviceBookingLink}
         onChange={(event) => setServiceBookingLink(event.target.value)}
-        placeholder="Booking link (optional)"
+        placeholder={t("city.bookingLink", "Booking link (optional)")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <input
         value={serviceLink}
         onChange={(event) => setServiceLink(event.target.value)}
-        placeholder="Official website / Instagram / Facebook (optional)"
+        placeholder={t("city.officialSocialLink", "Official website / Instagram / Facebook (optional)")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <input
         value={serviceImageUrlsInput}
         onChange={(event) => setServiceImageUrlsInput(event.target.value)}
-        placeholder="Image URLs, comma separated (optional)"
+        placeholder={t("city.imageUrls", "Image URLs, comma separated (optional)")}
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <input
@@ -144,8 +146,8 @@ export default function AddServiceInlineForm({
         className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
       />
       <PracticalIntelFields
-        title="Practical service intelligence"
-        description="Optional practical context adapted to the selected service type."
+        title={t("city.practicalServiceIntel", "Practical service intelligence")}
+        description={t("city.practicalServiceIntelDescription", "Optional practical context adapted to the selected service type.")}
         tone="cyan"
         fields={[
           { key: "lead", label: intelLabels.bookingLeadTime, value: serviceBookingLeadTime, onChange: setServiceBookingLeadTime, placeholder: "How far ahead should someone book?" },
@@ -160,7 +162,7 @@ export default function AddServiceInlineForm({
         onClick={onSaveService}
         className="w-full rounded-2xl bg-gradient-to-r from-cyan-300 to-sky-200 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45"
       >
-        Save service
+        {t("city.saveService", "Save service")}
       </button>
     </div>
   );

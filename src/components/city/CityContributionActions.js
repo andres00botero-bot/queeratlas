@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/components/i18n/LocaleProvider";
+
 export default function CityContributionActions({
   addMode,
   addEventMode,
@@ -8,6 +10,7 @@ export default function CityContributionActions({
   onToggleAddEvent,
   onToggleAddService,
 }) {
+  const { t } = useLocale();
   const baseButton =
     "qa-action qa-cinematic-hover relative isolate inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold tracking-[0.01em] transition duration-300";
 
@@ -52,10 +55,10 @@ export default function CityContributionActions({
       {renderButton({
         active: addMode,
         onClick: onToggleAddPlace,
-        ariaLabelOpen: "Open add place form",
-        ariaLabelClose: "Cancel add place form",
-        labelIdle: "+ Add place",
-        labelActive: "Cancel adding",
+        ariaLabelOpen: t("city.openAddPlace", "Open add place form"),
+        ariaLabelClose: t("city.cancelAddPlace", "Cancel add place form"),
+        labelIdle: t("city.addPlace", "+ Add place"),
+        labelActive: t("city.cancelAdding", "Cancel adding"),
         tone: "place",
       })}
       {renderButton({
@@ -70,10 +73,10 @@ export default function CityContributionActions({
       {renderButton({
         active: addServiceMode,
         onClick: onToggleAddService,
-        ariaLabelOpen: "Open add service form",
-        ariaLabelClose: "Cancel add service form",
-        labelIdle: "+ Add service",
-        labelActive: "Cancel service",
+        ariaLabelOpen: t("city.openAddService", "Open add service form"),
+        ariaLabelClose: t("city.cancelAddService", "Cancel add service form"),
+        labelIdle: t("city.addService", "+ Add service"),
+        labelActive: t("city.cancelService", "Cancel service"),
         tone: "service",
       })}
     </div>

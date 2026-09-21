@@ -2,6 +2,7 @@ import { cache } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { ArrowLeft, ArrowUpRight, CheckCircle2, ChevronDown, MapPin } from "lucide-react";
 import NewsComments from "@/components/news/NewsComments";
 import NewsArticleUtilityActions from "@/components/news/NewsArticleUtilityActions";
@@ -9,6 +10,8 @@ import NewsMemberActions from "@/components/news/NewsMemberActions";
 import { getNewsArticleLinks, resolveNewsArticle } from "@/lib/newsArticleResolver";
 import { QA_LOGO_URL, QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { safeJsonLd } from "@/lib/seo/safeJsonLd";
+import { getMessage } from "@/lib/i18n/messages";
+import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/i18n/locales";
 
 const getNewsArticle = cache(resolveNewsArticle);
 
@@ -52,11 +55,11 @@ function articleUrl(articleId) {
   return `${QA_SITE_URL}/now/news/${encodeURIComponent(String(articleId))}`;
 }
 
-function formatArticleDate(value) {
-  if (!value) return "Not dated";
+function formatArticleDate(value, locale, t) {
+  if (!value) return t("now.articleNotDated", "Not dated");
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat(locale === "es" ? "es" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(date);
 }
 
 function safeExternalUrl(value) {
@@ -107,6 +110,9 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function NewsArticlePage({ params }) {
+  const requestHeaders = await headers();
+  const locale = normalizeLocale(requestHeaders.get("x-qa-locale"), DEFAULT_LOCALE);
+  const t = (key, fallback) => getMessage(locale, key, fallback);
   const { articleId } = await params;
   const article = await getNewsArticle(articleId);
   if (!article) notFound();
@@ -117,12 +123,12 @@ export default async function NewsArticlePage({ params }) {
   const articleCopy = resolveArticleCopy(article.summary, article.whyItMatters);
   const deck = articleCopy.deck;
   const body = articleCopy.body;
-  const publishedLabel = formatArticleDate(article.publishedAt || article.date);
-  const updatedLabel = formatArticleDate(article.updatedAt || article.publishedAt || article.date);
+  const publishedLabel = formatArticleDate(article.publishedAt || article.date, locale, t);
+  const updatedLabel = formatArticleDate(article.updatedAt || article.publishedAt || article.date, locale, t);
   const showUpdated = isMeaningfullyUpdated(article.publishedAt || article.date, article.updatedAt);
   const isSignal = article.kind === "venue-signal" || article.kind === "event-signal";
   const isAtlasSource = /queer atlas|atlas /i.test(String(article.sourceName || ""));
-  const sourcePrefix = isAtlasSource ? "By" : "Source";
+  const sourcePrefix = isAtlasSource ? t("now.articleBy", "By") : t("now.articleSource", "Source");
   const useContainedImage = article.kind === "event-signal";
   const jsonLd = {
     "@context": "https://schema.org",
@@ -145,10 +151,10 @@ export default async function NewsArticlePage({ params }) {
     <main className="min-h-screen bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.09),transparent_28%),radial-gradient(circle_at_88%_8%,rgba(244,114,182,0.08),transparent_28%),#07080c] px-4 pb-24 pt-5 text-white sm:px-6 sm:pb-16 sm:pt-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <article className="mx-auto max-w-6xl">
-        <nav className="border-b border-white/10 pb-3" aria-label="Article navigation">
+        <nav className="border-b border-white/10 pb-3" aria-label={t("now.articleNavigation", "Article navigation")}>
           <Link href="/now/news" className="group inline-flex min-h-11 items-center gap-2 text-xs font-semibold uppercase tracking-[0.13em] text-white/58 transition hover:text-cyan-50 focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">
             <ArrowLeft size={16} aria-hidden="true" className="transition group-hover:-translate-x-0.5" />
-            Queer World News
+            {t("now.newsTitle", "Queer World News")}
           </Link>
         </nav>
 
@@ -156,7 +162,7 @@ export default async function NewsArticlePage({ params }) {
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] font-semibold uppercase tracking-[0.17em]">
             <span className="text-fuchsia-200">{article.storyType}</span>
             <span aria-hidden="true" className="text-white/24">/</span>
-            <span className="text-white/44">{article.city || "Global"}</span>
+            <span className="text-white/44">{article.city || t("now.global", "Global")}</span>
           </div>
           <h1 className="qa-display mt-4 max-w-[58rem] text-[clamp(2.25rem,5.2vw,4.75rem)] font-semibold leading-[0.98] tracking-[-0.052em] text-[#f7f4ee]">{article.title}</h1>
           {deck ? <p className="mt-6 max-w-[46rem] text-[1.05rem] leading-7 text-white/68 [hyphens:none] sm:text-[1.3rem] sm:leading-8">{deck}</p> : null}
@@ -165,8 +171,8 @@ export default async function NewsArticlePage({ params }) {
             <div className="text-xs leading-5 text-white/48 [&_p]:[hyphens:none]">
               <p className="font-medium text-white/72">{sourcePrefix} {article.sourceName}</p>
               <p className="mt-0.5 flex flex-wrap items-center gap-x-2">
-                <span>{isSignal ? "Verified" : "Published"} <time dateTime={article.publishedAt || article.date || undefined}>{publishedLabel}</time></span>
-                {showUpdated ? <><span aria-hidden="true">·</span><span>Updated <time dateTime={article.updatedAt}>{updatedLabel}</time></span></> : null}
+                <span>{isSignal ? t("now.verified", "Verified") : t("now.published", "Published")} <time dateTime={article.publishedAt || article.date || undefined}>{publishedLabel}</time></span>
+                {showUpdated ? <><span aria-hidden="true">·</span><span>{t("now.updated", "Updated")} <time dateTime={article.updatedAt}>{updatedLabel}</time></span></> : null}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -181,29 +187,29 @@ export default async function NewsArticlePage({ params }) {
             <div className="relative aspect-[16/10] w-full sm:aspect-[16/9]">
               <Image src={article.imageUrl} alt={article.imageAlt || article.title} fill priority sizes="(max-width: 1152px) 100vw, 1152px" className={useContainedImage ? "object-contain" : "object-cover"} />
             </div>
-            {article.imageCredit ? <figcaption className="px-1 pt-2.5 text-[10px] leading-4 text-white/38">Photo: {article.imageCredit}</figcaption> : null}
+            {article.imageCredit ? <figcaption className="px-1 pt-2.5 text-[10px] leading-4 text-white/38">{t("now.photoCredit", "Photo")}: {article.imageCredit}</figcaption> : null}
           </figure>
         ) : null}
 
         <div className="grid gap-12 pt-9 sm:pt-12 lg:grid-cols-[minmax(0,44rem)_16rem] lg:justify-center lg:gap-20">
           <div className="min-w-0">
             {body ? (
-              <section className="hyphens-auto whitespace-pre-line text-justify text-[1.0625rem] leading-[1.78] text-[#e4e1dc]/86 [text-justify:inter-word] sm:text-[1.125rem]" aria-label="Article text">
+              <section className="hyphens-auto whitespace-pre-line text-justify text-[1.0625rem] leading-[1.78] text-[#e4e1dc]/86 [text-justify:inter-word] sm:text-[1.125rem]" aria-label={t("now.articleText", "Article text")}>
                 {body}
               </section>
             ) : null}
 
             <details className="group mt-10 border-y border-white/10 py-1" name="article-transparency">
               <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-sm font-semibold text-white/72 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 [&::-webkit-details-marker]:hidden">
-                <span className="inline-flex items-center gap-2.5"><CheckCircle2 size={16} aria-hidden="true" className="text-emerald-200/80" />Sources &amp; verification</span>
+                <span className="inline-flex items-center gap-2.5"><CheckCircle2 size={16} aria-hidden="true" className="text-emerald-200/80" />{t("now.sourcesVerification", "Sources & verification")}</span>
                 <ChevronDown size={16} aria-hidden="true" className="text-white/40 transition group-open:rotate-180" />
               </summary>
               <div className="pb-5 pl-[26px] text-sm leading-6 text-white/52">
                 <p>{article.verificationLabel}.</p>
                 <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs">
-                  {sourceUrl ? <a href={sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded text-cyan-100/78 underline decoration-cyan-200/25 underline-offset-4 transition hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">Open original source <ArrowUpRight size={13} aria-hidden="true" /></a> : null}
-                  <Link href="/editorial-policy" className="rounded text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-white/82 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">Editorial policy</Link>
-                  <Link href={`/corrections?article=${encodeURIComponent(article.id)}`} className="rounded text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-white/82 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">Report a correction</Link>
+                  {sourceUrl ? <a href={sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded text-cyan-100/78 underline decoration-cyan-200/25 underline-offset-4 transition hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">{t("now.openOriginalSource", "Open original source")} <ArrowUpRight size={13} aria-hidden="true" /></a> : null}
+                  <Link href="/editorial-policy" className="rounded text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-white/82 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">{t("now.editorialPolicy", "Editorial policy")}</Link>
+                  <Link href={`/corrections?article=${encodeURIComponent(article.id)}`} className="rounded text-white/55 underline decoration-white/20 underline-offset-4 transition hover:text-white/82 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60">{t("now.reportCorrection", "Report a correction")}</Link>
                 </div>
               </div>
             </details>
@@ -213,12 +219,12 @@ export default async function NewsArticlePage({ params }) {
             {article.commentsEnabled ? <NewsComments articleId={article.id} articleTitle={article.title} /> : null}
           </div>
 
-          <aside className="lg:sticky lg:top-6 lg:self-start" aria-label="Continue in Queer Atlas">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.19em] text-white/38">Continue in the atlas</p>
+          <aside className="lg:sticky lg:top-6 lg:self-start" aria-label={t("now.continueAtlas", "Continue in Queer Atlas")}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.19em] text-white/38">{t("now.continueAtlas", "Continue in the atlas")}</p>
             <div className="mt-3 divide-y divide-white/10 border-y border-white/10">
               {links.entityHref ? <Link href={links.entityHref} className="group flex min-h-16 items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-[#f7f4ee] transition hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"><span>{links.entityLabel}</span><ArrowUpRight size={16} aria-hidden="true" className="shrink-0 text-cyan-200 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></Link> : null}
               {links.cityHref ? <Link href={links.cityHref} className="group flex min-h-16 items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-[#f7f4ee] transition hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"><span className="inline-flex items-center gap-2"><MapPin size={15} aria-hidden="true" className="text-fuchsia-200" />{links.cityLabel}</span><ArrowUpRight size={16} aria-hidden="true" className="shrink-0 text-cyan-200 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></Link> : null}
-              <Link href="/events" className="group flex min-h-16 items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-[#f7f4ee] transition hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"><span>Explore queer events</span><ArrowUpRight size={16} aria-hidden="true" className="shrink-0 text-cyan-200 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></Link>
+              <Link href="/events" className="group flex min-h-16 items-center justify-between gap-3 rounded-md py-3 text-sm font-semibold text-[#f7f4ee] transition hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60"><span>{t("now.exploreQueerEvents", "Explore queer events")}</span><ArrowUpRight size={16} aria-hidden="true" className="shrink-0 text-cyan-200 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></Link>
             </div>
           </aside>
         </div>

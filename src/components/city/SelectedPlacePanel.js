@@ -7,6 +7,7 @@ import SelectedPlaceLiveVibePanel from "@/components/city/SelectedPlaceLiveVibeP
 import SelectedPlaceReviewComposer from "@/components/city/SelectedPlaceReviewComposer";
 import SelectedPlaceReviewsList from "@/components/city/SelectedPlaceReviewsList";
 import SelectedPlaceSummary from "@/components/city/SelectedPlaceSummary";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function SelectedPlacePanel({
   selectedPlace,
@@ -62,13 +63,14 @@ export default function SelectedPlacePanel({
   setComment,
   onSubmitReview,
 }) {
+  const { t } = useLocale();
   const [activeTab, setActiveTab] = useState("overview");
 
   if (!selectedPlace) return null;
-  const placeTypeLabel = typeLabels?.[selectedPlace.type] || "Venue";
+  const placeTypeLabel = typeLabels?.[selectedPlace.type] || t("city.venue", "Venue");
   const tabs = [
-    { key: "overview", label: "Overview" },
-    { key: "reviews", label: "Reviews" },
+    { key: "overview", label: t("city.overview", "Overview") },
+    { key: "reviews", label: t("city.reviews", "Reviews") },
   ];
   const reviewCount = Number(selectedPlace.reviewCount || 0);
   const reviewCountLabel = reviewCount > 0 ? `${reviewCount}` : "";
@@ -90,11 +92,11 @@ export default function SelectedPlacePanel({
           </div>
           <button
             type="button"
-            aria-label="Close venue details"
+            aria-label={t("city.closeVenueDetails", "Close venue details")}
             className="qa-cinematic-hover rounded-full border border-white/24 bg-white/[0.10] px-3 py-2 text-xs text-white/86 hover:border-white/38 hover:bg-white/[0.14] hover:text-white"
             onClick={onClose}
           >
-            Close
+            {t("city.close", "Close")}
           </button>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-2 rounded-full border border-white/14 bg-black/18 p-1">
@@ -153,7 +155,7 @@ export default function SelectedPlacePanel({
           </div>
 
           <div className="qa-city-detail-surface mt-4 rounded-[22px] border p-4">
-            <p className="mb-3 text-[10px] uppercase tracking-[0.18em] text-white/58">Actions</p>
+            <p className="mb-3 text-[10px] uppercase tracking-[0.18em] text-white/58">{t("city.actions", "Actions")}</p>
             <SelectedPlaceActions
               selectedPlace={selectedPlace}
               showPlaceOnMap={showPlaceOnMap}
@@ -191,8 +193,8 @@ export default function SelectedPlacePanel({
       {activeTab === "reviews" ? (
         <>
           <div className="qa-city-detail-surface rounded-[22px] border p-4">
-            <p className="text-base font-semibold tracking-[0.01em] text-white">Reviews</p>
-            <p className="mt-1 text-xs leading-5 text-cyan-50/78">Community ratings and notes for this venue.</p>
+            <p className="text-base font-semibold tracking-[0.01em] text-white">{t("city.reviews", "Reviews")}</p>
+            <p className="mt-1 text-xs leading-5 text-cyan-50/78">{t("city.communityReviewsDescription", "Community ratings and notes for this venue.")}</p>
           </div>
 
           <div className="qa-city-detail-surface mt-4 rounded-[22px] border p-4">
@@ -200,7 +202,7 @@ export default function SelectedPlacePanel({
           </div>
 
           <div className="qa-city-detail-surface mt-4 rounded-[22px] border p-4">
-            <p className="mb-3 text-xs font-semibold tracking-[0.06em] text-white/88">Write a review</p>
+            <p className="mb-3 text-xs font-semibold tracking-[0.06em] text-white/88">{t("city.writeReview", "Write a review")}</p>
             <SelectedPlaceReviewComposer
               isMember={isMember}
               canReviewSelectedPlace={canReviewSelectedPlace}

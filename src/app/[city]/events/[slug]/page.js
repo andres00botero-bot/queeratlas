@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
+import { headers } from "next/headers";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityLifecycle";
 import { supabase } from "@/lib/supabase";
@@ -16,7 +17,10 @@ import {
   parseEntitySlug,
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { evaluateEventSeoQuality } from "@/lib/seo/entityIndexing";
+import { getEntitySearchCopy } from "@/lib/seo/entitySearchCopy";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
@@ -192,6 +196,7 @@ function buildEventDetailWebPageJsonLd({ cityName, canonicalUrl, eventJsonLdId }
 }
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const { city, event, coreConfig } = await findEventByParams(
     resolved?.city,
@@ -208,25 +213,26 @@ export async function generateMetadata({ params }) {
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildEventPath(city, event);
   const normalizedEvent = normalizeEventRange(event);
-  const title = `${event.name} (${cityName}) | Queer Atlas Event Guide`;
+  const searchCopy = getEntitySearchCopy({ kind: "event", city, cityName, entity: normalizedEvent });
+  const title = searchCopy?.title || `${event.name} (${cityName}) | Queer Atlas Event Guide`;
   const description =
+    searchCopy?.description ||
     String(event?.description || "").trim() ||
     `${event.name} in ${cityName}: date, location, vibe and safer queer nightlife context.`;
   const quality = evaluateEventSeoQuality(event);
 
   return {
-    title,
+    title: searchCopy ? { absolute: title } : title,
     description,
-    alternates: {
-      canonical: canonicalPath,
-    },
+    alternates: localizedAlternates(canonicalPath, locale),
     robots: quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {
       title,
       description,
-      url: canonicalPath,
+      url: localizedOpenGraphUrl(canonicalPath, locale),
+      locale: locale === "es" ? "es_ES" : "en_US",
       type: "article",
     },
     twitter: {
@@ -260,6 +266,7 @@ export default async function CityEventDetailPage({ params }) {
   const cityName = cityNameFromConfig(coreConfig, city);
   const normalizedEvent = normalizeEventRange(event);
   const canonicalPath = buildEventPath(city, event);
+  const searchCopy = getEntitySearchCopy({ kind: "event", city, cityName, entity: normalizedEvent });
   const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
   if (canonicalSlug !== String(resolved?.slug || "").trim()) {
     permanentRedirect(canonicalPath);
@@ -313,7 +320,7 @@ export default async function CityEventDetailPage({ params }) {
             {event.name}
           </h1>
           <p className="mt-2 text-sm text-white/70">
-            {cityName} event intelligence with schedule context, vibe signal, and safer routing.
+            {searchCopy?.description || `${cityName} event intelligence with schedule context, vibe signal, and safer routing.`}
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/65">
             {normalizedEvent.eventStatus !== "scheduled" ? (

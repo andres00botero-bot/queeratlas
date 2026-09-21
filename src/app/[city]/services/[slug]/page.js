@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
+import { headers } from "next/headers";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
@@ -8,6 +9,8 @@ import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityLifecycle";
 import { cityNameFromConfig } from "@/features/city/checkinFeature";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { evaluateServiceSeoQuality } from "@/lib/seo/entityIndexing";
 import { supabase } from "@/lib/supabase";
 import {
@@ -48,6 +51,7 @@ const findServiceByParams = cache(async (cityParam = "", slugParam = "") => {
 });
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const { city, service, coreConfig } = await findServiceByParams(resolved?.city, resolved?.slug);
 
@@ -67,14 +71,15 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    alternates: { canonical: canonicalPath },
+    alternates: localizedAlternates(canonicalPath, locale),
     robots: quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {
       title,
       description,
-      url: canonicalPath,
+      url: localizedOpenGraphUrl(canonicalPath, locale),
+      locale: locale === "es" ? "es_ES" : "en_US",
       type: "article",
     },
   };
