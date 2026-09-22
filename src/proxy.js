@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_LOCALE, getPublishedLocales, isSupportedLocale, normalizeLocale } from "@/lib/i18n/locales";
+import { defaultsToSpanishByCountry } from "@/lib/i18n/localeGeo";
 
 const LOCALE_COOKIE = "qa_locale";
 const PUBLISHED_LOCALE_CODES = new Set(getPublishedLocales().map((locale) => locale.code));
@@ -24,6 +25,25 @@ function rememberLocale(response, locale) {
   return response;
 }
 
+function isDocumentNavigation(request) {
+  const destination = request.headers.get("sec-fetch-dest");
+  const acceptsHtml = request.headers.get("accept")?.includes("text/html");
+  return destination === "document" || (!destination && acceptsHtml);
+}
+
+function isSearchCrawler(request) {
+  return /(?:bot|crawler|spider|slurp|bingpreview)/i.test(request.headers.get("user-agent") || "");
+}
+
+function geoLocaleRedirect(request, pathname) {
+  const localizedUrl = request.nextUrl.clone();
+  localizedUrl.pathname = `/es${pathname === "/" ? "" : pathname}`;
+  const response = NextResponse.redirect(localizedUrl);
+  // Do not let a location-dependent first-visit redirect be shared by caches.
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
+
 export function proxy(request) {
   const { pathname } = request.nextUrl;
   const segments = pathname.split("/").filter(Boolean);
@@ -40,11 +60,22 @@ export function proxy(request) {
     );
   }
 
-  const cookieLocale = normalizeLocale(request.cookies.get(LOCALE_COOKIE)?.value);
-  if (cookieLocale !== DEFAULT_LOCALE && isPublishedLocale(cookieLocale)) {
+  const cookieLocaleValue = request.cookies.get(LOCALE_COOKIE)?.value;
+  const cookieLocale = normalizeLocale(cookieLocaleValue);
+  const hasSavedLocale = Boolean(cookieLocaleValue && isSupportedLocale(cookieLocaleValue) && isPublishedLocale(cookieLocale));
+  if (hasSavedLocale && cookieLocale !== DEFAULT_LOCALE) {
     const localizedUrl = request.nextUrl.clone();
     localizedUrl.pathname = `/${cookieLocale}${pathname === "/" ? "" : pathname}`;
     return NextResponse.redirect(localizedUrl);
+  }
+
+  if (
+    !hasSavedLocale &&
+    isDocumentNavigation(request) &&
+    !isSearchCrawler(request) &&
+    defaultsToSpanishByCountry(request.headers.get("x-vercel-ip-country"))
+  ) {
+    return geoLocaleRedirect(request, pathname);
   }
 
   return NextResponse.next({
