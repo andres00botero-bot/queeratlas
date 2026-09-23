@@ -256,6 +256,8 @@ export default function FloatingHomeButton() {
             onChange={(event) => {
               const nextLocale = event.target.value;
               if (nextLocale === locale) return;
+              document.cookie = `qa_locale=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
+              document.cookie = "qa_locale_preference=manual; path=/; max-age=31536000; samesite=lax";
               window.location.assign(toLocalePath(languagePath, nextLocale));
             }}
             className="cursor-pointer appearance-none bg-transparent pr-0.5 text-[10px] font-semibold text-white outline-none"

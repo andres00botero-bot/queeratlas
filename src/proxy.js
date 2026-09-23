@@ -3,6 +3,7 @@ import { DEFAULT_LOCALE, getPublishedLocales, isSupportedLocale, normalizeLocale
 import { defaultsToSpanishByCountry } from "@/lib/i18n/localeGeo";
 
 const LOCALE_COOKIE = "qa_locale";
+const LOCALE_PREFERENCE_COOKIE = "qa_locale_preference";
 const PUBLISHED_LOCALE_CODES = new Set(getPublishedLocales().map((locale) => locale.code));
 
 function isPublishedLocale(locale) {
@@ -63,19 +64,30 @@ export function proxy(request) {
   const cookieLocaleValue = request.cookies.get(LOCALE_COOKIE)?.value;
   const cookieLocale = normalizeLocale(cookieLocaleValue);
   const hasSavedLocale = Boolean(cookieLocaleValue && isSupportedLocale(cookieLocaleValue) && isPublishedLocale(cookieLocale));
-  if (hasSavedLocale && cookieLocale !== DEFAULT_LOCALE) {
+  const hasManualLocalePreference = request.cookies.get(LOCALE_PREFERENCE_COOKIE)?.value === "manual";
+
+  // An explicit visitor choice always wins. Older English locale cookies did not
+  // record their source, so they must not prevent country-based first-visit
+  // localization for Spanish-speaking markets.
+  if (hasSavedLocale && hasManualLocalePreference && cookieLocale !== DEFAULT_LOCALE) {
     const localizedUrl = request.nextUrl.clone();
     localizedUrl.pathname = `/${cookieLocale}${pathname === "/" ? "" : pathname}`;
     return NextResponse.redirect(localizedUrl);
   }
 
   if (
-    !hasSavedLocale &&
     isDocumentNavigation(request) &&
     !isSearchCrawler(request) &&
+    !hasManualLocalePreference &&
     defaultsToSpanishByCountry(request.headers.get("x-vercel-ip-country"))
   ) {
     return geoLocaleRedirect(request, pathname);
+  }
+
+  if (hasSavedLocale && cookieLocale !== DEFAULT_LOCALE) {
+    const localizedUrl = request.nextUrl.clone();
+    localizedUrl.pathname = `/${cookieLocale}${pathname === "/" ? "" : pathname}`;
+    return NextResponse.redirect(localizedUrl);
   }
 
   return NextResponse.next({

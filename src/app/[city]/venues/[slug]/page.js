@@ -114,11 +114,17 @@ function buildPlaceJsonLd({ place, city, cityName }) {
   const hasGeo = Number.isFinite(maybeLat) && Number.isFinite(maybeLng);
   const reviewCount = Number(place?.reviewCount || 0);
   const ratingValue = Number(place?.avgRating || 0);
-  const schemaType = schemaTypeForVenue(place?.type);
+  const venueSchemaType = schemaTypeForVenue(place?.type);
+  const canPublishAggregateRating =
+    reviewCount > 0 &&
+    ratingValue > 0 &&
+    supportsVenueAggregateRating(place?.type);
 
   const payload = {
     "@context": "https://schema.org",
-    "@type": schemaType,
+    // Google Review Snippet validates the parent against LocalBusiness. Keep
+    // the more specific Schema.org venue type as an additional classification.
+    "@type": canPublishAggregateRating ? "LocalBusiness" : venueSchemaType,
     "@id": `${canonicalUrl}#place`,
     name: String(place?.name || ""),
     description: String(place?.description || "").trim() || `${String(place?.name || "")} in ${cityName}.`,
@@ -140,6 +146,10 @@ function buildPlaceJsonLd({ place, city, cityName }) {
     },
   };
 
+  if (canPublishAggregateRating && venueSchemaType !== "LocalBusiness") {
+    payload.additionalType = `https://schema.org/${venueSchemaType}`;
+  }
+
   if (hasGeo) {
     payload.geo = {
       "@type": "GeoCoordinates",
@@ -152,11 +162,7 @@ function buildPlaceJsonLd({ place, city, cityName }) {
     payload.sameAs = [String(place.link)];
   }
 
-  if (
-    reviewCount > 0 &&
-    ratingValue > 0 &&
-    supportsVenueAggregateRating(place?.type)
-  ) {
+  if (canPublishAggregateRating) {
     payload.aggregateRating = {
       "@type": "AggregateRating",
       ratingValue: Number(ratingValue.toFixed(1)),

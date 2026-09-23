@@ -1056,6 +1056,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                     onClick={() => {
                       if (locale === code) return;
                       document.cookie = `qa_locale=${code}; path=/; max-age=31536000; samesite=lax`;
+                      document.cookie = "qa_locale_preference=manual; path=/; max-age=31536000; samesite=lax";
                       window.location.assign(code === "es" ? "/es" : "/");
                     }}
                     className={`qa-action inline-flex h-9 min-w-10 items-center justify-center rounded-full px-2.5 text-xs font-extrabold tracking-[0.08em] transition ${locale === code ? "bg-white text-[#0a1320] shadow-[0_5px_16px_rgba(255,255,255,0.25)]" : "text-white/72 hover:bg-white/12 hover:text-white"}`}
