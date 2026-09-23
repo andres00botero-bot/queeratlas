@@ -1156,6 +1156,11 @@ export default function HomePageClient({ initialHomeData = null }) {
               <p className="qa-eyebrow mt-6 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
                 {t("home.whereverYouAre", "Wherever you are")}
               </p>
+              {locale === "es" ? (
+                <p className="mt-3 max-w-[48ch] !text-left text-sm font-medium leading-6 text-cyan-50/88 sm:text-base">
+                  Queer Atlas en español: ciudades LGBTQ+, lugares seguros, eventos y vida nocturna queer.
+                </p>
+              ) : null}
               <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[2.85rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
                 {t("home.findYourQueerWorld", "Find your queer world.")}
               </h1>
