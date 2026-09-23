@@ -2,10 +2,11 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import NowSectionNav from "@/components/now/NowSectionNav";
 import { ATLAS_COLLECTIONS, ATLAS_COLLECTION_FILTERS } from "@/lib/atlasCollections";
+import { getLocalizedAtlasCollection } from "@/lib/atlasCollectionTranslations";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getMessage } from "@/lib/i18n/messages";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 const metadata = {
   title: "Atlas Collections | Best Queer Travel, Stays, Events & Culture",
@@ -64,13 +65,14 @@ const COLLECTION_STYLES = {
   emerald: { wash: "from-emerald-300/22 via-teal-300/8 to-transparent", line: "from-emerald-200 via-teal-300 to-transparent", label: "text-emerald-100", border: "hover:border-emerald-100/34" },
 };
 
-function buildDiscoveryHref({ filter = "all", query = "", sort = "curated" }) {
+function buildDiscoveryHref({ filter = "all", query = "", sort = "curated", locale = "en" }) {
   const params = new URLSearchParams();
   if (filter && filter !== "all") params.set("type", filter);
   if (query) params.set("q", query);
   if (sort && sort !== "curated") params.set("sort", sort);
   const value = params.toString();
-  return value ? `/now/collections?${value}#discover-collections` : "/now/collections#discover-collections";
+  const path = localePath("/now/collections", locale);
+  return value ? `${path}?${value}#discover-collections` : `${path}#discover-collections`;
 }
 
 function collectionTimestamp(collection) {
@@ -100,7 +102,7 @@ function CollectionCover({ collection, index, lead = false, t }) {
   );
 }
 
-function CollectionCard({ collection, index, t }) {
+function CollectionCard({ collection, index, t, locale }) {
   const style = COLLECTION_STYLES[collection.accent] || COLLECTION_STYLES.cyan;
 
   return (
@@ -122,7 +124,7 @@ function CollectionCard({ collection, index, t }) {
         </dl>
         <div className="mt-auto flex items-end justify-between gap-4 pt-4">
           <p className="line-clamp-2 text-[11px] leading-4 text-white/42">{t("now.bestFor", "Best for")} {collection.bestFor.toLowerCase()}</p>
-          <Link href={collection.href} className={`shrink-0 border-b border-current/35 pb-1 text-sm font-bold transition hover:border-current ${style.label}`} aria-label={`${t("now.openCollection", "Open collection")}: ${collection.title}`}>
+          <Link href={localePath(collection.href, locale)} className={`shrink-0 border-b border-current/35 pb-1 text-sm font-bold transition hover:border-current ${style.label}`} aria-label={`${t("now.openCollection", "Open collection")}: ${collection.title}`}>
             {t("now.openEdit", "Open edit")} <span aria-hidden="true">→</span>
           </Link>
         </div>
@@ -135,6 +137,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
   const requestHeaders = await headers();
   const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
   const t = (key, fallback) => getMessage(locale, key, fallback);
+  const collections = ATLAS_COLLECTIONS.map((collection) => getLocalizedAtlasCollection(collection, locale));
   const resolvedParams = await searchParams;
   const activeFilter = String(resolvedParams?.type || "all").trim().toLowerCase();
   const query = String(resolvedParams?.q || "").trim();
@@ -145,7 +148,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
   const activeFilterDefinition = ATLAS_COLLECTION_FILTERS.find((filter) => filter.id === validFilter);
   const activeFilterLabel = activeFilterDefinition ? collectionFilterLabel(activeFilterDefinition, t) : t("now.allCollections", "All collections");
 
-  const visibleCollections = ATLAS_COLLECTIONS
+  const visibleCollections = collections
     .filter((collection) => {
       if (validFilter !== "all" && collection.filter !== validFilter) return false;
       if (!normalizedQuery) return true;
@@ -154,11 +157,11 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
     .sort((left, right) => {
       if (validSort === "verified") return collectionTimestamp(right) - collectionTimestamp(left);
       if (validSort === "az") return left.title.localeCompare(right.title);
-      return ATLAS_COLLECTIONS.indexOf(left) - ATLAS_COLLECTIONS.indexOf(right);
+      return collections.indexOf(left) - collections.indexOf(right);
     });
 
-  const uniqueCities = new Set(ATLAS_COLLECTIONS.flatMap((collection) => collection.cities)).size;
-  const totalPicks = ATLAS_COLLECTIONS.reduce((total, collection) => total + collection.items.length, 0);
+  const uniqueCities = new Set(collections.flatMap((collection) => collection.cities)).size;
+  const totalPicks = collections.reduce((total, collection) => total + collection.items.length, 0);
   const hasActiveDiscovery = validFilter !== "all" || Boolean(query) || validSort !== "curated";
   const leadCollection = visibleCollections[0] || null;
   const remainingCollections = visibleCollections.slice(1);
@@ -176,8 +179,8 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
         publisher: { "@id": QA_ORGANIZATION_ID },
         mainEntity: {
           "@type": "ItemList",
-          numberOfItems: ATLAS_COLLECTIONS.length,
-          itemListElement: ATLAS_COLLECTIONS.map((collection, index) => ({ "@type": "ListItem", position: index + 1, url: `${QA_SITE_URL}${collection.href}`, name: collection.title })),
+          numberOfItems: collections.length,
+          itemListElement: collections.map((collection, index) => ({ "@type": "ListItem", position: index + 1, url: `${QA_SITE_URL}${localePath(collection.href, locale)}`, name: collection.title })),
         },
       },
       {
@@ -196,7 +199,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-7xl">
         <nav aria-label={t("now.breadcrumb", "Breadcrumb")} className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/38 sm:text-xs">
-          <Link href="/now/news" className="transition hover:text-white">{t("now.now", "Now")}</Link>
+          <Link href={localePath("/now/news", locale)} className="transition hover:text-white">{t("now.now", "Now")}</Link>
           <span aria-hidden="true">/</span>
           <span className="text-white/64">{t("now.collections", "Atlas Collections")}</span>
         </nav>
@@ -210,7 +213,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
               <p className="mt-4 max-w-2xl text-sm leading-6 text-white/62 sm:text-base sm:leading-7">{t("now.collectionPageIntro", "Researched routes for the kind of trip you actually want—from a softer first night to a serious dance floor.")}</p>
             </div>
             <dl className="flex flex-wrap gap-x-7 gap-y-3 border-l-0 border-white/10 lg:border-l lg:pl-7">
-              {[[t("now.edits", "Edits"), ATLAS_COLLECTIONS.length], [t("now.citySignals", "City signals"), uniqueCities], [t("now.picks", "Picks"), totalPicks]].map(([term, value]) => (
+              {[[t("now.edits", "Edits"), collections.length], [t("now.citySignals", "City signals"), uniqueCities], [t("now.picks", "Picks"), totalPicks]].map(([term, value]) => (
                 <div key={term}>
                   <dt className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/34">{term}</dt>
                   <dd className="mt-1 text-lg font-bold text-white/86">{value}</dd>
@@ -231,7 +234,7 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
             <p aria-live="polite" className="text-xs text-white/46">{visibleCollections.length} {visibleCollections.length === 1 ? t("now.collection", "collection") : t("now.collectionsLower", "collections")}{validFilter !== "all" ? ` · ${activeFilterLabel}` : ""}{query ? ` · “${query}”` : ""}</p>
           </div>
 
-          <form action="/now/collections" className="mt-5 grid gap-2 border-y border-white/9 py-4 sm:grid-cols-[minmax(0,1fr)_11rem_auto] sm:items-center">
+          <form action={localePath("/now/collections", locale)} className="mt-5 grid gap-2 border-y border-white/9 py-4 sm:grid-cols-[minmax(0,1fr)_11rem_auto] sm:items-center">
             {validFilter !== "all" && <input type="hidden" name="type" value={validFilter} />}
             <label htmlFor="collection-search" className="sr-only">{t("now.searchCollections", "Search Atlas Collections")}</label>
             <input id="collection-search" name="q" type="search" defaultValue={query} placeholder={t("now.searchCollectionsPlaceholder", "Search a city, place, or kind of trip")} className="min-h-12 w-full rounded-xl border border-white/11 bg-white/[0.045] px-4 text-base text-white outline-none placeholder:text-white/30 focus:border-cyan-100/38 focus:ring-2 focus:ring-cyan-100/10 sm:text-sm" />
@@ -243,32 +246,32 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
             </select>
             <div className="grid grid-cols-2 gap-2 sm:flex">
               <button type="submit" className={`${hasActiveDiscovery ? "" : "col-span-2"} min-h-12 rounded-xl bg-[#f3eee5] px-5 text-xs font-bold uppercase tracking-[0.1em] text-[#0a0c11] transition hover:bg-white sm:col-span-1`}>{t("now.apply", "Apply")}</button>
-              {hasActiveDiscovery && <Link href="/now/collections#discover-collections" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/13 px-4 text-xs font-bold uppercase tracking-[0.1em] text-white/62 transition hover:border-white/28 hover:text-white">{t("now.clear", "Clear")}</Link>}
+              {hasActiveDiscovery && <Link href={localePath("/now/collections", locale) + "#discover-collections"} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/13 px-4 text-xs font-bold uppercase tracking-[0.1em] text-white/62 transition hover:border-white/28 hover:text-white">{t("now.clear", "Clear")}</Link>}
             </div>
           </form>
 
           <div aria-label={t("now.primaryCollectionFilters", "Primary collection filters")} className="mt-3 flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain pb-1 pr-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {ATLAS_COLLECTION_FILTERS.filter((filter) => PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => {
               const isActive = validFilter === filter.id;
-              return <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort })} aria-current={isActive ? "page" : undefined} className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${isActive ? "border-emerald-100/36 bg-emerald-100/12 text-emerald-50" : "border-white/9 text-white/46 hover:border-white/20 hover:text-white/76"}`}>{collectionFilterLabel(filter, t)}</Link>;
+              return <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort, locale })} aria-current={isActive ? "page" : undefined} className={`shrink-0 rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${isActive ? "border-emerald-100/36 bg-emerald-100/12 text-emerald-50" : "border-white/9 text-white/46 hover:border-white/20 hover:text-white/76"}`}>{collectionFilterLabel(filter, t)}</Link>;
             })}
           </div>
 
           <details className="group mt-2 sm:hidden">
             <summary className="inline-flex min-h-10 cursor-pointer list-none items-center text-[10px] font-bold uppercase tracking-[0.12em] text-white/48 transition hover:text-white/76">{t("now.moreFilters", "More filters")} <span className="ml-2 transition group-open:rotate-45" aria-hidden="true">+</span></summary>
             <div className="flex flex-wrap gap-2 pb-2">
-              {ATLAS_COLLECTION_FILTERS.filter((filter) => !PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort })} aria-current={validFilter === filter.id ? "page" : undefined} className={`rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] ${validFilter === filter.id ? "border-amber-100/38 bg-amber-100/10 text-amber-50" : "border-white/9 text-white/48"}`}>{collectionFilterLabel(filter, t)}</Link>)}
+              {ATLAS_COLLECTION_FILTERS.filter((filter) => !PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort, locale })} aria-current={validFilter === filter.id ? "page" : undefined} className={`rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] ${validFilter === filter.id ? "border-amber-100/38 bg-amber-100/10 text-amber-50" : "border-white/9 text-white/48"}`}>{collectionFilterLabel(filter, t)}</Link>)}
             </div>
           </details>
 
           <div className="mt-2 hidden flex-wrap gap-2 sm:flex" aria-label={t("now.moreCollectionFilters", "More collection filters")}>
-            {ATLAS_COLLECTION_FILTERS.filter((filter) => !PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort })} aria-current={validFilter === filter.id ? "page" : undefined} className={`rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${validFilter === filter.id ? "border-amber-100/38 bg-amber-100/10 text-amber-50" : "border-white/9 text-white/40 hover:border-white/20 hover:text-white/70"}`}>{collectionFilterLabel(filter, t)}</Link>)}
+            {ATLAS_COLLECTION_FILTERS.filter((filter) => !PRIMARY_FILTER_IDS.has(filter.id)).map((filter) => <Link key={filter.id} href={buildDiscoveryHref({ filter: filter.id, query, sort: validSort, locale })} aria-current={validFilter === filter.id ? "page" : undefined} className={`rounded-full border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${validFilter === filter.id ? "border-amber-100/38 bg-amber-100/10 text-amber-50" : "border-white/9 text-white/40 hover:border-white/20 hover:text-white/70"}`}>{collectionFilterLabel(filter, t)}</Link>)}
           </div>
 
           {leadCollection ? (
             <>
               <article className="mt-6 overflow-hidden rounded-[28px] border border-white/12 bg-[linear-gradient(145deg,rgba(18,22,31,0.99),rgba(9,11,17,1))] shadow-[0_28px_90px_rgba(0,0,0,0.28)] lg:grid lg:grid-cols-[0.86fr_1.14fr]">
-                <CollectionCover collection={leadCollection} index={ATLAS_COLLECTIONS.indexOf(leadCollection)} lead t={t} />
+                <CollectionCover collection={leadCollection} index={collections.indexOf(leadCollection)} lead t={t} />
                 <div className="flex flex-col justify-center p-5 sm:p-7 lg:p-9">
                   <div className="flex flex-wrap items-center gap-2 text-[9px] font-bold uppercase tracking-[0.15em]"><span className="text-emerald-100/76">{t("now.leadEdit", "Lead edit")}</span><span className="text-white/20">/</span><span className="text-white/42">{t("now.picksCities", "{picks} picks · {cities} cities").replace("{picks}", leadCollection.items.length).replace("{cities}", leadCollection.cities.length)}</span></div>
                   <h3 className="mt-3 max-w-2xl text-3xl font-black leading-[1.04] tracking-[-0.045em] text-[#f7f4ee] sm:text-4xl">{leadCollection.title}</h3>
@@ -276,18 +279,18 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
                   <p className="mt-5 border-l border-amber-100/36 pl-4 text-sm italic leading-6 text-white/52">{leadCollection.editorialNote || `${t("now.bestFor", "Best for")} ${leadCollection.bestFor.toLowerCase()}.`}</p>
                   <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-white/9 pt-5">
                     <p className="text-[10px] uppercase tracking-[0.12em] text-white/38">{t("now.verified", "Verified")} {leadCollection.updated}</p>
-                    <Link href={leadCollection.href} className="inline-flex min-h-11 items-center rounded-full bg-[#f3eee5] px-5 text-xs font-bold uppercase tracking-[0.1em] text-[#0a0c11] transition hover:bg-white">{t("now.openEdit", "Open the edit")} <span className="ml-2" aria-hidden="true">→</span></Link>
+                    <Link href={localePath(leadCollection.href, locale)} className="inline-flex min-h-11 items-center rounded-full bg-[#f3eee5] px-5 text-xs font-bold uppercase tracking-[0.1em] text-[#0a0c11] transition hover:bg-white">{t("now.openEdit", "Open the edit")} <span className="ml-2" aria-hidden="true">→</span></Link>
                   </div>
                 </div>
               </article>
 
-              {remainingCollections.length > 0 && <ul className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{remainingCollections.map((collection) => <li key={collection.id}><CollectionCard collection={collection} index={ATLAS_COLLECTIONS.indexOf(collection)} t={t} /></li>)}</ul>}
+              {remainingCollections.length > 0 && <ul className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">{remainingCollections.map((collection) => <li key={collection.id}><CollectionCard collection={collection} index={collections.indexOf(collection)} t={t} locale={locale} /></li>)}</ul>}
             </>
           ) : (
             <div className="mt-7 border-y border-white/10 py-12 text-center">
               <h3 className="text-xl font-bold text-white">{t("now.noExactMatch", "No exact match yet")}</h3>
               <p className="mt-2 text-sm text-white/50">{t("now.noExactMatchHint", "Try a broader city, place, or kind of trip.")}</p>
-              <Link href="/now/collections#discover-collections" className="mt-5 inline-flex rounded-full bg-[#f3eee5] px-4 py-2 text-xs font-bold text-[#0a0c11]">{t("now.resetDiscovery", "Reset discovery")}</Link>
+              <Link href={localePath("/now/collections", locale) + "#discover-collections"} className="mt-5 inline-flex rounded-full bg-[#f3eee5] px-4 py-2 text-xs font-bold text-[#0a0c11]">{t("now.resetDiscovery", "Reset discovery")}</Link>
             </div>
           )}
         </section>

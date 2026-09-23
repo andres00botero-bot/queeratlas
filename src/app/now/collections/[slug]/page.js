@@ -3,12 +3,13 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { ATLAS_COLLECTIONS, getAtlasCollectionBySlug } from "@/lib/atlasCollections";
+import { getLocalizedAtlasCollection, getSpanishCollectionSearchTerms } from "@/lib/atlasCollectionTranslations";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { getMessage } from "@/lib/i18n/messages";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import {
   QA_LOGO_URL,
   QA_ORGANIZATION_ID,
@@ -61,12 +62,15 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }) {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const { slug } = await params;
-  const collection = getAtlasCollectionBySlug(slug);
-  if (!collection) return {};
+  const sourceCollection = getAtlasCollectionBySlug(slug);
+  if (!sourceCollection) return {};
+  const collection = getLocalizedAtlasCollection(sourceCollection, locale);
+  const keywords = locale === "es" ? getSpanishCollectionSearchTerms(sourceCollection) : undefined;
 
   return {
     title: `${collection.title} | Queer Atlas`,
     description: formatCollectionDescription(collection),
+    keywords,
     alternates: localizedAlternates(collection.href, locale),
     robots: {
       index: true,
@@ -101,8 +105,10 @@ export default async function AtlasCollectionDetailPage({ params }) {
   const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
   const t = (key, fallback) => getMessage(locale, key, fallback);
   const { slug } = await params;
-  const collection = getAtlasCollectionBySlug(slug);
-  if (!collection) notFound();
+  const sourceCollection = getAtlasCollectionBySlug(slug);
+  if (!sourceCollection) notFound();
+  const collection = getLocalizedAtlasCollection(sourceCollection, locale);
+  const searchTerms = locale === "es" ? getSpanishCollectionSearchTerms(sourceCollection) : [];
   const researchScope = `${collection.methodology} The current collection reviews ${collection.items.length} named picks or routes across ${collection.cities.length} city references. Operating details and door policies should be confirmed before travel.`;
   const editorial = await getPublishedEditorialRecord(`collection:${collection.slug}`, {
     ...GUIDE_EDITORIAL_META.collection,
@@ -121,21 +127,24 @@ export default async function AtlasCollectionDetailPage({ params }) {
       const rightScore = right.filter === collection.filter ? 2 : right.tags.some((tag) => collection.tags.includes(tag)) ? 1 : 0;
       return rightScore - leftScore;
     })
-    .slice(0, 3);
+    .slice(0, 3)
+    .map((item) => getLocalizedAtlasCollection(item, locale));
   const accentStyle = ACCENT_STYLES[collection.accent] || ACCENT_STYLES.cyan;
+  const localizedCollectionHref = localePath(collection.href, locale);
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Article",
-        "@id": `${QA_SITE_URL}${collection.href}#article`,
-        url: `${QA_SITE_URL}${collection.href}`,
+        "@id": `${QA_SITE_URL}${localizedCollectionHref}#article`,
+        url: `${QA_SITE_URL}${localizedCollectionHref}`,
         headline: collection.title,
         description: collection.summary,
+        ...(searchTerms.length > 0 ? { keywords: searchTerms.join(", ") } : {}),
         datePublished: editorial.publishedAt,
         dateModified: editorial.updatedAt,
-        inLanguage: "en",
+        inLanguage: locale === "es" ? "es" : "en",
         isPartOf: { "@id": QA_WEBSITE_ID },
         publisher: {
           "@type": "Organization",
@@ -168,9 +177,9 @@ export default async function AtlasCollectionDetailPage({ params }) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: QA_SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Atlas Collections", item: `${QA_SITE_URL}/now/collections` },
-          { "@type": "ListItem", position: 3, name: collection.title, item: `${QA_SITE_URL}${collection.href}` },
+          { "@type": "ListItem", position: 1, name: locale === "es" ? "Inicio" : "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+          { "@type": "ListItem", position: 2, name: locale === "es" ? "Colecciones Atlas" : "Atlas Collections", item: `${QA_SITE_URL}${localePath("/now/collections", locale)}` },
+          { "@type": "ListItem", position: 3, name: collection.title, item: `${QA_SITE_URL}${localizedCollectionHref}` },
         ],
       },
     ],
@@ -181,9 +190,9 @@ export default async function AtlasCollectionDetailPage({ params }) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-7xl">
         <nav aria-label={t("now.breadcrumb", "Breadcrumb")} className="flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/44 sm:text-xs">
-          <Link href="/now/news" className="transition hover:text-white">{t("now.now", "Now")}</Link>
+          <Link href={localePath("/now/news", locale)} className="transition hover:text-white">{t("now.now", "Now")}</Link>
           <span>/</span>
-          <Link href="/now/collections" className="transition hover:text-white">{t("now.collections", "Atlas Collections")}</Link>
+          <Link href={localePath("/now/collections", locale)} className="transition hover:text-white">{t("now.collections", "Atlas Collections")}</Link>
           <span>/</span>
           <span className="text-white/72">{collection.title}</span>
         </nav>
@@ -253,7 +262,7 @@ export default async function AtlasCollectionDetailPage({ params }) {
                         <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">{collection.itemNotes?.[index] || t("now.collectionPickFallback", "Selected for its relevance to this collection and its usefulness within the wider city route.")}</p>
                       </div>
                       {hasCity && (
-                        <Link href={`/${citySlug}`} className="group/city inline-flex items-center gap-2 rounded-full border border-fuchsia-100/38 bg-[linear-gradient(135deg,rgba(244,114,182,0.24),rgba(167,139,250,0.22))] px-3.5 py-2 text-xs font-bold text-fuchsia-50 shadow-[0_10px_26px_rgba(217,70,239,0.13)] transition hover:-translate-y-0.5 hover:border-fuchsia-50/65 hover:brightness-110">
+                        <Link href={localePath(`/${citySlug}`, locale)} className="group/city inline-flex items-center gap-2 rounded-full border border-fuchsia-100/38 bg-[linear-gradient(135deg,rgba(244,114,182,0.24),rgba(167,139,250,0.22))] px-3.5 py-2 text-xs font-bold text-fuchsia-50 shadow-[0_10px_26px_rgba(217,70,239,0.13)] transition hover:-translate-y-0.5 hover:border-fuchsia-50/65 hover:brightness-110">
                           <span>{t("now.cityGuide", "City guide")}</span>
                           <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[10px] transition-transform group-hover/city:translate-x-0.5 group-hover/city:-translate-y-0.5" aria-hidden="true">↗</span>
                         </Link>
@@ -303,7 +312,7 @@ export default async function AtlasCollectionDetailPage({ params }) {
             {relatedCollections.map((item, index) => {
               const relatedStyle = RELATED_CARD_STYLES[index % RELATED_CARD_STYLES.length];
               return (
-                <Link key={item.id} href={item.href} className={`group rounded-[24px] border p-5 shadow-[0_14px_40px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:brightness-110 ${relatedStyle.card}`}>
+              <Link key={item.id} href={localePath(item.href, locale)} className={`group rounded-[24px] border p-5 shadow-[0_14px_40px_rgba(0,0,0,0.12)] transition hover:-translate-y-0.5 hover:brightness-110 ${relatedStyle.card}`}>
                   <p className={`text-[9px] font-bold uppercase tracking-[0.18em] ${relatedStyle.eyebrow}`}>{item.eyebrow}</p>
                   <h3 className="mt-3 text-xl font-bold leading-tight tracking-[-0.03em] text-white">{item.title}</h3>
                   <p className="mt-3 text-xs leading-5 text-white/58">{t("now.picksAcrossCities", "{picks} picks across {cities} city signals").replace("{picks}", item.items.length).replace("{cities}", item.cities.length)}</p>
