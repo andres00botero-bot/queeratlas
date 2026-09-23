@@ -1,4 +1,24 @@
+import { cityCoreConfig } from "../../lib/cityCore.js";
+
 const hero = (hook, status, crowd, intro = "") => Object.freeze({ hook, status, crowd, intro });
+
+function cityLabel(citySlug) {
+  const city = String(citySlug || "").toLowerCase();
+  return String(cityCoreConfig[city]?.title || city)
+    .replace(/^Queer\s+/i, "")
+    .replaceAll("_", " ")
+    .trim();
+}
+
+function spanishHeroFallback(citySlug) {
+  const city = cityLabel(citySlug);
+  return hero(
+    `${city} combina cultura queer local, comunidad y planes que cambian con la agenda.`,
+    `La experiencia queer de ${city} se descubre entre lugares de confianza, eventos y redes locales.`,
+    "Locales, visitantes y comunidad queer comparten una escena con ritmos y espacios propios.",
+    `Empieza en ${city} con un lugar de confianza, consulta la agenda actual y deja que el ritmo local marque tu ruta.`,
+  );
+}
 
 const LOCALIZED_CITY_HERO_COPY = Object.freeze({
   es: Object.freeze({
@@ -199,5 +219,8 @@ export const CITY_HERO_COPY = Object.freeze({
 export function getCityHeroCopy(citySlug, locale = "en") {
   const city = String(citySlug || "").toLowerCase();
   const language = String(locale || "en").toLowerCase().split("-")[0];
-  return LOCALIZED_CITY_HERO_COPY[language]?.[city] || CITY_HERO_COPY[city] || null;
+  if (language === "es") {
+    return LOCALIZED_CITY_HERO_COPY.es?.[city] || (CITY_HERO_COPY[city] ? spanishHeroFallback(city) : null);
+  }
+  return CITY_HERO_COPY[city] || null;
 }
