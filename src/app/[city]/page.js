@@ -4979,7 +4979,7 @@ export default function CityPage() {
         cityFaqJsonLd={cityFaqJsonLd}
       />
       <ActionToast toast={toast} />
-      <div ref={mainScrollRef} className="relative flex-1 overflow-y-auto px-3.5 py-4 pb-4 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
+      <div ref={mainScrollRef} data-scroll-to-top-container className="relative flex-1 overflow-y-auto px-3.5 py-4 pb-4 sm:px-6 sm:py-8 lg:pb-8 xl:h-full xl:overflow-hidden">
         <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(245,169,198,0.11),transparent_28%),radial-gradient(circle_at_78%_14%,rgba(136,217,212,0.075),transparent_25%),linear-gradient(180deg,#0b0910_0%,#100b14_56%,#0b0910_100%)]" />
         <div className="relative mx-auto w-full max-w-[1900px]">
           <div className="flex flex-col xl:grid xl:min-h-[calc(100vh-3rem)] xl:grid-cols-[minmax(0,3fr)_minmax(400px,2fr)] xl:items-start xl:gap-4">
@@ -5002,6 +5002,7 @@ export default function CityPage() {
 
             <section
               ref={centerColumnScrollRef}
+              data-scroll-to-top-container
               className="order-1 min-w-0 xl:order-none xl:col-start-1 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto xl:pr-1"
             >
               <div className="hidden xl:block">

@@ -32,6 +32,7 @@ const messages = {
       community: "Community",
       messages: "Messages",
       language: "Language",
+      backToTop: "Back to top",
     },
     home: {
       joinFree: "Join free",
@@ -426,6 +427,7 @@ const messages = {
       community: "Comunidad",
       messages: "Mensajes",
       language: "Idioma",
+      backToTop: "Volver arriba",
     },
     home: {
       joinFree: "Únete gratis",

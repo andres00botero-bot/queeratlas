@@ -6,6 +6,9 @@ import dynamic from "next/dynamic";
 const FloatingHomeButton = dynamic(() => import("@/components/ui/FloatingHomeButton"), {
   ssr: false,
 });
+const ScrollToTopButton = dynamic(() => import("@/components/ui/ScrollToTopButton"), {
+  ssr: false,
+});
 const MessageAlertGate = dynamic(() => import("@/components/messaging/MessageAlertGate"), {
   ssr: false,
 });
@@ -32,6 +35,7 @@ export default function DeferredGlobalChrome() {
   return (
     <>
       <FloatingHomeButton />
+      <ScrollToTopButton />
       {isReady ? (
         <>
           <MessageAlertGate />
