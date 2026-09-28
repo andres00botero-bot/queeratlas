@@ -320,8 +320,8 @@ export default function CityQuickNavigation({
                 <span
                   className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
                     showVenuePicker
-                      ? "border-amber-100/60 bg-amber-100/18 text-amber-50"
-                      : "border-amber-100/32 bg-amber-100/[0.10] text-amber-50/90"
+                      ? "border-amber-100 bg-amber-200/35 text-white shadow-[0_0_18px_rgba(251,191,36,0.45)]"
+                      : "border-amber-200/80 bg-amber-300/25 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.30)]"
                   }`}
                   aria-hidden="true"
                 >
