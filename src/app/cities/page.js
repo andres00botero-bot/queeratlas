@@ -321,6 +321,7 @@ export default function CitiesPage() {
   const [countryEditorError, setCountryEditorError] = useState("");
   const [countryEditorSuccess, setCountryEditorSuccess] = useState("");
   const [expandedSafetyCountry, setExpandedSafetyCountry] = useState("");
+  const [pendingCityKey, setPendingCityKey] = useState("");
   const [registryConfig, setRegistryConfig] = useState(cityConfig);
   const [eventsData, setEventsData] = useState([]);
   const [isEventsLoading, setIsEventsLoading] = useState(true);
@@ -1539,7 +1540,11 @@ export default function CitiesPage() {
                             delete cityCardRefs.current[city.key];
                           }
                         }}
+                        disabled={Boolean(pendingCityKey)}
                         onClick={() => {
+                          if (pendingCityKey) return;
+                          setPendingCityKey(city.key);
+
                           if (typeof window !== "undefined") {
                             try {
                               const currentState = window.history?.state;
@@ -1556,7 +1561,8 @@ export default function CitiesPage() {
 
                           router.push(`/${city.key}`);
                         }}
-                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 px-5 py-5 text-left transition duration-300 hover:-translate-y-[3px] active:translate-y-0 sm:px-6 sm:py-6 ${tone.card} ${tone.hover} ${
+                        aria-describedby={pendingCityKey === city.key ? `city-loading-${city.key}` : undefined}
+                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 px-5 py-5 text-left transition duration-300 hover:-translate-y-[3px] active:translate-y-0 disabled:cursor-wait sm:px-6 sm:py-6 ${tone.card} ${tone.hover} ${
                           city.key === lastExploredCity
                             ? "ring-1 ring-white/28 shadow-[0_28px_92px_rgba(0,0,0,0.34),0_0_38px_rgba(186,230,253,0.07)]"
                             : ""
@@ -1614,6 +1620,17 @@ export default function CitiesPage() {
                             </span>
                           </div>
                         </div>
+                        {pendingCityKey === city.key ? (
+                          <div
+                            id={`city-loading-${city.key}`}
+                            role="status"
+                            aria-live="polite"
+                            className="absolute inset-0 z-10 flex items-center justify-center gap-3 bg-[#0c0d14]/88 px-5 text-center backdrop-blur-md"
+                          >
+                            <span className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-cyan-100/25 border-t-cyan-100" aria-hidden="true" />
+                            <span className="text-sm font-semibold text-white">{t("cities.openingCity", "Opening")} {city.title.replace(/^Queer\s+/i, "")}</span>
+                          </div>
+                        ) : null}
                       </button>
                     ))}
                   </div>
