@@ -173,10 +173,17 @@ export default function CityRightsSignals({
             aria-expanded={expanded}
             aria-controls={panelId}
             onClick={onToggle}
-            className="qa-action inline-flex min-h-9 items-center gap-2 rounded-full border border-white/12 bg-white/[0.045] px-3.5 text-xs font-semibold text-white/72 transition hover:border-white/24 hover:bg-white/[0.08] hover:text-white sm:min-h-10"
+            className="qa-action group inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-xs font-bold tracking-[0.01em] text-white shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition hover:-translate-y-px hover:brightness-125 hover:shadow-[0_14px_28px_rgba(0,0,0,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/75 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111019]"
+            style={{
+              backgroundColor: `${tone.color}24`,
+              borderColor: `${tone.color}8C`,
+              boxShadow: `0 10px 24px rgba(0,0,0,0.18), 0 0 0 1px ${tone.color}1F inset`,
+            }}
           >
             {expanded ? t("qari.close", "Close") : t("qari.safetyDetails", "Safety details")}
-            <ChevronDown size={15} className={`transition-transform ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+            <span className="grid h-5 w-5 place-items-center rounded-full bg-black/20 transition group-hover:bg-black/32" aria-hidden="true">
+              <ChevronDown size={14} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
+            </span>
           </button>
         </div>
       </div>
