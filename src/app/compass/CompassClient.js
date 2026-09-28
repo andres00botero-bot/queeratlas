@@ -96,7 +96,14 @@ function findBestSearchMatch(value) {
   }) || null;
 }
 
-function CompassTermDetail({ term, detailRef }) {
+function findRelatedTerm(label) {
+  const normalizedLabel = normalizeSearch(label);
+  return COMPASS_TERMS.find((term) =>
+    [term.name, ...term.aliases].some((value) => normalizeSearch(value) === normalizedLabel),
+  ) || null;
+}
+
+function CompassTermDetail({ term, detailRef, onSelectRelated }) {
   const tone = TERM_TONES[term.category] || TERM_TONES.identity;
 
   return (
@@ -111,7 +118,7 @@ function CompassTermDetail({ term, detailRef }) {
           <span className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${tone.badge}`}>
             {term.type}
           </span>
-          <span className="text-[10px] uppercase tracking-[0.13em] text-white/38">Reviewed · Sep 2026</span>
+          <span className="text-[10px] uppercase tracking-[0.13em] text-white/38">Reviewed · {term.reviewedOn || "Sep 2026"}</span>
         </div>
         <h2 className="qa-display mt-5 text-4xl font-semibold tracking-[-0.045em] text-[#fff8fc] sm:text-5xl">
           {term.name}
@@ -166,9 +173,19 @@ function CompassTermDetail({ term, detailRef }) {
         <section aria-labelledby={`related-${term.slug}`}>
           <h3 id={`related-${term.slug}`} className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">Related language</h3>
           <div className="mt-3 flex flex-wrap gap-2">
-            {term.related.map((label) => (
-              <span key={label} className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[11px] text-white/58">{label}</span>
-            ))}
+            {term.related.map((label) => {
+              const relatedTerm = findRelatedTerm(label);
+              return relatedTerm ? (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => onSelectRelated(relatedTerm.slug)}
+                  className="rounded-full border border-cyan-100/18 bg-cyan-100/[0.045] px-3 py-1.5 text-[11px] text-cyan-50/75 transition hover:border-cyan-100/35 hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45"
+                >
+                  {label}
+                </button>
+              ) : <span key={label} className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-[11px] text-white/58">{label}</span>;
+            })}
           </div>
         </section>
 
@@ -202,6 +219,22 @@ export default function CompassClient() {
   const libraryRef = useRef(null);
   const emptyRef = useRef(null);
 
+  function selectTerm(slug) {
+    setSelectedSlug(slug);
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      window.setTimeout(() => {
+        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        detailRef.current?.focus({ preventScroll: true });
+      }, 30);
+    }
+  }
+
+  function selectRelatedTerm(slug) {
+    setCategory("all");
+    setQuery("");
+    selectTerm(slug);
+  }
+
   const filteredTerms = useMemo(() => {
     const normalizedQuery = normalizeSearch(query);
     return COMPASS_TERMS.filter((term) => {
@@ -221,15 +254,6 @@ export default function CompassClient() {
 
   const selectedTerm = filteredTerms.find((term) => term.slug === selectedSlug) || filteredTerms[0] || null;
 
-  function selectTerm(slug) {
-    setSelectedSlug(slug);
-    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
-      window.setTimeout(() => {
-        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        detailRef.current?.focus({ preventScroll: true });
-      }, 30);
-    }
-  }
 
   function updateSearch(value) {
     setQuery(value);
@@ -390,7 +414,7 @@ export default function CompassClient() {
             </div>
 
             <div className="lg:sticky lg:top-6">
-              {selectedTerm ? <CompassTermDetail term={selectedTerm} detailRef={detailRef} /> : null}
+              {selectedTerm ? <CompassTermDetail term={selectedTerm} detailRef={detailRef} onSelectRelated={selectRelatedTerm} /> : null}
             </div>
           </div>
         </section>
