@@ -86,6 +86,10 @@ export default function CityQuickNavigation({
     {
       key: "venues",
       onClick: () => {
+        if (isPhoneVariant) {
+          onGoVenues?.();
+          return;
+        }
         setShowVenuePicker((current) => !current);
       },
       label: t("city.venues", "Venues"),
@@ -299,7 +303,7 @@ export default function CityQuickNavigation({
             </p>
             <p className="mt-1 flex max-w-full items-center justify-center gap-1 font-semibold sm:mt-2 sm:justify-between sm:gap-2">
               <span className="truncate text-white">{item.label}</span>
-              {item.key === "venues" ? (
+              {item.key === "venues" && !isPhoneVariant ? (
                 <ChevronDown
                   className={`h-3.5 w-3.5 transition ${showVenuePicker ? "rotate-180" : "rotate-0"}`}
                   aria-hidden="true"

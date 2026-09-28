@@ -270,6 +270,28 @@ function TrustSupportStrip({ onAction, contactSlot }) {
   );
 }
 
+export function HomeDiscoverySection({ discoveryCards = [] }) {
+  const { t } = useLocale();
+  return (
+    <section id="home-discovery" data-home-section="discovery" className="mt-8 scroll-mt-20">
+      <div className="relative overflow-hidden rounded-[30px] border border-white/14 bg-[radial-gradient(circle_at_7%_0%,rgba(56,189,248,0.14),transparent_32%),radial-gradient(circle_at_94%_8%,rgba(217,70,239,0.14),transparent_30%),radial-gradient(circle_at_52%_110%,rgba(139,92,246,0.1),transparent_38%),linear-gradient(155deg,rgba(16,19,33,0.98),rgba(7,9,17,0.99))] p-4 shadow-[0_28px_78px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.075)] ring-1 ring-inset ring-white/[0.035] sm:p-6">
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/46 to-transparent" />
+        <div className="relative mb-6 sm:mb-7">
+          <p className="!text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-cyan-100/68 sm:text-[10px]">{t("home.exploreQueerAtlas", "Explore Queer Atlas")}</p>
+          <h2 className="qa-display mt-2.5 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2.1rem]">
+            {t("home.findPrompt", "What do you want to find?")}
+          </h2>
+        </div>
+        <div className="relative grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+          {discoveryCards.map((item) => (
+            <DiscoveryCard key={item.title} item={item} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function HomeDeferredSections({
   discoveryCards = [],
   livePulseCards = [],
@@ -278,26 +300,13 @@ export default function HomeDeferredSections({
   participationActions = [],
   onEditorialAction,
   contactSlot = null,
+  evidenceSlot = null,
+  showDiscovery = true,
 }) {
   const { t } = useLocale();
   return (
     <>
-      <section id="home-discovery" data-home-section="discovery" className="qa-defer-render mt-8 scroll-mt-20">
-        <div className="relative overflow-hidden rounded-[30px] border border-white/14 bg-[radial-gradient(circle_at_7%_0%,rgba(56,189,248,0.14),transparent_32%),radial-gradient(circle_at_94%_8%,rgba(217,70,239,0.14),transparent_30%),radial-gradient(circle_at_52%_110%,rgba(139,92,246,0.1),transparent_38%),linear-gradient(155deg,rgba(16,19,33,0.98),rgba(7,9,17,0.99))] p-4 shadow-[0_28px_78px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.075)] ring-1 ring-inset ring-white/[0.035] sm:p-6">
-          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/46 to-transparent" />
-          <div className="relative mb-6 sm:mb-7">
-            <p className="!text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-cyan-100/68 sm:text-[10px]">{t("home.exploreQueerAtlas", "Explore Queer Atlas")}</p>
-            <h2 className="qa-display mt-2.5 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2.1rem]">
-              {t("home.findPrompt", "What do you want to find?")}
-            </h2>
-          </div>
-          <div className="relative grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-            {discoveryCards.map((item) => (
-              <DiscoveryCard key={item.title} item={item} />
-            ))}
-          </div>
-        </div>
-      </section>
+      {showDiscovery ? <HomeDiscoverySection discoveryCards={discoveryCards} /> : null}
 
       <CompassPreview onOpen={onEditorialAction} />
 
@@ -343,6 +352,8 @@ export default function HomeDeferredSections({
           </div>
         </section>
       ) : null}
+
+      {evidenceSlot}
 
       <TrustSupportStrip onAction={onEditorialAction} contactSlot={contactSlot} />
 

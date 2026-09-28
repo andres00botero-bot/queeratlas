@@ -14,6 +14,7 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
 import { Globe2, Search, Sparkles } from "lucide-react";
 import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
+import { HomeDiscoverySection } from "@/components/home/HomeDeferredSections";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 
@@ -1308,17 +1309,12 @@ export default function HomePageClient({ initialHomeData = null }) {
             </div>
           </section>
 
-          <HomeVenueIntelligence
-            venue={featuredVenue}
-            onOpen={() => trackHomeAction("venue_intelligence", "place_detail", {
-              city: String(featuredVenue?.city || ""),
-            })}
-            onContextOpen={(href) => trackHomeAction("global_context", href)}
-          />
+          <HomeDiscoverySection discoveryCards={discoveryCards} />
 
           {showDeferredSections ? (
             <HomeDeferredSections
               discoveryCards={discoveryCards}
+              showDiscovery={false}
               livePulseCards={livePulseCards}
               localContext={{
                 city: focusedCity,
@@ -1336,6 +1332,15 @@ export default function HomePageClient({ initialHomeData = null }) {
                   userId={String(user?.id || "")}
                   defaultName={String(memberProfile?.displayName || memberName || "")}
                   onAnalyticsEvent={(action, meta) => trackKpiEvent(`home_${action}`, { meta })}
+                />
+              }
+              evidenceSlot={
+                <HomeVenueIntelligence
+                  venue={featuredVenue}
+                  onOpen={() => trackHomeAction("venue_intelligence", "place_detail", {
+                    city: String(featuredVenue?.city || ""),
+                  })}
+                  onContextOpen={(href) => trackHomeAction("global_context", href)}
                 />
               }
             />
