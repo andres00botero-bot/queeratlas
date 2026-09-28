@@ -93,7 +93,7 @@ export default function CityQuickNavigation({
         setShowVenuePicker((current) => !current);
       },
       label: t("city.venues", "Venues"),
-      eyebrow: "Bars and places",
+      eyebrow: "Choose a category",
       Icon: MapPin,
       className:
         "border-white/[0.11] bg-white/[0.045] text-white/86 hover:border-[#f5a9c6]/36 hover:bg-[#f5a9c6]/[0.08]",
@@ -274,6 +274,14 @@ export default function CityQuickNavigation({
           const Icon = item.Icon;
           const isActive =
             activeSection === item.key || (activeSection === "venues" && item.key === "venues");
+          const isVenueMenuOpen = item.key === "venues" && showVenuePicker;
+          const itemAppearance = isDesktopVariant
+            ? isActive
+              ? "border-[#f5a9c6]/70 bg-[linear-gradient(145deg,rgba(245,169,198,0.24),rgba(183,160,247,0.14),rgba(255,255,255,0.07))] text-white shadow-[0_16px_38px_rgba(245,169,198,0.20)] ring-1 ring-[#f5a9c6]/48"
+              : isVenueMenuOpen
+                ? "border-amber-100/42 bg-[linear-gradient(145deg,rgba(216,182,120,0.14),rgba(245,169,198,0.08),rgba(255,255,255,0.04))] text-white shadow-[0_12px_28px_rgba(216,182,120,0.12)]"
+                : "border-white/[0.10] bg-white/[0.035] text-white/68 hover:border-white/[0.24] hover:bg-white/[0.075] hover:text-white"
+            : item.className;
           return (
           <button
             key={item.key}
@@ -285,15 +293,18 @@ export default function CityQuickNavigation({
               item.onClick?.();
             }}
             onMouseEnter={
-              item.key === "venues"
+              item.key === "venues" && !isPhoneVariant
                 ? () => {
                     setShowVenuePicker(true);
                   }
                 : undefined
             }
-            className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl border px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${item.className} ${
-              isActive
-                ? "ring-1 ring-[#f5a9c6]/45 shadow-[0_10px_28px_rgba(245,169,198,0.10)]"
+            aria-label={item.key === "venues" ? "Venues — choose a category" : undefined}
+            aria-expanded={item.key === "venues" ? showVenuePicker : undefined}
+            aria-controls={item.key === "venues" ? "city-venue-picker" : undefined}
+            className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl border px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${itemAppearance} ${
+              isActive && !isDesktopVariant
+                ? "border-[#f5a9c6]/58 bg-[linear-gradient(145deg,rgba(245,169,198,0.17),rgba(183,160,247,0.10),rgba(255,255,255,0.06))] text-white shadow-[0_14px_34px_rgba(245,169,198,0.16)] ring-1 ring-[#f5a9c6]/38"
                 : ""
             }`}
           >
@@ -302,12 +313,22 @@ export default function CityQuickNavigation({
               <span className="hidden sm:inline">{item.eyebrow}</span>
             </p>
             <p className="mt-1 flex max-w-full items-center justify-center gap-1 font-semibold sm:mt-2 sm:justify-between sm:gap-2">
-              <span className="truncate text-white">{item.label}</span>
+              <span className={`${item.key === "venues" ? "shrink-0" : "truncate"} text-white`}>
+                {item.label}
+              </span>
               {item.key === "venues" && !isPhoneVariant ? (
-                <ChevronDown
-                  className={`h-3.5 w-3.5 transition ${showVenuePicker ? "rotate-180" : "rotate-0"}`}
+                <span
+                  className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
+                    showVenuePicker
+                      ? "border-amber-100/60 bg-amber-100/18 text-amber-50"
+                      : "border-amber-100/32 bg-amber-100/[0.10] text-amber-50/90"
+                  }`}
                   aria-hidden="true"
-                />
+                >
+                  <ChevronDown
+                    className={`h-4 w-4 transition ${showVenuePicker ? "rotate-180" : "rotate-0"}`}
+                  />
+                </span>
               ) : null}
             </p>
           </button>
@@ -316,8 +337,8 @@ export default function CityQuickNavigation({
       </div>
 
       {showVenuePicker && venueGroups.length > 0 ? (
-        <div className="mt-3 rounded-2xl border border-white/18 bg-white/[0.08] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.12)]">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-white/70">Venue types</p>
+        <div id="city-venue-picker" className="mt-3 rounded-2xl border border-amber-100/20 bg-[linear-gradient(145deg,rgba(216,182,120,0.10),rgba(255,255,255,0.055))] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-50/78">Browse venue categories</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               key="venue-jump-all"
