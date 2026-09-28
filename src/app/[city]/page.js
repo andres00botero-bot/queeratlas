@@ -545,6 +545,9 @@ export default function CityPage() {
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
+    const desktopQuery = window.matchMedia("(min-width: 1280px)");
+    if (!desktopQuery.matches) return undefined;
+
     const sections = [
       { key: "map", ref: mapWrapperRef },
       { key: "guide", ref: guideSectionRef },
