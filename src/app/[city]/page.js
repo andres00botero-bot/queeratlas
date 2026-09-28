@@ -5055,6 +5055,7 @@ export default function CityPage() {
                       mapContainerRef={phoneMapContainerRef}
                       mapError={mapError}
                       isMapReady={isMapReady}
+                      compactWhileLoading
                       showSearchArea={showSearchArea}
                       searchAreaLabel={mapAreaResult || "Search this area"}
                       onSearchThisArea={handleSearchThisArea}

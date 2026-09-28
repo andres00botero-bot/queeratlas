@@ -11,14 +11,20 @@ export default function CityMapSection({
   searchAreaLabel = "Search this area",
   onSearchThisArea,
   onContinueInListMode,
+  compactWhileLoading = false,
 }) {
   const { t } = useLocale();
+  const isLoading = !isMapReady && !mapError;
+  const mapHeightClass = compactWhileLoading && isLoading
+    ? "h-[104px] sm:h-[460px] xl:h-full xl:min-h-0"
+    : "h-[300px] sm:h-[460px] xl:h-full xl:min-h-0";
+
   return (
     <div
       ref={mapWrapperRef}
       className="qa-city-section qa-city-map-shell mb-5 mt-0 overflow-hidden rounded-[24px] sm:mb-8 sm:rounded-[28px] xl:mb-0 xl:mt-0 xl:h-full xl:min-h-0"
     >
-      <div className="relative h-[300px] w-full overflow-hidden rounded-[24px] border border-white/[0.11] bg-[#17121c] p-1 shadow-[0_22px_70px_rgba(0,0,0,0.34)] sm:h-[460px] sm:rounded-[28px] xl:h-full xl:min-h-0">
+      <div className={`relative ${mapHeightClass} w-full overflow-hidden rounded-[24px] border border-white/[0.11] bg-[#17121c] p-1 shadow-[0_22px_70px_rgba(0,0,0,0.34)] sm:rounded-[28px]`}>
         <div className="relative h-full min-h-0 w-full overflow-hidden rounded-[20px] border border-white/[0.07] bg-[#121017] sm:rounded-[24px]">
           <div
             ref={mapContainerRef}
@@ -26,7 +32,7 @@ export default function CityMapSection({
             role="region"
             aria-label={t("city.cityMapView", "City map view")}
           />
-          {!isMapReady && !mapError ? (
+          {isLoading ? (
             <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(245,169,198,0.06),transparent_38%),rgba(11,9,16,0.44)]">
               <div className="flex items-center gap-2 rounded-full border border-white/[0.09] bg-[#17121c]/80 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55 backdrop-blur">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#88d9d4]" aria-hidden="true" />
