@@ -206,6 +206,15 @@ export const cityCoreConfig = {
     "country": "United Kingdom",
     "vibe": "rainbow-quarter warmth"
   },
+  "newcastle": {
+    "center": [
+      -1.6178,
+      54.9691
+    ],
+    "title": "Queer Newcastle",
+    "country": "United Kingdom",
+    "vibe": "pink-triangle cabaret and north-east DIY energy"
+  },
   "liverpool": {
     "center": [
       -2.9916,

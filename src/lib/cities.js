@@ -583,6 +583,19 @@ export const cityConfig = {
       cost: "Belfast is usually better value than London, Edinburgh or Dublin, though central hotel prices rise around Pride, concerts and major weekends. Pints, casual food and taxis remain relatively manageable by UK capital standards. Staying near the Cathedral Quarter, City Hall or the Linen Quarter keeps most queer nightlife walkable and protects the budget from repeated late-night rides.",
     }),
   },
+  newcastle: {
+    center: [-1.6178, 54.9691],
+    title: "Queer Newcastle",
+    country: "United Kingdom",
+    vibe: "pink-triangle cabaret and north-east DIY energy",
+    guide: buildGuide({
+      about: "Newcastle upon Tyne has a compact, unusually legible queer nightlife core, but it should not be reduced to one strip. The Pink Triangle remains the fastest route into drag, pop, cabaret and late clubs; beyond it, co-operative venues, independent theatre and daytime groups give the city a more creative, community-built texture. It is a strong city for a first queer weekend because a few well-chosen stops can deliver both a night out and a sense of local life.",
+      district: "The Pink Triangle lies west of Central Station around Times Square, Scotswood Road, Churchill Street and Westmorland Road. Rusty's, Switch, The Eagle, Boulevard, Number 52 and Powerhouse form a compact walkable cluster. St James Boulevard adds Alphabetti and The Lubber Fiend for arts-led alternatives, while the Quayside's Cycle Hub provides a useful daytime community address. Stay near Central Station, Stephenson Quarter or Newgate Street to keep the key routes simple.",
+      safety: "Central Newcastle is straightforward to navigate, but a visibly queer destination is not a promise that every street or late-night crowd feels identical. Keep the group together after closing, use licensed taxis or pre-booked rides when tired, and do not leave drinks unattended. The Pink Triangle is compact and near the station; the Quayside and Ouseburn are better treated as separate journeys after dark. For an adult men-only venue, read the house rules, respect privacy and remember that entry never means consent.",
+      nightlife: "Newcastle rewards an intentional sequence: begin with a relaxed pint at The Eagle or a drag-and-pop opener at Rusty's, choose Boulevard when a ticketed cabaret is the point, then move through Switch into Powerhouse only if the night actually wants a late club. The alternative route is calendar-led—check The Lubber Fiend or Alphabetti for a queer-produced bill. Pride is substantial, with the 2026 festival on 25-26 July, but daily venue schedules and individual promoters matter more than generic assumptions.",
+      cost: "Newcastle can be better value than London, Manchester or Edinburgh, especially for food and mid-range stays, but Pride, football fixtures, university dates and Saturday hotel demand can shift the equation quickly. A central base saves on late rides because the Pink Triangle is walkable from Central Station. Budget separately for ticketed cabaret, club entry and an occasional direct ride home rather than assuming every part of the night is free.",
+    }),
+  },
   bangkok: {
     center: [100.5018, 13.7563],
     title: "Queer Bangkok",

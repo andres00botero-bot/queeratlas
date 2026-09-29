@@ -11,6 +11,7 @@ import { LJUBLJANA_CITY_SLUGS, ljubljanaSeedPlaces } from "./seed/regions/ljublj
 import { MARSEILLE_CITY_SLUGS, marseilleSeedPlaces } from "./seed/regions/marseille.js";
 import { OTTAWA_CITY_SLUGS, ottawaSeedPlaces } from "./seed/regions/ottawa.js";
 import { BELFAST_CITY_SLUGS, belfastSeedPlaces } from "./seed/regions/belfast.js";
+import { NEWCASTLE_CITY_SLUGS, newcastleSeedPlaces } from "./seed/regions/newcastle.js";
 import { JOHANNESBURG_CITY_SLUGS, johannesburgSeedPlaces } from "./seed/regions/johannesburg.js";
 import { ALMATY_CITY_SLUGS, almatySeedPlaces } from "./seed/regions/almaty.js";
 import { ULAANBAATAR_CITY_SLUGS, ulaanbaatarSeedPlaces } from "./seed/regions/ulaanbaatar.js";
@@ -9528,6 +9529,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
       !MARSEILLE_CITY_SLUGS.has(String(place.city || "")) &&
       !OTTAWA_CITY_SLUGS.has(String(place.city || "")) &&
       !BELFAST_CITY_SLUGS.has(String(place.city || "")) &&
+      !NEWCASTLE_CITY_SLUGS.has(String(place.city || "")) &&
       !JOHANNESBURG_CITY_SLUGS.has(String(place.city || "")) &&
       !ALMATY_CITY_SLUGS.has(String(place.city || "")) &&
       !ULAANBAATAR_CITY_SLUGS.has(String(place.city || "")) &&
@@ -9546,6 +9548,7 @@ export function mergeSeedPlaces(databasePlaces = []) {
     ...marseilleSeedPlaces,
     ...ottawaSeedPlaces,
     ...belfastSeedPlaces,
+    ...newcastleSeedPlaces,
     ...johannesburgSeedPlaces,
     ...almatySeedPlaces,
     ...ulaanbaatarSeedPlaces,
