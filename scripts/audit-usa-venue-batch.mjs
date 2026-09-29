@@ -22,6 +22,11 @@ if (error) throw error;
 
 const findings = places.map((place) => {
   const intel = place.venue_intel || {};
+  // Rejected rows are deliberately retained as de-indexed archival/deduplication
+  // records. They are not live venue listings and must not create a repair task.
+  if (place.seo_quality_status === "rejected") {
+    return { id: place.id, name: place.name, city: place.city, type: place.type, issues: [], updated_at: intel.updated_at || null };
+  }
   const issues = [
     ...requiredIntel.filter((field) => !String(intel[field] || "").trim()).map((field) => `missing_${field}`),
     !String(place.description || "").trim() ? "missing_description" : null,
@@ -29,7 +34,7 @@ const findings = places.map((place) => {
     !/^https?:\/\//.test(String(place.link || "")) ? "missing_or_invalid_link" : null,
     !Array.isArray(intel.source_urls) || !intel.source_urls.some((url) => /^https?:\/\//.test(url)) ? "missing_verified_source" : null,
     !String(intel.updated_at || "").trim() ? "missing_research_date" : null,
-    !["approved", "rejected"].includes(place.seo_quality_status) ? "not_reviewed" : null,
+    place.seo_quality_status !== "approved" ? "not_reviewed" : null,
   ].filter(Boolean);
   return { id: place.id, name: place.name, city: place.city, type: place.type, issues, updated_at: intel.updated_at || null };
 });
