@@ -16,6 +16,23 @@ function createSessionToken() {
   return `qa-location-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+async function readJsonResponse(response, fallbackMessage) {
+  const contentType = response.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return response.json().catch(() => ({ error: fallbackMessage }));
+  }
+
+  // A proxy or the geocoding provider can return a plain-text 402 response.
+  // Do not expose a JSON parser error to the editor in that case.
+  const text = await response.text().catch(() => "");
+  const isPaymentResponse = response.status === 402 || /payment required/i.test(text);
+  return {
+    error: isPaymentResponse
+      ? "Address lookup is temporarily unavailable because the map service needs attention. Please try again after its billing or usage limit has been resolved."
+      : fallbackMessage,
+  };
+}
+
 export default function VenueLocationPicker({
   address,
   city,
@@ -100,7 +117,7 @@ export default function VenueLocationPicker({
           sessionToken: sessionTokenRef.current,
         });
         const response = await fetch(`/api/geocode/suggest?${params}`, { signal: controller.signal });
-        const payload = await response.json();
+        const payload = await readJsonResponse(response, "Address search failed.");
         if (!response.ok) throw new Error(payload?.error || "Address search failed.");
         setSuggestions(Array.isArray(payload?.suggestions) ? payload.suggestions : []);
         if (!payload?.suggestions?.length) {
@@ -223,7 +240,7 @@ export default function VenueLocationPicker({
         sessionToken: sessionTokenRef.current,
       });
       const response = await fetch(`/api/geocode/retrieve?${params}`);
-      const payload = await response.json();
+      const payload = await readJsonResponse(response, "Could not retrieve the selected address.");
       if (!response.ok) throw new Error(payload?.error || "Could not retrieve the selected address.");
       if (!isCoordinateInsideBounds(payload, cityContext.bounds)) {
         setMessage(`That result is outside ${cityContext.city}. Choose a closer address or place the pin manually.`);

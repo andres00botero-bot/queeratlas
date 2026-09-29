@@ -58,7 +58,10 @@ async function searchGeocodingV6({ accessToken, context, query }) {
   const response = await fetch(`https://api.mapbox.com/search/geocode/v6/forward?${params}`, {
     cache: "no-store",
   });
-  if (!response.ok) return [];
+  if (!response.ok) {
+    console.error("[api/geocode/suggest] Mapbox geocoding request failed", { status: response.status });
+    return [];
+  }
   const payload = await response.json();
   return (payload?.features || []).map((feature) => {
     const properties = feature?.properties || {};
@@ -108,6 +111,13 @@ export async function GET(request) {
       }),
       context.bounds ? searchGeocodingV6({ accessToken, context, query }) : Promise.resolve([]),
     ]);
+    if (searchboxResponse.status === 402) {
+      console.error("[api/geocode/suggest] Mapbox Search Box payment required");
+      return Response.json(
+        { error: "Address suggestions are temporarily unavailable because the map service needs attention." },
+        { status: 503 },
+      );
+    }
     const payload = searchboxResponse.ok ? await searchboxResponse.json() : { suggestions: [] };
     const searchboxSuggestions = (payload?.suggestions || []).map((item) => ({
       address: item.full_address || [item.name, item.place_formatted].filter(Boolean).join(", "),

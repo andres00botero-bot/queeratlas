@@ -29,7 +29,10 @@ export async function GET(request) {
     );
     if (!response.ok) {
       console.error("[api/geocode/retrieve] Mapbox request failed", { status: response.status });
-      return Response.json({ error: "The selected address could not be retrieved." }, { status: 502 });
+      const error = response.status === 402
+        ? "Address lookup is temporarily unavailable because the map service needs attention."
+        : "The selected address could not be retrieved.";
+      return Response.json({ error }, { status: response.status === 402 ? 503 : 502 });
     }
 
     const payload = await response.json();
