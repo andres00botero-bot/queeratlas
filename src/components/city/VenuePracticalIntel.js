@@ -33,7 +33,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
       detail: reviewCount > 0 ? `${reviewCount} community review${reviewCount === 1 ? "" : "s"}` : "Be the first to rate this venue",
       isKnown: hasRating,
     },
-  ].filter((field) => field.key === "communityRating" || (field.value && !HIDDEN_EVIDENCE_STATUSES.has(field.evidence?.status)));
+  ];
   const Heading = compact ? "h3" : "h2";
 
   return (
@@ -52,7 +52,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
         {fields.map((field) => {
           const hidesUnsupportedText = HIDDEN_EVIDENCE_STATUSES.has(field.evidence?.status);
           const isKnown = field.isKnown ?? Boolean(field.value && !hidesUnsupportedText);
-          const value = field.value;
+          const value = hidesUnsupportedText ? "" : field.value;
           return (
             <div
               key={field.key}
