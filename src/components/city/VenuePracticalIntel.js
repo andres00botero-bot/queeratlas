@@ -1,21 +1,5 @@
 import { getVenueIntelLabels, normalizeVenueIntel } from "@/lib/venueIntel";
 
-const EMPTY_VALUES = {
-  queueWait: "No reliable queue pattern yet",
-  bestNights: "Best night not confirmed yet",
-  crowdMix: "Not enough crowd signal yet",
-  dressCode: "No practical dress-code notes yet",
-  staffInclusivity: "Not enough community feedback yet",
-};
-
-const STORE_EMPTY_VALUES = {
-  queueWait: "Product range not confirmed yet",
-  bestNights: "Best browsing time not confirmed yet",
-  crowdMix: "Online and shipping options not confirmed yet",
-  dressCode: "Payment methods not confirmed yet",
-  staffInclusivity: "Not enough privacy and inclusion information yet",
-};
-
 const EVIDENCE_LABELS = {
   verified: "Source verified",
   verified_policy: "Policy verified",
@@ -36,7 +20,6 @@ export default function VenuePracticalIntel({ place, compact = false }) {
   const reviewCount = Number(place?.reviewCount ?? place?.review_count ?? 0);
   const hasRating = Number.isFinite(rating) && rating > 0;
   const labels = getVenueIntelLabels(place?.type);
-  const emptyValues = String(place?.type || "").trim().toLowerCase() === "store" ? STORE_EMPTY_VALUES : EMPTY_VALUES;
   const fields = [
     { key: "queueWait", label: labels.queueWait, value: intel.queueWait, evidence: intel.topicEvidence.queueWait },
     { key: "bestNights", label: labels.bestNights, value: intel.bestNights, evidence: intel.topicEvidence.bestNights },
@@ -50,7 +33,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
       detail: reviewCount > 0 ? `${reviewCount} community review${reviewCount === 1 ? "" : "s"}` : "Be the first to rate this venue",
       isKnown: hasRating,
     },
-  ];
+  ].filter((field) => field.key === "communityRating" || (field.value && !HIDDEN_EVIDENCE_STATUSES.has(field.evidence?.status)));
   const Heading = compact ? "h3" : "h2";
 
   return (
@@ -69,7 +52,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
         {fields.map((field) => {
           const hidesUnsupportedText = HIDDEN_EVIDENCE_STATUSES.has(field.evidence?.status);
           const isKnown = field.isKnown ?? Boolean(field.value && !hidesUnsupportedText);
-          const value = hidesUnsupportedText ? emptyValues[field.key] : field.value || emptyValues[field.key];
+          const value = field.value;
           return (
             <div
               key={field.key}
