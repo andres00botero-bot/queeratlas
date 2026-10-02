@@ -749,7 +749,8 @@ export default function CitiesPage() {
         const cityName = String(city.title || "").replace(/^Queer\s+/i, "");
         const cityText = normalizeCitySearchText(cityName);
         const countryText = normalizeCitySearchText(city.country);
-        const matches = cityText.includes(search) || countryText.includes(search);
+        const coverageText = normalizeCitySearchText(city.coverageLabel);
+        const matches = cityText.includes(search) || countryText.includes(search) || coverageText.includes(search);
         const priority = cityText === search ? 0 : cityText.startsWith(search) ? 1 : countryText.startsWith(search) ? 2 : 3;
         return { city, cityName, matches, priority };
       })
@@ -788,7 +789,8 @@ export default function CitiesPage() {
         const search = normalizeCitySearchText(query);
         return (
           normalizeCitySearchText(city.title).includes(search) ||
-          normalizeCitySearchText(city.country).includes(search)
+          normalizeCitySearchText(city.country).includes(search) ||
+          normalizeCitySearchText(city.coverageLabel).includes(search)
         );
       })
       .sort((a, b) => CITY_NAME_COLLATOR.compare(a.title, b.title));
@@ -1579,6 +1581,11 @@ export default function CitiesPage() {
                               <h3 className={`mt-2 truncate text-[1.55rem] font-semibold tracking-[-0.035em] text-white transition duration-300 ${tone.titleHover}`}>
                                 {city.title}
                               </h3>
+                              {city.coverageLabel ? (
+                                <p className="mt-1.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100/72">
+                                  {city.coverageLabel}
+                                </p>
+                              ) : null}
                             </div>
                             <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums tracking-[0.14em] text-white/28">
                               {String(cityIndex + 1).padStart(2, "0")}

@@ -25,6 +25,7 @@ export default function CityTopCluster({
   mobileDiscovery = null,
   queerAreas = [],
   onFocusQueerArea,
+  regionalGuideNote = "",
 }) {
   return (
     <>
@@ -42,7 +43,7 @@ export default function CityTopCluster({
         </>
       ) : null}
 
-      {showHero ? <CityQueerAreas cityName={cityName} areas={queerAreas} onFocusArea={onFocusQueerArea} /> : null}
+      {showHero ? <CityQueerAreas cityName={cityName} areas={queerAreas} onFocusArea={onFocusQueerArea} regionalGuideNote={regionalGuideNote} /> : null}
 
       {showContribution ? (
         <CityContributionStack

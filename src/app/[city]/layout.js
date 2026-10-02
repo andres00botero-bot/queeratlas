@@ -40,9 +40,14 @@ export async function generateMetadata({ params }) {
   const title = isSpanish
     ? `Guía queer de ${cityName} 2026: bares, eventos y seguridad`
     : `Queer ${cityName} Guide 2026: Bars, Events & Safety`;
+  const isMiamiRegionalGuide = city === "miami";
   const detailedDescription = isSpanish
-    ? `En ${cityName}, descubre lugares queer verificados, eventos en directo, vida nocturna y contexto práctico de seguridad. Actualizado para 2026.`
-    : `${cityName}, ${country}: ${ownership.primary}, trusted queer venues, live events, and route-smart safety context${vibe ? ` with a ${vibe} city vibe` : ""}. Updated for 2026.`;
+    ? isMiamiRegionalGuide
+      ? `Guía queer de Miami y el sur de Florida: Miami Beach, Fort Lauderdale Beach y Wilton Manors, con lugares verificados, eventos y contexto práctico para planificar la ruta.`
+      : `En ${cityName}, descubre lugares queer verificados, eventos en directo, vida nocturna y contexto práctico de seguridad. Actualizado para 2026.`
+    : isMiamiRegionalGuide
+      ? "Queer Miami and South Florida guide: Miami Beach, Fort Lauderdale Beach and Wilton Manors, with trusted venues, live events and practical route context."
+      : `${cityName}, ${country}: ${ownership.primary}, trusted queer venues, live events, and route-smart safety context${vibe ? ` with a ${vibe} city vibe` : ""}. Updated for 2026.`;
   const description = detailedDescription.length <= 160
     ? detailedDescription
     : isSpanish

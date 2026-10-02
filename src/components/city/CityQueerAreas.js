@@ -2,7 +2,7 @@
 
 import { useLocale } from "@/components/i18n/LocaleProvider";
 
-export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
+export default function CityQueerAreas({ cityName, areas = [], onFocusArea, regionalGuideNote = "" }) {
   const { t } = useLocale();
   if (!Array.isArray(areas) || areas.length === 0) return null;
 
@@ -18,6 +18,11 @@ export default function CityQueerAreas({ cityName, areas = [], onFocusArea }) {
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/64">
             {t("city.queerAreasDescription", "Tap an area to zoom in. The map’s colour glow shows the concentration of published Atlas venues, events and community listings—not people, live activity or an official boundary.")}
           </p>
+          {regionalGuideNote ? (
+            <p className="mt-3 max-w-2xl rounded-xl border border-cyan-100/14 bg-cyan-100/[0.06] px-3 py-2 text-sm leading-6 text-cyan-50/86">
+              {regionalGuideNote}
+            </p>
+          ) : null}
         </div>
         <span className="rounded-full border border-fuchsia-200/20 bg-fuchsia-200/[0.08] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-fuchsia-100/85">
           {t("city.cityPilot", "{city} pilot").replace("{city}", cityName)}

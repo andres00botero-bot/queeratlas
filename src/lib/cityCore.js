@@ -651,12 +651,14 @@ export const cityCoreConfig = {
   },
   "miami": {
     "center": [
-      -80.1918,
-      25.7617
+      -80.145,
+      25.96
     ],
+    "zoom": 9.8,
     "title": "Queer Miami",
     "country": "United States",
-    "vibe": "humid glamour"
+    "vibe": "humid glamour",
+    "coverageLabel": "Miami · Fort Lauderdale · Wilton Manors"
   },
   "tokyo": {
     "center": [

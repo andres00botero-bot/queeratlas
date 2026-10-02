@@ -123,7 +123,7 @@ import {
 } from "@/features/city/cityPageConstants";
 import styles from "./page.module.css";
 import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
-import { getQueerAreasForCity } from "@/lib/queerAreas";
+import { getQueerAreasForCity, queerAreaLabelsFeatureCollection, queerAreasFeatureCollection } from "@/lib/queerAreas";
 
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const QUEER_AREA_MARKER_ZOOM = 12;
@@ -156,6 +156,9 @@ export default function CityPage() {
 
   const cityName = cityNameFromConfig(config, city);
   const queerAreas = useMemo(() => getQueerAreasForCity(city), [city]);
+  const regionalGuideNote = city === "miami"
+    ? "This Miami guide spans three South Florida stops: Miami Beach & South Beach, Fort Lauderdale Beach and Wilton Manors. They are separate destinations, so use the coloured areas to plan travel time and choose one cluster at a time."
+    : "";
   const cityHero = getCityHeroCopy(city, locale) || {
     hook: config?.localMood,
     status: config?.queerStatus,
@@ -2715,6 +2718,85 @@ export default function CityPage() {
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !isMapReady || queerAreas.length === 0) return undefined;
+
+    const sourceId = "qa-queer-areas";
+    const labelSourceId = "qa-queer-area-labels";
+    const fillLayerId = "qa-queer-areas-fill";
+    const outlineLayerId = "qa-queer-areas-outline";
+    const labelLayerId = "qa-queer-areas-label";
+    const areasById = new Map(queerAreas.map((area) => [area.id, area]));
+    const areaData = queerAreasFeatureCollection(queerAreas);
+    const labelData = queerAreaLabelsFeatureCollection(queerAreas);
+    let mounted = true;
+
+    const focusAreaFromFeature = (event) => {
+      const areaId = String(event?.features?.[0]?.properties?.id || "");
+      const area = areasById.get(areaId);
+      if (area) focusQueerArea(area);
+    };
+    const showPointer = () => { map.getCanvas().style.cursor = "pointer"; };
+    const clearPointer = () => { map.getCanvas().style.cursor = ""; };
+    const setupAreas = () => {
+      if (!mounted || !hasMapStyle(map)) return;
+      const source = map.getSource(sourceId);
+      const labelSource = map.getSource(labelSourceId);
+      if (source?.setData && labelSource?.setData) {
+        source.setData(areaData);
+        labelSource.setData(labelData);
+        return;
+      }
+      map.addSource(sourceId, { type: "geojson", data: areaData });
+      map.addSource(labelSourceId, { type: "geojson", data: labelData });
+      map.addLayer({
+        id: fillLayerId,
+        type: "fill",
+        source: sourceId,
+        paint: { "fill-color": ["get", "color"], "fill-opacity": 0.18 },
+      });
+      map.addLayer({
+        id: outlineLayerId,
+        type: "line",
+        source: sourceId,
+        paint: { "line-color": ["get", "color"], "line-width": 2, "line-opacity": 0.9 },
+      });
+      map.addLayer({
+        id: labelLayerId,
+        type: "symbol",
+        source: labelSourceId,
+        minzoom: 9,
+        layout: { "text-field": ["get", "name"], "text-size": 11, "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"], "text-allow-overlap": false },
+        paint: { "text-color": "#fff8fc", "text-halo-color": "#17121c", "text-halo-width": 1.4 },
+      });
+      map.on("click", fillLayerId, focusAreaFromFeature);
+      map.on("click", outlineLayerId, focusAreaFromFeature);
+      map.on("mouseenter", fillLayerId, showPointer);
+      map.on("mouseleave", fillLayerId, clearPointer);
+    };
+
+    if (map.isStyleLoaded()) setupAreas();
+    else map.once("load", setupAreas);
+
+    return () => {
+      mounted = false;
+      map.off("load", setupAreas);
+      if (mapRef.current !== map || !hasMapStyle(map)) return;
+      [fillLayerId, outlineLayerId].forEach((layerId) => {
+        if (map.getLayer(layerId)) {
+          map.off("click", layerId, focusAreaFromFeature);
+          map.off("mouseenter", layerId, showPointer);
+          map.off("mouseleave", layerId, clearPointer);
+          map.removeLayer(layerId);
+        }
+      });
+      if (map.getLayer(labelLayerId)) map.removeLayer(labelLayerId);
+      if (map.getSource(sourceId)) map.removeSource(sourceId);
+      if (map.getSource(labelSourceId)) map.removeSource(labelSourceId);
+    };
+  }, [focusQueerArea, isMapReady, queerAreas]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map) return undefined;
 
     const sourceId = "qa-city-clusters";
@@ -5060,6 +5142,7 @@ export default function CityPage() {
                 showContributionActions={false}
                 queerAreas={queerAreas}
                 onFocusQueerArea={focusQueerArea}
+                regionalGuideNote={regionalGuideNote}
                 mobileDiscovery={
                   <>
                     <CityMapSection

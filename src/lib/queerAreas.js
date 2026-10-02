@@ -918,7 +918,53 @@ const CHICAGO_QUEER_AREAS = [
   },
 ];
 
+const MIAMI_QUEER_AREAS = [
+  {
+    id: "miami-south-beach",
+    name: "Miami Beach & South Beach",
+    type: "Beach, culture & nightlife area",
+    bestFor: "Beach days, drag, LGBTQ+ visitor resources and a Miami-first itinerary",
+    summary: "Miami Beach is the coastal anchor of this guide, with 12th Street Beach, visitor resources and a highly visible LGBTQ+ travel scene.",
+    practicalNote: "Use this as the Miami leg of the trip. The guide also includes venues farther north in Greater Fort Lauderdale and Wilton Manors.",
+    sourceLabel: "Miami & Miami Beach: LGBTQ Miami",
+    sourceUrl: "https://www.miamiandbeaches.com/travel-interests/lgbtq-miami",
+    color: "#f5a9c6",
+    center: [-80.1301, 25.7818],
+    bounds: [[-80.143, 25.770], [-80.121, 25.793]],
+    geometry: { type: "Polygon", coordinates: [[[-80.141, 25.771], [-80.126, 25.770], [-80.121, 25.779], [-80.125, 25.790], [-80.136, 25.793], [-80.143, 25.784], [-80.141, 25.771]]] },
+  },
+  {
+    id: "miami-fort-lauderdale-beach",
+    name: "Fort Lauderdale Beach",
+    type: "Beach & resort area",
+    bestFor: "Beach time, resorts and a coastal Greater Fort Lauderdale stop",
+    summary: "Fort Lauderdale Beach adds a distinct coastal leg to the regional guide, including the LGBTQ+ travel context around Sebastian Street Beach.",
+    practicalNote: "Plan this as a separate beach or stay area rather than a walkable extension of Miami Beach; allow time for the trip between them.",
+    sourceLabel: "Visit Lauderdale: LGBTQ+ Travel",
+    sourceUrl: "https://www.visitlauderdale.com/lgbtq/",
+    color: "#88d9d4",
+    center: [-80.1167, 26.1224],
+    bounds: [[-80.126, 26.114], [-80.108, 26.130]],
+    geometry: { type: "Polygon", coordinates: [[[-80.124, 26.115], [-80.113, 26.114], [-80.108, 26.121], [-80.112, 26.129], [-80.121, 26.130], [-80.126, 26.122], [-80.124, 26.115]]] },
+  },
+  {
+    id: "miami-wilton-manors",
+    name: "Wilton Manors",
+    type: "LGBTQ+ community & nightlife area",
+    bestFor: "Gay-owned businesses, bars, dining and a community-centred night out",
+    summary: "Wilton Manors is Greater Fort Lauderdale's well-known LGBTQ+ hub, centred around its gay-owned businesses, nightlife and community life.",
+    practicalNote: "Treat Wilton Manors as its own destination north of Miami. Pick a current venue or event before travelling, then build the evening around Wilton Drive.",
+    sourceLabel: "Visit Lauderdale: Wilton Manors",
+    sourceUrl: "https://www.visitlauderdale.com/beaches-and-beyond/cities-towns/wilton-manors/",
+    color: "#c4b5fd",
+    center: [-80.1383, 26.1599],
+    bounds: [[-80.150, 26.151], [-80.126, 26.170]],
+    geometry: { type: "Polygon", coordinates: [[[-80.148, 26.152], [-80.134, 26.151], [-80.126, 26.158], [-80.130, 26.167], [-80.142, 26.170], [-80.150, 26.162], [-80.148, 26.152]]] },
+  },
+];
+
 const AREAS_BY_CITY = {
+  miami: MIAMI_QUEER_AREAS,
   berlin: BERLIN_QUEER_AREAS,
   san_francisco: SAN_FRANCISCO_QUEER_AREAS,
   madrid: MADRID_QUEER_AREAS,
