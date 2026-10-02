@@ -103,6 +103,26 @@ function checkCountryToCityRedirects() {
   );
 }
 
+function checkIslandGuideCatalogLabels() {
+  const cityCore = readText("src/lib/cityCore.js");
+  const citiesPage = readText("src/app/cities/page.js");
+
+  assert(
+    cityCore.includes('"title": "Queer Cyprus Island Guide"') &&
+      cityCore.includes('"coverageLabel": "Island-wide guide · Republic-controlled south"'),
+    "src/lib/cityCore.js: Cyprus must be labelled as an island-wide guide"
+  );
+  assert(
+    cityCore.includes('"title": "Queer Malta Island Guide"') &&
+      cityCore.includes('"coverageLabel": "Island-wide guide · main urban and coastal areas"'),
+    "src/lib/cityCore.js: Malta must be labelled as an island-wide guide"
+  );
+  assert(
+    citiesPage.includes("{city.coverageLabel}") && citiesPage.includes("coverageLabel"),
+    "src/app/cities/page.js: city catalog must render destination coverage labels"
+  );
+}
+
 function run() {
   checkNoMergeMarkers("package.json");
   checkNoMergeMarkers("src/lib/seedPlacesContent.js");
@@ -117,6 +137,7 @@ function run() {
   checkCanonicalDomainConfig();
   checkCityEventsIndexRedirect();
   checkCountryToCityRedirects();
+  checkIslandGuideCatalogLabels();
 
   if (failures.length > 0) {
     console.error("Smoke test failed:");

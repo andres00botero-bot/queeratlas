@@ -339,9 +339,10 @@ export const cityCoreConfig = {
       35.1264
     ],
     "zoom": 8,
-    "title": "Queer Cyprus",
+    "title": "Queer Cyprus Island Guide",
     "country": "Cyprus",
-    "vibe": "sunlit island micro-scenes"
+    "vibe": "sunlit island micro-scenes",
+    "coverageLabel": "Island-wide guide · Republic-controlled south"
   },
   "mykonos": {
     "center": [
@@ -366,9 +367,10 @@ export const cityCoreConfig = {
       14.5146,
       35.8989
     ],
-    "title": "Queer Malta",
+    "title": "Queer Malta Island Guide",
     "country": "Malta",
-    "vibe": "island social"
+    "vibe": "island social",
+    "coverageLabel": "Island-wide guide · main urban and coastal areas"
   },
   "toronto": {
     "center": [

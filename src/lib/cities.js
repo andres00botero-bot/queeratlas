@@ -468,11 +468,12 @@ export const cityConfig = {
   cyprus: {
     center: [33.4299, 35.1264],
     zoom: 8,
-    title: "Queer Cyprus",
+    title: "Queer Cyprus Island Guide",
     country: "Cyprus",
     vibe: "sunlit island micro-scenes",
+    coverageLabel: "Island-wide guide · Republic-controlled south",
     guide: buildGuide({
-      about: "Cyprus is a queer island route rather than a single scene. Nicosia carries the strongest community and Pride infrastructure, Larnaca and Paphos have compact gay-bar anchors, Limassol adds mixed social nightlife, and Protaras delivers seasonal drag by the coast. The whole thing feels less like a gay village and more like a Mediterranean constellation: small points, warm weather, and a rental car doing emotional labor.",
+      about: "This is an island-wide Cyprus guide, not a guide to one city. It connects verified listings across the Republic-controlled south: Nicosia has the strongest community and Pride infrastructure, Larnaca and Paphos have compact gay-bar anchors, Limassol adds mixed social nightlife, and Protaras delivers seasonal drag by the coast. Plan it as a Mediterranean road route, not a single gay district.",
       district: "Use Nicosia for community organizations, Pride, Ithaki, and event-led drag; Larnaca for Lube Bar and summer boat-party signals; Paphos for Different Bar and romantic resort stays; Limassol for mixed old-town and garden-bar evenings; and Protaras or Ayia Napa for beaches, seasonal cabaret, and resort energy. Distances are too large for casual bar-hopping across cities, so build one regional chapter per day.",
       safety: "Tourist areas are generally welcoming, but social attitudes can become more conservative away from the main cities and resorts. Keep public affection measured where the room is unclear, use direct transport after late nights, and visit secluded queer beaches only in daylight with proper shoes, water, and a charged phone. Crossing between the southern and northern parts of Nicosia also requires current travel documents and border guidance.",
       nightlife: "The permanent scene is small and the best nights are specific: karaoke or DJs at Lube, pop-camp at Ithaki, retro hits at Different, seasonal drag at Diamonds, and occasional Pride, boat-party, or guest-drag dates. Verify every event before travel. There is currently no verified active dedicated gay sauna on the island, so beach, bar, app, and event culture carry most of the social momentum.",
@@ -507,11 +508,12 @@ export const cityConfig = {
   },
   malta: {
     center: [14.5146, 35.8989],
-    title: "Queer Malta",
+    title: "Queer Malta Island Guide",
     country: "Malta",
     vibe: "island social",
+    coverageLabel: "Island-wide guide · main urban and coastal areas",
     guide: buildGuide({
-      about: "Malta has a sunny, compact queer appeal that comes less from giant scene depth and more from how easy the whole island can feel. Beaches, nightlife pockets, terrace drinks, and a growing LGBTQ travel profile all give it a light, social energy that works especially well for shorter, warm-weather escapes.",
+      about: "This is an island-wide Malta guide, not a city page. It connects verified listings across Valletta, Sliema, St Julian's and nearby coastal areas, so plan accommodation and transport by area rather than expecting every listing to be walkable. Beaches, nightlife pockets and terrace drinks make it especially good for a short warm-weather escape.",
       district: "St Julian's matters most for nightlife and ease, while Valletta can add style, food, and a more atmospheric daytime rhythm. Malta is not a city logic destination. It is an island logic destination. Planning where you sleep and how far you want to move matters more than chasing one perfect street.",
       safety: "Malta is generally comfortable for queer travelers, especially in tourism-heavy areas. The bigger issue is standard party-zone awareness rather than social hostility. Heat, alcohol, and transport choices matter more than scene navigation.",
       nightlife: "Malta works best as a compact holiday flow: beach, drinks, dinner, one more bar, then whatever the night still has left. It can feel breezy rather than deep, but that breeziness is part of the attraction.",

@@ -949,7 +949,7 @@ export const cityGuideConfig = {
   "cyprus": [
     {
       "title": "About",
-      "text": "Cyprus is a queer island route rather than a single scene. Nicosia carries the strongest community and Pride infrastructure, Larnaca and Paphos have compact gay-bar anchors, Limassol adds mixed social nightlife, and Protaras delivers seasonal drag by the coast. The whole thing feels less like a gay village and more like a Mediterranean constellation: small points, warm weather, and a rental car doing emotional labor.",
+      "text": "This is an island-wide Cyprus guide, not a guide to one city. It connects verified listings across the Republic-controlled south: Nicosia has the strongest community and Pride infrastructure, Larnaca and Paphos have compact gay-bar anchors, Limassol adds mixed social nightlife, and Protaras delivers seasonal drag by the coast. Plan it as a Mediterranean road route, not a single gay district.",
       "extra": ""
     },
     {
@@ -1030,7 +1030,7 @@ export const cityGuideConfig = {
   "malta": [
     {
       "title": "About",
-      "text": "Malta has a sunny, compact queer appeal that comes less from giant scene depth and more from how easy the whole island can feel. Beaches, nightlife pockets, terrace drinks, and a growing LGBTQ travel profile all give it a light, social energy that works especially well for shorter, warm-weather escapes.",
+      "text": "This is an island-wide Malta guide, not a city page. It connects verified listings across Valletta, Sliema, St Julian's and nearby coastal areas, so plan accommodation and transport by area rather than expecting every listing to be walkable. Beaches, nightlife pockets and terrace drinks make it especially good for a short warm-weather escape.",
       "extra": ""
     },
     {
