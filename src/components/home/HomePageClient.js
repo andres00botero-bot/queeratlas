@@ -146,6 +146,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [events, setEvents] = useState(initialEvents);
   const [places, setPlaces] = useState(initialPlaces);
   const [homeMetrics, setHomeMetrics] = useState(initialMetrics);
+  const [hasCompleteHomeData, setHasCompleteHomeData] = useState(hasCompleteInitialHomeData);
   const [query, setQuery] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [authReturnTarget, setAuthReturnTarget] = useState("/");
@@ -186,6 +187,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [homeFocusCity, setHomeFocusCity] = useState("");
   const [homeFocusSource, setHomeFocusSource] = useState("");
   const viewedHomeSectionsRef = useRef(new Set());
+  const fullHomeDataLoadRef = useRef(null);
   const deferredQuery = useDeferredValue(query);
   const {
     isMember,
@@ -368,6 +370,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     setWorldNews(nextWorldNews);
     if (nextFeaturedVenue) setFeaturedVenue(nextFeaturedVenue);
     if (nextMetrics) setHomeMetrics(nextMetrics);
+    setHasCompleteHomeData(true);
     writeRuntimeCache(HOME_DATA_CACHE_KEY, {
       events: nextEvents,
       places: nextPlaces,
@@ -394,13 +397,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       queueMicrotask(() => {
         setIsDataLoading(false);
       });
-      if (hasCompleteInitialHomeData) return () => {};
-
-      return scheduleIdleTask(() => {
-        queueMicrotask(async () => {
-          await loadHomeData({ forceRefresh: true });
-        });
-      }, 900);
+      return () => {};
     }
 
     return scheduleIdleTask(() => {
@@ -565,6 +562,16 @@ export default function HomePageClient({ initialHomeData = null }) {
       return;
     }
 
+    if (!hasCompleteHomeData) {
+      if (!fullHomeDataLoadRef.current) {
+        fullHomeDataLoadRef.current = loadHomeData({ forceRefresh: true })
+          .finally(() => {
+            fullHomeDataLoadRef.current = null;
+          });
+      }
+      return;
+    }
+
     let cancelled = false;
     const timeout = setTimeout(async () => {
       const [{ buildAtlasSearchResults }, { getQualityMap }] = await Promise.all([
@@ -593,7 +600,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [deferredQuery, events, favorites, places]);
+  }, [deferredQuery, events, favorites, hasCompleteHomeData, loadHomeData, places]);
 
   useEffect(() => {
     let cancelled = false;
