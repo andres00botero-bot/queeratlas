@@ -89,6 +89,20 @@ function checkCityEventsIndexRedirect() {
   );
 }
 
+function checkCountryToCityRedirects() {
+  const albaniaRedirect = readText("src/app/albania/page.js");
+  const montenegroRedirect = readText("src/app/montenegro/page.js");
+
+  assert(
+    albaniaRedirect.includes('permanentRedirect("/tirana")'),
+    "src/app/albania/page.js: legacy Albania route must redirect to Tirana"
+  );
+  assert(
+    montenegroRedirect.includes('permanentRedirect("/podgorica")'),
+    "src/app/montenegro/page.js: legacy Montenegro route must redirect to Podgorica"
+  );
+}
+
 function run() {
   checkNoMergeMarkers("package.json");
   checkNoMergeMarkers("src/lib/seedPlacesContent.js");
@@ -102,6 +116,7 @@ function run() {
   checkNoDesktopMirrorFiles();
   checkCanonicalDomainConfig();
   checkCityEventsIndexRedirect();
+  checkCountryToCityRedirects();
 
   if (failures.length > 0) {
     console.error("Smoke test failed:");

@@ -1,4 +1,27 @@
 export const cityGuideResearch = {
+  tirana: {
+    checkedAt: "2026-10-03",
+    sources: [
+      { label: "Albanian National Tourism Agency — Blloku's current visitor and nightlife context", url: "https://akt.gov.al/en/attractions/BLOCK/" },
+      { label: "Albanian National Tourism Agency — Tirana city guide and practical visitor context", url: "https://akt.gov.al/en/qytetet/tirane/" },
+      { label: "Aleanca LGBT — current Albanian LGBTIQ community resources and contact routes", url: "https://linktr.ee/aleanca_lgbt" },
+      { label: "Streha — LGBTQI+ housing and support service", url: "https://strehalgbt.al/" },
+      { label: "Pink Embassy Albania — LGBTQI+ rights and public-information work", url: "https://www.pinkembassy.al/" },
+      { label: "ILGA-Europe Rainbow Map — current Albania legal and policy context", url: "https://rainbowmap.ilga-europe.org/" },
+    ],
+  },
+  podgorica: {
+    checkedAt: "2026-10-03",
+    sources: [
+      { label: "Podgorica Tourism — current nightlife districts and visitor context", url: "https://podgorica.travel/en/nightlife/" },
+      { label: "Podgorica Tourism — Bokeška and central-street visitor guide", url: "https://podgorica.travel/wp-content/uploads/2024/07/Gastro-Guide-online.pdf" },
+      { label: "Capital City of Podgorica — municipal LGBTIQ office and support remit", url: "https://podgorica.me/sekretarijat-za-socijalno-staranje/kancelarija-za-lgbtiq-lica/" },
+      { label: "Queer Montenegro — current LGBTIQ organisation and community contact", url: "https://queermontenegro.org/" },
+      { label: "Association Spectra — trans, gender-diverse and intersex community support", url: "https://www.asocijacijaspektra.org/" },
+      { label: "Juventas — Montenegro youth, health and community support", url: "https://juventas.me/" },
+      { label: "ILGA-Europe Rainbow Map — current Montenegro legal and policy context", url: "https://rainbowmap.ilga-europe.org/" },
+    ],
+  },
   cairo: {
     checkedAt: "2026-08-15",
     sources: [

@@ -1443,23 +1443,23 @@ export const cityCoreConfig = {
     "country": "Lebanon",
     "vibe": "discreet resilient nightlife"
   },
-  "albania": {
+  "tirana": {
     "center": [
       19.8189,
       41.3275
     ],
-    "title": "Queer Albania",
+    "title": "Queer Tirana",
     "country": "Albania",
-    "vibe": "tirana-first country route"
+    "vibe": "Blloku-led capital nights and community-rooted culture"
   },
-  "montenegro": {
+  "podgorica": {
     "center": [
       19.2594,
       42.4304
     ],
-    "title": "Queer Montenegro",
+    "title": "Queer Podgorica",
     "country": "Montenegro",
-    "vibe": "coastal country route"
+    "vibe": "low-key capital culture with community-led queer visibility"
   },
   "almaty": {
     "center": [

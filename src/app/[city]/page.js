@@ -128,6 +128,13 @@ import { getQueerAreasForCity, queerAreaLabelsFeatureCollection, queerAreasFeatu
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const QUEER_AREA_MARKER_ZOOM = 12;
 
+function hasMapCoordinates(entity) {
+  const lat = entity?.lat;
+  const lng = entity?.lng;
+  if (lat == null || lng == null || String(lat).trim() === "" || String(lng).trim() === "") return false;
+  return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
+}
+
 function hasMapStyle(map) {
   try {
     return Boolean(map?.getStyle?.());
@@ -726,9 +733,9 @@ export default function CityPage() {
     const bounds = map.getBounds();
     const entities = [...cityPlaces, ...cityEvents, ...cityServices];
     const visibleCount = entities.reduce((count, entity) => {
-      const lat = Number(entity?.lat);
-      const lng = Number(entity?.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return count;
+      if (!hasMapCoordinates(entity)) return count;
+      const lat = Number(entity.lat);
+      const lng = Number(entity.lng);
       return bounds.contains([lng, lat]) ? count + 1 : count;
     }, 0);
     const resultLabel = visibleCount === 1 ? "1 place in this area" : `${visibleCount} places in this area`;
@@ -1052,7 +1059,7 @@ export default function CityPage() {
     [selectedServiceQuality]
   );
   const canShowSelectedServiceOnMap = useMemo(
-    () => Number.isFinite(Number(selectedService?.lat)) && Number.isFinite(Number(selectedService?.lng)),
+    () => hasMapCoordinates(selectedService),
     [selectedService?.lat, selectedService?.lng]
   );
   const selectedServiceImages = useMemo(
@@ -2514,7 +2521,7 @@ export default function CityPage() {
     const EVENT_MARKER_COLOR = "#ff4ec4";
 
     cityPlaces.forEach((place) => {
-      if (place.lat == null || place.lng == null) return;
+      if (!hasMapCoordinates(place)) return;
 
       const typeConfig = TYPES.find((item) => item.value === place.type);
       const neonColor = useNeonMarkers
@@ -2555,7 +2562,7 @@ export default function CityPage() {
     });
 
     cityEvents.forEach((event) => {
-      if (event.lat == null || event.lng == null) return;
+      if (!hasMapCoordinates(event)) return;
       const eventNeonColor = useNeonMarkers
         ? EVENT_MARKER_COLOR
         : "#8b5cf6";
@@ -2600,9 +2607,9 @@ export default function CityPage() {
     });
 
     cityServices.forEach((service) => {
-      const lat = Number(service?.lat);
-      const lng = Number(service?.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (!hasMapCoordinates(service)) return;
+      const lat = Number(service.lat);
+      const lng = Number(service.lng);
       const typeConfig = SERVICE_TYPES.find((item) => item.value === service.type);
       const serviceNeonColor = useNeonMarkers
         ? typeConfig?.color || "#2ef2c8"
@@ -2656,9 +2663,9 @@ export default function CityPage() {
     const layerId = "qa-queer-pulse-heat";
     const features = [];
     const addListing = (listing, kind) => {
-      const lat = Number(listing?.lat);
-      const lng = Number(listing?.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (!hasMapCoordinates(listing)) return;
+      const lat = Number(listing.lat);
+      const lng = Number(listing.lng);
       features.push({
         type: "Feature",
         geometry: { type: "Point", coordinates: [lng, lat] },
@@ -2808,9 +2815,9 @@ export default function CityPage() {
     const features = [];
 
     const addEntity = (entity, kind) => {
-      const lat = Number(entity?.lat);
-      const lng = Number(entity?.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (!hasMapCoordinates(entity)) return;
+      const lat = Number(entity.lat);
+      const lng = Number(entity.lng);
       const id = String(entity?.id || "");
       if (!id) return;
       entitiesByKey.set(`${kind}:${id}`, entity);

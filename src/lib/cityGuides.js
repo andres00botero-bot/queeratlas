@@ -4247,57 +4247,57 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
-  "albania": [
+  "tirana": [
     {
       "title": "About",
-      "text": "Albania works best as a Tirana-first queer route rather than a classic gay-scene destination. Tirana has the strongest community infrastructure, Pride visibility, cafe culture and queer-friendly mixed bars, while the coast adds beach travel, resort stays and summer social energy. The scene is small, public gay venues are limited, and the best trip comes from realistic routing rather than expecting a big rainbow district.",
+      "text": "Tirana is Albania's most practical queer base: a fast-changing capital where the visible LGBTQ+ infrastructure comes through organisers, Pride and community services rather than a large permanent gay district. It is a compact city for cafés, museums, late bars and cultural nights, with the clearest local signal around Blloku and the central neighbourhoods. Expect a mixed scene, not a rainbow-strip fantasy.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Use Tirana's Blloku and central cafe corridors for most nightlife and low-friction social movement. Podgorica-style single-strip logic does not apply here: Tirana is the anchor, while Durres, Himare, Dhermi, Saranda and Ksamil work as coastal add-ons for beach and hotel energy. Keep the itinerary compact when nightlife matters.",
+      "text": "Use Blloku for the easiest evening route: it concentrates cocktail bars, cafés and dance-floor options within a short walk. Start near Rruga Pjetër Bogdani or Rruga Ismail Qemali, then use the boulevard and central hotel area as a calmer base. The New Bazaar and the lake/Grand Park corridor are better for daytime, food and a lower-pressure first drink than for a dedicated queer scene.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Same-sex relationships are legal and Albania has anti-discrimination protections, but there is no same-sex partnership or marriage recognition and public comfort can vary. Tirana is usually the most workable base for queer travelers. Keep public affection measured where the room is unclear, use direct transport late at night, and rely on community organizations for current Pride and safety context.",
+      "text": "Albania's national legal context still matters in Tirana: same-sex relations are legal and anti-discrimination protections exist, while relationship recognition and everyday comfort remain uneven. Do not treat a mixed venue as automatically queer-specific. Keep public affection context-aware, use a known ride late, meet new app contacts in staffed public places and check Aleanca LGBT, Streha or Pink Embassy for current community information.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Tirana nightlife is mostly mixed rather than gay-specific. Guides point to Radio Bar, Komiteti, Nouvelle Vague, Bunker 1944, Colonial and Blloku bars as queer-friendly or useful mixed rooms, not dedicated gay bars. No active dedicated gay sauna or permanent gay club could be verified for this package.",
+      "text": "Tirana's useful queer route is mixed and programme-led. Blloku's Nouvelle Vague, Colonial and nearby cocktail rooms work as social starts; Tulla Culture Center can be stronger when its programme fits. There is no verified permanent gay club or sauna to promise here. Check same-week listings, choose one or two nearby venues and let a current community event outrank an inherited bar list.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Albania can be strong value compared with much of coastal Europe, especially for cafes, local food and ordinary transport. Prices rise on the Riviera in summer, and Tirana's best hotels and cocktail bars can feel more international than budget-local. Value is strongest when you keep Tirana central and use the coast selectively.",
+      "text": "Tirana remains comparatively good value for central cafés, local food and everyday transport, though polished Blloku cocktails and international hotels raise the spend quickly. A central stay cuts late-night friction more effectively than chasing the cheapest room. Budget for direct rides after a night out and treat the city as its own compact break rather than a base for a same-night coast trip.",
       "extra": ""
     }
   ],
-  "montenegro": [
+  "podgorica": [
     {
       "title": "About",
-      "text": "Montenegro works best as a small-country queer route rather than a single city scene. There is community infrastructure in Podgorica, summer nightlife around Budva, beach and naturist culture near Ulcinj and Ada Bojana, and polished coastal stays around Kotor Bay and Tivat. The scene is not large or heavily branded, but the country can still be useful for queer travelers who plan with realistic expectations.",
+      "text": "Podgorica is Montenegro's administrative and community anchor, not a miniature version of the Adriatic coast. Its queer life is small, civic and organiser-led: local LGBTIQ organisations, Pride history and a municipal LGBTIQ office matter more than venue count. The capital rewards a low-key city break built around cafés, culture and a current community programme rather than expectations of a permanent gay district.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Use Podgorica for services, Pride and rights context; Budva for clubs, bars and summer nightlife; Kotor and Tivat for polished coastal bases; Ulcinj and Ada Bojana for beach, naturist and more relaxed travel energy. Distances are short by country standards, but the best route still needs planning because the queer signal is spread out.",
+      "text": "Start in the central grid around Independence Square, Njegoševa and Bokeška streets. Bokeška is the most useful evening corridor for café and bar movement, while the nearby administrative centre and central hotels make a practical base. Stara Varoš and the river area are cultural walks, not queer districts; keep the route compact and use confirmed venue details rather than a generic citywide search.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Same-sex relationships are legal and same-sex life partnerships are recognized, but public visibility can feel uneven outside tourist zones and community-led spaces. Keep public affection measured where the room is unclear, verify beach and nightlife conditions locally, and use direct transport after late club nights.",
+      "text": "Montenegro recognises same-sex life partnerships and has anti-discrimination protections, but that does not make every public setting equally comfortable. Visibility in Podgorica is strongest through community-led spaces and organised events. Keep public affection context-aware, do not publish private gathering details, use direct transport after late nights and contact Queer Montenegro, Association Spectra or Juventas for current support and event information.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Montenegro is more mixed and seasonal than gay-specific. Budva carries the strongest club output, with venues like Top Hill, Omnia and Casper Bar functioning as mixed nightlife anchors. Podgorica and Kotor add smaller alternative and old-town social rooms. No active dedicated gay sauna or permanent gay club could be verified for this package.",
+      "text": "Podgorica has plenty of general nightlife but no verified permanent gay bar, club or sauna. Propaganda on Bokeška is a useful alternative mixed stop when its current programme suits; the stronger queer signal comes from organiser-led events, Pride-related activity and cultural programming. Check the same-week calendar before going, and do not treat a venue's older social posts as proof of a recurring queer night.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Montenegro is usually better value than the highest-priced Adriatic destinations, but coastal summer pricing can climb fast in Budva, Kotor Bay and Tivat. Podgorica is cheaper and more practical for services; the coast is where atmosphere, hotels and late-night spending rise.",
+      "text": "Podgorica is generally less expensive than Montenegro's high-season coast for accommodation, cafés and local transport. Central hotels cost more but reduce late-night logistics, while a short direct ride is usually a better trade-off than an unplanned walk. The city works best as a calm overnight or two-night capital stop, not as a substitute for Budva, Kotor or the beaches.",
       "extra": ""
     }
   ],

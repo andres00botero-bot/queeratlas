@@ -23,20 +23,34 @@ export default function SelectedServiceAdminControls({
   priceTierOptions,
   city,
 }) {
-  if (!canEdit) return null;
+  if (!canEdit && !canDelete) return null;
   const intelLabels = getServiceIntelLabels(draft.type);
 
   return (
     <div className="mt-3 rounded-2xl border border-amber-200/18 bg-amber-200/[0.08] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/82">Service controls</p>
-        <button
-          type="button"
-          onClick={onToggleOpen}
-          className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
-        >
-          {isOpen ? "Close editor" : "Edit service"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {canEdit && (
+            <button
+              type="button"
+              onClick={onToggleOpen}
+              className="rounded-full border border-amber-100/30 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-amber-100 transition hover:border-amber-100/50"
+            >
+              {isOpen ? "Close editor" : "Edit service"}
+            </button>
+          )}
+          {canDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              disabled={isDeleting}
+              className="rounded-full border border-rose-200/40 bg-rose-200/14 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/70 disabled:opacity-60"
+            >
+              {isDeleting ? "Deleting..." : "Delete service"}
+            </button>
+          )}
+        </div>
       </div>
 
       {isOpen && (
@@ -166,26 +180,14 @@ export default function SelectedServiceAdminControls({
           >
             Clear service intelligence
           </button>
-          <div className={`grid gap-2 ${canDelete ? "grid-cols-2" : "grid-cols-1"}`}>
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={isSaving}
-              className="rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
-            >
-              {isSaving ? "Saving..." : "Save all changes"}
-            </button>
-            {canDelete && (
-              <button
-                type="button"
-                onClick={onDelete}
-                disabled={isDeleting}
-                className="rounded-xl border border-rose-200/30 bg-rose-200/14 px-3 py-2 text-xs uppercase tracking-[0.14em] text-rose-100 transition hover:border-rose-200/55 disabled:opacity-60"
-              >
-                {isDeleting ? "Deleting..." : "Delete service"}
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={isSaving}
+            className="w-full rounded-xl border border-emerald-200/30 bg-emerald-200/16 px-3 py-2 text-xs uppercase tracking-[0.14em] text-emerald-100 transition hover:border-emerald-200/55 disabled:opacity-60"
+          >
+            {isSaving ? "Saving..." : "Save all changes"}
+          </button>
         </div>
       )}
     </div>
