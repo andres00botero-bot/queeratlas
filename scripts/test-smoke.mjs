@@ -67,6 +67,10 @@ function checkCanonicalDomainConfig() {
     "src/app/robots.js: host and sitemap must use the canonical www origin"
   );
   assert(
+    /userAgent: "OAI-SearchBot",\s*allow: "\/"/.test(robots),
+    "src/app/robots.js: OAI-SearchBot must remain allowed for ChatGPT Search"
+  );
+  assert(
     sitemap.includes(`QA_SITE_URL = "${canonicalOrigin}"`) &&
       sitemapIndex.includes('"/sitemap-venues.xml"') &&
       sitemapIndex.includes('"/sitemap-events.xml"') &&
