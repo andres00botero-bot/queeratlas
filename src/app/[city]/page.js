@@ -128,6 +128,15 @@ import { getQueerAreasForCity } from "@/lib/queerAreas";
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const QUEER_AREA_MARKER_ZOOM = 12;
 
+function hasMapStyle(map) {
+  try {
+    return Boolean(map?.getStyle?.());
+  } catch {
+    // Mapbox clears its style during remove(); sibling effect cleanups can run afterwards.
+    return false;
+  }
+}
+
 export default function CityPage() {
   const { locale } = useLocale();
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -2661,7 +2670,7 @@ export default function CityPage() {
     let mounted = true;
 
     const setupPulse = () => {
-      if (!mounted || !map.getStyle()) return;
+      if (!mounted || !hasMapStyle(map)) return;
       const existingSource = map.getSource(sourceId);
       if (existingSource?.setData) {
         existingSource.setData(data);
@@ -2698,7 +2707,7 @@ export default function CityPage() {
     return () => {
       mounted = false;
       map.off("load", setupPulse);
-      if (mapRef.current !== map || !map.getStyle()) return;
+      if (mapRef.current !== map || !hasMapStyle(map)) return;
       if (map.getLayer(layerId)) map.removeLayer(layerId);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     };
@@ -2775,7 +2784,7 @@ export default function CityPage() {
     };
 
     const setupClusters = () => {
-      if (!mounted || !map.getStyle()) return;
+      if (!mounted || !hasMapStyle(map)) return;
       const existingSource = map.getSource(sourceId);
       if (existingSource?.setData) {
         existingSource.setData(data);
@@ -2841,7 +2850,7 @@ export default function CityPage() {
       map.off("load", setupClusters);
       map.off("zoom", syncDomMarkerVisibility);
       if (mapRef.current !== map) return;
-      if (!map.getStyle()) return;
+      if (!hasMapStyle(map)) return;
       if (map.getLayer(clusterLayerId)) map.off("click", clusterLayerId, expandCluster);
       if (map.getLayer(pointLayerId)) map.off("click", pointLayerId, openClusterPoint);
       if (map.getLayer(clusterLayerId)) map.off("mouseenter", clusterLayerId, setPointerCursor);
