@@ -37,7 +37,7 @@ export function useCitySelectionRouting({
   );
 
   const buildSelectionUrl = useCallback(
-    ({ nextPlaceId = placeId, nextEventId = eventId, nextServiceId = serviceId } = {}) => {
+    ({ nextPlaceId = placeId, nextEventId = eventId, nextServiceId = serviceId, review = false } = {}) => {
       const params = new URLSearchParams(searchParams.toString());
 
       if (nextPlaceId) {
@@ -60,6 +60,8 @@ export function useCitySelectionRouting({
 
       params.delete("lat");
       params.delete("lng");
+      if (review) params.set("review", "1");
+      else params.delete("review");
 
       const query = params.toString();
       return query ? `${pathname}?${query}` : pathname;
@@ -69,9 +71,10 @@ export function useCitySelectionRouting({
 
   const openPlace = useCallback(
     (place, options = {}) => {
+      const { review = false, ...navigationOptions } = options;
       navigateSelection(
-        buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null }),
-        options
+        buildSelectionUrl({ nextPlaceId: place.id, nextEventId: null, nextServiceId: null, review }),
+        navigationOptions
       );
     },
     [buildSelectionUrl, navigateSelection]

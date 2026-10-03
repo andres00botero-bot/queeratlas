@@ -4,6 +4,14 @@ import SafetyShields from "@/components/city/SafetyShields";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 
 export default function SelectedPlaceReviewsList({ reviews = [] }) {
+  if (reviews.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-cyan-100/24 bg-cyan-200/[0.05] px-4 py-6 text-center">
+        <p className="text-sm font-semibold text-white">No reviews yet.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-4 space-y-2">
       {reviews.map((review) => {

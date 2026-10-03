@@ -822,6 +822,43 @@ body > div:first-child {
   }
 }
 
+.qa-review-cta {
+  background: linear-gradient(135deg, #ec4899 0%, #c026d3 48%, #7c3aed 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 8px 20px rgba(192, 38, 211, 0.25),
+    0 2px 7px rgba(236, 72, 153, 0.2);
+}
+
+.qa-review-cta:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    0 14px 28px rgba(192, 38, 211, 0.34),
+    0 3px 10px rgba(236, 72, 153, 0.28);
+}
+
+.qa-review-cta:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.qa-review-cta-sheen {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.52), transparent);
+  transform: translateX(-180%);
+  transition: transform 540ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.qa-review-cta:hover .qa-review-cta-sheen,
+.qa-review-cta:focus-visible .qa-review-cta-sheen {
+  transform: translateX(620%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qa-review-cta,
+  .qa-review-cta-sheen {
+    transition: none;
+  }
+}
+
 .qa-event-panel-cta {
   position: relative;
   isolation: isolate;

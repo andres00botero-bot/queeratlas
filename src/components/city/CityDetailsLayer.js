@@ -84,6 +84,9 @@ export default function CityDetailsLayer({
   toggleFavorite,
   favorites,
   reviews,
+  onReviewCtaOpened,
+  onReviewStarted,
+  reviewRequested,
   canReviewSelectedPlace,
   isSubmittingReview,
   handleJoinToPlaceReview,
@@ -228,6 +231,9 @@ export default function CityDetailsLayer({
             toggleFavorite={toggleFavorite}
             favorites={favorites}
             reviews={reviews}
+            onReviewCtaOpened={onReviewCtaOpened}
+            onReviewStarted={onReviewStarted}
+            reviewRequested={reviewRequested}
             canReviewSelectedPlace={canReviewSelectedPlace}
             isSubmittingReview={isSubmittingReview}
             onJoinToReview={handleJoinToPlaceReview}

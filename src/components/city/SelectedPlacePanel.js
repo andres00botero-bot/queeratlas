@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { PenLine } from "lucide-react";
 import SelectedPlaceActions from "@/components/city/SelectedPlaceActions";
 import SelectedPlaceAdminControls from "@/components/city/SelectedPlaceAdminControls";
 import SelectedPlaceLiveVibePanel from "@/components/city/SelectedPlaceLiveVibePanel";
@@ -48,6 +49,9 @@ export default function SelectedPlacePanel({
   toggleFavorite,
   favorites,
   reviews,
+  onReviewCtaOpened,
+  onReviewStarted,
+  reviewRequested = false,
   canReviewSelectedPlace,
   isSubmittingReview,
   onJoinToReview,
@@ -66,11 +70,18 @@ export default function SelectedPlacePanel({
   const { t } = useLocale();
   const [activeTab, setActiveTab] = useState("overview");
 
+  useEffect(() => {
+    if (reviewRequested) {
+      setActiveTab("reviews");
+      onReviewCtaOpened?.();
+    }
+  }, [onReviewCtaOpened, reviewRequested, selectedPlace?.id]);
+
   if (!selectedPlace) return null;
   const placeTypeLabel = typeLabels?.[selectedPlace.type] || t("city.venue", "Venue");
   const tabs = [
     { key: "overview", label: t("city.overview", "Overview") },
-    { key: "reviews", label: t("city.reviews", "Reviews") },
+    { key: "reviews", label: t("city.writeReview", "Write a review") },
   ];
   const reviewCount = Number(selectedPlace.reviewCount || 0);
   const reviewCountLabel = reviewCount > 0 ? `${reviewCount}` : "";
@@ -99,7 +110,7 @@ export default function SelectedPlacePanel({
             {t("city.close", "Close")}
           </button>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 rounded-full border border-white/14 bg-black/18 p-1">
+        <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/14 bg-black/18 p-1.5">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
             return (
@@ -108,15 +119,30 @@ export default function SelectedPlacePanel({
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
                 aria-pressed={isActive}
-                className={`qa-action rounded-full px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition ${
-                  isActive
-                    ? "border border-cyan-100/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(244,114,182,0.16))] text-white shadow-[0_10px_26px_rgba(34,211,238,0.14)]"
-                    : "text-white/58 hover:bg-white/[0.08] hover:text-white"
+                className={`qa-action relative inline-flex min-h-11 items-center justify-center gap-2 overflow-hidden rounded-xl px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100 ${
+                  tab.key === "reviews"
+                    ? isActive
+                      ? "qa-review-cta border border-fuchsia-50/80 text-white"
+                      : "qa-review-cta border border-fuchsia-100/58 text-white"
+                    : isActive
+                      ? "border border-cyan-100/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.22),rgba(244,114,182,0.16))] text-white shadow-[0_10px_26px_rgba(34,211,238,0.14)]"
+                      : "text-white/58 hover:bg-white/[0.08] hover:text-white"
                 }`}
               >
-                {tab.label}
+                {tab.key === "reviews" ? (
+                  <span
+                    aria-hidden="true"
+                    className="qa-review-cta-sheen pointer-events-none absolute inset-y-[-60%] left-[-26%] w-[22%] -skew-x-12"
+                  />
+                ) : null}
+                {tab.key === "reviews" ? (
+                  <span className="relative inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-white/18 bg-black/20 shadow-inner">
+                    <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                ) : null}
+                <span className="relative">{tab.label}</span>
                 {tab.key === "reviews" && reviewCountLabel ? (
-                  <span className="ml-1 text-white/60">{reviewCountLabel}</span>
+                  <span className="relative rounded-full border border-white/18 bg-black/18 px-1.5 py-0.5 text-[10px] text-white/78">{reviewCountLabel}</span>
                 ) : null}
               </button>
             );
@@ -133,6 +159,10 @@ export default function SelectedPlacePanel({
               typeLabels={typeLabels}
               selectedPlaceSafetySignal={selectedPlaceSafetySignal}
               showPlaceOnMap={showPlaceOnMap}
+              onOpenReviews={() => {
+                setActiveTab("reviews");
+                onReviewCtaOpened?.();
+              }}
               liveSignal={
                 <SelectedPlaceLiveVibePanel
                   liveVibeSummary={liveVibeSummary}
@@ -194,7 +224,6 @@ export default function SelectedPlacePanel({
         <>
           <div className="qa-city-detail-surface rounded-[22px] border p-4">
             <p className="text-base font-semibold tracking-[0.01em] text-white">{t("city.reviews", "Reviews")}</p>
-            <p className="mt-1 text-xs leading-5 text-cyan-50/78">{t("city.communityReviewsDescription", "Community ratings and notes for this venue.")}</p>
           </div>
 
           <div className="qa-city-detail-surface mt-4 rounded-[22px] border p-4">
@@ -218,6 +247,7 @@ export default function SelectedPlacePanel({
               setSafetyRating={setSafetyRating}
               comment={comment}
               setComment={setComment}
+              onStartReview={onReviewStarted}
               onSubmitReview={onSubmitReview}
             />
           </div>

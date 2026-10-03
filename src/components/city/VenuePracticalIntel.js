@@ -28,9 +28,9 @@ export default function VenuePracticalIntel({ place, compact = false }) {
     { key: "staffInclusivity", label: labels.staffInclusivity, value: intel.staffInclusivity, evidence: intel.topicEvidence.staffInclusivity },
     {
       key: "communityRating",
-      label: "Community rating",
-      value: hasRating ? `${rating.toFixed(1)} / 5` : "Not rated yet",
-      detail: reviewCount > 0 ? `${reviewCount} community review${reviewCount === 1 ? "" : "s"}` : "Be the first to rate this venue",
+      label: "Reviews",
+      value: hasRating ? `${rating.toFixed(1)} / 5` : "No reviews yet",
+      detail: reviewCount > 0 ? `${reviewCount} review${reviewCount === 1 ? "" : "s"}` : "",
       isKnown: hasRating,
     },
   ];

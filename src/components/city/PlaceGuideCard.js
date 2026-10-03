@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, ExternalLink, MapPin, MousePointerClick, Shield } from "lucide-react";
+import { ArrowUpRight, ExternalLink, MapPin, MessageCircle, MousePointerClick, Shield } from "lucide-react";
 import { getEntityQuality, getQualityStatus } from "@/lib/quality";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { qualityPillClass, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
@@ -192,9 +192,18 @@ export default function PlaceGuideCard({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
-        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-          {t("city.reviewsCount", "{count} reviews").replace("{count}", place.reviewCount || 0)}
-        </span>
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            openPlace(place, { review: true });
+          }}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-cyan-100/28 bg-cyan-200/[0.09] px-3 py-1 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/52 hover:bg-cyan-200/[0.16]"
+          aria-label={`Open reviews for ${place.name}`}
+        >
+          <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+          {Number(place.reviewCount || 0) > 0 ? `${place.reviewCount} Reviews` : "Reviews · Be the first"}
+        </button>
         <div className="flex items-center gap-2">
           {canRefreshQuality ? (
             <button

@@ -13,6 +13,7 @@ export default function CityPanelButton({
   entityId = "",
   entityKind = "",
   section = "",
+  review = false,
   className = "",
   children,
 }) {
@@ -23,6 +24,7 @@ export default function CityPanelButton({
     const entityParamKey = ENTITY_PARAM_KEYS[entityKind] || "";
     if (entityParamKey && entityId) params.set(entityParamKey, String(entityId));
     else if (section) params.set("section", String(section));
+    if (review) params.set("review", "1");
 
     const query = params.toString();
     router.push(`/${city}${query ? `?${query}` : ""}`);

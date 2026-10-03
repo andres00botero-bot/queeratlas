@@ -334,6 +334,15 @@ export default async function CityVenueDetailPage({ params }) {
             <span className="relative">Open {place.name} in the {cityName} city guide</span>
             <span className="relative text-cyan-100 transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
           </CityPanelButton>
+          <CityPanelButton
+            city={city}
+            entityKind="place"
+            entityId={String(place.id)}
+            review
+            className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl border border-fuchsia-100/30 bg-fuchsia-200/10 px-4 text-xs font-semibold text-fuchsia-50 transition hover:border-fuchsia-100/55 hover:bg-fuchsia-200/[0.16]"
+          >
+            Reviews ({Number(place?.reviewCount || 0)})
+          </CityPanelButton>
           <p className="mt-2 hidden text-sm text-white/70 sm:block">
             {searchCopy?.description || `${cityName} venue intelligence with route context, hours, and trusted local signal.`}
           </p>

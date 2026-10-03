@@ -185,6 +185,7 @@ export default function CityPage() {
   const placeId = searchParams?.get("placeId") || "";
   const eventId = searchParams?.get("eventId") || "";
   const serviceId = searchParams?.get("serviceId") || "";
+  const reviewRequested = searchParams?.get("review") === "1";
   const contributeMode = searchParams?.get("contribute") || "";
 
   useEffect(() => {
@@ -341,12 +342,13 @@ export default function CityPage() {
     setServiceProviderInclusivity,
     resetServiceForm,
   } = useCityServiceForm();
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(null);
-  const [safetyRating, setSafetyRating] = useState(4);
+  const [safetyRating, setSafetyRating] = useState(0);
   const [hoverSafetyRating, setHoverSafetyRating] = useState(null);
   const [comment, setComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const reviewStartedForPlaceRef = useRef("");
   const { toast, showToast } = useActionToast();
   const [selectedPlaceDbId, setSelectedPlaceDbId] = useState("");
   const [liveVibeRows, setLiveVibeRows] = useState([]);
@@ -4177,8 +4179,37 @@ export default function CityPage() {
     redirectToJoinWithReturnTarget(redirectTarget);
   }, [buildSelectionUrl, redirectToJoinWithReturnTarget, selectedPlace]);
 
+  const handleReviewCtaOpened = useCallback(() => {
+    if (!selectedPlace) return;
+    trackKpiEvent("reviews_opened", {
+      city,
+      targetType: "place",
+      targetId: String(selectedPlace.id || ""),
+      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+    });
+  }, [city, memberName, selectedPlace, user?.email]);
+
+  const handleReviewStarted = useCallback(() => {
+    const placeKey = String(selectedPlace?.id || "");
+    if (!placeKey || reviewStartedForPlaceRef.current === placeKey) return;
+    reviewStartedForPlaceRef.current = placeKey;
+    trackKpiEvent("review_started", {
+      city,
+      targetType: "place",
+      targetId: placeKey,
+      memberKey: String(user?.email || memberName || "").trim().toLowerCase(),
+    });
+  }, [city, memberName, selectedPlace?.id, user?.email]);
+
   const handleSubmitPlaceReview = useCallback(async () => {
     if (!selectedPlace) return;
+    if (!Number.isFinite(Number(rating)) || Number(rating) < 1) {
+      showToast("Choose an overall rating before submitting your review.", {
+        tone: "warn",
+        duration: 2200,
+      });
+      return;
+    }
     const trimmedComment = comment.trim();
     if (!trimmedComment) {
       showToast("Write a short comment before submitting.", {
@@ -4207,8 +4238,8 @@ export default function CityPage() {
       }
 
       setComment("");
-      setRating(5);
-      setSafetyRating(4);
+      setRating(0);
+      setSafetyRating(0);
       const updated = await getReviews(selectedPlace.id, selectedPlace);
       setReviews(updated);
       trackKpiEvent("review_submitted", {
@@ -5569,6 +5600,9 @@ export default function CityPage() {
                       toggleFavorite={toggleFavorite}
                       favorites={favorites}
                       reviews={reviews}
+                      onReviewCtaOpened={handleReviewCtaOpened}
+                      onReviewStarted={handleReviewStarted}
+                      reviewRequested={reviewRequested}
                       canReviewSelectedPlace={canReviewSelectedPlace}
                       isSubmittingReview={isSubmittingReview}
                       onJoinToReview={handleJoinToPlaceReview}
@@ -5702,6 +5736,9 @@ export default function CityPage() {
         toggleFavorite={toggleFavorite}
         favorites={favorites}
         reviews={reviews}
+        onReviewCtaOpened={handleReviewCtaOpened}
+        onReviewStarted={handleReviewStarted}
+        reviewRequested={reviewRequested}
         canReviewSelectedPlace={canReviewSelectedPlace}
         isSubmittingReview={isSubmittingReview}
         handleJoinToPlaceReview={handleJoinToPlaceReview}

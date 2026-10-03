@@ -17,6 +17,7 @@ export default function SelectedPlaceSummary({
   typeLabels,
   selectedPlaceSafetySignal,
   showPlaceOnMap,
+  onOpenReviews,
   liveSignal = null,
 }) {
   const { t } = useLocale();
@@ -78,10 +79,10 @@ export default function SelectedPlaceSummary({
         />
       )}
       <div className="mt-3 grid grid-cols-2 gap-2.5">
-        <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
+        <button type="button" onClick={onOpenReviews} className="rounded-2xl border border-cyan-100/24 bg-cyan-200/[0.08] px-3 py-3 text-left transition hover:border-cyan-100/48 hover:bg-cyan-200/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100">
           <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">{t("city.reviews", "Reviews")}</p>
-          <p className="mt-1 text-base font-semibold text-white">{selectedPlace.reviewCount || 0}</p>
-        </div>
+          <p className="mt-1 text-base font-semibold text-white">{selectedPlace.reviewCount || 0} {t("city.reviews", "Reviews")}</p>
+        </button>
         <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
           <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">{t("city.safety", "Safety")}</p>
           {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 ? (
