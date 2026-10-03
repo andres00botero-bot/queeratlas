@@ -17,6 +17,7 @@ import { usePlaces } from "@/lib/usePlaces";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { fetchEventsData } from "@/features/events/eventDataApi";
 import { isEventVisibleOnCityPage } from "@/features/city/eventRailFeature";
+import { isPublishedEntity, isUpcomingPublishedEvent } from "@/lib/publicInventory";
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import { useQariProfiles } from "@/lib/useQariProfiles";
 import { QARI_MAP_PALETTE } from "@/lib/qari";
@@ -711,7 +712,7 @@ export default function CitiesPage() {
       return acc;
     }, new Map());
     const eventsByCity = eventsData.reduce((acc, event) => {
-      if (!isEventVisibleOnCityPage(event)) return acc;
+      if (!isEventVisibleOnCityPage(event) || !isUpcomingPublishedEvent(event)) return acc;
       const cityKey = normalizeCityKey(event?.city || "");
       if (!cityKey) return acc;
       acc.set(cityKey, (acc.get(cityKey) || 0) + 1);
@@ -719,7 +720,7 @@ export default function CitiesPage() {
     }, new Map());
 
     return Object.entries(registryConfig).map(([key, city]) => {
-      const cityPlaces = placesByCity.get(normalizeCityKey(key)) || [];
+      const cityPlaces = (placesByCity.get(normalizeCityKey(key)) || []).filter(isPublishedEntity);
       const reviewCount = cityPlaces.reduce(
         (sum, place) => sum + (place.reviewCount || 0),
         0
@@ -941,7 +942,7 @@ export default function CitiesPage() {
   );
   const totalCities = Object.keys(registryConfig).length;
   const totalCountries = countries.length - 1;
-  const totalPlaces = places.length;
+  const totalPlaces = places.filter(isPublishedEntity).length;
   const visibleCityCount = filteredCities.length;
   useEffect(() => {
     if (isAuthLoading) return;

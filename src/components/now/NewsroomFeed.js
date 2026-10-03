@@ -142,6 +142,7 @@ export default function NewsroomFeed({
   onOpen,
   onEdit,
   onDelete,
+  isFallback = false,
 }) {
   const { t } = useLocale();
   const [visibleCount, setVisibleCount] = useState(INITIAL_STORY_COUNT);
@@ -259,6 +260,11 @@ export default function NewsroomFeed({
   return (
     <div className="relative z-10 min-w-0">
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{feedAnnouncement}</p>
+      {isFallback ? (
+        <p className="mb-5 inline-flex rounded-full border border-amber-200/25 bg-amber-200/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100/90">
+          Editorial fallback · no published news available
+        </p>
+      ) : null}
       {feedMode === "following" && followedPreferences.length > 0 ? (
         <section className="mb-7 flex min-w-0 items-center gap-3 border-b border-white/10 pb-4" aria-label={t("now.followedNewsInterests", "Followed news interests")}>
           <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">{t("now.following", "Following")}</span>

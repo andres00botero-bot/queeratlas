@@ -954,47 +954,17 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
     []
   );
 
-  const risingSpotsNews = useMemo(
-    () =>
-      trendingPlaces.slice(0, 4).map((place) => ({
-        id: `rising-${place.id}`,
-        title: `${place.name} is rising`,
-        city: place.city || "City",
-        category: "rising_spot",
-        date: new Date().toISOString().slice(0, 10),
-        summary: `${place.type || "Venue"} | ${place.reviewCount || 0} reviews | rating ${formatRatingValue(place.avgRating)}`,
-        whyItMatters: "Community traction is increasing, so this venue is becoming a higher-confidence choice.",
-      })),
-    [trendingPlaces]
-  );
-
-  const majorEventNews = useMemo(
-    () =>
-      thisWeekEvents.slice(0, 4).map((event) => ({
-        id: `major-${event.id}`,
-        title: event.name,
-        city: event.city || "City",
-        category: "major_event",
-        date: event.date,
-        summary: event.description || "Major community event with high planning value.",
-        whyItMatters: "Events like this often shape where the strongest queer energy will concentrate.",
-      })),
-    [thisWeekEvents]
-  );
-
   const worldNewsItems = useMemo(() => {
-    const combined = [
-      ...adminNews,
-      ...EDITORIAL_PULSE_ITEMS,
-      ...risingSpotsNews,
-      ...majorEventNews,
-    ];
+    const usingFallback = adminNews.length === 0;
+    const combined = usingFallback
+      ? EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, isFallback: true }))
+      : adminNews;
     const hiddenNewsIdSet = new Set((hiddenNewsIds || []).map((id) => String(id)));
 
     return combined
       .filter((item) => !hiddenNewsIdSet.has(String(item.id)))
       .sort(compareNewsRecency);
-  }, [adminNews, hiddenNewsIds, majorEventNews, risingSpotsNews]);
+  }, [adminNews, hiddenNewsIds]);
 
   const mixedFeedItems = useMemo(
     () => worldNewsItems.filter((item) => !isVoicesMemberItem(item)),
@@ -2537,6 +2507,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                 onOpen={openNewsArticle}
                 onEdit={openEditNewsComposer}
                 onDelete={deleteFeedItem}
+                isFallback={adminNews.length === 0}
               />
 
               {false && leadNewsItem ? (

@@ -8,6 +8,7 @@ import { normalizeVenueIntel } from "@/lib/venueIntel";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { listCityRegistry } from "@/lib/server/cityRegistry";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
+import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
@@ -127,8 +128,9 @@ async function fetchWorldNews() {
 
   if (error) {
     return {
-      data: [...EDITORIAL_PULSE_ITEMS].sort(compareNewsRecency),
+      data: EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, isFallback: true })).sort(compareNewsRecency),
       partialData: true,
+      fallback: true,
     };
   }
 
@@ -138,19 +140,19 @@ async function fetchWorldNews() {
     categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
   }));
 
-  const merged = [...withCategoryLabel, ...EDITORIAL_PULSE_ITEMS].reduce((acc, item) => {
-    const key = String(item.id || `${item.title}-${item.date}`);
-    if (!acc.some((existing) => String(existing.id || `${existing.title}-${existing.date}`) === key)) {
-      acc.push(item);
-    }
-    return acc;
-  }, []);
+  if (withCategoryLabel.length > 0) {
+    return { data: withCategoryLabel.sort(compareNewsRecency), partialData: false, fallback: false };
+  }
 
-  return { data: merged.sort(compareNewsRecency), partialData: false };
+  return {
+    data: EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, isFallback: true })).sort(compareNewsRecency),
+    partialData: false,
+    fallback: true,
+  };
 }
 
 export async function fetchHomeDataPayload() {
-  const [eventsRes, globalRes, placesRes, newsRes, registryCities] = await Promise.all([
+  const [eventsRes, globalRes, placesRes, newsRes, registryCities, inventory] = await Promise.all([
     supabase
       .from("events")
       .select("*")
@@ -163,6 +165,7 @@ export async function fetchHomeDataPayload() {
     fetchPlacesForAtlas(),
     fetchWorldNews(),
     listCityRegistry().catch(() => Object.values(cityCoreConfig)),
+    loadSeoEntityInventory(),
   ]);
 
   const mergedEvents = await mergeSeedEventsAsync(eventsRes?.data || []);
@@ -177,8 +180,8 @@ export async function fetchHomeDataPayload() {
   const metrics = {
     countries: new Set(registryCities.map((city) => city?.country).filter(Boolean)).size,
     cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
-    places: places.length,
-    events: events.length,
+    places: inventory.publicVenues.length,
+    events: inventory.publicEvents.length,
   };
   const partialData = Boolean(
     eventsRes?.error ||
@@ -192,6 +195,7 @@ export async function fetchHomeDataPayload() {
     places,
     featuredVenue,
     worldNews,
+    worldNewsFallback: Boolean(newsRes?.fallback),
     metrics,
     partialData,
   };
@@ -208,6 +212,7 @@ function buildInitialHomeData(payload) {
   const events = Array.isArray(payload?.events) ? payload.events : [];
   const places = Array.isArray(payload?.places) ? payload.places : [];
   const worldNews = Array.isArray(payload?.worldNews) ? payload.worldNews : [];
+  const worldNewsFallback = Boolean(payload?.worldNewsFallback);
   const featuredVenue = payload?.featuredVenue || pickFeaturedVenue(places);
   const metrics = payload?.metrics && typeof payload.metrics === "object"
     ? payload.metrics
@@ -250,6 +255,7 @@ function buildInitialHomeData(payload) {
     ),
     featuredVenue,
     worldNews: [...worldNews].sort(compareNewsRecency).slice(0, 3),
+    worldNewsFallback,
     metrics,
     partialData: Boolean(payload?.partialData),
     complete: false,

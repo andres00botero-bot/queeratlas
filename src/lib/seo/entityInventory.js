@@ -9,6 +9,7 @@ import {
   evaluateVenueSeoQuality,
   excludeDuplicateEntityCopy,
 } from "@/lib/seo/entityIndexing";
+import { isUpcomingPublishedEvent, uniquePublishedEntities } from "@/lib/publicInventory";
 
 const PAGE_SIZE = 1000;
 const MAX_PAGES = 50;
@@ -102,6 +103,8 @@ async function buildInventory() {
   const services = excludeDuplicateEntityCopy(allServices).filter(
     (row) => evaluateServiceSeoQuality(row).indexable,
   );
+  const publicVenues = uniquePublishedEntities(allVenues);
+  const publicEvents = uniquePublishedEntities(allEvents).filter((row) => isUpcomingPublishedEvent(row));
 
   return {
     venues,
@@ -110,6 +113,8 @@ async function buildInventory() {
     allVenues,
     allEvents,
     allServices,
+    publicVenues,
+    publicEvents,
     availability: {
       places: !placesResult.error,
       events: !eventsResult.error,

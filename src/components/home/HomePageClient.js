@@ -135,6 +135,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     () => (Array.isArray(initialHomeData?.worldNews) ? initialHomeData.worldNews : []),
     [initialHomeData]
   );
+  const initialWorldNewsFallback = Boolean(initialHomeData?.worldNewsFallback);
   const initialFeaturedVenue = useMemo(
     () => (initialHomeData?.featuredVenue && typeof initialHomeData.featuredVenue === "object" ? initialHomeData.featuredVenue : null),
     [initialHomeData]
@@ -156,6 +157,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [results, setResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [worldNews, setWorldNews] = useState(initialWorldNews);
+  const [worldNewsFallback, setWorldNewsFallback] = useState(initialWorldNewsFallback);
   const [featuredVenue, setFeaturedVenue] = useState(initialFeaturedVenue);
   const [favorites, setFavorites] = useState([]);
   const [emailInput, setEmailInput] = useState("");
@@ -302,6 +304,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       events: Array.isArray(payload?.events) ? payload.events : [],
       places: Array.isArray(payload?.places) ? payload.places : [],
       worldNews: Array.isArray(payload?.worldNews) ? payload.worldNews : [],
+      worldNewsFallback: Boolean(payload?.worldNewsFallback),
       featuredVenue: payload?.featuredVenue && typeof payload.featuredVenue === "object" ? payload.featuredVenue : null,
       metrics: payload?.metrics && typeof payload.metrics === "object" ? payload.metrics : null,
       partialData: Boolean(payload?.partialData),
@@ -340,6 +343,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       setEvents(Array.isArray(cached.data.events) ? cached.data.events : []);
       setPlaces(Array.isArray(cached.data.places) ? cached.data.places : []);
       setWorldNews(Array.isArray(cached.data.worldNews) ? cached.data.worldNews : []);
+      setWorldNewsFallback(Boolean(cached.data.worldNewsFallback));
       if (cached.data.featuredVenue && typeof cached.data.featuredVenue === "object") {
         setFeaturedVenue(cached.data.featuredVenue);
       }
@@ -362,12 +366,14 @@ export default function HomePageClient({ initialHomeData = null }) {
     const nextEvents = payload.events;
     const nextPlaces = payload.places;
     const nextWorldNews = payload.worldNews;
+    const nextWorldNewsFallback = payload.worldNewsFallback;
     const nextFeaturedVenue = payload.featuredVenue;
     const nextMetrics = payload.metrics;
 
     setEvents(nextEvents);
     setPlaces(nextPlaces);
     setWorldNews(nextWorldNews);
+    setWorldNewsFallback(nextWorldNewsFallback);
     if (nextFeaturedVenue) setFeaturedVenue(nextFeaturedVenue);
     if (nextMetrics) setHomeMetrics(nextMetrics);
     setHasCompleteHomeData(true);
@@ -375,6 +381,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       events: nextEvents,
       places: nextPlaces,
       worldNews: nextWorldNews,
+      worldNewsFallback: nextWorldNewsFallback,
       featuredVenue: nextFeaturedVenue,
       metrics: nextMetrics,
     });
@@ -391,6 +398,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         events: initialEvents,
         places: initialPlaces,
         worldNews: initialWorldNews,
+        worldNewsFallback: initialWorldNewsFallback,
         featuredVenue: initialFeaturedVenue,
         metrics: initialMetrics,
       });
@@ -413,6 +421,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     initialMetrics,
     initialPlaces,
     initialWorldNews,
+    initialWorldNewsFallback,
     loadHomeData,
   ]);
 
@@ -950,7 +959,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       meta: latestPulseNews?.city ? `${formatCityLabel(latestPulseNews.city)} signal` : t("home.editorialDesk", "Editorial desk"),
       signalLabel: t("home.news", "News"),
       signalValue: homeNewsItems.length ? `${homeNewsItems.length} ${t("home.freshStories", "fresh stories")}` : t("home.newsDescription", "Open queer world news"),
-      badge: latestPulseNews ? "Fresh" : "Pending",
+      badge: latestPulseNews ? (worldNewsFallback ? "Editorial fallback" : "Fresh") : "Pending",
       badgeClass: "border-cyan-200/30 bg-cyan-200/12 text-cyan-100/90",
       cardClass:
         "border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] hover:border-cyan-200/44",

@@ -9,7 +9,6 @@ import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvid
 import CityEntityCrawlSection from "@/components/city/CityEntityCrawlSection";
 import { CityRelatedGuides } from "@/components/city/CityGuideLinks";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
-import { isEventVisibleOnCityPage } from "@/features/city/eventRailFeature";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -123,11 +122,8 @@ export default async function CityLayout({ children, params }) {
     return sourceAvailable || count > 0 ? count : null;
   };
   const initialEntityCounts = {
-    venues: countEntities(inventory.allVenues, inventory.availability.places),
-    events: countEntities(
-      inventory.allEvents.filter(isEventVisibleOnCityPage),
-      inventory.availability.events,
-    ),
+    venues: countEntities(inventory.publicVenues, inventory.availability.places),
+    events: countEntities(inventory.publicEvents, inventory.availability.events),
     services: countEntities(inventory.allServices, inventory.availability.services),
   };
   const routeConfig = {
