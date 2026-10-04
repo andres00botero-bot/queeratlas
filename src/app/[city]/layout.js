@@ -14,6 +14,7 @@ import { headers } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { getLocalizedCityGuide } from "@/lib/cityGuideTranslations";
+import { getQariProfileForCountry } from "@/lib/qariCountryProfiles2026";
 
 export async function generateMetadata({ params }) {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
@@ -129,6 +130,7 @@ export default async function CityLayout({ children, params }) {
   const routeConfig = {
     ...coreConfig,
     key: city,
+    qariProfile: getQariProfileForCountry(coreConfig.country),
     guide: cityGuide,
     guideResearch,
     initialEntityCounts,

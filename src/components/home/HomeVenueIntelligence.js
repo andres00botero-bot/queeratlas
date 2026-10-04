@@ -130,8 +130,8 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             </p>
 
             <Link
-              href="/cities"
-              onClick={() => onContextOpen?.("/cities")}
+              href="/qari"
+              onClick={() => onContextOpen?.("/qari")}
               className="mt-auto flex min-h-11 items-center justify-between gap-2 pt-3 text-[11px] font-semibold text-cyan-50/86 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:mt-auto lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-cyan-100/24 lg:bg-cyan-100/[0.09] lg:px-3.5 lg:py-0 lg:text-white lg:hover:border-cyan-100/40 lg:hover:bg-cyan-100/[0.14]"
             >
               {t("home.exploreQariMap", "Explore the QARI world map")} <ArrowUpRight size={11} aria-hidden="true" />

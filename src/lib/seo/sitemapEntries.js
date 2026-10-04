@@ -17,6 +17,8 @@ import { QA_SITE_URL } from "@/lib/seo/sitemapXml";
 import { localePath } from "@/lib/seo/localizedSeo";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
+import { QARI_COUNTRY_PROFILES } from "@/lib/qariCountryProfiles2026";
+import { qariCountryPath } from "@/lib/qariRoutes";
 import { supabase } from "@/lib/supabase";
 
 const CLUSTER_INTENT_PRIORITY = {
@@ -86,6 +88,7 @@ export async function getPageSitemapEntries() {
   const staticRoutes = [
     "",
     "/cities",
+    "/qari",
     "/events",
     "/events/calendar",
     "/events/off-grid",
@@ -173,6 +176,13 @@ export async function getPageSitemapEntries() {
     priority: 0.83,
   }));
 
+  const qariEntries = QARI_COUNTRY_PROFILES.map((profile) => ({
+    url: `${QA_SITE_URL}${qariCountryPath(profile.country)}`,
+    ...(profile.reviewedAt ? { lastModified: new Date(profile.reviewedAt) } : {}),
+    changeFrequency: "monthly",
+    priority: 0.78,
+  }));
+
   const collectionEntries = ATLAS_COLLECTIONS.map((collection) => ({
     url: `${QA_SITE_URL}${collection.href}`,
     ...(collection.updatedAt ? { lastModified: new Date(collection.updatedAt) } : {}),
@@ -197,6 +207,7 @@ export async function getPageSitemapEntries() {
     ...cityClusterEntries,
     ...topicHubEntries,
     ...reportEntries,
+    ...qariEntries,
     ...collectionEntries,
     ...newsArticleEntries,
   ]));
