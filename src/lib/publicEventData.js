@@ -45,9 +45,28 @@ function toCalendarEvent(event = {}) {
   };
 }
 
+async function fetchAllEvents() {
+  const pageSize = 1000;
+  const rows = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const result = await supabase
+      .from("events")
+      .select("*")
+      .order("date", { ascending: true })
+      .range(from, from + pageSize - 1);
+
+    if (result.error || (result.data || []).length < pageSize) {
+      return { data: [...rows, ...(result.data || [])], error: result.error };
+    }
+
+    rows.push(...result.data);
+  }
+}
+
 async function loadPublicEventData() {
   const [eventsResult, globalResult] = await Promise.all([
-    supabase.from("events").select("*").order("date", { ascending: true }),
+    fetchAllEvents(),
     supabase.from("global_events").select("*").order("date", { ascending: true }).order("created_at", { ascending: false }),
   ]);
 
@@ -69,7 +88,7 @@ async function loadPublicEventData() {
 
 const getCachedPublicEventData = unstable_cache(
   loadPublicEventData,
-  ["qa-public-event-data-v1"],
+  ["qa-public-event-data-v2"],
   { revalidate: 60, tags: [PUBLIC_EVENTS_CACHE_TAG] },
 );
 

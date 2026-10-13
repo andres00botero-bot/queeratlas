@@ -1654,10 +1654,23 @@ export default function CityPage() {
     setEventsLoading(true);
     setEventsLoadError("");
     try {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .order("date", { ascending: true });
+      const pageSize = 1000;
+      const allEvents = [];
+      let error = null;
+
+      for (let from = 0; ; from += pageSize) {
+        const result = await supabase
+          .from("events")
+          .select("*")
+          .order("date", { ascending: true })
+          .range(from, from + pageSize - 1);
+
+        error = result.error;
+        if (error) break;
+
+        allEvents.push(...(result.data || []));
+        if ((result.data || []).length < pageSize) break;
+      }
 
       if (error) {
         setEventsLoadError("Could not load city events right now.");
@@ -1665,7 +1678,7 @@ export default function CityPage() {
         return;
       }
 
-      setEventsData((await mergeSeedEventsAsync(data || [])).map((event) => normalizeEventRange(event)));
+      setEventsData((await mergeSeedEventsAsync(allEvents)).map((event) => normalizeEventRange(event)));
     } catch {
       setEventsLoadError("Could not reach event service right now.");
       setEventsData((await mergeSeedEventsAsync([])).map((event) => normalizeEventRange(event)));
