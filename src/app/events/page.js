@@ -155,7 +155,7 @@ function normalizeEventVibeKeys(event) {
   return Array.from(new Set(legacy));
 }
 
-export default function EventsPage({ initialSection = "calendar" }) {
+export default function EventsPage({ initialSection = "calendar", initialEvents, initialGlobalEvents }) {
   const router = useRouter();
   const { locale, t } = useLocale();
   const { isMember, isLoading: isAuthLoading, user, memberName } = useAuth();
@@ -168,9 +168,10 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const eventsControlsRef = useRef(null);
   const eventsControlButtonsRef = useRef({});
 
-  const [events, setEvents] = useState([]);
+  const hasInitialEventData = Array.isArray(initialEvents) && Array.isArray(initialGlobalEvents);
+  const [events, setEvents] = useState(() => (hasInitialEventData ? initialEvents : []));
   const [, setQualityTick] = useState(0);
-  const [globalEvents, setGlobalEvents] = useState([]);
+  const [globalEvents, setGlobalEvents] = useState(() => (hasInitialEventData ? initialGlobalEvents : []));
   const [showGlobalForm, setShowGlobalForm] = useState(false);
   const [offgridVisibleLimit, setOffgridVisibleLimit] = useState(6);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -183,7 +184,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
   const [searchVibe, setSearchVibe] = useState("");
   const [searchVisibleLimit, setSearchVisibleLimit] = useState(8);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !hasInitialEventData);
   const [loadError, setLoadError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [isSavingGlobal, setIsSavingGlobal] = useState(false);
@@ -497,11 +498,28 @@ export default function EventsPage({ initialSection = "calendar" }) {
     setIsLoading(false);
   }, [isAdmin]);
 
+  const revalidatePublicEvents = useCallback(async (city = "") => {
+    if (!isAdmin) return;
+    const { data } = await supabase.auth.getSession();
+    const token = String(data?.session?.access_token || "").trim();
+    if (!token) return;
+
+    await fetch("/api/admin/events/revalidate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ city }),
+    });
+  }, [isAdmin]);
+
   useEffect(() => {
+    if (hasInitialEventData) return;
     queueMicrotask(() => {
       loadAllEvents();
     });
-  }, [loadAllEvents]);
+  }, [hasInitialEventData, loadAllEvents]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -789,6 +807,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
     resetGlobalForm();
     setShowGlobalForm(false);
     setIsSavingGlobal(false);
+    void revalidatePublicEvents("Global");
   };
 
   const deleteGlobalEvent = useCallback(
@@ -810,11 +829,12 @@ export default function EventsPage({ initialSection = "calendar" }) {
         }
         setGlobalEvents((current) => current.filter((item) => String(item.id || "") !== id));
         showToast("Off-grid event deleted.", { tone: "success", duration: 1800 });
+        void revalidatePublicEvents("Global");
       } finally {
         setDeletingGlobalEventId("");
       }
     },
-    [isAdmin, showToast]
+    [isAdmin, revalidatePublicEvents, showToast]
   );
 
   const openCityEdit = (event, clickEvent) => {
@@ -912,6 +932,7 @@ export default function EventsPage({ initialSection = "calendar" }) {
     setIsSavingCityEdit(false);
     setCityEditOpen(false);
     showToast("Event updated.", { tone: "success", duration: 1900 });
+    void revalidatePublicEvents(normalized.city || cityEditDraft.city);
   };
 
   const focusOffgridEvent = useCallback((eventId) => {
