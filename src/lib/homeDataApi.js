@@ -9,6 +9,7 @@ import { cityCoreConfig } from "@/lib/cityCore";
 import { listCityRegistry } from "@/lib/server/cityRegistry";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
+import { isPublishedEntity } from "@/lib/publicInventory";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
@@ -180,7 +181,7 @@ export async function fetchHomeDataPayload() {
   const metrics = {
     countries: new Set(registryCities.map((city) => city?.country).filter(Boolean)).size,
     cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
-    places: inventory.publicVenues.length,
+    places: places.filter(isPublishedEntity).length,
     events: inventory.publicEvents.length,
   };
   const partialData = Boolean(

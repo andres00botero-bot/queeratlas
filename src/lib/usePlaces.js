@@ -12,13 +12,13 @@ import {
 import { hasVenueIntel } from "./venueIntel";
 
 const PLACE_SELECT_FIELDS_WITH_LEGACY_ID =
-  "id, legacy_seed_id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, venue_intel";
+  "id, legacy_seed_id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, venue_intel, seo_indexable, seo_quality_status";
 const PLACE_SELECT_FIELDS_WITH_INTEL =
-  "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, venue_intel";
+  "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, venue_intel, seo_indexable, seo_quality_status";
 const PLACE_SELECT_FIELDS =
-  "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location";
+  "id, name, type, city, lat, lng, description, vibe, vibe_tags, legacy_vibe_user_set, hours, link, location, seo_indexable, seo_quality_status";
 const PLACE_SELECT_FIELDS_NO_LEGACY_VIBE_FLAG =
-  "id, name, type, city, lat, lng, description, vibe, vibe_tags, hours, link, location";
+  "id, name, type, city, lat, lng, description, vibe, vibe_tags, hours, link, location, seo_indexable, seo_quality_status";
 const PLACE_SELECT_FIELDS_LEGACY =
   "id, name, type, city, lat, lng, description, vibe, hours, link, location";
 const SUPABASE_PAGE_SIZE = 1000;
@@ -63,6 +63,13 @@ async function fetchAllPlacePages(client, selectFields, city) {
 
 async function fetchPlacesRows(client, city) {
   let response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_WITH_LEGACY_ID, city);
+  if (
+    response?.error &&
+    (isMissingColumnError(response.error, "seo_indexable") ||
+      isMissingColumnError(response.error, "seo_quality_status"))
+  ) {
+    response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_LEGACY, city);
+  }
   if (response?.error && isMissingColumnError(response.error, "legacy_seed_id")) {
     response = await fetchAllPlacePages(client, PLACE_SELECT_FIELDS_WITH_INTEL, city);
   }
