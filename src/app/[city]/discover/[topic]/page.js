@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
@@ -14,6 +15,8 @@ import {
   loadCityDiscoveryData,
 } from "@/lib/seo/cityDiscoveryData";
 import { evaluateCityDiscoveryIndexability } from "@/lib/seo/cityDiscoveryQuality";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 export const revalidate = 600;
 
@@ -29,15 +32,13 @@ function buildCanonicalPath(city = "", topic = "") {
   return `/${city}/discover/${topic}`;
 }
 
-function buildClusterJsonLd({ city, cityName, topic, topicConfig, editorial }) {
-  const canonicalPath = buildCanonicalPath(city, topic);
-  const canonicalUrl = toAbsoluteUrl(canonicalPath);
+function buildClusterJsonLd({ city, cityName, topicConfig, editorial, canonicalUrl, locale }) {
   const related = [
     `/${city}`,
     `/${city}/events`,
     "/events",
     "/now",
-  ].map((path) => toAbsoluteUrl(path));
+  ].map((path) => toAbsoluteUrl(localePath(path, locale)));
 
   return {
     "@context": "https://schema.org",
@@ -57,12 +58,12 @@ function buildClusterJsonLd({ city, cityName, topic, topicConfig, editorial }) {
     ...(editorial.sources.length > 0 ? { citation: editorial.sources.map((source) => source.url) } : {}),
     datePublished: editorial.publishedAt,
     dateModified: editorial.updatedAt,
-    publishingPrinciples: toAbsoluteUrl("/editorial-policy"),
+    publishingPrinciples: toAbsoluteUrl(localePath("/editorial-policy", locale)),
     relatedLink: related,
   };
 }
 
-function buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig }) {
+function buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig, locale }) {
   const canonicalPath = buildCanonicalPath(city, topic);
 
   return {
@@ -73,31 +74,31 @@ function buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig }) {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: toAbsoluteUrl("/"),
+        item: toAbsoluteUrl(localePath("/", locale)),
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Cities",
-        item: toAbsoluteUrl("/cities"),
+        item: toAbsoluteUrl(localePath("/cities", locale)),
       },
       {
         "@type": "ListItem",
         position: 3,
         name: cityName,
-        item: toAbsoluteUrl(`/${city}`),
+        item: toAbsoluteUrl(localePath(`/${city}`, locale)),
       },
       {
         "@type": "ListItem",
         position: 4,
         name: `${topicConfig.title} in ${cityName}`,
-        item: toAbsoluteUrl(canonicalPath),
+        item: toAbsoluteUrl(localePath(canonicalPath, locale)),
       },
     ],
   };
 }
 
-function buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics = [] }) {
+function buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics = [], locale }) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -107,13 +108,13 @@ function buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics = [] }
     itemListElement: relatedTopics.map((entry, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: toAbsoluteUrl(buildCanonicalPath(city, entry.key)),
+      url: toAbsoluteUrl(localePath(buildCanonicalPath(city, entry.key), locale)),
       name: `${entry.title} in ${cityName}`,
     })),
   };
 }
 
-function buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results = [] }) {
+function buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results = [], locale }) {
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -123,12 +124,12 @@ function buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results = 
     itemListElement: results.map((entry, index) => ({
       "@type": "ListItem",
       position: index + 1,
-      url: toAbsoluteUrl(entry.href),
+      url: toAbsoluteUrl(localePath(entry.href, locale)),
       name: entry.name,
       item: {
         "@type": entry.kind === "event" ? "Event" : entry.kind === "service" ? "ProfessionalService" : "LocalBusiness",
         name: entry.name,
-        url: toAbsoluteUrl(entry.href),
+        url: toAbsoluteUrl(localePath(entry.href, locale)),
         ...(entry.location ? { address: entry.location } : {}),
         ...(entry.description ? { description: entry.description } : {}),
         ...(entry.kind === "event" && entry.startDate ? { startDate: entry.startDate } : {}),
@@ -290,6 +291,7 @@ function shouldIndexCityTopicPage({ topicConfig, cityName, relatedTopicCount }) 
 }
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const city = normalizeCityKey(resolved?.city || "");
   const topic = String(resolved?.topic || "").trim().toLowerCase();
@@ -305,7 +307,7 @@ export async function generateMetadata({ params }) {
 
   const cityName = cityNameFromConfig(config, city);
   const canonical = buildCanonicalPath(city, topic);
-  const canonicalUrl = toAbsoluteUrl(canonical);
+  const canonicalUrl = toAbsoluteUrl(localePath(canonical, locale));
   const ownership = getCityKeywordOwnership(cityName);
   const { title, description } = buildClusterMetaCopy({ topicConfig, cityName });
   const relatedTopicCount = listCityClusterTopics().filter((entry) => entry.key !== topic).length;
@@ -325,13 +327,11 @@ export async function generateMetadata({ params }) {
       ownership.primary,
       ...ownership.secondary.slice(0, 4),
     ],
-    alternates: {
-      canonical,
-    },
+    alternates: localizedAlternates(canonical, locale),
     openGraph: {
       title,
       description,
-      url: canonicalUrl,
+      url: localizedOpenGraphUrl(canonical, locale),
       type: "article",
       siteName: "Queer Atlas",
     },
@@ -347,6 +347,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CityClusterTopicPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const city = normalizeCityKey(resolved?.city || "");
   const topic = String(resolved?.topic || "").trim().toLowerCase();
@@ -369,10 +370,11 @@ export default async function CityClusterTopicPage({ params }) {
     loadCityDiscoveryData(city, topic),
   ]);
   const narrative = discovery.buildNarrative(cityName);
-  const clusterJsonLd = buildClusterJsonLd({ city, cityName, topic, topicConfig, editorial });
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig });
-  const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics });
-  const discoveryResultsJsonLd = buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results: discovery.results });
+  const canonicalUrl = toAbsoluteUrl(localePath(buildCanonicalPath(city, topic), locale));
+  const clusterJsonLd = buildClusterJsonLd({ city, cityName, topicConfig, editorial, canonicalUrl, locale });
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig, locale });
+  const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics, locale });
+  const discoveryResultsJsonLd = buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results: discovery.results, locale });
   const faqEntries = buildFaqEntries({ cityName, topicConfig, discovery, narrative });
   const faqJsonLd = buildFaqJsonLd({ faqEntries });
   const intentBlueprint = buildIntentBlueprint({ cityName, topicConfig });

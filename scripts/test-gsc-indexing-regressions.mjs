@@ -36,6 +36,11 @@ assert.match(legacyDetail, /permanentRedirect\(localePath\(lifecycle\.destinatio
 const qariDetail = source("src/app/qari/[country]/page.js");
 assert.match(qariDetail, /canonicalUrl = `\$\{QA_SITE_URL\}\$\{localePath\(canonical, locale\)\}`/);
 
+const discoveryDetail = source("src/app/[city]/discover/[topic]/page.js");
+assert.match(discoveryDetail, /alternates: localizedAlternates\(canonical, locale\)/);
+assert.match(discoveryDetail, /canonicalUrl = toAbsoluteUrl\(localePath\(buildCanonicalPath\(city, topic\), locale\)\)/);
+assert.match(discoveryDetail, /toAbsoluteUrl\(localePath\(entry\.href, locale\)\)/);
+
 const venueDetail = source("src/app/[city]/venues/[slug]/page.js");
 assert.match(venueDetail, /filters: isDatabaseId \? \{ city, id: parsed\.id \} : \{ city \}/);
 assert.doesNotMatch(venueDetail, /redirect\(buildVenueFallbackPath/);
