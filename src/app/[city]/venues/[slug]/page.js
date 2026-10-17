@@ -15,7 +15,7 @@ import {
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 import { getEntitySearchCopy } from "@/lib/seo/entitySearchCopy";
 import {
@@ -106,9 +106,7 @@ function buildVenueDiscoverLinks({ city, cityName, placeType }) {
   ];
 }
 
-function buildPlaceJsonLd({ place, city, cityName }) {
-  const canonicalPath = buildVenuePath(city, place);
-  const canonicalUrl = toAbsoluteUrl(canonicalPath);
+function buildPlaceJsonLd({ place, city, cityName, canonicalUrl }) {
   const maybeLat = Number(place?.lat);
   const maybeLng = Number(place?.lng);
   const hasGeo = Number.isFinite(maybeLat) && Number.isFinite(maybeLng);
@@ -251,6 +249,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CityVenueDetailPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const { city, place, coreConfig } = await findVenueByParams(resolved?.city, resolved?.slug);
 
@@ -268,12 +267,13 @@ export default async function CityVenueDetailPage({ params }) {
   const cityName = cityNameFromConfig(coreConfig, city);
   const searchCopy = getEntitySearchCopy({ kind: "venue", city, cityName, entity: place });
   const canonicalPath = buildVenuePath(city, place);
+  const localizedCanonicalPath = localePath(canonicalPath, locale);
   const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
   if (canonicalSlug !== String(resolved?.slug || "").trim()) {
-    permanentRedirect(canonicalPath);
+    permanentRedirect(localizedCanonicalPath);
   }
-  const canonicalUrl = toAbsoluteUrl(canonicalPath);
-  const placeJsonLd = buildPlaceJsonLd({ place, city, cityName });
+  const canonicalUrl = toAbsoluteUrl(localizedCanonicalPath);
+  const placeJsonLd = buildPlaceJsonLd({ place, city, cityName, canonicalUrl });
   const breadcrumbJsonLd = buildVenueDetailBreadcrumbJsonLd({
     city,
     cityName,

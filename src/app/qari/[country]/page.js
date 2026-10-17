@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { QARI_COUNTRY_PROFILES } from "@/lib/qariCountryProfiles2026";
 import { getQariProfileBySlug, qariCountryPath, qariCountrySlug } from "@/lib/qariRoutes";
 import { listCityRegistry } from "@/lib/server/cityRegistry";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { QA_ORGANIZATION_ID, QA_SITE_URL } from "@/lib/seo/entityAuthority";
 
@@ -42,12 +42,13 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function QariCountryPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const { country } = await params;
   const profile = getQariProfileBySlug(country);
   if (!profile) notFound();
   const cities = (await listCityRegistry({ indexableOnly: true })).filter((city) => city.country.toLowerCase() === profile.country.toLowerCase());
   const canonical = qariCountryPath(profile.country);
-  const canonicalUrl = `${QA_SITE_URL}${canonical}`;
+  const canonicalUrl = `${QA_SITE_URL}${localePath(canonical, locale)}`;
   const faq = [
     { question: `What does QARI say about ${profile.country}?`, answer: `QARI records a ${profile.tier.label.toLowerCase()} country-level baseline of ${profile.score} out of 100. Higher numbers mean greater documented exposure, not a personal-safety verdict.` },
     { question: "How is this score built?", answer: "The published score combines legal risk (35%), social reality (40%), and digital and enforcement risk (25%). A documented risk floor can raise, but never lower, the result." },

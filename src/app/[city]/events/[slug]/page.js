@@ -18,7 +18,7 @@ import {
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { evaluateEventSeoQuality } from "@/lib/seo/entityIndexing";
 import { getEntitySearchCopy } from "@/lib/seo/entitySearchCopy";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
@@ -109,9 +109,7 @@ const findEventByParams = cache(async (cityParam = "", slugParam = "") => {
   return { city, event, coreConfig };
 });
 
-function buildEventJsonLd({ event, city, cityName }) {
-  const canonicalPath = buildEventPath(city, event);
-  const canonicalUrl = toAbsoluteUrl(canonicalPath);
+function buildEventJsonLd({ event, city, cityName, canonicalUrl }) {
   const normalizedEvent = normalizeEventRange(event);
   const maybeLat = Number(event?.lat);
   const maybeLng = Number(event?.lng);
@@ -248,6 +246,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CityEventDetailPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const { city, event, coreConfig } = await findEventByParams(
     resolved?.city,
@@ -266,13 +265,14 @@ export default async function CityEventDetailPage({ params }) {
   const cityName = cityNameFromConfig(coreConfig, city);
   const normalizedEvent = normalizeEventRange(event);
   const canonicalPath = buildEventPath(city, event);
+  const localizedCanonicalPath = localePath(canonicalPath, locale);
   const searchCopy = getEntitySearchCopy({ kind: "event", city, cityName, entity: normalizedEvent });
   const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
   if (canonicalSlug !== String(resolved?.slug || "").trim()) {
-    permanentRedirect(canonicalPath);
+    permanentRedirect(localizedCanonicalPath);
   }
-  const canonicalUrl = toAbsoluteUrl(canonicalPath);
-  const eventJsonLd = buildEventJsonLd({ event, city, cityName });
+  const canonicalUrl = toAbsoluteUrl(localizedCanonicalPath);
+  const eventJsonLd = buildEventJsonLd({ event, city, cityName, canonicalUrl });
   const breadcrumbJsonLd = buildEventDetailBreadcrumbJsonLd({
     city,
     cityName,

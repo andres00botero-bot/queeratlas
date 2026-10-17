@@ -10,7 +10,7 @@ import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityL
 import { cityNameFromConfig } from "@/features/city/checkinFeature";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { evaluateServiceSeoQuality } from "@/lib/seo/entityIndexing";
 import { supabase } from "@/lib/supabase";
 import {
@@ -86,6 +86,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CityServiceDetailPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const { city, service, coreConfig } = await findServiceByParams(resolved?.city, resolved?.slug);
   if (!coreConfig) notFound();
@@ -98,11 +99,12 @@ export default async function CityServiceDetailPage({ params }) {
 
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildServicePath(city, service);
+  const localizedCanonicalPath = localePath(canonicalPath, locale);
   const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
   if (canonicalSlug !== String(resolved?.slug || "").trim()) {
-    permanentRedirect(canonicalPath);
+    permanentRedirect(localizedCanonicalPath);
   }
-  const canonicalUrl = toAbsoluteUrl(canonicalPath);
+  const canonicalUrl = toAbsoluteUrl(localizedCanonicalPath);
   const officialUrl = String(service?.booking_link || service?.link || "").trim();
   const serviceJsonLd = {
     "@context": "https://schema.org",

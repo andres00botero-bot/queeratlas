@@ -18,9 +18,18 @@ assert.doesNotMatch(nextConfig, /type:\s*["']host["']/);
 
 for (const route of ["venues", "events", "services"]) {
   const detail = source(`src/app/[city]/${route}/[slug]/page.js`);
-  assert.match(detail, /permanentRedirect\(canonicalPath\)/);
+  assert.match(detail, /const localizedCanonicalPath = localePath\(canonicalPath, locale\)/);
+  assert.match(detail, /permanentRedirect\(localizedCanonicalPath\)/);
   assert.match(detail, /const find\w+ByParams = cache\(/);
 }
+
+for (const route of ["venues", "events", "services"]) {
+  const detail = source(`src/app/[city]/${route}/[slug]/page.js`);
+  assert.match(detail, /canonicalUrl = toAbsoluteUrl\(localizedCanonicalPath\)/);
+}
+
+const qariDetail = source("src/app/qari/[country]/page.js");
+assert.match(qariDetail, /canonicalUrl = `\$\{QA_SITE_URL\}\$\{localePath\(canonical, locale\)\}`/);
 
 const venueDetail = source("src/app/[city]/venues/[slug]/page.js");
 assert.match(venueDetail, /filters: isDatabaseId \? \{ city, id: parsed\.id \} : \{ city \}/);
