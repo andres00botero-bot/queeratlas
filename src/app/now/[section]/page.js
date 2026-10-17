@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import NowPage from "../page";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 const NOW_SECTIONS = {
   news: {
@@ -80,10 +80,11 @@ export default async function NowSectionPage({ params, searchParams }) {
   const { section } = await params;
   const query = await searchParams;
   const requestHeaders = await headers();
-  const config = sectionMetadata(section, normalizeLocale(requestHeaders.get("x-qa-locale")));
+  const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
+  const config = sectionMetadata(section, locale);
   if (!config) notFound();
 
-  const url = `${QA_SITE_URL}/now/${section}`;
+  const url = `${QA_SITE_URL}${localePath(`/now/${section}`, locale)}`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -99,8 +100,8 @@ export default async function NowSectionPage({ params, searchParams }) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: QA_SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Now", item: `${QA_SITE_URL}/now/news` },
+          { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+          { "@type": "ListItem", position: 2, name: "Now", item: `${QA_SITE_URL}${localePath("/now/news", locale)}` },
           { "@type": "ListItem", position: 3, name: config.name, item: url },
         ],
       },

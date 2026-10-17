@@ -171,8 +171,8 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
     "@graph": [
       {
         "@type": "CollectionPage",
-        "@id": `${QA_SITE_URL}/now/collections`,
-        url: `${QA_SITE_URL}/now/collections`,
+        "@id": `${QA_SITE_URL}${localePath("/now/collections", locale)}`,
+        url: `${QA_SITE_URL}${localePath("/now/collections", locale)}`,
         name: "Atlas Collections",
         description: "Editorially researched queer travel collections for stays, events, culture, nightlife, beaches, and solo travel.",
         isPartOf: { "@id": QA_WEBSITE_ID },
@@ -186,9 +186,9 @@ export default async function AtlasCollectionsIndexPage({ searchParams }) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: QA_SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Now", item: `${QA_SITE_URL}/now/news` },
-          { "@type": "ListItem", position: 3, name: "Atlas Collections", item: `${QA_SITE_URL}/now/collections` },
+          { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+          { "@type": "ListItem", position: 2, name: "Now", item: `${QA_SITE_URL}${localePath("/now/news", locale)}` },
+          { "@type": "ListItem", position: 3, name: "Atlas Collections", item: `${QA_SITE_URL}${localePath("/now/collections", locale)}` },
         ],
       },
     ],

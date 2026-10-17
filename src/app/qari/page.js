@@ -2,7 +2,7 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import { QARI_COUNTRY_PROFILES } from "@/lib/qariCountryProfiles2026";
 import { qariCountryPath } from "@/lib/qariRoutes";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { QA_ORGANIZATION_ID, QA_SITE_URL } from "@/lib/seo/entityAuthority";
 
@@ -29,16 +29,17 @@ export async function generateMetadata() {
   };
 }
 
-export default function QariIndexPage() {
+export default async function QariIndexPage() {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const profiles = [...QARI_COUNTRY_PROFILES].sort((a, b) => a.country.localeCompare(b.country));
   const latestReview = profiles.reduce((latest, profile) => latest > profile.reviewedAt ? latest : profile.reviewedAt, "");
   const datasetJsonLd = {
     "@context": "https://schema.org",
     "@type": "Dataset",
-    "@id": `${QA_SITE_URL}/qari#dataset`,
+    "@id": `${QA_SITE_URL}${localePath("/qari", locale)}#dataset`,
     name: "Queer Atlas Risk Index (QARI)",
     description: "Country-level LGBTQ+ travel-planning baselines combining legal risk, social reality, and digital and enforcement risk.",
-    url: `${QA_SITE_URL}/qari`,
+    url: `${QA_SITE_URL}${localePath("/qari", locale)}`,
     creator: { "@id": QA_ORGANIZATION_ID },
     publisher: { "@id": QA_ORGANIZATION_ID },
     dateModified: latestReview,
