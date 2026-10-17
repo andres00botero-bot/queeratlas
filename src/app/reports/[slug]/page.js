@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
@@ -14,6 +15,8 @@ import GlobalQueerCityIndexMethodologyReport from "@/components/reports/GlobalQu
 import GlobalQueerEventReport from "@/components/reports/GlobalQueerEventReport";
 import TopNightlifeDestinationsReport from "@/components/reports/TopNightlifeDestinationsReport";
 import { GLOBAL_QUEER_EVENT_REPORT_2026 } from "@/lib/seo/globalQueerEventReport2026";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 const REPORT_THEMES = Object.freeze({
   nightlife: {
@@ -57,6 +60,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const slug = String(resolved?.slug || "").trim().toLowerCase();
   const report = getSeoReport(slug);
@@ -80,12 +84,12 @@ export async function generateMetadata({ params }) {
     title,
     description,
     keywords: [...report.keyphrases, "queer atlas report", "LGBTQ report 2026"],
-    alternates: { canonical },
+    alternates: localizedAlternates(canonical, locale),
     robots: { index: true, follow: true },
     openGraph: {
       title: ogTitle,
       description: ogDescription,
-      url: toAbsoluteUrl(canonical),
+      url: localizedOpenGraphUrl(canonical, locale),
       type: "article",
       siteName: "Queer Atlas",
     },
@@ -145,6 +149,7 @@ function buildFaqEntries(report) {
 }
 
 export default async function ReportDetailPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const slug = String(resolved?.slug || "").trim().toLowerCase();
   const report = getSeoReport(slug);
@@ -180,7 +185,7 @@ export default async function ReportDetailPage({ params }) {
   ].filter(Boolean))];
 
   const canonical = buildCanonical(report.slug);
-  const canonicalUrl = toAbsoluteUrl(canonical);
+  const canonicalUrl = toAbsoluteUrl(localePath(canonical, locale));
   const faqEntries = buildFaqEntries(report);
   const snippetCards = [
     { key: "reddit", label: "Reddit", body: report.creatorSnippets?.reddit || "" },
@@ -206,7 +211,7 @@ export default async function ReportDetailPage({ params }) {
     author: buildEditorialAuthorJsonLd(editorial.author),
     ...(editorial.reviewer ? { reviewedBy: buildEditorialAuthorJsonLd(editorial.reviewer) } : {}),
     ...(citationUrls.length > 0 ? { citation: citationUrls } : {}),
-    publishingPrinciples: `${QA_SITE_URL}/editorial-policy`,
+    publishingPrinciples: `${QA_SITE_URL}${localePath("/editorial-policy", locale)}`,
     about: report.keyphrases,
     ...(evidenceIndex || isGlobalMethodology || isGlobalEventReport ? { mainEntity: { "@id": `${canonicalUrl}#dataset` } } : {}),
   };
@@ -239,7 +244,7 @@ export default async function ReportDetailPage({ params }) {
             maxValue: 50,
           },
         ],
-        license: `${QA_SITE_URL}/terms`,
+        license: `${QA_SITE_URL}${localePath("/terms", locale)}`,
         isAccessibleForFree: true,
       }
     : isGlobalEventReport
@@ -263,7 +268,7 @@ export default async function ReportDetailPage({ params }) {
           { "@type": "PropertyValue", name: "Route-ready events" },
         ],
         distribution: { "@type": "DataDownload", encodingFormat: "text/csv", contentUrl: `${QA_SITE_URL}/api/reports/global-queer-event-report-2026` },
-        license: `${QA_SITE_URL}/terms`,
+        license: `${QA_SITE_URL}${localePath("/terms", locale)}`,
         isAccessibleForFree: true,
       }
     : evidenceIndex
@@ -291,7 +296,7 @@ export default async function ReportDetailPage({ params }) {
           encodingFormat: "text/csv",
           contentUrl: `${QA_SITE_URL}${isNightlifeIndex || isTopNightlifeDestinations ? "/api/reports/nightlife-index-2026" : "/api/reports/safety-index-2026"}`,
         },
-        license: `${QA_SITE_URL}/terms`,
+        license: `${QA_SITE_URL}${localePath("/terms", locale)}`,
         isAccessibleForFree: true,
       }
     : null;
@@ -300,8 +305,8 @@ export default async function ReportDetailPage({ params }) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}/` },
-      { "@type": "ListItem", position: 2, name: "Reports", item: `${QA_SITE_URL}/reports` },
+      { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+      { "@type": "ListItem", position: 2, name: "Reports", item: `${QA_SITE_URL}${localePath("/reports", locale)}` },
       { "@type": "ListItem", position: 3, name: report.title, item: canonicalUrl },
     ],
   };

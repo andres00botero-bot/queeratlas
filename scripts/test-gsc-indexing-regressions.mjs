@@ -41,6 +41,23 @@ assert.match(discoveryDetail, /alternates: localizedAlternates\(canonical, local
 assert.match(discoveryDetail, /canonicalUrl = toAbsoluteUrl\(localePath\(buildCanonicalPath\(city, topic\), locale\)\)/);
 assert.match(discoveryDetail, /toAbsoluteUrl\(localePath\(entry\.href, locale\)\)/);
 
+const eventSectionDetail = source("src/app/events/[section]/page.js");
+assert.match(eventSectionDetail, /alternates: localizedAlternates\(canonical, locale\)/);
+assert.ok(eventSectionDetail.includes("const url = `${QA_SITE_URL}${localePath(`/events/${section}`, locale)}`;"));
+
+const topicHubDetail = source("src/app/topics/[topic]/page.js");
+assert.match(topicHubDetail, /alternates: localizedAlternates\(canonical, locale\)/);
+assert.match(topicHubDetail, /function toAbsoluteUrl\(path = "", locale\)/);
+
+const reportDetail = source("src/app/reports/[slug]/page.js");
+assert.match(reportDetail, /alternates: localizedAlternates\(canonical, locale\)/);
+assert.match(reportDetail, /canonicalUrl = toAbsoluteUrl\(localePath\(canonical, locale\)\)/);
+
+const reportsIndex = source("src/app/reports/page.js");
+assert.match(reportsIndex, /alternates: localizedAlternates\("\/reports", locale\)/);
+const topicsIndex = source("src/app/topics/page.js");
+assert.match(topicsIndex, /alternates: localizedAlternates\("\/topics", locale\)/);
+
 const venueDetail = source("src/app/[city]/venues/[slug]/page.js");
 assert.match(venueDetail, /filters: isDatabaseId \? \{ city, id: parsed\.id \} : \{ city \}/);
 assert.doesNotMatch(venueDetail, /redirect\(buildVenueFallbackPath/);

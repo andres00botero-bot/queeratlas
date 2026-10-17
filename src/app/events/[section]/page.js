@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import Link from "next/link";
 import EventsPage from "../page";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { fetchPublicEventData } from "@/lib/publicEventData";
 import { buildEventPath } from "@/lib/seo/entitySlug";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 export const revalidate = 60;
 
@@ -83,6 +86,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const { section } = await params;
   const config = EVENT_SECTIONS[section];
   if (!config) return {};
@@ -91,12 +95,12 @@ export async function generateMetadata({ params }) {
   return {
     title: config.title,
     description: config.description,
-    alternates: { canonical },
+    alternates: localizedAlternates(canonical, locale),
     robots: { index: config.index, follow: true },
     openGraph: {
       title: config.title,
       description: config.description,
-      url: canonical,
+      url: localizedOpenGraphUrl(canonical, locale),
       type: "website",
     },
     twitter: {
@@ -108,11 +112,12 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function EventSectionPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const { section } = await params;
   const config = EVENT_SECTIONS[section];
   if (!config) notFound();
 
-  const url = `${QA_SITE_URL}/events/${section}`;
+  const url = `${QA_SITE_URL}${localePath(`/events/${section}`, locale)}`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -128,8 +133,8 @@ export default async function EventSectionPage({ params }) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: QA_SITE_URL },
-          { "@type": "ListItem", position: 2, name: "Events", item: `${QA_SITE_URL}/events/calendar` },
+          { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+          { "@type": "ListItem", position: 2, name: "Events", item: `${QA_SITE_URL}${localePath("/events/calendar", locale)}` },
           { "@type": "ListItem", position: 3, name: config.name, item: url },
         ],
       },

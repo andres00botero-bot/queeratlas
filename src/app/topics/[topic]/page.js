@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getTopicHub, listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
@@ -6,9 +7,11 @@ import {
   evaluateTopicHubIndexability,
   loadIndexableTopicHubRoutes,
 } from "@/lib/seo/topicHubRoutes";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
-function toAbsoluteUrl(path = "") {
-  return `${QA_SITE_URL}${path}`;
+function toAbsoluteUrl(path = "", locale) {
+  return `${QA_SITE_URL}${localePath(path, locale)}`;
 }
 
 function buildTopicPath(topic = "") {
@@ -20,6 +23,7 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const topic = String(resolved?.topic || "").trim().toLowerCase();
   const hub = getTopicHub(topic);
@@ -40,11 +44,11 @@ export async function generateMetadata({ params }) {
   return {
     title,
     description,
-    alternates: { canonical },
+    alternates: localizedAlternates(canonical, locale),
     openGraph: {
       title,
       description,
-      url: toAbsoluteUrl(canonical),
+      url: localizedOpenGraphUrl(canonical, locale),
       siteName: "Queer Atlas",
       type: "website",
     },
@@ -104,6 +108,7 @@ function buildTopicHubFaqJsonLd({ faqEntries = [] }) {
 }
 
 export default async function TopicHubPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolved = await params;
   const topic = String(resolved?.topic || "").trim().toLowerCase();
   const hub = getTopicHub(topic);
@@ -117,8 +122,8 @@ export default async function TopicHubPage({ params }) {
   const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "@id": `${toAbsoluteUrl(canonical)}#collection`,
-    url: toAbsoluteUrl(canonical),
+    "@id": `${toAbsoluteUrl(canonical, locale)}#collection`,
+    url: toAbsoluteUrl(canonical, locale),
     name: hub.title,
     description: hub.description,
     isPartOf: {
@@ -134,7 +139,7 @@ export default async function TopicHubPage({ params }) {
       itemListElement: cityClusterRoutes.map((route, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        url: toAbsoluteUrl(route.href),
+        url: toAbsoluteUrl(route.href, locale),
         name: route.label,
       })),
     },
@@ -144,9 +149,9 @@ export default async function TopicHubPage({ params }) {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}/` },
-      { "@type": "ListItem", position: 2, name: "Topics", item: `${QA_SITE_URL}/topics` },
-      { "@type": "ListItem", position: 3, name: hub.title, item: toAbsoluteUrl(canonical) },
+      { "@type": "ListItem", position: 1, name: "Home", item: toAbsoluteUrl("/", locale) },
+      { "@type": "ListItem", position: 2, name: "Topics", item: toAbsoluteUrl("/topics", locale) },
+      { "@type": "ListItem", position: 3, name: hub.title, item: toAbsoluteUrl(canonical, locale) },
     ],
   };
 
