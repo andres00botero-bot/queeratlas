@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
 import { isIndexableTopicHub } from "@/lib/seo/indexingTier";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localePath, localizedAlternates } from "@/lib/seo/localizedSeo";
 
-export const metadata = {
+const metadata = {
   title: "Queer Topic Hubs 2026",
   description:
     "Topical queer discovery hubs across nightlife, safety, events, cafes, and community-led route intelligence.",
@@ -12,14 +15,20 @@ export const metadata = {
   },
 };
 
-export default function TopicsIndexPage() {
+export async function generateMetadata() {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
+  return { ...metadata, alternates: localizedAlternates("/topics", locale) };
+}
+
+export default async function TopicsIndexPage() {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const hubs = listTopicHubs().filter((hub) => isIndexableTopicHub(hub.key));
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}/` },
-      { "@type": "ListItem", position: 2, name: "Topics", item: `${QA_SITE_URL}/topics` },
+      { "@type": "ListItem", position: 1, name: "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+      { "@type": "ListItem", position: 2, name: "Topics", item: `${QA_SITE_URL}${localePath("/topics", locale)}` },
     ],
   };
 

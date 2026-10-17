@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { listSeoReports } from "@/lib/seo/reportsIndex";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 const REPORT_CARD_TONES = [
   "border-fuchsia-200/22 bg-[linear-gradient(145deg,rgba(244,114,182,0.1),rgba(139,92,246,0.045))] hover:border-fuchsia-100/42",
@@ -10,7 +13,7 @@ const REPORT_CARD_TONES = [
   "border-violet-200/22 bg-[linear-gradient(145deg,rgba(167,139,250,0.11),rgba(45,212,191,0.04))] hover:border-violet-100/42",
 ];
 
-export const metadata = {
+const metadata = {
   title: "Queer Reports 2026: Nightlife, Safety & Events",
   description:
     "Index of Queer Atlas reports for nightlife, safety, and events with methodology-first summaries designed for reliable citation.",
@@ -19,18 +22,28 @@ export const metadata = {
   },
 };
 
-function toAbsoluteUrl(path = "") {
-  return `${QA_SITE_URL}${path}`;
+function toAbsoluteUrl(path = "", locale) {
+  return `${QA_SITE_URL}${localePath(path, locale)}`;
 }
 
-export default function ReportsIndexPage() {
+export async function generateMetadata() {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
+  return {
+    ...metadata,
+    alternates: localizedAlternates("/reports", locale),
+    openGraph: { ...(metadata.openGraph || {}), url: localizedOpenGraphUrl("/reports", locale) },
+  };
+}
+
+export default async function ReportsIndexPage() {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const reports = listSeoReports();
 
   const collectionJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    "@id": `${toAbsoluteUrl("/reports")}#collection`,
-    url: toAbsoluteUrl("/reports"),
+    "@id": `${toAbsoluteUrl("/reports", locale)}#collection`,
+    url: toAbsoluteUrl("/reports", locale),
     name: "Queer Atlas Reports",
     description:
       "Methodology-first report index for queer nightlife, safety, and events intelligence.",
@@ -47,7 +60,7 @@ export default function ReportsIndexPage() {
       itemListElement: reports.map((report, index) => ({
         "@type": "ListItem",
         position: index + 1,
-        url: toAbsoluteUrl(`/reports/${report.slug}`),
+        url: toAbsoluteUrl(`/reports/${report.slug}`, locale),
         name: report.title,
       })),
     },
