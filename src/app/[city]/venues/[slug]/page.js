@@ -260,7 +260,7 @@ export default async function CityVenueDetailPage({ params }) {
   if (!place) {
     const sourcePath = normalizeLifecyclePath(`/${resolved?.city}/venues/${resolved?.slug}`);
     const lifecycle = await getEntityLifecycle(sourcePath);
-    if (lifecycle?.lifecycleStatus === "redirected") permanentRedirect(lifecycle.destinationPath);
+    if (lifecycle?.lifecycleStatus === "redirected") permanentRedirect(localePath(lifecycle.destinationPath, locale));
     notFound();
   }
 

@@ -26,7 +26,12 @@ for (const route of ["venues", "events", "services"]) {
 for (const route of ["venues", "events", "services"]) {
   const detail = source(`src/app/[city]/${route}/[slug]/page.js`);
   assert.match(detail, /canonicalUrl = toAbsoluteUrl\(localizedCanonicalPath\)/);
+  assert.match(detail, /permanentRedirect\(localePath\(lifecycle\.destinationPath, locale\)\)/);
 }
+
+const legacyDetail = source("src/app/[...legacyPath]/page.js");
+assert.match(legacyDetail, /const locale = normalizeLocale\(\(await headers\(\)\)\.get\("x-qa-locale"\)\)/);
+assert.match(legacyDetail, /permanentRedirect\(localePath\(lifecycle\.destinationPath, locale\)\)/);
 
 const qariDetail = source("src/app/qari/[country]/page.js");
 assert.match(qariDetail, /canonicalUrl = `\$\{QA_SITE_URL\}\$\{localePath\(canonical, locale\)\}`/);

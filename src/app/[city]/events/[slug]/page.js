@@ -257,7 +257,7 @@ export default async function CityEventDetailPage({ params }) {
     if (coreConfig) {
       const sourcePath = normalizeLifecyclePath(`/${resolved?.city}/events/${resolved?.slug}`);
       const lifecycle = await getEntityLifecycle(sourcePath);
-      if (lifecycle?.lifecycleStatus === "redirected") permanentRedirect(lifecycle.destinationPath);
+      if (lifecycle?.lifecycleStatus === "redirected") permanentRedirect(localePath(lifecycle.destinationPath, locale));
     }
     notFound();
   }
