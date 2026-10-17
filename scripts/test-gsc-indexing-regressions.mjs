@@ -58,6 +58,15 @@ assert.match(reportsIndex, /alternates: localizedAlternates\("\/reports", locale
 const topicsIndex = source("src/app/topics/page.js");
 assert.match(topicsIndex, /alternates: localizedAlternates\("\/topics", locale\)/);
 
+const newsArticleDetail = source("src/app/now/news/[articleId]/page.js");
+assert.match(newsArticleDetail, /alternates: localizedAlternates\(canonical, locale\)/);
+assert.match(newsArticleDetail, /const url = articleUrl\(article\.id, locale\)/);
+
+const nowSectionDetail = source("src/app/now/[section]/page.js");
+assert.ok(nowSectionDetail.includes("const url = `${QA_SITE_URL}${localePath(`/now/${section}`, locale)}`;"));
+const qariIndex = source("src/app/qari/page.js");
+assert.match(qariIndex, /url: `\$\{QA_SITE_URL\}\$\{localePath\("\/qari", locale\)\}`/);
+
 const venueDetail = source("src/app/[city]/venues/[slug]/page.js");
 assert.match(venueDetail, /filters: isDatabaseId \? \{ city, id: parsed\.id \} : \{ city \}/);
 assert.doesNotMatch(venueDetail, /redirect\(buildVenueFallbackPath/);

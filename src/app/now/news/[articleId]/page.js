@@ -12,6 +12,7 @@ import { QA_LOGO_URL, QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/l
 import { safeJsonLd } from "@/lib/seo/safeJsonLd";
 import { getMessage } from "@/lib/i18n/messages";
 import { DEFAULT_LOCALE, normalizeLocale } from "@/lib/i18n/locales";
+import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
 const getNewsArticle = cache(resolveNewsArticle);
 
@@ -51,8 +52,12 @@ function uniqueArticleBody(summary, body) {
   return cleanBody;
 }
 
-function articleUrl(articleId) {
-  return `${QA_SITE_URL}/now/news/${encodeURIComponent(String(articleId))}`;
+function articlePath(articleId) {
+  return `/now/news/${encodeURIComponent(String(articleId))}`;
+}
+
+function articleUrl(articleId, locale) {
+  return `${QA_SITE_URL}${localePath(articlePath(articleId), locale)}`;
 }
 
 function formatArticleDate(value, locale, t) {
@@ -80,19 +85,21 @@ function isMeaningfullyUpdated(publishedAt, updatedAt) {
 }
 
 export async function generateMetadata({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"), DEFAULT_LOCALE);
   const { articleId } = await params;
   const article = await getNewsArticle(articleId);
   if (!article) return { title: "News article not found", robots: { index: false, follow: false } };
-  const url = articleUrl(article.id);
+  const canonical = articlePath(article.id);
+  const url = articleUrl(article.id, locale);
   const image = String(article.imageUrl || "").trim();
   return {
     title: article.title,
     description: articleDescription(article),
-    alternates: { canonical: url },
+    alternates: localizedAlternates(canonical, locale),
     authors: [{ name: article.sourceName || "Queer Atlas editorial desk" }],
     openGraph: {
       type: "article",
-      url,
+      url: localizedOpenGraphUrl(canonical, locale),
       title: article.title,
       description: articleDescription(article),
       publishedTime: article.publishedAt || undefined,
@@ -117,7 +124,7 @@ export default async function NewsArticlePage({ params }) {
   const article = await getNewsArticle(articleId);
   if (!article) notFound();
 
-  const url = articleUrl(article.id);
+  const url = articleUrl(article.id, locale);
   const links = getNewsArticleLinks(article);
   const sourceUrl = safeExternalUrl(article.sourceUrl);
   const articleCopy = resolveArticleCopy(article.summary, article.whyItMatters);
