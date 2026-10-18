@@ -4,17 +4,21 @@ import Link from "next/link";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import {
   Activity,
+  ArrowRight,
   ArrowUpRight,
   BookOpen,
   CalendarDays,
   ClipboardCheck,
   Compass,
   History,
+  Heart,
   Map,
+  MapPinned,
   Megaphone,
   Newspaper,
   Quote,
   ShieldCheck,
+  Route,
   UsersRound,
 } from "lucide-react";
 
@@ -292,6 +296,43 @@ export function HomeDiscoverySection({ discoveryCards = [] }) {
   );
 }
 
+function MembershipPreview({ isMember = false, onAction }) {
+  const { t } = useLocale();
+  const features = [
+    { label: t("home.memberSaveTitle", "Save what feels right"), icon: Heart, tone: "text-rose-100" },
+    { label: t("home.memberTripTitle", "Build a trip that fits"), icon: Route, tone: "text-amber-100" },
+    { label: t("home.memberMapTitle", "Keep your queer map"), icon: MapPinned, tone: "text-cyan-100" },
+  ];
+
+  return (
+    <section data-home-section="membership-preview" className="qa-defer-render mt-8 border-y border-white/10 py-5 sm:py-6">
+      <div className="relative flex flex-col gap-5 overflow-hidden sm:gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+        <div className="pointer-events-none absolute inset-x-[18%] top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-100/45 to-transparent" />
+        <div className="min-w-0 pt-1">
+          <p className="!text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-fuchsia-100/70 sm:text-[10px]">{t("home.memberEyebrow", "Free member space")}</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h2 className="qa-display !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">{t("home.memberTitle", "Make the atlas yours.")}</h2>
+            <p className="!text-left text-sm text-white/62 sm:text-base">{t("home.memberShortDescription", "Save places. Shape trips. Keep your queer world close.")}</p>
+          </div>
+          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2" aria-label={t("home.memberFeaturesLabel", "Your Atlas features")}>
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return <li key={feature.label} className={`flex items-center gap-1.5 text-xs font-medium ${feature.tone}`}><Icon size={14} aria-hidden="true" />{feature.label}</li>;
+            })}
+          </ul>
+        </div>
+        <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
+          <button type="button" onClick={onAction} className="qa-action qa-action-strong inline-flex min-h-11 items-center gap-2 rounded-full border border-fuchsia-100/40 bg-fuchsia-200/[0.09] px-4 py-2.5 text-sm font-semibold text-fuchsia-50 transition hover:-translate-y-0.5 hover:border-fuchsia-100/72 hover:bg-fuchsia-200/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100/85">
+            {isMember ? t("home.openYourAtlas", "Open your Atlas") : t("home.createFreeAtlas", "Create your free Atlas")}
+            <ArrowRight size={15} aria-hidden="true" />
+          </button>
+          <p className="text-xs text-white/42">{t("home.memberReassurance", "Free to create. Your saved Atlas stays personal by default.")}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function HomeDeferredSections({
   discoveryCards = [],
   livePulseCards = [],
@@ -302,11 +343,15 @@ export default function HomeDeferredSections({
   contactSlot = null,
   evidenceSlot = null,
   showDiscovery = true,
+  isMember = false,
+  onMembershipAction,
 }) {
   const { t } = useLocale();
   return (
     <>
       {showDiscovery ? <HomeDiscoverySection discoveryCards={discoveryCards} /> : null}
+
+      <MembershipPreview isMember={isMember} onAction={onMembershipAction} />
 
       <CompassPreview onOpen={onEditorialAction} />
 

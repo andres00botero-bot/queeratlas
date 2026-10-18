@@ -1339,6 +1339,15 @@ export default function HomePageClient({ initialHomeData = null }) {
               }}
               onLocalCityChange={handleHomeFocusCityChange}
               participationActions={participationActions}
+              isMember={isMember}
+              onMembershipAction={() => {
+                trackHomeAction("membership_preview", isMember ? "/favorites" : "signup", { member_status: isMember ? "member" : "visitor" });
+                if (isMember) {
+                  router.push("/favorites");
+                  return;
+                }
+                openSignup("/favorites", "signup", "membership_preview");
+              }}
               onEditorialAction={(destination) => trackHomeAction("editorial_trust", destination)}
               contactSlot={
                 <HomeContactSection
