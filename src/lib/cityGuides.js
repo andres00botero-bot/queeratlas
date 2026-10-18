@@ -2411,6 +2411,33 @@ export const cityGuideConfig = {
       "extra": ""
     }
   ],
+  "dusseldorf": [
+    {
+      "title": "About",
+      "text": "Düsseldorf's queer scene is compact, polished and strongly shaped by its social calendar. The permanent bar circuit is smaller than Cologne's, but Carnival, CSD and programmed nights give the city real momentum when dates align. It suits travellers who prefer a well-timed, local-feeling night to chasing a large fixed district.",
+      "extra": ""
+    },
+    {
+      "title": "Districts",
+      "text": "The clearest queer bar cluster sits south and east of Hauptbahnhof, where AromA, Bar Lola, Studio 1, Comeback, K1 and Queenz can be joined on foot. Altstadt adds Nähkörbchen and Ludwigs for a more traditional pub and Carnival atmosphere. Choose a central or station-adjacent base if late-night walking convenience matters.",
+      "extra": ""
+    },
+    {
+      "title": "Safety",
+      "text": "Düsseldorf is generally easy to navigate, but normal central-station and late-night precautions still apply. Keep valuables close in busy transit areas, plan your trip home before the last venue, and note that indoor smoking can affect comfort in some smaller bars. Check current event details rather than relying on older venue lists.",
+      "extra": ""
+    },
+    {
+      "title": "Nightlife",
+      "text": "Start with AromA or Bar Lola for a relaxed first drink, then follow the programme toward K1 or Queenz if the night is building. Nähkörbchen offers the most distinctive Altstadt counterpoint, especially around Carnival. The strongest route is event-led: look at official social feeds on the day rather than expecting every room to be busy every night.",
+      "extra": ""
+    },
+    {
+      "title": "Cost",
+      "text": "Most drinks and everyday nights out are moderate for a major German city, but trade fairs can make hotels and central rooms unexpectedly expensive. Check the Messe calendar before booking, reserve accommodation early for CSD or Carnival, and use the compact bar geography to keep late-night transport costs low.",
+      "extra": ""
+    }
+  ],
   "chicago": [
     {
       "title": "About",
