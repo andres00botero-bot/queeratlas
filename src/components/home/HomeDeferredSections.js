@@ -189,26 +189,26 @@ function ParticipationStrip({ actions = [] }) {
 function CompassPreview({ onOpen }) {
   const { t } = useLocale();
   return (
-    <section id="home-compass" data-home-section="compass" className="qa-defer-render mt-7 scroll-mt-20">
+    <section id="home-compass" data-home-section="compass" className="qa-defer-render mt-8 scroll-mt-20">
       <Link
         href="/dictionary"
         onClick={() => onOpen?.("/dictionary")}
-        className="group relative block overflow-hidden border-y border-white/9 bg-[linear-gradient(90deg,rgba(167,139,250,0.035),rgba(45,212,191,0.02),transparent)] px-1 py-3.5 transition duration-300 hover:border-violet-100/20 hover:bg-[linear-gradient(90deg,rgba(167,139,250,0.065),rgba(45,212,191,0.035),transparent)] focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/40 sm:px-2 sm:py-4"
+        className="group relative block overflow-hidden rounded-[26px] border border-violet-100/20 bg-[radial-gradient(circle_at_8%_0%,rgba(167,139,250,0.22),transparent_30%),radial-gradient(circle_at_94%_100%,rgba(45,212,191,0.14),transparent_33%),linear-gradient(125deg,rgba(36,20,60,0.94),rgba(12,17,36,0.98)_58%,rgba(8,21,33,0.98))] px-4 py-4 shadow-[0_20px_54px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] transition duration-300 hover:-translate-y-0.5 hover:border-violet-100/40 hover:shadow-[0_25px_64px_rgba(76,29,149,0.2),inset_0_1px_0_rgba(255,255,255,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/60 sm:px-5 sm:py-5"
       >
-        <span className="pointer-events-none absolute inset-y-3 left-0 w-px bg-gradient-to-b from-transparent via-violet-200/70 to-transparent" />
-        <span className="pointer-events-none absolute left-0 top-0 h-px w-2/5 bg-gradient-to-r from-violet-200/28 to-transparent" />
-        <div className="relative flex items-center gap-3 sm:gap-4">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-violet-100/18 bg-[linear-gradient(145deg,rgba(167,139,250,0.11),rgba(45,212,191,0.055))] text-violet-100/78 shadow-[0_10px_26px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.06)] sm:h-11 sm:w-11">
-            <Compass size={19} strokeWidth={1.75} aria-hidden="true" />
+        <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full border border-cyan-100/10 bg-cyan-200/[0.035]" />
+        <span className="pointer-events-none absolute bottom-0 left-[18%] h-px w-1/2 bg-gradient-to-r from-transparent via-violet-100/45 to-transparent" />
+        <div className="relative flex items-center gap-3.5 sm:gap-5">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[17px] border border-violet-100/34 bg-[linear-gradient(145deg,rgba(196,181,253,0.25),rgba(45,212,191,0.12))] text-violet-50 shadow-[0_12px_30px_rgba(76,29,149,0.32),inset_0_1px_0_rgba(255,255,255,0.24)] sm:h-14 sm:w-14">
+            <Compass size={22} strokeWidth={1.7} aria-hidden="true" />
           </span>
-          <span className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-5">
+          <span className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-6">
             <span className="block shrink-0">
-              <span className="block text-[8px] font-semibold uppercase tracking-[0.19em] text-cyan-100/50">{t("home.dictionaryNew", "New · Queer Dictionary")}</span>
-              <span className="qa-display mt-1 block text-[17px] font-semibold tracking-[-0.025em] text-white sm:text-xl">Queer Dictionary</span>
+              <span className="inline-flex rounded-full border border-cyan-100/24 bg-cyan-100/[0.08] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-50/82">{t("home.dictionaryNew", "New · Queer Dictionary")}</span>
+              <span className="qa-display mt-2 block text-[19px] font-semibold tracking-[-0.035em] text-white sm:text-[1.45rem]">Queer Dictionary</span>
             </span>
-            <span className="mt-1 block truncate text-center text-xs font-medium leading-5 text-white/62 sm:mt-0 sm:flex-1 sm:text-sm sm:text-white/58">{t("home.dictionaryDescription", "Identities, pronouns and community language — with sources and nuance.")}</span>
+            <span className="mt-1 block text-left text-xs font-medium leading-5 text-white/68 sm:mt-0 sm:flex-1 sm:text-sm sm:leading-6">{t("home.dictionaryDescription", "Identities, pronouns and community language — with sources and nuance.")}</span>
           </span>
-          <span className="flex shrink-0 items-center gap-2 rounded-full border border-violet-100/20 bg-violet-100/[0.075] py-2 pl-3 pr-2.5 text-[9px] font-semibold uppercase tracking-[0.13em] text-violet-50/75 shadow-[0_8px_22px_rgba(0,0,0,0.18)] transition group-hover:border-cyan-100/30 group-hover:bg-cyan-100/[0.08] group-hover:text-cyan-50">
+          <span className="flex shrink-0 items-center gap-2 rounded-full border border-violet-100/42 bg-violet-100/[0.15] py-2.5 pl-3.5 pr-3 text-[9px] font-semibold uppercase tracking-[0.13em] text-violet-50 shadow-[0_10px_26px_rgba(0,0,0,0.22)] transition group-hover:border-cyan-100/48 group-hover:bg-cyan-100/[0.17] group-hover:text-cyan-50">
             <span className="sm:hidden">{t("home.open", "Open")}</span>
             <span className="hidden sm:inline">{t("home.openDictionary", "Open Dictionary")}</span>
             <ArrowUpRight size={12} className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
@@ -305,9 +305,8 @@ function MembershipPreview({ isMember = false, onAction }) {
   ];
 
   return (
-    <section data-home-section="membership-preview" className="qa-defer-render mt-8 border-y border-white/10 py-5 sm:py-6">
+    <section data-home-section="membership-preview" className="qa-defer-render mt-8 py-5 sm:py-6">
       <div className="relative flex flex-col gap-5 overflow-hidden sm:gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
-        <div className="pointer-events-none absolute inset-x-[18%] top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-100/45 to-transparent" />
         <div className="min-w-0 pt-1">
           <p className="!text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-fuchsia-100/70 sm:text-[10px]">{t("home.memberEyebrow", "Free member space")}</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
