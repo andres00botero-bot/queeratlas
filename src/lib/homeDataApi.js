@@ -109,6 +109,29 @@ function parseNewsTimestamp(value) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+function getEventEndTimestamp(event = {}) {
+  const value = event.end_date || event.endDate || event.date || event.start_date || event.startDate || "";
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function prioritizeInitialEvents(events = []) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTimestamp = today.getTime();
+
+  return [...events].sort((a, b) => {
+    const aTimestamp = getEventEndTimestamp(a);
+    const bTimestamp = getEventEndTimestamp(b);
+    const aCurrentOrUpcoming = aTimestamp >= todayTimestamp;
+    const bCurrentOrUpcoming = bTimestamp >= todayTimestamp;
+
+    if (aCurrentOrUpcoming !== bCurrentOrUpcoming) return aCurrentOrUpcoming ? -1 : 1;
+    if (aCurrentOrUpcoming) return aTimestamp - bTimestamp;
+    return bTimestamp - aTimestamp;
+  });
+}
+
 function compareNewsRecency(a, b) {
   const byCreatedAt =
     parseNewsTimestamp(b.createdAt || b.created_at) - parseNewsTimestamp(a.createdAt || a.created_at);
@@ -210,7 +233,7 @@ function pickFields(row, fields) {
 }
 
 function buildInitialHomeData(payload) {
-  const events = Array.isArray(payload?.events) ? payload.events : [];
+  const events = prioritizeInitialEvents(Array.isArray(payload?.events) ? payload.events : []);
   const places = Array.isArray(payload?.places) ? payload.places : [];
   const worldNews = Array.isArray(payload?.worldNews) ? payload.worldNews : [];
   const worldNewsFallback = Boolean(payload?.worldNewsFallback);
@@ -265,7 +288,7 @@ function buildInitialHomeData(payload) {
 
 const fetchCachedInitialHomeData = unstable_cache(
   async () => buildInitialHomeData(await fetchHomeDataPayload()),
-  ["qa-home-initial-data-v1"],
+  ["qa-home-initial-data-v2"],
   {
     revalidate: HOME_DATA_REVALIDATE_SECONDS,
     tags: ["qa-home-data"],

@@ -48,6 +48,23 @@ function parseEventTimestamp(value) {
   return Number.isNaN(timestamp) ? 0 : timestamp;
 }
 
+function getEventStartDate(event = {}) {
+  return event?.date || event?.start_date || event?.startDate || "";
+}
+
+function getEventEndDate(event = {}) {
+  return event?.end_date || event?.endDate || getEventStartDate(event);
+}
+
+function formatEventDateRange(event = {}) {
+  const startDate = getEventStartDate(event);
+  const endDate = getEventEndDate(event);
+  if (startDate && endDate && startDate !== endDate) {
+    return `${formatDateShort(startDate)}–${formatDateShort(endDate)}`;
+  }
+  return formatDateShort(startDate || endDate);
+}
+
 function getDayStartTimestamp(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return 0;
@@ -63,6 +80,7 @@ function getUpcomingEventSignal(value, nowTimestamp) {
   if (!eventTimestamp || !todayTimestamp) return { label: "UPCOMING", tone: "neutral" };
 
   const daysAway = Math.round((eventTimestamp - todayTimestamp) / (24 * 60 * 60 * 1000));
+  if (daysAway < 0) return { label: "CALENDAR", tone: "neutral" };
   if (daysAway <= 0) return { label: "TODAY", tone: "live" };
   if (daysAway === 1) return { label: "TOMORROW", tone: "today" };
   if (daysAway <= 7) return { label: "THIS WEEK", tone: "week" };
@@ -670,7 +688,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     const nowTimestamp = Number(nowTick || 0);
     const todayTimestamp = getDayStartTimestamp(nowTimestamp);
     return [...events]
-      .map((event) => ({ ...event, __ts: parseEventTimestamp(event?.date) }))
+      .map((event) => ({ ...event, __ts: parseEventTimestamp(getEventEndDate(event)) }))
       .filter((event) => isEventStatusDiscoverable(event) && event.__ts > 0 && event.__ts >= todayTimestamp)
       .sort((a, b) => a.__ts - b.__ts);
   }, [events, nowTick]);
@@ -720,6 +738,7 @@ export default function HomePageClient({ initialHomeData = null }) {
     [focusedCity, upcomingEvents]
   );
   const nextUpcomingEvent = focusedUpcomingEvent || upcomingEvents[0] || null;
+  const calendarEvent = nextUpcomingEvent || events.find((event) => isEventStatusDiscoverable(event)) || null;
   const focusedVenue = useMemo(
     () => [...focusedCityPlaces].sort((a, b) => getPlaceSignalScore(b) - getPlaceSignalScore(a))[0] || null,
     [focusedCityPlaces]
@@ -738,8 +757,8 @@ export default function HomePageClient({ initialHomeData = null }) {
   }, [cityOptions]);
 
   const nextEventFreshness = useMemo(
-    () => getUpcomingEventSignal(nextUpcomingEvent?.date, nowTick),
-    [nextUpcomingEvent, nowTick]
+    () => getUpcomingEventSignal(getEventEndDate(calendarEvent), nowTick),
+    [calendarEvent, nowTick]
   );
 
   const trackHomeAction = (action, destination, meta = {}) => {
@@ -919,14 +938,18 @@ export default function HomePageClient({ initialHomeData = null }) {
     {
       key: "next-event",
       subtitle: focusedUpcomingEvent ? `${t("home.nextEvent", "Next")} ${formatCityLabel(focusedCity)}` : t("home.nextEvent", "Next event"),
-      title: nextUpcomingEvent?.name || t("home.noUpcomingEvent", "No upcoming event signal yet"),
-      description: `${formatCityLabel(nextUpcomingEvent?.city)} - ${
-        nextUpcomingEvent ? formatDateShort(nextUpcomingEvent.date) : t("home.noDate", "No date available")
+      title: calendarEvent?.name || t("home.noUpcomingEvent", "No upcoming event signal yet"),
+      description: `${formatCityLabel(calendarEvent?.city)} - ${
+        calendarEvent ? formatEventDateRange(calendarEvent) : t("home.noDate", "No date available")
       }.`,
-      meta: focusedUpcomingEvent ? t("home.localCalendar", "Your local calendar") : t("home.globalCalendar", "Next global calendar signal"),
+      meta: focusedUpcomingEvent
+        ? t("home.localCalendar", "Your local calendar")
+        : nextUpcomingEvent
+          ? t("home.globalCalendar", "Next global calendar signal")
+          : t("home.eventsCalendar", "From the events calendar"),
       signalLabel: "Event route",
-      signalValue: nextUpcomingEvent
-        ? `${formatCityLabel(nextUpcomingEvent.city)} · ${formatDateShort(nextUpcomingEvent.date)}`
+      signalValue: calendarEvent
+        ? `${formatCityLabel(calendarEvent.city)} · ${formatEventDateRange(calendarEvent)}`
         : t("home.openEventsCalendar", "Open the events calendar"),
       badge: nextEventFreshness.label,
       badgeClass:
@@ -941,11 +964,11 @@ export default function HomePageClient({ initialHomeData = null }) {
         "border-amber-200/26 bg-[linear-gradient(180deg,rgba(44,28,14,0.78),rgba(16,12,8,0.94))] hover:border-amber-200/46",
       ctaLabel: t("home.openEvent", "Open event"),
       onClick: () => {
-        trackHomeAction("next_event", nextUpcomingEvent?.id ? "event_detail" : "/events", {
-          city: String(nextUpcomingEvent?.city || ""),
+        trackHomeAction("next_event", calendarEvent?.id ? "event_detail" : "/events", {
+          city: String(calendarEvent?.city || ""),
         });
-        if (nextUpcomingEvent?.city && nextUpcomingEvent?.id) {
-          router.push(citySelectionPath(nextUpcomingEvent.city, { eventId: nextUpcomingEvent.id }));
+        if (calendarEvent?.city && calendarEvent?.id) {
+          router.push(citySelectionPath(calendarEvent.city, { eventId: calendarEvent.id }));
           return;
         }
         router.push("/events");
