@@ -40,12 +40,12 @@ export default function CityHeroCard({
   ];
 
   return (
-    <section className={`animate-cinematic-in relative mb-4 overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#17121c]/95 p-5 shadow-[0_28px_90px_rgba(0,0,0,0.32)] sm:mb-8 sm:rounded-[32px] sm:p-8 ${showOnLargerScreens ? "" : "sm:hidden"}`}>
+    <section className={`animate-cinematic-in relative mb-4 overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#1b1930]/95 p-5 shadow-[0_28px_90px_rgba(5,6,18,0.48)] sm:mb-8 sm:rounded-[32px] sm:p-8 ${showOnLargerScreens ? "" : "sm:hidden"}`}>
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.13] mix-blend-luminosity"
         style={{ backgroundImage: "url('/queer-city-guide-neon-orbit-background.png')" }}
       />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(245,169,198,0.15),transparent_38%,rgba(136,217,212,0.07)_72%,transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(183,160,247,0.24),transparent_36%),linear-gradient(145deg,rgba(245,169,198,0.14),transparent_44%,rgba(136,217,212,0.09)_74%,transparent)]" />
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,#f5a9c6,#88d9d4,transparent)] opacity-75" />
       <div className="relative z-10 flex min-h-full flex-col gap-6 sm:gap-8">
         <div className="flex items-center justify-between gap-3">

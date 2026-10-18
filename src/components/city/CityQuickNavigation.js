@@ -130,7 +130,7 @@ export default function CityQuickNavigation({
     return (
       <div
         aria-label="Contribute actions"
-        className="qa-city-panel-cq rounded-[24px] border border-white/18 bg-[linear-gradient(145deg,rgba(255,79,163,0.16),rgba(34,211,238,0.12),rgba(15,18,24,0.92))] p-3.5 shadow-[0_18px_52px_rgba(91,33,182,0.18)] backdrop-blur"
+        className="qa-city-panel-cq rounded-[24px] border border-violet-100/24 bg-[linear-gradient(145deg,rgba(183,160,247,0.26),rgba(245,169,198,0.12),rgba(20,19,39,0.98))] p-3.5 shadow-[0_18px_52px_rgba(5,6,18,0.38)] backdrop-blur"
       >
         <div className="mb-3 px-1 text-[12px] font-semibold uppercase tracking-[0.18em] text-white/64">Contribute</div>
         <div className="space-y-2">
@@ -178,14 +178,14 @@ export default function CityQuickNavigation({
     return (
       <nav
         aria-label="City sections"
-        className="qa-city-panel-cq relative overflow-hidden rounded-[26px] border border-white/18 bg-[linear-gradient(150deg,rgba(255,79,163,0.14),rgba(34,211,238,0.10),rgba(13,15,22,0.95))] p-3.5 shadow-[0_24px_64px_rgba(91,33,182,0.22)] backdrop-blur"
+        className="qa-city-panel-cq relative overflow-hidden rounded-[26px] border border-violet-100/24 bg-[linear-gradient(150deg,rgba(183,160,247,0.24),rgba(136,217,212,0.10),rgba(20,19,39,0.98))] p-3.5 shadow-[0_24px_64px_rgba(5,6,18,0.42)] backdrop-blur"
       >
         <div className="relative mb-3 px-2 py-1">
           <span className="inline-flex rounded-full border border-amber-100/30 bg-[linear-gradient(135deg,rgba(251,191,36,0.18),rgba(244,114,182,0.12),rgba(255,255,255,0.08))] px-3 py-1.5 text-[12px] font-bold uppercase tracking-[0.22em] text-amber-50 shadow-[0_12px_30px_rgba(251,191,36,0.12)]">
             City Menu
           </span>
         </div>
-        <div className="mb-2 h-px w-full bg-[linear-gradient(90deg,transparent,#ff7ac3,#4de1ff,transparent)] opacity-70" />
+        <div className="mb-2 h-px w-full bg-[linear-gradient(90deg,transparent,#b7a0f7,#f5a9c6,#88d9d4,transparent)] opacity-90" />
         <div className="space-y-2">
           {railItems.map((item) => {
             const isActive =
@@ -258,8 +258,8 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className={`qa-city-panel-cq animate-cinematic-in z-30 sm:top-3 sm:mb-8 sm:rounded-[24px] sm:border sm:border-white/[0.10] sm:bg-[#17121c]/92 sm:p-4 sm:shadow-[0_18px_52px_rgba(0,0,0,0.24)] sm:backdrop-blur ${
-        isPhoneVariant ? "relative mb-0 mt-[-0.25rem]" : "sticky top-2 mb-4 rounded-[20px] border border-white/[0.10] bg-[#17121c]/92 p-2.5 shadow-[0_18px_52px_rgba(0,0,0,0.24)] backdrop-blur"
+      className={`qa-city-panel-cq animate-cinematic-in z-30 sm:top-3 sm:mb-8 sm:rounded-[24px] sm:border sm:border-violet-100/[0.14] sm:bg-[#1b1930]/92 sm:p-4 sm:shadow-[0_18px_52px_rgba(5,6,18,0.32)] sm:backdrop-blur ${
+        isPhoneVariant ? "relative mb-0 mt-[-0.25rem]" : "sticky top-2 mb-4 rounded-[20px] border border-violet-100/[0.14] bg-[#1b1930]/92 p-2.5 shadow-[0_18px_52px_rgba(5,6,18,0.32)] backdrop-blur"
       }`}
       style={{ animationDelay: "170ms" }}
     >

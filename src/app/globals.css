@@ -363,15 +363,19 @@ body > div:first-child {
 }
 
 .qa-city {
-  --qa-city-canvas: #0b0910;
-  --qa-city-surface: #17121c;
-  --qa-city-surface-raised: #211925;
+  --qa-city-canvas: #0b1020;
+  --qa-city-surface: #1b1930;
+  --qa-city-surface-raised: #282143;
   --qa-city-text: #fff8fc;
   --qa-city-muted: #bdafba;
   --qa-city-petal: #f5a9c6;
   --qa-city-sea: #88d9d4;
   --qa-city-orchid: #b7a0f7;
   --qa-city-amber: #d8b678;
+  background:
+    radial-gradient(circle at 4% 0%, rgba(183, 160, 247, 0.18), transparent 27%),
+    radial-gradient(circle at 96% 8%, rgba(136, 217, 212, 0.10), transparent 24%),
+    linear-gradient(145deg, #0b1020 0%, #100f22 48%, #0d1421 100%) !important;
 }
 
 .qa-city-section {
@@ -415,8 +419,8 @@ body > div:first-child {
   --qa-city-section-accent: var(--qa-city-petal);
   border-color: rgba(255, 255, 255, 0.085) !important;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--qa-city-section-accent) 5%, transparent), transparent 34%),
-    rgba(23, 18, 28, 0.94) !important;
+    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--qa-city-section-accent) 17%, transparent), transparent 38%),
+    linear-gradient(150deg, rgba(31, 27, 55, 0.98), rgba(20, 19, 39, 0.98)) !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--qa-city-section-accent) 22%, transparent),
     0 24px 68px rgba(0, 0, 0, 0.24) !important;
@@ -440,7 +444,7 @@ body > div:first-child {
 
 .qa-city-content-card:not([aria-pressed="true"]) {
   border-color: rgba(255, 255, 255, 0.085) !important;
-  background: rgba(255, 255, 255, 0.035) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.16) !important;
 }
 
