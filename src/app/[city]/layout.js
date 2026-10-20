@@ -1,13 +1,10 @@
 import { cityGuideConfig } from "@/lib/cityGuides";
-import { cityCoreConfig } from "@/lib/cityCore";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getCityGuideResearch } from "@/lib/cityGuideResearch";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
-import Link from "next/link";
-import { CityRelatedGuides } from "@/components/city/CityGuideLinks";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
@@ -109,11 +106,6 @@ export default async function CityLayout({ children, params }) {
     ? staticGuideResearch
     : coreConfig.guideResearch || { checkedAt: "", sources: [] };
   const inventory = await loadSeoEntityInventory();
-  const indexableCities = Object.entries(cityCoreConfig).map(([key, value]) => ({
-    key,
-    ...value,
-    seoIndexable: true,
-  }));
   const normalizedCity = normalizeCitySlug(city);
   const matchesCity = (item) => normalizeCitySlug(item?.city) === normalizedCity;
   const countEntities = (items, sourceAvailable) => {
@@ -139,14 +131,6 @@ export default async function CityLayout({ children, params }) {
   return (
     <CityRouteConfigProvider config={routeConfig}>
       {children}
-      <nav aria-label="City directory" className="border-t border-white/10 bg-[#07090f] px-4 py-3 text-white sm:px-6">
-        <div className="mx-auto max-w-6xl">
-          <Link href={`/${city}/directory`} className="text-sm text-cyan-100 underline underline-offset-4">
-            Browse all {String(coreConfig.title || city).replace(/^Queer\s+/i, "").trim()} listings
-          </Link>
-        </div>
-      </nav>
-      <CityRelatedGuides currentCity={routeConfig} cities={indexableCities} />
     </CityRouteConfigProvider>
   );
 }

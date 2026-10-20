@@ -250,15 +250,11 @@ ensureContains(
   failures
 );
 
-const cityEntityLinksSource = read("src/components/city/CityEntityCrawlSection.js");
-ensureContains(
-  cityEntityLinksSource,
-  /buildVenuePath[\s\S]*buildEventPath[\s\S]*buildServicePath/,
-  "src/components/city/CityEntityCrawlSection.js: missing server-rendered entity link groups",
-  failures
-);
-if (/sr-only/.test(cityEntityLinksSource)) {
-  failures.push("src/components/city/CityEntityCrawlSection.js: entity crawl links must remain visible to users");
+// City routes use a viewport-height discovery layout. Appending bulk
+// directories after the page scrolls the navigation out of the viewport.
+const cityLayoutSource = read("src/app/[city]/layout.js");
+if (/CityEntityCrawlSection|CityRelatedGuides|aria-label="City directory"/.test(cityLayoutSource)) {
+  failures.push("src/app/[city]/layout.js: avoid directory blocks outside the city scroll container");
 }
 
 const cityTopicPath = "src/app/[city]/discover/[topic]/page.js";
