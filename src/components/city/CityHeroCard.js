@@ -34,9 +34,24 @@ export default function CityHeroCard({
     },
   ].filter((item) => String(item.value || "").trim());
   const stats = [
-    { label: t("city.venues", "Venues"), value: placesChipLabel, dot: "bg-white/38" },
-    { label: t("city.events", "Events"), value: eventsChipLabel, dot: "bg-white/38" },
-    { label: t("city.signal", "Signal"), value: t("city.live", "Live"), dot: "bg-white/38" },
+    {
+      label: t("city.venues", "Venues"),
+      value: placesChipLabel,
+      dot: "bg-[#e7c67f]",
+      accent: "text-[#f2d997]",
+    },
+    {
+      label: t("city.events", "Events"),
+      value: eventsChipLabel,
+      dot: "bg-[#d7c0ff]",
+      accent: "text-[#e5d9ff]",
+    },
+    {
+      label: t("city.signal", "Signal"),
+      value: t("city.live", "Live"),
+      dot: "bg-[#88d9d4]",
+      accent: "text-[#b8f0ed]",
+    },
   ];
 
   return (
@@ -44,8 +59,8 @@ export default function CityHeroCard({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(215,192,255,0.13),transparent_42%)]" />
       <div className="relative z-10 flex min-h-full flex-col gap-6 sm:gap-8">
         <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.055] px-2.5 py-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07]">
+          <div className="inline-flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center">
               <Image
                 src="/queer-atlas-logo.png"
                 alt="Queer Atlas logo"
@@ -85,7 +100,7 @@ export default function CityHeroCard({
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${stat.dot}`} aria-hidden="true" />
                 <span className="uppercase tracking-[0.13em] text-white/55">{stat.label}</span>
-                <span className="font-semibold text-[#f7f2f7]">{stat.value}</span>
+                <span className={`font-semibold ${stat.accent}`}>{stat.value}</span>
               </div>
             ))}
           </div>
