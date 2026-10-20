@@ -5149,7 +5149,7 @@ export default function CityPage() {
             <section
               ref={centerColumnScrollRef}
               data-scroll-to-top-container
-              className="order-1 min-w-0 xl:order-none xl:col-start-1 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto xl:pr-1"
+              className="qa-city-content-scroll order-1 min-w-0 xl:order-none xl:col-start-1 xl:row-start-1 xl:h-[calc(100vh-3rem)] xl:self-start xl:overflow-y-auto xl:pr-4"
             >
               <div className="hidden xl:block">
                 <CityNavigationCluster
@@ -5168,12 +5168,12 @@ export default function CityPage() {
                   activeVenueFilter={activeVenueFilter}
                   variant="desktop"
                 />
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[18px] border border-white/[0.08] bg-white/[0.025] px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/48">Help keep {cityName} current</p>
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 py-2">
+                  <p className="text-[12px] font-semibold tracking-[0.02em] text-[#d7fbf8]">Help keep {cityName} current</p>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => { handleDesktopSectionNav("guide", guideSectionRef); onToggleAddPlace(); }} className="qa-action rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-xs text-white/72 transition hover:border-[#88d9d4]/35 hover:text-white">+ Place</button>
-                    <button type="button" onClick={() => { handleDesktopSectionNav("events", tonightSectionRef); onToggleAddEvent(); }} className="qa-action rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-xs text-white/72 transition hover:border-[#b7a0f7]/35 hover:text-white">+ Event</button>
-                    <button type="button" onClick={() => { handleDesktopSectionNav("services", servicesSectionRef); onToggleAddService(); }} className="qa-action rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-xs text-white/72 transition hover:border-[#88d9d4]/35 hover:text-white">+ Service</button>
+                    <button type="button" onClick={() => { handleDesktopSectionNav("guide", guideSectionRef); onToggleAddPlace(); }} className="qa-action rounded-full bg-[#88d9d4] px-4 py-2 text-sm font-semibold text-[#102431] shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_8px_20px_rgba(43,167,159,0.18)] transition hover:-translate-y-px hover:bg-[#b5f0eb] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_26px_rgba(43,167,159,0.24)]">+ Add a place</button>
+                    <button type="button" onClick={() => { handleDesktopSectionNav("events", tonightSectionRef); onToggleAddEvent(); }} className="qa-action rounded-full bg-[#b7a0f7] px-4 py-2 text-sm font-semibold text-[#171229] shadow-[inset_0_1px_0_rgba(255,255,255,0.42),0_8px_20px_rgba(129,102,211,0.18)] transition hover:-translate-y-px hover:bg-[#d1c1ff] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_12px_26px_rgba(129,102,211,0.24)]">+ Add an event</button>
+                    <button type="button" onClick={() => { handleDesktopSectionNav("services", servicesSectionRef); onToggleAddService(); }} className="qa-action rounded-full bg-[#d8b678] px-4 py-2 text-sm font-semibold text-[#251d11] shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_8px_20px_rgba(170,124,42,0.18)] transition hover:-translate-y-px hover:bg-[#f2d493] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.48),0_12px_26px_rgba(170,124,42,0.24)]">+ Add a service</button>
                   </div>
                 </div>
               </div>

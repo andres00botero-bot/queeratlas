@@ -258,14 +258,14 @@ export default function CityQuickNavigation({
 
   return (
     <div
-      className={`qa-city-panel-cq animate-cinematic-in z-30 sm:top-3 sm:mb-8 sm:rounded-[24px] sm:border sm:border-violet-100/[0.14] sm:bg-[#1b1930]/92 sm:p-4 sm:shadow-[0_18px_52px_rgba(5,6,18,0.32)] sm:backdrop-blur ${
-        isPhoneVariant ? "relative mb-0 mt-[-0.25rem]" : "sticky top-2 mb-4 rounded-[20px] border border-violet-100/[0.14] bg-[#1b1930]/92 p-2.5 shadow-[0_18px_52px_rgba(5,6,18,0.32)] backdrop-blur"
+      className={`qa-city-panel-cq qa-city-explorer animate-cinematic-in z-30 sm:top-3 sm:mb-8 sm:rounded-[24px] sm:p-4 ${
+        isPhoneVariant ? "relative mb-0 mt-[-0.25rem]" : "sticky top-2 mb-4 rounded-[20px] p-2.5"
       }`}
       style={{ animationDelay: "170ms" }}
     >
       <div className={`items-center justify-between gap-2 ${isPhoneVariant ? "hidden" : "flex"}`}>
-        <p className="text-[10px] uppercase tracking-[0.16em] text-white/72 sm:text-[11px] sm:tracking-[0.18em]">Explore this city</p>
-        <p className="hidden rounded-full border border-white/14 bg-white/[0.08] px-2 py-1 text-[11px] text-white/72 sm:block">
+        <p className="qa-city-explorer-title text-[11px] font-semibold uppercase tracking-[0.16em] sm:tracking-[0.18em]">Explore this city</p>
+        <p className="qa-city-explorer-current hidden rounded-full px-2 py-1 text-[11px] sm:block">
           Current: {activeSection || "overview"}
         </p>
       </div>
@@ -275,13 +275,11 @@ export default function CityQuickNavigation({
           const isActive =
             activeSection === item.key || (activeSection === "venues" && item.key === "venues");
           const isVenueMenuOpen = item.key === "venues" && showVenuePicker;
-          const itemAppearance = isDesktopVariant
-            ? isActive
-              ? "border-[#f5a9c6]/70 bg-[linear-gradient(145deg,rgba(245,169,198,0.24),rgba(183,160,247,0.14),rgba(255,255,255,0.07))] text-white shadow-[0_16px_38px_rgba(245,169,198,0.20)] ring-1 ring-[#f5a9c6]/48"
-              : isVenueMenuOpen
-                ? "border-amber-100/42 bg-[linear-gradient(145deg,rgba(216,182,120,0.14),rgba(245,169,198,0.08),rgba(255,255,255,0.04))] text-white shadow-[0_12px_28px_rgba(216,182,120,0.12)]"
-                : "border-white/[0.10] bg-white/[0.035] text-white/68 hover:border-white/[0.24] hover:bg-white/[0.075] hover:text-white"
-            : item.className;
+          const itemAppearance = isActive
+            ? "border-0 bg-[#2a5963] text-[#f2fffe] shadow-none"
+            : isVenueMenuOpen
+              ? "border-0 bg-[#233f4b] text-[#effcfb]"
+              : "border-0 bg-transparent text-white/62 hover:bg-white/[0.055] hover:text-white";
           return (
           <button
             key={item.key}
@@ -302,11 +300,7 @@ export default function CityQuickNavigation({
             aria-label={item.key === "venues" ? "Venues — choose a category" : undefined}
             aria-expanded={item.key === "venues" ? showVenuePicker : undefined}
             aria-controls={item.key === "venues" ? "city-venue-picker" : undefined}
-            className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl border px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${itemAppearance} ${
-              isActive && !isDesktopVariant
-                ? "border-[#f5a9c6]/58 bg-[linear-gradient(145deg,rgba(245,169,198,0.17),rgba(183,160,247,0.10),rgba(255,255,255,0.06))] text-white shadow-[0_14px_34px_rgba(245,169,198,0.16)] ring-1 ring-[#f5a9c6]/38"
-                : ""
-            }`}
+            className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${itemAppearance}`}
           >
             <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] opacity-72">
               <Icon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -318,10 +312,10 @@ export default function CityQuickNavigation({
               </span>
               {item.key === "venues" && !isPhoneVariant ? (
                 <span
-                  className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition ${
+                  className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
                     showVenuePicker
-                      ? "border-amber-100 bg-amber-200/35 text-white shadow-[0_0_18px_rgba(251,191,36,0.45)]"
-                      : "border-amber-200/80 bg-amber-300/25 text-amber-50 shadow-[0_0_14px_rgba(251,191,36,0.30)]"
+                      ? "bg-[#f2c879] text-[#17202b]"
+                      : "bg-[#d8b678] text-[#17202b] hover:bg-[#f2c879]"
                   }`}
                   aria-hidden="true"
                 >
@@ -337,8 +331,8 @@ export default function CityQuickNavigation({
       </div>
 
       {showVenuePicker && venueGroups.length > 0 ? (
-        <div id="city-venue-picker" className="mt-3 rounded-2xl border border-amber-100/20 bg-[linear-gradient(145deg,rgba(216,182,120,0.10),rgba(255,255,255,0.055))] p-3 shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-50/78">Browse venue categories</p>
+        <div id="city-venue-picker" className="mt-3 rounded-2xl bg-[#091a28]/72 p-3 shadow-none">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#c8f4f0]/78">Browse venue categories</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               key="venue-jump-all"
@@ -347,7 +341,7 @@ export default function CityQuickNavigation({
                 onGoVenues?.();
                 setShowVenuePicker(false);
               }}
-              className="qa-action rounded-full border border-white/18 bg-white/[0.07] px-3 py-1.5 text-[11px] text-white/82 transition hover:border-white/34 hover:bg-white/[0.11]"
+              className="qa-action rounded-full bg-white/[0.07] px-3 py-1.5 text-[11px] text-white/82 transition hover:bg-white/[0.11]"
             >
               All venues
             </button>
@@ -362,10 +356,10 @@ export default function CityQuickNavigation({
                   setShowVenuePicker(false);
                 }}
                 aria-pressed={isActive}
-                className={`qa-action rounded-full border px-3 py-1.5 text-[11px] transition ${
+                className={`qa-action rounded-full px-3 py-1.5 text-[11px] transition ${
                   isActive
-                    ? "border-amber-200/52 bg-amber-200/16 text-amber-50"
-                    : "border-white/14 bg-white/[0.045] text-white/72 hover:border-amber-200/34 hover:bg-amber-200/[0.08] hover:text-amber-50"
+                    ? "bg-[#88d9d4]/16 text-[#d7fbf8]"
+                    : "bg-white/[0.045] text-white/72 hover:bg-[#88d9d4]/[0.08] hover:text-[#d7fbf8]"
                 }`}
               >
                 {group.label}

@@ -676,6 +676,49 @@ body > div:first-child {
   container-type: inline-size;
 }
 
+/* A quiet scroll indicator for the city-content column. It is deliberately
+   scoped here so the rest of the product keeps its existing scrollbar theme. */
+.qa-city-content-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(215, 192, 255, 0.62) transparent;
+  scrollbar-gutter: stable;
+}
+
+.qa-city-content-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.qa-city-content-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.qa-city-content-scroll::-webkit-scrollbar-thumb {
+  background: rgba(215, 192, 255, 0.62);
+  border-radius: 999px;
+}
+
+.qa-city-content-scroll::-webkit-scrollbar-thumb:hover {
+  background: #d7c0ff;
+}
+
+/* The city explorer is a navigation instrument, so it uses an ink surface rather
+   than competing with the editorial plum hero above it. */
+.qa-city-explorer {
+  position: relative;
+  overflow: hidden;
+  background: #102431;
+  box-shadow: none;
+}
+
+.qa-city-explorer-title {
+  color: #d7fbf8;
+}
+
+.qa-city-explorer-current {
+  background: rgba(222, 242, 245, 0.055);
+  color: rgba(220, 239, 242, 0.72);
+}
+
 @container (max-width: 390px) {
   .qa-city-panel-cq {
     border-radius: 1.05rem;

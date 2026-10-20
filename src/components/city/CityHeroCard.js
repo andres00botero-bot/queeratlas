@@ -20,36 +20,31 @@ export default function CityHeroCard({
     {
       label: t("city.localMood", "Local mood"),
       value: cityHero?.hook,
-      tone: "bg-[#f5a9c6]/10 text-[#f5a9c6]",
+      tone: "bg-[#d7c0ff]/12 text-[#d7c0ff]",
     },
     {
       label: t("city.queerStatus", "Queer status"),
       value: cityHero?.status,
-      tone: "bg-[#88d9d4]/10 text-[#88d9d4]",
+      tone: "bg-[#d7c0ff]/12 text-[#d7c0ff]",
     },
     {
       label: t("city.crowd", "Crowd"),
       value: cityHero?.crowd,
-      tone: "bg-[#d8b678]/10 text-[#d8b678]",
+      tone: "bg-[#d7c0ff]/12 text-[#d7c0ff]",
     },
   ].filter((item) => String(item.value || "").trim());
   const stats = [
-    { label: t("city.venues", "Venues"), value: placesChipLabel, dot: "bg-[#88d9d4]" },
-    { label: t("city.events", "Events"), value: eventsChipLabel, dot: "bg-[#b7a0f7]" },
-    { label: t("city.signal", "Signal"), value: t("city.live", "Live"), dot: "bg-[#d8b678]" },
+    { label: t("city.venues", "Venues"), value: placesChipLabel, dot: "bg-white/38" },
+    { label: t("city.events", "Events"), value: eventsChipLabel, dot: "bg-white/38" },
+    { label: t("city.signal", "Signal"), value: t("city.live", "Live"), dot: "bg-white/38" },
   ];
 
   return (
-    <section className={`animate-cinematic-in relative mb-4 overflow-hidden rounded-[26px] border border-white/[0.10] bg-[#1b1930]/95 p-5 shadow-[0_28px_90px_rgba(5,6,18,0.48)] sm:mb-8 sm:rounded-[32px] sm:p-8 ${showOnLargerScreens ? "" : "sm:hidden"}`}>
-      <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.13] mix-blend-luminosity"
-        style={{ backgroundImage: "url('/queer-city-guide-neon-orbit-background.png')" }}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_0%,rgba(183,160,247,0.24),transparent_36%),linear-gradient(145deg,rgba(245,169,198,0.14),transparent_44%,rgba(136,217,212,0.09)_74%,transparent)]" />
-      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-[linear-gradient(90deg,transparent,#f5a9c6,#88d9d4,transparent)] opacity-75" />
+    <section className={`animate-cinematic-in relative mb-4 overflow-hidden rounded-[26px] bg-[#181426] p-5 shadow-[0_28px_90px_rgba(5,6,18,0.42)] sm:mb-8 sm:rounded-[32px] sm:p-8 ${showOnLargerScreens ? "" : "sm:hidden"}`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(215,192,255,0.13),transparent_42%)]" />
       <div className="relative z-10 flex min-h-full flex-col gap-6 sm:gap-8">
         <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.11] bg-white/[0.055] px-2.5 py-2 backdrop-blur-md">
+          <div className="inline-flex items-center gap-2.5 rounded-full bg-white/[0.055] px-2.5 py-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.07]">
               <Image
                 src="/queer-atlas-logo.png"
@@ -60,25 +55,25 @@ export default function CityHeroCard({
               />
             </span>
             <span className="leading-none">
-              <span className="block text-[11px] font-bold uppercase tracking-[0.20em] text-white">
+              <span className="block whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.14em] text-white sm:text-[11px] sm:tracking-[0.20em]">
                 Queer Atlas
               </span>
             </span>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#d8b678]/20 bg-[#d8b678]/[0.07] px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#ead09b] sm:text-[10px]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#d8b678] shadow-[0_0_12px_rgba(216,182,120,0.8)]" aria-hidden="true" />
+          <span className="inline-flex whitespace-nowrap items-center gap-2 rounded-full bg-[#e7c67f]/12 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[#f2d997] sm:text-[10px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#e7c67f]" aria-hidden="true" />
             {t("city.liveCityGuide", "Live city guide")}
           </span>
         </div>
 
         <div className="max-w-4xl">
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#f5a9c6]">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d7c0ff]">
             {t("city.yourQueerGuideTo", "Your queer guide to")}
           </p>
-          <h1 className="max-w-3xl text-4xl font-bold leading-[0.98] tracking-[-0.035em] text-[#fff8fc] sm:text-5xl lg:text-6xl">
+          <h1 className="max-w-3xl text-4xl font-bold leading-[0.98] tracking-[-0.035em] text-[#f7f2f7] sm:text-5xl lg:text-6xl">
             {cityName}
           </h1>
-          <p className="qa-city-copy-left mt-4 h-auto max-w-2xl text-pretty text-sm leading-[1.65] text-[#d8ccd5] sm:mt-5 sm:text-base sm:leading-7">
+          <p className="qa-city-copy-left mt-4 h-auto max-w-2xl text-pretty text-sm leading-[1.65] text-[#bdb3c2] sm:mt-5 sm:text-base sm:leading-7">
             {introCopy}
           </p>
 
@@ -86,11 +81,11 @@ export default function CityHeroCard({
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="inline-flex items-center gap-2 rounded-full border border-white/[0.10] bg-white/[0.045] px-3 py-2 text-xs text-white/78"
+                className="inline-flex items-center gap-2 rounded-full bg-white/[0.055] px-3 py-2 text-xs text-white/78"
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${stat.dot}`} aria-hidden="true" />
                 <span className="uppercase tracking-[0.13em] text-white/55">{stat.label}</span>
-                <span className="font-semibold text-[#fff8fc]">{stat.value}</span>
+                <span className="font-semibold text-[#f7f2f7]">{stat.value}</span>
               </div>
             ))}
           </div>
@@ -99,14 +94,14 @@ export default function CityHeroCard({
         {mobileDiscovery ? <div className="sm:hidden">{mobileDiscovery}</div> : null}
 
         {highlights.length > 0 ? (
-          <div className="overflow-hidden rounded-[22px] border border-white/[0.09] bg-white/[0.035]">
-            <div className="border-b border-white/[0.07] px-4 py-3 sm:px-5">
+          <div className="overflow-hidden rounded-[22px] bg-[#211b33]">
+            <div className="border-b border-white/[0.055] px-4 py-3 sm:px-5">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/50">{t("city.knowBeforeYouGo", "Know before you go")}</p>
             </div>
             {highlights.map((item, index) => (
               <div
                 key={item.label}
-                className={`grid grid-cols-[auto_1fr] gap-3 border-b border-white/[0.07] p-4 last:border-b-0 sm:grid-cols-[9rem_1fr] sm:gap-5 sm:px-5 ${
+                className={`grid grid-cols-[auto_1fr] gap-3 border-b border-white/[0.055] p-4 last:border-b-0 sm:grid-cols-[9rem_1fr] sm:gap-5 sm:px-5 ${
                   index % 2 === 0 ? "bg-white/[0.018]" : ""
                 }`}
               >
@@ -118,7 +113,7 @@ export default function CityHeroCard({
                 </div>
                 <div>
                   <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.15em] text-white/58 sm:hidden">{item.label}</p>
-                  <p className="qa-city-copy-left text-pretty text-sm leading-[1.6] text-[#ddd1da] sm:text-[0.95rem] sm:leading-6">{item.value}</p>
+                  <p className="qa-city-copy-left text-pretty text-sm leading-[1.6] text-[#d5cbd9] sm:text-[0.95rem] sm:leading-6">{item.value}</p>
                 </div>
               </div>
             ))}
