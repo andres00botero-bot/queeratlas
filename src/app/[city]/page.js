@@ -5173,7 +5173,7 @@ export default function CityPage() {
                   onGoEvents={() => handleDesktopSectionNav("events", tonightSectionRef)}
                   onGoGuide={() => handleDesktopSectionNav("guide", guideSectionRef)}
                   onGoServices={() => handleDesktopSectionNav("services", servicesSectionRef)}
-                  onGoVenues={() => handleDesktopSectionNav("venues", placesSectionRef)}
+                  onGoVenues={() => handleGoVenueType("")}
                   onGoVenueType={handleGoVenueType}
                   venueJumpGroups={venueJumpGroups}
                   activeVenueFilter={activeVenueFilter}
@@ -5227,7 +5227,10 @@ export default function CityPage() {
                       onGoEvents={() => goToMobileSection("events", tonightSectionRef)}
                       onGoGuide={() => goToMobileSection("guide", guideSectionRef)}
                       onGoServices={() => goToMobileSection("services", servicesSectionRef)}
-                      onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
+                      onGoVenues={() => {
+                        goToMobileSection("venues", placesSectionRef);
+                        handleGoVenueType("");
+                      }}
                       onGoVenueType={(value) => {
                         goToMobileSection("venues", placesSectionRef);
                         handleGoVenueType(value);
@@ -5363,7 +5366,10 @@ export default function CityPage() {
                     onGoEvents={() => goToMobileSection("events", tonightSectionRef)}
                     onGoGuide={() => goToMobileSection("guide", guideSectionRef)}
                     onGoServices={() => goToMobileSection("services", servicesSectionRef)}
-                    onGoVenues={() => goToMobileSection("venues", placesSectionRef)}
+                    onGoVenues={() => {
+                      goToMobileSection("venues", placesSectionRef);
+                      handleGoVenueType("");
+                    }}
                     onGoVenueType={(value) => {
                       goToMobileSection("venues", placesSectionRef);
                       handleGoVenueType(value);
