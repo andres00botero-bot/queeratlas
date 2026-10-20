@@ -20,17 +20,17 @@ export default function CityHeroCard({
     {
       label: t("city.localMood", "Local mood"),
       value: cityHero?.hook,
-      tone: "bg-[#d7c0ff]/12 text-[#d7c0ff]",
+      tone: "bg-[#e7c67f]/14 text-[#f2d997]",
     },
     {
       label: t("city.queerStatus", "Queer status"),
       value: cityHero?.status,
-      tone: "bg-[#d7c0ff]/12 text-[#d7c0ff]",
+      tone: "bg-[#d7c0ff]/14 text-[#e5d9ff]",
     },
     {
       label: t("city.crowd", "Crowd"),
       value: cityHero?.crowd,
-      tone: "bg-[#d7c0ff]/12 text-[#d7c0ff]",
+      tone: "bg-[#88d9d4]/14 text-[#b8f0ed]",
     },
   ].filter((item) => String(item.value || "").trim());
   const stats = [
