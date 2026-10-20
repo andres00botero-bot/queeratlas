@@ -36,27 +36,20 @@ export default async function CityEntityCrawlSection({ city, cityName, inventory
   return (
     <section
       aria-labelledby="city-verified-directory-title"
-      className="hidden border-t border-white/10 bg-[#07090f] px-4 py-3 text-white sm:block sm:px-6"
+      className="border-t border-white/10 bg-[#07090f] px-4 py-3 text-white sm:px-6"
     >
       <div className="mx-auto max-w-6xl">
-        <details className="group">
-          <summary className="flex cursor-pointer items-center justify-between gap-4 rounded-lg py-2 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200">
-            <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/62">
                 Direct city directory
               </p>
               <h2 id="city-verified-directory-title" className="mt-1 text-xl font-semibold tracking-[-0.01em]">
                 Explore verified {cityName} listings
               </h2>
-            </div>
-            <span aria-hidden="true" className="text-xl text-cyan-100 transition group-open:rotate-45">+</span>
-          </summary>
           <div className="mt-5 grid gap-5 pb-3 lg:grid-cols-3">
             <EntityLinkGroup title="Venues" items={venues} buildPath={buildVenuePath} />
             <EntityLinkGroup title="Events" items={events} buildPath={buildEventPath} />
             <EntityLinkGroup title="Services" items={services} buildPath={buildServicePath} />
         </div>
-        </details>
       </div>
     </section>
   );

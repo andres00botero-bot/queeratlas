@@ -6,7 +6,7 @@ import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { CityRouteConfigProvider } from "@/components/city/CityRouteConfigProvider";
-import CityEntityCrawlSection from "@/components/city/CityEntityCrawlSection";
+import Link from "next/link";
 import { CityRelatedGuides } from "@/components/city/CityGuideLinks";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { notFound } from "next/navigation";
@@ -139,11 +139,13 @@ export default async function CityLayout({ children, params }) {
   return (
     <CityRouteConfigProvider config={routeConfig}>
       {children}
-      <CityEntityCrawlSection
-        city={city}
-        cityName={String(coreConfig.title || city).replace(/^Queer\s+/i, "").trim()}
-        inventory={inventory}
-      />
+      <nav aria-label="City directory" className="border-t border-white/10 bg-[#07090f] px-4 py-3 text-white sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <Link href={`/${city}/directory`} className="text-sm text-cyan-100 underline underline-offset-4">
+            Browse all {String(coreConfig.title || city).replace(/^Queer\s+/i, "").trim()} listings
+          </Link>
+        </div>
+      </nav>
       <CityRelatedGuides currentCity={routeConfig} cities={indexableCities} />
     </CityRouteConfigProvider>
   );
