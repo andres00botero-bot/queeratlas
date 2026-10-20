@@ -16,9 +16,6 @@ const HIDDEN_EVIDENCE_STATUSES = new Set(["not_published", "source_unavailable"]
 
 export default function VenuePracticalIntel({ place, compact = false }) {
   const intel = normalizeVenueIntel(place);
-  const rating = Number(place?.avgRating ?? place?.avg_rating);
-  const reviewCount = Number(place?.reviewCount ?? place?.review_count ?? 0);
-  const hasRating = Number.isFinite(rating) && rating > 0;
   const labels = getVenueIntelLabels(place?.type);
   const fields = [
     { key: "queueWait", label: labels.queueWait, value: intel.queueWait, evidence: intel.topicEvidence.queueWait },
@@ -26,40 +23,31 @@ export default function VenuePracticalIntel({ place, compact = false }) {
     { key: "crowdMix", label: labels.crowdMix, value: intel.crowdMix, evidence: intel.topicEvidence.crowdMix },
     { key: "dressCode", label: labels.dressCode, value: intel.dressCode, evidence: intel.topicEvidence.dressCode },
     { key: "staffInclusivity", label: labels.staffInclusivity, value: intel.staffInclusivity, evidence: intel.topicEvidence.staffInclusivity },
-    {
-      key: "communityRating",
-      label: "Reviews",
-      value: hasRating ? `${rating.toFixed(1)} / 5` : "No reviews yet",
-      detail: reviewCount > 0 ? `${reviewCount} review${reviewCount === 1 ? "" : "s"}` : "",
-      isKnown: hasRating,
-    },
   ];
   const Heading = compact ? "h3" : "h2";
 
   return (
-    <section className={compact ? "mt-4" : "rounded-[20px] border border-fuchsia-200/16 bg-[linear-gradient(145deg,rgba(244,114,182,0.08),rgba(34,211,238,0.05),rgba(10,10,10,0.96))] p-4 sm:rounded-[24px] sm:p-6"}>
+    <section className={compact ? "mt-6 border-t border-white/[0.08] pt-5" : "rounded-[20px] border border-fuchsia-200/16 bg-[linear-gradient(145deg,rgba(244,114,182,0.08),rgba(34,211,238,0.05),rgba(10,10,10,0.96))] p-4 sm:rounded-[24px] sm:p-6"}>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/68">Venue intelligence</p>
-          <Heading className={`${compact ? "mt-1 text-base" : "mt-1 text-lg"} font-semibold text-white`}>Know before you go</Heading>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#e7c67f]/82">Venue intelligence</p>
+          <Heading className={`${compact ? "mt-1 text-base" : "mt-1 text-lg"} font-semibold text-[#f7f2f7]`}>Know before you go</Heading>
         </div>
         <span className="hidden rounded-full border border-cyan-100/18 bg-cyan-300/[0.08] px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cyan-50/72 sm:inline-flex">
           Community + editorial
         </span>
       </div>
 
-      <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+      <div className="mt-5 grid gap-0">
         {fields.map((field) => {
           const hidesUnsupportedText = HIDDEN_EVIDENCE_STATUSES.has(field.evidence?.status);
           const isKnown = field.isKnown ?? Boolean(field.value && !hidesUnsupportedText);
           const value = hidesUnsupportedText ? "" : field.value;
           return (
-            <div
-              key={field.key}
-              className={`rounded-2xl border px-3.5 py-3 ${isKnown ? "border-white/14 bg-white/[0.065]" : "border-white/10 bg-black/20"}`}
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/48">{field.label}</p>
-              <p className={`qa-copy-justify mt-1.5 text-sm leading-5 ${isKnown ? "text-white/90" : "text-white/48"}`}>{value}</p>
+            <div key={field.key} className={compact ? "grid grid-cols-[minmax(8rem,0.8fr)_minmax(0,1.2fr)] gap-5 border-b border-white/[0.06] py-4 last:border-b-0" : `rounded-2xl border px-3.5 py-3 ${isKnown ? "border-white/14 bg-white/[0.065]" : "border-white/10 bg-black/20"}`}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#d7c0ff]/86">{field.label}</p>
+              <div>
+              <p className={`mt-0 text-sm leading-6 ${isKnown ? "text-white/90" : "text-white/54"}`}>{value}</p>
               {field.detail ? <p className="mt-1 text-[11px] text-white/46">{field.detail}</p> : null}
               {field.evidence?.status && !hidesUnsupportedText ? (
                 <div className="mt-2 hidden flex-wrap items-center gap-2 text-[10px] text-cyan-50/58 sm:flex">
@@ -78,6 +66,7 @@ export default function VenuePracticalIntel({ place, compact = false }) {
                   ) : null}
                 </div>
               ) : null}
+              </div>
             </div>
           );
         })}

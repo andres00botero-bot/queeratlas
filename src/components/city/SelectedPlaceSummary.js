@@ -26,51 +26,41 @@ export default function SelectedPlaceSummary({
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap gap-2">
-        <span className="rounded-full border border-cyan-100/28 bg-cyan-300/14 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-cyan-50">
-          {selectedPlace.city || cityName}
-        </span>
-        <span className="rounded-full border border-fuchsia-100/24 bg-fuchsia-300/12 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-fuchsia-50">
-          {typeLabels[selectedPlace.type] || t("city.place", "Place")}
-        </span>
+      <div className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#bdb3c2]">
+        <span>{selectedPlace.city || cityName}</span>
+        <span className="text-[#d7c0ff]/66">·</span>
+        <span className="text-[#d7c0ff]">{typeLabels[selectedPlace.type] || t("city.place", "Place")}</span>
+        <button type="button" onClick={onOpenReviews} className="ml-auto normal-case tracking-normal text-[#d7c0ff] hover:text-[#e4d6ff]">
+          {selectedPlace.avgRating ? `${Number(selectedPlace.avgRating).toFixed(1)} · ` : ""}{selectedPlace.reviewCount || 0} {t("city.reviews", "reviews")}
+        </button>
       </div>
-      <h2 className="mb-3 text-3xl font-bold leading-tight tracking-[-0.025em] text-white">{selectedPlace.name}</h2>
-      <VibeTagChips
-        entity={selectedPlace}
-        tone="cyan"
-        className="mb-3"
-        includeTypeFallback
-        includeMixedFallback
-      />
+      <VibeTagChips entity={selectedPlace} tone="cyan" className="mb-4" includeTypeFallback includeMixedFallback />
       {shouldShowLegacyVibe(selectedPlace) && (
         <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-cyan-100/72">
           {t("city.legacyVibe", "Legacy vibe:")} {String(selectedPlace.vibe || "").trim()}
         </p>
       )}
-      <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-amber-200 shadow-[0_0_22px_rgba(34,211,238,0.22)]" />
-      <div className="mb-4 flex items-start gap-3 rounded-[20px] border border-cyan-100/26 bg-[linear-gradient(135deg,rgba(34,211,238,0.14),rgba(255,255,255,0.06))] p-4 shadow-[0_14px_34px_rgba(34,211,238,0.08)]">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-cyan-100/28 bg-cyan-300/14 text-cyan-50">
-          <MapPin className="h-4 w-4" aria-hidden="true" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-50/68">{t("city.address", "Address")}</p>
-          <p className="mt-1 text-sm leading-6 text-white/90">{addressLabel}</p>
+      <div className="border-y border-white/[0.08] py-4">
+        <div className="flex items-start gap-3">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#d7c0ff]" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d7c0ff]/72">{t("city.address", "Address")}</p>
+            <p className="mt-1 text-sm leading-6 text-white/86">{addressLabel}</p>
+          </div>
+        </div>
+        <div className="mt-4 border-t border-white/[0.06] pt-4">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[#d7c0ff]/72">{t("city.openingHoursLabel", "Opening Hours")}</p>
+          <p className="mt-1 text-sm leading-6 text-white/78">
+            {String(selectedPlace.hours || "").trim() || t("city.hoursVary", "Hours vary by night. Check official channels before going.")}
+          </p>
         </div>
       </div>
-      <SelectedEntityMiniMap entity={selectedPlace} kind="venue" onExpand={showPlaceOnMap} />
-      {liveSignal}
       {polishVenueDescription(selectedPlace, cityName, typeLabels) && (
-        <div className="mb-4 rounded-[20px] border border-white/14 bg-white/[0.065] p-4">
-          <p className="qa-copy-justify text-[15px] leading-7 text-white/78">{polishVenueDescription(selectedPlace, cityName, typeLabels)}</p>
-        </div>
+        <p className="my-5 text-[15px] leading-7 text-white/76">{polishVenueDescription(selectedPlace, cityName, typeLabels)}</p>
       )}
-      <div className="mb-4 rounded-[20px] border border-amber-100/22 bg-amber-300/[0.08] p-4">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-amber-50/72">{t("city.openingHoursLabel", "Opening Hours")}</p>
-        <p className="mt-1 text-sm leading-6 text-white/86">
-          {String(selectedPlace.hours || "").trim() || t("city.hoursVary", "Hours vary by night. Check official channels before going.")}
-        </p>
-      </div>
+      <SelectedEntityMiniMap entity={selectedPlace} kind="venue" onExpand={showPlaceOnMap} />
       <VenuePracticalIntel place={selectedPlace} compact />
+      {liveSignal}
       {selectedPlace.link && (
         <OfficialExternalLink
           href={normalizeExternalUrl(selectedPlace.link)}
@@ -78,19 +68,18 @@ export default function SelectedPlaceSummary({
           className="mb-5 mt-8"
         />
       )}
-      <div className="mt-3 grid grid-cols-2 gap-2.5">
-        <button type="button" onClick={onOpenReviews} className="rounded-2xl border border-cyan-100/24 bg-cyan-200/[0.08] px-3 py-3 text-left transition hover:border-cyan-100/48 hover:bg-cyan-200/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-100">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">{t("city.reviews", "Reviews")}</p>
-          <p className="mt-1 text-base font-semibold text-white">{selectedPlace.reviewCount || 0} {t("city.reviews", "Reviews")}</p>
+      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.08] pt-4">
+        <button type="button" onClick={onOpenReviews} className="text-sm font-semibold text-[#d7c0ff] transition hover:text-[#e4d6ff]">
+          {t("city.reviews", "Reviews")} · {selectedPlace.reviewCount || 0}
         </button>
-        <div className="rounded-2xl border border-white/14 bg-white/[0.065] px-3 py-3">
-          <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">{t("city.safety", "Safety")}</p>
+        <div className="flex items-center gap-2 text-sm text-white/68">
+          <span className="text-[10px] uppercase tracking-[0.16em] text-white/44">{t("city.safety", "Safety")}</span>
           {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 ? (
             <p className={`mt-1 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-sm ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
               {getDisplayedSafetyShields(selectedPlaceSafetySignal)}/5
             </p>
           ) : (
-            <p className="mt-1 text-sm text-white/84">-</p>
+            <span className="text-white/70">-</span>
           )}
         </div>
       </div>
