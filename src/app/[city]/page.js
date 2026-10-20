@@ -1092,7 +1092,12 @@ export default function CityPage() {
     () =>
       TYPES.map((item) => ({
         ...item,
-        items: placesByType[item.value] || [],
+        items: [...(placesByType[item.value] || [])].sort((left, right) =>
+          String(left?.name || "").localeCompare(String(right?.name || ""), "sv", {
+            sensitivity: "base",
+            numeric: true,
+          })
+        ),
       })),
     [placesByType]
   );

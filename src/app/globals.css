@@ -453,6 +453,36 @@ body > div:first-child {
   background: rgba(255, 255, 255, 0.052) !important;
 }
 
+/* Venue categories are an index: a restrained surface makes names and practical details easier to scan. */
+.qa-venue-list {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.qa-venue-list-card.qa-city-content-card:not([aria-pressed="true"]) {
+  border-color: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075) !important;
+  border-left: 2px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.qa-venue-list-card.qa-city-content-card:not([aria-pressed="true"]):hover {
+  border-color: transparent !important;
+  border-bottom-color: rgba(215, 192, 255, 0.22) !important;
+  border-left-color: #d7c0ff !important;
+  background: rgba(215, 192, 255, 0.045) !important;
+}
+
+.qa-venue-list-card.qa-city-content-card[aria-pressed="true"] {
+  border-color: transparent !important;
+  border-bottom-color: rgba(231, 198, 127, 0.20) !important;
+  border-left-color: #e7c67f !important;
+  background: rgba(231, 198, 127, 0.055) !important;
+  box-shadow: none !important;
+}
+
 .qa-city-detail-sheet {
   --qa-city-detail-accent: var(--qa-city-petal);
   border-color: rgba(255, 255, 255, 0.10) !important;

@@ -111,7 +111,7 @@ export default function CityPlacesSection({
           <p className="mt-1 text-xs leading-5 text-white/52">{t("city.chooseVenueCategoryHint", "Open one category at a time to keep exploring simple.")}</p>
         </div>
 
-        <div className="overflow-hidden rounded-[22px] border border-white/[0.10] bg-[#0d0b12]/68 shadow-[0_18px_46px_rgba(0,0,0,0.18)]">
+        <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#181426] shadow-[0_18px_46px_rgba(5,6,18,0.22)]">
           {visiblePlaceGroups.map((group, groupIndex) => {
             const items = Array.isArray(group.items) ? group.items : [];
             const isExpanded = expandedGroupValue === group.value;
@@ -121,7 +121,7 @@ export default function CityPlacesSection({
               <div
                 key={group.value}
                 ref={(node) => setPlaceGroupRef?.(group.value, node)}
-                className={groupIndex > 0 ? "border-t border-white/[0.08]" : ""}
+                className={groupIndex > 0 ? "border-t border-white/[0.055]" : ""}
               >
                 <button
                   type="button"
@@ -130,24 +130,24 @@ export default function CityPlacesSection({
                   aria-controls={panelId}
                   className={`qa-action flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition ${
                     isExpanded
-                      ? "bg-[linear-gradient(100deg,rgba(34,211,238,0.13),rgba(245,169,198,0.10),rgba(255,255,255,0.04))]"
-                      : "bg-white/[0.018] hover:bg-white/[0.06]"
+                      ? "bg-[#27203c]"
+                      : "bg-transparent hover:bg-white/[0.045]"
                   }`}
                 >
-                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition ${isExpanded ? "border-cyan-100/36 bg-cyan-200/12 text-cyan-50" : "border-white/12 bg-white/[0.045] text-white/56"}`}>
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition ${isExpanded ? "bg-[#d7c0ff]/14 text-[#e4d6ff]" : "bg-white/[0.055] text-white/52"}`}>
                     <MapPin className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[15px] font-semibold tracking-[-0.01em] text-white">{group.label}</span>
                     <span className="mt-0.5 block text-[11px] font-medium uppercase tracking-[0.14em] text-white/46">{t("city.venuesCount", "{count} venues").replace("{count}", items.length)}</span>
                   </span>
-                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition ${isExpanded ? "border-cyan-100/36 bg-cyan-200/14 text-cyan-50" : "border-white/12 bg-white/[0.04] text-white/58"}`}>
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${isExpanded ? "bg-[#d7c0ff] text-[#211b33]" : "bg-white/[0.055] text-white/58"}`}>
                     <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true" />
                   </span>
                 </button>
 
                 {isExpanded ? (
-                  <div id={panelId} className="border-t border-white/[0.08] bg-black/16 p-3">
+                  <div id={panelId} className="border-t border-white/[0.055] bg-black/10 p-3">
                     <div className="grid grid-cols-1 gap-3">{renderPlaceCards(group)}</div>
                   </div>
                 ) : null}
@@ -171,18 +171,18 @@ export default function CityPlacesSection({
         <div
           ref={attachGroupRef}
           key={group.value}
-          className="qa-city-section qa-city-content-section qa-city-tone-venues qa-city-copy-left animate-cinematic-in mb-10 rounded-[28px] border p-5 sm:p-6"
+          className="qa-city-section qa-city-content-section qa-city-tone-venues qa-city-copy-left qa-venue-list animate-cinematic-in mb-10 rounded-[28px] border border-white/[0.07] bg-[#181426] p-5 shadow-[0_18px_46px_rgba(5,6,18,0.16)] sm:p-6"
             style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
           >
             <div className="mb-7">
-              <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-white/48">{t("city.venueCategory", "Venue category")}</p>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-[#d7c0ff]/70">{t("city.venueCategory", "Venue category")}</p>
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">{group.label}</h2>
-                <span className="inline-flex items-center rounded-full border border-cyan-200/20 bg-cyan-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-cyan-100/86">
+                <span className="inline-flex items-center rounded-full bg-[#d7c0ff]/12 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#e4d6ff]">
                   {t("city.venuesCount", "{count} venues").replace("{count}", items.length)}
                 </span>
               </div>
-              <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,#4de1ff,#ff7ac3,transparent)] opacity-60" />
+              <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,rgba(215,192,255,0.8),rgba(215,192,255,0.16),transparent)]" />
             </div>
 
             <div>
