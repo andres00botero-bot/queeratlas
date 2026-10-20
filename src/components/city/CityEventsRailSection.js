@@ -38,12 +38,10 @@ export default function CityEventsRailSection({
   return (
     <div
       ref={sectionRef}
-      className="hidden qa-city-section qa-city-content-section qa-city-tone-events animate-cinematic-in relative mb-10 overflow-hidden rounded-[28px] border p-6"
+      className="hidden qa-city-section qa-city-content-section qa-city-tone-events qa-event-agenda animate-cinematic-in relative mb-10 overflow-hidden rounded-[28px] border p-6"
       style={{ animationDelay: "210ms" }}
     >
-      <div className="pointer-events-none absolute -left-16 top-8 h-52 w-52 rounded-full bg-cyan-300/8 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-8 h-52 w-52 rounded-full bg-fuchsia-300/8 blur-3xl" />
-      <h2 className="sticky top-[66px] z-10 -mx-2 mb-4 border-b border-white/10 bg-[#050505]/92 px-2 py-3 text-xl tracking-[0.02em] text-white backdrop-blur">
+      <h2 className="sticky top-[66px] z-10 -mx-2 mb-4 border-b border-white/[0.08] bg-[#181426]/95 px-2 py-3 text-xl tracking-[0.02em] text-[#f7f2f7] backdrop-blur">
         {t("city.events", "Events")}
       </h2>
       {eventsLoadError && (
@@ -76,7 +74,7 @@ export default function CityEventsRailSection({
 
           return (
             <div className="mb-4">
-              <h3 className="mb-2 text-sm text-purple-400">{t("city.featuredUpcoming", "Featured upcoming")}</h3>
+              <h3 className="mb-2 text-sm text-[#e8a47c]">{t("city.comingUpNext", "Coming up next")}</h3>
               <div
                 onClick={() => openEvent(featuredEvent)}
                 role="button"
@@ -107,7 +105,7 @@ export default function CityEventsRailSection({
                     {featuredEvent.name}
                   </h3>
                   {normalizeEventRange(featuredEvent).startDate && (
-                    <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
+                    <span className="qa-event-date shrink-0 self-start sm:self-auto">
                       {formatEventDateLabel(featuredEvent)}
                     </span>
                   )}
@@ -192,7 +190,7 @@ export default function CityEventsRailSection({
                   {event.name}
                 </p>
                 {normalizeEventRange(event).startDate && (
-                  <span className="shrink-0 self-start rounded bg-purple-500 px-2 py-1 text-xs text-black sm:self-auto">
+                  <span className="qa-event-date shrink-0 self-start sm:self-auto">
                     {formatEventDateLabel(event)}
                   </span>
                 )}

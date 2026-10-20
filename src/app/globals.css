@@ -483,6 +483,18 @@ body > div:first-child {
   box-shadow: none !important;
 }
 
+.qa-event-agenda { border-color: transparent !important; background: transparent !important; box-shadow: none !important; }
+.qa-events-stage { border-color: transparent !important; background: transparent !important; box-shadow: none !important; }
+.qa-event-agenda .qa-city-content-card { border-color: transparent !important; border-bottom: 1px solid rgba(255,255,255,.075) !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+.qa-event-agenda .qa-city-content-card:hover { border-bottom-color: rgba(232,164,124,.38) !important; background: rgba(232,164,124,.045) !important; }
+.qa-event-agenda-row { border-color: transparent !important; border-bottom: 1px solid rgba(255,255,255,.075) !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; }
+.qa-event-agenda-row:hover { border-bottom-color: rgba(232,164,124,.38) !important; background: rgba(232,164,124,.045) !important; }
+.qa-event-date { border-radius: 999px; background: rgba(232,164,124,.14); padding: .32rem .58rem; font-size: .7rem; font-weight: 700; color: #f1ba98; }
+.qa-event-ticket { border-color: rgba(232,164,124,.22) !important; background: linear-gradient(110deg, rgba(232,164,124,.12), #241923 22%, #1d1620) !important; box-shadow: 0 14px 34px rgba(5,6,18,.18) !important; }
+.qa-event-ticket:hover { border-color: rgba(232,164,124,.52) !important; background: linear-gradient(110deg, rgba(232,164,124,.18), #4a2d2a 26%, #241923) !important; transform: translateY(-2px); }
+.qa-event-ticket.is-selected { border-color: rgba(232,164,124,.68) !important; background: linear-gradient(110deg, rgba(232,164,124,.24), #5a342e 30%, #321c31) !important; }
+.qa-event-ticket-date { display: inline-flex; max-width: 5.5rem; min-height: 3.75rem; align-items: center; justify-content: center; border-right: 1px dashed rgba(232,164,124,.48); padding: .35rem .75rem .35rem 0; color: #f1ba98; font-size: .72rem; font-weight: 700; line-height: 1.15; text-transform: uppercase; }
+
 .qa-city-detail-sheet {
   --qa-city-detail-accent: var(--qa-city-petal);
   border-color: rgba(255, 255, 255, 0.10) !important;

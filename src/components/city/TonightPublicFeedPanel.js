@@ -4,6 +4,7 @@ import EventPulseEmptyState from "@/components/city/EventPulseEmptyState";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { polishEventDescription } from "@/features/city/liveVibeFeature";
+import { ChevronRight } from "lucide-react";
 
 export default function TonightPublicFeedPanel({
   eventsLoadError,
@@ -23,35 +24,8 @@ export default function TonightPublicFeedPanel({
   openEventContribution,
   redirectToJoin,
 }) {
-  const eventTones = [
-    {
-      card: "border-fuchsia-100/28 bg-[linear-gradient(135deg,rgba(244,114,182,0.18),rgba(139,92,246,0.10),rgba(255,255,255,0.07))]",
-      rail: "from-fuchsia-300 to-pink-200",
-      badge: "border-fuchsia-100/28 bg-fuchsia-300/16 text-fuchsia-50",
-      label: "Featured pulse",
-    },
-    {
-      card: "border-cyan-100/26 bg-[linear-gradient(135deg,rgba(34,211,238,0.15),rgba(59,130,246,0.10),rgba(255,255,255,0.07))]",
-      rail: "from-cyan-300 to-sky-200",
-      badge: "border-cyan-100/28 bg-cyan-300/16 text-cyan-50",
-      label: "City night",
-    },
-    {
-      card: "border-amber-100/26 bg-[linear-gradient(135deg,rgba(251,191,36,0.15),rgba(244,114,182,0.08),rgba(255,255,255,0.07))]",
-      rail: "from-amber-200 to-orange-200",
-      badge: "border-amber-100/28 bg-amber-300/16 text-amber-50",
-      label: "Social pick",
-    },
-    {
-      card: "border-emerald-100/26 bg-[linear-gradient(135deg,rgba(52,211,153,0.13),rgba(34,211,238,0.08),rgba(255,255,255,0.07))]",
-      rail: "from-emerald-300 to-teal-200",
-      badge: "border-emerald-100/28 bg-emerald-300/16 text-emerald-50",
-      label: "Local signal",
-    },
-  ];
-
   return (
-    <div className="space-y-3 rounded-[22px] border border-white/[0.08] bg-white/[0.025] p-4 sm:p-5">
+    <div className="qa-event-agenda space-y-0 py-1">
       {eventsLoadError ? (
         <div className="rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
           <p>{eventsLoadError}</p>
@@ -86,7 +60,7 @@ export default function TonightPublicFeedPanel({
               openEvent(featuredEvent);
             }
           }}
-          className={`qa-cinematic-hover qa-city-card qa-city-content-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[20px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 ${
+          className={`qa-event-ticket qa-cinematic-hover qa-city-card qa-city-content-card animate-rise-in relative cursor-pointer overflow-hidden rounded-[20px] border p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8a47c]/55 ${
             String(hoveredEventId) === String(featuredEvent.id)
               ? "border-violet-200/45 shadow-[0_24px_70px_rgba(139,92,246,0.22)]"
               : ""
@@ -96,18 +70,18 @@ export default function TonightPublicFeedPanel({
               : ""
           }`}
         >
-          <div className="mb-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-fuchsia-300 via-pink-200 to-amber-200" />
+          <div className="mb-4 h-px w-full bg-[linear-gradient(90deg,rgba(232,164,124,.8),transparent)]" />
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/74">
-                Featured event
+                Coming up next
               </p>
               <h3 className="text-xl font-semibold leading-tight tracking-[-0.01em] text-white">
                 {featuredEvent.name}
               </h3>
             </div>
             {normalizeEventRange(featuredEvent).startDate ? (
-              <span className="shrink-0 self-start rounded-full border border-violet-200/24 bg-violet-200/14 px-3 py-1 text-xs text-violet-50 sm:self-auto">
+              <span className="qa-event-ticket-date shrink-0 self-start sm:self-auto">
                 {formatEventDateLabel(featuredEvent)}
               </span>
             ) : null}
@@ -120,8 +94,7 @@ export default function TonightPublicFeedPanel({
 
       {!eventsLoading ? (
         <div className="space-y-3">
-          {remainingEvents.map((event, index) => {
-            const tone = eventTones[index % eventTones.length];
+          {remainingEvents.map((event) => {
             return (
             <div
               key={event.id}
@@ -138,10 +111,10 @@ export default function TonightPublicFeedPanel({
                   openEvent(event);
                 }
               }}
-              className={`qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden rounded-[22px] border p-4 shadow-[0_14px_34px_rgba(0,0,0,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/45 sm:p-5 ${
+              className={`qa-event-ticket group qa-cinematic-hover animate-rise-in relative cursor-pointer overflow-hidden border p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e8a47c]/55 sm:p-5 ${
                 String(selectedEvent?.id) === String(event.id)
-                  ? "border-violet-100/42 bg-violet-300/[0.16]"
-                  : `${tone.card} hover:border-white/36 ${
+                  ? "is-selected"
+                  : `hover:border-white/36 ${
                     isFocusMode ? "opacity-55 saturate-75" : ""
                   }`
               } ${
@@ -150,21 +123,18 @@ export default function TonightPublicFeedPanel({
                   : ""
               }`}
             >
-              <div className={`mb-4 h-1.5 w-20 rounded-full bg-gradient-to-r ${tone.rail}`} />
-              <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-3">
+                {normalizeEventRange(event).startDate ? (
+                  <span className="qa-event-ticket-date shrink-0">{formatEventDateLabel(event)}</span>
+                ) : null}
+                <div className="min-w-0 flex-1">
                 <div className="min-w-0">
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/54">
-                    {tone.label}
-                  </p>
                   <p className="text-base font-semibold leading-tight tracking-[-0.01em] text-white">
                     {event.name}
                   </p>
                 </div>
-                {normalizeEventRange(event).startDate ? (
-                  <span className={`shrink-0 self-start rounded-full border px-3 py-1 text-xs sm:self-auto ${tone.badge}`}>
-                    {formatEventDateLabel(event)}
-                  </span>
-                ) : null}
+                <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-[#e8a47c] transition group-hover:translate-x-0.5" aria-hidden="true" />
+                </div>
               </div>
               <p className="line-clamp-2 text-sm leading-6 text-white/74">
                 {polishEventDescription(event, cityName)}

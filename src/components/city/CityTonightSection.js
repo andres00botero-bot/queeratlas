@@ -62,7 +62,7 @@ export default function CityTonightSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section qa-city-content-section qa-city-tone-events qa-city-copy-left animate-cinematic-in relative mb-10 overflow-hidden rounded-[28px] border p-5 sm:p-6"
+      className="qa-city-section qa-city-content-section qa-city-tone-events qa-events-stage qa-city-copy-left animate-cinematic-in relative mb-10 overflow-hidden rounded-[28px] border p-5 sm:p-6"
       style={{ animationDelay: "195ms" }}
     >
       <CityTonightHeader
