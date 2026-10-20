@@ -1322,6 +1322,20 @@ body > div:first-child {
     min-height: 2.75rem;
   }
 }
+
+/* Keep long-form city copy balanced between the mobile gutters. UI labels and
+   headings remain left-aligned through the rule above for a stable hierarchy. */
+@media (max-width: 640px) {
+  .qa-city :is(p, li),
+  .qa-city .qa-city-copy-left,
+  .qa-city .qa-city-copy-left :is(p, li) {
+    text-align: justify !important;
+    text-align-last: left;
+    text-justify: inter-word !important;
+    hyphens: auto !important;
+    overflow-wrap: normal;
+  }
+}
 /* Compact mobile trust rail: keep swipe behavior without a utilitarian scrollbar. */
 .qa-trust-rail {
   -ms-overflow-style: none;

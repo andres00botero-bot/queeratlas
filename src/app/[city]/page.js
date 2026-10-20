@@ -456,8 +456,14 @@ export default function CityPage() {
     const bounds = Array.isArray(area?.bounds) ? area.bounds : null;
     const map = mapRef.current;
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
+    const isPhoneViewport =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 639px)").matches;
 
-    if (!isDesktop) scrollToSection(mapWrapperRef);
+    if (!isDesktop) {
+      scrollToSection(isPhoneViewport ? phoneMapWrapperRef : mapWrapperRef);
+    }
     if (!map || !bounds || bounds.length !== 2) return;
 
     const ensureMarkerZoom = () => {
