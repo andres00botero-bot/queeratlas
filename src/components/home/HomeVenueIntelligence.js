@@ -37,8 +37,8 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
       <div className="relative py-3 sm:py-5 lg:pb-7 lg:pt-2">
         <header className="relative z-10 flex flex-col gap-2 border-b border-white/9 pb-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-4 lg:items-center lg:border-white/12 lg:pb-6">
           <div>
-            <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/78">
-              <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-fuchsia-300 via-violet-300 to-cyan-200 shadow-[0_0_13px_rgba(244,114,182,0.72)]" />
+            <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f5a9c6]/78">
+              <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-br from-[#f5a9c6] via-[#b7a0f7] to-[#88d9d4] shadow-[0_0_13px_rgba(245,169,198,0.72)]" />
               {t("home.trustHeading", "How Queer Atlas builds trust")}
             </p>
             <h2 className="qa-display mt-1.5 text-[1.55rem] font-semibold leading-none tracking-[-0.035em] text-white sm:text-[1.85rem] lg:mt-2 lg:whitespace-nowrap lg:text-[2.05rem] lg:tracking-[-0.045em] xl:text-[2.35rem]">
@@ -53,11 +53,11 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
         </header>
 
         <div className="qa-trust-rail relative z-10 mt-3 grid snap-x snap-mandatory grid-flow-col auto-cols-[86%] gap-2.5 overflow-x-auto overscroll-x-contain pb-1 lg:mt-5 lg:grid-flow-row lg:auto-cols-auto lg:grid-cols-[1fr_1fr_1.08fr] lg:gap-3 lg:overflow-visible lg:pb-0">
-          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-fuchsia-100/15 bg-[radial-gradient(circle_at_0%_0%,rgba(244,114,182,0.12),transparent_32%),linear-gradient(155deg,rgba(255,255,255,0.065),rgba(255,255,255,0.022))] p-3.5 sm:p-4 lg:rounded-[24px] lg:border-fuchsia-100/20 lg:bg-[radial-gradient(circle_at_0%_0%,rgba(244,114,182,0.11),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] lg:p-5 lg:shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
-            <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-fuchsia-100/65 to-transparent lg:block" aria-hidden="true" />
+          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-[#f5a9c6]/15 bg-[radial-gradient(circle_at_0%_0%,rgba(245,169,198,0.12),transparent_32%),linear-gradient(155deg,rgba(255,255,255,0.065),rgba(255,255,255,0.022))] p-3.5 sm:p-4 lg:rounded-[24px] lg:border-[#f5a9c6]/20 lg:bg-[radial-gradient(circle_at_0%_0%,rgba(245,169,198,0.11),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] lg:p-5 lg:shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
+            <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-[#f5a9c6]/65 to-transparent lg:block" aria-hidden="true" />
             <div className="flex items-center justify-between gap-3">
-              <p className="relative z-10 text-[9px] font-semibold uppercase tracking-[0.16em] text-fuchsia-100/70 lg:rounded-full lg:border lg:border-fuchsia-100/18 lg:bg-[#17101f] lg:px-2.5 lg:py-1.5 lg:text-[10px] lg:text-fuchsia-50/82">01 · {t("home.venueLevel", "Venue level")}</p>
-              <MapPin size={14} className="text-fuchsia-100/44" aria-hidden="true" />
+              <p className="relative z-10 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#f5a9c6]/70 lg:rounded-full lg:border lg:border-[#f5a9c6]/18 lg:bg-[#17101f] lg:px-2.5 lg:py-1.5 lg:text-[10px] lg:text-fuchsia-50/82">01 · {t("home.venueLevel", "Venue level")}</p>
+              <MapPin size={14} className="text-[#f5a9c6]/44" aria-hidden="true" />
             </div>
             <h3 className="mt-2 text-lg font-semibold tracking-[-0.02em] text-white lg:mt-5 lg:text-[1.35rem]">{t("home.venueIntelligence", "Venue Intelligence")}</h3>
             <p className="mt-1 hidden text-[13px] leading-5 text-white/70 sm:block lg:mt-2 lg:text-[14px] lg:leading-6 lg:text-white/76">
@@ -65,7 +65,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             </p>
 
             <div className="mt-2.5 rounded-[15px] border border-white/10 bg-black/18 p-2.5 sm:mt-3 lg:mt-5 lg:rounded-[18px] lg:border-white/12 lg:bg-black/22 lg:p-3.5">
-              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-50/78">
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#d7fbf8]/78">
                 <Sparkles size={10} aria-hidden="true" />
                 {hasVenueExample ? `${venue.name} · ${formatLabel(venue.city)}` : t("home.insideVenueProfile", "Inside a venue profile")}
               </p>
@@ -78,7 +78,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
               <Link
                 href={hasVenueExample ? venueHref : "/cities"}
                 onClick={onOpen}
-                className="inline-flex min-h-11 items-center justify-between gap-1 text-[11px] font-semibold text-cyan-50/86 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-fuchsia-100/22 lg:bg-fuchsia-100/[0.08] lg:px-3.5 lg:text-[12px] lg:text-white lg:hover:border-fuchsia-100/38 lg:hover:bg-fuchsia-100/[0.13]"
+                className="inline-flex min-h-11 items-center justify-between gap-1 text-[11px] font-semibold text-[#d7fbf8]/86 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-[#f5a9c6]/22 lg:bg-[#f5a9c6]/[0.08] lg:px-3.5 lg:text-[12px] lg:text-white lg:hover:border-[#f5a9c6]/38 lg:hover:bg-[#f5a9c6]/[0.13]"
               >
                 <span className="lg:hidden">{hasVenueExample ? t("home.openVenue", "Open venue") : t("home.exploreVenues", "Explore venues")}</span>
                 <span className="hidden lg:inline xl:hidden">{hasVenueExample ? t("home.viewEvidence", "View evidence") : t("home.exploreEvidence", "Explore evidence")}</span>
@@ -88,11 +88,11 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             </div>
           </article>
 
-          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-cyan-100/15 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.10),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-3.5 sm:p-4 lg:rounded-[24px] lg:border-cyan-100/20 lg:bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.10),transparent_36%),linear-gradient(155deg,rgba(255,255,255,0.07),rgba(255,255,255,0.022))] lg:p-5 lg:shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
-            <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-cyan-100/65 to-transparent lg:block" aria-hidden="true" />
+          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-[#88d9d4]/15 bg-[radial-gradient(circle_at_50%_0%,rgba(136,217,212,0.10),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-3.5 sm:p-4 lg:rounded-[24px] lg:border-[#88d9d4]/20 lg:bg-[radial-gradient(circle_at_50%_0%,rgba(136,217,212,0.10),transparent_36%),linear-gradient(155deg,rgba(255,255,255,0.07),rgba(255,255,255,0.022))] lg:p-5 lg:shadow-[0_18px_45px_rgba(0,0,0,0.22)]">
+            <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-[#88d9d4]/65 to-transparent lg:block" aria-hidden="true" />
             <div className="flex items-center justify-between gap-3">
-              <p className="relative z-10 text-[9px] font-semibold uppercase tracking-[0.16em] text-cyan-100/70 lg:rounded-full lg:border lg:border-cyan-100/18 lg:bg-[#0d1820] lg:px-2.5 lg:py-1.5 lg:text-[10px] lg:text-cyan-50/82">02 · {t("home.countryContext", "Country context")}</p>
-              <ShieldCheck size={14} className="text-cyan-100/44" aria-hidden="true" />
+              <p className="relative z-10 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#88d9d4]/70 lg:rounded-full lg:border lg:border-[#88d9d4]/18 lg:bg-[#0d1820] lg:px-2.5 lg:py-1.5 lg:text-[10px] lg:text-[#d7fbf8]/82">02 · {t("home.countryContext", "Country context")}</p>
+              <ShieldCheck size={14} className="text-[#88d9d4]/44" aria-hidden="true" />
             </div>
             <div className="mt-2 flex items-center justify-between gap-3 lg:mt-5">
               <h3 className="text-lg font-semibold tracking-[-0.02em] text-white lg:text-[1.35rem]">
@@ -113,7 +113,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
               {[
                 [t("home.legal", "Legal"), "35%", "border-blue-200/16 bg-blue-300/[0.07] text-blue-100/70"],
                 [t("home.social", "Social"), "40%", "border-emerald-200/16 bg-emerald-300/[0.07] text-emerald-100/70"],
-                [t("home.digital", "Digital"), "25%", "border-amber-200/16 bg-amber-300/[0.07] text-amber-100/70"],
+                [t("home.digital", "Digital"), "25%", "border-[#d8b678]/16 bg-amber-300/[0.07] text-[#d8b678]/70"],
               ].map(([label, value, tone]) => (
                 <div key={label} className={`rounded-[13px] border px-2 py-2 lg:rounded-[16px] lg:px-3 lg:py-3 ${tone}`}>
                   <p className="text-[9px] font-medium uppercase tracking-[0.1em] opacity-85 lg:text-[10px]">{label}</p>
@@ -132,21 +132,21 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             <Link
               href="/qari"
               onClick={() => onContextOpen?.("/qari")}
-              className="mt-auto flex min-h-11 items-center justify-between gap-2 pt-3 text-[11px] font-semibold text-cyan-50/86 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:mt-auto lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-cyan-100/24 lg:bg-cyan-100/[0.09] lg:px-3.5 lg:py-0 lg:text-white lg:hover:border-cyan-100/40 lg:hover:bg-cyan-100/[0.14]"
+              className="mt-auto flex min-h-11 items-center justify-between gap-2 pt-3 text-[11px] font-semibold text-[#d7fbf8]/86 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:mt-auto lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-[#88d9d4]/24 lg:bg-[#88d9d4]/[0.09] lg:px-3.5 lg:py-0 lg:text-white lg:hover:border-[#88d9d4]/40 lg:hover:bg-[#88d9d4]/[0.14]"
             >
               {t("home.exploreQariMap", "Explore the QARI world map")} <ArrowUpRight size={11} aria-hidden="true" />
             </Link>
           </article>
 
-          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-violet-100/15 bg-[radial-gradient(circle_at_100%_0%,rgba(167,139,250,0.13),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 sm:p-4 lg:rounded-[24px] lg:border-violet-100/30 lg:bg-[radial-gradient(circle_at_100%_0%,rgba(167,139,250,0.20),transparent_38%),linear-gradient(155deg,rgba(139,92,246,0.12),rgba(255,255,255,0.03))] lg:p-5 lg:shadow-[0_22px_55px_rgba(76,29,149,0.20)]">
-            <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-violet-100/75 to-transparent lg:block" aria-hidden="true" />
+          <article className="group relative flex min-w-0 snap-start flex-col overflow-hidden rounded-[20px] border border-[#b7a0f7]/15 bg-[radial-gradient(circle_at_100%_0%,rgba(183,160,247,0.13),transparent_34%),linear-gradient(155deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-3.5 sm:p-4 lg:rounded-[24px] lg:border-[#b7a0f7]/30 lg:bg-[radial-gradient(circle_at_100%_0%,rgba(183,160,247,0.20),transparent_38%),linear-gradient(155deg,rgba(183,160,247,0.12),rgba(255,255,255,0.03))] lg:p-5 lg:shadow-[0_22px_55px_rgba(76,29,149,0.20)]">
+            <div className="pointer-events-none absolute inset-x-8 top-0 hidden h-px bg-gradient-to-r from-transparent via-[#b7a0f7]/75 to-transparent lg:block" aria-hidden="true" />
             <div className="flex items-center justify-between gap-3">
-              <p className="relative z-10 text-[9px] font-semibold uppercase tracking-[0.16em] text-violet-100/70 lg:rounded-full lg:border lg:border-violet-100/24 lg:bg-[#171226] lg:px-2.5 lg:py-1.5 lg:text-[10px] lg:text-violet-50/88">03 · {t("home.globalResearch", "Global research")}</p>
-              <ChartNoAxesCombined size={14} className="text-violet-100/44" aria-hidden="true" />
+              <p className="relative z-10 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#b7a0f7]/70 lg:rounded-full lg:border lg:border-[#b7a0f7]/24 lg:bg-[#171226] lg:px-2.5 lg:py-1.5 lg:text-[10px] lg:text-[#e5d9ff]/88">03 · {t("home.globalResearch", "Global research")}</p>
+              <ChartNoAxesCombined size={14} className="text-[#b7a0f7]/44" aria-hidden="true" />
             </div>
             <div className="mt-2 flex items-center justify-between gap-3 lg:mt-5 lg:flex-col lg:items-start lg:gap-2 xl:flex-row xl:items-center xl:gap-3">
               <h3 className="text-lg font-semibold tracking-[-0.02em] text-white lg:text-[1.35rem]">Queer Atlas Indexes</h3>
-              <span className="hidden rounded-full border border-violet-100/28 bg-violet-100/[0.10] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-50/90 lg:inline-flex">Flagship 2026</span>
+              <span className="hidden rounded-full border border-[#b7a0f7]/28 bg-[#b7a0f7]/[0.10] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#e5d9ff]/90 lg:inline-flex">Flagship 2026</span>
             </div>
             <p className="mt-1 hidden text-[13px] leading-5 text-white/70 sm:block lg:mt-2 lg:text-[14px] lg:leading-6 lg:text-white/78">
               {t("home.globalIndexesDescription", "Compare cities and destinations through transparent, source-backed global research.")}
@@ -155,13 +155,13 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             <Link
               href="/reports/global-queer-safety-culture-index-methodology"
               onClick={() => onContextOpen?.("/reports/global-queer-safety-culture-index-methodology")}
-              className="mt-3 rounded-[15px] border border-violet-100/16 bg-violet-100/[0.07] p-2.5 transition hover:border-violet-100/30 hover:bg-violet-100/[0.10] lg:mt-5 lg:rounded-[18px] lg:border-amber-100/34 lg:bg-[linear-gradient(135deg,rgba(251,191,36,0.16),rgba(244,114,182,0.13)_52%,rgba(34,211,238,0.08))] lg:p-3.5 lg:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_30px_rgba(251,191,36,0.07)] lg:hover:border-amber-100/52 lg:hover:brightness-110"
+              className="mt-3 rounded-[15px] border border-[#b7a0f7]/16 bg-[#b7a0f7]/[0.07] p-2.5 transition hover:border-[#b7a0f7]/30 hover:bg-[#b7a0f7]/[0.10] lg:mt-5 lg:rounded-[18px] lg:border-[#d8b678]/34 lg:bg-[linear-gradient(135deg,rgba(216,182,120,0.16),rgba(245,169,198,0.13)_52%,rgba(136,217,212,0.08))] lg:p-3.5 lg:shadow-[inset_0_1px_0_rgba(255,255,255,0.10),0_12px_30px_rgba(216,182,120,0.07)] lg:hover:border-[#d8b678]/52 lg:hover:brightness-110"
             >
               <span className="flex items-start justify-between gap-2">
-                <span className="text-[12px] font-semibold leading-[1.1rem] text-violet-50/92 lg:text-[14px] lg:leading-5 lg:text-amber-50">Global Queer Safety &amp; Culture Index 2026</span>
-                <ArrowUpRight size={11} className="mt-0.5 shrink-0 text-violet-100/44" aria-hidden="true" />
+                <span className="text-[12px] font-semibold leading-[1.1rem] text-[#e5d9ff]/92 lg:text-[14px] lg:leading-5 lg:text-[#f2d493]">Global Queer Safety &amp; Culture Index 2026</span>
+                <ArrowUpRight size={11} className="mt-0.5 shrink-0 text-[#b7a0f7]/44" aria-hidden="true" />
               </span>
-              <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.09em] text-violet-100/68 lg:mt-2 lg:text-[10px] lg:text-amber-50/76">{t("home.legalProtection", "Legal protection 50% · Lived acceptance 50%")}</span>
+              <span className="mt-1 block text-[9px] font-medium uppercase tracking-[0.09em] text-[#b7a0f7]/68 lg:mt-2 lg:text-[10px] lg:text-[#f2d493]/76">{t("home.legalProtection", "Legal protection 50% · Lived acceptance 50%")}</span>
             </Link>
 
             <nav aria-label={t("home.moreIndexes", "More Queer Atlas indexes")} className="mt-2 flex flex-wrap gap-1 lg:hidden">
@@ -180,7 +180,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
             <Link
               href="/now/data"
               onClick={() => onContextOpen?.("/now/data")}
-              className="mt-auto flex min-h-11 items-center justify-between gap-2 pt-3 text-[11px] font-semibold text-violet-50/84 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:mt-auto lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-amber-100/42 lg:bg-[linear-gradient(135deg,rgba(251,191,36,0.25),rgba(244,114,182,0.20))] lg:px-3.5 lg:py-0 lg:text-amber-50 lg:shadow-[0_10px_28px_rgba(251,191,36,0.10)] lg:hover:border-amber-50/65 lg:hover:brightness-110"
+              className="mt-auto flex min-h-11 items-center justify-between gap-2 pt-3 text-[11px] font-semibold text-[#e5d9ff]/84 transition hover:text-white sm:min-h-0 sm:text-[12px] lg:mt-auto lg:h-10 lg:min-h-10 lg:whitespace-nowrap lg:justify-center lg:self-start lg:rounded-full lg:border lg:border-[#d8b678]/42 lg:bg-[linear-gradient(135deg,rgba(216,182,120,0.25),rgba(245,169,198,0.20))] lg:px-3.5 lg:py-0 lg:text-[#f2d493] lg:shadow-[0_10px_28px_rgba(216,182,120,0.10)] lg:hover:border-[#f2d493]/65 lg:hover:brightness-110"
             >
               <span className="lg:hidden">{t("home.allIndexes", "View all indexes & reports")}</span>
               <span className="hidden lg:inline">{t("home.openFlagshipIndex", "Open flagship index")}</span>

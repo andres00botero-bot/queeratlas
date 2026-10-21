@@ -22,8 +22,8 @@ const CONTACT_PATHS = [
     description: "Tell us about a place or situation.",
     category: "safety_concern",
     icon: ShieldAlert,
-    cardClass: "hover:bg-rose-200/[0.055]",
-    iconClass: "text-rose-100/72",
+    cardClass: "hover:bg-[#f5a9c6]/[0.055]",
+    iconClass: "text-[#f5a9c6]/72",
   },
   {
     key: "correction",
@@ -31,8 +31,8 @@ const CONTACT_PATHS = [
     description: "Update a venue, event or service.",
     category: "venue_event_correction",
     icon: PencilLine,
-    cardClass: "hover:bg-cyan-200/[0.055]",
-    iconClass: "text-cyan-100/72",
+    cardClass: "hover:bg-[#88d9d4]/[0.055]",
+    iconClass: "text-[#88d9d4]/72",
   },
   {
     key: "feedback",
@@ -40,8 +40,8 @@ const CONTACT_PATHS = [
     description: "Help us improve Queer Atlas.",
     category: "general_feedback",
     icon: MessageCircleMore,
-    cardClass: "hover:bg-violet-200/[0.055]",
-    iconClass: "text-violet-100/72",
+    cardClass: "hover:bg-[#b7a0f7]/[0.055]",
+    iconClass: "text-[#b7a0f7]/72",
   },
   {
     key: "business",
@@ -49,8 +49,8 @@ const CONTACT_PATHS = [
     description: "Work with Queer Atlas.",
     category: "business_inquiry",
     icon: BriefcaseBusiness,
-    cardClass: "hover:bg-fuchsia-200/[0.055]",
-    iconClass: "text-fuchsia-100/72",
+    cardClass: "hover:bg-[#f5a9c6]/[0.055]",
+    iconClass: "text-[#f5a9c6]/72",
   },
 ];
 
@@ -202,7 +202,7 @@ export default function HomeContactSection({
     <div className="relative">
       {successRef ? (
         <div className="py-3 text-center sm:py-5">
-          <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-100/18 bg-emerald-200/[0.08] text-emerald-100">
+          <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl border border-[#b8f0ed]/18 bg-[#88d9d4]/[0.08] text-[#b8f0ed]">
             <CheckCircle2 size={21} strokeWidth={1.8} aria-hidden="true" />
           </span>
           <h3 ref={dialogHeadingRef} tabIndex={-1} className="mt-4 text-2xl font-semibold tracking-[-0.025em] text-white outline-none">
@@ -229,7 +229,7 @@ export default function HomeContactSection({
             <button
               type="button"
               onClick={() => setSuccessRef("")}
-              className="rounded-full border border-cyan-100/24 bg-cyan-100/[0.08] px-4 py-2 text-xs text-cyan-50 transition hover:border-cyan-100/42"
+              className="rounded-full border border-[#88d9d4]/24 bg-[#88d9d4]/[0.08] px-4 py-2 text-xs text-[#d7fbf8] transition hover:border-[#88d9d4]/42"
             >
               {t("contact.sendAnother", "Send another")}
             </button>
@@ -239,7 +239,7 @@ export default function HomeContactSection({
         <form onSubmit={submitContact} noValidate>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-100/56">{t("contact.heading", "Contact Queer Atlas")}</p>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#88d9d4]/56">{t("contact.heading", "Contact Queer Atlas")}</p>
               <h3 ref={dialogHeadingRef} tabIndex={-1} className="mt-2 text-2xl font-semibold tracking-[-0.025em] text-white outline-none">
                 {selectedPath.title}
               </h3>
@@ -269,7 +269,7 @@ export default function HomeContactSection({
                     onClick={() => setCategory(option.value)}
                     className={`rounded-full border px-3 py-2 text-[10px] font-medium transition ${
                       category === option.value
-                        ? "border-violet-100/32 bg-violet-200/[0.1] text-violet-50"
+                        ? "border-[#b7a0f7]/32 bg-[#b7a0f7]/[0.1] text-[#e5d9ff]"
                         : "border-white/11 bg-white/[0.035] text-white/54 hover:border-white/22"
                     }`}
                   >
@@ -281,7 +281,7 @@ export default function HomeContactSection({
           ) : null}
 
           {selectedPath.key === "safety" ? (
-            <div className="mt-5 rounded-[16px] border border-rose-100/14 bg-rose-200/[0.055] px-3.5 py-3 text-[11px] leading-5 text-rose-50/68">
+            <div className="mt-5 rounded-[16px] border border-[#f5a9c6]/14 bg-[#f5a9c6]/[0.055] px-3.5 py-3 text-[11px] leading-5 text-[#ffd2e3]/68">
               {t("contact.urgentSafety", "If someone is in immediate danger, contact local emergency services first. Queer Atlas reports are not monitored live.")}
             </div>
           ) : null}
@@ -293,7 +293,7 @@ export default function HomeContactSection({
             id="qa-contact-message"
             value={message}
             onChange={(event) => setMessage(event.target.value)}
-            className="mt-2 min-h-[118px] w-full resize-y rounded-[18px] border border-white/12 bg-black/20 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-white/28 focus:border-cyan-100/34 focus:ring-2 focus:ring-cyan-300/10"
+            className="mt-2 min-h-[118px] w-full resize-y rounded-[18px] border border-white/12 bg-black/20 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-white/28 focus:border-[#88d9d4]/34 focus:ring-2 focus:ring-[#88d9d4]/10"
             placeholder={selectedPath.key === "correction" ? t("contact.correctionPlaceholder", "Tell us what is wrong and what the correct information should be.") : t("contact.messagePlaceholder", "Share the details that will help us understand.")}
             maxLength={5000}
             aria-describedby={errorMessage ? "qa-contact-error" : undefined}
@@ -338,7 +338,7 @@ export default function HomeContactSection({
                   autoComplete="email"
                   value={senderEmail}
                   onChange={(event) => setSenderEmail(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-white/28 focus:border-cyan-100/34"
+                  className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-white/28 focus:border-[#88d9d4]/34"
                   placeholder="you@email.com"
                   maxLength={180}
                   required
@@ -352,7 +352,7 @@ export default function HomeContactSection({
                   spellCheck="false"
                   value={senderName}
                   onChange={(event) => setSenderName(event.target.value)}
-                  className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-white/28 focus:border-cyan-100/34"
+                  className="mt-2 w-full rounded-xl border border-white/12 bg-black/20 px-3 py-2.5 text-sm normal-case tracking-normal text-white outline-none placeholder:text-white/28 focus:border-[#88d9d4]/34"
                   placeholder={t("contact.yourName", "Your name")}
                   maxLength={120}
                 />
@@ -365,7 +365,7 @@ export default function HomeContactSection({
           ) : null}
 
           {errorMessage ? (
-            <p id="qa-contact-error" role="alert" className="mt-4 rounded-xl border border-rose-300/24 bg-rose-300/[0.08] px-3 py-2 text-sm text-rose-100">
+            <p id="qa-contact-error" role="alert" className="mt-4 rounded-xl border border-[#f5a9c6]/24 bg-[#f5a9c6]/[0.08] px-3 py-2 text-sm text-[#f5a9c6]">
               {errorMessage}
             </p>
           ) : null}
@@ -381,7 +381,7 @@ export default function HomeContactSection({
             <button
               type="submit"
               disabled={!canSubmit}
-              className="qa-action qa-action-strong rounded-full border border-cyan-100/65 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-5 py-2.5 text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-45"
+              className="qa-action qa-action-strong rounded-full border border-[#88d9d4]/65 bg-gradient-to-r from-[#88d9d4] via-[#88d9d4] to-[#88d9d4] px-5 py-2.5 text-sm font-semibold text-black transition disabled:cursor-not-allowed disabled:opacity-45"
             >
               {submitting ? t("contact.sending", "Sending...") : t(`contact.send${selectedPath.key.charAt(0).toUpperCase()}${selectedPath.key.slice(1)}`, SUBMIT_LABELS[selectedPath.key])}
             </button>
@@ -398,15 +398,15 @@ export default function HomeContactSection({
       className={
         embedded
           ? `${className} relative min-w-0`
-          : `${className} qa-premium-card relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_5%_0%,rgba(34,211,238,0.11),transparent_31%),radial-gradient(circle_at_96%_100%,rgba(244,114,182,0.1),transparent_31%),linear-gradient(145deg,rgba(10,17,24,0.97),rgba(13,9,19,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.28)] sm:p-5`
+          : `${className} qa-premium-card relative overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_5%_0%,rgba(136,217,212,0.11),transparent_31%),radial-gradient(circle_at_96%_100%,rgba(245,169,198,0.1),transparent_31%),linear-gradient(145deg,rgba(10,17,24,0.97),rgba(13,9,19,0.98))] p-4 shadow-[0_22px_64px_rgba(0,0,0,0.28)] sm:p-5`
       }
     >
-      {!embedded ? <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/24 to-transparent" /> : null}
+      {!embedded ? <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#88d9d4]/24 to-transparent" /> : null}
 
       {!isExpanded || !isStandalone ? (
         <div className={`relative grid gap-4 ${embedded ? "h-full grid-rows-[auto_1fr]" : "lg:grid-cols-[minmax(0,0.72fr)_minmax(36rem,1.28fr)] lg:items-center lg:gap-8"}`}>
           <div className="min-w-0">
-            <p className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-fuchsia-100/62">
+            <p className="flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#f5a9c6]/62">
               <MessageCircleMore size={13} strokeWidth={1.8} aria-hidden="true" />
               {t("home.humanSupport", "Human support")}
             </p>
@@ -431,19 +431,19 @@ export default function HomeContactSection({
                   onClick={() => openPath(path)}
                   className={`group min-h-[3.75rem] p-2.5 text-left transition duration-300 sm:min-h-[4.5rem] sm:p-3 ${
                     embedded
-                      ? "overflow-hidden rounded-[17px] border border-fuchsia-100/14 bg-[linear-gradient(145deg,rgba(244,114,182,0.075),rgba(255,255,255,0.025))] shadow-[0_10px_26px_rgba(0,0,0,0.16)] hover:-translate-y-0.5 hover:border-fuchsia-100/32 hover:shadow-[0_14px_32px_rgba(190,24,93,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300/45"
+                      ? "overflow-hidden rounded-[17px] border border-[#f5a9c6]/14 bg-[linear-gradient(145deg,rgba(245,169,198,0.075),rgba(255,255,255,0.025))] shadow-[0_10px_26px_rgba(0,0,0,0.16)] hover:-translate-y-0.5 hover:border-[#f5a9c6]/32 hover:shadow-[0_14px_32px_rgba(190,24,93,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f5a9c6]/45"
                       : "border-b border-r border-white/8 even:border-r-0 [&:nth-last-child(-n+2)]:border-b-0"
                   } ${path.cardClass}`}
                 >
                   <span className="flex items-start gap-2.5">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${embedded ? "border border-fuchsia-100/16 bg-fuchsia-100/[0.07]" : ""}`}>
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${embedded ? "border border-[#f5a9c6]/16 bg-[#f5a9c6]/[0.07]" : ""}`}>
                       <Icon size={15} strokeWidth={1.8} className={path.iconClass} aria-hidden="true" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-[11px] font-semibold text-white/82 sm:text-xs">{path.title}</span>
                       <span className="mt-1 hidden text-[9px] leading-4 text-white/43 sm:block sm:text-[10px]">{path.description}</span>
                     </span>
-                    <ArrowUpRight size={12} className="mt-0.5 shrink-0 text-fuchsia-100/32 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-fuchsia-50" aria-hidden="true" />
+                    <ArrowUpRight size={12} className="mt-0.5 shrink-0 text-[#f5a9c6]/32 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-fuchsia-50" aria-hidden="true" />
                   </span>
                 </button>
               );
@@ -462,7 +462,7 @@ export default function HomeContactSection({
                 if (event.currentTarget === event.target) closeForm();
               }}
             >
-              <div role="dialog" aria-modal="true" aria-labelledby="qa-contact-dialog-title" className="max-h-[92svh] w-full overflow-y-auto rounded-t-[28px] border border-white/12 bg-[radial-gradient(circle_at_0%_0%,rgba(34,211,238,0.1),transparent_30%),radial-gradient(circle_at_100%_100%,rgba(167,139,250,0.1),transparent_30%),linear-gradient(155deg,#10151d,#0b0a11)] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:max-w-[38rem] sm:rounded-[28px] sm:p-5">
+              <div role="dialog" aria-modal="true" aria-labelledby="qa-contact-dialog-title" className="max-h-[92svh] w-full overflow-y-auto rounded-t-[28px] border border-white/12 bg-[radial-gradient(circle_at_0%_0%,rgba(136,217,212,0.1),transparent_30%),radial-gradient(circle_at_100%_100%,rgba(167,139,250,0.1),transparent_30%),linear-gradient(155deg,#10151d,#0b0a11)] p-4 shadow-[0_30px_100px_rgba(0,0,0,0.65)] sm:max-w-[38rem] sm:rounded-[28px] sm:p-5">
                 <span id="qa-contact-dialog-title" className="sr-only">{t("contact.heading", "Contact Queer Atlas")}</span>
                 {formContent}
               </div>
