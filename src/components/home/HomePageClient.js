@@ -1040,8 +1040,8 @@ export default function HomePageClient({ initialHomeData = null }) {
               <picture>
                 <source
                   media="(min-width: 1024px)"
-                  srcSet="/home/queer-atlas-luminous-hero-v10.webp"
-                  type="image/webp"
+                  srcSet="/home/queer-atlas-midnight-globe-v7.png"
+                  type="image/png"
                 />
                 <img
                   src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
@@ -1052,7 +1052,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                   loading="eager"
                   decoding="async"
                   fetchPriority="high"
-                  className="absolute inset-0 h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)]"
+                  className="absolute inset-0 h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)] lg:object-contain lg:object-right"
                 />
               </picture>
             </div>
