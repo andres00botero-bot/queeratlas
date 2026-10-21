@@ -831,11 +831,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.citiesShortDescription", "Places, safety and queer life."),
       icon: "Cities",
       metric: `${cityCountDisplay} ${t("home.cities", "cities").toLowerCase()}`,
-      surface: "border-sky-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(56,189,248,0.18),transparent_40%),linear-gradient(150deg,rgba(18,39,75,0.92),rgba(12,24,52,0.95))] hover:border-sky-200/34",
-      glow: "bg-sky-300/20",
-      accentLine: "from-transparent via-sky-200/70 to-transparent",
-      iconSurface: "border-sky-100/20 bg-[linear-gradient(145deg,rgba(125,211,252,0.24),rgba(37,99,235,0.24))] text-sky-50",
-      metricClass: "text-sky-100/56",
+      surface: "border-[#88d9d4]/22 bg-[radial-gradient(circle_at_95%_0%,rgba(136,217,212,0.14),transparent_40%),linear-gradient(150deg,rgba(16,36,49,0.94),rgba(11,16,32,0.97))] hover:border-[#88d9d4]/45",
+      glow: "bg-[#88d9d4]/18",
+      accentLine: "from-transparent via-[#88d9d4]/75 to-transparent",
+      iconSurface: "border-[#88d9d4]/25 bg-[linear-gradient(145deg,rgba(136,217,212,0.22),rgba(183,160,247,0.16))] text-[#d7fbf8]",
+      metricClass: "text-[#b8f0ed]/62",
       onClick: () => {
         trackHomeAction("cities", "/cities");
         router.push("/cities");
@@ -847,11 +847,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.eventsShortDescription", "What’s on tonight and later."),
       icon: "Events",
       metric: `${eventCountDisplay} ${t("home.events", "events").toLowerCase()}`,
-      surface: "border-rose-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(251,113,133,0.18),transparent_40%),linear-gradient(150deg,rgba(71,27,57,0.94),rgba(42,20,46,0.96))] hover:border-rose-200/34",
-      glow: "bg-rose-300/20",
-      accentLine: "from-transparent via-amber-200/70 to-transparent",
-      iconSurface: "border-rose-100/20 bg-[linear-gradient(145deg,rgba(253,164,175,0.22),rgba(251,146,60,0.2))] text-rose-50",
-      metricClass: "text-rose-100/58",
+      surface: "border-[#f1ba98]/20 bg-[radial-gradient(circle_at_95%_0%,rgba(241,186,152,0.13),transparent_40%),linear-gradient(150deg,rgba(59,38,39,0.94),rgba(29,22,32,0.97))] hover:border-[#f1ba98]/42",
+      glow: "bg-[#f1ba98]/18",
+      accentLine: "from-transparent via-[#d8b678]/75 to-transparent",
+      iconSurface: "border-[#f1ba98]/24 bg-[linear-gradient(145deg,rgba(241,186,152,0.2),rgba(216,182,120,0.14))] text-[#fff8fc]",
+      metricClass: "text-[#f1ba98]/65",
       onClick: () => {
         trackHomeAction("events", "/events");
         router.push("/events");
@@ -863,11 +863,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.newsDescription", "Queer news from around the world."),
       icon: "News",
       metric: `${homeNewsItems.length || 0} ${t("home.freshStories", "fresh stories")}`,
-      surface: "border-emerald-200/15 bg-[radial-gradient(circle_at_95%_0%,rgba(45,212,191,0.16),transparent_40%),linear-gradient(150deg,rgba(13,55,62,0.94),rgba(12,31,48,0.96))] hover:border-emerald-200/32",
-      glow: "bg-teal-300/18",
-      accentLine: "from-transparent via-emerald-200/65 to-transparent",
-      iconSurface: "border-emerald-100/18 bg-[linear-gradient(145deg,rgba(110,231,183,0.2),rgba(34,211,238,0.17))] text-emerald-50",
-      metricClass: "text-emerald-100/56",
+      surface: "border-[#88d9d4]/20 bg-[radial-gradient(circle_at_95%_0%,rgba(136,217,212,0.13),transparent_40%),linear-gradient(150deg,rgba(17,41,49,0.94),rgba(12,22,35,0.97))] hover:border-[#88d9d4]/42",
+      glow: "bg-[#88d9d4]/16",
+      accentLine: "from-transparent via-[#88d9d4]/72 to-transparent",
+      iconSurface: "border-[#88d9d4]/22 bg-[linear-gradient(145deg,rgba(136,217,212,0.19),rgba(183,160,247,0.14))] text-[#d7fbf8]",
+      metricClass: "text-[#b8f0ed]/62",
       onClick: () => {
         trackHomeAction("news", "/now");
         router.push("/now");
@@ -879,11 +879,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.collectionsShortDescription", "Handpicked places and trips."),
       icon: "Collections",
       metric: t("home.editorialPicks", "Editorial picks"),
-      surface: "border-violet-200/16 bg-[radial-gradient(circle_at_95%_0%,rgba(192,132,252,0.18),transparent_40%),linear-gradient(150deg,rgba(59,30,81,0.94),rgba(31,22,59,0.96))] hover:border-violet-200/34",
-      glow: "bg-violet-300/20",
-      accentLine: "from-transparent via-fuchsia-200/66 to-transparent",
-      iconSurface: "border-violet-100/20 bg-[linear-gradient(145deg,rgba(216,180,254,0.22),rgba(244,114,182,0.18))] text-violet-50",
-      metricClass: "text-violet-100/58",
+      surface: "border-[#d7c0ff]/22 bg-[radial-gradient(circle_at_95%_0%,rgba(215,192,255,0.14),transparent_40%),linear-gradient(150deg,rgba(40,32,62,0.95),rgba(20,18,34,0.98))] hover:border-[#d7c0ff]/44",
+      glow: "bg-[#d7c0ff]/18",
+      accentLine: "from-transparent via-[#d7c0ff]/75 to-transparent",
+      iconSurface: "border-[#d7c0ff]/25 bg-[linear-gradient(145deg,rgba(215,192,255,0.2),rgba(245,169,198,0.14))] text-[#f7f2f7]",
+      metricClass: "text-[#e5d9ff]/65",
       onClick: () => {
         trackHomeAction("collections", "/now/collections");
         router.push("/now/collections");
@@ -896,7 +896,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       label: locale === "es" ? (isMember ? "Miembros, empleos y conversaciones en directo" : "Únete a miembros, empleos y conversaciones en directo") : (isMember ? "Members, jobs and live conversations" : "Join members, jobs and live conversations"),
       shortLabel: locale === "es" ? (isMember ? "Abrir espacio de miembros" : "Únete a la red") : (isMember ? "Open member hub" : "Join the network"),
       icon: "Community",
-      cardClass: "border-cyan-100/26 bg-[radial-gradient(circle_at_8%_50%,rgba(45,212,191,0.16),transparent_30%),linear-gradient(110deg,rgba(10,35,42,0.96),rgba(10,19,31,0.98))] hover:border-cyan-100/48",
+      cardClass: "border-[#88d9d4]/25 bg-[radial-gradient(circle_at_8%_50%,rgba(136,217,212,0.13),transparent_30%),linear-gradient(110deg,rgba(13,35,42,0.96),rgba(14,20,32,0.98))] hover:border-[#88d9d4]/48",
       glowClass: "bg-cyan-300/16",
       lineClass: "from-teal-300 via-cyan-300 to-sky-300",
       iconClass: "border-cyan-100/28 bg-[linear-gradient(145deg,rgba(94,234,212,0.2),rgba(34,211,238,0.11))] text-cyan-50",
@@ -917,7 +917,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       label: locale === "es" ? (isMember ? "Añade lugares, eventos y servicios" : "Únete para aportar lo que sabes") : (isMember ? "Add places, events and services" : "Join to add what you know"),
       shortLabel: locale === "es" ? (isMember ? "Aporta lo que sabes" : "Únete y aporta") : (isMember ? "Add what you know" : "Join & add"),
       icon: "Contribute",
-      cardClass: "border-rose-100/26 bg-[radial-gradient(circle_at_8%_50%,rgba(251,113,133,0.17),transparent_30%),linear-gradient(110deg,rgba(49,18,38,0.96),rgba(25,15,31,0.98))] hover:border-rose-100/48",
+      cardClass: "border-[#f5a9c6]/25 bg-[radial-gradient(circle_at_8%_50%,rgba(245,169,198,0.13),transparent_30%),linear-gradient(110deg,rgba(47,27,43,0.96),rgba(25,18,33,0.98))] hover:border-[#f5a9c6]/48",
       glowClass: "bg-fuchsia-300/17",
       lineClass: "from-rose-300 via-pink-300 to-fuchsia-300",
       iconClass: "border-rose-100/28 bg-[linear-gradient(145deg,rgba(253,164,175,0.2),rgba(232,121,249,0.11))] text-rose-50",
@@ -1028,14 +1028,14 @@ export default function HomePageClient({ initialHomeData = null }) {
     : "";
 
   return (
-    <main className="qa-page min-h-screen overflow-x-hidden bg-[#01010C] text-white">
+    <main className="qa-page min-h-screen overflow-x-hidden bg-[#0b1020] text-[#fff8fc]">
       <div className="relative">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(244,114,182,0.05),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(56,189,248,0.06),transparent_27%),linear-gradient(180deg,#01010C_0%,#02020E_52%,#01010C_100%)]" />
-        <div className="pointer-events-none absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-rose-500/4 blur-3xl" />
-        <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-cyan-400/5 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_8%,rgba(245,169,198,0.045),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(136,217,212,0.055),transparent_27%),linear-gradient(180deg,#0b1020_0%,#100f22_52%,#0b1020_100%)]" />
+        <div className="pointer-events-none absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-[#f5a9c6]/[0.045] blur-3xl" />
+        <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-[#88d9d4]/[0.055] blur-3xl" />
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
-          <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#05070f]/72 px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] lg:overflow-visible xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
+          <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#0b1020] px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] lg:overflow-visible xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <picture>
                 <source
@@ -1052,14 +1052,14 @@ export default function HomePageClient({ initialHomeData = null }) {
                   loading="eager"
                   decoding="async"
                   fetchPriority="high"
-                  className="absolute inset-0 h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)] lg:object-contain lg:object-right"
+                  className="absolute inset-0 h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)] lg:origin-right lg:scale-[0.885] lg:object-contain lg:object-right"
                 />
               </picture>
             </div>
-            <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(100deg,rgba(1,6,15,0.96)_0%,rgba(2,9,19,0.72)_30%,rgba(2,10,20,0.22)_55%,rgba(2,8,17,0.05)_76%,rgba(1,5,13,0.16)_100%)] lg:block" />
+            <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(100deg,rgba(11,16,32,0.98)_0%,rgba(11,16,32,0.76)_30%,rgba(11,16,32,0.24)_55%,rgba(11,16,32,0.06)_76%,rgba(11,16,32,0.14)_100%)] lg:block" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_92%_8%,rgba(34,211,238,0.11),transparent_34%),radial-gradient(circle_at_4%_45%,rgba(244,114,182,0.075),transparent_32%),linear-gradient(180deg,#03101a_0%,#020914_46%,#01010C_100%)] lg:hidden" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-32 bg-gradient-to-b from-[#010610]/78 via-[#020812]/26 to-transparent lg:block" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#020611]/38 to-[#01010C]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-24 bg-gradient-to-b from-[#0b1020]/46 via-[#0b1020]/12 to-transparent lg:block" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#0b1020]/34 to-[#0b1020]" />
 
             <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[686px] xl:min-h-[690px]">
           <div className="mb-7 flex items-center justify-end gap-3 sm:mb-14 sm:gap-4 lg:mb-0 lg:justify-between">
@@ -1074,7 +1074,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               />
               <div className="qa-display !text-left text-2xl font-semibold tracking-[-0.025em]">
                 <span className="text-white">Queer</span>{" "}
-                <span className="bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#88d9d4] via-[#d7c0ff] to-[#f5a9c6] bg-clip-text text-transparent">
                   Atlas
                 </span>
               </div>
@@ -1113,15 +1113,15 @@ export default function HomePageClient({ initialHomeData = null }) {
 
               {!isMember ? (
                 <>
-                <p className="qa-display hidden text-[15px] font-semibold tracking-[-0.015em] text-white/92 sm:block lg:text-[16px]">
+                <p className="hidden bg-transparent text-[15px] font-medium tracking-[-0.01em] text-[#fff8fc]/78 sm:block lg:text-[16px]">
                   {t("home.livingAtlas", "A living atlas, built together.")}
                 </p>
                 <button
                   aria-label={t("home.joinFree", "Join Queer Atlas for free")}
                   onClick={() => openSignup("/", "signup", "hero_join")}
-                  className="qa-home-join-cta qa-action qa-action-strong group relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full border border-rose-200/78 bg-[linear-gradient(110deg,#f43f5e_0%,#d946ef_52%,#7c3aed_100%)] py-1.5 pl-2 pr-5 text-[15px] font-bold tracking-[-0.01em] text-white shadow-[0_15px_38px_rgba(217,70,239,0.34),0_7px_22px_rgba(244,63,94,0.2),inset_0_1px_0_rgba(255,255,255,0.3)] transition duration-300 hover:-translate-y-0.5 hover:border-white hover:brightness-110 hover:shadow-[0_20px_48px_rgba(217,70,239,0.46),0_9px_26px_rgba(244,63,94,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-100/85"
+                  className="qa-home-join-cta qa-action qa-action-strong group relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full border border-[#f2d997]/80 bg-[#d8b678] py-1.5 pl-2 pr-5 text-[15px] font-bold tracking-[-0.01em] text-[#17121c] shadow-[0_15px_38px_rgba(216,182,120,0.26),inset_0_1px_0_rgba(255,255,255,0.34)] transition duration-300 hover:-translate-y-0.5 hover:border-[#fff8fc] hover:bg-[#e7c67f] hover:shadow-[0_20px_48px_rgba(216,182,120,0.38)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2d997]/80"
                 >
-                  <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/34 bg-white/16 text-white shadow-[0_6px_16px_rgba(49,18,61,0.24)] transition group-hover:-rotate-6 group-hover:scale-105" aria-hidden="true">
+                  <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border border-[#17121c]/16 bg-[#fff8fc]/58 text-[#17121c] shadow-[0_6px_16px_rgba(89,61,20,0.16)] transition group-hover:-rotate-6 group-hover:scale-105" aria-hidden="true">
                     <Sparkles size={16} strokeWidth={2.2} />
                   </span>
                   <span className="relative z-10">{t("home.joinFree", "Join free")}</span>
@@ -1188,7 +1188,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 />
                 <div className="qa-display !text-left text-xl font-semibold tracking-[-0.025em] sm:text-2xl">
                     <span className="text-white">Queer</span>{" "}
-                    <span className="bg-gradient-to-r from-cyan-200 via-sky-200 to-fuchsia-200 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-[#88d9d4] via-[#d7c0ff] to-[#f5a9c6] bg-clip-text text-transparent">
                       Atlas
                     </span>
                 </div>

@@ -193,22 +193,22 @@ function CompassPreview({ onOpen }) {
       <Link
         href="/dictionary"
         onClick={() => onOpen?.("/dictionary")}
-        className="group relative block overflow-hidden rounded-[26px] border border-violet-100/20 bg-[radial-gradient(circle_at_8%_0%,rgba(167,139,250,0.22),transparent_30%),radial-gradient(circle_at_94%_100%,rgba(45,212,191,0.14),transparent_33%),linear-gradient(125deg,rgba(36,20,60,0.94),rgba(12,17,36,0.98)_58%,rgba(8,21,33,0.98))] px-4 py-4 shadow-[0_20px_54px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.12)] transition duration-300 hover:-translate-y-0.5 hover:border-violet-100/40 hover:shadow-[0_25px_64px_rgba(76,29,149,0.2),inset_0_1px_0_rgba(255,255,255,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/60 sm:px-5 sm:py-5"
+        className="group relative block overflow-hidden rounded-[26px] border border-[#88d9d4]/22 bg-[#102431] px-4 py-4 shadow-[0_20px_54px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.07)] transition duration-300 hover:-translate-y-0.5 hover:border-[#88d9d4]/46 hover:bg-[#132d3b] hover:shadow-[0_25px_64px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#88d9d4]/55 sm:px-5 sm:py-5"
       >
-        <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full border border-cyan-100/10 bg-cyan-200/[0.035]" />
-        <span className="pointer-events-none absolute bottom-0 left-[18%] h-px w-1/2 bg-gradient-to-r from-transparent via-violet-100/45 to-transparent" />
+        <span className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full border border-[#88d9d4]/14 bg-[#88d9d4]/[0.045]" />
+        <span className="pointer-events-none absolute bottom-0 left-[18%] h-px w-1/2 bg-gradient-to-r from-transparent via-[#88d9d4]/48 to-transparent" />
         <div className="relative flex items-center gap-3.5 sm:gap-5">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[17px] border border-violet-100/34 bg-[linear-gradient(145deg,rgba(196,181,253,0.25),rgba(45,212,191,0.12))] text-violet-50 shadow-[0_12px_30px_rgba(76,29,149,0.32),inset_0_1px_0_rgba(255,255,255,0.24)] sm:h-14 sm:w-14">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[17px] border border-[#88d9d4]/30 bg-[#88d9d4]/[0.10] text-[#d7fbf8] shadow-[0_12px_30px_rgba(0,0,0,0.22),inset_0_1px_0_rgba(255,255,255,0.16)] sm:h-14 sm:w-14">
             <Compass size={22} strokeWidth={1.7} aria-hidden="true" />
           </span>
           <span className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-6">
             <span className="block shrink-0">
-              <span className="inline-flex rounded-full border border-cyan-100/24 bg-cyan-100/[0.08] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-cyan-50/82">{t("home.dictionaryNew", "New · Queer Dictionary")}</span>
+              <span className="inline-flex rounded-full border border-[#88d9d4]/24 bg-[#88d9d4]/[0.09] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-[#d7fbf8]/88">{t("home.dictionaryNew", "New · Queer Dictionary")}</span>
               <span className="qa-display mt-2 block text-[19px] font-semibold tracking-[-0.035em] text-white sm:text-[1.45rem]">Queer Dictionary</span>
             </span>
             <span className="mt-1 block text-left text-xs font-medium leading-5 text-white/68 sm:mt-0 sm:flex-1 sm:text-sm sm:leading-6">{t("home.dictionaryDescription", "Identities, pronouns and community language — with sources and nuance.")}</span>
           </span>
-          <span className="flex shrink-0 items-center gap-2 rounded-full border border-violet-100/42 bg-violet-100/[0.15] py-2.5 pl-3.5 pr-3 text-[9px] font-semibold uppercase tracking-[0.13em] text-violet-50 shadow-[0_10px_26px_rgba(0,0,0,0.22)] transition group-hover:border-cyan-100/48 group-hover:bg-cyan-100/[0.17] group-hover:text-cyan-50">
+          <span className="flex shrink-0 items-center gap-2 rounded-full border border-[#88d9d4]/34 bg-[#88d9d4]/[0.10] py-2.5 pl-3.5 pr-3 text-[9px] font-semibold uppercase tracking-[0.13em] text-[#d7fbf8] shadow-[0_10px_26px_rgba(0,0,0,0.22)] transition group-hover:border-[#88d9d4]/58 group-hover:bg-[#88d9d4]/[0.17] group-hover:text-[#f2fffe]">
             <span className="sm:hidden">{t("home.open", "Open")}</span>
             <span className="hidden sm:inline">{t("home.openDictionary", "Open Dictionary")}</span>
             <ArrowUpRight size={12} className="transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
@@ -230,8 +230,8 @@ function TrustSupportStrip({ onAction, contactSlot }) {
   return (
     <section id="home-editorial-trust" data-home-section="editorial_trust" className="qa-defer-render mt-8 scroll-mt-20" aria-label="Queer Atlas trust and support">
       <div className="grid items-stretch gap-4 lg:grid-cols-2">
-          <article className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-[26px] border border-cyan-100/18 bg-[radial-gradient(circle_at_5%_0%,rgba(34,211,238,0.14),transparent_34%),linear-gradient(150deg,rgba(10,25,32,0.96),rgba(10,12,22,0.98))] p-4 shadow-[0_22px_58px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-5 lg:rounded-[28px]">
-            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/48 to-transparent" />
+          <article className="relative flex h-full min-w-0 flex-col rounded-[26px] border border-transparent bg-transparent p-4 shadow-none sm:p-5 lg:rounded-[28px]">
+            
             <p className="flex items-center gap-2 !text-left text-[9px] font-semibold uppercase tracking-[0.2em] text-cyan-100/60">
               <ClipboardCheck size={13} strokeWidth={1.8} aria-hidden="true" />
               {t("home.editorialStandards", "Editorial standards")}
@@ -265,8 +265,8 @@ function TrustSupportStrip({ onAction, contactSlot }) {
             </nav>
           </article>
 
-          <div className="relative h-full min-w-0 overflow-hidden rounded-[26px] border border-fuchsia-100/18 bg-[radial-gradient(circle_at_95%_0%,rgba(244,114,182,0.14),transparent_34%),linear-gradient(150deg,rgba(31,15,31,0.96),rgba(12,13,23,0.98))] p-4 shadow-[0_22px_58px_rgba(0,0,0,0.28),inset_0_1px_0_rgba(255,255,255,0.07)] sm:p-5 lg:rounded-[28px]">
-            <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-100/48 to-transparent" />
+          <div className="relative h-full min-w-0 rounded-[26px] border border-transparent bg-transparent p-4 shadow-none sm:p-5 lg:rounded-[28px]">
+            
             {contactSlot}
           </div>
       </div>
@@ -321,7 +321,7 @@ function MembershipPreview({ isMember = false, onAction }) {
           </ul>
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
-          <button type="button" onClick={onAction} className="qa-action qa-action-strong inline-flex min-h-11 items-center gap-2 rounded-full border border-fuchsia-100/40 bg-fuchsia-200/[0.09] px-4 py-2.5 text-sm font-semibold text-fuchsia-50 transition hover:-translate-y-0.5 hover:border-fuchsia-100/72 hover:bg-fuchsia-200/[0.16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-100/85">
+          <button type="button" onClick={onAction} className="qa-action qa-action-strong inline-flex min-h-11 items-center gap-2 rounded-full border border-[#f2d997]/78 bg-[#d8b678] px-4 py-2.5 text-sm font-semibold text-[#17121c] shadow-[0_10px_26px_rgba(216,182,120,0.18)] transition hover:-translate-y-0.5 hover:border-[#fff8fc] hover:bg-[#e7c67f] hover:shadow-[0_14px_32px_rgba(216,182,120,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2d997]/80">
             {isMember ? t("home.openYourAtlas", "Open your Atlas") : t("home.createFreeAtlas", "Create your free Atlas")}
             <ArrowRight size={15} aria-hidden="true" />
           </button>
