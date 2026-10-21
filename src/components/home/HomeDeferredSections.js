@@ -329,18 +329,9 @@ export function MembershipPreview({ isMember = false, onAction }) {
                 <span>{t("home.memberPreviewLabel", "Preview · My Atlas")}</span>
                 <span>{t("home.memberPreviewStatus", "Private")}</span>
               </div>
-              <div className="mt-5 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/64">{t("home.memberTripLabel", "Next trip")}</p>
-                  <p className="qa-display mt-1 text-2xl font-semibold tracking-[-0.045em] text-white">Berlin</p>
-                  <p className="mt-1 text-xs text-white/52">16—19 May · {t("home.memberTripStops", "4 saved stops")}</p>
-                </div>
-                <div className="flex -space-x-2" aria-label={t("home.memberTripStops", "4 saved stops")}>
-                  <span className="h-8 w-8 rounded-xl border-2 border-[#0d1528] bg-[linear-gradient(135deg,#fb7185,#a855f7)]" />
-                  <span className="h-8 w-8 rounded-xl border-2 border-[#0d1528] bg-[linear-gradient(135deg,#67e8f9,#2563eb)]" />
-                  <span className="h-8 w-8 rounded-xl border-2 border-[#0d1528] bg-[linear-gradient(135deg,#fde68a,#f97316)]" />
-                </div>
-              </div>
+              <div className="mt-4 flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-cyan-100/18 bg-cyan-100/10 text-xs font-bold text-cyan-50">QA</span><span><span className="block text-sm font-semibold text-white">My Atlas</span><span className="mt-0.5 block text-[11px] text-white/48">Places, plans and memories</span></span></div>
+              <div className="mt-4 grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/[0.06] px-2.5 py-2"><span className="block text-sm font-semibold text-white">14</span><span className="text-[9px] uppercase tracking-[0.1em] text-white/46">Saved</span></div><div className="rounded-xl bg-white/[0.06] px-2.5 py-2"><span className="block text-sm font-semibold text-white">3</span><span className="text-[9px] uppercase tracking-[0.1em] text-white/46">Visited</span></div><div className="rounded-xl bg-white/[0.06] px-2.5 py-2"><span className="block text-sm font-semibold text-white">4</span><span className="text-[9px] uppercase tracking-[0.1em] text-white/46">Cities</span></div></div>
+              <div className="mt-3 rounded-xl border border-cyan-100/14 bg-cyan-100/[0.06] px-3 py-2.5"><p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-cyan-100/66">Coming up</p><p className="mt-1 text-xs font-medium text-white">Berlin · 4 places ready to shape</p></div>
             </div>
           </div>
 
@@ -355,34 +346,12 @@ export function MembershipPreview({ isMember = false, onAction }) {
               </div>
 
               <div className="mt-3 rounded-[22px] border border-white/[0.18] bg-[#0e162a]/70 p-4 shadow-[0_18px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/66">{t("home.memberTripLabel", "Next trip")}</p>
-                    <p className="qa-display mt-1.5 text-2xl font-semibold tracking-[-0.045em] text-white">Berlin</p>
-                    <p className="mt-1 text-xs text-white/56">16—19 May · {t("home.memberTripStops", "4 saved stops")}</p>
-                  </div>
-                  <span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-50">{t("home.memberTripReady", "Ready to shape")}</span>
-                </div>
-                <div className="mt-4 flex items-center gap-2">
-                  <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#fb7185,#a855f7)]" />
-                  <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#67e8f9,#2563eb)]" />
-                  <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#fde68a,#f97316)]" />
-                  <span className="ml-1 text-xs text-white/52">+ {t("home.memberTripSaved", "one plan in progress")}</span>
-                </div>
+                <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-cyan-100/18 bg-cyan-100/10 text-xs font-bold text-cyan-50">QA</span><div><p className="text-sm font-semibold text-white">My Atlas</p><p className="mt-0.5 text-[11px] text-white/48">Private by default</p></div></div><span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-50">Growing</span></div>
+                <div className="mt-4 grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">14</p><p className="text-[9px] uppercase tracking-[0.12em] text-white/46">Saved</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">3</p><p className="text-[9px] uppercase tracking-[0.12em] text-white/46">Visited</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">4</p><p className="text-[9px] uppercase tracking-[0.12em] text-white/46">Cities</p></div></div>
+                <div className="mt-4 border-t border-white/10 pt-3"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/66">Your cities</p><div className="mt-2 flex flex-wrap gap-2"><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Berlin · 6</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Stockholm · 5</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Brussels · 3</span></div></div>
               </div>
 
-              <div className="ml-[7%] mt-3 flex items-center justify-between gap-3 rounded-2xl border border-white/[0.14] bg-white/[0.09] px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.16)] backdrop-blur-sm">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/60">{t("home.memberFollowLabel", "Following")}</p>
-                  <p className="mt-1 text-sm font-medium text-white">Berlin · Lisbon · Copenhagen</p>
-                </div>
-                <span className="h-2.5 w-2.5 rounded-full bg-fuchsia-300 shadow-[0_0_18px_rgba(232,121,249,0.85)]" />
-              </div>
-
-              <div className="mt-3 flex max-w-[89%] items-center gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.2)]">
-                <span aria-hidden="true" className="h-8 w-8 shrink-0 rounded-full border border-[#f5d99a]/28 bg-[radial-gradient(circle_at_35%_35%,#fff6d9_0_7%,#f5d99a_8%_15%,rgba(245,217,154,0.16)_16%_100%)]" />
-                <p className="text-xs leading-5 text-white/76">{t("home.memberContributionPreview", "A local note, an event or a guide can become part of the Atlas.")}</p>
-              </div>
+              <div className="ml-[7%] mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.2)]"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f5d99a]/70">Coming up</p><p className="mt-1 text-sm font-medium text-white">Berlin · 4 places ready to shape</p></div><span className="h-2.5 w-2.5 rounded-full bg-[#f5d99a] shadow-[0_0_18px_rgba(245,217,154,0.7)]" /></div>
             </div>
           </div>
         </div>
