@@ -489,7 +489,7 @@ const messages = {
       collectionsShortDescription: "Lugares y viajes seleccionados.",
       editorialPicks: "Selección editorial",
       memberEyebrow: "Tu Atlas personal",
-      memberTitle: "No solo lo encuentres. Guárdalo.",
+      memberTitle: "Haz que cada descubrimiento sea tuyo.",
       memberDescription: "Guarda los lugares que te llaman. Planea tu próximo viaje queer. Reúne cada plan, evento y recuerdo en un Atlas personal.",
       memberShortDescription: "Un lugar se convierte en un plan. Un plan se convierte en tu manera de recorrer una ciudad.",
       memberFeaturesLabel: "Vista previa de tu Atlas",
