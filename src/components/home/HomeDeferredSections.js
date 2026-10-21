@@ -303,10 +303,10 @@ export function MembershipPreview({ isMember = false, onAction }) {
         <div className="pointer-events-none absolute -right-20 top-20 hidden h-72 w-72 rounded-full border border-white/15 lg:block" />
         <div className="pointer-events-none absolute -right-4 top-36 hidden h-48 w-48 rounded-full border border-white/10 lg:block" />
         <div className="relative grid lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="flex min-h-[295px] flex-col justify-between p-6 sm:min-h-[430px] sm:p-9 lg:p-10">
+          <div className="flex min-h-[295px] flex-col justify-between p-6 sm:min-h-[400px] sm:p-8 lg:p-9">
             <div>
               <p className="!text-left text-[10px] font-bold uppercase tracking-[0.24em] text-[#645b70]">{t("home.memberEyebrow", "Your personal Atlas")}</p>
-              <h2 className="qa-display mt-4 max-w-md !text-left text-[2.15rem] font-semibold leading-[0.94] tracking-[-0.065em] text-[#171421] sm:mt-5 sm:text-[3.55rem]">
+              <h2 className="qa-display mt-4 max-w-md !text-left text-[2.15rem] font-semibold leading-[0.94] tracking-[-0.065em] text-[#171421] sm:mt-5 sm:text-[3rem]">
                 {t("home.memberTitle", "Don’t just find it. Keep it.")}
               </h2>
               <p className="mt-4 max-w-sm !text-left text-sm leading-6 text-[#4f4858] sm:mt-5 sm:text-base">
@@ -344,7 +344,7 @@ export function MembershipPreview({ isMember = false, onAction }) {
             </div>
           </div>
 
-          <div className="relative hidden min-h-[470px] overflow-hidden px-5 pb-7 pt-4 sm:px-9 sm:pb-9 lg:block lg:py-9">
+          <div className="relative hidden min-h-[400px] overflow-hidden px-5 pb-7 pt-4 sm:px-7 sm:pb-7 lg:block lg:py-7">
             <div className="absolute left-[14%] top-[19%] h-[58%] w-px bg-gradient-to-b from-transparent via-cyan-100/70 to-transparent" />
             <div className="absolute left-[14%] top-[31%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-cyan-200 shadow-[0_0_0_5px_rgba(125,211,252,0.12),0_0_25px_rgba(125,211,252,0.8)]" />
             <div className="absolute left-[14%] top-[65%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-fuchsia-300 shadow-[0_0_0_5px_rgba(232,121,249,0.1),0_0_24px_rgba(232,121,249,0.62)]" />
@@ -354,7 +354,7 @@ export function MembershipPreview({ isMember = false, onAction }) {
                 <span>{t("home.memberPreviewStatus", "Private")}</span>
               </div>
 
-              <div className="mt-4 rounded-[22px] border border-white/[0.18] bg-[#0e162a]/70 p-4 shadow-[0_18px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm sm:p-5">
+              <div className="mt-3 rounded-[22px] border border-white/[0.18] bg-[#0e162a]/70 p-4 shadow-[0_18px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/66">{t("home.memberTripLabel", "Next trip")}</p>
@@ -363,7 +363,7 @@ export function MembershipPreview({ isMember = false, onAction }) {
                   </div>
                   <span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-50">{t("home.memberTripReady", "Ready to shape")}</span>
                 </div>
-                <div className="mt-5 flex items-center gap-2">
+                <div className="mt-4 flex items-center gap-2">
                   <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#fb7185,#a855f7)]" />
                   <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#67e8f9,#2563eb)]" />
                   <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#fde68a,#f97316)]" />
@@ -371,7 +371,7 @@ export function MembershipPreview({ isMember = false, onAction }) {
                 </div>
               </div>
 
-              <div className="ml-[7%] mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/[0.14] bg-white/[0.09] px-4 py-3.5 shadow-[0_16px_30px_rgba(0,0,0,0.16)] backdrop-blur-sm">
+              <div className="ml-[7%] mt-3 flex items-center justify-between gap-3 rounded-2xl border border-white/[0.14] bg-white/[0.09] px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.16)] backdrop-blur-sm">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/60">{t("home.memberFollowLabel", "Following")}</p>
                   <p className="mt-1 text-sm font-medium text-white">Berlin · Lisbon · Copenhagen</p>
@@ -379,7 +379,7 @@ export function MembershipPreview({ isMember = false, onAction }) {
                 <span className="h-2.5 w-2.5 rounded-full bg-fuchsia-300 shadow-[0_0_18px_rgba(232,121,249,0.85)]" />
               </div>
 
-              <div className="mt-4 flex max-w-[89%] items-center gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3.5 shadow-[0_16px_30px_rgba(0,0,0,0.2)]">
+              <div className="mt-3 flex max-w-[89%] items-center gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.2)]">
                 <span aria-hidden="true" className="h-8 w-8 shrink-0 rounded-full border border-[#f5d99a]/28 bg-[radial-gradient(circle_at_35%_35%,#fff6d9_0_7%,#f5d99a_8%_15%,rgba(245,217,154,0.16)_16%_100%)]" />
                 <p className="text-xs leading-5 text-white/76">{t("home.memberContributionPreview", "A local note, an event or a guide can become part of the Atlas.")}</p>
               </div>
