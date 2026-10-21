@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BookmarkCheck } from "lucide-react";
 import CalendarMonthExperience from "@/features/favorites/calendar/CalendarMonthExperience";
@@ -437,7 +436,7 @@ export default function FavoritesPage() {
   const handledTripAddRef = useRef("");
   const [showSecondaryPanels, setShowSecondaryPanels] = useState(false);
   const [activeProfileTab, setActiveProfileTab] = useState("about");
-  const [myMapView, setMyMapView] = useState("checkins");
+  const [myMapView, setMyMapView] = useState("saved");
   const [selectedTripMapId, setSelectedTripMapId] = useState(null);
   const [isCheckinComposerOpen, setIsCheckinComposerOpen] = useState(false);
   const [checkinMapReadyTick, setCheckinMapReadyTick] = useState(0);
@@ -1549,6 +1548,10 @@ export default function FavoritesPage() {
       .filter((event) => Number.isFinite(event.calendarTime))
       .sort((a, b) => a.calendarTime - b.calendarTime);
   }, [savedEvents]);
+  const goingEventCount = useMemo(
+    () => calendarEvents.filter((event) => calendarGoingByEventId?.[String(event.id || "")]).length,
+    [calendarEvents, calendarGoingByEventId]
+  );
   const todayDateKey = useMemo(() => {
     const referenceTs = Number(nowTs || 0);
     return new Date(referenceTs).toISOString().slice(0, 10);
@@ -2515,13 +2518,26 @@ export default function FavoritesPage() {
         homeCity: String(profile?.homeCity || profile?.home_city || "").trim(),
         avatarUrl: resolveAvatarUrlFromRow(profile) || String(profile?.avatarUrl || "").trim(),
       }));
+  const profileCitySignals = useMemo(() => {
+    const byCity = new Map();
+    const ensure = (city) => {
+      const key = String(city || "").trim();
+      if (!key) return null;
+      if (!byCity.has(key)) byCity.set(key, { city: key, saved: 0, visited: 0, trips: 0 });
+      return byCity.get(key);
+    };
+    savedPlaces.forEach((place) => { const item = ensure(place.city); if (item) item.saved += 1; });
+    checkins.forEach((checkin) => { const item = ensure(checkin.city); if (item) item.visited += 1; });
+    plans.forEach((plan) => { const item = ensure(plan.city); if (item) item.trips += 1; });
+    return [...byCity.values()].sort((a, b) => (b.saved + b.visited + b.trips) - (a.saved + a.visited + a.trips)).slice(0, 3);
+  }, [checkins, plans, savedPlaces]);
   const shouldRenderAvatarImage = Boolean(effectiveAvatarUrl) && !profileAvatarLoadFailed;
   const profileTabs = useMemo(
     () =>
       isReadOnlyPublicProfileView
         ? [{ id: "about", label: t("favorites.profileHome", "Profile Home") }]
         : [
-            { id: "about", label: t("favorites.home", "Home") },
+            { id: "about", label: t("favorites.profile", "Profile") },
             { id: "map", label: t("favorites.myMap", "My map") },
             { id: "trips", label: t("favorites.planTrip", "Plan a trip") },
             { id: "calendar", label: t("favorites.myCalendar", "My Calendar") },
@@ -3636,38 +3652,21 @@ export default function FavoritesPage() {
   }
 
   return (
-    <main className="qa-page min-h-screen bg-[radial-gradient(circle_at_12%_9%,rgba(56,189,248,0.11),transparent_26%),radial-gradient(circle_at_88%_12%,rgba(244,114,182,0.11),transparent_26%),linear-gradient(180deg,#040406_0%,#070911_48%,#040406_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
+    <main className="qa-page min-h-screen bg-[#07080c] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
       <ActionToast toast={toast} />
       <div className="qa-shell relative">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_24%),radial-gradient(circle_at_80%_14%,rgba(45,212,191,0.14),transparent_24%),radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.12),transparent_20%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_32%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />
-        <div className="pointer-events-none absolute -left-10 top-20 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-12 top-28 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
-
-        <section className={`qa-panel qa-premium-card relative mb-6 overflow-hidden rounded-[30px] border border-white/12 bg-[#060910] p-4 shadow-[0_24px_64px_rgba(0,0,0,0.44)] sm:rounded-[34px] sm:p-6 sm:shadow-[0_42px_132px_rgba(0,0,0,0.56)] ${(isProfileAboutTab || isProfileMapTab) ? (isReadOnlyPublicProfileView ? "hidden" : "border-0 !bg-transparent !p-0 !shadow-none [&>div:not(:last-child)]:hidden") : ""}`}>
-          <div className="pointer-events-none absolute inset-0">
-            <Image
-              src="/favorites/queer-atlas-saved-places-neon-waves-hero.png"
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,14,0.58),rgba(4,7,14,0.8)_56%,rgba(4,7,14,0.92)_100%)] sm:bg-[linear-gradient(180deg,rgba(4,7,14,0.48),rgba(4,7,14,0.74)_56%,rgba(4,7,14,0.9)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_16%,rgba(244,114,182,0.08),transparent_28%),radial-gradient(circle_at_82%_22%,rgba(56,189,248,0.08),transparent_30%)] sm:bg-[radial-gradient(circle_at_16%_16%,rgba(244,114,182,0.14),transparent_28%),radial-gradient(circle_at_82%_22%,rgba(56,189,248,0.14),transparent_30%)]" />
-          </div>
-          <div className="pointer-events-none absolute -left-16 top-8 h-48 w-48 rounded-full bg-rose-400/8 blur-3xl sm:bg-rose-400/12" />
-          <div className="pointer-events-none absolute -right-20 top-10 h-56 w-56 rounded-full bg-cyan-400/7 blur-3xl sm:bg-cyan-400/10" />
+        <section className={`qa-panel qa-premium-card relative mb-4 overflow-hidden rounded-[24px] border border-white/10 bg-[#0d1528] p-5 shadow-[0_20px_54px_rgba(0,0,0,0.28)] sm:mb-5 sm:rounded-[28px] sm:p-7 ${isProfileMapTab ? (isReadOnlyPublicProfileView ? "hidden" : "border-0 !bg-transparent !p-0 !shadow-none [&>div:not(:last-child)]:hidden") : ""}`}>
+          <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-[#88d9d4]/[0.09] blur-3xl" />
+          <div className="pointer-events-none absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-[#f5a9c6]/45 to-transparent" />
           <div className="relative z-10 max-w-4xl">
-            <p className="mt-1 max-w-[calc(100%-0.25rem)] bg-gradient-to-r from-amber-100 via-rose-100 to-cyan-100 bg-clip-text text-lg font-semibold tracking-[-0.01em] text-transparent sm:text-3xl sm:drop-shadow-[0_10px_24px_rgba(251,191,36,0.2)]">
+            <p className="max-w-[calc(100%-0.25rem)] text-base font-medium tracking-[-0.01em] text-white/68 sm:text-xl">
               {isReadOnlyPublicProfileView ? `${effectiveDisplayName}'s profile` : `${greeting}, ${displayName}`}
             </p>
-            <h1 className="qa-display qa-h1 mt-3 inline-flex items-center gap-3 bg-gradient-to-r from-cyan-100 via-white to-fuchsia-100 bg-clip-text text-3xl font-bold text-transparent sm:mt-4 sm:gap-4 sm:text-6xl">
-              <BrandMark iconOnly className="h-10 w-10 sm:h-14 sm:w-14" />
+            <h1 className="qa-display qa-h1 mt-3 inline-flex items-center gap-3 text-3xl font-bold tracking-[-0.05em] text-[#fff8fc] sm:gap-4 sm:text-5xl">
+              <BrandMark iconOnly className="h-9 w-9 sm:h-12 sm:w-12" />
               {isReadOnlyPublicProfileView ? t("favorites.memberProfile", "Member Profile") : t("favorites.yourAtlas", "Your Atlas")}
             </h1>
-            <p className="qa-lead mt-3 max-w-2xl text-sm text-white/64 sm:mt-5 sm:text-base">
+            <p className="qa-lead mt-3 max-w-2xl text-sm text-white/60 sm:mt-4 sm:text-base">
               {isReadOnlyPublicProfileView
                 ? t("favorites.publicSignal", "Public queer signal across identity, vibe, and contributor presence.")
                 : t("favorites.intro", "Your saved queer map across cities, places, and events. This is where discovery becomes direction.")}
@@ -3696,7 +3695,7 @@ export default function FavoritesPage() {
             )}
           </div>
           {!isReadOnlyPublicProfileView ? (
-            <div className="relative z-10 mt-4 sm:mt-5">
+            <div className="relative z-10 mt-5 border-t border-white/[0.08] pt-4 sm:mt-6 sm:pt-5">
               <PageControls
                 variant="editorial-rail"
                 controlsRef={favoritesControlsRef}
@@ -3706,7 +3705,7 @@ export default function FavoritesPage() {
                 mobileCompact
                 mobileLayout="fit"
                 mobileLabelsById={{
-                  about: t("favorites.home", "Home"),
+                  about: t("favorites.profile", "Profile"),
                   map: t("favorites.map", "Map"),
                   trips: t("favorites.trips", "Trips"),
                   calendar: t("favorites.calendar", "Calendar"),
@@ -3737,6 +3736,7 @@ export default function FavoritesPage() {
             pronouns={effectivePronouns}
             about={profileAboutMe}
             vibeChips={profileVibeChips}
+            citySignals={profileCitySignals}
             stats={isReadOnlyPublicProfileView
               ? [
                   { label: "Contributions", value: atlasCredScore },
@@ -3746,7 +3746,7 @@ export default function FavoritesPage() {
                 ]
               : [
                   { label: "Saved", value: totalPlaces + totalEvents, onClick: () => { setMyMapView("saved"); setActiveProfileTab("map"); } },
-                  { label: "Check-ins", value: checkins.length, onClick: () => { setMyMapView("checkins"); setActiveProfileTab("map"); } },
+                  { label: t("favorites.visited", "Visited"), value: checkins.length, onClick: () => { setMyMapView("checkins"); setActiveProfileTab("map"); } },
                   { label: "Cities", value: totalCities, onClick: () => setActiveProfileTab("map") },
                   { label: "Friends", value: effectiveProfileFriends.length },
                 ]}
@@ -4595,41 +4595,51 @@ export default function FavoritesPage() {
                 {t("favorites.myMap", "My map")}
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-violet-50/68">
-                {t("favorites.mapIntro", "Places you love and moments you’ve lived.")}
+                {t("favorites.mapIntro", "See what you saved, what is becoming a trip, and the places you have made your own.")}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-violet-50/58 sm:justify-end">
               <span><strong className="font-semibold text-white">{savedPlaces.length}</strong> saved</span>
               <span aria-hidden="true">·</span>
-              <span><strong className="font-semibold text-white">{checkins.length}</strong> check-ins</span>
+              <span><strong className="font-semibold text-white">{goingEventCount}</strong> going</span>
               <span aria-hidden="true">·</span>
-              <span><strong className="font-semibold text-white">{myMapView === "checkins" ? checkinCities.length : savedPlaceCities}</strong> cities</span>
+              <span><strong className="font-semibold text-white">{checkins.length}</strong> visited</span>
             </div>
           </div>
-          <div className="mb-4 inline-flex rounded-full border border-white/16 bg-white/10 p-1 shadow-[0_14px_38px_rgba(72,36,94,0.22)] backdrop-blur-xl">
+          <div className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {[
-              { id: "saved", label: t("favorites.saved", "Saved") },
-              { id: "checkins", label: t("favorites.checkins", "Check-ins") },
-              { id: "trips", label: t("favorites.trips", "Trips") },
+              { id: "saved", label: t("favorites.mapSavedLabel", "Saved places"), hint: t("favorites.mapSavedHint", "Places you saved"), count: savedPlaces.length, tone: "cyan" },
+              { id: "trips", label: t("favorites.mapTripsLabel", "Trip plans"), hint: t("favorites.mapTripsHint", "Places in your trips"), count: plans.length, tone: "sand" },
+              { id: "going", label: t("favorites.mapGoingLabel", "Events you're going to"), hint: t("favorites.mapGoingHint", "Open your calendar"), count: goingEventCount, tone: "pink" },
+              { id: "checkins", label: t("favorites.mapCheckinsLabel", "Check-ins"), hint: t("favorites.mapVisitedHint", "Places you checked in at"), count: checkins.length, tone: "violet" },
             ].map((view) => {
               const isActive = myMapView === view.id;
               return (
                 <button
                   key={view.id}
                   type="button"
-                  onClick={() => setMyMapView(view.id)}
-                  aria-pressed={isActive}
-                  className={`rounded-full px-5 py-2 text-xs font-semibold transition-colors ${
+                  onClick={() => {
+                    if (view.id === "going") {
+                      setActiveProfileTab("calendar");
+                      return;
+                    }
+                    setMyMapView(view.id);
+                  }}
+                  aria-pressed={view.id === "going" ? activeProfileTab === "calendar" : isActive}
+                  className={`group relative min-h-[74px] overflow-hidden rounded-[20px] border px-3.5 py-3 text-left transition sm:min-w-[146px] sm:flex-1 ${
                     isActive
-                      ? view.id === "checkins"
-                        ? "bg-gradient-to-r from-rose-200 to-fuchsia-200 text-[#32152e] shadow-[0_8px_24px_rgba(244,114,182,0.28)]"
+                      ? view.tone === "violet"
+                        ? "border-[#d7c0ff]/70 bg-[linear-gradient(135deg,rgba(215,192,255,0.96),rgba(183,166,255,0.92))] text-[#1e1838] shadow-[0_12px_28px_rgba(135,102,210,0.3)]"
                         : view.id === "trips"
-                          ? "bg-gradient-to-r from-fuchsia-100 to-rose-100 text-[#32152e] shadow-[0_8px_24px_rgba(245,169,198,0.22)]"
-                          : "bg-gradient-to-r from-emerald-100 via-teal-100 to-amber-100 text-[#17322c] shadow-[0_8px_24px_rgba(167,243,208,0.24)]"
-                      : "text-violet-50/62 hover:bg-white/10 hover:text-white"
+                          ? "border-[#f5d99a]/70 bg-[linear-gradient(135deg,rgba(245,217,154,0.98),rgba(216,182,120,0.94))] text-[#352512] shadow-[0_12px_28px_rgba(216,182,120,0.22)]"
+                          : "border-[#88d9d4]/70 bg-[linear-gradient(135deg,rgba(136,217,212,0.98),rgba(178,234,220,0.92))] text-[#10302e] shadow-[0_12px_28px_rgba(80,185,177,0.22)]"
+                      : view.id === "going"
+                        ? "border-[#f5a9c6]/26 bg-[linear-gradient(135deg,rgba(245,169,198,0.13),rgba(255,255,255,0.04))] text-[#ffe6f0] hover:border-[#f5a9c6]/54 hover:bg-[#f5a9c6]/16"
+                        : "border-white/12 bg-white/[0.055] text-violet-50/82 hover:border-white/22 hover:bg-white/[0.10]"
                   }`}
                 >
-                  {view.label}
+                  <span className="block text-[10px] font-semibold uppercase tracking-[0.14em] opacity-70">{view.label}</span>
+                  <span className="mt-1 flex items-end justify-between gap-2"><span className="text-sm font-semibold leading-none">{view.hint}</span><span className="text-xl font-semibold leading-none">{view.count}</span></span>
                 </button>
               );
             })}
@@ -4642,8 +4652,10 @@ export default function FavoritesPage() {
               className={`relative rounded-[28px] border bg-[radial-gradient(circle_at_10%_0%,rgba(139,92,246,0.15),transparent_32%),linear-gradient(155deg,#26213f,#171c2e)] p-2 shadow-[0_24px_66px_rgba(10,8,25,0.36)] transition sm:p-3 ${
                 selectedCheckin
                   ? myMapView === "saved"
-                    ? "border-emerald-200/42"
-                    : "border-rose-200/42"
+                    ? "border-[#88d9d4]/52"
+                    : myMapView === "trips"
+                      ? "border-[#f5d99a]/52"
+                      : "border-[#d7c0ff]/52"
                   : "border-white/14"
               }`}
             >
@@ -4651,7 +4663,7 @@ export default function FavoritesPage() {
                 <div className="mb-2 inline-flex max-w-[calc(100%-7rem)] items-center gap-2 rounded-full bg-white/14 px-3 py-1.5 text-[11px] text-white/88 backdrop-blur-xl">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-fuchsia-200 shadow-[0_0_14px_rgba(244,114,182,0.85)]" />
                   <span className="truncate">
-                    Selected: {selectedCheckin.label || "Check-in"} | {selectedCheckin.city || "City"}
+                    Selected: {selectedCheckin.label || "Place"} | {selectedCheckin.city || "City"}
                   </span>
                 </div>
               ) : null}
@@ -4996,25 +5008,29 @@ export default function FavoritesPage() {
 
             <div className={`relative z-10 mx-0 mt-3 flex min-h-0 flex-col overflow-hidden rounded-[26px] border p-4 shadow-[0_22px_58px_rgba(8,8,18,0.36)] backdrop-blur-xl transition-colors duration-300 xl:mt-0 xl:h-[39rem] ${
               myMapView === "checkins"
-                ? "border-emerald-100/20 bg-[radial-gradient(circle_at_100%_0%,rgba(110,231,183,0.13),transparent_34%),linear-gradient(155deg,#173a35,#142925)]"
-                : "border-emerald-100/20 bg-[radial-gradient(circle_at_100%_0%,rgba(167,243,208,0.11),transparent_34%),linear-gradient(155deg,#173a35,#142925)]"
+                ? "border-[#d7c0ff]/22 bg-[radial-gradient(circle_at_100%_0%,rgba(215,192,255,0.16),transparent_34%),linear-gradient(155deg,#27203b,#17162a)]"
+                : myMapView === "trips"
+                  ? "border-[#f5d99a]/20 bg-[radial-gradient(circle_at_100%_0%,rgba(245,217,154,0.13),transparent_34%),linear-gradient(155deg,#342b1d,#201b16)]"
+                  : "border-[#88d9d4]/20 bg-[radial-gradient(circle_at_100%_0%,rgba(136,217,212,0.14),transparent_34%),linear-gradient(155deg,#173a35,#142925)]"
             }`}>
               <div className="mb-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-base font-semibold text-white">
-                    {myMapView === "checkins" ? t("favorites.checkins", "Check-ins") : myMapView === "trips" ? t("favorites.tripRoute", "Trip route") : t("favorites.savedPlaces", "Saved places")}
+                    {myMapView === "checkins" ? t("favorites.mapCheckinsLabel", "Check-ins") : myMapView === "trips" ? t("favorites.mapTripsLabel", "Trip plans") : t("favorites.mapSavedLabel", "Saved places")}
                   </p>
                   <p className="mt-1 text-xs text-white/58">
                     {myMapView === "checkins"
-                      ? "Tap a card to focus the map."
-                      : myMapView === "trips" ? "Numbered stops match your plan." : "Tap a place to find it on your map."}
+                      ? t("favorites.mapVisitedHint", "Places you checked in at")
+                      : myMapView === "trips" ? t("favorites.mapTripsHint", "Places in your trips") : t("favorites.mapSavedHint", "Places you saved")}
                   </p>
                 </div>
                 <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] ${
                   myMapView === "checkins"
-                    ? "border-rose-100/28 bg-rose-100/12 text-rose-50/90"
-                    : "border-emerald-100/30 bg-emerald-100/12 text-emerald-50/90"
+                    ? "border-[#d7c0ff]/30 bg-[#d7c0ff]/12 text-[#eee6ff]"
+                    : myMapView === "trips"
+                      ? "border-[#f5d99a]/30 bg-[#f5d99a]/12 text-[#fff0c7]"
+                      : "border-[#88d9d4]/30 bg-[#88d9d4]/12 text-[#d8fffc]"
                 }`}>
                   {myMapView === "checkins" ? filteredRecentCheckins.length : myMapView === "trips" ? tripMapMarkers.length : savedPlaces.length}
                 </span>
@@ -5451,7 +5467,13 @@ export default function FavoritesPage() {
                 Saved events, trip plans and personal moments — arranged around where you are going next.
               </p>
             </div>
-            <div className="flex items-center gap-2 self-start rounded-full border border-white/10 bg-[#17121d]/90 p-1 shadow-[0_14px_38px_rgba(0,0,0,0.26)]">
+            <div className="flex flex-wrap items-center gap-2 self-start">
+              {goingEventCount > 0 ? (
+                <span className="inline-flex min-h-10 items-center rounded-full border border-[#f5a9c6]/25 bg-[#f5a9c6]/10 px-3 text-[11px] font-semibold text-[#ffd8e7]">
+                  {t("favorites.goingPlans", "{count} going").replace("{count}", String(goingEventCount))}
+                </span>
+              ) : null}
+              <div className="flex items-center rounded-full border border-white/10 bg-[#17121d]/90 p-1 shadow-[0_14px_38px_rgba(0,0,0,0.26)]">
               {[{ id: "agenda", label: "Agenda" }, { id: "month", label: "Month" }].map((view) => (
                 <button
                   key={`calendar-view-${view.id}`}
@@ -5467,6 +5489,7 @@ export default function FavoritesPage() {
                   {view.label}
                 </button>
               ))}
+              </div>
             </div>
           </div>
 
@@ -5478,7 +5501,7 @@ export default function FavoritesPage() {
                     <p className="text-[10px] uppercase tracking-[0.2em] text-[#f5a9c6]/70">Coming up</p>
                     <h3 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[#fff7fb]">Your agenda</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     <button type="button" onClick={enableCalendarPush} disabled={calendarPushState === "loading" || calendarPushState === "enabled"} className="min-h-10 rounded-full border border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white/62 disabled:opacity-60">
                       {calendarPushState === "enabled" ? "Reminders on" : calendarPushState === "loading" ? "Enabling…" : "Enable reminders"}
                     </button>
@@ -5542,8 +5565,8 @@ export default function FavoritesPage() {
                             {group.entries.map((entry) => {
                               const isEvent = entry.kind === "event";
                               const isPlan = entry.kind === "plan";
-                              const railClass = isEvent ? "bg-[#ff78ad]" : isPlan ? "bg-[#88d9d4]" : "bg-[#d8b678]";
-                              const sourceLabel = isEvent ? (entry.status === "going" ? "Going" : "Saved event") : isPlan ? "Trip plan" : entry.type || "Personal";
+                              const railClass = isEvent ? (entry.status === "going" ? "bg-[#f5a9c6]" : "bg-[#d7c0ff]") : isPlan ? "bg-[#88d9d4]" : "bg-[#d8b678]";
+                              const sourceLabel = isEvent ? (entry.status === "going" ? t("favorites.going", "Going") : t("favorites.savedEvent", "Saved event")) : isPlan ? t("favorites.tripPlan", "Trip plan") : entry.type || t("favorites.personal", "Personal");
                               return (
                                 <article key={`agenda-${entry.id}`} className="group relative overflow-hidden rounded-[18px] border border-white/8 bg-white/[0.028] transition hover:border-white/14 hover:bg-white/[0.045]">
                                   <span className={`absolute inset-y-0 left-0 w-[3px] ${railClass}`} />
@@ -5562,7 +5585,7 @@ export default function FavoritesPage() {
                                         onClick={() => toggleCalendarGoing(entry.sourceId)}
                                         className={`min-h-10 flex-none rounded-full px-3 text-[10px] font-semibold uppercase tracking-[0.1em] transition ${entry.status === "going" ? "border border-[#f5a9c6]/26 bg-[#f5a9c6]/12 text-[#ffd8e7]" : "bg-[#f5a9c6] text-[#24131d] hover:bg-[#ffc0d7]"}`}
                                       >
-                                        {entry.status === "going" ? "Going" : "Going?"}
+                                        {entry.status === "going" ? t("favorites.going", "Going") : t("favorites.markGoing", "Mark as going")}
                                       </button>
                                     ) : isPlan ? (
                                       <button

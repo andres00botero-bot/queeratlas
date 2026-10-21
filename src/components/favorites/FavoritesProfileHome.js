@@ -29,6 +29,7 @@ export default function FavoritesProfileHome({
   pronouns,
   about,
   vibeChips = [],
+  citySignals = [],
   stats = [],
   recentSaves = [],
   friends = [],
@@ -64,10 +65,8 @@ export default function FavoritesProfileHome({
   const visibleLocation = locationLabel && locationLabel !== "Location not set" ? locationLabel : "";
 
   return (
-    <section className="relative mb-8 overflow-hidden rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(20,14,31,0.96),rgba(7,8,13,0.99))] shadow-[0_34px_108px_rgba(0,0,0,0.48)]">
-      <div className="relative min-h-44 overflow-hidden bg-[radial-gradient(circle_at_18%_18%,rgba(244,114,182,0.44),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(34,211,238,0.36),transparent_35%),linear-gradient(135deg,#351443,#101c32_58%,#23122b)] px-5 pb-6 pt-5 sm:min-h-52 sm:px-8">
-        <div className="pointer-events-none absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_center,white_0.8px,transparent_0.8px)] [background-size:22px_22px]" />
-        <div className="relative flex items-start justify-between gap-3">
+    <section className="relative mb-8 overflow-hidden rounded-[24px] border border-white/10 bg-[#111217] shadow-[0_24px_72px_rgba(0,0,0,0.32)] sm:rounded-[28px]">
+      <div className="relative flex items-start justify-between gap-3 border-b border-white/[0.08] px-5 py-4 sm:px-8 sm:py-5">
           <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/72">
             <Sparkles className="h-4 w-4 text-amber-100" aria-hidden="true" /> {t("favorites.profile", "My Atlas profile")}
           </span>
@@ -78,18 +77,17 @@ export default function FavoritesProfileHome({
               <Pencil className="h-3.5 w-3.5" aria-hidden="true" /> {t("favorites.edit", "Edit")}
             </button>
           )}
-        </div>
       </div>
 
       <div className="relative px-5 pb-7 sm:px-8">
         {isLoading ? <p className="pt-4 text-sm text-white/56">{t("favorites.loadingProfile", "Loading profile…")}</p> : null}
         {error ? <p className="pt-4 text-sm text-amber-100/76">{error}</p> : null}
-        <div className="-mt-16 flex flex-col gap-4 sm:-mt-20 sm:flex-row sm:items-end">
-          <button type="button" onClick={isReadOnly ? undefined : onEditAvatar} className="group relative h-32 w-32 shrink-0 overflow-hidden rounded-[30px] border-[3px] border-[#15101f] bg-[linear-gradient(135deg,#f472b6,#22d3ee)] p-1 text-3xl font-semibold text-white shadow-[0_20px_52px_rgba(0,0,0,0.42)] sm:h-40 sm:w-40" aria-label={isReadOnly ? "Member profile image" : "Change profile image"}>
+        <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-start sm:pt-8">
+          <button type="button" onClick={isReadOnly ? undefined : onEditAvatar} className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-[24px] border border-white/16 bg-[linear-gradient(135deg,#88d9d4,#d7c0ff)] p-1 text-2xl font-semibold text-[#111217] shadow-[0_16px_40px_rgba(0,0,0,0.28)] sm:h-28 sm:w-28" aria-label={isReadOnly ? "Member profile image" : "Change profile image"}>
             {showAvatarImage ? (
               <img src={avatarUrl} alt={`${displayName} profile`} className="h-full w-full rounded-[25px] object-cover" onError={onAvatarError} />
             ) : (
-              <span className="flex h-full w-full items-center justify-center rounded-[25px] bg-[#17111f]">{displayInitials}</span>
+              <span className="flex h-full w-full items-center justify-center rounded-[20px] bg-[#1a1b21] text-white">{displayInitials}</span>
             )}
             {!isReadOnly ? <span className="absolute inset-x-3 bottom-3 rounded-full bg-black/64 py-1 text-center text-[10px] uppercase tracking-[0.1em] opacity-0 backdrop-blur transition group-hover:opacity-100">{t("favorites.change", "Change")}</span> : null}
           </button>
@@ -100,7 +98,7 @@ export default function FavoritesProfileHome({
               <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.1em] text-fuchsia-100">{titleLabel || t("favorites.contributor", "Contributor")}</span>
               {!isReadOnly ? <span className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] text-white/48"><LockKeyhole className="h-3 w-3" aria-hidden="true" /> {visibilityLabel}</span> : null}
             </div>
-            <h2 className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-white sm:text-5xl">{displayName}</h2>
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#fff8fc] sm:text-4xl">{displayName}</h2>
             {(visibleLocation || pronouns) ? (
               <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/58">
                 {visibleLocation ? <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" aria-hidden="true" />{visibleLocation}</span> : null}
@@ -125,6 +123,8 @@ export default function FavoritesProfileHome({
         <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 border-y border-white/10 py-4">
           {stats.map((stat) => <button key={stat.label} type="button" onClick={stat.onClick} className="text-left"><span className="block text-lg font-semibold text-white">{stat.value}</span><span className="text-[11px] uppercase tracking-[0.1em] text-white/44">{stat.label}</span></button>)}
         </div>
+
+        {!isReadOnly ? <section className="mt-7" aria-labelledby="atlas-signature-heading"><div className="flex items-end justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#88d9d4]/72">Your Atlas signature</p><h3 id="atlas-signature-heading" className="mt-1 text-xl font-semibold tracking-[-0.03em] text-white">Cities that hold your story</h3></div><MapPin className="h-5 w-5 text-[#88d9d4]/54" aria-hidden="true" /></div>{citySignals.length ? <div className="mt-4 grid gap-2 sm:grid-cols-3">{citySignals.map((signal) => <button key={signal.city} type="button" onClick={() => stats.find((stat) => stat.label === "Cities")?.onClick?.()} className="rounded-[18px] border border-white/[0.09] bg-white/[0.035] p-4 text-left transition hover:border-[#88d9d4]/28 hover:bg-[#88d9d4]/[0.05]"><p className="truncate text-base font-semibold text-white">{signal.city}</p><p className="mt-2 text-xs leading-5 text-white/48">{signal.saved ? `${signal.saved} saved` : ""}{signal.saved && signal.visited ? " · " : ""}{signal.visited ? `${signal.visited} visited` : ""}{signal.trips ? `${(signal.saved || signal.visited) ? " · " : ""}${signal.trips} trip` : ""}</p></button>)}</div> : <p className="mt-3 text-sm text-white/48">Save a place or check in to start shaping your Atlas.</p>}</section> : null}
 
         {!isReadOnly ? (
           <div className="mt-7">
