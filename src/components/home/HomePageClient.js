@@ -14,7 +14,7 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
 import { ChevronDown, Globe2, Search } from "lucide-react";
 import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
-import { HomeDiscoverySection } from "@/components/home/HomeDeferredSections";
+import { HomeDiscoverySection, MembershipPreview } from "@/components/home/HomeDeferredSections";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 
@@ -1343,6 +1343,18 @@ export default function HomePageClient({ initialHomeData = null }) {
 
           <HomeDiscoverySection discoveryCards={discoveryCards} />
 
+          <MembershipPreview
+            isMember={isMember}
+            onAction={() => {
+              trackHomeAction("membership_preview", isMember ? "/favorites" : "signup", { member_status: isMember ? "member" : "visitor" });
+              if (isMember) {
+                router.push("/favorites");
+                return;
+              }
+              openSignup("/favorites", "signup", "membership_preview");
+            }}
+          />
+
           {showDeferredSections ? (
             <HomeDeferredSections
               discoveryCards={discoveryCards}
@@ -1356,14 +1368,6 @@ export default function HomePageClient({ initialHomeData = null }) {
               onLocalCityChange={handleHomeFocusCityChange}
               participationActions={participationActions}
               isMember={isMember}
-              onMembershipAction={() => {
-                trackHomeAction("membership_preview", isMember ? "/favorites" : "signup", { member_status: isMember ? "member" : "visitor" });
-                if (isMember) {
-                  router.push("/favorites");
-                  return;
-                }
-                openSignup("/favorites", "signup", "membership_preview");
-              }}
               onEditorialAction={(destination) => trackHomeAction("editorial_trust", destination)}
               contactSlot={
                 <HomeContactSection

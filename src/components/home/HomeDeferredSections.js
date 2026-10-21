@@ -11,14 +11,11 @@ import {
   ClipboardCheck,
   Compass,
   History,
-  Heart,
   Map,
-  MapPinned,
   Megaphone,
   Newspaper,
   Quote,
   ShieldCheck,
-  Route,
   UsersRound,
 } from "lucide-react";
 
@@ -296,36 +293,98 @@ export function HomeDiscoverySection({ discoveryCards = [] }) {
   );
 }
 
-function MembershipPreview({ isMember = false, onAction }) {
+export function MembershipPreview({ isMember = false, onAction }) {
   const { t } = useLocale();
-  const features = [
-    { label: t("home.memberSaveTitle", "Save what feels right"), icon: Heart, tone: "text-rose-100" },
-    { label: t("home.memberTripTitle", "Build a trip that fits"), icon: Route, tone: "text-amber-100" },
-    { label: t("home.memberMapTitle", "Keep your queer map"), icon: MapPinned, tone: "text-cyan-100" },
-  ];
 
   return (
     <section data-home-section="membership-preview" className="qa-defer-render mt-8 py-5 sm:py-6">
-      <div className="relative flex flex-col gap-5 overflow-hidden sm:gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
-        <div className="min-w-0 pt-1">
-          <p className="!text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-fuchsia-100/70 sm:text-[10px]">{t("home.memberEyebrow", "Free member space")}</p>
-          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h2 className="qa-display !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2rem]">{t("home.memberTitle", "Make the atlas yours.")}</h2>
-            <p className="!text-left text-sm text-white/62 sm:text-base">{t("home.memberShortDescription", "Save places. Shape trips. Keep your queer world close.")}</p>
+      <div className="relative isolate overflow-hidden rounded-[30px] bg-[#e6d7be] text-[#171421] shadow-[0_30px_84px_rgba(0,0,0,0.34)]">
+        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] bg-[radial-gradient(circle_at_80%_15%,rgba(48,208,204,0.9),transparent_18%),radial-gradient(circle_at_18%_88%,rgba(229,113,174,0.72),transparent_28%),linear-gradient(135deg,#131b35_4%,#19294a_58%,#101826)] lg:block" />
+        <div className="pointer-events-none absolute -right-20 top-20 hidden h-72 w-72 rounded-full border border-white/15 lg:block" />
+        <div className="pointer-events-none absolute -right-4 top-36 hidden h-48 w-48 rounded-full border border-white/10 lg:block" />
+        <div className="relative grid lg:grid-cols-[0.92fr_1.08fr]">
+          <div className="flex min-h-[295px] flex-col justify-between p-6 sm:min-h-[430px] sm:p-9 lg:p-10">
+            <div>
+              <p className="!text-left text-[10px] font-bold uppercase tracking-[0.24em] text-[#645b70]">{t("home.memberEyebrow", "Your personal Atlas")}</p>
+              <h2 className="qa-display mt-4 max-w-md !text-left text-[2.15rem] font-semibold leading-[0.94] tracking-[-0.065em] text-[#171421] sm:mt-5 sm:text-[3.55rem]">
+                {t("home.memberTitle", "Don’t just find it. Keep it.")}
+              </h2>
+              <p className="mt-4 max-w-sm !text-left text-sm leading-6 text-[#4f4858] sm:mt-5 sm:text-base">
+                {t("home.memberShortDescription", "One place becomes a plan. A plan becomes your own way through a city.")}
+              </p>
+            </div>
+            <div className="mt-7 sm:mt-9">
+              <button type="button" onClick={onAction} className="qa-action inline-flex min-h-12 items-center gap-2 rounded-full bg-[#171421] px-5 py-3 text-sm font-semibold text-[#fff8ef] shadow-[0_12px_24px_rgba(23,20,33,0.2)] transition hover:-translate-y-0.5 hover:bg-[#2b2438] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171421] focus-visible:ring-offset-2 focus-visible:ring-offset-[#e6d7be]">
+                {isMember ? t("home.openYourAtlas", "Open your Atlas") : t("home.createFreeAtlas", "Start your free Atlas")}
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
+              <p className="mt-3 text-xs font-medium text-[#665d6d]">{t("home.memberReassurance", "Free to create. Private by default.")}</p>
+            </div>
           </div>
-          <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-2" aria-label={t("home.memberFeaturesLabel", "Your Atlas features")}>
-            {features.map((feature) => {
-              const Icon = feature.icon;
-              return <li key={feature.label} className={`flex items-center gap-1.5 text-xs font-medium ${feature.tone}`}><Icon size={14} aria-hidden="true" />{feature.label}</li>;
-            })}
-          </ul>
-        </div>
-        <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
-          <button type="button" onClick={onAction} className="qa-action qa-action-strong inline-flex min-h-11 items-center gap-2 rounded-full border border-[#f2d997]/78 bg-[#d8b678] px-4 py-2.5 text-sm font-semibold text-[#17121c] shadow-[0_10px_26px_rgba(216,182,120,0.18)] transition hover:-translate-y-0.5 hover:border-[#fff8fc] hover:bg-[#e7c67f] hover:shadow-[0_14px_32px_rgba(216,182,120,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2d997]/80">
-            {isMember ? t("home.openYourAtlas", "Open your Atlas") : t("home.createFreeAtlas", "Create your free Atlas")}
-            <ArrowRight size={15} aria-hidden="true" />
-          </button>
-          <p className="text-xs text-white/42">{t("home.memberReassurance", "Free to create. Your saved Atlas stays personal by default.")}</p>
+
+          <div className="relative overflow-hidden bg-[#121b32] p-5 lg:hidden">
+            <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-cyan-300/25 blur-3xl" />
+            <div className="relative rounded-[20px] border border-white/[0.17] bg-[#0d1528]/80 p-4 shadow-[0_16px_32px_rgba(0,0,0,0.24)]">
+              <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-50/58">
+                <span>{t("home.memberPreviewLabel", "Preview · My Atlas")}</span>
+                <span>{t("home.memberPreviewStatus", "Private")}</span>
+              </div>
+              <div className="mt-5 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/64">{t("home.memberTripLabel", "Next trip")}</p>
+                  <p className="qa-display mt-1 text-2xl font-semibold tracking-[-0.045em] text-white">Berlin</p>
+                  <p className="mt-1 text-xs text-white/52">16—19 May · {t("home.memberTripStops", "4 saved stops")}</p>
+                </div>
+                <div className="flex -space-x-2" aria-label={t("home.memberTripStops", "4 saved stops")}>
+                  <span className="h-8 w-8 rounded-xl border-2 border-[#0d1528] bg-[linear-gradient(135deg,#fb7185,#a855f7)]" />
+                  <span className="h-8 w-8 rounded-xl border-2 border-[#0d1528] bg-[linear-gradient(135deg,#67e8f9,#2563eb)]" />
+                  <span className="h-8 w-8 rounded-xl border-2 border-[#0d1528] bg-[linear-gradient(135deg,#fde68a,#f97316)]" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative hidden min-h-[470px] overflow-hidden px-5 pb-7 pt-4 sm:px-9 sm:pb-9 lg:block lg:py-9">
+            <div className="absolute left-[14%] top-[19%] h-[58%] w-px bg-gradient-to-b from-transparent via-cyan-100/70 to-transparent" />
+            <div className="absolute left-[14%] top-[31%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-cyan-200 shadow-[0_0_0_5px_rgba(125,211,252,0.12),0_0_25px_rgba(125,211,252,0.8)]" />
+            <div className="absolute left-[14%] top-[65%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-fuchsia-300 shadow-[0_0_0_5px_rgba(232,121,249,0.1),0_0_24px_rgba(232,121,249,0.62)]" />
+            <div className="relative ml-[12%] max-w-md">
+              <div className="flex items-center justify-between px-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-50/58">
+                <span>{t("home.memberPreviewLabel", "Preview · My Atlas")}</span>
+                <span>{t("home.memberPreviewStatus", "Private")}</span>
+              </div>
+
+              <div className="mt-4 rounded-[22px] border border-white/[0.18] bg-[#0e162a]/70 p-4 shadow-[0_18px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm sm:p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/66">{t("home.memberTripLabel", "Next trip")}</p>
+                    <p className="qa-display mt-1.5 text-2xl font-semibold tracking-[-0.045em] text-white">Berlin</p>
+                    <p className="mt-1 text-xs text-white/56">16—19 May · {t("home.memberTripStops", "4 saved stops")}</p>
+                  </div>
+                  <span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-50">{t("home.memberTripReady", "Ready to shape")}</span>
+                </div>
+                <div className="mt-5 flex items-center gap-2">
+                  <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#fb7185,#a855f7)]" />
+                  <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#67e8f9,#2563eb)]" />
+                  <span className="h-8 w-8 rounded-xl bg-[linear-gradient(135deg,#fde68a,#f97316)]" />
+                  <span className="ml-1 text-xs text-white/52">+ {t("home.memberTripSaved", "one plan in progress")}</span>
+                </div>
+              </div>
+
+              <div className="ml-[7%] mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/[0.14] bg-white/[0.09] px-4 py-3.5 shadow-[0_16px_30px_rgba(0,0,0,0.16)] backdrop-blur-sm">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/60">{t("home.memberFollowLabel", "Following")}</p>
+                  <p className="mt-1 text-sm font-medium text-white">Berlin · Lisbon · Copenhagen</p>
+                </div>
+                <span className="h-2.5 w-2.5 rounded-full bg-fuchsia-300 shadow-[0_0_18px_rgba(232,121,249,0.85)]" />
+              </div>
+
+              <div className="mt-4 flex max-w-[89%] items-center gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3.5 shadow-[0_16px_30px_rgba(0,0,0,0.2)]">
+                <span aria-hidden="true" className="h-8 w-8 shrink-0 rounded-full border border-[#f5d99a]/28 bg-[radial-gradient(circle_at_35%_35%,#fff6d9_0_7%,#f5d99a_8%_15%,rgba(245,217,154,0.16)_16%_100%)]" />
+                <p className="text-xs leading-5 text-white/76">{t("home.memberContributionPreview", "A local note, an event or a guide can become part of the Atlas.")}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -349,8 +408,6 @@ export default function HomeDeferredSections({
   return (
     <>
       {showDiscovery ? <HomeDiscoverySection discoveryCards={discoveryCards} /> : null}
-
-      <MembershipPreview isMember={isMember} onAction={onMembershipAction} />
 
       <ParticipationStrip actions={participationActions} />
 
