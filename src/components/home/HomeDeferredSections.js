@@ -352,9 +352,9 @@ export default function HomeDeferredSections({
 
       <MembershipPreview isMember={isMember} onAction={onMembershipAction} />
 
-      <CompassPreview onOpen={onEditorialAction} />
-
       <ParticipationStrip actions={participationActions} />
+
+      <CompassPreview onOpen={onEditorialAction} />
 
       {livePulseCards.length > 0 ? (
         <section data-home-section="live" className="qa-defer-render mt-8">

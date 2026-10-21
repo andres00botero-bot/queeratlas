@@ -12,7 +12,7 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
-import { Globe2, Search, Sparkles } from "lucide-react";
+import { ChevronDown, Globe2, Search } from "lucide-react";
 import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
 import { HomeDiscoverySection } from "@/components/home/HomeDeferredSections";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
@@ -1052,7 +1052,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                   loading="eager"
                   decoding="async"
                   fetchPriority="high"
-                  className="absolute inset-0 h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)] lg:origin-right lg:scale-[0.885] lg:object-contain lg:object-right"
+                  className="absolute inset-x-0 top-[0.5cm] h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)] lg:origin-right lg:scale-[0.885] lg:object-contain lg:object-right"
                 />
               </picture>
             </div>
@@ -1081,29 +1081,25 @@ export default function HomePageClient({ initialHomeData = null }) {
             </div>
 
             <div className="flex items-center gap-2.5 sm:gap-3">
-              <div aria-label={t("global.language", "Language")} className="flex h-11 shrink-0 items-center gap-1 rounded-full border border-cyan-100/35 bg-[linear-gradient(135deg,rgba(34,211,238,0.2),rgba(168,85,247,0.17),rgba(244,114,182,0.16))] p-1 shadow-[0_10px_30px_rgba(34,211,238,0.14),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#07121d]/88 text-cyan-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]" aria-hidden="true">
-                  <Globe2 className="h-4 w-4" />
-                </span>
-                {[
-                  { code: "en", label: "EN" },
-                  { code: "es", label: "ES" },
-                ].map(({ code, label }) => (
-                  <button
-                    key={code}
-                    type="button"
-                    aria-pressed={locale === code}
-                    onClick={() => {
-                      if (locale === code) return;
-                      document.cookie = `qa_locale=${code}; path=/; max-age=31536000; samesite=lax`;
-                      document.cookie = "qa_locale_preference=manual; path=/; max-age=31536000; samesite=lax";
-                      window.location.assign(code === "es" ? "/es" : "/");
-                    }}
-                    className={`qa-action inline-flex h-9 min-w-10 items-center justify-center rounded-full px-2.5 text-xs font-extrabold tracking-[0.08em] transition ${locale === code ? "bg-white text-[#0a1320] shadow-[0_5px_16px_rgba(255,255,255,0.25)]" : "text-white/72 hover:bg-white/12 hover:text-white"}`}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="relative flex h-11 shrink-0 items-center rounded-full text-white/80 transition hover:bg-white/5 focus-within:ring-2 focus-within:ring-cyan-100/80">
+                <Globe2 className="pointer-events-none absolute left-3 h-4 w-4" aria-hidden="true" />
+                <span className="pointer-events-none pl-9 pr-8 text-sm font-medium sm:hidden" aria-hidden="true">{locale === "es" ? "ES" : "EN"}</span>
+                <select
+                  aria-label={t("global.language", "Language")}
+                  value={locale === "es" ? "es" : "en"}
+                  onChange={(event) => {
+                    const code = event.target.value;
+                    if (locale === code) return;
+                    document.cookie = `qa_locale=${code}; path=/; max-age=31536000; samesite=lax`;
+                    document.cookie = "qa_locale_preference=manual; path=/; max-age=31536000; samesite=lax";
+                    window.location.assign(code === "es" ? "/es" : "/");
+                  }}
+                  className="absolute inset-0 h-11 w-full cursor-pointer appearance-none rounded-full bg-transparent opacity-0 focus:outline-none sm:static sm:pl-9 sm:pr-8 sm:text-sm sm:font-medium sm:opacity-100"
+                >
+                  <option value="en" lang="en" className="bg-[#0b1020] text-white">English</option>
+                  <option value="es" lang="es" className="bg-[#0b1020] text-white">Español</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 h-3.5 w-3.5 text-white/60" aria-hidden="true" />
               </div>
               {isMember && (
                 <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
@@ -1113,18 +1109,12 @@ export default function HomePageClient({ initialHomeData = null }) {
 
               {!isMember ? (
                 <>
-                <p className="hidden bg-transparent text-[15px] font-medium tracking-[-0.01em] text-[#fff8fc]/78 sm:block lg:text-[16px]">
-                  {t("home.livingAtlas", "A living atlas, built together.")}
-                </p>
                 <button
                   aria-label={t("home.joinFree", "Join Queer Atlas for free")}
                   onClick={() => openSignup("/", "signup", "hero_join")}
-                  className="qa-home-join-cta qa-action qa-action-strong group relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full border border-[#f2d997]/80 bg-[#d8b678] py-1.5 pl-2 pr-5 text-[15px] font-bold tracking-[-0.01em] text-[#17121c] shadow-[0_15px_38px_rgba(216,182,120,0.26),inset_0_1px_0_rgba(255,255,255,0.34)] transition duration-300 hover:-translate-y-0.5 hover:border-[#fff8fc] hover:bg-[#e7c67f] hover:shadow-[0_20px_48px_rgba(216,182,120,0.38)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2d997]/80"
+                  className="qa-action inline-flex h-11 shrink-0 items-center justify-center rounded-full border border-[#f2d997]/65 bg-[#d8b678] px-5 text-sm font-bold tracking-[-0.01em] text-[#17121c] transition-colors hover:bg-[#e7c67f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f2d997] focus-visible:ring-offset-4 focus-visible:ring-offset-[#0b1020] sm:h-12 sm:px-6 sm:text-[15px]"
                 >
-                  <span className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full border border-[#17121c]/16 bg-[#fff8fc]/58 text-[#17121c] shadow-[0_6px_16px_rgba(89,61,20,0.16)] transition group-hover:-rotate-6 group-hover:scale-105" aria-hidden="true">
-                    <Sparkles size={16} strokeWidth={2.2} />
-                  </span>
-                  <span className="relative z-10">{t("home.joinFree", "Join free")}</span>
+                  {t("home.joinFree", "Join free")}
                 </button>
                 </>
               ) : (
@@ -1205,7 +1195,10 @@ export default function HomePageClient({ initialHomeData = null }) {
               <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[2.85rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
                 {t("home.findYourQueerWorld", "Find your queer world.")}
               </h1>
-              <p className="qa-lead mt-4 max-w-[48ch] !text-left text-[0.95rem] leading-[1.5] tracking-[-0.005em] text-white/76 [hyphens:none] sm:mt-6 sm:text-[1.18rem]">
+              <p className="mt-4 !text-left text-sm font-medium leading-6 text-[#d8b678] sm:mt-5 sm:text-base">
+                {t("home.livingAtlas", "A living atlas, built together.")}
+              </p>
+              <p className="qa-lead mt-2 max-w-[48ch] !text-left text-[0.95rem] leading-[1.5] tracking-[-0.005em] text-white/76 [hyphens:none] sm:mt-3 sm:text-[1.18rem]">
                 <span className="sm:hidden">{t("home.heroShort", "Places, events, safety and local queer knowledge — wherever you land.")}</span>
                 <span className="hidden sm:inline">{t("home.heroLong", "Know where to go, what’s happening, how it feels, and what locals actually say — wherever you land.")}</span>
               </p>
