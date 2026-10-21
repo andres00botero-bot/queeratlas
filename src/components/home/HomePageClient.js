@@ -1040,7 +1040,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               <picture>
                 <source
                   media="(min-width: 1024px)"
-                  srcSet="/home/queer-atlas-midnight-globe-v7.png"
+                  srcSet="/home/queer-atlas-contour-globe-v1.png"
                   type="image/png"
                 />
                 <img
