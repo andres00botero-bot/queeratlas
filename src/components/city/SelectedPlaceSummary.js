@@ -60,7 +60,6 @@ export default function SelectedPlaceSummary({
       )}
       <SelectedEntityMiniMap entity={selectedPlace} kind="venue" onExpand={showPlaceOnMap} />
       <VenuePracticalIntel place={selectedPlace} compact />
-      {liveSignal}
       {selectedPlace.link && (
         <OfficialExternalLink
           href={normalizeExternalUrl(selectedPlace.link)}
@@ -68,6 +67,7 @@ export default function SelectedPlaceSummary({
           className="mb-5 mt-8"
         />
       )}
+      {liveSignal}
       <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.08] pt-4">
         <button type="button" onClick={onOpenReviews} className="text-sm font-semibold text-[#d7c0ff] transition hover:text-[#e4d6ff]">
           {t("city.reviews", "Reviews")} · {selectedPlace.reviewCount || 0}
