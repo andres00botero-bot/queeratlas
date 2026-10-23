@@ -221,6 +221,46 @@ function DeviceBreakdown({ rows = [] }) {
   );
 }
 
+function formatPercent(value) {
+  const number = Number(value || 0);
+  return Number.isFinite(number) ? `${number.toFixed(1)}%` : "—";
+}
+
+function TrafficIntelligenceBrief({ traffic, days, legacy }) {
+  const totals = traffic?.totals || {};
+  const routeCount = (traffic?.topRoutes || []).length;
+  const sourceCount = (traffic?.topSources || []).length;
+  const eventCount = Number(traffic?.coverage?.storedPageviews || 0);
+  const currentSessions = Number(totals.sessions || 0);
+  const directSessions = (traffic?.topSources || []).filter((row) => String(row.source || "").toLowerCase() === "direct").reduce((sum, row) => sum + Number(row.sessions || 0), 0);
+  const directShare = currentSessions ? (directSessions / currentSessions) * 100 : 0;
+  const completeness = legacy ? "Directional" : eventCount ? "Live collection" : "No events";
+  const rows = [
+    ["Collection", completeness, legacy ? "One browser + route + UTC day; repeat views are intentionally absent." : "First-party accepted public page-view events. Private, preview and bot traffic are excluded."],
+    ["Window", `${days} days`, `Compared with the immediately preceding ${days}-day period.`],
+    ["Coverage", `${formatNumber(eventCount)} stored events`, `${traffic?.coverage?.firstEventAt ? `From ${formatDateTime(traffic.coverage.firstEventAt)}` : "No first event recorded"} · ${routeCount} ranked routes.`],
+    ["Acquisition", sourceCount ? `${sourceCount} source variants` : "Awaiting source data", legacy ? "Not available in legacy mode." : `${formatPercent(directShare)} direct-session share; UTM values are grouped with referrer context.`],
+  ];
+  return (
+    <section aria-label="Traffic intelligence interpretation" className="mt-4 grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
+      <article className="rounded-[24px] border border-cyan-200/14 bg-cyan-200/[0.045] p-4 sm:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/68">Executive readout</p>
+        <h3 className="mt-2 text-lg font-semibold text-white">What changed — and what it means</h3>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/8 bg-black/20 p-3"><p className="text-[10px] uppercase tracking-[0.14em] text-white/40">Demand</p><p className="mt-1 text-xl font-semibold text-white"><DeltaBadge current={totals.pageviews} previous={totals.previousPageviews} /></p><p className="mt-1 text-[10px] leading-4 text-white/42">Pageviews vs prior window</p></div>
+          <div className="rounded-2xl border border-white/8 bg-black/20 p-3"><p className="text-[10px] uppercase tracking-[0.14em] text-white/40">Discovery</p><p className="mt-1 text-xl font-semibold text-white"><DeltaBadge current={totals.visitors} previous={totals.previousVisitors} /></p><p className="mt-1 text-[10px] leading-4 text-white/42">Identified browsers vs prior window</p></div>
+          <div className="rounded-2xl border border-white/8 bg-black/20 p-3"><p className="text-[10px] uppercase tracking-[0.14em] text-white/40">Depth</p><p className="mt-1 text-xl font-semibold text-white">{legacy ? "—" : formatNumber(totals.pagesPerSession)}</p><p className="mt-1 text-[10px] leading-4 text-white/42">Average pages per session</p></div>
+        </div>
+        <p className="mt-4 text-xs leading-5 text-white/55">Interpret trends as signals: investigate a route, city or acquisition movement before changing editorial priority. A rise in browsers with flat sessions can be awareness; a rise in sessions and pages/session is a stronger discovery signal.</p>
+      </article>
+      <article className="rounded-[24px] border border-white/10 bg-white/[0.035] p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/46">Data health & scope</p><h3 className="mt-1 text-lg font-semibold text-white">Know exactly what you are reading</h3></div><span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${legacy ? "border-amber-200/24 bg-amber-200/10 text-amber-100" : "border-emerald-200/24 bg-emerald-200/10 text-emerald-100"}`}>{completeness}</span></div>
+        <dl className="mt-3 divide-y divide-white/8">{rows.map(([label, value, description]) => <div key={label} className="grid gap-1 py-2.5 sm:grid-cols-[105px_1fr]"><dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/42">{label}</dt><dd><p className="text-xs font-semibold text-white/78">{value}</p><p className="mt-0.5 text-[10px] leading-4 text-white/42">{description}</p></dd></div>)}</dl>
+      </article>
+    </section>
+  );
+}
+
 export default function AdminTrafficPanel({ summary, loading = false, days = 30, onDaysChange }) {
   const traffic = summary || {};
   const totals = traffic?.totals || {};
@@ -303,6 +343,8 @@ export default function AdminTrafficPanel({ summary, loading = false, days = 30,
             ))}
           </div>
 
+          <TrafficIntelligenceBrief traffic={traffic} days={days} legacy={legacy} />
+
           <TrafficTrendChart rows={traffic.daily} days={days} legacy={legacy} />
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -320,9 +362,11 @@ export default function AdminTrafficPanel({ summary, loading = false, days = 30,
             <RankedList title="Country signal" icon={Globe2} rows={traffic.countries || []} labelKey="country" emptyText="Country data appears on Vercel production traffic." tone="fuchsia" />
             <div className="rounded-[22px] border border-white/8 bg-black/20 px-4 py-4 text-[10px] leading-5 text-white/38 lg:max-w-xs">
               <p className="font-semibold uppercase tracking-[0.14em] text-white/52">Metric definitions</p>
-              <p className="mt-2"><strong className="text-white/60">Browser</strong> = one pseudonymous local browser ID.</p>
-              <p><strong className="text-white/60">Session</strong> = activity grouped until 30 minutes of inactivity.</p>
+              <p className="mt-2"><strong className="text-white/60">Browser</strong> = one pseudonymous local browser ID, never a named person.</p>
+              <p><strong className="text-white/60">Session</strong> = activity grouped until 30 minutes of inactivity; it is not a visit guaranteed to be human.</p>
               <p><strong className="text-white/60">Pageview</strong> = one accepted public route render. Bots, previews and admin routes are filtered.</p>
+              <p><strong className="text-white/60">Bounce</strong> = a single-page session. It is context, not a quality score — some users find exactly what they need immediately.</p>
+              <p><strong className="text-white/60">Source</strong> = UTM/referrer classification captured when a session starts; direct means no attributable referrer or campaign.</p>
             </div>
           </div>
         </div>

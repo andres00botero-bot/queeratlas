@@ -28,6 +28,7 @@ import ActionToast from "@/components/ui/ActionToast";
 import AdminTrafficPanel from "@/components/admin/AdminTrafficPanel";
 import AdminCityManager from "@/components/admin/AdminCityManager";
 import AdminMembersPanel from "@/components/admin/AdminMembersPanel";
+import AdminOperationsShell from "@/components/admin/AdminOperationsShell";
 import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
 import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 
@@ -363,6 +364,7 @@ function AdminPageContent() {
   const removeNewsComment = useCallback(async (comment) => {
     const id = String(comment?.id || "").trim();
     if (!id || !user?.id || comment?.status === "removed") return;
+    if (!window.confirm("Remove this comment from the public article? Its text will be replaced and the action is permanent.")) return;
     const busyKey = `news-comment:${id}`;
     setBusyMap((current) => ({ ...current, [busyKey]: true }));
     const nowIso = new Date().toISOString();
@@ -585,6 +587,7 @@ function AdminPageContent() {
   const deleteCommunityIdea = async (ideaId) => {
     const id = String(ideaId || "").trim();
     if (!id) return;
+    if (!window.confirm("Delete this community idea permanently? This cannot be undone.")) return;
     const busyKey = `idea:${id}`;
     setBusyMap((current) => ({ ...current, [busyKey]: true }));
     try {
@@ -654,6 +657,7 @@ function AdminPageContent() {
 
   const deleteReportItem = async (report) => {
     if (!report?.id) return;
+    if (!window.confirm("Delete this report permanently? This cannot be undone.")) return;
     const targetId = String(report.id);
     setBusyMap((current) => ({ ...current, [targetId]: true }));
     try {
@@ -727,6 +731,7 @@ function AdminPageContent() {
     if (selectedReportIds.length === 0) return;
     const selectedSet = new Set(selectedReportIds.map(String));
     const selectedReports = reports.filter((report) => selectedSet.has(String(report.id)));
+    if (!window.confirm(`Delete ${selectedReports.length} selected report${selectedReports.length === 1 ? "" : "s"} permanently? This cannot be undone.`)) return;
     for (const report of selectedReports) {
       await removeReport(String(report.id));
     }
@@ -775,8 +780,8 @@ function AdminPageContent() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#0f172a_0%,#050505_40%,#040404_100%)] px-6 py-8 text-white">
       <ActionToast toast={toast} />
-      <div className="mx-auto max-w-7xl">
-        <section className="mb-8 overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_80%_16%,rgba(167,139,250,0.14),transparent_28%),linear-gradient(135deg,rgba(17,24,39,0.95),rgba(10,10,10,0.99))] p-8 shadow-[0_34px_110px_rgba(0,0,0,0.40)]">
+      <AdminOperationsShell counts={{ reports: openReports.length, submissions: pendingSubmissions.length, comments: stats.unreadComments }} refreshing={isRefreshing} onRefresh={async () => { window.dispatchEvent(new Event("qa:admin-members-refresh")); await Promise.all([loadAdminState(), loadTrafficData(trafficDays), refreshPendingSubmissions()]); }}>
+        <section id="today" className="mb-8 scroll-mt-5 overflow-hidden rounded-[34px] border border-cyan-300/16 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_80%_16%,rgba(167,139,250,0.14),transparent_28%),linear-gradient(135deg,rgba(17,24,39,0.95),rgba(10,10,10,0.99))] p-6 shadow-[0_34px_110px_rgba(0,0,0,0.40)] sm:p-8">
           <p className="text-xs uppercase tracking-[0.35em] text-cyan-100/80">Admin</p>
           <h1 className="mt-3 text-4xl font-bold tracking-[-0.03em] text-white sm:text-5xl">
             Command Center
@@ -821,7 +826,13 @@ function AdminPageContent() {
           )}
         </section>
 
-        <AdminCityManager />
+        <section aria-label="Today's priorities" className="mb-8 grid gap-3 md:grid-cols-3">
+          <a href="#safety" className="rounded-2xl border border-rose-200/18 bg-rose-200/[0.07] p-4 transition hover:border-rose-200/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-200"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-100/72">Act first</p><p className="mt-2 text-2xl font-semibold tabular-nums text-white">{openReports.length}</p><p className="mt-1 text-xs text-white/60">Open safety reports need a decision.</p></a>
+          <a href="#submissions" className="rounded-2xl border border-amber-200/18 bg-amber-200/[0.07] p-4 transition hover:border-amber-200/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-100/72">Publish safely</p><p className="mt-2 text-2xl font-semibold tabular-nums text-white">{pendingSubmissions.length}</p><p className="mt-1 text-xs text-white/60">Member contributions await verification.</p></a>
+          <a href="#community" className="rounded-2xl border border-cyan-200/18 bg-cyan-200/[0.07] p-4 transition hover:border-cyan-200/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-100/72">Listen & improve</p><p className="mt-2 text-2xl font-semibold tabular-nums text-white">{openContactThreads.length + stats.unreadComments}</p><p className="mt-1 text-xs text-white/60">Open contact cases and unread discussion.</p></a>
+        </section>
+
+        <div id="data-quality" className="scroll-mt-5"><AdminCityManager /></div>
 
         <section className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
           <article className="rounded-3xl border border-cyan-200/18 bg-cyan-200/10 p-5">
@@ -903,16 +914,11 @@ function AdminPageContent() {
           </div>
         </section>
 
-        <AdminTrafficPanel
-          summary={trafficSummary}
-          loading={trafficLoading}
-          days={trafficDays}
-          onDaysChange={loadTrafficData}
-        />
+        <div id="traffic" className="scroll-mt-5"><AdminTrafficPanel summary={trafficSummary} loading={trafficLoading} days={trafficDays} onDaysChange={loadTrafficData} /></div>
 
-        <AdminMembersPanel />
+        <div id="members" className="scroll-mt-5"><AdminMembersPanel /></div>
 
-        <section className="mb-8 rounded-[30px] border border-indigo-300/16 bg-[linear-gradient(180deg,rgba(24,22,58,0.82),rgba(10,10,10,0.98))] p-6">
+        <section id="submissions" className="mb-8 scroll-mt-5 rounded-[30px] border border-indigo-300/16 bg-[linear-gradient(180deg,rgba(24,22,58,0.82),rgba(10,10,10,0.98))] p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-indigo-100/80">Moderation Queue</p>
@@ -997,7 +1003,7 @@ function AdminPageContent() {
           )}
         </section>
 
-        <section className="mb-8 rounded-[30px] border border-amber-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.13),transparent_28%),linear-gradient(180deg,rgba(45,31,10,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_24px_80px_rgba(251,191,36,0.08)]">
+        <section id="community" className="mb-8 scroll-mt-5 rounded-[30px] border border-amber-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.13),transparent_28%),linear-gradient(180deg,rgba(45,31,10,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_24px_80px_rgba(251,191,36,0.08)]">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Improve Atlas</p>
@@ -1082,7 +1088,7 @@ function AdminPageContent() {
           </div>
         </section>
 
-        <section className="mb-8 rounded-[30px] border border-amber-300/16 bg-[linear-gradient(180deg,rgba(45,31,10,0.85),rgba(10,10,10,0.98))] p-6">
+        <section id="safety" className="mb-8 scroll-mt-5 rounded-[30px] border border-amber-300/16 bg-[linear-gradient(180deg,rgba(45,31,10,0.85),rgba(10,10,10,0.98))] p-6">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Safety inbox</p>
@@ -1355,7 +1361,7 @@ function AdminPageContent() {
             )}
           </div>
         </section>
-      </div>
+      </AdminOperationsShell>
     </main>
   );
 }
