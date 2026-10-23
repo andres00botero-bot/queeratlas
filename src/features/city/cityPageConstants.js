@@ -1,15 +1,15 @@
 export const TYPES = [
   { value: "club", label: "Clubs", color: "#ef4444" },
   { value: "bar", label: "Bars", color: "#3b82f6" },
-  { value: "restaurant", label: "Restaurants", color: "#14b8a6" },
-  { value: "sauna", label: "Saunas", color: "#a855f7" },
   { value: "cruise_club", label: "Cruise Clubs", color: "#111111" },
-  { value: "cruising_area", label: "Cruising Areas", color: "#f97316" },
+  { value: "sauna", label: "Saunas", color: "#a855f7" },
+  { value: "restaurant", label: "Restaurants", color: "#14b8a6" },
   { value: "cafe", label: "Cafes", color: "#22c55e" },
   { value: "hotel", label: "Hotels", color: "#eab308" },
+  { value: "store", label: "Stores", color: "#a78bfa" },
+  { value: "cruising_area", label: "Cruising Areas", color: "#f97316" },
   { value: "cinema", label: "Cinemas", color: "#fb7185" },
   { value: "gallery", label: "Art & Galleries", color: "#22d3ee" },
-  { value: "store", label: "Stores", color: "#a78bfa" },
 ];
 
 export const TYPE_LABELS = {
