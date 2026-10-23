@@ -1,8 +1,13 @@
 "use client";
 
+import { useMemo, useState } from "react";
+
 import {
   Activity,
+  AlertTriangle,
+  ArrowRight,
   Clock3,
+  Download,
   Eye,
   Globe2,
   Laptop,
@@ -99,56 +104,62 @@ function fillDaily(rows = [], days = 30) {
   return result;
 }
 
-function TrafficTrendChart({ rows = [], days = 30, legacy = false }) {
+const TREND_METRICS = {
+  pageviews: { label: "Pageviews", key: "pageviews", color: "#67e8f9", description: "Total accepted public route renders." },
+  visitors: { label: "Browsers", key: "visitors", color: "#e9a8ff", description: "Pseudonymous browser IDs; not people." },
+  sessions: { label: "Sessions", key: "sessions", color: "#a78bfa", description: "30-minute activity groups." },
+};
+
+function TrafficTrendChart({ rows = [], days = 30, legacy = false, metric = "pageviews", onMetricChange }) {
   const daily = fillDaily(rows, days);
+  const activeMetric = TREND_METRICS[metric] || TREND_METRICS.pageviews;
   const width = 900;
   const height = 260;
   const paddingX = 24;
   const paddingTop = 24;
   const paddingBottom = 34;
   const chartHeight = height - paddingTop - paddingBottom;
-  const maxValue = Math.max(1, ...daily.map((row) => Number(row.pageviews || 0)));
+  const maxValue = Math.max(1, ...daily.map((row) => Number(row[activeMetric.key] || 0)));
   const step = daily.length > 1 ? (width - paddingX * 2) / (daily.length - 1) : 0;
   const points = daily.map((row, index) => {
     const x = paddingX + index * step;
-    const y = paddingTop + chartHeight - (Number(row.pageviews || 0) / maxValue) * chartHeight;
+    const y = paddingTop + chartHeight - (Number(row[activeMetric.key] || 0) / maxValue) * chartHeight;
     return { x, y, ...row };
   });
   const line = points.map((point) => `${point.x},${point.y}`).join(" ");
   const area = `${paddingX},${paddingTop + chartHeight} ${line} ${width - paddingX},${paddingTop + chartHeight}`;
   const labelIndexes = new Set([0, Math.floor((daily.length - 1) / 2), daily.length - 1]);
+  const valueLabelIndexes = new Set(daily.length <= 14 ? daily.map((_, index) => index) : [0, Math.floor((daily.length - 1) / 2), daily.length - 1]);
 
   return (
     <div className="mt-5 overflow-hidden rounded-[22px] border border-white/10 bg-black/25 p-3 sm:p-4">
-      <div className="flex items-center justify-between gap-3 px-1">
+      <div className="flex flex-col justify-between gap-3 px-1 sm:flex-row sm:items-start">
         <div>
           <p className="text-sm font-semibold text-white">Daily signal</p>
-          <p className="mt-0.5 text-[11px] text-white/42">{legacy ? "Unique browser–route combinations" : "Recorded pageviews, UTC"}</p>
+          <p className="mt-0.5 text-[11px] text-white/42">{legacy ? "Unique browser–route combinations" : `${activeMetric.description} UTC`}</p>
         </div>
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.12em] text-cyan-100/70">
-          <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.8)]" /> pageviews
+        <div className="inline-flex w-fit rounded-xl border border-white/10 bg-black/25 p-1">
+          {Object.entries(TREND_METRICS).map(([key, item]) => (
+            <button key={key} type="button" disabled={legacy && key === "sessions"} onClick={() => onMetricChange?.(key)} aria-pressed={metric === key} className={`rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition ${metric === key ? "bg-white text-black" : "text-white/48 hover:text-white disabled:cursor-not-allowed disabled:opacity-25"}`}>{item.label}</button>
+          ))}
         </div>
       </div>
       <svg viewBox={`0 0 ${width} ${height}`} className="mt-3 h-auto w-full" role="img" aria-label={`Traffic trend for the last ${days} days`}>
         <defs>
           <linearGradient id="qaTrafficArea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.32" />
-            <stop offset="100%" stopColor="#67e8f9" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="qaTrafficLine" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="55%" stopColor="#a78bfa" />
-            <stop offset="100%" stopColor="#f0abfc" />
+            <stop offset="0%" stopColor={activeMetric.color} stopOpacity="0.32" />
+            <stop offset="100%" stopColor={activeMetric.color} stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0, 0.5, 1].map((position) => (
-          <line key={position} x1={paddingX} x2={width - paddingX} y1={paddingTop + chartHeight * position} y2={paddingTop + chartHeight * position} stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          <g key={position}><line x1={paddingX} x2={width - paddingX} y1={paddingTop + chartHeight * position} y2={paddingTop + chartHeight * position} stroke="rgba(255,255,255,0.08)" strokeWidth="1" /><text x={width - paddingX} y={paddingTop + chartHeight * position - 7} textAnchor="end" fill="rgba(255,255,255,0.46)" fontSize="13">{formatNumber(Math.round(maxValue * (1 - position)))}</text></g>
         ))}
         <polygon points={area} fill="url(#qaTrafficArea)" />
-        <polyline points={line} fill="none" stroke="url(#qaTrafficLine)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={line} fill="none" stroke={activeMetric.color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
         {points.map((point, index) => (
           <g key={point.day}>
-            <circle cx={point.x} cy={point.y} r={daily.length <= 30 ? 4 : 2.5} fill="#050505" stroke="#a5f3fc" strokeWidth="2" />
+            <title>{`${point.day}: ${formatNumber(point[activeMetric.key])} ${activeMetric.label.toLowerCase()}`}</title><circle cx={point.x} cy={point.y} r={daily.length <= 30 ? 4 : 2.5} fill="#050505" stroke={activeMetric.color} strokeWidth="2" />
+            {valueLabelIndexes.has(index) ? <text x={point.x} y={Math.max(14, point.y - 11)} textAnchor="middle" fill="rgba(255,255,255,0.78)" fontSize="13" fontWeight="600">{formatNumber(point[activeMetric.key])}</text> : null}
             {labelIndexes.has(index) ? (
               <text x={point.x} y={height - 8} textAnchor={index === 0 ? "start" : index === daily.length - 1 ? "end" : "middle"} fill="rgba(255,255,255,0.42)" fontSize="15">
                 {new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${point.day}T00:00:00Z`))}
@@ -226,6 +237,15 @@ function formatPercent(value) {
   return Number.isFinite(number) ? `${number.toFixed(1)}%` : "—";
 }
 
+function exportTrafficCsv(traffic, days) {
+  const escape = (value) => `"${String(value ?? "").replaceAll("\"", "\"\"")}"`;
+  const rows = [["section", "label", "pageviews", "visitors", "sessions", "day"]];
+  (traffic?.daily || []).forEach((row) => rows.push(["daily", "", row.pageviews || 0, row.visitors || 0, row.sessions || 0, row.day || ""]));
+  [["routes", traffic?.topRoutes, "route"], ["cities", traffic?.topCities, "city"], ["sources", traffic?.topSources, "source"], ["referrers", traffic?.topReferrers, "referrer"], ["countries", traffic?.countries, "country"], ["devices", traffic?.devices, "device"]].forEach(([section, list, labelKey]) => (list || []).forEach((row) => rows.push([section, row[labelKey] || "", row.pageviews || 0, row.visitors || 0, row.sessions || 0, ""])));
+  const blob = new Blob([rows.map((row) => row.map(escape).join(",")).join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `queeratlas-traffic-${days}d.csv`; link.click(); URL.revokeObjectURL(url);
+}
+
 function TrafficIntelligenceBrief({ traffic, days, legacy }) {
   const totals = traffic?.totals || {};
   const routeCount = (traffic?.topRoutes || []).length;
@@ -261,7 +281,33 @@ function TrafficIntelligenceBrief({ traffic, days, legacy }) {
   );
 }
 
+function TrafficActionBoard({ traffic, days, legacy }) {
+  const totals = traffic?.totals || {};
+  const routes = traffic?.topRoutes || [];
+  const cities = traffic?.topCities || [];
+  const sources = traffic?.topSources || [];
+  const insights = useMemo(() => {
+    if (legacy) return [{ tone: "amber", title: "Upgrade the collection before acting", body: "Legacy data deliberately omits repeat views and sessions. Use it to spot routes worth checking, then install Traffic v2 before ranking cities or channels.", action: "Open the setup note above" }];
+    const result = [];
+    const viewChange = percentageDelta(totals.pageviews, totals.previousPageviews);
+    const sessionChange = percentageDelta(totals.sessions, totals.previousSessions);
+    const bounce = Number(totals.bounceRate || 0);
+    const depth = Number(totals.pagesPerSession || 0);
+    if (viewChange !== null && Math.abs(viewChange) >= 15) result.push({ tone: viewChange > 0 ? "emerald" : "rose", title: `${viewChange > 0 ? "Demand increased" : "Demand dropped"} ${Math.abs(viewChange).toFixed(0)}%`, body: `${formatNumber(totals.pageviews)} pageviews in the last ${days} days, compared with ${formatNumber(totals.previousPageviews)} in the previous window.${sessionChange !== null ? ` Sessions changed ${sessionChange > 0 ? "+" : ""}${sessionChange.toFixed(1)}%.` : ""}`, action: viewChange > 0 ? "Check the routes and sources that earned the lift" : "Inspect availability, discovery and recent publishing changes" });
+    if (bounce >= 70 && Number(totals.sessions || 0) >= 10) result.push({ tone: "amber", title: "High single-page session rate", body: `${formatPercent(bounce)} of sessions ended on their first route while depth is ${formatNumber(depth)} pages/session. This can be a fast successful lookup, or a weak next step — read it alongside route intent.", action: "Audit top landing routes for clear related-city and category paths" });
+    if (routes[0] && cities[0]) result.push({ tone: "cyan", title: `${routes[0].route} is the leading entry route`, body: `${formatNumber(routes[0].pageviews)} views; ${cities[0].city} leads city demand with ${formatNumber(cities[0].pageviews)} views. These are prioritisation signals, not quality scores.", action: "Review freshness, related links and missing listings on this path" });
+    if (sources[0]) result.push({ tone: "violet", title: `${sources[0].source} is the leading acquisition source`, body: `${formatNumber(sources[0].sessions)} sessions in this window. Compare its landing pages and completion depth before putting effort into another channel.", action: "Open source attribution and validate campaign names" });
+    return result.slice(0, 4);
+  }, [cities, days, legacy, routes, sources, totals]);
+  const tones = { emerald: "border-emerald-200/18 bg-emerald-200/[0.06] text-emerald-100", rose: "border-rose-200/18 bg-rose-200/[0.06] text-rose-100", amber: "border-amber-200/18 bg-amber-200/[0.06] text-amber-100", cyan: "border-cyan-200/18 bg-cyan-200/[0.06] text-cyan-100", violet: "border-violet-200/18 bg-violet-200/[0.06] text-violet-100" };
+  return <section className="mt-4 rounded-[24px] border border-white/10 bg-white/[0.035] p-4 sm:p-5" aria-label="Traffic priorities">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/46">Decision queue</p><h3 className="mt-1 text-lg font-semibold text-white">What to do with this signal</h3></div><p className="text-[10px] text-white/38">Generated from this window · verify before action</p></div>
+    <div className="mt-4 grid gap-3 lg:grid-cols-2">{insights.map((insight) => <article key={insight.title} className={`rounded-2xl border p-4 ${tones[insight.tone]}`}><div className="flex gap-3"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /><div><h4 className="text-sm font-semibold">{insight.title}</h4><p className="mt-1.5 text-xs leading-5 text-white/62">{insight.body}</p><p className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-white/78">{insight.action}<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></p></div></div></article>)}</div>
+  </section>;
+}
+
 export default function AdminTrafficPanel({ summary, loading = false, days = 30, onDaysChange }) {
+  const [trendMetric, setTrendMetric] = useState("pageviews");
   const traffic = summary || {};
   const totals = traffic?.totals || {};
   const legacy = traffic?.model === "legacy-v1";
@@ -302,7 +348,7 @@ export default function AdminTrafficPanel({ summary, loading = false, days = 30,
               </button>
             ))}
           </div>
-          <p className="px-1 text-[10px] text-white/36">UTC · refreshed {formatDateTime(traffic?.generatedAt)}</p>
+          <div className="flex items-center gap-2"><p className="px-1 text-[10px] text-white/36">UTC · refreshed {formatDateTime(traffic?.generatedAt)}</p>{ready ? <button type="button" onClick={() => exportTrafficCsv(traffic, days)} className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[.04] px-2 py-1 text-[10px] font-semibold text-white/62 transition hover:border-cyan-200/35 hover:text-cyan-100"><Download className="h-3 w-3" /> Export CSV</button> : null}</div>
         </div>
       </header>
 
@@ -345,7 +391,9 @@ export default function AdminTrafficPanel({ summary, loading = false, days = 30,
 
           <TrafficIntelligenceBrief traffic={traffic} days={days} legacy={legacy} />
 
-          <TrafficTrendChart rows={traffic.daily} days={days} legacy={legacy} />
+          <TrafficTrendChart rows={traffic.daily} days={days} legacy={legacy} metric={trendMetric} onMetricChange={setTrendMetric} />
+
+          <TrafficActionBoard traffic={traffic} days={days} legacy={legacy} />
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <RankedList title="Top routes" icon={Route} rows={traffic.topRoutes || []} labelKey="route" emptyText="No route traffic in this period." />

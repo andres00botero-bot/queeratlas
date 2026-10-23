@@ -163,6 +163,7 @@ export default function AdminCityManager() {
   const [editingCityId, setEditingCityId] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [registryQuery, setRegistryQuery] = useState("");
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -228,6 +229,16 @@ export default function AdminCityManager() {
       return groups;
     }, []);
   }, [form.timezone, timezones]);
+
+  const registryCities = useMemo(() => {
+    const queryValue = registryQuery.trim().toLowerCase();
+    return cities.filter((city) => !queryValue || [city.name, city.country, city.slug].join(" ").toLowerCase().includes(queryValue));
+  }, [cities, registryQuery]);
+  const registryHealth = useMemo(() => ({
+    indexable: cities.filter((city) => city.seo_indexable).length,
+    building: cities.filter((city) => !city.seo_indexable).length,
+    readyListings: cities.filter((city) => Number(city.verified_place_count || 0) >= 3).length,
+  }), [cities]);
 
   const requirements = {
     identity: form.name.trim().length >= 2 && form.country.trim().length >= 2,
@@ -364,13 +375,17 @@ export default function AdminCityManager() {
 
   return (
     <section id="city-registry" className="mb-8 scroll-mt-6 overflow-hidden rounded-[32px] border border-cyan-300/18 bg-[radial-gradient(circle_at_12%_8%,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_88%_12%,rgba(236,72,153,0.12),transparent_26%),linear-gradient(155deg,rgba(15,23,42,0.96),rgba(8,8,12,0.99))] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.35)] sm:p-7">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-5">
         <div>
-          <p className="flex items-center gap-2 text-xs uppercase tracking-[0.22em] text-cyan-100/78"><Sparkles size={14} /> City registry</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">{editingCityId ? "Edit Atlas city" : "Add a complete Atlas city"}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/62">The city is published with noindex first. Indexing switches on automatically after every city requirement and three quality-complete venues, events or services are present.</p>
+          <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-100/72"><Sparkles size={14} /> Atlas quality control</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-white">{editingCityId ? "Edit city intelligence" : "Create a publish-ready city"}</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/58">Every city passes through verified geography, editorial sources, safety context and QARI before its route can earn search visibility.</p>
         </div>
-        <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1.5 text-xs text-cyan-50">{cities.length} registry cities</span>
+        <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1.5 text-xs font-semibold text-cyan-50">{cities.length} registry cities</span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[["Registry cities", cities.length, "cyan"], ["Search-ready", registryHealth.indexable, "emerald"], ["Building evidence", registryHealth.building, "amber"], ["3+ verified listings", registryHealth.readyListings, "violet"]].map(([label, value, color]) => <div key={label} className={`rounded-2xl border p-3 ${color === "emerald" ? "border-emerald-200/16 bg-emerald-200/[.055]" : color === "amber" ? "border-amber-200/16 bg-amber-200/[.055]" : color === "violet" ? "border-violet-200/16 bg-violet-200/[.055]" : "border-cyan-200/16 bg-cyan-200/[.055]"}`}><p className="text-[9px] font-semibold uppercase tracking-[.14em] text-white/42">{label}</p><p className="mt-1 text-xl font-semibold tabular-nums text-white">{value}</p></div>)}
       </div>
 
       {error && <div className="mt-4 flex gap-2 rounded-2xl border border-rose-200/20 bg-rose-200/10 p-3 text-sm text-rose-100"><CircleAlert size={18} className="mt-0.5 shrink-0" />{error}</div>}
@@ -457,7 +472,7 @@ export default function AdminCityManager() {
             {editingCityId && <button type="button" onClick={cancelEdit} className="mt-2 w-full rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-2.5 text-sm text-white/66 transition hover:border-white/25 hover:text-white">Cancel editing</button>}
           </div>
 
-          {cities.length > 0 && <div className="rounded-3xl border border-white/10 bg-black/25 p-5"><p className="text-xs uppercase tracking-[0.18em] text-white/50">Registered cities</p><div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{cities.map((city) => <div key={city.id} className="flex items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/[0.035] px-3 py-2"><div><p className="text-sm text-white/82">{city.name}</p><p className="text-[10px] text-white/38">{city.verified_place_count || 0}/3 quality-complete listings</p></div><div className="flex items-center gap-2"><span className={`rounded-full px-2 py-1 text-[10px] ${city.seo_indexable ? "bg-emerald-200/12 text-emerald-100" : "bg-amber-200/10 text-amber-100"}`}>{city.seo_indexable ? "index" : "noindex"}</span><button type="button" onClick={() => beginEdit(city)} className="rounded-full border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-cyan-100 transition hover:border-cyan-100/45">Edit city</button></div></div>)}</div></div>}
+          {cities.length > 0 && <div className="rounded-3xl border border-white/10 bg-black/25 p-5"><div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">City health registry</p><p className="mt-1 text-xs text-white/38">Find a city, inspect readiness, then edit.</p></div><span className="text-xs tabular-nums text-white/45">{registryCities.length}/{cities.length}</span></div><label className="mt-3 block"><span className="sr-only">Search city registry</span><input value={registryQuery} onChange={(event) => setRegistryQuery(event.target.value)} placeholder="Find city or country…" className="min-h-10 w-full rounded-xl border border-white/10 bg-black/30 px-3 text-xs text-white placeholder:text-white/30 focus-visible:outline-2 focus-visible:outline-cyan-200" /></label><div className="mt-3 max-h-[28rem] space-y-2 overflow-y-auto pr-1">{registryCities.map((city) => <div key={city.id} className="rounded-2xl border border-white/8 bg-white/[0.035] p-3 transition hover:border-cyan-200/22"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-white/86">{city.name}</p><p className="mt-1 text-[10px] text-white/38">{city.country} · {city.verified_place_count || 0}/3 quality-complete listings</p></div><span className={`rounded-full px-2 py-1 text-[9px] font-semibold uppercase tracking-[.1em] ${city.seo_indexable ? "bg-emerald-200/12 text-emerald-100" : "bg-amber-200/10 text-amber-100"}`}>{city.seo_indexable ? "Search-ready" : "Building"}</span></div><div className="mt-3 flex items-center justify-between border-t border-white/[.07] pt-2"><span className="text-[10px] text-white/38">{city.qari_confidence || "QARI"} confidence</span><button type="button" onClick={() => beginEdit(city)} className="rounded-lg border border-cyan-200/22 bg-cyan-200/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[.08em] text-cyan-100 transition hover:border-cyan-100/45">Open intelligence</button></div></div>)}{registryCities.length === 0 && <p className="rounded-xl border border-dashed border-white/12 px-3 py-6 text-center text-xs text-white/42">No city matches this search.</p>}</div></div>}
         </aside>
       </form>
     </section>

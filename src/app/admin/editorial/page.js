@@ -291,6 +291,26 @@ export default function EditorialAdminPage() {
   const selectedEntry = entries.find((entry) => String(entry.id) === String(selectedEvidenceEntryId)) || null;
   const selectedSources = sources.filter((source) => String(source.entry_id) === String(selectedEvidenceEntryId));
   const selectedRevisions = revisions.filter((revision) => String(revision.entry_id) === String(selectedEvidenceEntryId));
+  const editorialHealth = useMemo(() => {
+    const today = Date.now();
+    const ageLimit = 180 * 24 * 60 * 60 * 1000;
+    const published = entries.filter((entry) => entry.status === "published");
+    const sourceCountByEntry = new Map();
+    const hasFreshSourceByEntry = new Map();
+    sources.forEach((source) => {
+      const id = String(source.entry_id || "");
+      sourceCountByEntry.set(id, (sourceCountByEntry.get(id) || 0) + 1);
+      const checked = new Date(source.checked_at || 0).getTime();
+      if (checked && today - checked <= ageLimit) hasFreshSourceByEntry.set(id, true);
+    });
+    return {
+      published: published.length,
+      needsOwner: entries.filter((entry) => !entry.author_id).length,
+      needsReview: published.filter((entry) => !entry.reviewer_id || !entry.reviewed_at).length,
+      needsEvidence: published.filter((entry) => !sourceCountByEntry.get(String(entry.id))).length,
+      staleEvidence: published.filter((entry) => sourceCountByEntry.get(String(entry.id)) && !hasFreshSourceByEntry.get(String(entry.id))).length,
+    };
+  }, [entries, sources]);
 
   const revalidateEditorialPaths = async (paths = []) => {
     const token = String(session?.access_token || "").trim();
@@ -560,6 +580,17 @@ export default function EditorialAdminPage() {
             </article>
           ))}
         </section>
+
+        {!setupRequired ? <section className="mt-3 rounded-[24px] border border-cyan-200/14 bg-cyan-200/[0.045] p-4 sm:p-5" aria-label="Editorial readiness">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/68">Publishing readiness</p><h2 className="mt-1 text-lg font-semibold text-white">See what blocks trustworthy publication</h2></div><p className="text-[10px] text-white/42">Fresh source = checked within 180 days</p></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">{[
+            { label: "Published", value: editorialHealth.published, note: "Live entries", tone: "emerald" },
+            { label: "Needs owner", value: editorialHealth.needsOwner, note: "No named author", tone: "amber" },
+            { label: "Needs fact-check", value: editorialHealth.needsReview, note: "Published without a dated review", tone: "amber" },
+            { label: "No evidence", value: editorialHealth.needsEvidence, note: "Published with no linked source", tone: "rose" },
+            { label: "Evidence aging", value: editorialHealth.staleEvidence, note: "Source exists but is not fresh", tone: "violet" },
+          ].map((item) => <article key={item.label} className={`rounded-2xl border p-3 ${item.tone === "rose" ? "border-rose-200/20 bg-rose-200/[.07]" : item.tone === "amber" ? "border-amber-200/20 bg-amber-200/[.07]" : item.tone === "violet" ? "border-violet-200/20 bg-violet-200/[.07]" : "border-emerald-200/20 bg-emerald-200/[.07]"}`}><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-white/50">{item.label}</p><p className="mt-2 text-2xl font-semibold tabular-nums text-white">{item.value}</p><p className="mt-1 text-[10px] leading-4 text-white/48">{item.note}</p></article>)}</div>
+        </section> : null}
 
         <nav className="-mx-4 mt-5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" aria-label="Editorial admin sections">
           <div className="flex min-w-max gap-2">

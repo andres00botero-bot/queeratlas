@@ -145,6 +145,10 @@ function AdminPageContent() {
   const [reports, setReports] = useState([]);
   const [blockedItems, setBlockedItems] = useState([]);
   const [selectedReportIds, setSelectedReportIds] = useState([]);
+  const [reportQuery, setReportQuery] = useState("");
+  const [reportTypeFilter, setReportTypeFilter] = useState("all");
+  const [blockedQuery, setBlockedQuery] = useState("");
+  const [blockedTypeFilter, setBlockedTypeFilter] = useState("all");
   const [warning, setWarning] = useState("");
   const [busyMap, setBusyMap] = useState({});
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -154,13 +158,21 @@ function AdminPageContent() {
   const [trafficLoading, setTrafficLoading] = useState(false);
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [isLoadingPendingSubmissions, setIsLoadingPendingSubmissions] = useState(false);
+  const [submissionQuery, setSubmissionQuery] = useState("");
+  const [submissionTypeFilter, setSubmissionTypeFilter] = useState("all");
   const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
   const [isProcessingSubmissionId, setIsProcessingSubmissionId] = useState("");
   const [contactThreads, setContactThreads] = useState([]);
+  const [contactQuery, setContactQuery] = useState("");
+  const [contactView, setContactView] = useState("open");
   const [communityIdeas, setCommunityIdeas] = useState([]);
   const [communityIdeasNotice, setCommunityIdeasNotice] = useState("");
+  const [ideaQuery, setIdeaQuery] = useState("");
+  const [ideaSort, setIdeaSort] = useState("votes");
   const [newsComments, setNewsComments] = useState([]);
   const [newsCommentsNotice, setNewsCommentsNotice] = useState("");
+  const [commentQuery, setCommentQuery] = useState("");
+  const [commentView, setCommentView] = useState("unread");
 
   const loadAdminState = useCallback(async () => {
     setIsRefreshing(true);
@@ -445,10 +457,47 @@ function AdminPageContent() {
     () => reports.filter((item) => String(item.status || "open") === "open"),
     [reports]
   );
+  const safetyReports = useMemo(() => {
+    const query = reportQuery.trim().toLowerCase();
+    return openReports
+      .filter((report) => reportTypeFilter === "all" || String(report.targetType || "").toLowerCase() === reportTypeFilter)
+      .filter((report) => !query || [report.title, report.reason, report.message, report.city, report.targetType].join(" ").toLowerCase().includes(query))
+      .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0));
+  }, [openReports, reportQuery, reportTypeFilter]);
+  const visiblePendingSubmissions = useMemo(() => {
+    const query = submissionQuery.trim().toLowerCase();
+    return pendingSubmissions.filter((submission) => {
+      const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
+      const type = String(submission?.entity_type || "item").toLowerCase();
+      return (submissionTypeFilter === "all" || type === submissionTypeFilter) && (!query || [submission?.title, payload?.name, payload?.description, submission?.city, submission?.submitted_by_name].join(" ").toLowerCase().includes(query));
+    });
+  }, [pendingSubmissions, submissionQuery, submissionTypeFilter]);
   const openContactThreads = useMemo(
     () => contactThreads.filter((item) => item.status !== "resolved" && item.status !== "closed"),
     [contactThreads]
   );
+  const visibleContactThreads = useMemo(() => {
+    const query = contactQuery.trim().toLowerCase();
+    return contactThreads.filter((thread) => {
+      const viewMatch = contactView === "all" || contactView === "open" && thread.status !== "resolved" && thread.status !== "closed" || contactView === "urgent" && (thread.priority === "urgent" || thread.priority === "high") || contactView === "review" && thread.status === "in_review";
+      return viewMatch && (!query || [thread.subject, thread.message, thread.senderName, thread.senderEmail, thread.cityContext, thread.category].join(" ").toLowerCase().includes(query));
+    });
+  }, [contactQuery, contactThreads, contactView]);
+  const visibleCommunityIdeas = useMemo(() => {
+    const query = ideaQuery.trim().toLowerCase();
+    return communityIdeas.filter((idea) => !query || [idea.text, idea.author, idea.category].join(" ").toLowerCase().includes(query)).sort((a, b) => ideaSort === "newest" ? new Date(b.createdAt || 0) - new Date(a.createdAt || 0) : Number(b.votes || 0) - Number(a.votes || 0));
+  }, [communityIdeas, ideaQuery, ideaSort]);
+  const visibleNewsComments = useMemo(() => {
+    const query = commentQuery.trim().toLowerCase();
+    return newsComments.filter((comment) => {
+      const viewMatch = commentView === "all" || commentView === "unread" && !comment.adminSeenAt || commentView === "published" && comment.status !== "removed" || commentView === "removed" && comment.status === "removed";
+      return viewMatch && (!query || [comment.authorName, comment.articleTitle, comment.body].join(" ").toLowerCase().includes(query));
+    });
+  }, [commentQuery, commentView, newsComments]);
+  const visibleBlockedItems = useMemo(() => {
+    const query = blockedQuery.trim().toLowerCase();
+    return blockedItems.filter((item) => (blockedTypeFilter === "all" || String(item.targetType || "").toLowerCase() === blockedTypeFilter) && (!query || [item.title, item.city, item.targetType, item.targetId].join(" ").toLowerCase().includes(query))).sort((left, right) => new Date(right.blockedAt || 0) - new Date(left.blockedAt || 0));
+  }, [blockedItems, blockedQuery, blockedTypeFilter]);
 
   const toggleReportSelection = (reportId) => {
     const key = String(reportId);
@@ -672,6 +721,7 @@ function AdminPageContent() {
   };
 
   const removeBlockedItem = async (itemId) => {
+    if (!window.confirm("Restore this item to public availability? Re-check its safety and accuracy before reopening it.")) return;
     const targetId = String(itemId);
     setBusyMap((current) => ({ ...current, [targetId]: true }));
     try {
@@ -868,9 +918,9 @@ function AdminPageContent() {
         <section className="mb-8 rounded-[30px] border border-fuchsia-300/16 bg-[radial-gradient(circle_at_top_left,rgba(217,70,239,0.12),transparent_28%),linear-gradient(180deg,rgba(37,14,43,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_24px_80px_rgba(217,70,239,0.07)]">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/80">News discussion</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">New member comments</h2>
-              <p className="mt-2 text-sm text-white/62">Comments are already public. This inbox simply lets you review new activity when needed.</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/80">Discussion moderation</p>
+              <h2 className="mt-1 text-xl font-semibold text-white">News conversation desk</h2>
+              <p className="mt-2 text-sm text-white/62">Triage new public discussion, retain its context, and act only when a comment needs intervention.</p>
             </div>
             <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 py-1 text-xs text-fuchsia-100">
               {stats.unreadComments} unread
@@ -881,8 +931,16 @@ function AdminPageContent() {
             <div className="mb-3 rounded-xl border border-amber-200/22 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">{newsCommentsNotice}</div>
           ) : null}
 
+          <div className="mb-4 rounded-2xl border border-white/9 bg-black/20 p-3 sm:p-4">
+            <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+              <label><span className="sr-only">Search discussion</span><input value={commentQuery} onChange={(event) => setCommentQuery(event.target.value)} placeholder="Search author, article or comment…" className="min-h-11 w-full rounded-xl border border-white/12 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200" /></label>
+              <p className="self-center text-xs text-white/50"><strong className="text-white">{visibleNewsComments.length}</strong> conversations in view</p>
+            </div>
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{[["unread", "Needs review"], ["published", "Public"], ["removed", "Removed"], ["all", "All discussion"]].map(([value, label]) => <button key={value} type="button" onClick={() => setCommentView(value)} aria-pressed={commentView === value} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${commentView === value ? "border-fuchsia-200/45 bg-fuchsia-200/[.14] text-fuchsia-100" : "border-white/10 bg-white/[.03] text-white/55 hover:border-white/24"}`}>{label}</button>)}</div>
+          </div>
+
           <div className="space-y-3">
-            {newsComments.length > 0 ? newsComments.map((comment) => {
+            {visibleNewsComments.length > 0 ? visibleNewsComments.map((comment) => {
               const unread = !comment.adminSeenAt;
               const removed = comment.status === "removed";
               const busyKey = `news-comment:${comment.id}`;
@@ -909,7 +967,7 @@ function AdminPageContent() {
                 </article>
               );
             }) : (
-              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/52">No news comments yet.</div>
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-center text-sm text-white/52">No conversations match this view. Clear a filter or search to continue.</div>
             )}
           </div>
         </section>
@@ -918,18 +976,16 @@ function AdminPageContent() {
 
         <div id="members" className="scroll-mt-5"><AdminMembersPanel /></div>
 
-        <section id="submissions" className="mb-8 scroll-mt-5 rounded-[30px] border border-indigo-300/16 bg-[linear-gradient(180deg,rgba(24,22,58,0.82),rgba(10,10,10,0.98))] p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section id="submissions" className="mb-8 scroll-mt-5 overflow-hidden rounded-[30px] border border-indigo-300/16 bg-[radial-gradient(circle_at_96%_0%,rgba(129,140,248,.17),transparent_34%),linear-gradient(155deg,#151535,#070811)] p-4 shadow-[0_24px_80px_rgba(0,0,0,.30)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-indigo-100/80">Moderation Queue</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Pending member entries</h2>
-              <p className="mt-2 text-sm text-white/65">
-                Approve or reject member-added venues, events, services, and Voices stories before they go live.
-              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-100/68">Publishing review</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-.03em] text-white">Content review queue</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">Verify the place, event, service or story before it becomes part of the public Atlas.</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="rounded-full border border-indigo-200/20 bg-indigo-200/10 px-3 py-1 text-xs text-indigo-100">
-                Pending: {pendingSubmissions.length}
+              <span className="rounded-full border border-indigo-200/24 bg-indigo-200/[.10] px-3 py-1 text-xs font-semibold text-indigo-100">
+                {pendingSubmissions.length} waiting
               </span>
               <button
                 type="button"
@@ -947,38 +1003,48 @@ function AdminPageContent() {
             </div>
           ) : null}
 
+          <div className="mb-4 rounded-2xl border border-white/9 bg-black/20 p-3 sm:p-4">
+            <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+              <label><span className="sr-only">Search submissions</span><input value={submissionQuery} onChange={(event) => setSubmissionQuery(event.target.value)} placeholder="Search title, description, city or contributor…" className="min-h-11 w-full rounded-xl border border-white/12 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-200" /></label>
+              <p className="self-center text-xs text-white/50"><strong className="text-white">{visiblePendingSubmissions.length}</strong> shown for review</p>
+            </div>
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{[["all", "All entries"], ["place", "Venues"], ["event", "Events"], ["service", "Services"], ["voice", "Voices"]].map(([value, label]) => <button key={value} type="button" onClick={() => setSubmissionTypeFilter(value)} aria-pressed={submissionTypeFilter === value} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${submissionTypeFilter === value ? "border-indigo-200/45 bg-indigo-200/[.14] text-indigo-100" : "border-white/10 bg-white/[.03] text-white/55 hover:border-white/24"}`}>{label}</button>)}</div>
+          </div>
+
           {isLoadingPendingSubmissions ? (
             <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
               Loading pending submissions...
             </div>
           ) : pendingSubmissions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
-              No pending submissions right now.
+            <div className="rounded-2xl border border-dashed border-white/14 px-4 py-10 text-center text-sm text-white/55">
+              The queue is clear. New member submissions will appear here.
             </div>
           ) : (
-            <div className="grid gap-3 lg:grid-cols-2">
-              {pendingSubmissions.map((submission) => {
+            <div className="grid gap-3 xl:grid-cols-2">
+              {visiblePendingSubmissions.map((submission) => {
                 const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
                 const statusBusy = isProcessingSubmissionId === String(submission.id);
                 const submissionName = String(submission?.title || payload?.name || "Untitled");
 
                 return (
-                  <article key={submission.id} className="rounded-2xl border border-white/12 bg-black/25 p-4">
+                  <article key={submission.id} className="group rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-indigo-200/30 hover:bg-indigo-200/[.045]">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
-                        {String(submission.entity_type || "item")} | {formatCityLabel(String(submission.city || "global"))}
+                      <p className="rounded-full border border-indigo-200/20 bg-indigo-200/[.08] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-100">
+                        {String(submission.entity_type || "item")} · {formatCityLabel(String(submission.city || "global"))}
                       </p>
                       <p className="text-xs text-white/45">{timeAgo(submission.created_at)}</p>
                     </div>
-                    <p className="mt-1 text-sm font-semibold text-white">{submissionName}</p>
+                    <p className="mt-3 text-base font-semibold text-white">{submissionName}</p>
                     <p className="mt-2 text-xs text-white/65">
                       by {String(submission.submitted_by_name || submission.submitted_by_email || "Member")}
                       {submission.is_trusted_contributor ? " | trusted" : ""}
                     </p>
                     {payload?.description ? (
-                      <p className="mt-2 line-clamp-3 text-sm text-white/70">{String(payload.description)}</p>
+                      <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/70">{String(payload.description)}</p>
                     ) : null}
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/8 pt-3">
+                      <p className="text-[10px] leading-4 text-white/38">{payload?.description ? "Description included" : "No description supplied"} · {submission.is_trusted_contributor ? "Trusted contributor" : "Standard contributor"}</p>
+                      <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => approvePendingSubmission(submission)}
@@ -995,22 +1061,22 @@ function AdminPageContent() {
                       >
                         Reject
                       </button>
+                      </div>
                     </div>
                   </article>
                 );
               })}
+              {visiblePendingSubmissions.length === 0 ? <div className="rounded-2xl border border-dashed border-white/14 px-4 py-10 text-center text-sm text-white/55 xl:col-span-2">No submissions match this view. Clear search or filters to continue.</div> : null}
             </div>
           )}
         </section>
 
-        <section id="community" className="mb-8 scroll-mt-5 rounded-[30px] border border-amber-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.13),transparent_28%),linear-gradient(180deg,rgba(45,31,10,0.86),rgba(10,10,10,0.98))] p-6 shadow-[0_24px_80px_rgba(251,191,36,0.08)]">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <section id="community" className="mb-8 scroll-mt-5 overflow-hidden rounded-[30px] border border-amber-300/16 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,.14),transparent_28%),linear-gradient(155deg,#261b08,#080706)] p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Improve Atlas</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Atlas Improvement Inbox</h2>
-              <p className="mt-2 text-sm text-white/65">
-                Member ideas from the Community Improve Atlas panel. Use this as a lightweight roadmap signal.
-              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/70">Product signal desk</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-.03em] text-white">Community improvement backlog</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">Turn member feedback into prioritised product signals without losing the original community context.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">
@@ -1047,12 +1113,14 @@ function AdminPageContent() {
             </div>
           ) : null}
 
+          <div className="mb-4 grid gap-3 rounded-2xl border border-white/9 bg-black/20 p-3 sm:grid-cols-[1fr_auto]"><label><span className="sr-only">Search community ideas</span><input value={ideaQuery} onChange={(event) => setIdeaQuery(event.target.value)} placeholder="Search idea, contributor or category…" className="min-h-11 w-full rounded-xl border border-white/12 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200" /></label><label className="flex items-center gap-2 text-xs text-white/50">Prioritise <select value={ideaSort} onChange={(event) => setIdeaSort(event.target.value)} className="min-h-11 rounded-xl border border-white/12 bg-black/30 px-3 text-sm text-white"><option value="votes">Most voted</option><option value="newest">Newest first</option></select></label></div>
+
           <div className="grid gap-3 lg:grid-cols-2">
-            {communityIdeas.length > 0 ? (
-              communityIdeas.map((idea) => {
+            {visibleCommunityIdeas.length > 0 ? (
+              visibleCommunityIdeas.map((idea) => {
                 const busyKey = `idea:${idea.id}`;
                 return (
-                  <article key={idea.id} className="rounded-2xl border border-white/12 bg-black/25 p-4 transition hover:border-amber-200/28 hover:bg-amber-200/6">
+                  <article key={idea.id} className="rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-amber-200/32 hover:bg-amber-200/[.055]">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -1082,21 +1150,22 @@ function AdminPageContent() {
               })
             ) : (
               <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55 lg:col-span-2">
-                No Improve Atlas ideas yet. Member suggestions from Community will appear here.
+                {communityIdeas.length ? "No ideas match this search." : "No Improve Atlas ideas yet. Member suggestions will appear here."}
               </div>
             )}
           </div>
         </section>
 
-        <section id="safety" className="mb-8 scroll-mt-5 rounded-[30px] border border-amber-300/16 bg-[linear-gradient(180deg,rgba(45,31,10,0.85),rgba(10,10,10,0.98))] p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
+        <section id="safety" className="mb-8 scroll-mt-5 overflow-hidden rounded-[30px] border border-rose-300/18 bg-[radial-gradient(circle_at_4%_0%,rgba(251,113,133,.14),transparent_32%),linear-gradient(155deg,#221016,#09070a)] p-4 shadow-[0_26px_86px_rgba(0,0,0,.30)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-amber-100/80">Safety inbox</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Open reports</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-100/70">Incident command</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-.03em] text-white">Safety & moderation queue</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">Triage reports by risk, hide unsafe content fast, then leave a clear resolved state.</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-xs text-amber-100">
-                {openReports.length} open
+              <span className="rounded-full border border-rose-200/24 bg-rose-200/[.10] px-3 py-1 text-xs font-semibold text-rose-100">
+                {openReports.length} open incidents
               </span>
               <button
                 type="button"
@@ -1145,16 +1214,24 @@ function AdminPageContent() {
               </button>
             </div>
           </div>
-          <div className="space-y-3">
-            {openReports.length > 0 ? (
-              openReports.map((report) => (
+          <div className="mb-4 rounded-2xl border border-white/9 bg-black/20 p-3 sm:p-4">
+            <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+              <label><span className="sr-only">Search safety reports</span><input value={reportQuery} onChange={(event) => setReportQuery(event.target.value)} placeholder="Search report, city, reason or reported content…" className="min-h-11 w-full rounded-xl border border-white/12 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-200" /></label>
+              <div className="flex items-center gap-2 text-xs text-white/50"><span>Showing</span><strong className="text-white">{safetyReports.length}</strong><span>of {openReports.length}</span></div>
+            </div>
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{[["all", "All"], ["place", "Venues"], ["event", "Events"], ["service", "Services"], ["comment", "Comments"]].map(([value, label]) => <button key={value} type="button" onClick={() => setReportTypeFilter(value)} aria-pressed={reportTypeFilter === value} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${reportTypeFilter === value ? "border-rose-200/45 bg-rose-200/[.14] text-rose-100" : "border-white/10 bg-white/[.03] text-white/55 hover:border-white/24"}`}>{label}</button>)}</div>
+          </div>
+          {selectedReportIds.length > 0 ? <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200/22 bg-rose-200/[.08] px-4 py-3"><p className="text-sm font-semibold text-rose-50">{selectedReportIds.length} incident{selectedReportIds.length === 1 ? "" : "s"} selected</p><p className="text-xs text-rose-100/68">Resolve is reversible in the queue; hide and delete change public safety state.</p></div> : null}
+          <div className="grid gap-3 xl:grid-cols-2">
+            {safetyReports.length > 0 ? (
+              safetyReports.map((report) => (
                 <article
                   key={report.id}
-                  className="rounded-2xl border border-white/12 bg-black/25 p-4"
+                  className={`rounded-2xl border p-4 transition ${selectedReportIds.includes(String(report.id)) ? "border-rose-200/38 bg-rose-200/[.08]" : "border-white/10 bg-black/25 hover:border-white/22"}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <label className="mb-2 inline-flex cursor-pointer items-center gap-2 text-[11px] text-white/60">
+                      <label className="mb-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-white/9 bg-white/[.03] px-2 py-1 text-[10px] font-semibold uppercase tracking-[.1em] text-white/60">
                         <input
                           type="checkbox"
                           checked={selectedReportIds.includes(String(report.id))}
@@ -1163,10 +1240,10 @@ function AdminPageContent() {
                         />
                         Select
                       </label>
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-100/68">
                         {formatTitle(report.targetType)}  |  {report.city || "Global"}
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-white">
+                      <p className="mt-1 text-base font-semibold text-white">
                         {report.title || "Reported content"}
                       </p>
                       <p className="mt-2 text-sm leading-6 text-white/78">{report.reason}</p>
@@ -1177,7 +1254,7 @@ function AdminPageContent() {
                       )}
                       <p className="mt-2 text-xs text-white/45">{timeAgo(report.createdAt)}</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
                         <button
                           type="button"
                           disabled={Boolean(busyMap[String(report.id)])}
@@ -1207,27 +1284,29 @@ function AdminPageContent() {
                 </article>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
-                No open reports right now.
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-10 text-center text-sm text-white/55 xl:col-span-2">
+                {openReports.length ? "No incidents match this view. Clear search or filters to see the queue." : "No open reports right now. This queue is clear."}
               </div>
             )}
           </div>
         </section>
 
-        <section className="mb-8 rounded-[30px] border border-cyan-300/16 bg-[linear-gradient(180deg,rgba(7,32,52,0.84),rgba(10,10,10,0.98))] p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
+        <section className="mb-8 overflow-hidden rounded-[30px] border border-cyan-300/16 bg-[radial-gradient(circle_at_96%_0%,rgba(34,211,238,.14),transparent_32%),linear-gradient(155deg,#071d2b,#06080d)] p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 border-b border-white/8 pb-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-100/80">Contact inbox</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Home contact threads</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/70">Community care desk</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-.03em] text-white">Contact & support signals</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">Prioritise sensitive issues, move active cases into review, then resolve with a visible status trail.</p>
             </div>
-            <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">
+            <span className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-xs font-semibold text-cyan-100">
               {openContactThreads.length} open
             </span>
           </div>
-          <div className="space-y-3">
-            {contactThreads.length > 0 ? (
-              contactThreads.map((thread) => (
-                <article key={thread.id} className="rounded-2xl border border-white/12 bg-black/25 p-4">
+          <div className="mb-4 rounded-2xl border border-white/9 bg-black/20 p-3 sm:p-4"><div className="grid gap-3 lg:grid-cols-[1fr_auto]"><label><span className="sr-only">Search contact cases</span><input value={contactQuery} onChange={(event) => setContactQuery(event.target.value)} placeholder="Search subject, message, person, city or category…" className="min-h-11 w-full rounded-xl border border-white/12 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200" /></label><p className="self-center text-xs text-white/50"><strong className="text-white">{visibleContactThreads.length}</strong> cases in view</p></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1">{[["open", "Open"], ["urgent", "High priority"], ["review", "In review"], ["all", "All cases"]].map(([value, label]) => <button key={value} type="button" onClick={() => setContactView(value)} aria-pressed={contactView === value} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold ${contactView === value ? "border-cyan-200/45 bg-cyan-200/[.14] text-cyan-100" : "border-white/10 bg-white/[.03] text-white/55"}`}>{label}</button>)}</div></div>
+          <div className="grid gap-3 xl:grid-cols-2">
+            {visibleContactThreads.length > 0 ? (
+              visibleContactThreads.map((thread) => (
+                <article key={thread.id} className={`rounded-2xl border p-4 transition ${thread.priority === "urgent" ? "border-rose-200/28 bg-rose-200/[.07]" : thread.priority === "high" ? "border-amber-200/20 bg-amber-200/[.045]" : "border-white/10 bg-black/25 hover:border-cyan-200/24"}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -1249,7 +1328,7 @@ function AdminPageContent() {
                           {thread.priority}
                         </span>
                       </div>
-                      <p className="text-sm font-semibold text-white">{thread.subject || "Contact message"}</p>
+                      <p className="text-base font-semibold text-white">{thread.subject || "Contact message"}</p>
                       <p className="mt-2 text-sm leading-6 text-white/80">{thread.message}</p>
                       <p className="mt-2 text-xs text-white/55">
                         From{" "}
@@ -1264,7 +1343,7 @@ function AdminPageContent() {
                         Created {timeAgo(thread.createdAt)} | Updated {timeAgo(thread.updatedAt)}
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
                       <button
                         type="button"
                         disabled={Boolean(busyMap[`contact:${thread.id}`])}
@@ -1312,27 +1391,29 @@ function AdminPageContent() {
                 </article>
               ))
             ) : (
-              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
-                No contact threads yet. Messages from Home Contact Us will appear here.
+              <div className="rounded-2xl border border-dashed border-white/14 px-4 py-10 text-center text-sm text-white/55 xl:col-span-2">
+                {contactThreads.length ? "No contact cases match this view." : "No contact threads yet. New messages will appear here."}
               </div>
             )}
           </div>
         </section>
 
-        <section className="rounded-[30px] border border-rose-300/16 bg-[linear-gradient(180deg,rgba(56,18,31,0.82),rgba(10,10,10,0.98))] p-6">
-          <div className="mb-4 flex items-center justify-between gap-3">
+        <section className="rounded-[30px] border border-rose-300/16 bg-[radial-gradient(circle_at_92%_0%,rgba(251,113,133,.13),transparent_30%),linear-gradient(180deg,rgba(56,18,31,0.82),rgba(10,10,10,0.98))] p-4 shadow-[0_24px_80px_rgba(0,0,0,.28)] sm:p-6">
+          <div className="mb-5 flex flex-col gap-3 border-b border-white/8 pb-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-rose-100/80">Blocklist</p>
-              <h2 className="mt-1 text-xl font-semibold text-white">Blocked items</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-100/80">Safety control</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-.03em] text-white">Restricted content register</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/55">A live recovery register for emergency hides. Restore only after confirming that the content is safe, accurate and ready for public access.</p>
             </div>
             <span className="rounded-full border border-rose-200/20 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">
               {blockedItems.length} items
             </span>
           </div>
+          <div className="mb-4 rounded-2xl border border-white/9 bg-black/20 p-3 sm:p-4"><div className="grid gap-3 lg:grid-cols-[1fr_auto]"><label><span className="sr-only">Search restricted content</span><input value={blockedQuery} onChange={(event) => setBlockedQuery(event.target.value)} placeholder="Search title, city, type or record ID…" className="min-h-11 w-full rounded-xl border border-white/12 bg-black/30 px-4 text-sm text-white placeholder:text-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-200" /></label><p className="self-center text-xs text-white/50"><strong className="text-white">{visibleBlockedItems.length}</strong> records in view</p></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1">{[["all", "All records"], ["place", "Places"], ["event", "Events"], ["service", "Services"], ["comment", "Comments"]].map(([value, label]) => <button key={value} type="button" onClick={() => setBlockedTypeFilter(value)} aria-pressed={blockedTypeFilter === value} className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${blockedTypeFilter === value ? "border-rose-200/45 bg-rose-200/[.14] text-rose-100" : "border-white/10 bg-white/[.03] text-white/55 hover:border-white/24"}`}>{label}</button>)}</div></div>
           <div className="space-y-3">
-            {blockedItems.length > 0 ? (
-              blockedItems.map((item) => (
-                <article key={item.id} className="rounded-2xl border border-white/12 bg-black/25 p-4">
+            {visibleBlockedItems.length > 0 ? (
+              visibleBlockedItems.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-white/12 bg-black/25 p-4 transition hover:border-rose-200/28 hover:bg-rose-200/[.045]">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">
@@ -1341,7 +1422,7 @@ function AdminPageContent() {
                       <p className="mt-1 text-sm font-semibold text-white">
                         {item.title || "Blocked content"}
                       </p>
-                      <p className="mt-2 text-xs text-white/45">Blocked {timeAgo(item.blockedAt)}</p>
+                      <p className="mt-2 text-xs text-white/45">Restricted {timeAgo(item.blockedAt)} <span className="px-1 text-white/25">·</span> ID {String(item.targetId || item.id).slice(0, 12)}</p>
                     </div>
                     <button
                       type="button"
@@ -1349,14 +1430,14 @@ function AdminPageContent() {
                       onClick={() => removeBlockedItem(item.id)}
                       className="rounded-full border border-cyan-200/24 bg-cyan-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
                     >
-                      Unblock
+                      Restore after review
                     </button>
                   </div>
                 </article>
               ))
             ) : (
               <div className="rounded-2xl border border-dashed border-white/14 px-4 py-8 text-sm text-white/55">
-                Nothing blocked right now.
+                {blockedItems.length ? "No restricted content matches this view." : "Nothing restricted right now. Emergency hides will be recorded here."}
               </div>
             )}
           </div>
