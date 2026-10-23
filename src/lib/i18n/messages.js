@@ -2,6 +2,7 @@ import { DEFAULT_LOCALE, normalizeLocale } from "./locales.js";
 
 const messages = {
   en: {
+    privacy: { settings: "Privacy & visibility", personalAtlas: "Private Atlas" },
     cities: {
       eyebrow: "Explore the queer world", title: "Cities", intro: "Find the places, scenes and local signal that fit your trip.", search: "Search city or country", clearSearch: "Clear city search", matchingCities: "Matching Atlas cities", matchingCountries: "Matching countries", browseCountry: "Browse the country collection", nearMe: "Near me", findingCity: "Finding city…", myPosition: "My position", locating: "Locating…", shown: "shown", continue: "Continue", safetyAtlas: "Safety atlas", selectCountry: "Select a country to explore its cities", filterRegion: "Filter cities by region", filterCountry: "Filter cities by country", allCountries: "All countries", loading: "Loading city signal", noMatch: "No cities match this filter yet.", resetHint: "Try resetting search and country to reopen the atlas.", resetFilters: "Reset filters", country: "Country", editRights: "Edit rights", places: "Places", events: "Events", atmosphere: "atmosphere", knownFor: "Known for", ready: "Ready for more local discoveries", explore: "Explore", cities: "cities", city: "city", countries: "Countries", noSearchMatch: "No Atlas cities or countries match “{query}”.",
       allRegions: "All regions", northCentralAmerica: "North & Central America", southAmerica: "South America", completeDirectory: "Complete directory", browseAllGuides: "Browse all {count} queer city guides A–Z",
@@ -197,7 +198,9 @@ const messages = {
       emailSignInLink: "Email me a sign-in link",
       forgotPassword: "Forgot password?",
       displayName: "Display name",
-      displayNamePlaceholder: "How you’ll appear in Queer Atlas",
+      alias: "Alias",
+      privacyIntro: "Your directory profile starts hidden. Use an alias; sharing is a separate choice. Public contributions have their own audience.",
+      displayNamePlaceholder: "Choose an alias",
       choosePassword: "Choose a password",
       hideChosenPassword: "Hide chosen password",
       showChosenPassword: "Show chosen password",
@@ -429,6 +432,7 @@ const messages = {
     },
   },
   es: {
+    privacy: { settings: "Privacidad y visibilidad", personalAtlas: "Atlas privado" },
     cities: {
       eyebrow: "Explora el mundo queer", title: "Ciudades", intro: "Encuentra los lugares, escenas y señales locales que encajen con tu viaje.", search: "Buscar ciudad o país", clearSearch: "Borrar búsqueda de ciudad", matchingCities: "Ciudades de Atlas coincidentes", matchingCountries: "Países coincidentes", browseCountry: "Explorar la colección del país", nearMe: "Cerca de mí", findingCity: "Buscando ciudad…", myPosition: "Mi posición", locating: "Localizando…", shown: "mostradas", continue: "Continuar", safetyAtlas: "Atlas de seguridad", selectCountry: "Selecciona un país para explorar sus ciudades", filterRegion: "Filtrar ciudades por región", filterCountry: "Filtrar ciudades por país", allCountries: "Todos los países", loading: "Cargando señales de ciudades", noMatch: "Aún no hay ciudades que coincidan con este filtro.", resetHint: "Restablece la búsqueda y el país para volver a abrir el atlas.", resetFilters: "Restablecer filtros", country: "País", editRights: "Editar derechos", places: "Lugares", events: "Eventos", atmosphere: "ambiente", knownFor: "Conocida por", ready: "Lista para más descubrimientos locales", explore: "Explorar", cities: "ciudades", city: "ciudad", countries: "Países", noSearchMatch: "Ninguna ciudad o país de Atlas coincide con “{query}”.",
       allRegions: "Todas las regiones", northCentralAmerica: "Norteamérica y Centroamérica", southAmerica: "Sudamérica", completeDirectory: "Directorio completo", browseAllGuides: "Explora las {count} guías de ciudades queer de la A a la Z",
@@ -624,7 +628,9 @@ const messages = {
       emailSignInLink: "Envíame un enlace para iniciar sesión",
       forgotPassword: "¿Olvidaste la contraseña?",
       displayName: "Nombre público",
-      displayNamePlaceholder: "Así aparecerás en Queer Atlas",
+      alias: "Alias",
+      privacyIntro: "Tu perfil del directorio está oculto por defecto. Usa un alias; compartirlo es una decisión aparte. Las contribuciones públicas tienen su propia audiencia.",
+      displayNamePlaceholder: "Elige un alias",
       choosePassword: "Elige una contraseña",
       hideChosenPassword: "Ocultar contraseña elegida",
       showChosenPassword: "Mostrar contraseña elegida",

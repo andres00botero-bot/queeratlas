@@ -1,0 +1,21 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
+
+const version="0.5.11";
+const directory=fileURLToPath(new URL("../node_modules/.cache/privacy-test-runtime/",import.meta.url));
+await mkdir(directory,{recursive:true});
+const metadata=await fetch(`https://registry.npmjs.org/@electric-sql/pglite/${version}`);
+if(!metadata.ok)throw Error(`Registry response ${metadata.status}`);
+const {dist}=await metadata.json();
+if(!dist.tarball.startsWith("https://registry.npmjs.org/")||!dist.integrity.startsWith("sha512-"))throw Error("Unexpected package metadata");
+const response=await fetch(dist.tarball);
+if(!response.ok)throw Error(`Package response ${response.status}`);
+const bytes=Buffer.from(await response.arrayBuffer());
+if(`sha512-${createHash("sha512").update(bytes).digest("base64")}`!==dist.integrity)throw Error("Integrity mismatch");
+const archive=`${directory}/pglite.tgz`;
+await writeFile(archive,bytes);
+const result=spawnSync("tar",["-xzf",archive,"-C",directory],{stdio:"inherit"});
+if(result.status!==0)throw Error("Could not extract PGlite test runtime");
+console.log(`PGlite ${version} prepared in ignored test cache. Application dependencies are unchanged.`);

@@ -1,13 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
+import { emptyMemberProfile, getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
 import { captureOperationalError } from "@/lib/monitoring";
 import { resolveAdminAccess } from "@/lib/adminAccess";
+import { privateAvatar } from "@/lib/memberPrivacy";
+import { prepareMemberImage } from "@/lib/memberImages";
 
 const AuthContext = createContext(null);
-const ALLOWED_POST_LOGIN_PREFIXES = ["/"];
+const ALLOWED_POST_LOGIN_PREFIXES = ["/", "/privacy-settings"];
 const MEMBER_AVATAR_BUCKET = "member-avatars";
 const MAX_MEMBER_AVATAR_BYTES = 5 * 1024 * 1024;
 
@@ -22,7 +24,7 @@ function safeAvatarPath(userId, fileType = "") {
   if (mimeType.includes("png")) ext = "png";
   if (mimeType.includes("webp")) ext = "webp";
   if (mimeType.includes("gif")) ext = "gif";
-  return `${normalizedUserId}/avatar.${ext}`;
+  return `${normalizedUserId}/avatar-${crypto.randomUUID()}.${ext}`;
 }
 
 function isDataUrl(value) {
@@ -46,11 +48,7 @@ function isMissingProfileExtrasColumnError(error) {
 function getMemberName(user) {
   if (!user) return "Explorer";
 
-  return (
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    "Member"
-  );
+  return "Member";
 }
 
 function consumePostLoginTarget() {
@@ -59,6 +57,15 @@ function consumePostLoginTarget() {
   const raw = (localStorage.getItem("qa_post_login_target") || "").trim();
   if (!raw) return "";
   localStorage.removeItem("qa_post_login_target");
+  // Remove private Atlas/profile caches on shared devices. Never preserve a
+  // previous member's profile for the next session.
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith("qa_")) localStorage.removeItem(key);
+  }
+  for (const key of Object.keys(sessionStorage)) {
+    if (key.startsWith("qa_")) sessionStorage.removeItem(key);
+  }
+  window.dispatchEvent(new Event("qa:privacy-changed"));
 
   if (
     raw === "/favorites" ||
@@ -92,13 +99,25 @@ function clearLocalAuthState() {
   }
 }
 
-function localProfileWithoutAvatar() {
-  const local = getMemberProfile();
+function localProfileWithoutAvatar(userId = "") {
+  const sameOwner = typeof window !== "undefined" && userId && localStorage.getItem("qa_private_cache_owner") === userId;
+  const local = sameOwner ? getMemberProfile() : emptyMemberProfile;
   return {
     ...local,
     avatarUrl: "",
     avatarPath: "",
   };
+}
+
+function synchronizeMemberCache(userId = "") {
+  const previous = localStorage.getItem("qa_private_cache_owner");
+  if (userId ? previous !== userId : Boolean(previous)) {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("qa_") && !["qa_redirect", "qa_post_login_target"].includes(key)) localStorage.removeItem(key);
+    }
+    window.dispatchEvent(new Event("qa:privacy-changed"));
+  }
+  if (userId) localStorage.setItem("qa_private_cache_owner", userId);
 }
 
 export function AuthProvider({ children }) {
@@ -107,6 +126,23 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [memberProfile, setMemberProfile] = useState(() => localProfileWithoutAvatar());
   const [isAdminUser, setIsAdminUser] = useState(false);
+  const activeUserId = useRef("");
+
+  useEffect(() => {
+    if (!user?.id || !memberProfile.avatarPath) return;
+    let active = true;
+    const owner = user.id;
+    const path = memberProfile.avatarPath;
+    const renew = async () => {
+      const avatarUrl = await privateAvatar(path);
+      if (active && activeUserId.current === owner) {
+        setMemberProfile(current => current.avatarPath === path ? { ...current, avatarUrl } : current);
+      }
+    };
+    const timer = setInterval(renew, 20000);
+    window.addEventListener("focus", renew);
+    return () => { active = false; clearInterval(timer); window.removeEventListener("focus", renew); };
+  }, [user?.id, memberProfile.avatarPath]);
 
   const loadRemoteMemberProfile = async (userId) => {
     if (!userId) return localProfileWithoutAvatar();
@@ -118,27 +154,23 @@ export function AuthProvider({ children }) {
       .maybeSingle();
 
     if (error || !data) {
-      return localProfileWithoutAvatar();
+      return localProfileWithoutAvatar(userId);
     }
 
     const avatarPath = String(data.avatar_path || "").trim();
-    const fallbackPublicAvatarUrl = avatarPath
-      ? supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(avatarPath)?.data?.publicUrl || ""
-      : "";
+    const fallbackPublicAvatarUrl = avatarPath ? await privateAvatar(avatarPath) : "";
     return {
       displayName: data.display_name || "",
       pronouns: data.pronouns || "",
       homeCity: data.home_city || "",
       residentCountry: data.resident_country || "",
       about: data.about || "",
-      visibility: ["friends", "members", "public"].includes(String(data.visibility || "members"))
-        ? String(data.visibility || "members")
-        : "members",
+      visibility: "hidden",
       birthday: data.birthday || "",
       vibe: data.vibe || "",
       phone: data.phone || "",
       contactEmail: data.contact_email || "",
-      avatarUrl: data.avatar_url || fallbackPublicAvatarUrl || "",
+      avatarUrl: fallbackPublicAvatarUrl,
       avatarPath,
       avatarVersion: Number(data.avatar_version || 1) || 1,
       trustedContributor: Boolean(data.trusted_contributor),
@@ -153,12 +185,14 @@ export function AuthProvider({ children }) {
       try {
         const { data } = await supabase.auth.getSession();
         if (!mounted) return;
+        synchronizeMemberCache(data.session?.user?.id || "");
 
         setSession(data.session || null);
         setUser(data.session?.user || null);
+        activeUserId.current = data.session?.user?.id || "";
         if (data.session?.user?.id) {
           const profile = await loadRemoteMemberProfile(data.session.user.id);
-          if (mounted) {
+          if (mounted && activeUserId.current === data.session.user.id) {
             saveMemberProfile(profile);
             setMemberProfile(profile);
           }
@@ -192,15 +226,20 @@ export function AuthProvider({ children }) {
     hydrate();
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (activeUserId.current !== (nextSession?.user?.id || "")) setMemberProfile({ ...emptyMemberProfile });
+      synchronizeMemberCache(nextSession?.user?.id || "");
+      activeUserId.current = nextSession?.user?.id || "";
       setSession(nextSession || null);
       setUser(nextSession?.user || null);
       if (nextSession?.user?.id) {
         queueMicrotask(async () => {
           const profile = await loadRemoteMemberProfile(nextSession.user.id);
+          if (!mounted || activeUserId.current !== nextSession.user.id) return;
           saveMemberProfile(profile);
           setMemberProfile(profile);
         });
       } else {
+        if (event === "SIGNED_OUT") clearLocalAuthState();
         setMemberProfile(localProfileWithoutAvatar());
       }
       setIsLoading(false);
@@ -415,6 +454,7 @@ export function AuthProvider({ children }) {
     };
 
     const signOut = async () => {
+      activeUserId.current = "";
       clearLocalAuthState();
 
       try {
@@ -471,9 +511,7 @@ export function AuthProvider({ children }) {
           home_city: localProfile.homeCity || null,
           resident_country: localProfile.residentCountry || null,
           about: localProfile.about || null,
-          visibility: ["friends", "members", "public"].includes(String(localProfile.visibility || "members"))
-            ? String(localProfile.visibility || "members")
-            : "members",
+          visibility: "hidden",
           birthday: localProfile.birthday || null,
           vibe: localProfile.vibe || null,
           phone: localProfile.phone || null,
@@ -520,7 +558,9 @@ export function AuthProvider({ children }) {
         let uploadedAvatarPath = "";
 
         if (isFileInput) {
-          const avatarFile = avatarInput;
+          let avatarFile;
+          try { avatarFile = await prepareMemberImage(avatarInput); }
+          catch (error) { return { ok: false, error }; }
           if (!String(avatarFile?.type || "").startsWith("image/")) {
             return { ok: false, error: new Error("invalid_avatar_file_type") };
           }
@@ -534,7 +574,7 @@ export function AuthProvider({ children }) {
             .from(MEMBER_AVATAR_BUCKET)
             .upload(path, avatarFile, {
               upsert: true,
-              cacheControl: "3600",
+              cacheControl: "0",
               contentType: avatarFile.type || "image/jpeg",
             });
 
@@ -543,8 +583,7 @@ export function AuthProvider({ children }) {
           }
 
           uploadedAvatarPath = path;
-          uploadedAvatarUrl =
-            supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+          uploadedAvatarUrl = await privateAvatar(path);
           if (!uploadedAvatarUrl) {
             return { ok: false, error: new Error("avatar_public_url_unavailable") };
           }

@@ -96,7 +96,6 @@ export default function FavoritesProfileHome({
           <div className="min-w-0 flex-1 pb-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-2.5 py-1 text-[10px] uppercase tracking-[0.1em] text-fuchsia-100">{titleLabel || t("favorites.contributor", "Contributor")}</span>
-              {!isReadOnly ? <span className="inline-flex items-center gap-1 rounded-full px-1 text-[10px] text-white/48"><LockKeyhole className="h-3 w-3" aria-hidden="true" /> {visibilityLabel}</span> : null}
             </div>
             <h2 className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-[#fff8fc] sm:text-4xl">{displayName}</h2>
             {(visibleLocation || pronouns) ? (

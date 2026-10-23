@@ -52,3 +52,5 @@ reports/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+/.next-privacy-preview/
+/.next-privacy-build/

@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { MemberPrivacySummary, PrivateMemberProfile } from "@/components/community/MemberPrivacy";
+import { privateAvatar } from "@/lib/memberPrivacy";
+import { prepareMemberImage } from "@/lib/memberImages";
 import { BookmarkCheck } from "lucide-react";
 import CalendarMonthExperience from "@/features/favorites/calendar/CalendarMonthExperience";
 import TripPlansHome from "@/features/favorites/trips/TripPlansHome";
@@ -256,19 +260,17 @@ function isCommunityContributionSchemaError(error) {
 }
 
 function resolveAvatarUrlFromRow(row) {
-  const direct = String(row?.avatar_url || "").trim();
-  if (direct) return direct;
-  const path = String(row?.avatar_path || "").trim();
-  if (!path) return "";
-  return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+  // Legacy relationship cards must never revive public image URLs.
+  void row;
+  return "";
 }
 
 function sanitizeProfileExtras(raw = {}) {
   return {
     about: String(raw?.about || "").slice(0, 300),
-    visibility: ["friends", "members", "public"].includes(String(raw?.visibility || "members"))
-      ? String(raw?.visibility || "members")
-      : "members",
+    visibility: ["hidden"].includes(String(raw?.visibility || "hidden"))
+      ? String(raw?.visibility || "hidden")
+      : "hidden",
     birthday: String(raw?.birthday || "").slice(0, 20),
     vibe: String(raw?.vibe || "").slice(0, 80),
     phone: String(raw?.phone || "").slice(0, 40),
@@ -371,6 +373,19 @@ function resolveProfileVibeChips(vibeRaw = "", fallbackVibe = "") {
 }
 
 export default function FavoritesPage() {
+  return <Suspense fallback={<main className="min-h-screen bg-[#0B1220]" />}><ProfileRouteGate /></Suspense>;
+}
+
+function ProfileRouteGate() {
+  const params = useSearchParams();
+  const { user, isLoading } = useAuth();
+  const target = params.get("member") || "";
+  if (isLoading) return <main className="min-h-screen bg-[#0B1220]" />;
+  if (target && target !== user?.id) return <main className="min-h-screen bg-[#0B1220] px-4 py-8 pb-28"><div className="mx-auto max-w-2xl"><PrivateMemberProfile target={target} /></div></main>;
+  return <FavoritesPageContent key={user?.id || "guest"} />;
+}
+
+function FavoritesPageContent() {
   const { locale, t } = useLocale();
   const router = useRouter();
   const [profileRouteParams, setProfileRouteParams] = useState({
@@ -472,7 +487,7 @@ export default function FavoritesPage() {
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [profileExtras, setProfileExtras] = useState({
     about: "",
-    visibility: "members",
+    visibility: "hidden",
     birthday: "",
     vibe: "",
     phone: "",
@@ -483,6 +498,20 @@ export default function FavoritesPage() {
   const [profileMemories, setProfileMemories] = useState(() =>
     readLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, [])
   );
+  useEffect(() => {
+    if (!user?.id || !profileMemories.length) return;
+    let active = true;
+    const renew = async () => {
+      const renewed = await Promise.all(profileMemories.map(async memory => ({
+        ...memory,
+        url: String(memory.storagePath || "").startsWith(`${user.id}/`) ? await privateAvatar(memory.storagePath) : "",
+      })));
+      if (active) setProfileMemories(renewed);
+    };
+    const timer = setInterval(renew, 20000);
+    window.addEventListener("focus", renew);
+    return () => { active = false; clearInterval(timer); window.removeEventListener("focus", renew); };
+  }, [user?.id, profileMemories]);
   const [viewedProfile, setViewedProfile] = useState(null);
   const [viewedProfileLoading, setViewedProfileLoading] = useState(false);
   const [viewedProfileError, setViewedProfileError] = useState("");
@@ -611,7 +640,7 @@ export default function FavoritesPage() {
         residentCountry: "",
         about: "",
         vibe: "",
-        visibility: "members",
+        visibility: "hidden",
         avatarUrl: viewedMemberAvatarParam,
         createdAt: "",
       });
@@ -1240,15 +1269,7 @@ export default function FavoritesPage() {
         }
         return;
       }
-      const normalized = (Array.isArray(data) ? data : [])
-        .map((row) => ({
-          id: String(row?.id || ""),
-          url: String(row?.image_url || "").trim(),
-          storagePath: String(row?.storage_path || "").trim(),
-          createdAt: String(row?.created_at || ""),
-        }))
-        .filter((row) => row.id && row.url)
-        .slice(0, 5);
+      const normalized = (await Promise.all((data || []).slice(0, 5).map(async row => ({ id: String(row.id), url: await privateAvatar(row.storage_path), storagePath: String(row.storage_path || ""), createdAt: String(row.created_at || "") })))).filter(row => row.url);
       setProfileMemories(normalized);
       writeLocalJson(FAVORITES_PROFILE_MEMORIES_STORAGE_KEY, normalized);
     });
@@ -1297,15 +1318,7 @@ export default function FavoritesPage() {
         setViewedProfileMemoriesLoading(false);
         return;
       }
-      const normalized = (Array.isArray(data) ? data : [])
-        .map((row) => ({
-          id: String(row?.id || ""),
-          url: String(row?.image_url || "").trim(),
-          storagePath: String(row?.storage_path || "").trim(),
-          createdAt: String(row?.created_at || ""),
-        }))
-        .filter((row) => row.id && row.url)
-        .slice(0, 5);
+      const normalized = (await Promise.all((data || []).slice(0, 5).map(async row => ({ id: String(row.id), url: await privateAvatar(row.storage_path), storagePath: String(row.storage_path || ""), createdAt: String(row.created_at || "") })))).filter(row => row.url);
       setViewedProfileMemories(normalized);
       setViewedProfileMemoriesLoading(false);
     });
@@ -2231,26 +2244,20 @@ export default function FavoritesPage() {
     const insertedRows = [];
 
     for (let idx = 0; idx < uploadBatch.length; idx += 1) {
-      const file = uploadBatch[idx];
+      let file;
+      try { file = await prepareMemberImage(uploadBatch[idx]); } catch { continue; }
       const mime = String(file.type || "").toLowerCase();
       const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : mime.includes("gif") ? "gif" : "jpg";
-      const memoryOwner = String(effectiveDisplayName || "queer-atlas-member")
-        .normalize("NFKD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 60) || "queer-atlas-member";
-      const path = `${String(user.id)}/memories/${memoryOwner}-travel-memory-${Date.now()}-${idx + 1}.${ext}`;
+      const path = `${String(user.id)}/memories/${crypto.randomUUID()}.${ext}`;
       const uploadRes = await supabase.storage
         .from(MEMBER_AVATAR_BUCKET)
         .upload(path, file, {
           upsert: false,
-          cacheControl: "3600",
+          cacheControl: "0",
           contentType: file.type || "image/jpeg",
         });
       if (uploadRes.error) continue;
-      const publicUrl = supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+      const publicUrl = await privateAvatar(path);
       if (!publicUrl) continue;
       const createdAtIso = new Date().toISOString();
       const localEntry = {
@@ -2262,7 +2269,7 @@ export default function FavoritesPage() {
       nextItems.push(localEntry);
       insertedRows.push({
         user_id: user.id,
-        image_url: publicUrl,
+        image_url: "",
         storage_path: path,
         created_at: createdAtIso,
       });
@@ -2283,13 +2290,13 @@ export default function FavoritesPage() {
       .limit(5);
 
     const limited = !loadCloudError && Array.isArray(cloudRows)
-      ? cloudRows
-          .map((row) => ({
+      ? (await Promise.all(cloudRows
+          .map(async (row) => ({
             id: String(row?.id || ""),
-            url: String(row?.image_url || "").trim(),
+            url: await privateAvatar(row?.storage_path),
             storagePath: String(row?.storage_path || "").trim(),
             createdAt: String(row?.created_at || ""),
-          }))
+          }))))
           .filter((row) => row.id && row.url)
           .slice(0, 5)
       : nextItems.slice(0, 5);
@@ -2461,13 +2468,7 @@ export default function FavoritesPage() {
     if (badges.length === 0) badges.push("Rising Voice");
     return badges.slice(0, 6);
   }, [activeContributionCounts, activeMemberRank, atlasEventsAdded, atlasPlacesAdded, atlasReviewsWritten]);
-  const activeProfileVisibility = isViewingAnotherMember ? viewedProfile?.visibility : profileExtras.visibility;
-  const profileVisibilityLabel =
-    activeProfileVisibility === "public"
-      ? t("favorites.visibleToAll", "Visible to all")
-      : activeProfileVisibility === "friends"
-        ? t("favorites.visibleToFriends", "Visible to friends")
-        : t("favorites.visibleToMembers", "Visible to members");
+  const profileVisibilityLabel = t("privacy.personalAtlas", "Private Atlas");
   const profileLocationLabel =
     effectiveHomeCity || effectiveResidentCountry
       ? [effectiveHomeCity, effectiveResidentCountry].filter(Boolean).join(", ")
@@ -2614,7 +2615,7 @@ export default function FavoritesPage() {
       ? `&member_avatar=${encodeURIComponent(nextRouteParams.memberAvatar)}`
       : "";
     router.push(
-      `/favorites?tab=about&member=${encodeURIComponent(friendUserId)}&member_name=${encodeURIComponent(friendName)}${avatarParam}`
+      `/favorites?tab=about&member=${encodeURIComponent(friendUserId)}`
     );
     window.setTimeout(() => {
       favoritesControlsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3338,7 +3339,7 @@ export default function FavoritesPage() {
       showToast("Open another member profile to send a message.", { tone: "info", duration: 2200 });
       return;
     }
-    router.push(`/messages?user=${encodeURIComponent(viewedTargetUserId)}&name=${encodeURIComponent(viewedDisplayName)}`);
+    router.push(`/messages?user=${encodeURIComponent(viewedTargetUserId)}`);
   };
 
   const toggleProfileFollow = async () => {
@@ -3717,6 +3718,7 @@ export default function FavoritesPage() {
           ) : null}
         </section>
 
+        {isProfileAboutTab && <MemberPrivacySummary />}
         {isProfileAboutTab && !isEditingAbout ? (
           <FavoritesProfileHome
             isReadOnly={isReadOnlyPublicProfileView}
@@ -4390,24 +4392,7 @@ export default function FavoritesPage() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Profile visibility</p>
-                  <p className="mb-1 text-[11px] text-white/44">Choose who can see your profile details in the atlas.</p>
-                  <select
-                    value={profileExtras.visibility}
-                    onChange={(event) =>
-                      setProfileExtras((current) => ({
-                        ...current,
-                        visibility: ["friends", "members", "public"].includes(String(event.target.value || ""))
-                          ? String(event.target.value)
-                          : "members",
-                      }))
-                    }
-                    className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="friends">Visible to friends only</option>
-                    <option value="members">Visible to members only</option>
-                    <option value="public">Visible to all</option>
-                  </select>
+                  <Link href="/privacy-settings" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#B9AAF0]">{t("privacy.settings", "Privacy & visibility")}</Link>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5 sm:col-span-2">
                   <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">About me (max 300)</p>

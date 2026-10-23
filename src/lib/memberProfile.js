@@ -6,7 +6,7 @@ const defaultProfile = {
   homeCity: "",
   residentCountry: "",
   about: "",
-  visibility: "members",
+  visibility: "hidden",
   birthday: "",
   vibe: "",
   phone: "",
@@ -17,6 +17,7 @@ const defaultProfile = {
   trustedContributor: false,
   updatedAt: "",
 };
+export const emptyMemberProfile = Object.freeze({ ...defaultProfile });
 
 function hasOwn(obj, key) {
   return Object.prototype.hasOwnProperty.call(obj || {}, key);
@@ -47,7 +48,7 @@ export function getMemberProfile() {
     homeCity: parsed.homeCity || "",
     residentCountry: parsed.residentCountry || "",
     about: parsed.about || "",
-    visibility: parsed.visibility || "members",
+    visibility: "hidden",
     birthday: parsed.birthday || "",
     vibe: parsed.vibe || "",
     phone: parsed.phone || "",
@@ -63,16 +64,13 @@ export function getMemberProfile() {
 export function saveMemberProfile(profile) {
   if (typeof window === "undefined") return;
   const current = safeParse(window.localStorage.getItem(PROFILE_KEY), defaultProfile);
-  const nextVisibility = hasOwn(profile, "visibility")
-    ? String(profile?.visibility || "members")
-    : String(current?.visibility || "members");
   const normalized = {
     displayName: pickStringField(profile, current, "displayName"),
     pronouns: pickStringField(profile, current, "pronouns"),
     homeCity: pickStringField(profile, current, "homeCity"),
     residentCountry: pickStringField(profile, current, "residentCountry"),
     about: pickStringField(profile, current, "about"),
-    visibility: ["friends", "members", "public"].includes(nextVisibility) ? nextVisibility : "members",
+    visibility: "hidden",
     birthday: pickStringField(profile, current, "birthday"),
     vibe: pickStringField(profile, current, "vibe"),
     phone: pickStringField(profile, current, "phone"),

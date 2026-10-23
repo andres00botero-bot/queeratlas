@@ -19,6 +19,8 @@ import { trackKpiEvent } from "@/lib/analytics";
 import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { PrivateMemberDirectory } from "@/components/community/MemberPrivacy";
+import { PRIVACY_CHANGED } from "@/lib/memberPrivacy";
 import ActionToast from "@/components/ui/ActionToast";
 import PageOpeningState from "@/components/ui/PageOpeningState";
 import {
@@ -508,16 +510,18 @@ function isAvatarFieldMissingError(error) {
 }
 
 function resolveAvatarUrlFromProfile(profileLike) {
-  const direct = String(profileLike?.avatar_url || "").trim();
-  if (direct) return direct;
-  const path = String(profileLike?.avatar_path || "").trim();
-  if (!path) return "";
-  return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
+  void profileLike;
+  return "";
 }
 
 export default function CommunityPage() {
+  const { user } = useAuth();
+  return <CommunityPageContent key={user?.id || "guest"} />;
+}
+
+function CommunityPageContent() {
   const router = useRouter();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [isReady, setIsReady] = useState(false);
   const [authWaitExpired, setAuthWaitExpired] = useState(false);
   const { isMember, memberName, user, isLoading: isAuthLoading } = useAuth();
@@ -598,6 +602,7 @@ export default function CommunityPage() {
   const memberSearchCacheRef = useRef(new Map());
   const loadedCommunityScopesRef = useRef(new Set());
   const communityScopeRequestsRef = useRef(new Map());
+  const communityPrivacyGeneration = useRef(0);
   const memberSearchSentinelRef = useRef(null);
   const chatMessagesRef = useRef(null);
   const communityControlsRef = useRef(null);
@@ -677,19 +682,21 @@ export default function CommunityPage() {
     }
 
     const request = (async () => {
+    const privacyGeneration = communityPrivacyGeneration.current;
     const needsFeed = safeScope === "feed";
     const needsRooms = safeScope === "home" || safeScope === "chat";
     const needsJobs = safeScope === "home" || safeScope === "jobs";
     const needsIdeas = safeScope === "improve";
-    const needsLeaderboard = safeScope === "discovery";
+    const needsLeaderboard = false; // Legacy member ranking must not bypass privacy.
     setSyncError("");
-    const localStories = readStored(KEYS.stories, baseStories);
-    const localGuides = readStored(KEYS.guides, baseGuides);
-    const localJobs = readStored(KEYS.jobs, baseJobs);
-    const localTopics = applyTopicPolicy(readStored(KEYS.topics, baseTopics));
-    const localMessages = readStored(KEYS.messages, baseMessages);
-    const localIdeas = readStored(KEYS.ideas, baseIdeas);
-    const localArchive = readStored(KEYS.messageArchive, {});
+    // Cached contributions may have lost authorization since they were saved.
+    const localStories = [];
+    const localGuides = [];
+    const localJobs = [];
+    const localTopics = [];
+    const localMessages = {};
+    const localIdeas = [];
+    const localArchive = {};
 
     const skippedResponse = { data: [], error: null, skipped: true };
     const [storiesRes, guidesRes, jobsRes, topicsRes, messagesRes, ideasRes, leaderboardRes] = await Promise.all([
@@ -702,6 +709,7 @@ export default function CommunityPage() {
       needsLeaderboard ? supabase.from("qa_member_leaderboard").select("*").order("rank", { ascending: true }).limit(200) : Promise.resolve(skippedResponse),
     ]);
 
+    if (privacyGeneration !== communityPrivacyGeneration.current) return;
     const errorParts = [];
     if (!storiesRes.skipped && storiesRes.error) errorParts.push("stories");
     if (!guidesRes.skipped && guidesRes.error) errorParts.push("guides");
@@ -738,7 +746,7 @@ export default function CommunityPage() {
     const nextMessages = messagesRes.error
       ? localMessages
       : mapMessages(messagesRes.data || [], nextTopics);
-    const mergedMessages = mergeMessageMaps(nextMessages, localMessages, nextTopics);
+    const mergedMessages = nextMessages;
     const nextArchive = { ...localArchive };
     const cappedMessages = {};
     Object.keys(mergedMessages).forEach((topicKey) => {
@@ -821,7 +829,7 @@ export default function CommunityPage() {
     if (needsIdeas) setIdeas(nextIdeas);
     if (needsLeaderboard) setLeaderboard(resolvedLeaderboard);
     if (errorParts.length > 0) {
-      setSyncError(`Partial cloud sync: ${errorParts.join(", ")} using local fallback.`);
+      setSyncError("Community updates could not be loaded. Reconnect and try again.");
     }
     if (errorParts.length === 0) {
       loadedCommunityScopesRef.current.add(safeScope);
@@ -839,6 +847,35 @@ export default function CommunityPage() {
       communityScopeRequestsRef.current.delete(safeScope);
     }
   }, [memberUserId]);
+
+  useEffect(() => {
+    const invalidate = () => { communityPrivacyGeneration.current++; };
+    const clear = () => {
+      invalidate();
+      loadedCommunityScopesRef.current.clear();
+      communityScopeRequestsRef.current.clear();
+      setStories([]); setGuides([]); setJobs([]); setTopics([]);
+      setMessages({}); setMessageArchive({}); setIdeas([]);
+    };
+    const refresh = (event) => {
+      if (event?.type !== "poll" || document.visibilityState !== "visible") clear();
+      if (document.visibilityState === "visible" && navigator.onLine && memberUserId) {
+        void loadCommunityData({ scope: activeCommunityPanel, force: true });
+      }
+    };
+    queueMicrotask(refresh);
+    const timer = setInterval(() => refresh({ type: "poll" }), 15000);
+    window.addEventListener(PRIVACY_CHANGED, refresh);
+    window.addEventListener("offline", clear);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      invalidate();
+      clearInterval(timer);
+      window.removeEventListener(PRIVACY_CHANGED, refresh);
+      window.removeEventListener("offline", clear);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [memberUserId, activeCommunityPanel, loadCommunityData]);
 
   useEffect(() => {
     if (!isReady || !isMember) return () => {};
@@ -969,146 +1006,7 @@ export default function CommunityPage() {
     };
   }, [isReady, isMember, user?.email]);
 
-  const loadMemberDiscovery = useCallback(async ({
-    offset = 0,
-    append = false,
-    force = false,
-  } = {}) => {
-    if (!isReady || !isMember || !memberUserId) return;
-    if (activeCommunityPanel !== "home" && activeCommunityPanel !== "discovery") return;
-    const query = String(memberSearchTerm || "").trim();
-    const city = String(memberSearchCity || "").trim();
-    const safeOffset = Math.max(0, Number(offset || 0));
-    const safeSort = String(memberSearchSort || "best").trim().toLowerCase();
-    const friendsOnly = memberSearchScope === "friends";
-    const cacheKey = JSON.stringify({
-      query: query.toLowerCase(),
-      city: city.toLowerCase(),
-      sort: safeSort,
-      scope: memberSearchScope,
-      offset: safeOffset,
-      size: MEMBER_SEARCH_PAGE_SIZE,
-    });
-
-    if (!force && memberSearchCacheRef.current.has(cacheKey)) {
-      const cached = memberSearchCacheRef.current.get(cacheKey);
-      setMemberSearchWarning(cached.warning || "");
-      setMemberSearchHasMore(Boolean(cached.hasMore));
-      setMemberSearchOffset(safeOffset);
-      setMemberSearchRows((current) => {
-        if (!append) return cached.rows;
-        const seen = new Set(current.map((row) => row.user_id));
-        const merged = [...current];
-        cached.rows.forEach((row) => {
-          if (seen.has(row.user_id)) return;
-          seen.add(row.user_id);
-          merged.push(row);
-        });
-        return merged;
-      });
-      return;
-    }
-
-    setMemberSearchLoading(true);
-    if (!append) setMemberSearchWarning("");
-
-    const requestLimit = MEMBER_SEARCH_PAGE_SIZE + 1;
-    const { data, error } = await supabase.rpc("qa_search_members", {
-      search_query: query,
-      city_filter: city,
-      sort_mode: safeSort,
-      friends_only: friendsOnly,
-      result_limit: requestLimit,
-      result_offset: safeOffset,
-    });
-
-    if (error) {
-      const fallbackRows = (leaderboard || [])
-        .filter((entry) => String(entry.user_id || "") !== memberUserId)
-        .map((entry) =>
-          mapMemberSearchRow({
-            user_id: entry.user_id,
-            display_name: entry.display_name,
-            title: entry.title,
-            rank: entry.rank,
-            score: entry.score,
-            city_count: entry.city_count,
-            is_following: false,
-            follows_you: false,
-            mutual_count: 0,
-            is_online: false,
-            last_seen_at: "",
-            trusted_contributor: false,
-          })
-        )
-        .filter((entry) => {
-          const queryLower = query.toLowerCase();
-          const cityLower = city.toLowerCase();
-          const queryPass =
-            !queryLower ||
-            entry.display_name.toLowerCase().includes(queryLower) ||
-            entry.home_city.toLowerCase().includes(queryLower) ||
-            entry.resident_country.toLowerCase().includes(queryLower);
-          const cityPass = !cityLower || entry.home_city.toLowerCase() === cityLower;
-          return queryPass && cityPass;
-        })
-        .slice(0, MEMBER_SEARCH_PAGE_SIZE);
-
-      const warning = isMissingDbObjectError(error)
-        ? "Member search backend is not migrated yet. Run supabase/community-member-search-v1.sql for full results."
-        : "Live member search is temporarily unavailable. Showing fallback ranking.";
-
-      const fallbackRowsHydrated = await hydrateMemberRowsWithAvatars(fallbackRows);
-      setMemberSearchWarning(warning);
-      setMemberSearchHasMore(false);
-      setMemberSearchOffset(0);
-      setMemberSearchRows(fallbackRowsHydrated);
-      memberSearchCacheRef.current.set(cacheKey, {
-        rows: fallbackRowsHydrated,
-        hasMore: false,
-        warning,
-      });
-      setMemberSearchLoading(false);
-      return;
-    }
-
-    const mapped = (data || []).map(mapMemberSearchRow);
-    const hasMore = mapped.length > MEMBER_SEARCH_PAGE_SIZE;
-    const visibleRows = hasMore ? mapped.slice(0, MEMBER_SEARCH_PAGE_SIZE) : mapped;
-    const hydratedVisibleRows = await hydrateMemberRowsWithAvatars(visibleRows);
-
-    setMemberSearchHasMore(hasMore);
-    setMemberSearchOffset(safeOffset);
-    setMemberSearchWarning("");
-    setMemberSearchRows((current) => {
-      if (!append) return hydratedVisibleRows;
-      const seen = new Set(current.map((row) => row.user_id));
-      const merged = [...current];
-      hydratedVisibleRows.forEach((row) => {
-        if (seen.has(row.user_id)) return;
-        seen.add(row.user_id);
-        merged.push(row);
-      });
-      return merged;
-    });
-    memberSearchCacheRef.current.set(cacheKey, {
-      rows: hydratedVisibleRows,
-      hasMore,
-      warning: "",
-    });
-    setMemberSearchLoading(false);
-  }, [
-    isReady,
-    isMember,
-    memberUserId,
-    memberSearchTerm,
-    memberSearchCity,
-    memberSearchSort,
-    memberSearchScope,
-    activeCommunityPanel,
-    leaderboard,
-    hydrateMemberRowsWithAvatars,
-  ]);
+  const loadMemberDiscovery = useCallback(async () => { /* Legacy discovery disabled: privacy RPCs own this flow. */ }, []);
 
   useEffect(() => {
     if (!isReady || !isMember || !memberUserId) return;
@@ -1623,6 +1521,7 @@ export default function CommunityPage() {
     const { data, error } = await supabase
       .from("community_messages")
       .insert([{
+        user_id: user.id,
         topic_id: activeTopic.id,
         author: memberName || "Member",
         text: messageForm.text.trim(),
@@ -1630,6 +1529,10 @@ export default function CommunityPage() {
       .select("*")
       .single();
 
+    if (error || !data) {
+      showToast(locale === "es" ? "No se pudo enviar el mensaje. Inténtalo de nuevo." : "Message was not sent. Please try again.", { tone: "warn", duration: 2200 });
+      return;
+    }
     const item = error || !data
       ? fallbackItem
       : {
@@ -1761,7 +1664,7 @@ export default function CommunityPage() {
     const targetId = String(entry?.user_id || "").trim();
     if (!targetId) return;
     const safeName = String(entry?.display_name || "Member");
-    router.push(`/messages?user=${encodeURIComponent(targetId)}&name=${encodeURIComponent(safeName)}`);
+    router.push(`/messages?user=${encodeURIComponent(targetId)}`);
   };
 
   const openMemberProfile = (entry) => {
@@ -1771,7 +1674,7 @@ export default function CommunityPage() {
     const avatarUrl = resolveAvatarUrlFromProfile(entry);
     const avatarParam = avatarUrl ? `&member_avatar=${encodeURIComponent(avatarUrl)}` : "";
     router.push(
-      `/favorites?tab=about&member=${encodeURIComponent(targetId)}&member_name=${encodeURIComponent(safeName)}${avatarParam}`
+      `/favorites?tab=about&member=${encodeURIComponent(targetId)}`
     );
   };
 
@@ -2036,135 +1939,7 @@ export default function CommunityPage() {
           </section>
         ) : null}
 
-        {isDiscoveryPanel ? (
-          <section
-            aria-labelledby="community-discovery-heading"
-            aria-busy={memberSearchLoading}
-            className="qa-community-section qa-community-section-people animate-rise-in mb-6 overflow-hidden rounded-[28px] border border-white/[0.10] bg-[linear-gradient(155deg,rgba(15,19,28,0.97),rgba(7,9,14,0.99))] shadow-[0_28px_90px_rgba(0,0,0,0.32)] [&_h2]:!text-left [&_h2]:[hyphens:none] [&_p]:!text-left [&_p]:[hyphens:none] sm:rounded-[32px]"
-          >
-            <div className="border-b border-white/[0.08] px-5 py-6 sm:px-7 sm:py-7">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/62">{t("community.people", "People")}</p>
-                  <h2 id="community-discovery-heading" className="mt-2 scroll-mt-28 text-2xl font-semibold tracking-[-0.035em] text-white sm:text-3xl">{t("community.findAcrossAtlas", "Find people across the atlas.")}</h2>
-                  <p className="mt-2 max-w-xl text-sm leading-6 text-white/52">{t("community.peopleIntro", "Search by name or place, then connect at your own pace.")}</p>
-                </div>
-                <p className="text-xs text-white/42" aria-live="polite">
-                  {memberSearchLoading ? t("community.searchingMembers", "Searching members...") : t("community.membersShown", "{count} members shown").replace("{count}", displayedMemberRows.length) + (memberSearchHasMore ? ` · ${t("community.moreAvailable", "more available")}` : "")}
-                </p>
-              </div>
-
-              <div className="mt-6 grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(12rem,0.75fr)_minmax(11rem,0.65fr)]">
-                <input
-                  value={memberSearchTerm}
-                  onChange={(event) => setMemberSearchTerm(event.target.value)}
-                  placeholder={t("community.searchMembers", "Search name, city, country, or pronouns")}
-                  aria-label={t("community.searchMembers", "Search community members")}
-                  className="min-h-12 w-full rounded-2xl border border-white/12 bg-white/[0.055] px-4 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-100/42 focus:bg-white/[0.075]"
-                />
-                <select
-                  value={memberSearchCity}
-                  onChange={(event) => setMemberSearchCity(event.target.value)}
-                  aria-label={t("community.filterMembersCity", "Filter members by city")}
-                  className="min-h-12 w-full rounded-2xl border border-white/12 bg-[#11151e] px-4 text-sm text-white/78 outline-none transition focus:border-cyan-100/42"
-                >
-                  <option value="">{t("community.allCities", "All cities")}</option>
-                  {memberDiscoveryCities.map((city) => (
-                    <option key={city.normalized} value={city.raw}>{city.label}</option>
-                  ))}
-                </select>
-                <select
-                  value={memberSearchSort}
-                  onChange={(event) => setMemberSearchSort(event.target.value)}
-                  aria-label={t("community.sortMembers", "Sort members")}
-                  className="min-h-12 w-full rounded-2xl border border-white/12 bg-[#11151e] px-4 text-sm text-white/78 outline-none transition focus:border-cyan-100/42"
-                >
-                  <option value="best">{t("community.bestMatch", "Best match")}</option>
-                  <option value="active">{t("community.recentlyActive", "Recently active")}</option>
-                  <option value="mutual">{t("community.mutualConnections", "Mutual connections")}</option>
-                </select>
-              </div>
-
-              <div className="mt-3 flex items-center gap-5 border-t border-white/[0.06] pt-3">
-                <button type="button" aria-pressed={memberSearchScope === "all"} onClick={() => setMemberSearchScope("all")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "all" ? "text-white" : "text-white/42 hover:text-white/72"}`}>{t("community.allPeople", "All people")}</button>
-                <button type="button" aria-pressed={memberSearchScope === "friends"} onClick={() => setMemberSearchScope("friends")} className={`min-h-11 text-xs font-semibold transition ${memberSearchScope === "friends" ? "text-white" : "text-white/42 hover:text-white/72"}`}>{t("community.following", "Following")}</button>
-              </div>
-
-              {memberSearchWarning ? (
-                <p className="mt-3 rounded-xl border border-amber-200/20 bg-amber-200/[0.08] px-3 py-2 text-xs text-amber-100">{memberSearchWarning}</p>
-              ) : null}
-            </div>
-
-            <div className="divide-y divide-white/[0.08] px-5 sm:px-7">
-              {displayedMemberRows.map((entry) => {
-                const titleMeta = getMemberTitleMeta(entry.title || "");
-                const busy = Boolean(memberSearchBusyById[entry.user_id]);
-                const avatarUrl = resolveAvatarUrlFromProfile(entry);
-                const initials = String(entry.display_name || "Member").split(/\s+/).filter(Boolean).slice(0, 2).map((chunk) => chunk.charAt(0).toUpperCase()).join("") || "M";
-                const location = [entry.home_city ? formatCityLabel(entry.home_city) : "", entry.resident_country].filter(Boolean).join(", ");
-                return (
-                  <article key={entry.user_id} className="group py-5 transition sm:py-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                      <button type="button" onClick={() => openMemberProfile(entry)} className="flex min-w-0 flex-1 items-center gap-4 text-left">
-                        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/12 bg-white/[0.06] text-sm font-semibold text-white/78">
-                          {avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={avatarUrl} alt={`${entry.display_name || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
-                          ) : initials}
-                          {entry.is_online ? <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-[#0a0d13] bg-emerald-300" title="Active now" /> : null}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                            <p className="truncate text-base font-semibold text-white transition group-hover:text-cyan-50">{entry.display_name}</p>
-                            {entry.pronouns ? <span className="text-xs text-white/38">{entry.pronouns}</span> : null}
-                            {entry.trusted_contributor ? (
-                              <span title={t("community.trustedTitle", "Recognized for trusted contributions to Queer Atlas")} className="text-[10px] font-semibold uppercase tracking-[0.1em] text-cyan-100/70">{t("community.trustedContributor", "Trusted contributor")}</span>
-                            ) : null}
-                          </div>
-                          <p className="mt-1 text-sm text-white/48">{location || t("community.locationNotShared", "Location not shared")}</p>
-                          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/38">
-                            <span className={entry.is_online ? "text-emerald-200/76" : ""}>{formatMemberSeen(entry.last_seen_at, entry.is_online)}</span>
-                            <span>{titleMeta.icon} {titleMeta.label}</span>
-                            {entry.mutual_count > 0 ? <span>{t("community.mutualCount", "{count} mutual").replace("{count}", entry.mutual_count)}</span> : null}
-                            {entry.follows_you ? <span>{t("community.followsYou", "Follows you")}</span> : null}
-                          </div>
-                        </div>
-                      </button>
-
-                      <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
-                        <button type="button" onClick={() => openMemberThread(entry)} className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white">{t("community.message", "Message")}</button>
-                        <button type="button" onClick={() => toggleMemberFollow(entry)} disabled={busy} className={`qa-action min-h-11 rounded-full border px-4 py-2 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-60 ${entry.is_following ? "border-cyan-100/24 bg-cyan-100/[0.08] text-cyan-50" : "border-white/16 bg-white text-[#080b11] hover:bg-cyan-50"}`}>
-                          {busy ? t("community.saving", "Saving...") : entry.is_following ? t("community.following", "Following") : t("community.follow", "Follow")}
-                        </button>
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-
-              {!memberSearchLoading && displayedMemberRows.length === 0 ? (
-                <div className="py-12">
-                  <p className="text-sm text-white/52">{t("community.noPeopleMatch", "No people match these filters. Try another place or broaden your search.")}</p>
-                </div>
-              ) : null}
-            </div>
-
-            <div ref={memberSearchSentinelRef} className="h-2 w-full" aria-hidden />
-            <div className="flex items-center justify-between gap-3 border-t border-white/[0.08] px-5 py-4 sm:px-7">
-              <p className="text-[11px] text-white/36">{t("community.memberVisibility", "Member visibility follows each person's profile settings.")}</p>
-              {memberSearchHasMore ? (
-                <button
-                  type="button"
-                  onClick={() => queueMicrotask(async () => { await loadMoreMemberDiscovery(); })}
-                  disabled={memberSearchLoading}
-                  className="qa-action min-h-11 rounded-full border border-white/12 px-4 py-2 text-xs font-semibold text-white/68 transition hover:border-white/24 hover:text-white disabled:opacity-60"
-                >
-                  {memberSearchLoading ? t("community.loading", "Loading...") : t("community.loadMore", "Load more")}
-                </button>
-              ) : null}
-            </div>
-          </section>
-        ) : null}
+        {isDiscoveryPanel ? <PrivateMemberDirectory /> : null}
 
         {isFeedPanel ? (
         <section aria-labelledby="community-feed-heading-premium" className="qa-premium-card rounded-[30px] border border-violet-300/16 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.13),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(180deg,rgba(20,16,34,0.95),rgba(10,10,10,1))] p-5 shadow-[0_34px_110px_rgba(139,92,246,0.12),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">

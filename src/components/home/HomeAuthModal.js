@@ -190,12 +190,12 @@ export default function HomeAuthModal({
       setPendingEmailConfirmation("");
       const result = await updateMemberProfile(profilePayload);
       setAuthMessage(result?.ok ? t("auth.accountReady", "Account ready. Welcome to Queer Atlas.") : t("auth.accountCreated", "Account created. Add more profile details in Your Atlas."));
-      trackKpiEvent("signup_completed", { memberKey: email.toLowerCase() });
+      trackKpiEvent("signup_completed");
     } else {
       setPendingEmailConfirmation(email);
       localStorage.setItem(pendingSignupProfileKey, JSON.stringify({ ...profilePayload, email }));
       setAuthMessage(t("auth.accountCreatedConfirmEmail", "Account created. Confirm your email to activate your profile."));
-      trackKpiEvent("signup_completed", { memberKey: email.toLowerCase() });
+      trackKpiEvent("signup_completed");
     }
 
     setSignupForm({ displayName: "", pronouns: "", homeCity: "", residentCountry: "", email: "", password: "", confirmPassword: "" });
@@ -399,6 +399,10 @@ export default function HomeAuthModal({
             </div>
           ) : authMode === "signup" ? (
             <div className="mt-5">
+              <p className="mb-4 rounded-2xl border border-[#2B3949] bg-[#141E2C] p-3 text-sm leading-relaxed text-[#BCC7D2]">
+                {t("auth.privacyIntro", "Your directory profile starts hidden. Use an alias; sharing is a separate choice. Public contributions have their own audience.")} {" "}
+                <Link href="/privacy-settings" className="font-medium text-[#80D4C4] underline underline-offset-4">{t("privacy.settings", "Privacy & visibility")}</Link>
+              </p>
               <button type="button" onClick={handleGoogleAuth} disabled={authLoading} className="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-2xl border border-[#747775] bg-white px-4 text-sm font-semibold text-[#1f1f1f] shadow-[0_10px_28px_rgba(0,0,0,0.2)] transition hover:bg-[#f7f7f7] disabled:cursor-wait disabled:opacity-65">
                 <GoogleMark />
                 {authLoading ? t("auth.opening", "Opening...") : t("auth.continueWithGoogle", "Continue with Google")}
@@ -412,7 +416,7 @@ export default function HomeAuthModal({
 
               <form onSubmit={handleCreateAccount} className="space-y-4">
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-medium text-white/72">{t("auth.displayName", "Display name")}</span>
+                  <span className="mb-1.5 block text-xs font-medium text-white/72">{t("auth.alias", "Alias")}</span>
                   <input id="signup-display-name" name="display-name" autoComplete="nickname" required value={signupForm.displayName} onChange={(event) => setSignupForm((current) => ({ ...current, displayName: event.target.value }))} placeholder={t("auth.displayNamePlaceholder", "How you’ll appear in Queer Atlas")} className="h-[52px] w-full rounded-2xl border border-white/14 bg-black/28 px-4 text-base text-white outline-none transition placeholder:text-white/30 focus:border-fuchsia-200/55 focus:ring-2 focus:ring-fuchsia-200/14" />
                 </label>
                 <label className="block">
