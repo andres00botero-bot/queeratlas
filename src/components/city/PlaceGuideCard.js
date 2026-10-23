@@ -19,11 +19,6 @@ export default function PlaceGuideCard({
   const isHovered = String(hoveredPlaceId) === String(place.id);
   const typeLabel = typeLabels[place.type] || t("city.place", "Place");
   const location = String(place.location || "").trim() || cityName;
-  const rating = Number(place.avgRating);
-  const summary = [
-    typeLabel,
-    Number.isFinite(rating) ? t("city.rating", "Rating {rating}").replace("{rating}", rating.toFixed(1)) : null,
-  ].filter(Boolean).join(" · ");
 
   return (
     <div
@@ -53,7 +48,7 @@ export default function PlaceGuideCard({
             {place.name}
           </h3>
           <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] leading-5 text-[#bdb3c2]">
-            <span className="shrink-0">{summary}</span>
+            <span className="shrink-0">{typeLabel}</span>
             <span className="text-white/42">·</span>
             <MapPin className="h-3 w-3 shrink-0 text-[#d7c0ff]/70" aria-hidden="true" />
             <span className="truncate">{location}</span>

@@ -55,9 +55,9 @@ export default function CityDiscoveryResults({ city, cityName, discovery, narrat
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${entry.exact ? "text-cyan-100/72" : "text-amber-100/68"}`}>
+                  {entry.matchLabel && <p className={`text-[10px] font-semibold uppercase tracking-[0.16em] ${entry.exact ? "text-cyan-100/72" : "text-amber-100/68"}`}>
                     {entry.matchLabel}
-                  </p>
+                  </p>}
                   <h3 className="mt-1 text-lg font-semibold leading-tight text-white">{entry.name}</h3>
                   <p className="mt-2 text-xs leading-5 text-white/50">{entry.reason}</p>
                 </div>
@@ -93,7 +93,7 @@ export default function CityDiscoveryResults({ city, cityName, discovery, narrat
                     <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                   </a>
                 )}
-                {entry.rating > 0 && (
+                {entry.kind !== "place" && entry.rating > 0 && (
                   <span className="inline-flex items-center gap-1.5 px-2 text-xs text-white/54">
                     <Star className="h-3.5 w-3.5 text-amber-200" fill="currentColor" aria-hidden="true" />
                     {entry.rating.toFixed(1)}{entry.reviewCount ? ` · ${entry.reviewCount}` : ""}

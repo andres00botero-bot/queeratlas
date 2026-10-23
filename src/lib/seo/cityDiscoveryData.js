@@ -35,7 +35,7 @@ const TOPIC_RULES = {
     keywordRequired: true,
     safetyFocus: true,
     listTitle: "Safety-led bar shortlist",
-    exactLabel: "Bar with stronger trust signals",
+    exactLabel: "",
     relatedLabel: "Lower-friction alternative",
   },
   "lesbian-nightlife": {
@@ -160,7 +160,7 @@ const TOPIC_RULES = {
     keywordRequired: true,
     safetyFocus: true,
     listTitle: "Practical trust and support anchors",
-    exactLabel: "Stronger trust signal",
+    exactLabel: "",
     relatedLabel: "Additional practical option",
   },
   "drag-shows-tonight": {
@@ -305,7 +305,7 @@ function buildReason(candidate) {
   const pieces = [formatTypeLabel(candidate.type, candidate.kind)];
   const location = cleanText(candidate.entity?.location);
   if (location) pieces.push(location);
-  if (candidate.reviews.rating > 0) {
+  if (candidate.kind !== "place" && candidate.reviews.rating > 0) {
     pieces.push(`${candidate.reviews.rating.toFixed(1)} community rating${candidate.reviews.count ? ` · ${candidate.reviews.count} reviews` : ""}`);
   } else if (candidate.sources > 0) {
     pieces.push(`${candidate.sources} saved source${candidate.sources === 1 ? "" : "s"}`);
