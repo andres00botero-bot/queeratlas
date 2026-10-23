@@ -79,46 +79,52 @@ function DiscoveryCard({ item }) {
   );
 }
 
-function PulseCard({ item, featured = false }) {
+const PULSE_TONES = {
+  "next-event": {
+    icon: "border-[#F2B38B]/25 bg-[#F2B38B]/[0.12] text-[#F2B38B]",
+    text: "text-[#F2B38B]",
+    hover: "hover:border-[#F2B38B]/50",
+  },
+  "latest-news": {
+    icon: "border-[#67D4F1]/25 bg-[#67D4F1]/[0.12] text-[#67D4F1]",
+    text: "text-[#67D4F1]",
+    hover: "hover:border-[#67D4F1]/50",
+  },
+  "local-pick": {
+    icon: "border-[#B9AAF0]/25 bg-[#B9AAF0]/[0.12] text-[#B9AAF0]",
+    text: "text-[#B9AAF0]",
+    hover: "hover:border-[#B9AAF0]/50",
+  },
+};
+
+function PulseCard({ item }) {
   const Icon = PULSE_ICONS[item.key] || Activity;
+  const tone = PULSE_TONES[item.key] || PULSE_TONES["local-pick"];
+  const detail = item.key === "next-event" ? item.signalValue : item.meta;
 
   return (
     <button
       type="button"
       onClick={item.onClick}
-      className={`qa-premium-card group relative w-full overflow-hidden rounded-[22px] border p-3.5 text-left shadow-[0_16px_42px_rgba(0,0,0,0.25)] transition hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 sm:min-h-[9.25rem] sm:p-4 ${featured ? "col-span-2 min-h-[9.25rem] lg:col-span-1" : "min-h-[8.25rem]"} ${item.cardClass}`}
+      className={`group flex w-full min-w-0 items-start gap-3 rounded-2xl border border-[#2B3949] bg-[#141E2C] p-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#80D4C4] sm:min-h-[15rem] sm:flex-col sm:gap-4 sm:rounded-[20px] sm:p-5 ${tone.hover}`}
     >
-      <div className="flex h-full flex-col">
-        <div className="flex items-start justify-between gap-2.5">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/12 bg-white/[0.065] text-white/82">
-              <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate !text-left text-[9px] font-semibold uppercase tracking-[0.16em] text-white/70">{item.subtitle}</p>
-              {item.meta ? <p className="mt-0.5 truncate !text-left text-[10px] text-white/38">{item.meta}</p> : null}
-            </div>
-          </div>
-          {item.badge ? (
-            <span className={`${featured ? "inline-flex" : "hidden sm:inline-flex"} shrink-0 rounded-full border px-2 py-1 text-[8px] uppercase tracking-[0.11em] ${item.badgeClass}`}>
-              {item.badge}
-            </span>
-          ) : null}
-        </div>
-
-        <p className="mt-3 line-clamp-2 !text-left text-sm font-semibold leading-5 tracking-[-0.01em] text-white sm:text-[15px]">
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border sm:h-10 sm:w-10 ${tone.icon}`}>
+        <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col sm:w-full">
+        <span className={`text-xs font-semibold leading-5 ${tone.text}`}>{item.subtitle}</span>
+        <span className="mt-1 line-clamp-2 text-sm font-semibold leading-5 tracking-[-0.01em] text-[#F5F1E8] sm:mt-3 sm:text-lg sm:leading-6">
           {item.title}
-        </p>
-        <p className={`${featured ? "line-clamp-1" : "hidden sm:line-clamp-1"} mt-1 !text-left text-[11px] leading-4 text-white/48`}>
-          {item.description}
-        </p>
-
-        <div className="mt-auto flex items-center justify-end pt-3">
-          <span className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-[0.13em] text-white/48 transition group-hover:text-white/78">
-            {item.ctaLabel} <ArrowUpRight size={11} aria-hidden="true" />
-          </span>
-        </div>
-      </div>
+        </span>
+        {detail ? (
+          <span className="mt-1 text-xs leading-5 text-[#BCC7D2] sm:mt-3 sm:text-sm">{detail}</span>
+        ) : null}
+        <span className={`mt-auto hidden items-center justify-between gap-3 pt-5 text-sm font-semibold sm:flex ${tone.text}`}>
+          {item.ctaLabel}
+          <ArrowUpRight size={16} className="shrink-0 transition-transform motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
+        </span>
+      </span>
+      <ArrowUpRight size={16} className={`mt-1 shrink-0 sm:hidden ${tone.text}`} aria-hidden="true" />
     </button>
   );
 }
@@ -383,22 +389,22 @@ export default function HomeDeferredSections({
       <CompassPreview onOpen={onEditorialAction} />
 
       {livePulseCards.length > 0 ? (
-        <section data-home-section="live" className="qa-defer-render mt-8">
-          <div className="qa-atlas-section">
+        <section id="atlas-pulse" data-home-section="live" className="qa-defer-render mt-8 scroll-mt-5">
+          <div className="rounded-[24px] bg-[#0B1220] p-3 sm:p-6">
             <div className="mb-4">
               <div className="flex items-center justify-between gap-3">
-                <p className="flex items-center gap-2 !text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/66">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-200 shadow-[0_0_14px_rgba(125,211,252,0.75)]" />
-                  {t("home.liveNow", "Live now")}
+                <p className="flex items-center gap-2 !text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#80D4C4]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#80D4C4]" />
+                  {t("home.atlasUpdates", "Atlas updates")}
                 </p>
                 {localContext?.cityOptions?.length ? (
-                  <label className="flex shrink-0 items-center gap-2 rounded-full border border-white/11 bg-black/20 px-2.5 py-1.5 text-[9px] uppercase tracking-[0.12em] text-white/38">
-                    <span className="hidden sm:inline">{t("home.localFocus", "Local focus")}</span>
+                  <label className="flex shrink-0 items-center gap-2 rounded-full border border-[#2B3949] bg-[#141E2C] px-3 py-2 text-xs text-[#BCC7D2]">
+                    <span>{t("home.localFocus", "Local focus")}</span>
                     <select
                       aria-label={t("home.chooseLocalCity", "Choose local city")}
                       value={localContext.city || ""}
                       onChange={(event) => onLocalCityChange?.(event.target.value)}
-                      className="max-w-[8.5rem] bg-transparent text-[10px] font-semibold normal-case tracking-normal text-white/76 outline-none sm:max-w-[11rem]"
+                      className="min-h-7 max-w-[8.5rem] rounded bg-transparent text-xs font-semibold text-[#F5F1E8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#80D4C4] sm:max-w-[11rem]"
                     >
                       {localContext.cityOptions.map((city) => (
                         <option key={city} value={city} className="bg-[#111118] text-white">
@@ -409,14 +415,14 @@ export default function HomeDeferredSections({
                   </label>
                 ) : null}
               </div>
-              <h2 className="qa-display mt-2 !text-left text-2xl font-semibold tracking-[-0.03em] text-white sm:text-[2rem]">
+              <h2 className="qa-display mt-3 !text-left text-[1.45rem] font-semibold leading-tight tracking-[-0.03em] text-[#F5F1E8] sm:text-[2rem]">
                 {t("home.happeningAcross", "Happening across the atlas")}
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-              {livePulseCards.map((item, index) => (
-                <PulseCard key={item.key} item={item} featured={index === 0} />
+            <div className="grid gap-3 lg:grid-cols-3">
+              {livePulseCards.map((item) => (
+                <PulseCard key={item.key} item={item} />
               ))}
             </div>
           </div>
