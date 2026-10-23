@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:admin-members": "node scripts/test-admin-members.mjs",
     "setup:member-privacy-tests": "node scripts/setup-member-privacy-tests.mjs",
     "test:member-privacy": "node scripts/test-member-privacy.mjs",
     "dev": "node --use-system-ca node_modules/next/dist/bin/next dev",

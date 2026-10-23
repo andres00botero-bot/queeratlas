@@ -37,12 +37,12 @@ export function getTelemetryServiceClient() {
   return serviceClient;
 }
 
-export async function hasAuthorizedSeoAdminRequest(request) {
+export async function getAuthorizedSeoAdminUser(request) {
   const authorization = String(request.headers.get("authorization") || "");
   const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
   const url = getSupabaseUrl();
   const publicKey = getPublicSupabaseKey();
-  if (!accessToken || !url || !publicKey) return false;
+  if (!accessToken || !url || !publicKey) return null;
 
   const userClient = createClient(url, publicKey, {
     global: {
@@ -57,8 +57,12 @@ export async function hasAuthorizedSeoAdminRequest(request) {
   });
 
   const { data: userData, error: userError } = await userClient.auth.getUser(accessToken);
-  if (userError || !userData?.user?.id) return false;
+  if (userError || !userData?.user?.id) return null;
 
   const { data: isAdmin, error: adminError } = await userClient.rpc("qa_is_admin");
-  return !adminError && Boolean(isAdmin);
+  return !adminError && isAdmin === true ? userData.user : null;
+}
+
+export async function hasAuthorizedSeoAdminRequest(request) {
+  return Boolean(await getAuthorizedSeoAdminUser(request));
 }

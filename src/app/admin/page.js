@@ -27,10 +27,10 @@ import { useActionToast } from "@/lib/useActionToast";
 import ActionToast from "@/components/ui/ActionToast";
 import AdminTrafficPanel from "@/components/admin/AdminTrafficPanel";
 import AdminCityManager from "@/components/admin/AdminCityManager";
+import AdminMembersPanel from "@/components/admin/AdminMembersPanel";
 import { buildPublishedEntityIndexNowUrls } from "@/lib/seo/indexNow";
 import { notifyIndexNowUrls } from "@/lib/seo/indexNowClient";
 
-const MEMBER_AVATAR_BUCKET = "member-avatars";
 
 function timeAgo(value) {
   if (!value) return "Recently";
@@ -80,21 +80,6 @@ function isMissingRelationError(error) {
   return code === "42P01" || text.includes("relation") && text.includes("does not exist");
 }
 
-function isMissingColumnError(error, columnName = "") {
-  const needle = String(columnName || "").trim().toLowerCase();
-  if (!needle) return false;
-  const text = `${error?.code || ""} ${error?.message || ""} ${error?.details || ""}`.toLowerCase();
-  return (text.includes("column") || text.includes("schema cache")) && text.includes(needle);
-}
-
-function resolveAvatarUrlFromProfile(profileLike) {
-  const direct = String(profileLike?.avatar_url || "").trim();
-  if (direct) return direct;
-  const path = String(profileLike?.avatar_path || "").trim();
-  if (!path) return "";
-  return supabase.storage.from(MEMBER_AVATAR_BUCKET).getPublicUrl(path)?.data?.publicUrl || "";
-}
-
 function formatContactCategory(value = "") {
   const map = {
     bug_report: "Bug report",
@@ -135,6 +120,11 @@ function mapCommunityIdeaRow(row = {}) {
 }
 
 export default function AdminPage() {
+  const { user } = useAuth();
+  return <AdminPageContent key={user?.id || "guest"} />;
+}
+
+function AdminPageContent() {
   const router = useRouter();
   const { isMember, isLoading: isAuthLoading, user, memberName, session } = useAuth();
   const { toast, showToast } = useActionToast();
@@ -161,10 +151,6 @@ export default function AdminPage() {
   const [trafficSummary, setTrafficSummary] = useState(EMPTY_TRAFFIC_SUMMARY);
   const [trafficDays, setTrafficDays] = useState(30);
   const [trafficLoading, setTrafficLoading] = useState(false);
-  const [memberDirectory, setMemberDirectory] = useState([]);
-  const [memberSearch, setMemberSearch] = useState("");
-  const [memberDirectoryLoading, setMemberDirectoryLoading] = useState(false);
-  const [memberDirectoryNotice, setMemberDirectoryNotice] = useState("");
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [isLoadingPendingSubmissions, setIsLoadingPendingSubmissions] = useState(false);
   const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
@@ -404,50 +390,6 @@ export default function AdminPage() {
     setBusyMap((current) => ({ ...current, [busyKey]: false }));
   }, [showToast, user]);
 
-  const loadMemberDirectory = useCallback(async () => {
-    setMemberDirectoryLoading(true);
-    setMemberDirectoryNotice("");
-    try {
-      let response = await supabase
-        .from("member_profiles")
-        .select("user_id,display_name,home_city,resident_country,trusted_contributor,avatar_url,avatar_path,updated_at")
-        .order("updated_at", { ascending: false })
-        .limit(250);
-
-      if (response.error && isMissingColumnError(response.error, "trusted_contributor")) {
-        response = await supabase
-          .from("member_profiles")
-          .select("user_id,display_name,home_city,resident_country,avatar_url,avatar_path,updated_at")
-          .order("updated_at", { ascending: false })
-          .limit(250);
-      }
-
-      if (response.error) {
-        setMemberDirectory([]);
-        setMemberDirectoryNotice(response.error.message || "Could not load members.");
-        return;
-      }
-
-      const rows = Array.isArray(response.data) ? response.data : [];
-      setMemberDirectory(
-        rows.map((row) => ({
-          user_id: String(row.user_id || ""),
-          display_name: String(row.display_name || "").trim(),
-          home_city: String(row.home_city || "").trim(),
-          resident_country: String(row.resident_country || "").trim(),
-          trusted_contributor: Boolean(row.trusted_contributor),
-          avatar_url: resolveAvatarUrlFromProfile(row),
-          updated_at: row.updated_at || "",
-        }))
-      );
-    } catch (error) {
-      setMemberDirectory([]);
-      setMemberDirectoryNotice(error?.message || "Could not load members.");
-    } finally {
-      setMemberDirectoryLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     let active = true;
 
@@ -480,7 +422,7 @@ export default function AdminPage() {
 
         if (!adminAccess) return;
 
-        await Promise.all([loadAdminState(), loadMemberDirectory(), loadTrafficData(30)]);
+        await Promise.all([loadAdminState(), loadTrafficData(30)]);
       } catch (error) {
         if (!active) return;
         setWarning(`Admin data could not be loaded: ${formatDbError(error)}`);
@@ -495,7 +437,7 @@ export default function AdminPage() {
     return () => {
       active = false;
     };
-  }, [isAuthLoading, isMember, loadAdminState, loadMemberDirectory, loadTrafficData, router, user?.email]);
+  }, [isAuthLoading, isMember, loadAdminState, loadTrafficData, router, user?.email]);
 
   const openReports = useMemo(
     () => reports.filter((item) => String(item.status || "open") === "open"),
@@ -512,56 +454,6 @@ export default function AdminPage() {
       current.includes(key) ? current.filter((item) => item !== key) : [...current, key]
     );
   };
-
-  const toggleTrustedContributor = async (profileRow) => {
-    const userId = String(profileRow?.user_id || "");
-    if (!userId) return;
-    const busyKey = `trusted-toggle-${userId}`;
-    setBusyMap((current) => ({ ...current, [busyKey]: true }));
-    try {
-      const nextValue = !Boolean(profileRow?.trusted_contributor);
-      const { error } = await supabase
-        .from("member_profiles")
-        .update({ trusted_contributor: nextValue })
-        .eq("user_id", userId);
-
-      if (error) {
-        showToast(error.message || "Could not update trusted contributor.", { tone: "warn", duration: 2400 });
-        return;
-      }
-
-      setMemberDirectory((current) =>
-        current.map((row) =>
-          String(row.user_id) === userId
-            ? { ...row, trusted_contributor: nextValue, updated_at: new Date().toISOString() }
-            : row
-        )
-      );
-
-      showToast(nextValue ? "Trusted contributor enabled." : "Trusted contributor removed.", {
-        tone: "ok",
-        duration: 2100,
-      });
-    } finally {
-      setBusyMap((current) => ({ ...current, [busyKey]: false }));
-    }
-  };
-
-  const filteredMemberDirectory = useMemo(() => {
-    const query = String(memberSearch || "").trim().toLowerCase();
-    if (!query) return memberDirectory;
-    return memberDirectory.filter((row) => {
-      const haystack = [
-        row.display_name,
-        row.home_city,
-        row.resident_country,
-        row.user_id,
-      ]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [memberDirectory, memberSearch]);
 
   const refreshPendingSubmissions = useCallback(async () => {
     if (!isAdmin) {
@@ -907,7 +799,8 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  await Promise.all([loadAdminState(), loadMemberDirectory(), loadTrafficData(trafficDays), refreshPendingSubmissions()]);
+                  window.dispatchEvent(new Event("qa:admin-members-refresh"));
+                  await Promise.all([loadAdminState(), loadTrafficData(trafficDays), refreshPendingSubmissions()]);
                 }}
                 disabled={isRefreshing}
                 className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-4 py-2 text-xs uppercase tracking-[0.12em] text-cyan-100 transition hover:border-cyan-200/40 disabled:opacity-60"
@@ -1017,132 +910,7 @@ export default function AdminPage() {
           onDaysChange={loadTrafficData}
         />
 
-        <section className="mb-8 rounded-[30px] border border-indigo-300/16 bg-[linear-gradient(180deg,rgba(24,20,54,0.88),rgba(10,10,10,0.98))] p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-indigo-100/78">Member access</p>
-              <h2 className="mt-2 text-xl font-semibold text-white">Trusted contributors</h2>
-              <p className="mt-1 text-xs text-white/62">
-                Toggle publishing privileges for vetted members.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full border border-indigo-200/22 bg-indigo-200/10 px-3 py-1 text-xs text-indigo-100">
-                Members: {memberDirectory.length}
-              </span>
-              <button
-                type="button"
-                onClick={loadMemberDirectory}
-                className="rounded-full border border-white/14 bg-white/8 px-3 py-1 text-xs text-white/80 transition hover:border-indigo-200/35 hover:text-indigo-100"
-              >
-                Refresh
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/12 bg-black/25 p-4">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <input
-                value={memberSearch}
-                onChange={(event) => setMemberSearch(event.target.value)}
-                placeholder="Search by name, city, country or user id..."
-                className="w-full rounded-xl border border-white/12 bg-black/35 px-3 py-2 text-sm text-white outline-none md:max-w-md"
-              />
-              <span className="rounded-full border border-white/12 bg-white/8 px-3 py-1 text-xs text-white/72">
-                Showing {filteredMemberDirectory.length}
-              </span>
-            </div>
-
-            {memberDirectoryNotice && (
-              <div className="mb-3 rounded-xl border border-amber-200/20 bg-amber-200/10 px-3 py-2 text-xs text-amber-100">
-                {memberDirectoryNotice}
-              </div>
-            )}
-
-            {memberDirectoryLoading ? (
-              <div className="rounded-xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/58">
-                Loading member directory...
-              </div>
-            ) : filteredMemberDirectory.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/58">
-                No members match current search.
-              </div>
-            ) : (
-              <div className="max-h-[420px] overflow-y-auto rounded-xl border border-white/10">
-                <table className="w-full text-left text-sm">
-                  <thead className="sticky top-0 bg-[#101320] text-xs uppercase tracking-[0.12em] text-white/55">
-                    <tr>
-                      <th className="px-3 py-2">Member</th>
-                      <th className="px-3 py-2">City</th>
-                      <th className="px-3 py-2">Country</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredMemberDirectory.map((row) => {
-                      const busyKey = `trusted-toggle-${row.user_id}`;
-                      const isBusy = Boolean(busyMap[busyKey]);
-                      const trusted = Boolean(row.trusted_contributor);
-                      return (
-                        <tr key={`member-row-${row.user_id}`} className="border-t border-white/8">
-                          <td className="px-3 py-2">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/16 bg-white/8 text-[11px] font-semibold text-white/82">
-                                {row.avatar_url ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={row.avatar_url} alt={`${row.display_name || "Queer Atlas member"} profile photo`} className="h-full w-full object-cover" />
-                                ) : (
-                                  (String(row.display_name || "Member")
-                                    .split(/\s+/)
-                                    .filter(Boolean)
-                                    .slice(0, 2)
-                                    .map((part) => part.charAt(0).toUpperCase())
-                                    .join("") || "M")
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="truncate font-medium text-white">{row.display_name || "Member"}</p>
-                                <p className="truncate text-[11px] text-white/48">{row.user_id}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-white/78">{row.home_city || "-"}</td>
-                          <td className="px-3 py-2 text-white/78">{row.resident_country || "-"}</td>
-                          <td className="px-3 py-2">
-                            <span
-                              className={`rounded-full border px-2 py-1 text-[11px] ${
-                                trusted
-                                  ? "border-cyan-200/26 bg-cyan-200/12 text-cyan-100"
-                                  : "border-white/16 bg-white/8 text-white/70"
-                              }`}
-                            >
-                              {trusted ? "Trusted" : "Standard"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-2 text-right">
-                            <button
-                              type="button"
-                              onClick={() => toggleTrustedContributor(row)}
-                              disabled={isBusy}
-                              className={`rounded-full border px-3 py-1 text-xs transition ${
-                                trusted
-                                  ? "border-rose-200/24 bg-rose-200/10 text-rose-100 hover:border-rose-200/38"
-                                  : "border-emerald-200/24 bg-emerald-200/10 text-emerald-100 hover:border-emerald-200/38"
-                              } disabled:opacity-60`}
-                            >
-                              {isBusy ? "Saving..." : trusted ? "Remove trusted" : "Make trusted"}
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </section>
+        <AdminMembersPanel />
 
         <section className="mb-8 rounded-[30px] border border-indigo-300/16 bg-[linear-gradient(180deg,rgba(24,22,58,0.82),rgba(10,10,10,0.98))] p-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
