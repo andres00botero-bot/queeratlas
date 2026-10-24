@@ -7,7 +7,7 @@ const FIELD_NAMES = ["hook", "status", "crowd"];
 const MIN_LENGTH = 38;
 const MAX_LENGTH = 126;
 const INTRO_MIN_WORDS = 20;
-const INTRO_MAX_WORDS = 38;
+const INTRO_MAX_WORDS = 65;
 const INTRO_BANNED_PHRASES = [
   "route-first guide",
   "live community signal",
