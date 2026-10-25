@@ -9,6 +9,8 @@ const RESTRICTED_VENUE_CITY_KEYS = new Set([
   "beijing",
   "chengdu",
   "shanghai",
+  "jakarta",
+  "bali",
 ]);
 
 const HIGH_SURVEILLANCE_VENUE_CITY_KEYS = new Set([
