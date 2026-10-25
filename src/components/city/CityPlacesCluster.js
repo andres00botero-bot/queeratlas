@@ -27,6 +27,8 @@ export default function CityPlacesCluster({
   formatDate,
   cityName,
   safetySignalsByPlaceId,
+  venueAccessRestricted = false,
+  onRequestRestrictedVenueAccess,
 }) {
   return (
     <CityPlacesSection
@@ -54,6 +56,8 @@ export default function CityPlacesCluster({
       formatDate={formatDate}
       cityName={cityName}
       safetySignalsByPlaceId={safetySignalsByPlaceId}
+      venueAccessRestricted={venueAccessRestricted}
+      onRequestRestrictedVenueAccess={onRequestRestrictedVenueAccess}
     />
   );
 }

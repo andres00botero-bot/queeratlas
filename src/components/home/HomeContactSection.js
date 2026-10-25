@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import {
   ArrowLeft,
@@ -83,18 +84,22 @@ export default function HomeContactSection({
   onAnalyticsEvent,
 }) {
   const { t } = useLocale();
+  const searchParams = useSearchParams();
+  const contactTopic = String(searchParams?.get("topic") || "").trim();
+  const cityContext = String(searchParams?.get("city") || "").trim().slice(0, 120);
   const contactPaths = CONTACT_PATHS.map((path) => ({
     ...path,
     title: t(`contact.${path.key}.title`, path.title),
     description: t(`contact.${path.key}.description`, path.description),
   }));
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedPathKey, setSelectedPathKey] = useState("");
-  const [category, setCategory] = useState("general_feedback");
+  const startsWithSafetyIntent = contactTopic === "safety";
+  const [isExpanded, setIsExpanded] = useState(startsWithSafetyIntent);
+  const [selectedPathKey, setSelectedPathKey] = useState(startsWithSafetyIntent ? "safety" : "");
+  const [category, setCategory] = useState(startsWithSafetyIntent ? "safety_concern" : "general_feedback");
   const [message, setMessage] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
   const [senderName, setSenderName] = useState(defaultName || "");
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(startsWithSafetyIntent);
   const [wantsReply, setWantsReply] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -179,6 +184,7 @@ export default function HomeContactSection({
           senderName: isAnonymous ? "" : senderName,
           isAnonymous: canUseAnonymous ? isAnonymous : false,
           userId: isMember ? userId : "",
+          cityContext,
           pageContext,
         }),
       });

@@ -17,6 +17,7 @@ export default function CityNavigationCluster({
   onGoVenueType,
   venueJumpGroups,
   activeVenueFilter = "",
+  venueAccessRestricted = false,
   onAddPlace,
   onAddEvent,
   onAddService,
@@ -46,6 +47,7 @@ export default function CityNavigationCluster({
         venueJumpGroups={venueJumpGroups}
         activeSection={activeCitySection}
         activeVenueFilter={activeVenueFilter}
+        venueAccessRestricted={venueAccessRestricted}
         onAddPlace={onAddPlace}
         onAddEvent={onAddEvent}
         onAddService={onAddService}
@@ -65,6 +67,7 @@ export default function CityNavigationCluster({
         venueJumpGroups={venueJumpGroups}
         activeSection={activeCitySection}
         activeVenueFilter={activeVenueFilter}
+        venueAccessRestricted={venueAccessRestricted}
         variant="phone"
       />
     );
@@ -82,6 +85,7 @@ export default function CityNavigationCluster({
         venueJumpGroups={venueJumpGroups}
         activeSection={activeCitySection}
         activeVenueFilter={activeVenueFilter}
+        venueAccessRestricted={venueAccessRestricted}
         variant="desktop"
       />
     );
@@ -107,6 +111,7 @@ export default function CityNavigationCluster({
         venueJumpGroups={venueJumpGroups}
         activeSection={activeCitySection}
         activeVenueFilter={activeVenueFilter}
+        venueAccessRestricted={venueAccessRestricted}
       />
     </>
   );

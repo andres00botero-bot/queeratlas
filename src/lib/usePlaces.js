@@ -184,13 +184,19 @@ function resolveBestPlaceCandidate(candidates = [], place = {}) {
   return best?.id || null;
 }
 
-export function usePlaces(city) {
+export function usePlaces(city, { enabled = true } = {}) {
   const [places, setPlaces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
   /* ---------------- FETCH PLACES ---------------- */
   const fetchPlaces = useCallback(async () => {
+    if (!enabled) {
+      setPlaces([]);
+      setLoadError("");
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setLoadError("");
 
@@ -465,10 +471,18 @@ export function usePlaces(city) {
 
     setPlaces(mergedRows);
     setIsLoading(false);
-  }, [city]);
+  }, [city, enabled]);
 
   /* ---------------- INIT + REALTIME ---------------- */
   useEffect(() => {
+    if (!enabled) {
+      queueMicrotask(() => {
+        setPlaces([]);
+        setLoadError("");
+        setIsLoading(false);
+      });
+      return undefined;
+    }
     queueMicrotask(() => {
       fetchPlaces();
     });
@@ -490,7 +504,7 @@ export function usePlaces(city) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchPlaces]);
+  }, [enabled, fetchPlaces]);
 
   /* ---------------- ADD PLACE ---------------- */
   const addPlace = useCallback(async (place) => {

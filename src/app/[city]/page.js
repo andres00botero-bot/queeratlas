@@ -125,6 +125,8 @@ import {
 import styles from "./page.module.css";
 import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 import { getQueerAreasForCity, queerAreaLabelsFeatureCollection, queerAreasFeatureCollection } from "@/lib/queerAreas";
+import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
+import RestrictedVenueAccessDialog from "@/components/city/RestrictedVenueAccessDialog";
 
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
 const QUEER_AREA_MARKER_ZOOM = 12;
@@ -163,6 +165,7 @@ export default function CityPage() {
   }, [cityParam, pathname]);
 
   const cityName = cityNameFromConfig(config, city);
+  const venueAccessRestricted = isVenueAccessRestricted(city);
   const queerAreas = useMemo(() => getQueerAreasForCity(city), [city]);
   const regionalGuideNote = city === "miami"
     ? "This Miami guide spans three South Florida stops: Miami Beach & South Beach, Fort Lauderdale Beach and Wilton Manors. They are separate destinations, so use the coloured areas to plan travel time and choose one cluster at a time."
@@ -206,7 +209,8 @@ export default function CityPage() {
     isLoading: placesLoading,
     loadError: placesLoadError,
     reloadPlaces,
-  } = usePlaces(city);
+  } = usePlaces(city, { enabled: !venueAccessRestricted });
+  const [restrictedVenueAccessOpen, setRestrictedVenueAccessOpen] = useState(false);
   const [eventsData, setEventsData] = useState([]);
   const [servicesData, setServicesData] = useState([]);
   const [servicesLoading, setServicesLoading] = useState(true);
@@ -1122,6 +1126,10 @@ export default function CityPage() {
     [groupedPlaces]
   );
   const handleGoVenueType = useCallback((groupValue) => {
+    if (venueAccessRestricted) {
+      setRestrictedVenueAccessOpen(true);
+      return;
+    }
     const rawKey = String(groupValue || "").trim();
     const venueKeys = rawKey === "cafe_restaurant" ? ["cafe", "restaurant"] : [rawKey];
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1280;
@@ -1166,7 +1174,7 @@ export default function CityPage() {
       setHoveredPlaceId(String(firstPlace.id));
       window.setTimeout(() => setHoveredPlaceId(null), 1200);
     }
-  }, [clearSelectedDetailFromUrl, scrollToSection, showDesktopSection, visiblePlaceGroups]);
+  }, [clearSelectedDetailFromUrl, scrollToSection, showDesktopSection, venueAccessRestricted, visiblePlaceGroups]);
 
   const servicesByType = useMemo(
     () =>
@@ -5177,6 +5185,7 @@ export default function CityPage() {
                   onGoVenueType={handleGoVenueType}
                   venueJumpGroups={venueJumpGroups}
                   activeVenueFilter={activeVenueFilter}
+                  venueAccessRestricted={venueAccessRestricted}
                   variant="desktop"
                 />
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3 py-2">
@@ -5237,6 +5246,7 @@ export default function CityPage() {
                       }}
                       venueJumpGroups={venueJumpGroups}
                       activeVenueFilter={activeVenueFilter}
+                      venueAccessRestricted={venueAccessRestricted}
                       variant="phone"
                     />
                   </>
@@ -5376,6 +5386,7 @@ export default function CityPage() {
                     }}
                     venueJumpGroups={venueJumpGroups}
                     activeVenueFilter={activeVenueFilter}
+                    venueAccessRestricted={venueAccessRestricted}
                   />
                 </div>
               </div>
@@ -5680,6 +5691,8 @@ export default function CityPage() {
                     formatDate={formatDate}
                     cityName={cityName}
                     safetySignalsByPlaceId={safetySignalsByPlaceId}
+                    venueAccessRestricted={venueAccessRestricted}
+                    onRequestRestrictedVenueAccess={() => setRestrictedVenueAccessOpen(true)}
                   />
                 </div>
               </div>
@@ -5817,6 +5830,13 @@ export default function CityPage() {
         closeQualityModal={closeQualityModal}
         submitQualityModal={submitQualityModal}
       />
+      {restrictedVenueAccessOpen ? (
+        <RestrictedVenueAccessDialog
+          cityName={cityName}
+          cityKey={city}
+          onClose={() => setRestrictedVenueAccessOpen(false)}
+        />
+      ) : null}
     </main>
   );
 }

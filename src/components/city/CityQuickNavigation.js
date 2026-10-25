@@ -15,6 +15,7 @@ export default function CityQuickNavigation({
   venueJumpGroups = [],
   activeSection = "",
   activeVenueFilter = "",
+  venueAccessRestricted = false,
   onAddPlace,
   onAddEvent,
   onAddService,
@@ -86,7 +87,7 @@ export default function CityQuickNavigation({
     {
       key: "venues",
       onClick: () => {
-        if (isPhoneVariant) {
+        if (isPhoneVariant || venueAccessRestricted) {
           onGoVenues?.();
           return;
         }
@@ -170,6 +171,10 @@ export default function CityQuickNavigation({
         key: "venues",
         label: "Venues",
         onClick: () => {
+          if (venueAccessRestricted) {
+            onGoVenues?.();
+            return;
+          }
           setShowVenuePicker((current) => !current);
         },
       },
@@ -223,7 +228,7 @@ export default function CityQuickNavigation({
           })}
         </div>
 
-        {showVenuePicker ? (
+        {showVenuePicker && !venueAccessRestricted ? (
           <div className="mt-3 rounded-xl border border-white/12 bg-black/22 p-2.5">
             <div className="mb-2 px-1 text-[10px] uppercase tracking-[0.16em] text-white/56">Venue Types</div>
             <div className="space-y-1.5">
@@ -291,15 +296,15 @@ export default function CityQuickNavigation({
               item.onClick?.();
             }}
             onMouseEnter={
-              item.key === "venues" && !isPhoneVariant
+              item.key === "venues" && !isPhoneVariant && !venueAccessRestricted
                 ? () => {
                     setShowVenuePicker(true);
                   }
                 : undefined
             }
-            aria-label={item.key === "venues" ? "Venues — choose a category" : undefined}
-            aria-expanded={item.key === "venues" ? showVenuePicker : undefined}
-            aria-controls={item.key === "venues" ? "city-venue-picker" : undefined}
+            aria-label={item.key === "venues" ? (venueAccessRestricted ? "Venues — details protected" : "Venues — choose a category") : undefined}
+            aria-expanded={item.key === "venues" && !venueAccessRestricted ? showVenuePicker : undefined}
+            aria-controls={item.key === "venues" && !venueAccessRestricted ? "city-venue-picker" : undefined}
             className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${itemAppearance}`}
           >
             <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] opacity-72">
@@ -310,7 +315,7 @@ export default function CityQuickNavigation({
               <span className={`${item.key === "venues" ? "shrink-0" : "truncate"} text-white`}>
                 {item.label}
               </span>
-              {item.key === "venues" && !isPhoneVariant ? (
+              {item.key === "venues" && !isPhoneVariant && !venueAccessRestricted ? (
                 <span
                   className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition ${
                     showVenuePicker
@@ -330,7 +335,7 @@ export default function CityQuickNavigation({
         })}
       </div>
 
-      {showVenuePicker && venueGroups.length > 0 ? (
+      {showVenuePicker && !venueAccessRestricted && venueGroups.length > 0 ? (
         <div id="city-venue-picker" className="mt-3 rounded-2xl bg-[#091a28]/72 p-3 shadow-none">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#c8f4f0]/78">Browse venue categories</p>
           <div className="mt-2 flex flex-wrap gap-2">
