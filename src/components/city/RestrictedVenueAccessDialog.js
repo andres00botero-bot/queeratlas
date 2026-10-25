@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ShieldAlert, X } from "lucide-react";
 
-export default function RestrictedVenueAccessDialog({ cityName, cityKey, onClose }) {
+export default function RestrictedVenueAccessDialog({ cityName, cityKey, highSurveillance = false, onClose }) {
   const headingRef = useRef(null);
 
   useEffect(() => {
@@ -57,9 +57,15 @@ export default function RestrictedVenueAccessDialog({ cityName, cityKey, onClose
         <p className="mt-4 text-sm leading-6 text-white/72">
           We do not show venue names, addresses, maps or opening details publicly here. This reduces the risk of exposing local communities and places in a high-risk environment.
         </p>
-        <p className="mt-3 text-sm leading-6 text-white/54">
-          If you need local guidance, contact the Queer Atlas safety team. Please do not include your full name, address, travel plans or other sensitive details in your first message.
-        </p>
+        {highSurveillance ? (
+          <p className="mt-3 text-sm leading-6 text-white/54">
+            The safety team can offer general safety guidance only. We do not share venue names, addresses or meeting details through this contact channel. Please do not include your full name, address, travel plans or other sensitive details.
+          </p>
+        ) : (
+          <p className="mt-3 text-sm leading-6 text-white/54">
+            If you need local guidance, contact the Queer Atlas safety team. Please do not include your full name, address, travel plans or other sensitive details in your first message.
+          </p>
+        )}
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href={contactHref}

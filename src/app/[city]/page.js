@@ -125,7 +125,7 @@ import {
 import styles from "./page.module.css";
 import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 import { getQueerAreasForCity, queerAreaLabelsFeatureCollection, queerAreasFeatureCollection } from "@/lib/queerAreas";
-import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
+import { hasHighSurveillanceVenueRisk, isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
 import RestrictedVenueAccessDialog from "@/components/city/RestrictedVenueAccessDialog";
 
 const LAST_EXPLORED_CITY_KEY = "qa_last_explored_city";
@@ -166,6 +166,7 @@ export default function CityPage() {
 
   const cityName = cityNameFromConfig(config, city);
   const venueAccessRestricted = isVenueAccessRestricted(city);
+  const highSurveillanceVenueRisk = hasHighSurveillanceVenueRisk(city);
   const queerAreas = useMemo(() => getQueerAreasForCity(city), [city]);
   const regionalGuideNote = city === "miami"
     ? "This Miami guide spans three South Florida stops: Miami Beach & South Beach, Fort Lauderdale Beach and Wilton Manors. They are separate destinations, so use the coloured areas to plan travel time and choose one cluster at a time."
@@ -5834,6 +5835,7 @@ export default function CityPage() {
         <RestrictedVenueAccessDialog
           cityName={cityName}
           cityKey={city}
+          highSurveillance={highSurveillanceVenueRisk}
           onClose={() => setRestrictedVenueAccessOpen(false)}
         />
       ) : null}
