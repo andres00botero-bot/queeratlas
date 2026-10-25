@@ -4,6 +4,7 @@ import { cityCoreConfig } from "../src/lib/cityCore.js";
 import { calculateQari } from "../src/lib/qari.js";
 import { QARI_COUNTRY_PROFILES, QARI_GENERATED_COUNTRY_PROFILES } from "../src/lib/qariCountryProfiles2026.js";
 import { QARI_PILOT_PROFILES } from "../src/lib/qariPilotProfiles.js";
+import { QARI_CURRENT_SITUATION_PROFILES } from "../src/lib/qariCurrentSituationProfiles.js";
 
 const atlasCountries = [...new Set(Object.values(cityCoreConfig).map((city) => city.country))].sort();
 assert.equal(atlasCountries.length, 86);
@@ -27,9 +28,16 @@ for (const profile of QARI_COUNTRY_PROFILES) {
 }
 
 for (const pilot of QARI_PILOT_PROFILES) {
+  if (QARI_CURRENT_SITUATION_PROFILES.some((profile) => profile.destinationKey === pilot.destinationKey)) continue;
   const expanded = QARI_COUNTRY_PROFILES.find((profile) => profile.country === pilot.country);
   assert.equal(expanded?.score, pilot.score, `${pilot.country}: pilot score changed`);
   assert.equal(expanded?.methodologyVersion, "1.0", `${pilot.country}: pilot methodology changed`);
+}
+
+for (const current of QARI_CURRENT_SITUATION_PROFILES) {
+  const expanded = QARI_COUNTRY_PROFILES.find((profile) => profile.destinationKey === current.destinationKey);
+  assert.equal(expanded?.score, current.score, `${current.country}: current-situation score changed`);
+  assert.equal(expanded?.methodologyVersion, "1.1-editorial-current", `${current.country}: current review not preferred`);
 }
 
 const sql = fs.readFileSync(new URL("../supabase/qari-country-profiles-2026.sql", import.meta.url), "utf8");
