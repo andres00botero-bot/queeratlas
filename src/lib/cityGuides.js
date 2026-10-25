@@ -1442,22 +1442,22 @@ export const cityGuideConfig = {
   "kuala_lumpur": [
     {
       "title": "About",
-      "text": "Kuala Lumpur has a discreet but persistent queer social layer built on long-running nightlife rooms, community organizations, and trusted social networks. It is less open than many regional capitals, but still workable when approached intentionally.",
+      "text": "Kuala Lumpur has resilient queer communities, but the current enforcement climate makes public visibility and public venue information unsafe to treat as routine travel guidance. This guide does not present the city as an openly accessible queer-nightlife destination.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Bukit Bintang and nearby central zones are the practical nightlife anchors, with additional community-support infrastructure in the wider inner-city area.",
+      "text": "We do not publish districts as queer meeting areas or provide routes to queer venues in Kuala Lumpur. Public location guidance can expose local people, spaces, and visitors.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "KL requires stronger situational awareness than openly queer capitals. Keep movement deliberate, use rideshare late, verify venues before going, and favor trusted community-led spaces.",
+      "text": "Risk is not limited to ordinary big-city precautions. In November 2025, authorities arrested 201 men after a two-week operation that police said was based on public information. Avoid public queer signalling and do not share private contacts, locations, images, or plans through public channels. This guide cannot verify that a venue or event is safe.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "The city runs in selective waves: one social warm-up, one dance-floor anchor, then a controlled finish. Weekend nights carry most of the energy, with community events adding depth.",
+      "text": "We do not publish a queer nightlife route for Kuala Lumpur. Venue and event details are protected to reduce exposure of local people and spaces, and conditions may change rapidly.",
       "extra": ""
     },
     {
@@ -2711,22 +2711,22 @@ export const cityGuideConfig = {
   "istanbul": [
     {
       "title": "About",
-      "text": "Istanbul is high-intensity and layered, with queer life that is resilient, social, and often venue-driven rather than openly citywide. The city can feel cinematic and contradictory at the same time: huge scale, deep nightlife appetite, and strong community-coded spaces that matter a lot to locals.",
+      "text": "Istanbul has resilient queer communities, but the current enforcement climate makes public visibility and public venue information unsafe to treat as routine travel guidance. This guide does not present the city as an openly accessible queer-nightlife destination.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Beyoglu/Taksim remains the practical launch zone for most queer nights, with nearby lanes in Sisli and occasional north-side club pivots. Istanbul works best as a planned route city: one warm-up room, one main dance target, and a clear return strategy.",
+      "text": "We do not publish districts as queer meeting areas or provide routes to queer venues in Istanbul. Conditions can change quickly, and public location guidance can expose local people, spaces, and visitors.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Use standard big-city discipline and keep route clarity, especially late. Entry policies and event security can vary by venue and night, so check official channels before going. Move with intention, keep transport simple, and avoid improvising long transfers when tired.",
+      "text": "Risk is not limited to ordinary big-city precautions. Following the September 2026 raids and detentions, avoid public queer signalling and do not share private contacts, locations, images, or plans through public channels. This guide cannot verify that a venue or event is safe; prioritise current guidance from trusted local safety organisations.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Istanbul nightlife can be electric when the room is right: drag blocks, pop-heavy dance floors, and mixed queer audiences with strong local energy. The city rewards pacing and local signal more than random bar-hopping.",
+      "text": "We do not publish a queer nightlife route for Istanbul. Venue and event details are protected to reduce exposure of local people and spaces, and conditions may change rapidly.",
       "extra": ""
     },
     {

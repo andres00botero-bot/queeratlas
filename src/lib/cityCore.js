@@ -496,7 +496,7 @@ export const cityCoreConfig = {
     ],
     "title": "Queer Kuala Lumpur",
     "country": "Malaysia",
-    "vibe": "discreet skyline pulse"
+    "vibe": "high-risk context"
   },
   "phuket": {
     "center": [
@@ -921,7 +921,7 @@ export const cityCoreConfig = {
     ],
     "title": "Queer Istanbul",
     "country": "Turkey",
-    "vibe": "bosphorus voltage"
+    "vibe": "high-risk context"
   },
   "san_jose": {
     "center": [
