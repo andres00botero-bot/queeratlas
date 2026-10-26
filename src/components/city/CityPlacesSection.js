@@ -43,17 +43,17 @@ export default function CityPlacesSection({
         aria-label={t("city.venues", "Venues")}
         className="qa-city-section qa-city-content-section qa-city-tone-venues mb-8 rounded-[28px] border border-amber-100/16 bg-[linear-gradient(145deg,rgba(245,169,198,0.10),rgba(24,20,38,0.94))] p-5 shadow-[0_18px_46px_rgba(5,6,18,0.16)] sm:p-6"
       >
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/72">Community protection</p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">Venue details are protected</h2>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/72">{t("city.restrictedVenueEyebrow", "Community protection")}</p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.02em] text-white">{t("city.restrictedVenueDetailsProtected", "Venue details are protected")}</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
-          Venue names, addresses, maps and opening details are not shown publicly for this city.
+          {t("city.restrictedVenueSummary", "Venue names, addresses, maps and opening details are not shown publicly for this city.")}
         </p>
         <button
           type="button"
           onClick={onRequestRestrictedVenueAccess}
           className="qa-action mt-5 inline-flex min-h-11 items-center rounded-full border border-amber-100/30 bg-amber-100/[0.10] px-4 text-sm font-semibold text-amber-50 transition hover:border-amber-100/55 hover:bg-amber-100/[0.16]"
         >
-          Why are venue details protected?
+          {t("city.restrictedVenueWhy", "Why are venue details protected?")}
         </button>
       </section>
     );
