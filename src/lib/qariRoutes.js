@@ -1,4 +1,4 @@
-import { QARI_COUNTRY_PROFILES } from "./qariCountryProfiles2026.js";
+import { QARI_PUBLIC_PROFILES } from "./qariPublicProfiles.js";
 
 export function qariCountrySlug(country = "") {
   return String(country || "")
@@ -17,5 +17,5 @@ export function qariCountryPath(country = "") {
 
 export function getQariProfileBySlug(slug = "") {
   const normalized = qariCountrySlug(slug);
-  return QARI_COUNTRY_PROFILES.find((profile) => qariCountrySlug(profile.country) === normalized) || null;
+  return QARI_PUBLIC_PROFILES.find((profile) => qariCountrySlug(profile.country) === normalized) || null;
 }

@@ -167,17 +167,17 @@ export const SEO_REPORTS = [
     slug: "global-queer-event-report-2026",
     title: "Global Queer Event Report 2026",
     summary:
-      "A transparent city list of 502 indexable 2026 queer events across 126 Atlas cities, with calendar depth and route readiness disclosed.",
+      "A transparent city list of eligible 2026 queer events across Atlas cities, with calendar depth and route readiness disclosed.",
     socialMeta: {
       ogTitle: "Global Queer Event Report 2026: Where Events Actually Convert",
       ogDescription:
-        "Compare 502 documented 2026 queer events across 126 Atlas cities, including active months, source links and route-ready event coverage.",
+        "Compare documented 2026 queer events across eligible Atlas cities, including active months, source links and route-ready event coverage.",
     },
     publishedAt: "2026-05-01",
     updatedAt: "2026-08-22",
     authorId: "queer-atlas-editorial-team",
     researchScope:
-      "This edition counts 502 indexable events dated in 2026 across 126 Queer Atlas cities. It publishes every city position, active calendar months, source-link coverage, map coverage and route-ready count. It measures documented Atlas coverage, not every queer event operating worldwide.",
+      "This edition counts eligible indexable events dated in 2026 across Queer Atlas cities. It publishes city positions, active calendar months, source-link coverage, map coverage and route-ready count. Cities with protected venue access are excluded. It measures documented Atlas coverage, not every queer event operating worldwide.",
     changeLog: [
       {
         date: "2026-08-22",

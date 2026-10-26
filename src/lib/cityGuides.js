@@ -1361,22 +1361,22 @@ export const cityGuideConfig = {
   "moscow": [
     {
       "title": "About",
-      "text": "Moscow's queer life is highly coded and community-dependent. The city still has nightlife and support infrastructure, but legal pressure and enforcement risk are real, so route planning and trusted sources matter more than in open-scene capitals.",
+      "text": "Moscow's queer communities face severe legal and enforcement risk. This guide does not present the city as an openly accessible queer-nightlife destination or publish information that could expose local people and spaces.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Nightlife and social movement are usually central-city focused. Build short, trusted routes between confirmed venues and avoid long unplanned late-night transfers.",
+      "text": "We do not publish districts as queer meeting areas or routes to queer venues in Moscow. Use a well-connected base for ordinary travel needs and protect private contacts and location information.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Moscow currently requires high caution for LGBTQ+ visibility. Verify events same-day, use direct transport, avoid public escalation around identity markers, and prioritize community-led support channels for practical guidance.",
+      "text": "Avoid public queer location-sharing, images, plans and contact details. Use direct transport, minimise digital traces and seek current guidance from trusted safety organisations.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "The scene runs through selected clubs, bars, and private or semi-private social networks. A strong night is usually one verified opener, one club pivot, then a direct return plan.",
+      "text": "We do not publish a public queer-nightlife route for Moscow. Venue and event details are protected to reduce exposure and can change quickly.",
       "extra": ""
     },
     {
@@ -1388,22 +1388,22 @@ export const cityGuideConfig = {
   "saint_petersburg": [
     {
       "title": "About",
-      "text": "Saint Petersburg has long carried queer cultural memory through film, arts, and community support networks. The current legal context is restrictive, so the city works best through careful planning and verified channels.",
+      "text": "Saint Petersburg has a queer cultural history, but the current legal and enforcement climate makes public queer visibility and venue information unsafe as routine travel guidance.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Central routes around Vladimirsky/Ligovsky and arts-focused venues are practical anchors. Keep movement compact and avoid overextended late-night jumps.",
+      "text": "We do not publish districts as queer meeting areas or routes to queer venues in Saint Petersburg. Use a well-connected base for ordinary travel needs while protecting local people and spaces.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Use a high-caution framework: verify venue/event status same-day, use rideshare for late movement, and prefer trusted organizations and established cultural formats over unknown listings.",
+      "text": "Avoid public queer location-sharing, images, plans and contact details. Minimise digital traces and seek current guidance from trusted safety organisations.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "The scene is selective and event-led, with strongest output coming from cabaret nights, club formats, and culture-driven gatherings. Build the night in layers and prioritize predictable exits.",
+      "text": "We do not publish a public queer-nightlife route for Saint Petersburg. Venue and event details are protected to reduce exposure and can change quickly.",
       "extra": ""
     },
     {
@@ -2630,27 +2630,27 @@ export const cityGuideConfig = {
   "budapest": [
     {
       "title": "About",
-      "text": "Budapest mixes beautiful architecture with a nightlife scene that can feel underground, social, and surprisingly energetic. Queer signal exists, but it rewards knowing where to go.",
+      "text": "Budapest has an active queer community, but current restrictions on public LGBT events and expression mean it cannot be presented as an openly accessible nightlife destination.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Central Pest is the practical nightlife base, with bars and party nights distributed across compact inner-city routes.",
+      "text": "We do not publish queer meeting areas, venue routes, event schedules, or local community contacts for Budapest.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Use normal urban caution at night and avoid isolated movement when tired. Sticking to known venues keeps the experience smoother.",
+      "text": "Protect local people and contacts: do not publicly share queer locations, attendance plans, images, or identifying details. Seek current advice from trusted local safety organisations before travel.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Expect a blend of gay bars, mixed queer parties, and occasional larger club events. The city works best when guided by current local schedules.",
+      "text": "We do not publish a public queer-nightlife route for Budapest. Venue and event information is protected to reduce exposure under current restrictions.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Generally more affordable than Western European capitals, especially for food, drinks, and transport.",
+      "text": "Keep travel and accommodation plans flexible in case events, transit, or local conditions change.",
       "extra": ""
     }
   ],
@@ -2765,27 +2765,27 @@ export const cityGuideConfig = {
   "guatemala_city": [
     {
       "title": "About",
-      "text": "Guatemala City has a small but real queer scene built through central-zone bars, dance clubs, men-only saunas, drag nights, and rights organizations rather than a polished rainbow district. It is one of those cities where the queer trip is rewarding when you plan carefully: culture by day, Zona 4 and Zona 10 for easier visitor movement, then verified nightlife in Zone 1 and nearby central routes.",
+      "text": "Guatemala City has a queer community, but documented anti-LGBT violence, limited legal protection and weak practical access to justice mean it should not be presented as an openly accessible queer-nightlife destination.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Zone 1 carries much of the historic gay nightlife memory and several current bars, clubs and sauna references. Zone 4 is better for cafes, street art, creative food and a softer daytime base. Zones 9 and 10 are the easiest hotel and restaurant areas for many travelers, while Zone 11 is useful for Tikal Futura and Miraflores. Avoid treating the city as walkable at night across zones; short direct rides are the move.",
+      "text": "We do not publish queer meeting areas, venue routes or location-based nightlife guidance for Guatemala City. Choose a well-connected base for ordinary travel needs and protect local people from unwanted exposure.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Guatemala City requires practical caution. Same-sex relations are legal, but public comfort and legal protections remain limited, and the city has sharply different safety conditions by zone. Keep public affection measured outside queer spaces, avoid high-risk outer zones, use registered taxis or ride apps after dark, and do not wander between nightlife stops when tired.",
+      "text": "Same-sex relations are legal, but comprehensive protection is limited and serious harm has been documented. Keep public queer information private, protect local contacts and seek current trusted safety guidance before travel.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "The scene is compact, local and late: G Bistro, Genetic Majestic, Black Club, Glam Garden, The Box, Casa Vintage and SO36 cover dance, drag, karaoke, electronic and cruise-coded moods, while Dansei, Greco and G Wet Sauna add men-only bathhouse options. Verify current socials before going because openings and names can change faster than guide pages.",
+      "text": "We do not publish a public queer-nightlife route for Guatemala City. Venue and event details are protected to reduce exposure and may change quickly.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Guatemala City can be good value for food, rides and nightlife, but safety and convenience are worth paying for. Staying in Zone 4, 9 or 10 often costs more than the cheapest central rooms, yet it can save stress and make the whole trip smoother. Budget for rides between zones rather than trying to force cheap late-night walking.",
+      "text": "Maintain flexibility for changes to accommodation, transport and itinerary.",
       "extra": ""
     }
   ],
@@ -2819,27 +2819,27 @@ export const cityGuideConfig = {
   "tegucigalpa": [
     {
       "title": "About",
-      "text": "Tegucigalpa is a community-first queer capital rather than a polished gay nightlife destination. The strongest signal comes from rights organizations, HIV and safety networks, cultural memory, discreet social routes, and occasional drag or diversity events. Build the trip around verified community channels, daytime culture, and safer hotel logistics.",
+      "text": "Tegucigalpa has a queer community, but documented violence and discrimination mean it should not be presented as an openly accessible queer-nightlife destination.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Use Colonia Palmira, Boulevard Morazan, Boulevard Juan Pablo II and the Multiplaza / Avenida Roble area as practical visitor anchors for hotels, restaurants and rides. Centro Historico matters for culture and memory, but late-night movement should stay direct. There is no reliably documented fixed gay strip in Tegucigalpa right now.",
+      "text": "We do not publish queer meeting areas, venue routes or local community contacts for Tegucigalpa.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Honduras requires high practical caution for LGBTQ travelers. Same-sex relations are legal, but public comfort is uneven and violence against LGBTQ people remains a documented concern. Keep public affection measured, use direct rides after dark, verify events through trusted organizers, and avoid informal cruising or unknown late-night meeting points.",
+      "text": "Keep public queer information private, protect local contacts and seek current trusted safety guidance before travel.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Tegucigalpa has drag and queer nightlife history, but current dedicated bars, saunas and cruising clubs are not consistently verifiable from public sources. Treat nightlife as event-led: look for same-week flyers, hotel-based transformismo events, private community gatherings and mixed venues known through local contacts rather than assuming permanent gay venues are active.",
+      "text": "We do not publish a public queer-nightlife route for Tegucigalpa. Venue and event details are protected to reduce exposure.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Daily costs can be moderate, but paying for safer location and transport is worth it. A central hotel base and direct rides will matter more than saving a little on the room. Community events may be low-cost, while premium hotels and taxis can raise the budget quickly.",
+      "text": "Maintain flexibility for changes to accommodation, transport and itinerary.",
       "extra": ""
     }
   ],
@@ -2981,27 +2981,27 @@ export const cityGuideConfig = {
   "caracas": [
     {
       "title": "About",
-      "text": "Caracas queer life is community-driven and resilient, with nightlife and organizing spaces that matter deeply to locals. It is less about polished tourism and more about trusted venues, social networks, and cultural persistence.",
+      "text": "Caracas has a resilient queer community and a nightlife scene best approached through current venue information and local context. A documented 2026 police operation remains relevant safety context, but it does not erase the value of visible community spaces.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Sabana Grande and nearby central lanes are practical anchors for queer bars and sauna routes. The city works best when you build a direct sequence of known addresses instead of improvising across long distances late at night.",
+      "text": "Use the current venue listings as your starting point rather than assuming one fixed queer district. Keep routes compact and confirm the particular venue or event before travelling across the city.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Plan transport in advance, move with trusted local routing, and avoid drifting into unfamiliar areas after peak hours. Keep movement simple and venue-targeted. In Caracas, preparation is part of a good night.",
+      "text": "Use direct transport after dark, keep plans flexible, and confirm venues and events on the same day. Avoid unnecessary public sharing of other people’s identities or private plans.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "The scene leans on high-energy dance bars, drag moments, and long-running men-only sauna infrastructure. Nights are often social-first, then escalate into dance-floor pressure and late crowd turnover.",
+      "text": "Check current listings and organiser channels for the most useful route. A confirmed bar, drag night, or community event is more reliable than assumptions based on older city guides.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Variable. Venue spend can stay moderate, but transport and logistics should be budgeted clearly. Prioritizing short hop routes and central accommodation usually gives the best experience-to-cost ratio.",
+      "text": "Maintain flexibility for changes to accommodation, transport and itinerary.",
       "extra": ""
     }
   ],
@@ -3521,27 +3521,27 @@ export const cityGuideConfig = {
   "tbilisi": [
     {
       "title": "About",
-      "text": "Tbilisi's queer scene is resilient, coded, and community-protected. It combines one clear queer bar anchor, underground club culture, and strong rights organizations working in a higher-risk legal and social context.",
+      "text": "Tbilisi has a resilient queer community with cultural and nightlife spaces that remain important despite restrictions on expression and public gatherings. Use current venue information with care rather than treating the city as risk-free or as absent.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Rustaveli and adjacent central lanes are the practical social anchor, with electronic nightlife routes extending through river-adjacent club zones.",
+      "text": "Use the current venue listings and organiser posts to build a compact central route. Confirm the particular venue or event before travelling, as programming can change quickly.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "High caution is essential: verify events same-day, use direct transport, avoid public escalation around identity markers, and prioritize trusted community channels for updates.",
+      "text": "Keep public sharing considerate, protect local contacts’ privacy, use direct transport after dark, and seek current local safety guidance before travel.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Tbilisi nightlife is intense and late, often moving from social-safe spaces into harder underground rooms. The best strategy is one tight route with a clear exit plan.",
+      "text": "Check current listings and organiser channels for the best route. Confirm events the same day, especially around demonstrations, Pride, or politically sensitive dates.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Generally moderate, but risk-aware transport and careful sequencing matter more than saving on small ticket differences.",
+      "text": "Maintain flexibility for changes to accommodation, transport and itinerary.",
       "extra": ""
     }
   ],
@@ -3612,7 +3612,7 @@ export const cityGuideConfig = {
     },
     {
       "title": "Safety",
-      "text": "Use ride-hailing between stops late at night, stay alert in dense entertainment streets, and keep your venue sequence tight once the city shifts into peak hours.",
+      "text": "Use ride-hailing between stops late at night, stay alert in dense entertainment streets, and keep your venue sequence tight once the city shifts into peak hours. Public queer events can be changed, censored, or cancelled at short notice; confirm organiser information on the same day and do not assume a past Pride listing is current.",
       "extra": ""
     },
     {
@@ -3639,7 +3639,7 @@ export const cityGuideConfig = {
     },
     {
       "title": "Safety",
-      "text": "Core nightlife routes are generally manageable with normal city caution. Keep your route tight after midnight, use direct rides between zones, and verify event updates same-day.",
+      "text": "Core nightlife routes are generally manageable with normal city caution. Keep your route tight after midnight, use direct rides between zones, and verify event updates same-day. Public queer programming can be changed, censored, or cancelled at short notice, so use current organiser information rather than historical Pride listings.",
       "extra": ""
     },
     {
@@ -3828,7 +3828,7 @@ export const cityGuideConfig = {
     },
     {
       "title": "Safety",
-      "text": "High caution is recommended. Verify gatherings same-day, use direct transport, and prioritize trusted community channels over open public listings.",
+      "text": "High caution is recommended. Current LGBTIQ+ monitoring documents institutionalised repression, so verify gatherings and venue plans the same day, use direct transport, and prioritise trusted local community channels over broad public-event assumptions. Protect local people’s identities and do not treat a public listing as confirmation that an event is safe or still happening.",
       "extra": ""
     },
     {
@@ -4250,22 +4250,22 @@ export const cityGuideConfig = {
   "beirut": [
     {
       "title": "About",
-      "text": "Beirut has one of the Middle East's most resilient queer scenes, but it is not an easy open-scene destination. Queer life here is built through discreet clubs, gay-friendly cafes, community organizations, Pride memory, art spaces and trusted local signals rather than a simple rainbow district. The city can feel magnetic, cultured and socially brave, but it has to be approached with realism.",
+      "text": "Beirut has resilient queer communities, but current legal and regional-security conditions mean public queer visibility and venue information are not routine travel guidance. This guide does not present the city as an openly accessible queer-nightlife destination.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "Use Hamra for cafes, hotels and easy daytime movement, Mar Mikhael and Gemmayzeh for mixed bar energy, Bourj Hammoud and Karantina for selected late club routes, and Achrafieh for polished hotel bases. There is no single gay village. A good Beirut route is compact, verified same day, and built around trusted venues instead of open wandering.",
+      "text": "We do not publish districts as queer meeting areas or provide routes to queer venues in Beirut. Use a well-connected base for ordinary travel needs, while recognising that public location guidance can expose local people, spaces and visitors.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Lebanon's legal and security context requires extra caution. Same-sex intimacy sits in an ambiguous legal environment, public displays of affection are not advisable, and the current travel-advisory climate is high-risk. Keep LGBTQ content discreet at borders and in public, avoid southern Beirut/Dahiyeh and protest areas, use direct transport at night, and verify local conditions before any trip.",
+      "text": "Lebanon's legal and security context requires extra caution. Avoid public queer location-sharing, images, plans and contact details; use direct transport and seek current guidance from trusted local safety organisations before travel.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "Beirut nightlife is coded, late and highly context-dependent. POSH, B 018 and Ego are the clearest gay or gay-popular club references, while Om and Cafe Younes give softer social starts. Some older gay venues have closed, and no active official gay sauna or cruising venue could be safely verified for this package.",
+      "text": "We do not publish a public queer-nightlife route for Beirut. Venue and event details are protected to reduce exposure and may change quickly with the security situation.",
       "extra": ""
     },
     {
@@ -4329,10 +4329,10 @@ export const cityGuideConfig = {
     }
   ],
   "almaty": [
-    { "title": "About", "text": "Almaty is Kazakhstan's cultural powerhouse: tree-lined streets, ambitious food and art, experimental electronic music and the Tian Shan rising behind it all. Its queer life is real but deliberately discreet. Community happens through trusted networks, screened spaces and event-led rooms; the city should never be sold as having an open gay district.", "extra": "" },
-    { "title": "Districts", "text": "Use the central Golden Quarter around Abay, Dostyk and Panfilov for cafés, museums and an easy first base. Nazarbayev Avenue adds Kumäno and polished bar movement, while bULt sits farther west on Gagarin Avenue and only makes sense for a confirmed event. Esentai and Al-Farabi offer high-comfort hotels and skyline drinks; book a direct ride for late returns instead of improvising long walks.", "extra": "" },
-    { "title": "Safety", "text": "Consensual same-sex relations are legal, but Kazakhstan offers no relationship recognition or specific national protection from discrimination based on sexual orientation or gender identity. A 2025 law restricting so-called 'propaganda of non-traditional sexual orientation' took effect in 2026, raising the risk around public advocacy and online or public visibility. Avoid conspicuous affection, protect local contacts, never disclose a screened venue address, and use dating apps with identity and meeting-place safeguards.", "extra": "" },
-    { "title": "Nightlife", "text": "Amirovka and Chernika are reported closed, and no current permanent public gay bar can be responsibly mapped. The useful layer is mixed and programme-led: bULt for experimental rave culture, Kumäno for cocktails and selectors, and selected hotel bars for a calmer international room. Confirm the same-week programme; a venue's crowd can change completely with the promoter.", "extra": "" },
+    { "title": "About", "text": "Almaty is Kazakhstan's cultural centre, but the current legal and social climate means public queer visibility and venue information should not be treated as ordinary travel guidance. This guide does not present the city as an openly accessible queer-nightlife destination.", "extra": "" },
+    { "title": "Districts", "text": "We do not publish districts as queer meeting areas or provide routes to queer venues in Almaty. Use a well-connected central base for ordinary travel needs, while recognising that public location guidance can expose local people, spaces and visitors.", "extra": "" },
+    { "title": "Safety", "text": "Same-sex relations are legal, but Kazakhstan has no relationship recognition or specific national protection from discrimination based on sexual orientation or gender identity. The 2026 restriction on so-called propaganda of non-traditional sexual orientation increases risk around public advocacy and online or public visibility. Avoid public queer signalling and do not share private contacts, locations, images or plans through public channels.", "extra": "" },
+    { "title": "Nightlife", "text": "We do not publish a queer nightlife route for Almaty. Venue and event details are protected to reduce exposure of local people and spaces; the available evidence on current state repression is incomplete, not reassuring.", "extra": "" },
     { "title": "Cost", "text": "Almaty ranges from inexpensive local cafés and ride-hailing to international five-star pricing at Esentai and Rixos. The metro is useful by day, but budgeting for direct late-night rides improves both comfort and discretion. Mountain trips, spas and premium bars can quickly exceed the everyday city budget, so separate those splurges from the compact central route.", "extra": "" }
   ],
   "ulaanbaatar": [
@@ -4345,23 +4345,23 @@ export const cityGuideConfig = {
   "kathmandu": [
     { "title": "About", "text": "Kathmandu layers courtyards, stupas, palace squares and a hard-charging modern capital into one dense valley. Nepal's queer history is unusually consequential for South Asia: court victories, third-gender recognition, constitutional protection and community organisations sit beside a nightlife map that remains genuinely small. PINK Tiffany, founded by trans activist Meghna Lama, is the everyday social anchor; public Pride and advocacy supply much of the wider scene.", "extra": "" },
     { "title": "Districts", "text": "Thamel is the simplest queer-night route. PINK Tiffany and Fire Club sit around Chaksibari Marg, while Aloft is a short walk through the same tourist-heavy grid. Naxal gives the Marriott and a calmer polished base east of the palace area. Blue Diamond Society operates in Dhumbarahi, Mitini Nepal in Bhatbhateni and Queer Youth Group across the river in Patandhoka, Lalitpur; contact organisations before visiting rather than treating offices as drop-in attractions.", "extra": "" },
-    { "title": "Safety", "text": "Same-sex relations are legal, Nepal's constitution prohibits discrimination against sexual minorities, legal gender recognition exists and the Supreme Court ordered equal marriage rights in June 2026. Practice still trails the legal headline: employment, housing and hate-crime protections remain incomplete, trans people report administrative barriers, and comfort varies sharply by family and setting. Keep affection low-key outside trusted rooms, meet app contacts in staffed public places and protect local people's identities.", "extra": "" },
+    { "title": "Safety", "text": "Same-sex relations are legal, Nepal's constitution prohibits discrimination against sexual minorities, and legal gender recognition exists. Same-sex marriages can be registered through a transitional mechanism, but implementation is uneven and the certificates do not yet provide the full rights of marriage. Practice still trails the legal headline: employment, housing and hate-crime protections remain incomplete, trans people report administrative barriers, and comfort varies sharply by family and setting. Keep affection low-key outside trusted rooms, meet app contacts in staffed public places and protect local people's identities.", "extra": "" },
     { "title": "Nightlife", "text": "Begin at PINK Tiffany for food, drinks and a direct connection to the local community. On Friday, Fire Club's recurring gay night supplies the larger dance floor; on other nights it is a mainstream club. Kathmandu's best queer gatherings are often calendar-led—Pride, trans-led marches, art programmes and organiser events—so one current post is worth more than a long inherited list of bars.", "extra": "" },
     { "title": "Cost", "text": "Local meals and app-based rides can be inexpensive, while Thamel cocktails, club entry and international hotels quickly shift the budget. Traffic makes short map distances slow, especially between Thamel, Dhumbarahi, Patan and the airport. Budget for direct late-night transport and leave generous transfer time; a central stay can save more energy than a cheaper room across the valley.", "extra": "" },
   ],
   "colombo": [
-    { "title": "About", "text": "Colombo is a humid Indian Ocean capital of seafront towers, tropical modernism, temples, markets and an unusually strong creative class. Queer life exists, but permanent rainbow-fronted nightlife does not. EQUAL GROUND and Colombo Pride provide the public spine; mixed rooms such as Love Bar and Barefoot become useful through programme, crowd and trust rather than formal LGBTQ+ branding.", "extra": "" },
-    { "title": "Districts", "text": "Colombo 3 links Galle Road, Barefoot, Cinnamon Grand and the sea-facing corridor. Colombo 7 brings Love Bar, Cinnamon Gardens, museums and Jetwing Colombo Seven into a greener, more residential circuit. Galle Face and Colombo 2 hold Shangri-La and the largest international-hotel footprint. Distances look small but heat and traffic matter; use a known ride and confirm the exact destination before leaving.", "extra": "" },
-    { "title": "Safety", "text": "Sections 365 and 365A still criminalise consensual same-sex intimacy, despite court support for repeal and years of reform advocacy. Relationship recognition is absent, police abuse against LGBTQ+ people has been documented, and only 25% in the 2024 Gallup measure called their area a good place for gay and lesbian people. Avoid public affection, keep dating-app meetings in staffed public spaces, protect local contacts and use EQUAL GROUND or a trusted legal contact if trouble develops.", "extra": "" },
-    { "title": "Nightlife", "text": "Colombo works through selective mixed spaces and private or event-led gatherings. Love Bar has a queer-following signal in Colombo 7; Barefoot is the daylight cultural option for books, art and jazz. Pride month changes the calendar through EQUAL GROUND, while other parties may circulate privately. Verify the current organiser and never turn an old social post into a permanent venue claim.", "extra": "" },
+    { "title": "About", "text": "Colombo is a major Indian Ocean capital, but criminalising laws and documented police abuse mean public queer visibility and venue information are not routine travel guidance.", "extra": "" },
+    { "title": "Districts", "text": "We do not publish districts as queer meeting areas or routes to queer venues in Colombo. Choose a well-connected base for ordinary travel needs while recognising that public location guidance can expose people, spaces and visitors.", "extra": "" },
+    { "title": "Safety", "text": "Sections 365 and 365A criminalise same-sex intimacy and police abuse against LGBTQ+ people has been documented. Avoid public location-sharing, protect local contacts and seek current guidance from trusted community or legal organisations.", "extra": "" },
+    { "title": "Nightlife", "text": "We do not publish a public queer-nightlife route for Colombo. Venue and event details are protected to reduce exposure and can change quickly.", "extra": "" },
     { "title": "Cost", "text": "Local food and tuk-tuk journeys can be inexpensive, while cocktails and seafront hotels price for an international market. App-based or hotel-arranged rides reduce negotiation and confusion after dark. Build airport time generously—the airport is well north of central Colombo—and treat a staffed central hotel as part of the safety budget when discretion matters.", "extra": "" },
   ],
   "yerevan": [
-    { "title": "About", "text": "Yerevan compresses rose-coloured stone, Soviet modernism, café terraces and a serious contemporary arts scene into a highly walkable centre. Its queer life is small but not imaginary: Relokant provides the clearest current nightlife anchor, while Pink Armenia and Right Side sustain legal, psychosocial and community support. The useful guide is built from those live signals, not from closed bars preserved in old lists.", "extra": "" },
-    { "title": "Districts", "text": "Kentron is the practical first map. Republic Square, Abovyan Street and Pushkin Street hold the main hotels and Calumet; the Opera and Cascade side leads to Sarmen Street and Esthetic Joys Embassy. Relokant's current entrance should be confirmed directly rather than broadcast from an inherited listing. Distances in the centre are short, but steep Cascade-side streets and late-hour gaps still make a direct ride useful.", "extra": "" },
-    { "title": "Safety", "text": "Consensual same-sex relations are legal, but Armenia offers no recognition for same-sex couples and no comprehensive LGBTQ+-specific anti-discrimination law. Human Rights Watch reports violence, family abuse, extortion, employment discrimination and abuse by law enforcement; gender-marker changes remain medically conditioned. Keep public affection measured, meet app contacts first in a staffed public room, avoid sharing local people's identities and save Pink Armenia's +374 33 522533 hotline before the night begins.", "extra": "" },
-    { "title": "Nightlife", "text": "Relokant is the clearest queer-led stop, strongest when a current party or karaoke night is posted. Esthetic Joys Embassy brings a mixed art-and-jazz crowd with occasional queer programming; Calumet is a relaxed gay-friendly lounge, not a dedicated venue. Yerevan has no broad public gay strip, and community events can move or stay deliberately private. Follow the organiser and date as carefully as the address.", "extra": "" },
-    { "title": "Cost", "text": "Central cafés, wine and app-based rides can be good value, while imported drinks and international hotels rise quickly toward European-capital pricing. Kentron's compact layout saves transport by day. Budget for a direct ride after late events, carry a payment backup and book airport transfer or a trusted app rather than negotiating at the curb when discretion matters.", "extra": "" },
+    { "title": "About", "text": "Yerevan is a cultural capital with a small queer community, but documented violence, discrimination and barriers to justice mean it should not be presented as an openly accessible queer-nightlife destination.", "extra": "" },
+    { "title": "Districts", "text": "We do not publish queer meeting areas, venue routes or local community contacts for Yerevan. Choose a well-connected base for ordinary travel needs and protect local people from unwanted exposure.", "extra": "" },
+    { "title": "Safety", "text": "Same-sex relations are legal, but comprehensive LGBTQ+-specific protection is absent and serious harm has been documented. Keep public queer information private, protect local contacts and seek current trusted safety guidance before travel.", "extra": "" },
+    { "title": "Nightlife", "text": "We do not publish a public queer-nightlife route for Yerevan. Venue and event details are protected to reduce exposure and may change quickly.", "extra": "" },
+    { "title": "Cost", "text": "Maintain flexibility for changes to accommodation, transport and itinerary.", "extra": "" },
   ],
   "zagreb": [
     {
@@ -4393,27 +4393,27 @@ export const cityGuideConfig = {
   "sarajevo": [
     {
       "title": "About",
-      "text": "Sarajevo has a small, resilient queer scene shaped more by community organizing, festivals, mixed nightlife and trusted local rooms than by a large permanent gay-bar district. The city is culturally rich and emotionally dense, so the strongest queer trip here is not a checklist of rainbow venues. It is a careful mix of Sarajevo Open Centre, Pride and Kvirhana programming, queer-friendly bars, cafes, and a realistic read of context.",
+      "text": "Sarajevo has a queer community with cultural and nightlife spaces worth finding through current listings. Past attacks on Pride and uneven protection remain relevant context, but they do not justify erasing public venue information.",
       "extra": ""
     },
     {
       "title": "Districts",
-      "text": "There is no single gay district. Most useful movement sits in the central city: Bascarsija for cafes and old-town dinners, Ferhadija and the Austro-Hungarian core for mixed bars, and nearby club rooms for late-night music. Treat Sarajevo as a compact route rather than a strip: start central, keep transitions short, and verify event-led spaces before going.",
+      "text": "Use current venue listings and organiser posts to plan a compact central route. Confirm the venue and event timing before travelling, as the scene is smaller and programming can move.",
       "extra": ""
     },
     {
       "title": "Safety",
-      "text": "Sarajevo can be rewarding for queer travelers, but discretion and context-reading matter more here than in larger Western European scene cities. Same-sex relationships are legal, yet public visibility and social comfort can vary. Keep public affection measured where the room is unclear, use direct transport late at night, and lean on verified community channels for Pride, festival and safety updates.",
+      "text": "Use normal city caution, arrange direct transport after late events, respect local contacts’ privacy, and check current local safety guidance before travel.",
       "extra": ""
     },
     {
       "title": "Nightlife",
-      "text": "The scene is mixed, event-led and more discreet than destination-gay nightlife. Travel guides point to gay-popular or queer-friendly rooms such as The Loft, The Bar, City Pub and Pink Houdini, while places like Silver & Smoke and Cinemas Sloga work better as mixed nightlife options. No active dedicated gay sauna or cruise club could be verified for this package.",
+      "text": "Check current listings and organiser channels for a bar, social event, or cultural programme that fits your visit. Same-day confirmation is useful for smaller events.",
       "extra": ""
     },
     {
       "title": "Cost",
-      "text": "Sarajevo is generally better value than most Western European capitals, especially for food, cafes and ordinary transport. The main cost risk is not price but planning: because the queer scene is smaller, a good trip depends on checking current programmes, staying central and avoiding unnecessary late-night improvisation.",
+      "text": "Maintain flexibility for changes to accommodation, transport and itinerary.",
       "extra": ""
     }
   ],

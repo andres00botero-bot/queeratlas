@@ -939,7 +939,7 @@ export const cityCoreConfig = {
     ],
     "title": "Queer Guatemala City",
     "country": "Guatemala",
-    "vibe": "coded central-zone nightlife"
+    "vibe": "high-caution capital"
   },
   "san_salvador": {
     "center": [
@@ -1497,7 +1497,7 @@ export const cityCoreConfig = {
     "center": [44.5152, 40.1872],
     "title": "Queer Yerevan",
     "country": "Armenia",
-    "vibe": "pink-stone capital with intimate queer rooms and resilient community networks"
+    "vibe": "high-caution cultural capital"
   },
   "gothenburg": {
     "center": [

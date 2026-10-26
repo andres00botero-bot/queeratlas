@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { cityCoreConfig } from "../src/lib/cityCore.js";
+import { isVenueAccessRestricted } from "../src/lib/venueAccessPolicy.js";
 
 const PAGE_SIZE = 1000;
 const REPORT_YEAR = 2026;
@@ -44,7 +45,8 @@ const eligibleEvents = allEvents.filter((event) => {
   const city = String(event?.city || "").trim().toLowerCase();
   return event?.seo_indexable !== false
     && eventDate(event).startsWith(String(REPORT_YEAR))
-    && Boolean(cityCoreConfig[city]);
+    && Boolean(cityCoreConfig[city])
+    && !isVenueAccessRestricted(city);
 });
 
 const grouped = Map.groupBy(eligibleEvents, (event) => String(event.city).trim().toLowerCase());

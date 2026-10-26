@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { QARI_COUNTRY_PROFILES } from "@/lib/qariCountryProfiles2026";
+import { QARI_PUBLIC_PROFILES } from "@/lib/qariPublicProfiles";
 import { qariCountryPath } from "@/lib/qariRoutes";
 import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { QA_ORGANIZATION_ID, QA_SITE_URL } from "@/lib/seo/entityAuthority";
 
-const AXES = [
-  ["Legal risk", "35%", "legalRisk"],
-  ["Social reality", "40%", "socialRisk"],
-  ["Digital & enforcement", "25%", "digitalRisk"],
-];
+const V1_AXES = [["Legal risk", "35%"], ["Social reality", "40%"], ["Digital & enforcement", "25%"]];
+const V2_AXES = [["Legal conditions", "Rule-based"], ["State repression", "Rule-based"], ["Digital exposure", "Rule-based"], ["Social & civil reality", "Rule-based"]];
 
 export async function generateMetadata() {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
@@ -31,20 +28,20 @@ export async function generateMetadata() {
 
 export default async function QariIndexPage() {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
-  const profiles = [...QARI_COUNTRY_PROFILES].sort((a, b) => a.country.localeCompare(b.country));
+  const profiles = [...QARI_PUBLIC_PROFILES].sort((a, b) => a.country.localeCompare(b.country));
   const latestReview = profiles.reduce((latest, profile) => latest > profile.reviewedAt ? latest : profile.reviewedAt, "");
   const datasetJsonLd = {
     "@context": "https://schema.org",
     "@type": "Dataset",
     "@id": `${QA_SITE_URL}${localePath("/qari", locale)}#dataset`,
     name: "Queer Atlas Risk Index (QARI)",
-    description: "Country-level LGBTQ+ travel-planning baselines combining legal risk, social reality, and digital and enforcement risk.",
+    description: "Country-level LGBTQ+ travel-planning profiles that disclose methodology, legal conditions, state repression, digital exposure and social reality.",
     url: `${QA_SITE_URL}${localePath("/qari", locale)}`,
     creator: { "@id": QA_ORGANIZATION_ID },
     publisher: { "@id": QA_ORGANIZATION_ID },
     dateModified: latestReview,
-    measurementTechnique: "QARI v1.0–v1.1 weighted risk model with documented risk floors",
-    variableMeasured: AXES.map(([name, weight]) => ({ "@type": "PropertyValue", name, value: weight })),
+    measurementTechnique: "QARI versioned country-risk methodology; published QARI 2.0 profiles are non-compensatory and evidence-graded",
+    variableMeasured: [...V1_AXES, ...V2_AXES].map(([name, method]) => ({ "@type": "PropertyValue", name, value: method })),
     spatialCoverage: `${profiles.length} countries and territories represented by Queer Atlas destinations`,
     isAccessibleForFree: true,
   };
@@ -56,12 +53,12 @@ export default async function QariIndexPage() {
         <section className="overflow-hidden rounded-[34px] border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(14,45,63,0.94),rgba(31,27,66,0.92))] p-6 shadow-[0_28px_90px_rgba(5,15,28,0.4)] sm:p-9">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/70">Queer Atlas trust layer</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold tracking-[-0.05em] sm:text-5xl">QARI: context before a trip becomes a risk.</h1>
-          <p className="mt-5 max-w-3xl text-base leading-7 text-white/72">The Queer Atlas Risk Index is a country-level travel-planning baseline. It combines documented legal risk, social reality, and digital and enforcement exposure. A higher score means greater documented exposure — never a verdict on people, places, or personal safety.</p>
+          <p className="mt-5 max-w-3xl text-base leading-7 text-white/72">The Queer Atlas Risk Index is a country-level travel-planning baseline. QARI 2.0 profiles show separate legal, state-repression, digital and social dimensions without averaging away critical risk. Older profiles remain clearly labelled with their version. No profile is a verdict on people, places or personal safety.</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            {AXES.map(([label, weight, key]) => (
-              <article key={key} className="rounded-2xl border border-white/12 bg-black/15 p-4">
+            {V2_AXES.slice(0, 3).map(([label, method]) => (
+              <article key={label} className="rounded-2xl border border-white/12 bg-black/15 p-4">
                 <p className="text-[10px] uppercase tracking-[0.16em] text-white/48">{label}</p>
-                <p className="mt-2 text-2xl font-semibold text-cyan-50">{weight}</p>
+                <p className="mt-2 text-sm font-semibold text-cyan-50">{method}</p>
               </article>
             ))}
           </div>
@@ -74,8 +71,8 @@ export default async function QariIndexPage() {
         <section id="method" className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
           <article className="rounded-[28px] border border-white/12 bg-white/[0.035] p-5 sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/62">Method</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">One baseline, three visible inputs.</h2>
-            <p className="mt-3 text-sm leading-7 text-white/68">QARI uses a fixed weighted formula and applies a documented floor where severe legal or enforcement conditions would otherwise be understated. Each published profile includes source links for legal, social and digital evidence.</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">Versioned methods, visible evidence.</h2>
+            <p className="mt-3 text-sm leading-7 text-white/68">QARI 2.0 uses rule-based levels and never lets a lower-risk dimension offset a critical one. Each published profile identifies its method, review date and source trail; legacy profiles remain visibly labelled while they are migrated.</p>
           </article>
           <aside className="rounded-[28px] border border-amber-100/18 bg-amber-100/[0.055] p-5 sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/70">Limit</p>
@@ -88,10 +85,10 @@ export default async function QariIndexPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {profiles.map((profile) => (
               <Link key={profile.destinationKey} href={qariCountryPath(profile.country)} className="group rounded-[20px] border border-white/10 bg-black/15 p-4 transition hover:-translate-y-0.5 hover:border-cyan-100/35 hover:bg-cyan-100/[0.055]">
-                <div className="flex items-start justify-between gap-3"><h3 className="font-semibold text-white group-hover:text-cyan-50">{profile.country}</h3><span className="text-sm font-semibold tabular-nums" style={{ color: profile.tier.color }}>{profile.score}/100</span></div>
+                <div className="flex items-start justify-between gap-3"><h3 className="font-semibold text-white group-hover:text-cyan-50">{profile.country}</h3><span className="text-sm font-semibold" style={{ color: profile.tier.color }}>{profile.isQariV2 ? profile.tier.label : `${profile.score}/100`}</span></div>
                 <p className="mt-1 text-xs font-medium" style={{ color: profile.tier.color }}>{profile.tier.label}</p>
                 <p className="mt-3 line-clamp-3 text-xs leading-5 text-white/57">{profile.summary}</p>
-                <p className="mt-3 text-[10px] uppercase tracking-[0.12em] text-white/38">{profile.confidence} confidence · v{profile.methodologyVersion}</p>
+                <p className="mt-3 text-[10px] uppercase tracking-[0.12em] text-white/38">{profile.isQariV2 ? "Evidence-graded" : `${profile.confidence} confidence`} · v{profile.methodologyVersion}</p>
               </Link>
             ))}
           </div>

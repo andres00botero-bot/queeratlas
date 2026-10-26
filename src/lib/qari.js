@@ -8,7 +8,9 @@ export const QARI_WEIGHTS = Object.freeze({
 
 export const QARI_MAP_PALETTE = Object.freeze({
   open: { label: "Lower risk", color: "#3b82f6", showInLegend: true },
-  steady: { label: "Lower context", color: "#22c55e", showInLegend: true },
+  // Retained only to render historic score data; QARI 2.0 has no separate
+  // "lower context" tier, so it must not appear in the public map legend.
+  steady: { label: "Lower context", color: "#22c55e", showInLegend: false },
   watch: { label: "Moderate", color: "#facc15", showInLegend: true },
   caution: { label: "High risk", color: "#fb923c", showInLegend: true },
   restricted: { label: "Extreme high risk", color: "#ef4444", showInLegend: true },

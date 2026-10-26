@@ -11,7 +11,8 @@ import { headers } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import { getLocalizedCityGuide } from "@/lib/cityGuideTranslations";
-import { getQariProfileForCountry } from "@/lib/qariCountryProfiles2026";
+import { getPublicQariProfileForCountry } from "@/lib/qariPublicProfiles";
+import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
 
 export async function generateMetadata({ params }) {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
@@ -31,12 +32,16 @@ export async function generateMetadata({ params }) {
   const cityName = String(config.title || "").replace(/^Queer\s+/i, "").trim() || city;
   const country = String(config.country || "").trim();
   const vibe = String(config.vibe || "").trim();
+  const venueAccessRestricted = isVenueAccessRestricted(city);
   const canonical = `/${city}`;
   const ownership = getCityKeywordOwnership(cityName);
   const isSpanish = locale === "es";
-  const title = isSpanish
+  const defaultTitle = isSpanish
     ? `Guía queer de ${cityName} 2026: bares, eventos y seguridad`
     : `Queer ${cityName} Guide 2026: Bars, Events & Safety`;
+  const title = venueAccessRestricted
+    ? (isSpanish ? `${cityName}: contexto de viaje y seguridad LGBTQ+` : `${cityName}: LGBTQ+ Travel Context & Safety`)
+    : defaultTitle;
   const isMiamiRegionalGuide = city === "miami";
   const detailedDescription = isSpanish
     ? isMiamiRegionalGuide
@@ -45,16 +50,25 @@ export async function generateMetadata({ params }) {
     : isMiamiRegionalGuide
       ? "Queer Miami and South Florida guide: Miami Beach, Fort Lauderdale Beach and Wilton Manors, with trusted venues, live events and practical route context."
       : `${cityName}, ${country}: ${ownership.primary}, trusted queer venues, live events, and route-smart safety context${vibe ? ` with a ${vibe} city vibe` : ""}. Updated for 2026.`;
-  const description = detailedDescription.length <= 160
+  const defaultDescription = detailedDescription.length <= 160
     ? detailedDescription
     : isSpanish
       ? `${cityName}, ${country}: descubre lugares queer verificados, eventos en directo, vida nocturna y contexto práctico de seguridad. Actualizado para 2026.`
       : `${cityName}, ${country}: discover trusted queer venues, live events, nightlife and practical safety context. Updated for 2026.`;
+  const description = venueAccessRestricted
+    ? (isSpanish
+      ? `${cityName}, ${country}: contexto de viaje LGBTQ+, información de seguridad actualizada y detalles locales protegidos.`
+      : `${cityName}, ${country}: LGBTQ+ travel context, current safety information and protected local details.`)
+    : defaultDescription;
 
   return {
     title: title,
     description: description,
-    keywords: [
+    keywords: venueAccessRestricted ? (
+      isSpanish
+        ? [`contexto LGBTQ+ ${cityName}`, `seguridad LGBTQ+ ${cityName}`, `viaje LGBTQ+ ${cityName}`]
+        : [`LGBTQ+ travel context ${cityName}`, `LGBTQ+ safety context ${cityName}`, `queer travel ${cityName}`]
+    ) : [
       ...(isSpanish
         ? [
           `guía queer ${cityName}`,
@@ -77,8 +91,8 @@ export async function generateMetadata({ params }) {
     ],
     alternates: localizedAlternates(canonical, locale),
     robots: {
-      index: config.seoIndexable !== false,
-      follow: true,
+      index: venueAccessRestricted ? false : config.seoIndexable !== false,
+      follow: !venueAccessRestricted,
     },
     openGraph: {
       title: title,
@@ -122,7 +136,7 @@ export default async function CityLayout({ children, params }) {
   const routeConfig = {
     ...coreConfig,
     key: city,
-    qariProfile: getQariProfileForCountry(coreConfig.country),
+    qariProfile: getPublicQariProfileForCountry(coreConfig.country),
     guide: cityGuide,
     guideResearch,
     initialEntityCounts,

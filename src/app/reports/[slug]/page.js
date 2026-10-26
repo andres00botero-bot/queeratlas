@@ -120,7 +120,7 @@ function buildFaqEntries(report) {
   }
   if (report.slug === "global-queer-event-report-2026") {
     return [
-      { q: "What does the Global Queer Event Report 2026 show?", a: "It publishes a city-by-city list of 502 indexable 2026 events documented across 126 Queer Atlas cities." },
+      { q: "What does the Global Queer Event Report 2026 show?", a: "It publishes a city-by-city list of eligible indexable 2026 events documented across Queer Atlas cities. Cities with protected venue access are excluded." },
       { q: "How are cities ordered?", a: "Cities are ordered by indexed event count. Ties use active calendar months, route-ready event count and then city name." },
       { q: "Is this a complete census of global queer events?", a: "No. It is a transparent snapshot of documented Queer Atlas coverage and publishes that limitation with the results." },
     ];

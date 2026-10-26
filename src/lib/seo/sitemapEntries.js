@@ -17,7 +17,7 @@ import { QA_SITE_URL } from "@/lib/seo/sitemapXml";
 import { localePath } from "@/lib/seo/localizedSeo";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
-import { QARI_COUNTRY_PROFILES } from "@/lib/qariCountryProfiles2026";
+import { QARI_PUBLIC_PROFILES } from "@/lib/qariPublicProfiles";
 import { qariCountryPath } from "@/lib/qariRoutes";
 import { supabase } from "@/lib/supabase";
 
@@ -176,7 +176,7 @@ export async function getPageSitemapEntries() {
     priority: 0.83,
   }));
 
-  const qariEntries = QARI_COUNTRY_PROFILES.map((profile) => ({
+  const qariEntries = QARI_PUBLIC_PROFILES.map((profile) => ({
     url: `${QA_SITE_URL}${qariCountryPath(profile.country)}`,
     ...(profile.reviewedAt ? { lastModified: new Date(profile.reviewedAt) } : {}),
     changeFrequency: "monthly",

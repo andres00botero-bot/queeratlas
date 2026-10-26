@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { GLOBAL_QUEER_EVENT_REPORT_2026 } from "../src/lib/seo/globalQueerEventReport2026.js";
 import { NIGHTLIFE_INDEX_2026 } from "../src/lib/seo/nightlifeIndex2026.js";
+import { isVenueAccessRestricted } from "../src/lib/venueAccessPolicy.js";
 
 const eventReport = GLOBAL_QUEER_EVENT_REPORT_2026;
 assert.equal(eventReport.scope.indexedEvents, eventReport.entries.reduce((sum, entry) => sum + entry.events, 0), "event total must reproduce from city rows");
@@ -9,6 +10,7 @@ assert.equal(eventReport.scope.atlasCitiesWithEvents, eventReport.entries.length
 assert(eventReport.entries.length > 30, "event report must contain a substantial global city list");
 assert(eventReport.entries.every((entry, index) => entry.rank === index + 1), "event positions must be unique and consecutive");
 assert(new Set(eventReport.entries.map((entry) => entry.rank)).size === eventReport.entries.length, "event rank numbers must not repeat");
+assert(eventReport.entries.every((entry) => !isVenueAccessRestricted(entry.city)), "protected-city events must not appear in the public report");
 assert.equal(NIGHTLIFE_INDEX_2026.entries.length, 25, "destination report must publish the full Top 25");
 assert(NIGHTLIFE_INDEX_2026.entries.every((entry) => NIGHTLIFE_INDEX_2026.components.every((component) => Number.isFinite(entry.scores[component.key]))), "every nightlife destination must expose all six components");
 

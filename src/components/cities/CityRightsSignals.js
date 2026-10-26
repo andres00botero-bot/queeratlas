@@ -2,6 +2,7 @@
 
 import { ChevronDown, ExternalLink, ShieldCheck } from "lucide-react";
 import { getQariTier, QARI_MAP_PALETTE } from "@/lib/qari";
+import { QARI_V2_TIER_DETAILS } from "@/lib/qariV2";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const FALLBACK_TIERS = QARI_MAP_PALETTE;
@@ -82,6 +83,24 @@ function AxisRow({ axis, value, color }) {
   );
 }
 
+function V2AxisRow({ axis, dimension, t }) {
+  const level = dimension?.level || "lower";
+  const tone = QARI_V2_TIER_DETAILS[level] || QARI_V2_TIER_DETAILS.lower;
+  const availability = String(dimension?.availability || "unknown").replaceAll("_", " ");
+  return (
+    <div className="grid gap-2 border-b border-white/8 py-3 last:border-0 sm:grid-cols-[1fr_auto] sm:items-center">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-white/88">{axis.label}</p>
+        <p className="mt-0.5 text-xs leading-5 text-white/48">{axis.detail}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        <span className="text-xs font-semibold" style={{ color: tone.color }}>{tierLabel({ key: level, ...tone }, t)}</span>
+        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] text-white/45">{availability} evidence</span>
+      </div>
+    </div>
+  );
+}
+
 function SourceLink({ source, t }) {
   const href = String(source?.url || "").trim();
   if (!href) return null;
@@ -120,10 +139,18 @@ export default function CityRightsSignals({
     { key: "digitalRisk", label: t("qari.digitalEnforcement", "Digital & enforcement"), detail: t("qari.digitalDetail", "Apps, devices, police and censorship"), weight: "25%" },
   ];
 
+  const v2Axes = [
+    { key: "legal", label: t("qari.legal", "Legal"), detail: t("qari.legalDetail", "Laws, rights and restrictions") },
+    { key: "stateRepression", label: t("qari.stateRepression", "State repression"), detail: t("qari.stateRepressionDetail", "Documented action by authorities") },
+    { key: "digitalExposure", label: t("qari.digitalExposure", "Digital exposure"), detail: t("qari.digitalExposureDetail", "LGBTIQ+-specific digital targeting and restrictions") },
+    { key: "socialCivil", label: t("qari.socialCivil", "Social & civil reality"), detail: t("qari.socialCivilDetail", "Violence, protection and civil-society conditions") },
+  ];
+
+  const isQariV2 = Boolean(qariProfile?.isQariV2);
   const score = Number.isFinite(qariProfile?.score) ? qariProfile.score : null;
-  const qariTier = getQariTier(score);
+  const qariTier = isQariV2 ? qariProfile.tier : getQariTier(score);
   const fallbackTier = FALLBACK_TIERS[riskTier] || FALLBACK_TIERS.unknown;
-  const tone = score === null ? fallbackTier : qariTier;
+  const tone = isQariV2 ? qariTier : score === null ? fallbackTier : qariTier;
   const summary = qariProfile?.summary || snapshot?.whatThisMeans || t("qari.awaitingReview", "This destination is awaiting a full QARI review.");
   const panelId = `qari-details-${String(country || "destination").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
@@ -148,12 +175,18 @@ export default function CityRightsSignals({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/40">{t("qari.safetySignal", "QARI safety signal")}</p>
+              <span className={isQariV2
+                ? "rounded-full border border-cyan-100/25 bg-cyan-100/[0.08] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-50"
+                : "rounded-full border border-white/15 bg-white/[0.045] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-white/55"}
+              >
+                {isQariV2 ? "QARI 2.0" : "Legacy QARI 1.x"}
+              </span>
               <span
                 className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{ color: tone.color }}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: tone.color }} aria-hidden="true" />
-                {tierLabel(score === null ? { key: fallbackTierKey(riskTier), ...tone } : qariTier, t)}
+                {tierLabel(isQariV2 ? qariTier : score === null ? { key: fallbackTierKey(riskTier), ...tone } : qariTier, t)}
               </span>
             </div>
             <p className="mt-1.5 line-clamp-2 max-w-3xl text-xs leading-5 text-white/56 sm:line-clamp-1">{summary}</p>
@@ -163,10 +196,10 @@ export default function CityRightsSignals({
         <div className="ml-[3.125rem] flex shrink-0 items-center justify-between gap-4 sm:ml-0 sm:border-l sm:border-white/[0.08] sm:pl-5">
           <div className="flex items-baseline gap-1.5 sm:block sm:min-w-20 sm:text-right">
             <p className="text-lg font-semibold tabular-nums leading-none text-white">
-              {score === null ? "—" : score}
-              {score !== null ? <span className="text-[10px] font-medium text-white/34">/100</span> : null}
+              {isQariV2 ? tierLabel(qariTier, t) : score === null ? "—" : score}
+              {score !== null && !isQariV2 ? <span className="text-[10px] font-medium text-white/34">/100</span> : null}
             </p>
-            <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/34">{t("qari.riskIndex", "Risk index")}</p>
+            <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/34">{isQariV2 ? t("qari.riskLevel", "Risk level") : t("qari.riskIndex", "Risk index")}</p>
           </div>
           <button
             type="button"
@@ -194,17 +227,17 @@ export default function CityRightsSignals({
             <div>
               <div className="flex items-end justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/38">{t("qari.howBuilt", "How this score is built")}</p>
-                  <p className="mt-1 text-sm leading-6 text-white/64">{t("qari.higherExposure", "Higher numbers mean greater traveller exposure.")}</p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/38">{isQariV2 ? t("qari.howBuilt", "How this profile is built") : t("qari.howBuilt", "How this score is built")}</p>
+                  <p className="mt-1 text-sm leading-6 text-white/64">{isQariV2 ? t("qari.v2NoAverage", "The highest verified dimension determines the headline level; lower risks never offset a critical one.") : "This is the legacy weighted-score method. Migration to QARI 2.0 is pending for this country."}</p>
                 </div>
-                <p className="text-[10px] text-white/34">{t("qari.method", "Method")} v{qariProfile?.methodologyVersion || "1.0"}</p>
+                <p className="text-[10px] text-white/34">{isQariV2 ? `${t("qari.method", "Method")} v${qariProfile?.methodologyVersion || "2.0"}` : "Migration pending"}</p>
               </div>
 
               {qariProfile ? (
                 <div className="mt-2">
-                  {axes.map((axis) => (
-                    <AxisRow key={axis.key} axis={axis} value={qariProfile[axis.key]} color={tone.color} />
-                  ))}
+                  {isQariV2
+                    ? v2Axes.map((axis) => <V2AxisRow key={axis.key} axis={axis} dimension={qariProfile.dimensions?.[axis.key]} t={t} />)
+                    : axes.map((axis) => <AxisRow key={axis.key} axis={axis} value={qariProfile[axis.key]} color={tone.color} />)}
                 </div>
               ) : (
                 <div className="mt-3 border-l border-amber-200/35 pl-3 text-sm leading-6 text-amber-50/72">
@@ -230,7 +263,7 @@ export default function CityRightsSignals({
 
           <div className="mt-5 flex flex-col gap-3 border-t border-white/[0.08] pt-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl text-[10px] leading-5 text-white/38">
-              <p>{confidenceLabel(qariProfile?.confidence || snapshot?.confidence, t)} · {reviewedLabel(qariProfile?.reviewedAt || snapshot?.updatedAt, locale, t)}</p>
+              <p>{isQariV2 ? t("qari.v2Evidence", "Evidence availability is shown for each dimension.") : confidenceLabel(qariProfile?.confidence || snapshot?.confidence, t)} · {reviewedLabel(qariProfile?.reviewedAt || snapshot?.updatedAt, locale, t)}</p>
               <p>
               {t("qari.disclaimer", "QARI is a planning signal, not a promise of safety. Risk can change by neighbourhood, identity, time and current events.")}
               </p>
