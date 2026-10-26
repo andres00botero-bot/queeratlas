@@ -3,6 +3,7 @@ import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
 import { mapGlobalEventRow } from "@/features/events/eventViewUtils";
+import { fetchEventRows } from "./fetchEventRows.js";
 
 const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
 
@@ -32,10 +33,7 @@ export function splitGlobalEventsByExpiry(rows = [], todayIso = "") {
 }
 
 export async function fetchEventsData() {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .order("date", { ascending: true });
+  const { data, error } = await fetchEventRows(supabase);
 
   return {
     data: (await mergeSeedEventsAsync(data || [])).map((event) => normalizeEventRange(event)),

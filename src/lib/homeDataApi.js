@@ -8,7 +8,7 @@ import { normalizeVenueIntel } from "@/lib/venueIntel";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { listCityRegistry } from "@/lib/server/cityRegistry";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
-import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
+import { fetchEventRows } from "@/features/events/fetchEventRows";
 import { isPublishedEntity } from "@/lib/publicInventory";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
@@ -176,20 +176,20 @@ async function fetchWorldNews() {
 }
 
 export async function fetchHomeDataPayload() {
-  const [eventsRes, globalRes, placesRes, newsRes, registryCities, inventory] = await Promise.all([
-    supabase
-      .from("events")
-      .select("*")
-      .order("date", { ascending: true }),
+  const [eventsRes, globalRes, eventCountRes, globalEventCountRes, placesRes, newsRes, registryCities] = await Promise.all([
+    fetchEventRows(supabase),
     supabase
       .from("global_events")
       .select("*")
       .order("date", { ascending: true })
       .order("created_at", { ascending: false }),
+    // The homepage total is deliberately the complete database inventory, not
+    // only upcoming, indexable, supported-city, or de-duplicated events.
+    supabase.from("events").select("id", { count: "exact", head: true }),
+    supabase.from("global_events").select("id", { count: "exact", head: true }),
     fetchPlacesForAtlas(),
     fetchWorldNews(),
     listCityRegistry().catch(() => Object.values(cityCoreConfig)),
-    loadSeoEntityInventory(),
   ]);
 
   const mergedEvents = await mergeSeedEventsAsync(eventsRes?.data || []);
@@ -205,11 +205,13 @@ export async function fetchHomeDataPayload() {
     countries: new Set(registryCities.map((city) => city?.country).filter(Boolean)).size,
     cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
     places: places.filter(isPublishedEntity).length,
-    events: inventory.publicEvents.length,
+    events: Number(eventCountRes?.count || 0) + Number(globalEventCountRes?.count || 0),
   };
   const partialData = Boolean(
     eventsRes?.error ||
       globalRes?.error ||
+      eventCountRes?.error ||
+      globalEventCountRes?.error ||
       placesRes?.error ||
       newsRes?.partialData
   );
