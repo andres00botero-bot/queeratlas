@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { citySelectionPath } from "@/lib/cityRouting";
 import { cityCoreConfig as cityConfig } from "@/lib/cityCore";
-import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
+import { getEditorialPulseItems, getPulseCategories, PULSE_CATEGORIES } from "@/lib/pulse";
 import {
   QA_LOGO_URL,
   QA_ORGANIZATION_ID,
@@ -36,6 +36,7 @@ import {
   TIER1_TOPIC_KEYS,
 } from "@/lib/seo/indexingTier";
 import { ATLAS_COLLECTION_FILTERS, ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
+import { getLocalizedAtlasCollection } from "@/lib/atlasCollectionTranslations";
 import { readLocalJson, writeLocalJson } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { fetchTrendingPlacesForNews } from "@/lib/placesDataApi";
@@ -50,6 +51,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import PageControls from "@/components/ui/PageControls";
 import NewsroomFeed from "@/components/now/NewsroomFeed";
 import NowSectionNav from "@/components/now/NowSectionNav";
+import { toLocalePath } from "@/lib/i18n/localeRouting";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const DataReportsNowSection = dynamic(() => import("@/components/reports/DataReportsNowSection"));
@@ -530,7 +532,8 @@ function PulseSkeletonCard({ tone = "orange" }) {
 
 export default function NowPage({ initialSection = "mixed", initialDataQuery = {} }) {
   const router = useRouter();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
+  const localizedAtlasCollections = useMemo(() => ATLAS_COLLECTIONS.map((collection) => getLocalizedAtlasCollection(collection, locale)), [locale]);
   const { isMember, memberName, user, memberProfile } = useAuth();
   const [ready, setReady] = useState(true);
   const [today, setToday] = useState(() => new Date());
@@ -940,31 +943,31 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
     [filteredPlaces]
   );
   const categoryLabels = useMemo(() => {
-    const base = PULSE_CATEGORIES.reduce((acc, item) => {
+    const base = getPulseCategories(locale).reduce((acc, item) => {
       acc[item.key] = item.label;
       return acc;
     }, {});
-    base.culture_tip = "Culture and lifestyle";
-    base.rights_safety = "Politics & Policy";
-    base.rising_spot = "Travel";
+    base.culture_tip = t("now.categoryCulture", "Culture and lifestyle");
+    base.rights_safety = t("now.categoryPolicy", "Politics & Policy");
+    base.rising_spot = t("now.categoryTravel", "Travel");
     return base;
-  }, []);
+  }, [locale, t]);
   const mixedFeedCategories = useMemo(
-    () => PULSE_CATEGORIES,
-    []
+    () => getPulseCategories(locale),
+    [locale]
   );
 
   const worldNewsItems = useMemo(() => {
     const usingFallback = adminNews.length === 0;
     const combined = usingFallback
-      ? EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, isFallback: true }))
+      ? getEditorialPulseItems(locale).map((item) => ({ ...item, isFallback: true }))
       : adminNews;
     const hiddenNewsIdSet = new Set((hiddenNewsIds || []).map((id) => String(id)));
 
     return combined
       .filter((item) => !hiddenNewsIdSet.has(String(item.id)))
       .sort(compareNewsRecency);
-  }, [adminNews, hiddenNewsIds]);
+  }, [adminNews, hiddenNewsIds, locale]);
 
   const mixedFeedItems = useMemo(
     () => worldNewsItems.filter((item) => !isVoicesMemberItem(item)),
@@ -980,14 +983,14 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
   }, [mixedFeedItems, selectedNewsCategory]);
   const leadNewsItem = displayedNewsItems[0] || null;
   const secondaryNewsItems = displayedNewsItems.slice(1);
-  const featuredCollection = ATLAS_COLLECTIONS[0];
+  const featuredCollection = localizedAtlasCollections[0];
   const featuredCollectionStyle = getAtlasCollectionStyle(featuredCollection?.accent);
   const filteredAtlasCollections = useMemo(
     () =>
       activeCollectionFilter === "all"
-        ? ATLAS_COLLECTIONS
-        : ATLAS_COLLECTIONS.filter((collection) => collection.filter === activeCollectionFilter),
-    [activeCollectionFilter]
+        ? localizedAtlasCollections
+        : localizedAtlasCollections.filter((collection) => collection.filter === activeCollectionFilter),
+    [activeCollectionFilter, localizedAtlasCollections]
   );
   const nowNewsJsonLd = useMemo(() => {
     const baseUrl = QA_SITE_URL;
@@ -1126,8 +1129,8 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
       mainEntity: {
         "@type": "ItemList",
         itemListOrder: "https://schema.org/ItemListOrderAscending",
-        numberOfItems: ATLAS_COLLECTIONS.length,
-        itemListElement: ATLAS_COLLECTIONS.map((collection, index) => ({
+        numberOfItems: localizedAtlasCollections.length,
+        itemListElement: localizedAtlasCollections.map((collection, index) => ({
           "@type": "ListItem",
           position: index + 1,
           url: `${baseUrl}${collection.href}`,
@@ -1186,13 +1189,13 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
   );
   const nowSections = useMemo(
     () => [
-      { id: "mixed", label: t("now.newsFeed", "News feed"), href: "/now/news", tone: "cyan", count: displayedNewsItems.length },
-      { id: "voices", label: t("now.voices", "Voices"), href: "/now/voices", tone: "fuchsia", count: communityStories.length },
-      { id: "rankings", label: t("now.rankings", "Rankings"), href: "/now/rankings", tone: "emerald", count: rankingItems.length },
-      { id: "data", label: t("now.dataReports", "Data & Reports"), href: "/now/data", tone: "fuchsia" },
-      { id: "collections", label: t("now.collections", "Atlas Collections"), href: "/now/collections", tone: "cyan", count: ATLAS_COLLECTIONS.length },
+      { id: "mixed", label: t("now.newsFeed", "News feed"), href: toLocalePath("/now/news", locale), tone: "cyan", count: displayedNewsItems.length },
+      { id: "voices", label: t("now.voices", "Voices"), href: toLocalePath("/now/voices", locale), tone: "fuchsia", count: communityStories.length },
+      { id: "rankings", label: t("now.rankings", "Rankings"), href: toLocalePath("/now/rankings", locale), tone: "emerald", count: rankingItems.length },
+      { id: "data", label: t("now.dataReports", "Data & Reports"), href: toLocalePath("/now/data", locale), tone: "fuchsia" },
+      { id: "collections", label: t("now.collections", "Atlas Collections"), href: toLocalePath("/now/collections", locale), tone: "cyan", count: localizedAtlasCollections.length },
     ],
-    [communityStories.length, displayedNewsItems.length, rankingItems.length, t]
+    [communityStories.length, displayedNewsItems.length, localizedAtlasCollections.length, rankingItems.length, t, locale]
   );
   const crawlClusterTopics = useMemo(
     () => TIER1_TOPIC_KEYS.filter((topicKey) => Boolean(listCityClusterTopics().find((topic) => topic.key === topicKey))),
@@ -2120,30 +2123,30 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
   return (
     <main className="qa-page qa-now min-h-screen overflow-x-hidden bg-[radial-gradient(ellipse_at_10%_4%,rgba(34,211,238,0.10),transparent_36%),radial-gradient(ellipse_at_92%_9%,rgba(217,70,239,0.09),transparent_34%),linear-gradient(180deg,#030507_0%,#070711_48%,#030305_100%)] px-4 py-6 pb-8 text-white sm:px-6 sm:py-8 sm:pb-12">
       <nav aria-label={t("now.internalLinks", "Internal now crawl links")} className="sr-only">
-        <Link href="/now/news">{t("now.now", "Now")}</Link>
-        <Link href="/cities">{t("now.cities", "Cities")}</Link>
-        <Link href="/events/calendar">{t("now.events", "Events")}</Link>
-        <Link href="/topics">{t("now.topics", "Topics")}</Link>
+        <Link href={toLocalePath("/now/news", locale)}>{t("now.now", "Now")}</Link>
+        <Link href={toLocalePath("/cities", locale)}>{t("now.cities", "Cities")}</Link>
+        <Link href={toLocalePath("/events/calendar", locale)}>{t("now.events", "Events")}</Link>
+        <Link href={toLocalePath("/topics", locale)}>{t("now.topics", "Topics")}</Link>
         {topicHubKeys.map((topicKey) => (
-          <Link key={`now-topic-hub-${topicKey}`} href={`/topics/${topicKey}`}>
+          <Link key={`now-topic-hub-${topicKey}`} href={toLocalePath(`/topics/${topicKey}`, locale)}>
             {topicKey}
           </Link>
         ))}
         {crawlClusterCities.flatMap((cityKey) =>
           crawlClusterTopics.map((topicKey) => (
-            <Link key={`now-crawl-cluster-${cityKey}-${topicKey}`} href={`/${cityKey}/discover/${topicKey}`}>
+            <Link key={`now-crawl-cluster-${cityKey}-${topicKey}`} href={toLocalePath(`/${cityKey}/discover/${topicKey}`, locale)}>
               {cityKey} {topicKey}
             </Link>
           ))
         )}
         {rankingSeoCities.map((city) => (
-          <Link key={`now-ranking-city-${city.slug}`} href={`/${city.slug}`}>
+          <Link key={`now-ranking-city-${city.slug}`} href={toLocalePath(`/${city.slug}`, locale)}>
             {t("now.queerGuideTo", "Queer guide to")} {city.label}
           </Link>
         ))}
-        <Link href="/now/collections">{t("now.collections", "Atlas Collections")}</Link>
-        {ATLAS_COLLECTIONS.map((collection) => (
-          <Link key={`now-crawl-collection-${collection.id}`} href={collection.href}>
+        <Link href={toLocalePath("/now/collections", locale)}>{t("now.collections", "Atlas Collections")}</Link>
+        {localizedAtlasCollections.map((collection) => (
+          <Link key={`now-crawl-collection-${collection.id}`} href={toLocalePath(collection.href, locale)}>
             {collection.title}
           </Link>
         ))}
@@ -3515,7 +3518,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                         {collection.items.length} picks
                       </span>
                       <span className={`font-mono text-4xl font-black leading-none ${style.number}`}>
-                        {String(ATLAS_COLLECTIONS.findIndex((item) => item.id === collection.id) + 1).padStart(2, "0")}
+                        {String(localizedAtlasCollections.findIndex((item) => item.id === collection.id) + 1).padStart(2, "0")}
                       </span>
                     </div>
                     <h3 className="mt-3 text-xl font-black tracking-[-0.035em] text-white">{collection.title}</h3>

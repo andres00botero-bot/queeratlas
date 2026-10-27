@@ -10,10 +10,11 @@ import {
   toLocalePath,
 } from "../src/lib/i18n/localeRouting.js";
 import { getMessage } from "../src/lib/i18n/messages.js";
-import { defaultsToSpanishByCountry } from "../src/lib/i18n/localeGeo.js";
+import { defaultsToGermanByCountry, defaultsToSpanishByCountry } from "../src/lib/i18n/localeGeo.js";
+import { isLocaleSearchReady } from "../src/lib/i18n/localeSeoRollout.js";
 
 assert.equal(DEFAULT_LOCALE, "en");
-assert.deepEqual(getPublishedLocales().map((locale) => locale.code), ["en", "es"]);
+assert.deepEqual(getPublishedLocales().map((locale) => locale.code), ["en", "es", "de"]);
 assert.equal(getPublishedLocales().every((locale) => locale.published), true);
 assert.equal(normalizeLocale("es-ES"), "es");
 assert.equal(normalizeLocale("unknown"), "en");
@@ -34,10 +35,17 @@ assert.equal(getMessage("es", "city.liveCityGuide"), "Guía de ciudad en directo
 assert.equal(getMessage("es", "city.exploreOnMap"), "Explorar en el mapa");
 assert.equal(getMessage("es", "city.servicesLower"), "servicios");
 assert.equal(getMessage("es", "city.cityOverview"), "Resumen de la ciudad");
+assert.equal(getMessage("de", "global.events"), "Veranstaltungen");
 assert.equal(getMessage("en", "home.joinFree"), "Join free");
 assert.equal(defaultsToSpanishByCountry("ES"), true);
 assert.equal(defaultsToSpanishByCountry("mx"), true);
 assert.equal(defaultsToSpanishByCountry("SE"), false);
 assert.equal(defaultsToSpanishByCountry("US"), false);
+assert.equal(defaultsToGermanByCountry("DE"), true);
+assert.equal(defaultsToGermanByCountry("AT"), true);
+assert.equal(defaultsToGermanByCountry("BE"), false);
+assert.equal(isLocaleSearchReady("en"), true);
+assert.equal(isLocaleSearchReady("es"), true);
+assert.equal(isLocaleSearchReady("de"), true);
 
 console.log("i18n foundation test passed.");

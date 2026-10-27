@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_LOCALE, getPublishedLocales, isSupportedLocale, normalizeLocale } from "@/lib/i18n/locales";
-import { defaultsToSpanishByCountry } from "@/lib/i18n/localeGeo";
+import { defaultsToGermanByCountry, defaultsToSpanishByCountry } from "@/lib/i18n/localeGeo";
+import { isLocaleSearchReady } from "@/lib/i18n/localeSeoRollout";
 
 const LOCALE_COOKIE = "qa_locale";
 const LOCALE_PREFERENCE_COOKIE = "qa_locale_preference";
@@ -23,6 +24,9 @@ function rememberLocale(response, locale) {
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 365,
   });
+  if (!isLocaleSearchReady(locale)) {
+    response.headers.set("X-Robots-Tag", "noindex, follow");
+  }
   return response;
 }
 
@@ -36,9 +40,17 @@ function isSearchCrawler(request) {
   return /(?:bot|crawler|spider|slurp|bingpreview)/i.test(request.headers.get("user-agent") || "");
 }
 
-function geoLocaleRedirect(request, pathname) {
+function preferredPublishedLocale(acceptLanguage = "") {
+  const requested = String(acceptLanguage)
+    .split(",")
+    .map((entry) => entry.trim().split(";", 1)[0])
+    .map((entry) => normalizeLocale(entry, ""));
+  return requested.find((locale) => isPublishedLocale(locale) && locale !== DEFAULT_LOCALE) || null;
+}
+
+function geoLocaleRedirect(request, pathname, locale) {
   const localizedUrl = request.nextUrl.clone();
-  localizedUrl.pathname = `/es${pathname === "/" ? "" : pathname}`;
+  localizedUrl.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
   const response = NextResponse.redirect(localizedUrl);
   // Do not let a location-dependent first-visit redirect be shared by caches.
   response.headers.set("Cache-Control", "private, no-store");
@@ -68,11 +80,28 @@ export function proxy(request) {
 
   // An explicit visitor choice always wins. Older English locale cookies did not
   // record their source, so they must not prevent country-based first-visit
-  // localization for Spanish-speaking markets.
+  // localization for language-targeted markets.
   if (hasSavedLocale && hasManualLocalePreference && cookieLocale !== DEFAULT_LOCALE) {
     const localizedUrl = request.nextUrl.clone();
     localizedUrl.pathname = `/${cookieLocale}${pathname === "/" ? "" : pathname}`;
     return NextResponse.redirect(localizedUrl);
+  }
+
+  // Prefer an explicit browser language over a coarse country inference. This
+  // also serves German-speaking travellers outside DACH without involving SEO
+  // crawlers, whose stable canonical URLs must remain crawlable.
+  const browserLocale = preferredPublishedLocale(request.headers.get("accept-language"));
+  if (isDocumentNavigation(request) && !isSearchCrawler(request) && !hasManualLocalePreference && browserLocale) {
+    return geoLocaleRedirect(request, pathname, browserLocale);
+  }
+
+  if (
+    isDocumentNavigation(request) &&
+    !isSearchCrawler(request) &&
+    !hasManualLocalePreference &&
+    defaultsToGermanByCountry(request.headers.get("x-vercel-ip-country"))
+  ) {
+    return geoLocaleRedirect(request, pathname, "de");
   }
 
   if (
@@ -81,7 +110,7 @@ export function proxy(request) {
     !hasManualLocalePreference &&
     defaultsToSpanishByCountry(request.headers.get("x-vercel-ip-country"))
   ) {
-    return geoLocaleRedirect(request, pathname);
+    return geoLocaleRedirect(request, pathname, "es");
   }
 
   if (hasSavedLocale && cookieLocale !== DEFAULT_LOCALE) {

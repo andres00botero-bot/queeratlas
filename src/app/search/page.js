@@ -19,6 +19,7 @@ import { formatVibeTagLabel, normalizeVibeTag } from "@/lib/vibeTaxonomy";
 import { resolveVibeTagsForEntity } from "@/lib/vibeDisplay";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import EmptyState from "@/components/ui/EmptyState";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 
 const TYPE_FILTERS = ["all", "city", "place", "event", "service", "guide"];
 const QUALITY_FILTERS = ["all", "verified", "unverified"];
@@ -265,6 +266,7 @@ function SearchResultSkeleton({ tone = "rose" }) {
 
 export default function SearchPage() {
   const router = useRouter();
+  const { t } = useLocale();
   const hasHydrated = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -1033,18 +1035,18 @@ export default function SearchPage() {
             <span className="h-2 w-2 rounded-full bg-violet-300 shadow-[0_0_16px_rgba(196,181,253,0.7)]" />
             <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.7)]" />
           </div>
-          <p className="qa-eyebrow inline-flex items-center gap-2 bg-gradient-to-r from-pink-100 via-fuchsia-100 to-cyan-100 bg-clip-text text-transparent"><Sparkles size={12} className="text-pink-200" /> Search Queer Atlas</p>
+          <p className="qa-eyebrow inline-flex items-center gap-2 bg-gradient-to-r from-pink-100 via-fuchsia-100 to-cyan-100 bg-clip-text text-transparent"><Sparkles size={12} className="text-pink-200" /> {t("search.eyebrow", "Search Queer Atlas")}</p>
           <h1 id="global-search-heading" className="qa-display mt-2 max-w-3xl bg-gradient-to-r from-white via-pink-50 to-cyan-100 bg-clip-text text-[1.8rem] font-semibold leading-[1.04] text-transparent sm:text-[2.7rem]">
-            Find your way into queer life.
+            {t("search.title", "Find your way into queer life.")}
           </h1>
           <p className="qa-lead mt-2 max-w-3xl text-sm leading-6 text-white/72 sm:text-base">
-            <span className="sm:hidden">Search cities, venues, events, services and guides — wherever you are.</span>
-            <span className="hidden sm:inline">Search cities, venues, events, services and guides — from tonight&apos;s plans to the places worth crossing town for.</span>
+            <span className="sm:hidden">{t("search.introShort", "Search cities, venues, events, services and guides — wherever you are.")}</span>
+            <span className="hidden sm:inline">{t("search.intro", "Search cities, venues, events, services and guides — from tonight's plans to the places worth crossing town for.")}</span>
           </p>
-          <form onSubmit={submitSearch} role="search" aria-label="Global search form" className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+          <form onSubmit={submitSearch} role="search" aria-label={t("search.formLabel", "Global search form")} className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:gap-3">
             <div className="relative flex-1">
               <label htmlFor={SEARCH_INPUT_ID} className="sr-only">
-                Search for city, venue, event, or vibe
+                {t("search.inputLabel", "Search for city, venue, event, or vibe")}
               </label>
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-fuchsia-100/52" size={18} />
               <input
@@ -1098,14 +1100,14 @@ export default function SearchPage() {
                     if (selected) applySuggestion(selected);
                   }
                 }}
-                placeholder="Try “drag tonight in Berlin” or a venue name"
+                placeholder={t("search.placeholder", "Try “drag tonight in Berlin” or a venue name")}
                 className="w-full rounded-2xl border border-fuchsia-100/24 bg-[linear-gradient(135deg,rgba(11,7,16,0.88),rgba(3,14,20,0.84))] py-3.5 pl-12 pr-4 text-[15px] shadow-[0_14px_40px_rgba(0,0,0,0.26),inset_0_1px_0_rgba(255,255,255,0.055)] outline-none transition placeholder:text-white/38 focus:border-pink-200/68 focus:bg-black/72 focus:shadow-[0_0_0_3px_rgba(244,114,182,0.11),0_16px_45px_rgba(0,0,0,0.34)]"
               />
               {isSuggestionsOpen && (
                 <ul
                   id={SEARCH_SUGGESTIONS_LIST_ID}
                   role="listbox"
-                  aria-label="Live search suggestions"
+                  aria-label={t("search.suggestions", "Live search suggestions")}
                   className="absolute left-0 right-0 top-[calc(100%+0.55rem)] z-40 rounded-2xl border border-white/12 bg-[#09090bf5] p-2 shadow-[0_24px_80px_rgba(0,0,0,0.55)] backdrop-blur-xl"
                 >
                   {liveSuggestions.map((suggestion, index) => {
@@ -1134,7 +1136,7 @@ export default function SearchPage() {
                           ) : null}
                         </span>
                         <span className="rounded-full border border-white/15 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/65">
-                          {suggestion.typeFilter === "all" ? "Search" : getTypeLabel(suggestion.typeFilter)}
+                          {suggestion.typeFilter === "all" ? t("search.searchAction", "Search") : getTypeLabel(suggestion.typeFilter)}
                         </span>
                       </li>
                     );
@@ -1143,11 +1145,11 @@ export default function SearchPage() {
               )}
             </div>
             <button type="submit" className="w-full rounded-2xl border border-white/42 bg-[linear-gradient(110deg,#d8b4fe_0%,#f9a8d4_38%,#fda4af_68%,#fed7aa_100%)] px-7 py-3.5 text-sm font-semibold text-[#210d22] shadow-[0_15px_42px_rgba(244,114,182,0.30),0_7px_24px_rgba(34,211,238,0.08),inset_0_1px_0_rgba(255,255,255,0.82)] transition hover:-translate-y-0.5 hover:brightness-105 hover:shadow-[0_18px_48px_rgba(244,114,182,0.38)] sm:w-auto">
-              Search
+              {t("search.searchAction", "Search")}
             </button>
           </form>
           {!activeQuery.trim() ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Popular searches">
+          <div className="mt-3 flex flex-wrap items-center gap-2" aria-label={t("search.popular", "Popular searches")}>
             {QUICK_SEARCHES.map((item) => (
               <button
                 key={item.label}
@@ -1155,7 +1157,7 @@ export default function SearchPage() {
                 onClick={() => runQuickSearch(item)}
                 className="rounded-full border border-fuchsia-200/16 bg-[linear-gradient(135deg,rgba(217,70,239,0.08),rgba(139,92,246,0.06))] px-3 py-1.5 text-xs text-white/72 transition hover:border-fuchsia-200/34 hover:bg-fuchsia-200/12 hover:text-white"
               >
-                {item.label}
+                {item.label === "Tonight" ? t("search.tonight", "Tonight") : t("search.guides", "Guides")}
               </button>
             ))}
             <button
@@ -1165,7 +1167,7 @@ export default function SearchPage() {
               className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/28 bg-[linear-gradient(135deg,rgba(34,211,238,0.14),rgba(16,185,129,0.08))] px-3 py-1.5 text-xs text-cyan-50 shadow-[0_8px_24px_rgba(34,211,238,0.08)] transition hover:border-cyan-100/46 hover:bg-cyan-200/18 disabled:cursor-wait disabled:opacity-60"
             >
               <LocateFixed size={13} />
-              {locationStatus === "requesting" ? "Finding you…" : "Near me"}
+              {locationStatus === "requesting" ? t("search.findingYou", "Finding you…") : t("search.nearMe", "Near me")}
             </button>
           </div>
           ) : null}
@@ -1173,8 +1175,8 @@ export default function SearchPage() {
             (!activeQuery.trim() || intentProfile.flags?.nearby) && (
             <p className="mt-2 text-xs text-amber-100/78">
               {locationStatus === "unsupported"
-                ? "Location is not available in this browser. Search by city instead."
-                : "Location was not shared. Search by city instead, or allow location and try again."}
+                ? t("search.locationUnsupported", "Location is not available in this browser. Search by city instead.")
+                : t("search.locationDenied", "Location was not shared. Search by city instead, or allow location and try again.")}
             </p>
           )}
           {activeQuery.trim() ? (
@@ -1283,7 +1285,7 @@ export default function SearchPage() {
           </div>
           )}
           <p id={SEARCH_SUMMARY_STATUS_ID} role="status" aria-live="polite" className="sr-only">
-            {filteredResults.all.length} matches, {filteredResults.cities.length} cities, {filteredResults.places.length} venues, {filteredResults.events.length} events, {filteredResults.services.length} services, {filteredResults.guides.length} guides
+            {t("search.resultSummary", "{matches} matches, {cities} cities, {places} venues, {events} events, {services} services, {guides} guides").replace("{matches}", filteredResults.all.length).replace("{cities}", filteredResults.cities.length).replace("{places}", filteredResults.places.length).replace("{events}", filteredResults.events.length).replace("{services}", filteredResults.services.length).replace("{guides}", filteredResults.guides.length)}
           </p>
           {isLoading && (
             <div className="mt-3 max-w-sm animate-pulse" aria-hidden="true">
@@ -1395,9 +1397,9 @@ export default function SearchPage() {
         {!activeQuery.trim() && (
           <section className="qa-panel rounded-[22px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-4 sm:rounded-[28px] sm:p-6">
             <EmptyState
-              title="Start with a city, venue or plan."
-              description="Search by name, choose what you’re looking for, or use Near me to explore queer places around you."
-              primaryActionLabel="Browse cities"
+              title={t("search.emptyTitle", "Start with a city, venue or plan.")}
+              description={t("search.emptyDescription", "Search by name, choose what you’re looking for, or use Near me to explore queer places around you.")}
+              primaryActionLabel={t("search.browseCities", "Browse cities")}
               onPrimaryAction={() => router.push("/cities")}
             />
           </section>

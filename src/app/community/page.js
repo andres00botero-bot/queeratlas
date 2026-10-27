@@ -1062,8 +1062,8 @@ function CommunityPageContent() {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-6">
         <PageOpeningState
-          title="Opening community..."
-          subtitle="Connecting members, jobs, and live conversations."
+          title={t("community.opening", "Opening community...")}
+          subtitle={t("community.openingSubtitle", "Connecting members, jobs, and live conversations.")}
           tone="violet"
         />
       </main>
@@ -1074,8 +1074,8 @@ function CommunityPageContent() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
         <PageOpeningState
-          title="Opening sign in..."
-          subtitle="Community is reserved for Queer Atlas members."
+          title={t("community.openingSignIn", "Opening sign in...")}
+          subtitle={t("community.membersOnly", "Community is reserved for Queer Atlas members.")}
           tone="violet"
         />
       </main>

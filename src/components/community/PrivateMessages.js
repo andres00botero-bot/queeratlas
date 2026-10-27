@@ -17,7 +17,7 @@ export default function PrivateMessages() {
 function PrivateMessagesContent() {
   const params=useSearchParams();
   const {user}=useAuth();
-  const {locale}=useLocale();
+  const { locale, t }=useLocale();
   const copy=memberPrivacyCopy(locale);
   const [target,setTarget]=useState(params.get('user')||'');
   const [state,setState]=useState(null);
@@ -58,13 +58,13 @@ function PrivateMessagesContent() {
   const contact=(state?.contacts||[]).find(c=>c.user_id===target&&c.state==='accepted');
   const permitted=Boolean(user?.id && state?.profile?.user_id===user.id && state.eligible);
   return <main className="min-h-screen bg-[#0B1220] px-4 py-8 pb-28 text-[#F5F1E8] sm:px-6"><div className="mx-auto max-w-5xl space-y-4">
-    <header><p className="text-xs font-semibold uppercase tracking-wider text-[#B9AAF0]">{copy.requests}</p><h1 className="mt-2 text-3xl font-semibold">{locale==='es'?'Mensajes privados':'Private messages'}</h1><p className="mt-3 text-sm leading-6 text-[#BCC7D2]">{locale==='es'?'Solo tus contactos aprobados pueden enviarte mensajes. Sin estado en línea ni confirmaciones de lectura.':'Only approved contacts can send you messages. No online status or read receipts.'}</p><Link href="/privacy-settings" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-[#80D4C4]">{copy.settings} ↗</Link></header>
+    <header><p className="text-xs font-semibold uppercase tracking-wider text-[#B9AAF0]">{copy.requests}</p><h1 className="mt-2 text-3xl font-semibold">{t("messages.privateTitle", "Private messages")}</h1><p className="mt-3 text-sm leading-6 text-[#BCC7D2]">{t("messages.privateIntro", "Only approved contacts can send you messages. No online status or read receipts.")}</p><Link href="/privacy-settings" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-[#80D4C4]">{copy.settings} ↗</Link></header>
     {!permitted?<p role="status" className="rounded-2xl bg-[#141E2C] p-5 text-sm leading-6 text-[#BCC7D2]">{failed?copy.unavailable:state?copy.staged:copy.loading}</p>:<div className="grid gap-4 lg:grid-cols-[16rem_1fr]">
       <nav aria-label={copy.requests} className="rounded-[22px] border border-[#2B3949] bg-[#141E2C] p-3"><div className="flex flex-wrap gap-2 lg:block">{[...(state.contacts||[]).filter(c=>c.state==='accepted').map(c=>({user_id:c.user_id,alias:c.alias})),...threads].filter((r,i,a)=>a.findIndex(x=>x.user_id===r.user_id)===i).map(c=><button key={c.user_id} className={`min-h-11 rounded-xl px-3 py-2 text-left text-sm lg:block lg:w-full ${target===c.user_id?'bg-[#B9AAF0]/15 text-[#B9AAF0]':'text-[#BCC7D2]'}`} onClick={()=>{generation.current++;setMessages([]);setTarget(c.user_id);}}>{c.alias}</button>)}</div></nav>
       <section className="rounded-[22px] border border-[#2B3949] bg-[#141E2C] p-4 sm:p-5" aria-label={copy.message}>
         {target&&contact?<><header className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{contact.alias}</h2><div className="flex gap-3"><Link href={`/favorites?member=${encodeURIComponent(target)}`} className="inline-flex min-h-11 items-center text-sm text-[#B9AAF0]">{copy.report}</Link><button disabled={busy} onClick={block} className="min-h-11 text-sm text-[#FDA4AF]">{copy.block}</button></div></header>
           <ol className="my-4 max-h-[45vh] space-y-3 overflow-y-auto" aria-live="polite">{messages.map(m=><li key={m.id} className={`max-w-[90%] whitespace-pre-wrap break-words rounded-xl px-3 py-2 text-sm leading-6 ${m.sender_id===user?.id?'ml-auto bg-[#80D4C4]/10 text-[#F5F1E8]':'bg-[#B9AAF0]/10 text-[#F5F1E8]'}`}>{m.body}</li>)}</ol>
-          <form onSubmit={send}><label className="block text-sm text-[#BCC7D2]">{copy.message}<textarea value={body} onChange={e=>setBody(e.target.value)} maxLength={2000} rows={3} className="mt-2 w-full rounded-xl border border-[#3B5060] bg-[#0B1220] p-3 text-base text-[#F5F1E8] focus-visible:outline-2 focus-visible:outline-[#80D4C4]" /></label><button disabled={busy||!body.trim()} className={`${button} mt-3`}>{locale==='es'?'Enviar':'Send'}</button></form>
+          <form onSubmit={send}><label className="block text-sm text-[#BCC7D2]">{copy.message}<textarea value={body} onChange={e=>setBody(e.target.value)} maxLength={2000} rows={3} className="mt-2 w-full rounded-xl border border-[#3B5060] bg-[#0B1220] p-3 text-base text-[#F5F1E8] focus-visible:outline-2 focus-visible:outline-[#80D4C4]" /></label><button disabled={busy||!body.trim()} className={`${button} mt-3`}>{t("messages.send", "Send")}</button></form>
         </>:<p className="text-sm leading-6 text-[#BCC7D2]">{copy.empty}</p>}
       </section>
     </div>}

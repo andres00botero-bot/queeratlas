@@ -39,8 +39,16 @@ const SPANISH_SECTION_METADATA = {
   voices: { title: "Voces queer, historias de miembros y guías locales | Queer Atlas", name: "Voces del Atlas", description: "Lee historias moderadas de miembros, guías locales prácticas, informes de campo y perspectivas queer vividas de destinos de todo el mundo." },
 };
 
+const GERMAN_SECTION_METADATA = {
+  news: { title: "Queere Weltnachrichten | Reisen, Kultur & Community", name: "Queer-Atlas-News", description: "Aktuelle queere Stories zu Reisen, Nachtleben, Kultur, Rechten und Community – ausgewählt von Queer Atlas." },
+  rankings: { title: "Queere Städte-Rankings | Sicherheits- & Nachtleben-Index 2026", name: "Queer-Atlas-Rankings", description: "Entdecke evidenzbasierte Rankings queerer Städte, einschließlich Sicherheits- und Nachtleben-Index, mit transparenten Methoden und Quellen." },
+  data: { title: "Globaler Index für queere Sicherheit & Kultur 2026 | Queer Atlas", name: "Globaler Index für queere Sicherheit & Kultur", description: "Vergleiche Städte transparent nach LGBTQ+-Sicherheit, Inklusion, Community-Infrastruktur, Nachtleben und Kultur." },
+  voices: { title: "Queere Stimmen, Mitgliederstories & lokale Guides | Queer Atlas", name: "Stimmen aus dem Atlas", description: "Lies moderierte Mitgliederstories, praktische lokale Guides, Berichte vor Ort und gelebte queere Perspektiven aus Reisezielen weltweit." },
+};
+
 function sectionMetadata(section, locale) {
   const base = NOW_SECTIONS[section];
+  if (locale === "de") return { ...base, ...GERMAN_SECTION_METADATA[section] };
   return locale === "es" ? { ...base, ...SPANISH_SECTION_METADATA[section] } : base;
 }
 
@@ -65,7 +73,7 @@ export async function generateMetadata({ params }) {
       title: config.title,
       description: config.description,
       url: localizedOpenGraphUrl(canonical, locale),
-      locale: locale === "es" ? "es_ES" : "en_US",
+      locale: locale === "es" ? "es_ES" : locale === "de" ? "de_DE" : "en_US",
       type: "website",
     },
     twitter: {

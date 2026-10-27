@@ -17,6 +17,8 @@ import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
 import { HomeDiscoverySection, MembershipPreview } from "@/components/home/HomeDeferredSections";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { getPublishedLocales } from "@/lib/i18n/locales";
+import { toLocalePath } from "@/lib/i18n/localeRouting";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v2";
@@ -776,7 +778,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         result_count: results.length,
       },
     });
-    router.push(`/search?q=${encodeURIComponent(normalizedQuery)}`);
+    router.push(`${toLocalePath("/search", locale)}?q=${encodeURIComponent(normalizedQuery)}`);
   };
 
   const cityCount = useMemo(
@@ -1083,21 +1085,22 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="flex items-center gap-2.5 sm:gap-3">
               <div className="relative flex h-11 shrink-0 items-center rounded-full text-white/80 transition hover:bg-white/5 focus-within:ring-2 focus-within:ring-cyan-100/80">
                 <Globe2 className="pointer-events-none absolute left-3 h-4 w-4" aria-hidden="true" />
-                <span className="pointer-events-none pl-9 pr-8 text-sm font-medium sm:hidden" aria-hidden="true">{locale === "es" ? "ES" : "EN"}</span>
+                <span className="pointer-events-none pl-9 pr-8 text-sm font-medium sm:hidden" aria-hidden="true">{locale.toUpperCase()}</span>
                 <select
                   aria-label={t("global.language", "Language")}
-                  value={locale === "es" ? "es" : "en"}
+                  value={locale}
                   onChange={(event) => {
                     const code = event.target.value;
                     if (locale === code) return;
                     document.cookie = `qa_locale=${code}; path=/; max-age=31536000; samesite=lax`;
                     document.cookie = "qa_locale_preference=manual; path=/; max-age=31536000; samesite=lax";
-                    window.location.assign(code === "es" ? "/es" : "/");
+                    window.location.assign(toLocalePath("/", code));
                   }}
                   className="absolute inset-0 h-11 w-full cursor-pointer appearance-none rounded-full bg-transparent opacity-0 focus:outline-none sm:static sm:pl-9 sm:pr-8 sm:text-sm sm:font-medium sm:opacity-100"
                 >
-                  <option value="en" lang="en" className="bg-[#0b1020] text-white">English</option>
-                  <option value="es" lang="es" className="bg-[#0b1020] text-white">Español</option>
+                  {getPublishedLocales().map((language) => (
+                    <option key={language.code} value={language.code} lang={language.code} className="bg-[#0b1020] text-white">{language.nativeName}</option>
+                  ))}
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 h-3.5 w-3.5 text-white/60" aria-hidden="true" />
               </div>
@@ -1120,7 +1123,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               ) : (
                 <>
                 <button
-                  onClick={() => router.push("/favorites")}
+                  onClick={() => router.push(toLocalePath("/favorites", locale))}
                   className="qa-action qa-action-strong inline-flex h-10 items-center justify-center rounded-full border border-fuchsia-200/48 bg-[linear-gradient(135deg,rgba(232,121,249,0.32),rgba(99,102,241,0.22),rgba(14,10,20,0.95))] px-4 text-sm font-semibold text-white transition hover:border-fuchsia-200/70"
                 >
                   {t("home.yourAtlas", "Your Atlas")}

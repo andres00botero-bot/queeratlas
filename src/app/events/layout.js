@@ -34,12 +34,13 @@ const metadata = {
 export async function generateMetadata() {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const isSpanish = locale === "es";
+  const isGerman = locale === "de";
   return {
     ...metadata,
-    title: isSpanish ? "Calendario de eventos LGBTQ+" : metadata.title,
-    description: isSpanish ? "Sigue eventos LGBTQ+, vida nocturna queer y actividades seleccionadas por ciudad con señales de comunidad en directo." : metadata.description,
+    title: isSpanish ? "Calendario de eventos LGBTQ+" : isGerman ? "Queerer Eventkalender" : metadata.title,
+    description: isSpanish ? "Sigue eventos LGBTQ+, vida nocturna queer y actividades seleccionadas por ciudad con señales de comunidad en directo." : isGerman ? "Finde LGBTQ+ Events, queeres Nachtleben und kuratierte Veranstaltungen nach Stadt – mit aktuellen Community-Hinweisen." : metadata.description,
     alternates: localizedAlternates("/events", locale),
-    openGraph: { ...metadata.openGraph, title: isSpanish ? "Eventos LGBTQ+ | Queer Atlas" : metadata.openGraph.title, description: isSpanish ? "Encuentra eventos LGBTQ+, calendarios de vida nocturna queer y actividad ciudad por ciudad." : metadata.openGraph.description, url: localizedOpenGraphUrl("/events", locale), locale: isSpanish ? "es_ES" : "en_US" },
+    openGraph: { ...metadata.openGraph, title: isSpanish ? "Eventos LGBTQ+ | Queer Atlas" : isGerman ? "LGBTQ+ Events | Queer Atlas" : metadata.openGraph.title, description: isSpanish ? "Encuentra eventos LGBTQ+, calendarios de vida nocturna queer y actividad ciudad por ciudad." : isGerman ? "Finde LGBTQ+ Events, queere Nachtleben-Kalender und Aktivitäten nach Stadt." : metadata.openGraph.description, url: localizedOpenGraphUrl("/events", locale), locale: isSpanish ? "es_ES" : isGerman ? "de_DE" : "en_US" },
     twitter: { ...metadata.twitter, title: isSpanish ? "Calendario de eventos LGBTQ+ | Queer Atlas" : metadata.twitter.title, description: isSpanish ? "Sigue vida nocturna queer, eventos locales y señales inclusivas." : metadata.twitter.description },
   };
 }

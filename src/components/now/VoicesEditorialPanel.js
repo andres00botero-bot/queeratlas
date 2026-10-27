@@ -48,7 +48,7 @@ function cityLabel(value = "") {
 function dateLabel(value = "", locale, t) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return t("now.recentlyPublished", "Recently published");
-  return new Intl.DateTimeFormat(locale === "es" ? "es" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(parsed);
+  return new Intl.DateTimeFormat(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en-GB", { day: "numeric", month: "short", year: "numeric" }).format(parsed);
 }
 
 function voiceBody(item = {}) {

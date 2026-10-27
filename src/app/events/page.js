@@ -613,7 +613,7 @@ export default function EventsPage({ initialSection = "calendar", initialEvents,
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  const monthName = currentDate.toLocaleString(locale === "es" ? "es" : "en", {
+  const monthName = currentDate.toLocaleString(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en", {
     month: "long",
   });
   const displayMonthName = titleCaseWords(monthName);

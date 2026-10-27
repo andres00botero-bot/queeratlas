@@ -3,7 +3,16 @@ const SPANISH_SPEAKING_COUNTRY_CODES = new Set([
   "HN", "MX", "NI", "PA", "PE", "PR", "PY", "SV", "UY", "VE",
 ]);
 
+// DACH visitors should receive a language they can use immediately. Belgium,
+// Luxembourg and South Tyrol are deliberately not included: country-level
+// routing there would be too coarse and can override the visitor's language.
+const GERMAN_SPEAKING_COUNTRY_CODES = new Set(["AT", "CH", "DE", "LI"]);
+
 export function defaultsToSpanishByCountry(countryCode) {
   return SPANISH_SPEAKING_COUNTRY_CODES.has(String(countryCode || "").trim().toUpperCase());
+}
+
+export function defaultsToGermanByCountry(countryCode) {
+  return GERMAN_SPEAKING_COUNTRY_CODES.has(String(countryCode || "").trim().toUpperCase());
 }
 

@@ -25,6 +25,15 @@ const metadata = {
 export async function generateMetadata() {
   const requestHeaders = await headers();
   const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
+  if (locale === "de") {
+    return {
+      ...metadata,
+      alternates: localizedAlternates("/now/collections", locale),
+      title: "Atlas-Kollektionen | Queere Reisen, Aufenthalte, Events & Kultur",
+      description: "Entdecke recherchierte LGBTQ+ Reisekollektionen zu queergeführten Unterkünften, Flitterwochen, bezahlbaren Städtereisen, sapphischen Reisen, Events, Wellness, Essen, Nachtleben und Stränden.",
+      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: "de_DE", title: "Atlas-Kollektionen | Queer Atlas", description: "Queere Orte, Aufenthalte, Events und Stadtrouten – ausgewählt danach, wie sie auf einer Reise wirklich funktionieren." },
+    };
+  }
   if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now/collections", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: "en_US" } };
 
   return {

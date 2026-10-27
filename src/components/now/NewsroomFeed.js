@@ -6,6 +6,7 @@ import { Bookmark, MapPin, Tags, X } from "lucide-react";
 import { formatDateShort } from "@/lib/dateDisplay";
 import useNewsPreferences from "@/features/news/useNewsPreferences";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { toLocalePath } from "@/lib/i18n/localeRouting";
 
 const INITIAL_STORY_COUNT = 10;
 const STORY_BATCH_SIZE = 8;
@@ -144,7 +145,7 @@ export default function NewsroomFeed({
   onDelete,
   isFallback = false,
 }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [visibleCount, setVisibleCount] = useState(INITIAL_STORY_COUNT);
   const [feedAnnouncement, setFeedAnnouncement] = useState("");
   const { preferences, loading: preferencesLoading, isMember, hasPreference, requestSignIn, togglePreference } = useNewsPreferences();
@@ -253,7 +254,7 @@ export default function NewsroomFeed({
       date: item.createdAt || item.date || "",
       imageUrl: item.imageUrl || "",
       sourceName: item.sourceName || t("now.queerAtlasDesk", "Queer Atlas desk"),
-      href: `/now/news/${encodeURIComponent(String(item.id))}`,
+      href: toLocalePath(`/now/news/${encodeURIComponent(String(item.id))}`, locale),
     },
   });
 
@@ -262,7 +263,7 @@ export default function NewsroomFeed({
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{feedAnnouncement}</p>
       {isFallback ? (
         <p className="mb-5 inline-flex rounded-full border border-amber-200/25 bg-amber-200/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-100/90">
-          Editorial fallback · no published news available
+          {t("now.editorialFallback", "Editorial fallback · no published news available")}
         </p>
       ) : null}
       {feedMode === "following" && followedPreferences.length > 0 ? (

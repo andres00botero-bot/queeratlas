@@ -49,3 +49,20 @@ export const EDITORIAL_PULSE_ITEMS = [
   },
 ];
 
+const GERMAN_PULSE_COPY = {
+  "pulse-rights-eu-travel-01": { title: "Vor der Anreise: Rechtslage prüfen, nicht nur das Nachtleben", city: "Mehrere Städte", country: "Weltweit", summary: "Queere Reisende prüfen vor einer Buchung zunehmend rechtliche und gesellschaftliche Bedingungen – besonders mit Blick auf die Sicherheit von trans und nichtbinären Menschen.", whyItMatters: "Eine Stadt kann partyfreundlich sein und trotzdem rechtliche oder soziale Hürden haben. Ein kurzer Rechte- und Sicherheitscheck kann die gesamte Routenplanung verändern.", sourceName: "Queer-Atlas-Redaktion" },
+  "pulse-culture-nightflow-01": { title: "Die beste Strategie für die Nacht: ruhig anfangen, bewusst enden", city: "Mehrere Städte", country: "Weltweit", summary: "Mitglieder mit gutem Ortsgefühl setzen auf Abende in zwei Schritten: erst ein sozialer Ort, um die Stimmung zu lesen, danach ein gezielter später Wechsel.", whyItMatters: "Das senkt das Risiko eines schlechten Abends, erhöht die Sicherheit und führt meist zu besseren sozialen Begegnungen als planloses Weiterziehen.", sourceName: "Queer-Atlas-Community" },
+  "pulse-major-pride-cycle-01": { title: "Die Planungsfenster für die Pride-Saison öffnen früher", city: "Europa / Nordamerika", country: "Regional", summary: "Mitglieder buchen Unterkünfte und wichtige Tickets in den gefragtesten Zielen früher als in den Vorjahren.", whyItMatters: "Späte Entscheidungen kosten inzwischen mehr und lassen weniger Auswahl. Früh zu planen erhält Freiheit und senkt Stress.", sourceName: "Atlas-Planungssignale" },
+};
+
+export function getPulseCategories(locale) {
+  if (locale !== "de") return PULSE_CATEGORIES;
+  const labels = { all: "Alle", rising_spot: "Aufstrebende Orte", rights_safety: "Rechte & Sicherheit", nightlife_change: "Eröffnungen / Schließungen", major_event: "Große Events", culture_tip: "Kultur & Lifestyle" };
+  return PULSE_CATEGORIES.map((category) => ({ ...category, label: labels[category.key] || category.label }));
+}
+
+export function getEditorialPulseItems(locale) {
+  if (locale !== "de") return EDITORIAL_PULSE_ITEMS;
+  return EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, ...(GERMAN_PULSE_COPY[item.id] || {}) }));
+}
+

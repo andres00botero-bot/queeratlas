@@ -80,7 +80,7 @@ export async function generateMetadata({ params }) {
       title: `${collection.title} | Queer Atlas`,
       description: formatCollectionDescription(collection),
       url: localizedOpenGraphUrl(collection.href, locale),
-      locale: locale === "es" ? "es_ES" : "en_US",
+      locale: locale === "es" ? "es_ES" : locale === "de" ? "de_DE" : "en_US",
       type: "article",
       images: [
         {
@@ -144,7 +144,7 @@ export default async function AtlasCollectionDetailPage({ params }) {
         ...(searchTerms.length > 0 ? { keywords: searchTerms.join(", ") } : {}),
         datePublished: editorial.publishedAt,
         dateModified: editorial.updatedAt,
-        inLanguage: locale === "es" ? "es" : "en",
+        inLanguage: locale === "es" ? "es" : locale === "de" ? "de" : "en",
         isPartOf: { "@id": QA_WEBSITE_ID },
         publisher: {
           "@type": "Organization",
@@ -177,8 +177,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: locale === "es" ? "Inicio" : "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
-          { "@type": "ListItem", position: 2, name: locale === "es" ? "Colecciones Atlas" : "Atlas Collections", item: `${QA_SITE_URL}${localePath("/now/collections", locale)}` },
+          { "@type": "ListItem", position: 1, name: locale === "es" ? "Inicio" : locale === "de" ? "Startseite" : "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+          { "@type": "ListItem", position: 2, name: locale === "es" ? "Colecciones Atlas" : locale === "de" ? "Atlas-Kollektionen" : "Atlas Collections", item: `${QA_SITE_URL}${localePath("/now/collections", locale)}` },
           { "@type": "ListItem", position: 3, name: collection.title, item: `${QA_SITE_URL}${localizedCollectionHref}` },
         ],
       },

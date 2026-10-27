@@ -68,4 +68,8 @@ const es = {
   deleteConfirm: "Entiendo y quiero eliminar mi cuenta y los datos privados de mi Atlas.", delete: "Eliminar mi cuenta", deletePending: "Tu perfil está oculto y la eliminación está pendiente. Esto no confirma que todos los datos se hayan borrado.",
   deleteReauth: "Vuelve a iniciar sesión antes de eliminar tu cuenta. Se requiere un inicio de sesión reciente.", reauthenticate: "Cerrar sesión y volver a entrar", cancel: "Cancelar",
 };
-export function memberPrivacyCopy(locale) { return locale === "es" ? es : en; }
+const de = {
+  ...en,
+  requests: "Deine Kontakte", message: "Nachricht", settings: "Privatsphäre-Einstellungen", report: "Mitglied melden", block: "Mitglied blockieren", empty: "Wähle einen bestätigten Kontakt, um den Nachrichtenverlauf zu sehen.", loading: "Privatsphäre-Einstellungen werden geprüft…", unavailable: "Die Mitgliederansicht ist gerade nicht verfügbar. Dein privater Atlas bleibt für dich nutzbar.", staged: "Die Mitgliederansicht wird vorbereitet. Profile können erst veröffentlicht werden, wenn sie geöffnet ist.",
+};
+export function memberPrivacyCopy(locale) { return locale === "es" ? es : locale === "de" ? de : en; }

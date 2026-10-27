@@ -36,7 +36,7 @@ function formatScore(value) {
 function formatSnapshotDate(value, locale) {
   const [year, month, day] = String(value || "").slice(0, 10).split("-");
   if (!year || !month || !day) return null;
-  return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString(locale === "es" ? "es" : "en-US", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en-US", { day: "numeric", month: "short", year: "numeric" });
 }
 
 function scoreFor(entry, metric) {

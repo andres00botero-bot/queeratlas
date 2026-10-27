@@ -104,10 +104,13 @@ export async function generateMetadata() {
   const locale = normalizeLocale(requestHeaders.get("x-qa-locale"), DEFAULT_LOCALE);
   const pathname = requestHeaders.get("x-qa-pathname") || "/";
   const isSpanish = locale === "es";
-  const title = isSpanish ? "Queer Atlas en español | Guía LGBTQ+ de ciudades, eventos y lugares" : baseMetadata.title;
+  const isGerman = locale === "de";
+  const title = isSpanish ? "Queer Atlas en español | Guía LGBTQ+ de ciudades, eventos y lugares" : isGerman ? "Queer Atlas auf Deutsch | LGBTQ+ Guide für Städte, Events und Orte" : baseMetadata.title;
   const description = isSpanish
     ? "Queer Atlas en español: guía LGBTQ+ global con ciudades, lugares seguros, vida nocturna inclusiva y eventos queer."
-    : baseMetadata.description;
+    : isGerman
+      ? "Queer Atlas auf Deutsch: dein globaler LGBTQ+ Guide für Städte, sichere Orte, queeres Nachtleben und Events."
+      : baseMetadata.description;
 
   return {
     ...baseMetadata,
@@ -115,20 +118,20 @@ export async function generateMetadata() {
     description,
     keywords: isSpanish
       ? ["Queer Atlas en español", "guía LGBTQ+", "viajes queer", "ciudades queer", "eventos LGBTQ+", "vida nocturna queer", "lugares LGBTQ+ seguros"]
-      : baseMetadata.keywords,
+      : isGerman ? ["Queer Atlas Deutsch", "LGBTQ+ Reiseführer", "queere Städte", "queere Events", "queeres Nachtleben", "schwule Bars", "LGBTQ+ sichere Orte"] : baseMetadata.keywords,
     alternates: localizedAlternates(pathname, locale),
     openGraph: {
       ...baseMetadata.openGraph,
-      title: isSpanish ? "Queer Atlas en español | Guía LGBTQ+ de ciudades, eventos y lugares" : baseMetadata.openGraph.title,
-      description: isSpanish ? "Queer Atlas en español para descubrir ciudades LGBTQ+, vida nocturna queer segura y eventos." : baseMetadata.openGraph.description,
+      title: isSpanish ? "Queer Atlas en español | Guía LGBTQ+ de ciudades, eventos y lugares" : isGerman ? "Queer Atlas auf Deutsch | LGBTQ+ Guide für Städte, Events und Orte" : baseMetadata.openGraph.title,
+      description: isSpanish ? "Queer Atlas en español para descubrir ciudades LGBTQ+, vida nocturna queer segura y eventos." : isGerman ? "Entdecke LGBTQ+ Städte, queeres Nachtleben, sichere Orte und Events – mit lokalem Kontext." : baseMetadata.openGraph.description,
       url: localizedOpenGraphUrl(pathname, locale),
-      locale: isSpanish ? "es_ES" : "en_US",
+      locale: isSpanish ? "es_ES" : isGerman ? "de_DE" : "en_US",
       images: baseMetadata.openGraph.images.map((image) => ({ ...image, alt: isSpanish ? "Queer Atlas" : image.alt })),
     },
     twitter: {
       ...baseMetadata.twitter,
-      title: isSpanish ? "Queer Atlas en español | Guía LGBTQ+ de ciudades, eventos y lugares" : baseMetadata.twitter.title,
-      description: isSpanish ? "Queer Atlas en español: viajes LGBTQ+, vida nocturna inclusiva y eventos." : baseMetadata.twitter.description,
+      title: isSpanish ? "Queer Atlas en español | Guía LGBTQ+ de ciudades, eventos y lugares" : isGerman ? "Queer Atlas auf Deutsch | LGBTQ+ Guide" : baseMetadata.twitter.title,
+      description: isSpanish ? "Queer Atlas en español: viajes LGBTQ+, vida nocturna inclusiva y eventos." : isGerman ? "LGBTQ+ Reisen, queeres Nachtleben, sichere Orte und Events." : baseMetadata.twitter.description,
     },
   };
 }

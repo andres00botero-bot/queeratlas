@@ -43,12 +43,13 @@ const metadata = {
 export async function generateMetadata() {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const isSpanish = locale === "es";
+  const isGerman = locale === "de";
   return {
     ...metadata,
-    title: isSpanish ? "Ciudades LGBTQ+ y mapa de seguridad queer 2026" : metadata.title,
-    description: isSpanish ? "Compara ciudades LGBTQ+ acogedoras, zonas queer seguras y vida nocturna con contexto de derechos y seguridad para viajar con más confianza." : metadata.description,
+    title: isSpanish ? "Ciudades LGBTQ+ y mapa de seguridad queer 2026" : isGerman ? "LGBTQ+ freundliche Städte & queere Sicherheitskarte 2026" : metadata.title,
+    description: isSpanish ? "Compara ciudades LGBTQ+ acogedoras, zonas queer seguras y vida nocturna con contexto de derechos y seguridad para viajar con más confianza." : isGerman ? "Vergleiche LGBTQ+ freundliche Städte, queere Orte und Nachtleben mit nachvollziehbarem Rechte- und Sicherheitskontext für eine besser geplante Reise." : metadata.description,
     alternates: localizedAlternates("/cities", locale),
-    openGraph: { ...metadata.openGraph, title: isSpanish ? "Ciudades LGBTQ+ y mapa de seguridad queer 2026 | Queer Atlas" : metadata.openGraph.title, description: isSpanish ? "Compara contexto de seguridad, vida nocturna y rutas locales de confianza ciudad por ciudad." : metadata.openGraph.description, url: localizedOpenGraphUrl("/cities", locale), locale: isSpanish ? "es_ES" : "en_US" },
+    openGraph: { ...metadata.openGraph, title: isSpanish ? "Ciudades LGBTQ+ y mapa de seguridad queer 2026 | Queer Atlas" : isGerman ? "LGBTQ+ freundliche Städte & queere Sicherheitskarte 2026 | Queer Atlas" : metadata.openGraph.title, description: isSpanish ? "Compara contexto de seguridad, vida nocturna y rutas locales de confianza ciudad por ciudad." : isGerman ? "Sicherheitskontext, Nachtleben und verlässliche lokale Routen – Stadt für Stadt." : metadata.openGraph.description, url: localizedOpenGraphUrl("/cities", locale), locale: isSpanish ? "es_ES" : isGerman ? "de_DE" : "en_US" },
     twitter: { ...metadata.twitter, title: isSpanish ? "Ciudades LGBTQ+ y mapa de seguridad queer 2026 | Queer Atlas" : metadata.twitter.title, description: isSpanish ? "Explora ciudades queer seguras, vida nocturna local y señales de confianza." : metadata.twitter.description },
   };
 }

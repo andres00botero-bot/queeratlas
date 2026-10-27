@@ -2481,7 +2481,7 @@ function FavoritesPageContent() {
     if (!raw) return t("favorites.joinedRecently", "Joined recently");
     const parsed = new Date(raw);
     if (Number.isNaN(parsed.getTime())) return t("favorites.joinedRecently", "Joined recently");
-    return t("favorites.joined", "Joined {date}").replace("{date}", parsed.toLocaleDateString(locale === "es" ? "es" : "en-US", {
+    return t("favorites.joined", "Joined {date}").replace("{date}", parsed.toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en-US", {
       year: "numeric",
       month: "short",
     }));

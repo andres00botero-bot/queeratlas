@@ -15,6 +15,7 @@ import {
 } from "@/lib/seo/topicHubRoutes";
 import { QA_SITE_URL } from "@/lib/seo/sitemapXml";
 import { localePath } from "@/lib/seo/localizedSeo";
+import { getSearchReadyLocales } from "@/lib/i18n/localeSeoRollout";
 import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
 import { QARI_PUBLIC_PROFILES } from "@/lib/qariPublicProfiles";
@@ -59,13 +60,20 @@ function canonicalEntries(entries = []) {
 }
 
 function withLanguageAlternates(entries = []) {
+  const searchReadyLocales = new Set(getSearchReadyLocales());
   return entries.flatMap((entry) => {
     const englishUrl = String(entry.url || "");
     if (!englishUrl.startsWith(QA_SITE_URL)) return [];
     const path = englishUrl.slice(QA_SITE_URL.length) || "/";
     const spanishUrl = `${QA_SITE_URL}${localePath(path, "es")}`;
     const languages = { en: englishUrl, es: spanishUrl, "x-default": englishUrl };
-    return [{ ...entry, languages }, { ...entry, url: spanishUrl, languages }];
+    const variants = [{ ...entry, languages }, { ...entry, url: spanishUrl, languages }];
+    if (searchReadyLocales.has("de")) {
+      const germanUrl = `${QA_SITE_URL}${localePath(path, "de")}`;
+      languages.de = germanUrl;
+      variants.push({ ...entry, url: germanUrl, languages });
+    }
+    return variants;
   });
 }
 

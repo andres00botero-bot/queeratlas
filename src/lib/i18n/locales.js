@@ -4,7 +4,7 @@ export const LOCALES = [
   { code: "en", name: "English", nativeName: "English", published: true },
   { code: "es", name: "Spanish", nativeName: "Español", published: true },
   { code: "fr", name: "French", nativeName: "Français", published: false },
-  { code: "de", name: "German", nativeName: "Deutsch", published: false },
+  { code: "de", name: "German", nativeName: "Deutsch", published: true },
 ];
 
 const LOCALE_CODES = new Set(LOCALES.map((locale) => locale.code));

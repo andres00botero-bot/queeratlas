@@ -70,6 +70,16 @@ const metadata = {
 export async function generateMetadata() {
   const requestHeaders = await headers();
   const locale = normalizeLocale(requestHeaders.get("x-qa-locale"));
+  if (locale === "de") {
+    return {
+      ...metadata,
+      alternates: localizedAlternates("/now", locale),
+      title: "Queere News, Rankings & Atlas-Kollektionen",
+      description: "Tägliche queere News, der Queer Safety Index, Rankings zu Reisezielen und Atlas-Kollektionen für LGBTQ+ Nachtleben, Strände, Drag, lesbische Bars und queere Cafés.",
+      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: "de_DE", title: "Queere News, Rankings & Atlas-Kollektionen | Queer Atlas", description: "Verfolge queere Weltnews, Rankings zu Reisezielen und Sicherheit sowie kuratierte Atlas-Kollektionen für LGBTQ+ Reisen." },
+      twitter: { ...metadata.twitter, title: "Queere News, Rankings & Atlas-Kollektionen | Queer Atlas", description: "Tägliche queere News mit Rankings und kuratierten Atlas-Kollektionen für Nachtleben, Strände, Drag, lesbische Bars und Cafés." },
+    };
+  }
   if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: "en_US" } };
 
   return {
