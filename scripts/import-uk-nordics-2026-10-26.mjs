@@ -28,9 +28,12 @@ for (const { table, row } of batch.events) {
 const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY, { auth: { persistSession: false } });
 const mapboxToken = process.env.MAPBOX_TOKEN || process.env.NEXT_PUBLIC_MAPBOX_TOKEN || '';
 const hasCoordinates = (row) => Number.isFinite(Number(row?.lat)) && Number.isFinite(Number(row?.lng));
-const hasGeocodableStreetAddress = (location) => /\b\d{1,5}\s+[A-Za-zÀ-ÿ]/.test(String(location || ''));
+const hasPublicSingleLocation = (location) => {
+  const value = String(location || '').trim();
+  return Boolean(value) && !/(to be announced|venue details|venue to be confirmed|venues to be confirmed|ticket-holder|ticket holder|secret location|disclosed to attendees|final entry details|individual venues pending|individual .*sites|venues pending|multiple venues|and other venues|programme venue|programme pending|screening venues|final venue|location disclosed|exact venue details|private location)/i.test(value);
+};
 async function geocodeEventRow(row) {
-  if (hasCoordinates(row) || !hasGeocodableStreetAddress(row.location) || !mapboxToken) return row;
+  if (hasCoordinates(row) || !hasPublicSingleLocation(row.location) || !mapboxToken) return row;
   const url = new URL('https://api.mapbox.com/search/geocode/v6/forward');
   url.searchParams.set('q', row.location);
   url.searchParams.set('limit', '1');
