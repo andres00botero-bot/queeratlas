@@ -1,6 +1,13 @@
 const guide = (title, text) => ({ title, text, extra: "" });
 
 const SPANISH_CITY_GUIDES = Object.freeze({
+  stuttgart: [
+    guide("Panorama", "Stuttgart no se entiende por un único barrio gay: su fuerza está en una red real de centro comunitario, salud sexual, colectivos, bares de barrio y noches puntuales de club. Weissenburg es una buena puerta de entrada y el calendario importa más que una lista antigua de locales."),
+    guide("Barrios", "Stuttgart-Süd, alrededor de Weißenburgstraße y Bopser, es la base comunitaria más clara. El centro y Olgaeck conectan Reboots, Viva y la actividad del Pride; los clubs pueden estar en otros puntos, así que comprueba siempre la sala exacta y la ruta de vuelta."),
+    guide("Seguridad", "La coordinación municipal LGBTIQ+ y las organizaciones locales son señales útiles, pero no sustituyen el criterio en cada calle o espacio. Consulta la información del organizador el mismo día, cuida tus pertenencias en el transporte y pregunta directamente por accesibilidad, privacidad o apoyo si lo necesitas."),
+    guide("Vida nocturna", "Empieza en Weissenburg o Reboots si buscas una entrada social sin presión y elige después una fecha concreta, como Love*Pop en Lehmann. No supongas que un club mixto es queer todas las noches: aquí el programa es la brújula."),
+    guide("Coste", "Las copas suelen tener un coste moderado para una gran ciudad alemana, pero las ferias, el fútbol y el Pride pueden disparar los hoteles. Dormir cerca de una conexión de transporte reduce mucho la fricción de una ciudad con cuestas y planes nocturnos repartidos."),
+  ],
   madrid: [
     guide("Panorama", "Madrid es una de las grandes ciudades queer de Europa porque se vive, no se escenifica. La visibilidad es alta, el tono es extrovertido y la vida LGBTQ+ forma parte del ritmo cotidiano de la ciudad, no solo de una calle señalizada. Es cálida, ruidosa, coqueta y especialmente fácil de disfrutar en una primera visita."),
     guide("Barrios", "Chueca sigue siendo el centro simbólico y práctico para bares, drag, terrazas y una noche sin demasiada logística. Pero el mejor Madrid se abre hacia los barrios cercanos: comida, paseos de día y una versión menos concentrada de su encanto. Usa Chueca como ancla, no como límite."),
@@ -237,6 +244,16 @@ const SPANISH_CITY_GUIDES = Object.freeze({
   belgrade: [guide("Panorama", "Belgrado ofrece energía nocturna, creatividad y una comunidad queer resiliente, con una escena guiada por eventos."), guide("Barrios", "Savamala, Dorćol y el centro dan rutas distintas para comida, bares y clubbing."), guide("Seguridad", "Mantén atención al contexto local, evita asumir visibilidad en todos los espacios y organiza la vuelta."), guide("Vida nocturna", "Fiestas, drag y colectivos pueden ser excelentes puertas de entrada si confirmas agenda y ambiente."), guide("Coste", "Alojamiento y salidas suelen dar buen valor para una capital europea con noches intensas.")],
 });
 
+const GERMAN_CITY_GUIDES = Object.freeze({
+  stuttgart: [
+    guide("Überblick", "Stuttgart erschließt sich nicht über ein einziges Gay-Viertel. Seine Stärke liegt in einem echten Netz aus Community-Zentrum, sexueller Gesundheit, Initiativen, Kiezbars und punktuellen Clubnächten. Die Weissenburg ist ein guter erster Anlaufpunkt; der aktuelle Kalender ist wichtiger als alte Szenelisten."),
+    guide("Viertel", "Stuttgart-Süd rund um die Weißenburgstraße und Bopser ist die klarste Community-Basis. Zentrum und Olgaeck verbinden Reboots, Viva und Pride-Aktivitäten; Clubs liegen teils anderswo – prüfe deshalb immer den konkreten Ort und deine Rückroute."),
+    guide("Sicherheit", "Die städtische LGBTIQ+-Koordination und lokale Organisationen sind hilfreiche Signale, ersetzen aber nicht das Gespür für jede Straße und jeden Raum. Prüfe Veranstaltungsinfos am selben Tag, achte in der Bahn auf deine Sachen und frage bei Bedarf direkt nach Barrierefreiheit, Privatsphäre oder Unterstützung."),
+    guide("Nachtleben", "Starte in der Weissenburg oder bei Reboots, wenn du einen entspannten sozialen Einstieg suchst, und wähle anschließend ein konkretes Format wie Love*Pop im Lehmann. Ein gemischter Club ist nicht automatisch jede Nacht queer – das Programm ist hier der Kompass."),
+    guide("Kosten", "Drinks liegen für eine große deutsche Stadt meist im moderaten Bereich, doch Messen, Fußball und Pride können Hotelpreise stark erhöhen. Eine Unterkunft nahe einer guten ÖPNV-Verbindung nimmt einer hügeligen Stadt mit verstreuten Abendplänen viel Reibung."),
+  ],
+});
+
 const SPANISH_LANGUAGE_CITY_KEYS = new Set(["tenerife","puerto_vallarta","bogota","medellin","santiago","lima","quito","san_jose","guatemala_city","san_salvador","tegucigalpa","guadalajara","panama_city","caracas","asuncion","san_juan","cancun","havana","santo_domingo","managua","la_paz","cartagena","mendoza","bilbao","mallorca"]);
 
 function spanishCityGuide(city) {
@@ -245,7 +262,11 @@ function spanishCityGuide(city) {
 }
 
 export function getLocalizedCityGuide(city, locale, fallbackGuide = []) {
-  if (String(locale || "").toLowerCase().split("-")[0] !== "es") return fallbackGuide;
+  const language = String(locale || "").toLowerCase().split("-")[0];
   const key = String(city || "").toLowerCase();
-  return SPANISH_CITY_GUIDES[key] || (SPANISH_LANGUAGE_CITY_KEYS.has(key) ? spanishCityGuide(key) : fallbackGuide);
+  if (language === "es") {
+    return SPANISH_CITY_GUIDES[key] || (SPANISH_LANGUAGE_CITY_KEYS.has(key) ? spanishCityGuide(key) : fallbackGuide);
+  }
+  if (language === "de") return GERMAN_CITY_GUIDES[key] || fallbackGuide;
+  return fallbackGuide;
 }
