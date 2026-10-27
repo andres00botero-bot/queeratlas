@@ -148,6 +148,12 @@ export default function CityRightsSignals({
 
   const isQariV2 = Boolean(qariProfile?.isQariV2);
   const score = Number.isFinite(qariProfile?.score) ? qariProfile.score : null;
+  const formattedScore = score === null
+    ? null
+    : new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(score);
   const qariTier = isQariV2 ? qariProfile.tier : getQariTier(score);
   const fallbackTier = FALLBACK_TIERS[riskTier] || FALLBACK_TIERS.unknown;
   const tone = isQariV2 ? qariTier : score === null ? fallbackTier : qariTier;
@@ -196,10 +202,9 @@ export default function CityRightsSignals({
         <div className="ml-[3.125rem] flex shrink-0 items-center justify-between gap-4 sm:ml-0 sm:border-l sm:border-white/[0.08] sm:pl-5">
           <div className="flex items-baseline gap-1.5 sm:block sm:min-w-20 sm:text-right">
             <p className="text-lg font-semibold tabular-nums leading-none text-white">
-              {isQariV2 ? tierLabel(qariTier, t) : score === null ? "—" : score}
-              {score !== null && !isQariV2 ? <span className="text-[10px] font-medium text-white/34">/100</span> : null}
+              {formattedScore || (isQariV2 ? tierLabel(qariTier, t) : "—")}
             </p>
-            <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/34">{isQariV2 ? t("qari.riskLevel", "Risk level") : t("qari.riskIndex", "Risk index")}</p>
+            <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.15em] text-white/34">{t("qari.riskIndex", "Risk index")}</p>
           </div>
           <button
             type="button"

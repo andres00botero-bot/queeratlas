@@ -100,21 +100,17 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
               </span>
             </div>
             <p className="mt-3 hidden text-sm leading-6 text-[#BCC7D2] sm:block">
-              {t("home.qariDescription", "QARI, the Queer Atlas Risk Index, combines legal risk, social reality, and digital and enforcement risk into a transparent country-level travel signal.")}
+              {t("home.qariDescription", "QARI measures country-level queer travel risk. Higher scores mean greater documented exposure; the highest verified dimension sets the risk level.")}
             </p>
-            <p className="mt-2 text-sm leading-5 text-[#BCC7D2] sm:hidden">{t("home.qariShort", "Understand country-level travel risks.")}</p>
+            <p className="mt-2 text-sm leading-5 text-[#BCC7D2] sm:hidden">{t("home.qariShort", "Country-level queer travel risk, scored 0–100.")}</p>
 
-            <div className="my-5 hidden sm:grid grid-cols-3 gap-3" aria-label={t("home.qariWeights", "QARI score weights")}>
-              {[
-                [t("home.legal", "Legal"), "35%", "text-[#F5F1E8]"],
-                [t("home.social", "Social"), "40%", "text-[#F5F1E8]"],
-                [t("home.digital", "Digital"), "25%", "text-[#F5F1E8]"],
-              ].map(([label, value, tone]) => (
-                <div key={label} className={`border-t border-[#3B5060] pt-3 ${tone}`}>
-                  <p className="text-xs font-medium text-[#BCC7D2]">{label}</p>
-                  <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-                </div>
-              ))}
+            <div className="my-5 hidden border-l-2 border-[#80D4C4] pl-4 sm:block">
+              <p className="text-xs font-semibold leading-5 text-[#80D4C4]">
+                {t("home.qariDimensionsTitle", "Four evidence-graded risk dimensions")}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-[#F5F1E8]">
+                {t("home.qariDimensionsList", "Legal conditions · State repression · Digital exposure · Social & civil reality")}
+              </p>
             </div>
 
 

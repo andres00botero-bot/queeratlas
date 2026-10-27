@@ -78,16 +78,20 @@ export function clampQariAxis(value) {
 }
 
 export function calculateQari({ legalRisk, socialRisk, digitalRisk, riskFloor = 0 } = {}) {
+  const exactScore = calculateExactQari({ legalRisk, socialRisk, digitalRisk, riskFloor });
+  return exactScore === null ? null : Math.round(exactScore);
+}
+
+export function calculateExactQari({ legalRisk, socialRisk, digitalRisk, riskFloor = 0 } = {}) {
   const legal = clampQariAxis(legalRisk);
   const social = clampQariAxis(socialRisk);
   const digital = clampQariAxis(digitalRisk);
   if ([legal, social, digital].some((value) => value === null)) return null;
 
-  const weighted = Math.round(
+  const weighted =
     legal * QARI_WEIGHTS.legal +
       social * QARI_WEIGHTS.social +
-      digital * QARI_WEIGHTS.digital,
-  );
+      digital * QARI_WEIGHTS.digital;
 
   return Math.max(weighted, clampQariAxis(riskFloor) || 0);
 }
