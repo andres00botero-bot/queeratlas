@@ -53,15 +53,16 @@ const metadata = {
 
 export async function generateMetadata() {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
-  if (locale !== "de") return metadata;
-  const title = "Queere Orte, Städte & Events suchen | Queer Atlas";
-  const description = "Durchsuche queere Städte, Orte, Veranstaltungen, Angebote und Guides mit aktuellen Treffern und Kartenansicht.";
+  if (locale !== "de" && locale !== "fr") return metadata;
+  const isFrench = locale === "fr";
+  const title = isFrench ? "Rechercher villes, lieux et événements queer | Queer Atlas" : "Queere Orte, Städte & Events suchen | Queer Atlas";
+  const description = isFrench ? "Explorez villes, lieux, événements, services et guides queer grâce à une recherche vivante et une carte intuitive." : "Durchsuche queere Städte, Orte, Veranstaltungen, Angebote und Guides mit aktuellen Treffern und Kartenansicht.";
   return {
     ...metadata,
     title,
     description,
     alternates: localizedAlternates("/search", locale),
-    openGraph: { ...metadata.openGraph, title, description, url: localizedOpenGraphUrl("/search", locale), locale: "de_DE", images: metadata.openGraph.images.map((image) => ({ ...image, alt: "Queer Atlas: Suche nach Städten, Orten und Veranstaltungen" })) },
+    openGraph: { ...metadata.openGraph, title, description, url: localizedOpenGraphUrl("/search", locale), locale: isFrench ? "fr_FR" : "de_DE", images: metadata.openGraph.images.map((image) => ({ ...image, alt: isFrench ? "Queer Atlas : rechercher des villes, lieux et événements" : "Queer Atlas: Suche nach Städten, Orten und Veranstaltungen" })) },
     twitter: { ...metadata.twitter, title, description },
   };
 }

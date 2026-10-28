@@ -72,4 +72,8 @@ const de = {
   ...en,
   requests: "Deine Kontakte", message: "Nachricht", settings: "Privatsphäre-Einstellungen", report: "Mitglied melden", block: "Mitglied blockieren", empty: "Wähle einen bestätigten Kontakt, um den Nachrichtenverlauf zu sehen.", loading: "Privatsphäre-Einstellungen werden geprüft…", unavailable: "Die Mitgliederansicht ist gerade nicht verfügbar. Dein privater Atlas bleibt für dich nutzbar.", staged: "Die Mitgliederansicht wird vorbereitet. Profile können erst veröffentlicht werden, wenn sie geöffnet ist.",
 };
-export function memberPrivacyCopy(locale) { return locale === "es" ? es : locale === "de" ? de : en; }
+const fr = {
+  ...en,
+  requests: "Vos contacts", message: "Message", settings: "Paramètres de confidentialité", report: "Signaler ce membre", block: "Bloquer ce membre", empty: "Choisissez un contact approuvé pour voir l’historique des messages.", loading: "Vérification des paramètres de confidentialité…", unavailable: "L’espace des membres est indisponible pour le moment. Votre Atlas privé reste accessible.", staged: "L’espace des membres est en préparation. Les profils ne peuvent être publiés que lorsqu’il sera ouvert.", title: "Votre vie privée. Votre choix.", eyebrow: "Confidentialité et visibilité", intro: "Utilisez votre Atlas sans apparaître dans l’annuaire des membres. Le partage de profil reste toujours facultatif.", directory: "Rencontrez des personnes selon vos propres conditions.", directoryIntro: "Seuls les membres qui choisissent d’être visibles apparaissent ici. Être répertorié·e ou disposer d’une adresse e-mail confirmée ne garantit pas la sécurité.", hidden: "Masqué", contacts: "Contacts approuvés", community: "Visible dans la communauté", save: "Enregistrer la visibilité", hide: "Masquer mon profil", cancel: "Annuler",
+};
+export function memberPrivacyCopy(locale) { return locale === "es" ? es : locale === "de" ? de : locale === "fr" ? fr : en; }

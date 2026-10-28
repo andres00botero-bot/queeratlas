@@ -1930,10 +1930,10 @@ function CommunityPageContent() {
                 <Link href="/now/voices" className="mt-4 inline-flex min-h-11 items-center text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">{t("community.readVoices", "Read Voices")} →</Link>
               </div>
               <div className="border-t border-white/[0.08] px-5 py-5 sm:border-l sm:border-t-0 sm:px-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">Build with us</p>
-                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeIdea?.text || "Help shape what comes next"}</h3>
-                <p className="mt-1 line-clamp-1 text-xs text-white/44">Suggest, vote, and follow ideas for Queer Atlas.</p>
-                <button type="button" onClick={() => setActiveCommunityPanel("improve")} className="mt-4 min-h-11 text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">Open ideas →</button>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/38">{t("community.homeBuild", "Build with us")}</p>
+                <h3 className="mt-2 line-clamp-1 text-sm font-semibold text-white">{homeIdea?.text || t("community.homeBuildTitle", "Help shape what comes next")}</h3>
+                <p className="mt-1 line-clamp-1 text-xs text-white/44">{t("community.homeBuildIntro", "Suggest, vote, and follow ideas for Queer Atlas.")}</p>
+                <button type="button" onClick={() => setActiveCommunityPanel("improve")} className="mt-4 min-h-11 text-xs font-semibold text-cyan-100/76 transition hover:text-cyan-50">{t("community.openIdeas", "Open ideas")} →</button>
               </div>
             </div>
           </section>
@@ -1988,7 +1988,7 @@ function CommunityPageContent() {
               <div className="max-h-[720px] space-y-3 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
                 {sortedStories.map((story) => (
                   <article key={`story-panel-${story.id}`} className="qa-premium-card rounded-[24px] border border-rose-300/22 bg-[linear-gradient(180deg,rgba(37,18,28,0.92),rgba(12,12,12,0.96))] p-4">
-                    <span className="inline-flex rounded-full border border-rose-200/32 bg-rose-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-100">Member Story</span>
+                    <span className="inline-flex rounded-full border border-rose-200/32 bg-rose-200/14 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-100">{t("community.memberStory", "Member Story")}</span>
                     <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-rose-100/66">
                       Personal experience | {story.city}
                       <span className="hidden sm:inline"> | {story.category}</span>
@@ -2000,7 +2000,7 @@ function CommunityPageContent() {
                       <p className="text-xs text-white/62">{story.author} | {timeAgo(story.createdAt)}</p>
                       <div className="flex items-center gap-2">
                         <button type="button" onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
-                        <button type="button" onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
+                        <button type="button" onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{t("community.report", "Report")}</button>
                       </div>
                     </div>
                   </article>
@@ -2294,13 +2294,13 @@ function CommunityPageContent() {
 
             {displayedJobs.length < filteredJobs.length ? (
               <div className="flex justify-center border-t border-white/[0.08] pt-6">
-                <button type="button" onClick={() => setVisibleJobCount((current) => current + JOB_VISIBLE_BATCH)} className="qa-action min-h-11 rounded-full border border-white/14 px-5 text-xs font-semibold text-white/62 transition hover:border-white/26 hover:text-white">Show more jobs · {filteredJobs.length - displayedJobs.length} remaining</button>
+                <button type="button" onClick={() => setVisibleJobCount((current) => current + JOB_VISIBLE_BATCH)} className="qa-action min-h-11 rounded-full border border-white/14 px-5 text-xs font-semibold text-white/62 transition hover:border-white/26 hover:text-white">{t("community.showMoreJobs", "Show more jobs · {count} remaining").replace("{count}", filteredJobs.length - displayedJobs.length)}</button>
               </div>
             ) : null}
 
             <div className="mt-8 flex items-start gap-3 border-t border-white/[0.08] pt-5">
               <span aria-hidden="true" className="mt-0.5 text-amber-100/58">◇</span>
-              <p className="max-w-3xl text-xs leading-5 text-white/38">Never pay to get paid. Be cautious if a recruiter requests money, crypto, banking details, or identity documents before a legitimate hiring stage. Report suspicious listings to Queer Atlas.</p>
+              <p className="max-w-3xl text-xs leading-5 text-white/38">{t("community.safetyJobNotice", "Never pay to get paid. Be cautious if a recruiter requests money, crypto, banking details, or identity documents before a legitimate hiring stage. Report suspicious listings to Queer Atlas.")}</p>
             </div>
           </section>
         ) : null}
@@ -2309,9 +2309,9 @@ function CommunityPageContent() {
         <section aria-labelledby="community-feed-heading" className="qa-premium-card rounded-[30px] border border-violet-300/16 bg-[radial-gradient(circle_at_top,rgba(167,139,250,0.14),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(244,114,182,0.12),transparent_30%),linear-gradient(180deg,rgba(20,16,34,0.95),rgba(10,10,10,1))] p-5 shadow-[0_34px_110px_rgba(139,92,246,0.12),0_14px_34px_rgba(0,0,0,0.3)] sm:p-6">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-violet-200/80">Community Feed</p>
-              <h2 id="community-feed-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Stories + Guides in one stream</h2>
-              <p className="mt-1 text-xs text-violet-100/70">Switch between all posts, stories, or guides without leaving the flow.</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-violet-200/80">{t("community.feed", "Community Feed")}</p>
+              <h2 id="community-feed-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">{t("community.feedTitle", "Stories + Guides in one stream")}</h2>
+              <p className="mt-1 text-xs text-violet-100/70">{t("community.feedIntro", "Switch between all posts, stories, or guides without leaving the flow.")}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" onClick={() => setShowStoryForm((current) => !current)} className="qa-action qa-action-strong rounded-full border border-rose-300/34 bg-rose-300/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-rose-100 transition hover:border-rose-200/62">
@@ -2324,9 +2324,9 @@ function CommunityPageContent() {
           </div>
 
           <div className="mb-4 inline-flex rounded-full border border-white/16 bg-black/35 p-1">
-            <button type="button" aria-pressed={communityFeedMode === "all"} onClick={() => setCommunityFeedMode("all")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "all" ? "bg-white/16 text-white" : "text-white/72 hover:text-white"}`}>All</button>
-            <button type="button" aria-pressed={communityFeedMode === "stories"} onClick={() => setCommunityFeedMode("stories")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "stories" ? "bg-rose-300/22 text-rose-50" : "text-white/72 hover:text-white"}`}>Stories</button>
-            <button type="button" aria-pressed={communityFeedMode === "guides"} onClick={() => setCommunityFeedMode("guides")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "guides" ? "bg-violet-300/22 text-violet-50" : "text-white/72 hover:text-white"}`}>Guides</button>
+            <button type="button" aria-pressed={communityFeedMode === "all"} onClick={() => setCommunityFeedMode("all")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "all" ? "bg-white/16 text-white" : "text-white/72 hover:text-white"}`}>{t("community.all", "All")}</button>
+            <button type="button" aria-pressed={communityFeedMode === "stories"} onClick={() => setCommunityFeedMode("stories")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "stories" ? "bg-rose-300/22 text-rose-50" : "text-white/72 hover:text-white"}`}>{t("community.stories", "Stories")}</button>
+            <button type="button" aria-pressed={communityFeedMode === "guides"} onClick={() => setCommunityFeedMode("guides")} className={`rounded-full px-3 py-1 text-xs transition ${communityFeedMode === "guides" ? "bg-violet-300/22 text-violet-50" : "text-white/72 hover:text-white"}`}>{t("community.guides", "Guides")}</button>
           </div>
 
           {showStoryForm && (
@@ -2338,7 +2338,7 @@ function CommunityPageContent() {
               </div>
               <Field value={storyForm.excerpt} onChange={(event) => setStoryForm((current) => ({ ...current, excerpt: event.target.value }))} placeholder="Short excerpt" area />
               <Field value={storyForm.body} onChange={(event) => setStoryForm((current) => ({ ...current, body: event.target.value }))} placeholder="Write your experience" area />
-              <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish story</button>
+              <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-rose-100/65 bg-gradient-to-r from-rose-300 via-pink-300 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">{t("community.publishStory", "Publish story")}</button>
             </form>
           )}
 
@@ -2351,7 +2351,7 @@ function CommunityPageContent() {
               </div>
               <Field value={guideForm.summary} onChange={(event) => setGuideForm((current) => ({ ...current, summary: event.target.value }))} placeholder="Short summary" area />
               <Field value={guideForm.content} onChange={(event) => setGuideForm((current) => ({ ...current, content: event.target.value }))} placeholder="Write the guide" area />
-              <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Publish guide</button>
+              <button type="submit" className="qa-action qa-action-strong min-h-[44px] w-full rounded-xl border border-violet-100/65 bg-gradient-to-r from-violet-200 via-fuchsia-200 to-sky-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">{t("community.publishGuide", "Publish guide")}</button>
             </form>
           )}
 
@@ -2386,7 +2386,7 @@ function CommunityPageContent() {
                       <p className="text-xs text-white/62">{story.author} · {timeAgo(story.createdAt)}</p>
                       <div className="flex items-center gap-2">
                         <button type="button" onClick={() => toggleStoryExpanded(story.id)} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{expandedStoryIds.includes(story.id) ? "Show less" : "Read more"}</button>
-                        <button type="button" onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">Report</button>
+                        <button type="button" onClick={() => reportContent({ targetType: "community-story", targetId: story.id, title: story.title })} className="qa-action rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-xs text-rose-100">{t("community.report", "Report")}</button>
                       </div>
                     </div>
                   </article>
@@ -2408,7 +2408,7 @@ function CommunityPageContent() {
                     <p className="text-xs text-white/62">{guide.author} · {timeAgo(guide.createdAt)}</p>
                     <div className="flex items-center gap-2">
                       <button type="button" onClick={() => toggleGuideExpanded(guide.id)} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{isExpanded ? "Show less" : "Read more"}</button>
-                      <button type="button" onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">Report</button>
+                      <button type="button" onClick={() => reportContent({ targetType: "community-guide", targetId: guide.id, title: guide.title })} className="qa-action rounded-full border border-violet-200/24 bg-violet-200/10 px-3 py-1 text-xs text-violet-100">{t("community.report", "Report")}</button>
                     </div>
                   </div>
                 </article>
@@ -2548,14 +2548,14 @@ function CommunityPageContent() {
                             <span aria-hidden="true" className="text-white/24 transition group-hover:translate-x-1 group-hover:text-white/68">→</span>
                           </button>
                         ))}
-                        {roomList.length === 0 ? <p className="py-8 text-sm leading-6 text-white/44">This is the only room in this view. Start a conversation or choose another filter.</p> : null}
+                        {roomList.length === 0 ? <p className="py-8 text-sm leading-6 text-white/44">{t("community.onlyRoomHint", "This is the only room in this view. Start a conversation or choose another filter.")}</p> : null}
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="mt-6 border-y border-dashed border-white/[0.13] py-12 text-center">
-                    <p className="text-base font-semibold text-white/72">No rooms in this view yet.</p>
-                    <p className="mt-2 text-sm text-white/42">Start the first focused conversation.</p>
+                    <p className="text-base font-semibold text-white/72">{t("community.noRooms", "No rooms in this view yet.")}</p>
+                    <p className="mt-2 text-sm text-white/42">{t("community.noRoomsHint", "Start the first focused conversation.")}</p>
                   </div>
                 )}
 
@@ -2788,9 +2788,9 @@ function CommunityPageContent() {
 
             {filteredIdeas.length === 0 ? (
               <div className="border-b border-dashed border-white/[0.13] py-12 text-center">
-                <p className="text-lg font-semibold tracking-[-0.02em] text-white/76">No ideas in this area yet.</p>
-                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/42">Choose another category or suggest the first thoughtful improvement.</p>
-                <button type="button" onClick={() => setShowIdeaForm(true)} className="qa-action mt-5 min-h-11 rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11]">Suggest an idea</button>
+                <p className="text-lg font-semibold tracking-[-0.02em] text-white/76">{t("community.noIdeas", "No ideas in this area yet.")}</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-white/42">{t("community.noIdeasHint", "Choose another category or suggest the first thoughtful improvement.")}</p>
+                <button type="button" onClick={() => setShowIdeaForm(true)} className="qa-action mt-5 min-h-11 rounded-full border border-white/70 bg-white px-5 text-xs font-semibold text-[#080b11]">{t("community.suggestIdea", "Suggest an idea")}</button>
               </div>
             ) : null}
 
@@ -2800,7 +2800,7 @@ function CommunityPageContent() {
               </div>
             ) : null}
 
-            <p className="mt-8 border-t border-white/[0.08] pt-5 text-xs leading-5 text-white/34">Community votes are one signal among safety, accessibility, editorial quality, technical effort, and member impact. A popular idea is not automatically scheduled.</p>
+            <p className="mt-8 border-t border-white/[0.08] pt-5 text-xs leading-5 text-white/34">{t("community.voteContext", "Community votes are one signal among safety, accessibility, editorial quality, technical effort, and member impact. A popular idea is not automatically scheduled.")}</p>
           </section>
         ) : null}
 
@@ -2808,9 +2808,9 @@ function CommunityPageContent() {
         <section aria-labelledby="community-ideas-heading" className="qa-premium-card animate-rise-in mt-6 rounded-[26px] border border-amber-300/15 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_26%),linear-gradient(180deg,rgba(45,31,10,0.96),rgba(10,10,10,1))] p-4 shadow-[0_32px_100px_rgba(251,191,36,0.13),0_14px_34px_rgba(0,0,0,0.30)] transition-all duration-300 sm:rounded-[30px] sm:p-6">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3 sm:mb-5 sm:items-center">
             <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-amber-300">Improve Queer Atlas</p>
-              <h2 id="community-ideas-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">Member ideas</h2>
-              <p className="mt-1 text-xs text-amber-100/70">Propose what we should build next together.</p>
+              <p className="text-xs uppercase tracking-[0.25em] text-amber-300">{t("community.improveAtlas", "Improve Queer Atlas")}</p>
+              <h2 id="community-ideas-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">{t("community.memberIdeas", "Member ideas")}</h2>
+              <p className="mt-1 text-xs text-amber-100/70">{t("community.improveIntro", "Propose what we should build next together.")}</p>
             </div>
             <button
               type="button"
@@ -2826,7 +2826,7 @@ function CommunityPageContent() {
             <form id="community-idea-form" onSubmit={publishIdea} className="mb-5 rounded-2xl border border-amber-300/20 bg-amber-300/6 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                 <Field value={ideaForm.text} onChange={(event) => setIdeaForm((current) => ({ ...current, text: event.target.value }))} placeholder="What should we improve in the app?" />
-                <button type="submit" className="qa-action qa-action-strong min-h-[44px] rounded-xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">Share idea</button>
+                <button type="submit" className="qa-action qa-action-strong min-h-[44px] rounded-xl border border-amber-100/65 bg-gradient-to-r from-amber-200 via-yellow-200 to-orange-200 px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] hover:opacity-95">{t("community.shareIdea", "Share idea")}</button>
               </div>
             </form>
           )}
@@ -2869,14 +2869,14 @@ function CommunityPageContent() {
           <div className="flex min-h-full items-center justify-center">
             <div role="dialog" aria-modal="true" aria-labelledby="community-report-title" className="w-full max-w-xl overflow-hidden rounded-[28px] border border-cyan-200/22 bg-[linear-gradient(165deg,rgba(8,30,38,0.9),rgba(10,10,10,0.98))] shadow-[0_28px_120px_rgba(0,0,0,0.58)]">
               <div className="border-b border-white/10 px-5 py-4">
-                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">Safety report</p>
-                <h3 id="community-report-title" className="mt-2 text-xl font-semibold text-white">Report content</h3>
+                <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-100/75">{t("community.safetyReport", "Safety report")}</p>
+                <h3 id="community-report-title" className="mt-2 text-xl font-semibold text-white">{t("community.reportContent", "Report content")}</h3>
                 <p className="mt-1 line-clamp-1 text-sm text-white/70">{reportModal.title}</p>
               </div>
 
               <div className="space-y-4 px-5 py-5">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-white/66">Reason</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-white/66">{t("community.reason", "Reason")}</p>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
                     {REPORT_REASON_OPTIONS.map((item) => {
                       const active = reportModal.reasonKey === item.value;

@@ -80,9 +80,48 @@ const GERMAN_COLLECTION_TITLES = Object.freeze({
   "best-queer-techno-clubs-world": "Die besten queeren Techno-Clubs der Welt", "best-queer-beaches-europe": "Die besten queeren Strände Europas", "best-lesbian-bars-europe": "Die besten lesbischen Bars Europas", "best-drag-venues": "Die besten Drag-Locations", "hidden-queer-cafes": "Versteckte queere Cafés", "best-first-night-bars-solo": "Die besten Bars für die erste queere Nacht allein", "best-queer-neighborhoods-world": "Die besten queeren Viertel der Welt", "best-lgbtq-destinations-solo-travel": "Die besten LGBTQ+-Ziele für Alleinreisende", "best-queer-nightlife-districts": "Die besten queeren Nachtleben-Viertel", "best-pride-festivals-worth-travelling-for": "Pride-Festivals, für die sich eine Reise lohnt", "emerging-queer-destinations": "Aufstrebende queere Reiseziele jenseits der bekannten Hauptstädte", "best-destinations-trans-nonbinary-travelers": "Die besten Ziele für trans und nichtbinäre Reisende", "accessible-queer-city-breaks": "Barriereärmere queere Städtereisen", "best-queer-cities-beyond-nightlife": "Die besten queeren Städte jenseits des Nachtlebens", "sober-queer-nightlife": "Nüchternes und alkoholarmeres queeres Nachtleben", "best-queer-bookstores-cultural-spaces": "Queere Buchläden und Kulturorte, die eine Reise wert sind", "genuinely-queer-welcoming-hotels": "Wirklich queerefreundliche Hotels", "best-lgbtq-beach-towns": "Die besten LGBTQ+-Strandorte", "best-gay-ski-weeks": "Die besten Gay- und Queer-Skiwochen", "best-lesbian-sapphic-festivals": "Die besten lesbischen und sapphischen Festivals", "queer-summer-without-biggest-crowds": "Queerer Sommer ohne die größten Menschenmengen", "best-lgbtq-honeymoon-destinations": "Die besten LGBTQ+-Flitterwochenziele", "best-queer-owned-hotels-resorts": "Die besten queergeführten Hotels und Resorts", "best-affordable-lgbtq-city-breaks": "Die besten bezahlbaren LGBTQ+-Städtereisen", "best-sapphic-city-breaks-world": "Die besten sapphischen Städtereisen der Welt", "best-bear-weeks-festivals": "Die besten Bear-Wochen und -Festivals", "best-queer-wellness-retreats": "Die besten queeren Wellness-Retreats", "best-cities-queer-food-restaurants": "Die besten Städte für queeres Essen und LGBTQ+-geführte Restaurants", "best-gay-friendly-destinations-over-40": "Die besten gayfreundlichen Ziele für Reisende über 40", "best-sapphic-destinations-solo-travelers": "Die besten sapphischen Ziele für Alleinreisende", "best-body-positive-gay-destinations-bears-bigger-guys": "Die körperpositivsten Gay-Reiseziele für Bears und große Männer", "best-lgbtq-destinations-first-international-trip": "Die besten LGBTQ+-Ziele für die erste internationale Reise", "best-queer-nightlife-cities-without-techno": "Die besten queeren Nachtleben-Städte ohne Techno", "best-quiet-lgbtq-escapes-couples": "Ruhige LGBTQ+-Auszeiten für Paare", "best-lgbtq-cities-48-hour-weekend": "Die besten LGBTQ+-Städte für ein 48-Stunden-Wochenende",
 });
 
+const FRENCH_COLLECTION_TITLES = Object.freeze({
+  "best-queer-techno-clubs-world": "Les meilleurs clubs techno queer du monde",
+  "best-queer-beaches-europe": "Les meilleures plages queer d’Europe",
+  "best-lesbian-bars-europe": "Les meilleurs bars lesbiens d’Europe",
+  "best-drag-venues": "Les meilleures scènes drag",
+  "hidden-queer-cafes": "Cafés queer confidentiels",
+  "best-first-night-bars-solo": "Les meilleurs bars pour une première soirée queer en solo",
+  "best-queer-neighborhoods-world": "Les meilleurs quartiers queer du monde",
+  "best-lgbtq-destinations-solo-travel": "Les meilleures destinations LGBTQ+ pour voyager en solo",
+  "best-queer-nightlife-districts": "Les meilleurs quartiers pour sortir queer",
+  "best-pride-festivals-worth-travelling-for": "Les Prides et festivals queer qui valent le voyage",
+  "emerging-queer-destinations": "Destinations queer émergentes, loin des capitales habituelles",
+  "best-destinations-trans-nonbinary-travelers": "Les meilleures destinations pour les voyageur·euses trans et non binaires",
+  "accessible-queer-city-breaks": "Les escapades urbaines queer les plus accessibles",
+  "best-queer-cities-beyond-nightlife": "Les meilleures villes queer au-delà de la vie nocturne",
+  "sober-queer-nightlife": "Sorties queer sobres ou peu alcoolisées",
+  "best-queer-bookstores-cultural-spaces": "Librairies et lieux culturels queer qui valent le voyage",
+  "genuinely-queer-welcoming-hotels": "Des hôtels véritablement accueillants pour les personnes queer",
+  "best-lgbtq-beach-towns": "Les meilleures stations balnéaires LGBTQ+",
+  "best-gay-ski-weeks": "Les meilleures semaines de ski gay et festivals queer d’hiver",
+  "best-lesbian-sapphic-festivals": "Les meilleurs festivals lesbiens et sapphiques",
+  "queer-summer-without-biggest-crowds": "Un été queer loin des plus grandes foules",
+  "best-lgbtq-honeymoon-destinations": "Les meilleures destinations LGBTQ+ pour une lune de miel",
+  "best-queer-owned-hotels-resorts": "Les meilleurs hôtels et resorts détenus par des personnes queer",
+  "best-affordable-lgbtq-city-breaks": "Les meilleures escapades urbaines LGBTQ+ à petit budget",
+  "best-sapphic-city-breaks-world": "Les meilleures escapades urbaines sapphiques au monde",
+  "best-bear-weeks-festivals": "Les meilleures semaines et festivals bear",
+  "best-queer-wellness-retreats": "Les meilleures retraites bien-être queer et séjours ressourçants",
+  "best-cities-queer-food-restaurants": "Les meilleures villes pour la cuisine queer et les restaurants LGBTQ+",
+  "best-gay-friendly-destinations-over-40": "Les meilleures destinations gay-friendly pour les plus de 40 ans",
+  "best-sapphic-destinations-solo-travelers": "Les meilleures destinations sapphiques pour voyager en solo",
+  "best-body-positive-gay-destinations-bears-bigger-guys": "Les destinations gay les plus inclusives pour les bears et les corps plus grands",
+  "best-lgbtq-destinations-first-international-trip": "Les meilleures destinations LGBTQ+ pour un premier voyage international",
+  "best-queer-nightlife-cities-without-techno": "Les meilleures villes pour sortir queer sans techno",
+  "best-quiet-lgbtq-escapes-couples": "Des escapades LGBTQ+ paisibles pour les couples",
+  "best-lgbtq-cities-48-hour-weekend": "Les meilleures villes LGBTQ+ pour un week-end de 48 heures",
+});
+
 export function getLocalizedAtlasCollection(collection, locale = "en") {
   const language = String(locale || "en").toLowerCase().split("-")[0];
   if (language === "de") return { ...collection, title: GERMAN_COLLECTION_TITLES[collection?.slug] || collection.title };
+  if (language === "fr") return { ...collection, title: FRENCH_COLLECTION_TITLES[collection?.slug] || collection.title };
   if (language !== "es") return collection;
   const translated = SPANISH_COLLECTIONS[collection?.slug];
   if (!translated) return collection;

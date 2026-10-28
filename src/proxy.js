@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { DEFAULT_LOCALE, getPublishedLocales, isSupportedLocale, normalizeLocale } from "@/lib/i18n/locales";
-import { defaultsToGermanByCountry, defaultsToSpanishByCountry } from "@/lib/i18n/localeGeo";
+import { defaultsToFrenchByCountry, defaultsToGermanByCountry, defaultsToSpanishByCountry } from "@/lib/i18n/localeGeo";
 import { isLocaleSearchReady } from "@/lib/i18n/localeSeoRollout";
 
 const LOCALE_COOKIE = "qa_locale";
@@ -102,6 +102,15 @@ export function proxy(request) {
     defaultsToGermanByCountry(request.headers.get("x-vercel-ip-country"))
   ) {
     return geoLocaleRedirect(request, pathname, "de");
+  }
+
+  if (
+    isDocumentNavigation(request) &&
+    !isSearchCrawler(request) &&
+    !hasManualLocalePreference &&
+    defaultsToFrenchByCountry(request.headers.get("x-vercel-ip-country"))
+  ) {
+    return geoLocaleRedirect(request, pathname, "fr");
   }
 
   if (

@@ -13,7 +13,7 @@ function parsePlanDate(value) {
 function formatPlanDate(value, locale, undecidedLabel) {
   const date = parsePlanDate(value);
   if (!date) return undecidedLabel;
-  return date.toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en-US", { weekday: "short", month: "short", day: "numeric" });
+  return date.toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : locale === "fr" ? "fr-FR" : "en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
 function groupPlans(plans = []) {

@@ -15,7 +15,7 @@ function formatCommentTime(value, locale, t) {
   if (!value) return t("now.justNow", "Just now");
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return t("now.justNow", "Just now");
-  return new Intl.DateTimeFormat(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en", {
+  return new Intl.DateTimeFormat(locale === "es" ? "es" : locale === "de" ? "de-DE" : locale === "fr" ? "fr-FR" : "en", {
     day: "numeric",
     month: "short",
     year: date.getFullYear() === new Date().getFullYear() ? undefined : "numeric",

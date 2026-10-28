@@ -131,8 +131,8 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
               <span className="flex h-7 w-7 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-[#B9AAF0]/25 bg-[#B9AAF0]/[0.12] text-[#B9AAF0]" aria-hidden="true"><ChartNoAxesCombined size={20} /></span>
             </div>
             <div className="mt-2 flex flex-wrap items-center sm:mt-5 gap-3">
-              <h3 className="text-lg sm:text-xl font-semibold tracking-[-0.02em] text-[#F5F1E8]">Queer Atlas Indexes</h3>
-              <span className="hidden text-xs font-semibold text-[#D8BE8A] sm:inline">Flagship 2026</span>
+              <h3 className="text-lg sm:text-xl font-semibold tracking-[-0.02em] text-[#F5F1E8]">{t("home.indexesTitle", "Queer Atlas Indexes")}</h3>
+              <span className="hidden text-xs font-semibold text-[#D8BE8A] sm:inline">{t("home.flagship2026", "Flagship 2026")}</span>
             </div>
             <p className="mt-3 hidden text-sm leading-6 text-[#BCC7D2] sm:block">
               {t("home.globalIndexesDescription", "Compare cities and destinations through transparent, source-backed global research.")}
@@ -145,7 +145,7 @@ export default function HomeVenueIntelligence({ venue, onOpen, onContextOpen }) 
               className="my-5 hidden sm:block border-l-2 border-[#D8BE8A] pl-4 transition-colors hover:bg-[#D8BE8A]/[0.04] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#80D4C4]"
             >
               <span className="flex items-start justify-between gap-2">
-                <span className="text-sm font-semibold leading-6 text-[#D8BE8A]">Global Queer Safety &amp; Culture Index 2026</span>
+                <span className="text-sm font-semibold leading-6 text-[#D8BE8A]">{t("home.safetyCultureIndex", "Global Queer Safety & Culture Index 2026")}</span>
                 <ArrowUpRight size={16} className="mt-1 shrink-0 text-[#D8BE8A]" aria-hidden="true" />
               </span>
               <span className="mt-2 block text-xs leading-5 text-[#BCC7D2]">{t("home.legalProtection", "Legal protection 50% · Lived acceptance 50%")}</span>

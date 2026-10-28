@@ -895,8 +895,8 @@ export default function HomePageClient({ initialHomeData = null }) {
   const participationActions = [
     {
       title: t("home.community", "Community"),
-      label: locale === "es" ? (isMember ? "Miembros, empleos y conversaciones en directo" : "Únete a miembros, empleos y conversaciones en directo") : (isMember ? "Members, jobs and live conversations" : "Join members, jobs and live conversations"),
-      shortLabel: locale === "es" ? (isMember ? "Abrir espacio de miembros" : "Únete a la red") : (isMember ? "Open member hub" : "Join the network"),
+      label: locale === "es" ? (isMember ? "Miembros, empleos y conversaciones en directo" : "Únete a miembros, empleos y conversaciones en directo") : locale === "fr" ? (isMember ? "Membres, opportunités et conversations en direct" : "Rejoignez des membres, des opportunités et des conversations en direct") : (isMember ? "Members, jobs and live conversations" : "Join members, jobs and live conversations"),
+      shortLabel: locale === "es" ? (isMember ? "Abrir espacio de miembros" : "Únete a la red") : locale === "fr" ? (isMember ? "Ouvrir l’espace membre" : "Rejoindre le réseau") : (isMember ? "Open member hub" : "Join the network"),
       icon: "Community",
       cardClass: "border-[#88d9d4]/25 bg-[radial-gradient(circle_at_8%_50%,rgba(136,217,212,0.13),transparent_30%),linear-gradient(110deg,rgba(13,35,42,0.96),rgba(14,20,32,0.98))] hover:border-[#88d9d4]/48",
       glowClass: "bg-cyan-300/16",
@@ -915,9 +915,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       },
     },
     {
-      title: locale === "es" ? "Contribuir" : "Contribute",
-      label: locale === "es" ? (isMember ? "Añade lugares, eventos y servicios" : "Únete para aportar lo que sabes") : (isMember ? "Add places, events and services" : "Join to add what you know"),
-      shortLabel: locale === "es" ? (isMember ? "Aporta lo que sabes" : "Únete y aporta") : (isMember ? "Add what you know" : "Join & add"),
+      title: locale === "es" ? "Contribuir" : locale === "fr" ? "Contribuer" : "Contribute",
+      label: locale === "es" ? (isMember ? "Añade lugares, eventos y servicios" : "Únete para aportar lo que sabes") : locale === "fr" ? (isMember ? "Ajoutez des lieux, événements et services" : "Rejoignez-nous pour partager ce que vous savez") : (isMember ? "Add places, events and services" : "Join to add what you know"),
+      shortLabel: locale === "es" ? (isMember ? "Aporta lo que sabes" : "Únete y aporta") : locale === "fr" ? (isMember ? "Partagez ce que vous savez" : "Rejoindre et contribuer") : (isMember ? "Add what you know" : "Join & add"),
       icon: "Contribute",
       cardClass: "border-[#f5a9c6]/25 bg-[radial-gradient(circle_at_8%_50%,rgba(245,169,198,0.13),transparent_30%),linear-gradient(110deg,rgba(47,27,43,0.96),rgba(25,18,33,0.98))] hover:border-[#f5a9c6]/48",
       glowClass: "bg-fuchsia-300/17",
@@ -949,7 +949,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         : nextUpcomingEvent
           ? t("home.globalCalendar", "Next global calendar signal")
           : t("home.eventsCalendar", "From the events calendar"),
-      signalLabel: "Event route",
+      signalLabel: locale === "fr" ? "Parcours événement" : "Event route",
       signalValue: calendarEvent
         ? `${formatCityLabel(calendarEvent.city)} · ${formatEventDateRange(calendarEvent)}`
         : t("home.openEventsCalendar", "Open the events calendar"),
@@ -984,7 +984,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       meta: latestPulseNews?.city ? `${formatCityLabel(latestPulseNews.city)} signal` : t("home.editorialDesk", "Editorial desk"),
       signalLabel: t("home.news", "News"),
       signalValue: homeNewsItems.length ? `${homeNewsItems.length} ${t("home.freshStories", "fresh stories")}` : t("home.newsDescription", "Open queer world news"),
-      badge: latestPulseNews ? (worldNewsFallback ? "Editorial fallback" : "Fresh") : "Pending",
+      badge: latestPulseNews ? (worldNewsFallback ? (locale === "fr" ? "Relais éditorial" : "Editorial fallback") : (locale === "fr" ? "Récent" : "Fresh")) : (locale === "fr" ? "En attente" : "Pending"),
       badgeClass: "border-cyan-200/30 bg-cyan-200/12 text-cyan-100/90",
       cardClass:
         "border-cyan-200/24 bg-[linear-gradient(180deg,rgba(14,28,44,0.74),rgba(10,12,20,0.92))] hover:border-cyan-200/44",
@@ -1000,9 +1000,9 @@ export default function HomePageClient({ initialHomeData = null }) {
       title: focusedVenue?.name || (focusedCity ? `${t("home.exploreAtlas", "Explore")} ${formatCityLabel(focusedCity)}` : t("home.chooseCity", "Choose a city to begin")),
       description: focusedVenue
         ? `${focusedCityPlaces.length} places and ${focusedCityEvents.length} events mapped in ${formatCityLabel(focusedCity)}.`
-        : "Open the city guide for venues, events, safety, and local context.",
+        : locale === "fr" ? "Ouvrez le guide de ville pour les lieux, événements, la sécurité et le contexte local." : "Open the city guide for venues, events, safety, and local context.",
       meta: focusedVenue?.type ? String(focusedVenue.type).replaceAll("_", " ") : t("home.cityGuide", "City guide"),
-      signalLabel: "Local atlas",
+      signalLabel: locale === "fr" ? "Atlas local" : "Local atlas",
       signalValue: `${focusedCityPlaces.length} places · ${focusedCityEvents.length} events`,
       badge: homeFocusSource === "home" ? "Home city" : homeFocusSource === "recent" ? "Recent" : "For you",
       badgeClass: "border-fuchsia-200/24 bg-fuchsia-200/12 text-fuchsia-100/90",

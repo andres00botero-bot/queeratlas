@@ -177,8 +177,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: locale === "es" ? "Inicio" : locale === "de" ? "Startseite" : "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
-          { "@type": "ListItem", position: 2, name: locale === "es" ? "Colecciones Atlas" : locale === "de" ? "Atlas-Kollektionen" : "Atlas Collections", item: `${QA_SITE_URL}${localePath("/now/collections", locale)}` },
+          { "@type": "ListItem", position: 1, name: locale === "es" ? "Inicio" : locale === "de" ? "Startseite" : locale === "fr" ? "Accueil" : "Home", item: `${QA_SITE_URL}${localePath("/", locale)}` },
+          { "@type": "ListItem", position: 2, name: locale === "es" ? "Colecciones Atlas" : locale === "de" ? "Atlas-Kollektionen" : locale === "fr" ? "Collections Atlas" : "Atlas Collections", item: `${QA_SITE_URL}${localePath("/now/collections", locale)}` },
           { "@type": "ListItem", position: 3, name: collection.title, item: `${QA_SITE_URL}${localizedCollectionHref}` },
         ],
       },

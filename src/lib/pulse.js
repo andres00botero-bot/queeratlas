@@ -55,13 +55,24 @@ const GERMAN_PULSE_COPY = {
   "pulse-major-pride-cycle-01": { title: "Die Planungsfenster für die Pride-Saison öffnen früher", city: "Europa / Nordamerika", country: "Regional", summary: "Mitglieder buchen Unterkünfte und wichtige Tickets in den gefragtesten Zielen früher als in den Vorjahren.", whyItMatters: "Späte Entscheidungen kosten inzwischen mehr und lassen weniger Auswahl. Früh zu planen erhält Freiheit und senkt Stress.", sourceName: "Atlas-Planungssignale" },
 };
 
+const FRENCH_PULSE_COPY = {
+  "pulse-rights-eu-travel-01": { title: "Avant d’arriver : vérifiez le contexte juridique, pas seulement la vie nocturne", city: "Plusieurs villes", country: "Monde", summary: "Les voyageurs queer vérifient de plus en plus les conditions juridiques et sociales avant de réserver, en particulier pour la sécurité des personnes trans et non binaires.", whyItMatters: "Une ville peut être accueillante pour la fête tout en présentant des obstacles juridiques ou sociaux. Une vérification rapide des droits et de la sécurité peut changer tout un itinéraire.", sourceName: "Rédaction Queer Atlas" },
+  "pulse-culture-nightflow-01": { title: "La meilleure stratégie pour sortir : commencer en douceur, finir en conscience", city: "Plusieurs villes", country: "Monde", summary: "Les membres les mieux informés privilégient des soirées en deux temps : un premier lieu social pour lire l’ambiance, puis un choix tardif assumé.", whyItMatters: "Cela réduit le risque d’une mauvaise soirée, améliore la sécurité et donne souvent de meilleures rencontres que de passer d’un lieu à l’autre au hasard.", sourceName: "Communauté Queer Atlas" },
+  "pulse-major-pride-cycle-01": { title: "Les périodes de préparation de la saison des Prides s’ouvrent plus tôt", city: "Europe / Amérique du Nord", country: "Régional", summary: "Les membres réservent hébergements et billets importants plus tôt que les années précédentes dans les destinations les plus demandées.", whyItMatters: "Les décisions tardives coûtent davantage et réduisent les choix. Préparer tôt laisse plus de liberté et moins de stress.", sourceName: "Signaux de planification Atlas" },
+};
+
 export function getPulseCategories(locale) {
+  if (locale === "fr") {
+    const labels = { all: "Tout", rising_spot: "Lieux émergents", rights_safety: "Droits et sécurité", nightlife_change: "Ouvertures / fermetures", major_event: "Grands événements", culture_tip: "Culture et art de vivre" };
+    return PULSE_CATEGORIES.map((category) => ({ ...category, label: labels[category.key] || category.label }));
+  }
   if (locale !== "de") return PULSE_CATEGORIES;
   const labels = { all: "Alle", rising_spot: "Aufstrebende Orte", rights_safety: "Rechte & Sicherheit", nightlife_change: "Eröffnungen / Schließungen", major_event: "Große Events", culture_tip: "Kultur & Lifestyle" };
   return PULSE_CATEGORIES.map((category) => ({ ...category, label: labels[category.key] || category.label }));
 }
 
 export function getEditorialPulseItems(locale) {
+  if (locale === "fr") return EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, ...(FRENCH_PULSE_COPY[item.id] || {}) }));
   if (locale !== "de") return EDITORIAL_PULSE_ITEMS;
   return EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, ...(GERMAN_PULSE_COPY[item.id] || {}) }));
 }

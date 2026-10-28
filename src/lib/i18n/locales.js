@@ -3,7 +3,7 @@ export const DEFAULT_LOCALE = "en";
 export const LOCALES = [
   { code: "en", name: "English", nativeName: "English", published: true },
   { code: "es", name: "Spanish", nativeName: "Español", published: true },
-  { code: "fr", name: "French", nativeName: "Français", published: false },
+  { code: "fr", name: "French", nativeName: "Français", published: true },
   { code: "de", name: "German", nativeName: "Deutsch", published: true },
 ];
 

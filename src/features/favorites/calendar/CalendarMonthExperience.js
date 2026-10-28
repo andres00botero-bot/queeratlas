@@ -60,7 +60,7 @@ export default function CalendarMonthExperience({
   const [isDayOpen, setIsDayOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const monthLabel = useMemo(
-    () => new Date(`${monthKey}-01T12:00:00`).toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en-US", { month: "long", year: "numeric" }),
+    () => new Date(`${monthKey}-01T12:00:00`).toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : locale === "fr" ? "fr-FR" : "en-US", { month: "long", year: "numeric" }),
     [locale, monthKey]
   );
 
@@ -138,7 +138,7 @@ export default function CalendarMonthExperience({
       </div>
 
       {isDayOpen ? (
-        <Sheet title={new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en-US", { weekday: "long", month: "long", day: "numeric" })} eyebrow={t("favorites.yourDay", "Your day")} onClose={() => setIsDayOpen(false)}>
+        <Sheet title={new Date(`${selectedDateKey}T12:00:00`).toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : locale === "fr" ? "fr-FR" : "en-US", { weekday: "long", month: "long", day: "numeric" })} eyebrow={t("favorites.yourDay", "Your day")} onClose={() => setIsDayOpen(false)}>
           <div className="mt-6 space-y-2">
             {selectedEntries.length ? selectedEntries.map((entry) => {
               const tone = entryTone(entry.kind);

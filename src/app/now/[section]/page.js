@@ -46,9 +46,17 @@ const GERMAN_SECTION_METADATA = {
   voices: { title: "Queere Stimmen, Mitgliederstories & lokale Guides | Queer Atlas", name: "Stimmen aus dem Atlas", description: "Lies moderierte Mitgliederstories, praktische lokale Guides, Berichte vor Ort und gelebte queere Perspektiven aus Reisezielen weltweit." },
 };
 
+const FRENCH_SECTION_METADATA = {
+  news: { title: "Actualités queer | Voyages, culture et communauté LGBTQ+", name: "Actualités Queer Atlas", description: "Suivez les actualités queer sur le voyage, la vie nocturne, la culture, les droits et la communauté, sélectionnées par Queer Atlas." },
+  rankings: { title: "Classements des villes queer | Indice sécurité et vie nocturne 2026", name: "Classements Queer Atlas", description: "Explorez des classements de villes queer fondés sur des données, incluant les indices de sécurité et de vie nocturne avec méthodes et sources transparentes." },
+  data: { title: "Indice mondial de sécurité et culture queer 2026 | Queer Atlas", name: "Indice mondial de sécurité et culture queer", description: "Comparez les villes de façon transparente selon la sécurité LGBTQ+, l’inclusion, les communautés, la vie nocturne et la culture." },
+  voices: { title: "Voix queer, récits de membres et guides locaux | Queer Atlas", name: "Voix de l’Atlas", description: "Lisez des récits modérés de membres, des guides locaux pratiques, des reportages et des perspectives queer vécues depuis des destinations du monde entier." },
+};
+
 function sectionMetadata(section, locale) {
   const base = NOW_SECTIONS[section];
   if (locale === "de") return { ...base, ...GERMAN_SECTION_METADATA[section] };
+  if (locale === "fr") return { ...base, ...FRENCH_SECTION_METADATA[section] };
   return locale === "es" ? { ...base, ...SPANISH_SECTION_METADATA[section] } : base;
 }
 
@@ -73,7 +81,7 @@ export async function generateMetadata({ params }) {
       title: config.title,
       description: config.description,
       url: localizedOpenGraphUrl(canonical, locale),
-      locale: locale === "es" ? "es_ES" : locale === "de" ? "de_DE" : "en_US",
+      locale: locale === "es" ? "es_ES" : locale === "de" ? "de_DE" : locale === "fr" ? "fr_FR" : "en_US",
       type: "website",
     },
     twitter: {

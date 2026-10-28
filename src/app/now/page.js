@@ -2862,7 +2862,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               <p className="text-xs text-cyan-100/70">
                 {evidenceBackedRanking
                   ? `${NIGHTLIFE_INDEX_2026.eligibility.eligibleNightlifePlaces.toLocaleString("en")} nightlife places, ${NIGHTLIFE_INDEX_2026.eligibility.eligibleEvents.toLocaleString("en")} events and ${NIGHTLIFE_INDEX_2026.eligibility.eligibleCommunityReviews.toLocaleString("en")} community reviews. Snapshot ${NIGHTLIFE_INDEX_2026.snapshotAt}.`
-                  : "Editorial ranking by Queer Atlas. Updated yearly to become the reference list."}
+                  : t("now.travelRankingNote", "Editorial ranking by Queer Atlas. Updated yearly to become the reference list.")}
               </p>
 
               {evidenceBackedRanking ? (
@@ -2945,15 +2945,15 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                             #{index + 1}
                           </span>
                           <span className="text-[11px] uppercase tracking-[0.14em] text-white/75">
-                            {evidenceBackedRanking ? `${item.score.toFixed(1)} / 100` : index === 0 ? "Global icon" : index === 1 ? "High signal" : "Rising elite"}
+                            {evidenceBackedRanking ? `${item.score.toFixed(1)} / 100` : index === 0 ? t("now.globalIcon", "Global icon") : index === 1 ? t("now.highSignal", "High signal") : t("now.risingElite", "Rising elite")}
                           </span>
                         </div>
                         <p className="truncate text-base font-semibold text-white">
-                          {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
+                          {(item.city || t("now.cityTba", "TBA")).replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
                         </p>
-                        <p className="mt-1 truncate text-xs text-white/65">{item.country || "Country TBA"}</p>
+                        <p className="mt-1 truncate text-xs text-white/65">{item.country || t("now.countryTba", "Country TBA")}</p>
                         <p className="mt-3 text-xs leading-5 text-white/70">
-                          {item.signal || "Signal pending editorial update."}
+                          {item.signal || t("now.signalPending", "Signal pending editorial update.")}
                         </p>
                         {evidenceBackedRanking ? (
                           <p className="mt-2 text-[10px] uppercase tracking-[0.1em] text-cyan-100/60">
@@ -3012,8 +3012,8 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                           <p className="truncate text-sm font-semibold text-white">
                             {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
                           </p>
-                          <p className="truncate text-[11px] text-white/55">{item.country || "Country TBA"}</p>
-                          <p className="truncate text-[11px] text-white/62">{item.signal || "Signal pending editorial update."}</p>
+                          <p className="truncate text-[11px] text-white/55">{item.country || t("now.countryTba", "Country TBA")}</p>
+                          <p className="truncate text-[11px] text-white/62">{item.signal || t("now.signalPending", "Signal pending editorial update.")}</p>
                           {evidenceBackedRanking ? (
                             <p className="mt-1 text-[10px] tabular-nums text-cyan-100/58">
                               {item.score.toFixed(1)} / 100 · {item.evidence.places} places · {item.evidence.events} events
@@ -3110,7 +3110,7 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
               <p className="text-xs text-emerald-100/70">
                 {evidenceBackedSafetyRanking
                   ? `${SAFETY_INDEX_2026.eligibility.cityCount} cities tested from ${SAFETY_INDEX_2026.eligibility.countryProfiles} rights profiles, ${SAFETY_INDEX_2026.eligibility.venueWelcomeEvidence} welcome records and ${SAFETY_INDEX_2026.eligibility.routeReadyPlaces} route-ready places.`
-                  : "Editorial safety ranking by Queer Atlas. Updated yearly to guide low-friction city movement."}
+                  : t("now.safetyRankingNote", "Editorial safety ranking by Queer Atlas. Updated yearly to guide low-friction city movement.")}
               </p>
 
               {evidenceBackedSafetyRanking ? (
@@ -3190,15 +3190,15 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                             #{index + 1}
                           </span>
                           <span className="text-[11px] uppercase tracking-[0.14em] text-white/75">
-                            {evidenceBackedSafetyRanking ? `${item.score.toFixed(1)} / 100` : index === 0 ? "Safety icon" : index === 1 ? "High confidence" : "Trusted route"}
+                            {evidenceBackedSafetyRanking ? `${item.score.toFixed(1)} / 100` : index === 0 ? t("now.safetyIcon", "Safety icon") : index === 1 ? t("now.highConfidence", "High confidence") : t("now.trustedRoute", "Trusted route")}
                           </span>
                         </div>
                         <p className="truncate text-base font-semibold text-white">
                           {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
                         </p>
-                        <p className="mt-1 truncate text-xs text-white/65">{item.country || "Country TBA"}</p>
+                        <p className="mt-1 truncate text-xs text-white/65">{item.country || t("now.countryTba", "Country TBA")}</p>
                         <p className="mt-3 text-xs leading-5 text-white/70">
-                          {item.signal || "Signal pending editorial update."}
+                          {item.signal || t("now.signalPending", "Signal pending editorial update.")}
                         </p>
                         {evidenceBackedSafetyRanking ? (
                           <p className="mt-2 text-[10px] uppercase tracking-[0.1em] text-emerald-100/60">
@@ -3257,8 +3257,8 @@ export default function NowPage({ initialSection = "mixed", initialDataQuery = {
                           <p className="truncate text-sm font-semibold text-white">
                             {(item.city || "TBA").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
                           </p>
-                          <p className="truncate text-[11px] text-white/55">{item.country || "Country TBA"}</p>
-                          <p className="truncate text-[11px] text-white/62">{item.signal || "Signal pending editorial update."}</p>
+                          <p className="truncate text-[11px] text-white/55">{item.country || t("now.countryTba", "Country TBA")}</p>
+                          <p className="truncate text-[11px] text-white/62">{item.signal || t("now.signalPending", "Signal pending editorial update.")}</p>
                           {evidenceBackedSafetyRanking ? (
                             <p className="mt-1 text-[10px] tabular-nums text-emerald-100/58">
                               {item.score.toFixed(1)} / 100 · {item.evidence.places} places · {item.evidence.routes} routes

@@ -2481,7 +2481,7 @@ function FavoritesPageContent() {
     if (!raw) return t("favorites.joinedRecently", "Joined recently");
     const parsed = new Date(raw);
     if (Number.isNaN(parsed.getTime())) return t("favorites.joinedRecently", "Joined recently");
-    return t("favorites.joined", "Joined {date}").replace("{date}", parsed.toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : "en-US", {
+    return t("favorites.joined", "Joined {date}").replace("{date}", parsed.toLocaleDateString(locale === "es" ? "es" : locale === "de" ? "de-DE" : locale === "fr" ? "fr-FR" : "en-US", {
       year: "numeric",
       month: "short",
     }));
@@ -5444,12 +5444,12 @@ function FavoritesPageContent() {
         <section className="qa-atlas-section mb-6">
           <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.22em] text-rose-100/78">My Calendar</p>
+              <p className="text-xs uppercase tracking-[0.22em] text-rose-100/78">{t("favorites.calendarEyebrow", "My Calendar")}</p>
               <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
-                Your plans, beautifully in sync.
+                {t("favorites.calendarTitle", "Your plans, beautifully in sync.")}
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/62">
-                Saved events, trip plans and personal moments — arranged around where you are going next.
+                {t("favorites.calendarIntro", "Saved events, trip plans and personal moments — arranged around where you are going next.")}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2 self-start">
@@ -5459,7 +5459,7 @@ function FavoritesPageContent() {
                 </span>
               ) : null}
               <div className="flex items-center rounded-full border border-white/10 bg-[#17121d]/90 p-1 shadow-[0_14px_38px_rgba(0,0,0,0.26)]">
-              {[{ id: "agenda", label: "Agenda" }, { id: "month", label: "Month" }].map((view) => (
+               {[{ id: "agenda", label: t("favorites.agenda", "Agenda") }, { id: "month", label: t("favorites.month", "Month") }].map((view) => (
                 <button
                   key={`calendar-view-${view.id}`}
                   type="button"
@@ -5483,19 +5483,19 @@ function FavoritesPageContent() {
               <div className="border-b border-white/8 px-4 pb-4 pt-5 sm:px-6 sm:pt-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#f5a9c6]/70">Coming up</p>
-                    <h3 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[#fff7fb]">Your agenda</h3>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#f5a9c6]/70">{t("favorites.comingUp", "Coming up")}</p>
+                    <h3 className="mt-1 text-2xl font-semibold tracking-[-0.035em] text-[#fff7fb]">{t("favorites.yourAgenda", "Your agenda")}</h3>
                   </div>
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <button type="button" onClick={enableCalendarPush} disabled={calendarPushState === "loading" || calendarPushState === "enabled"} className="min-h-10 rounded-full border border-white/10 bg-white/[0.035] px-3 text-xs font-semibold text-white/62 disabled:opacity-60">
-                      {calendarPushState === "enabled" ? "Reminders on" : calendarPushState === "loading" ? "Enabling…" : "Enable reminders"}
+                      {calendarPushState === "enabled" ? t("favorites.remindersOn", "Reminders on") : calendarPushState === "loading" ? t("favorites.enablingReminders", "Enabling…") : t("favorites.enableReminders", "Enable reminders")}
                     </button>
                     <button
                       type="button"
                       onClick={() => router.push("/events")}
                       className="min-h-10 rounded-full border border-[#f5a9c6]/22 bg-[#f5a9c6]/10 px-4 text-xs font-semibold text-[#ffd8e7] transition hover:border-[#f5a9c6]/38 hover:bg-[#f5a9c6]/14"
                     >
-                      Browse events
+                        {t("favorites.browseEvents", "Browse events")}
                     </button>
                   </div>
                 </div>
@@ -5536,15 +5536,15 @@ function FavoritesPageContent() {
                     {calendarAgendaGroups.map((group) => {
                       const dayOffset = Math.round((new Date(`${group.dateKey}T12:00:00`).getTime() - new Date(`${todayDateKey}T12:00:00`).getTime()) / 86400000);
                       const dateLabel = dayOffset === 0
-                        ? "Today"
+                          ? t("favorites.today", "Today")
                         : dayOffset === 1
-                          ? "Tomorrow"
-                          : new Date(`${group.dateKey}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+                          ? t("favorites.tomorrow", "Tomorrow")
+                          : new Date(`${group.dateKey}T12:00:00`).toLocaleDateString(locale === "fr" ? "fr-FR" : locale === "de" ? "de-DE" : locale === "es" ? "es-ES" : "en-US", { weekday: "long", month: "short", day: "numeric" });
                       return (
                         <section key={`agenda-group-${group.dateKey}`} id={`agenda-date-${group.dateKey}`} className="scroll-mt-36">
                           <div className="mb-3 flex items-baseline justify-between gap-3 border-b border-white/8 pb-2">
                             <h4 className="text-sm font-semibold text-[#fff7fb]">{dateLabel}</h4>
-                            <span className="text-[10px] uppercase tracking-[0.14em] text-white/34">{group.entries.length} {group.entries.length === 1 ? "plan" : "plans"}</span>
+                            <span className="text-[10px] uppercase tracking-[0.14em] text-white/34">{group.entries.length} {group.entries.length === 1 ? t("favorites.plan", "plan") : t("favorites.plans", "plans")}</span>
                           </div>
                           <div className="space-y-2">
                             {group.entries.map((entry) => {
@@ -5557,12 +5557,12 @@ function FavoritesPageContent() {
                                   <span className={`absolute inset-y-0 left-0 w-[3px] ${railClass}`} />
                                   <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
                                     <div className="w-12 flex-none text-center">
-                                      <span className="block text-sm font-semibold text-[#fff7fb]">{entry.time || "All day"}</span>
+                                      <span className="block text-sm font-semibold text-[#fff7fb]">{entry.time || t("favorites.allDay", "All day")}</span>
                                     </div>
                                     <div className="min-w-0 flex-1 border-l border-white/8 pl-3 sm:pl-4">
                                       <p className="text-[9px] uppercase tracking-[0.15em] text-white/38">{sourceLabel}</p>
                                       <h5 className="mt-1 truncate text-sm font-semibold text-[#fff7fb] sm:text-base">{entry.title}</h5>
-                                      <p className="mt-1 truncate text-xs text-[#bcaeb9]">{entry.city ? formatCityLabel(entry.city) : "Location not set"}</p>
+                                       <p className="mt-1 truncate text-xs text-[#bcaeb9]">{entry.city ? formatCityLabel(entry.city) : t("favorites.locationNotSet", "Location not set")}</p>
                                     </div>
                                     {isEvent ? (
                                       <button
@@ -5583,7 +5583,7 @@ function FavoritesPageContent() {
                                         }}
                                         className="min-h-10 flex-none rounded-full border border-[#88d9d4]/20 bg-[#88d9d4]/8 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#bff5ef] transition hover:border-[#88d9d4]/36"
                                       >
-                                        Open trip
+                                          {t("favorites.openTrip", "Open trip")}
                                       </button>
                                     ) : null}
                                   </div>
@@ -5598,9 +5598,9 @@ function FavoritesPageContent() {
                 ) : (
                   <div className="mx-auto flex min-h-72 max-w-md flex-col items-center justify-center px-5 text-center">
                     <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[#f5a9c6]/18 bg-[#f5a9c6]/8 text-2xl" aria-hidden="true">✦</div>
-                    <h3 className="mt-5 text-xl font-semibold tracking-[-0.025em] text-[#fff7fb]">Your next plan starts here</h3>
-                    <p className="mt-2 text-sm leading-6 text-[#bcaeb9]">Save an event and it will appear here automatically.</p>
-                    <button type="button" onClick={() => router.push("/events")} className="mt-5 min-h-11 rounded-full bg-[#f5a9c6] px-5 text-sm font-semibold text-[#24131d]">Explore events</button>
+                     <h3 className="mt-5 text-xl font-semibold tracking-[-0.025em] text-[#fff7fb]">{t("favorites.nextPlanTitle", "Your next plan starts here")}</h3>
+                     <p className="mt-2 text-sm leading-6 text-[#bcaeb9]">{t("favorites.nextPlanDescription", "Save an event and it will appear here automatically.")}</p>
+                     <button type="button" onClick={() => router.push("/events")} className="mt-5 min-h-11 rounded-full bg-[#f5a9c6] px-5 text-sm font-semibold text-[#24131d]">{t("favorites.exploreEvents", "Explore events")}</button>
                   </div>
                 )}
               </div>

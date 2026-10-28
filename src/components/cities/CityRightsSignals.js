@@ -18,7 +18,7 @@ function reviewedLabel(value, locale, t) {
   if (!value) return t("qari.reviewPending", "Review date pending");
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return t("qari.reviewPending", "Review date pending");
-  const dateText = new Intl.DateTimeFormat(locale === "es" ? "es" : "en", { month: "short", year: "numeric" }).format(date);
+  const dateText = new Intl.DateTimeFormat(locale === "es" ? "es" : locale === "fr" ? "fr-FR" : "en", { month: "short", year: "numeric" }).format(date);
   return t("qari.reviewed", "Reviewed {date}").replace("{date}", dateText);
 }
 
@@ -150,7 +150,7 @@ export default function CityRightsSignals({
   const score = Number.isFinite(qariProfile?.score) ? qariProfile.score : null;
   const formattedScore = score === null
     ? null
-    : new Intl.NumberFormat(locale === "es" ? "es-ES" : "en-US", {
+    : new Intl.NumberFormat(locale === "es" ? "es-ES" : locale === "fr" ? "fr-FR" : "en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(score);

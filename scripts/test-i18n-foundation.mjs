@@ -10,11 +10,11 @@ import {
   toLocalePath,
 } from "../src/lib/i18n/localeRouting.js";
 import { getMessage } from "../src/lib/i18n/messages.js";
-import { defaultsToGermanByCountry, defaultsToSpanishByCountry } from "../src/lib/i18n/localeGeo.js";
+import { defaultsToFrenchByCountry, defaultsToGermanByCountry, defaultsToSpanishByCountry } from "../src/lib/i18n/localeGeo.js";
 import { isLocaleSearchReady } from "../src/lib/i18n/localeSeoRollout.js";
 
 assert.equal(DEFAULT_LOCALE, "en");
-assert.deepEqual(getPublishedLocales().map((locale) => locale.code), ["en", "es", "de"]);
+assert.deepEqual(getPublishedLocales().map((locale) => locale.code), ["en", "es", "fr", "de"]);
 assert.equal(getPublishedLocales().every((locale) => locale.published), true);
 assert.equal(normalizeLocale("es-ES"), "es");
 assert.equal(normalizeLocale("unknown"), "en");
@@ -44,6 +44,9 @@ assert.equal(defaultsToSpanishByCountry("US"), false);
 assert.equal(defaultsToGermanByCountry("DE"), true);
 assert.equal(defaultsToGermanByCountry("AT"), true);
 assert.equal(defaultsToGermanByCountry("BE"), false);
+assert.equal(defaultsToFrenchByCountry("FR"), true);
+assert.equal(defaultsToFrenchByCountry("MC"), true);
+assert.equal(defaultsToFrenchByCountry("BE"), false);
 assert.equal(isLocaleSearchReady("en"), true);
 assert.equal(isLocaleSearchReady("es"), true);
 assert.equal(isLocaleSearchReady("de"), true);

@@ -80,6 +80,16 @@ export async function generateMetadata() {
       twitter: { ...metadata.twitter, title: "Queere News, Rankings & Atlas-Kollektionen | Queer Atlas", description: "Tägliche queere News mit Rankings und kuratierten Atlas-Kollektionen für Nachtleben, Strände, Drag, lesbische Bars und Cafés." },
     };
   }
+  if (locale === "fr") {
+    return {
+      ...metadata,
+      alternates: localizedAlternates("/now", locale),
+      title: "Actualités queer, classements et collections Atlas",
+      description: "Actualités queer quotidiennes, indice de sécurité queer, classements de destinations et collections Atlas pour la vie nocturne LGBTQ+, les plages, le drag, les bars lesbiens et les cafés queer.",
+      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: "fr_FR", title: "Actualités queer, classements et collections Atlas | Queer Atlas", description: "Suivez les actualités queer mondiales, les classements de destinations et de sécurité, ainsi que les collections Atlas sélectionnées pour les voyages LGBTQ+." },
+      twitter: { ...metadata.twitter, title: "Actualités queer, classements et collections Atlas | Queer Atlas", description: "Actualités queer quotidiennes avec classements et collections Atlas sélectionnées pour la vie nocturne, les plages, le drag, les bars lesbiens et les cafés." },
+    };
+  }
   if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: "en_US" } };
 
   return {
