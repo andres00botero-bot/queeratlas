@@ -50,5 +50,6 @@ assert.equal(defaultsToFrenchByCountry("BE"), false);
 assert.equal(isLocaleSearchReady("en"), true);
 assert.equal(isLocaleSearchReady("es"), true);
 assert.equal(isLocaleSearchReady("de"), true);
+assert.equal(isLocaleSearchReady("fr"), true);
 
 console.log("i18n foundation test passed.");
