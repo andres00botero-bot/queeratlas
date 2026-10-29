@@ -147,6 +147,10 @@ function hasMapStyle(map) {
   }
 }
 
+function getSearchParameter(searchParams, key) {
+  return typeof searchParams?.get === "function" ? String(searchParams.get(key) || "") : "";
+}
+
 export default function CityPageClient() {
   const { locale } = useLocale();
   const isMapboxStylesReady = useMapboxStylesheet();
@@ -187,11 +191,11 @@ export default function CityPageClient() {
     const vibeTail = vibe ? ` with a ${vibe} vibe` : "";
     return `${cityName} in ${country}${vibeTail}: queer nightlife, trusted venues, and live community signal in one route-first guide.`;
   }, [cityHero?.intro, cityName, config?.country, config?.introduction, config?.vibe]);
-  const placeId = searchParams?.get("placeId") || "";
-  const eventId = searchParams?.get("eventId") || "";
-  const serviceId = searchParams?.get("serviceId") || "";
-  const reviewRequested = searchParams?.get("review") === "1";
-  const contributeMode = searchParams?.get("contribute") || "";
+  const placeId = getSearchParameter(searchParams, "placeId");
+  const eventId = getSearchParameter(searchParams, "eventId");
+  const serviceId = getSearchParameter(searchParams, "serviceId");
+  const reviewRequested = getSearchParameter(searchParams, "review") === "1";
+  const contributeMode = getSearchParameter(searchParams, "contribute");
 
   useEffect(() => {
     if (!city) return;

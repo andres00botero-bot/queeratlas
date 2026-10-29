@@ -37,8 +37,8 @@ export default async function CityPage({ params }) {
 
   return (
     <>
-      <CityIndexableContent city={city} cityName={cityName} locale={locale} guide={guide} venues={venues} events={events} />
       <CityPageClient />
+      <CityIndexableContent city={city} cityName={cityName} locale={locale} guide={guide} venues={venues} events={events} />
     </>
   );
 }
