@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { ATLAS_METRICS_CACHE_TAG } from "@/lib/atlasMetrics";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { normalizeRegistrySlug } from "@/lib/cityRegistryShared";
 import { getSupportedTimeZones, isValidTimeZone } from "@/lib/timeZones";
@@ -164,6 +165,9 @@ export async function POST(request) {
   if (error) return failure(error.message, error.code === "23505" ? 409 : 500);
 
   await client.rpc("qa_refresh_city_seo_status", { target_slug: slug });
+  revalidateTag(ATLAS_METRICS_CACHE_TAG, "max");
+  revalidateTag("qa-home-data", "max");
+  revalidatePath("/");
   revalidatePath(`/${slug}`);
   revalidatePath("/cities");
   revalidatePath("/sitemap-pages.xml");
@@ -244,6 +248,9 @@ export async function PATCH(request) {
   if (error) return failure(error.message, 500);
 
   await client.rpc("qa_refresh_city_seo_status", { target_slug: existing.slug });
+  revalidateTag(ATLAS_METRICS_CACHE_TAG, "max");
+  revalidateTag("qa-home-data", "max");
+  revalidatePath("/");
   revalidatePath(`/${existing.slug}`);
   revalidatePath("/cities");
   revalidatePath("/sitemap-pages.xml");

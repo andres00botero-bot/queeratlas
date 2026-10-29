@@ -6,10 +6,9 @@ import { unstable_cache } from "next/cache";
 import { buildEventIntelFallback } from "@/lib/intelFallbacks";
 import { normalizeVenueIntel } from "@/lib/venueIntel";
 import { cityCoreConfig } from "@/lib/cityCore";
-import { listCityRegistry } from "@/lib/server/cityRegistry";
 import { fetchEventRows } from "@/features/events/fetchEventRows";
-import { isPublishedEntity } from "@/lib/publicInventory";
 import { upcomingPublicEvents } from "@/features/events/eventScope";
+import { getAtlasInventory } from "@/lib/atlasMetrics";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
@@ -176,7 +175,7 @@ async function fetchWorldNews() {
 }
 
 export async function fetchHomeDataPayload() {
-  const [eventsRes, globalRes, placesRes, newsRes, registryCities] = await Promise.all([
+  const [eventsRes, globalRes, placesRes, newsRes, atlasInventory] = await Promise.all([
     fetchEventRows(supabase),
     supabase
       .from("global_events")
@@ -185,7 +184,7 @@ export async function fetchHomeDataPayload() {
       .order("created_at", { ascending: false }),
     fetchPlacesForAtlas(),
     fetchWorldNews(),
-    listCityRegistry().catch(() => Object.values(cityCoreConfig)),
+    getAtlasInventory(),
   ]);
 
   const mergedEvents = await mergeSeedEventsAsync(eventsRes?.data || []);
@@ -198,9 +197,7 @@ export async function fetchHomeDataPayload() {
   const worldNews = Array.isArray(newsRes?.data) ? newsRes.data : [];
   const featuredVenue = pickFeaturedVenue(places);
   const metrics = {
-    countries: new Set(registryCities.map((city) => city?.country).filter(Boolean)).size,
-    cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
-    places: places.filter(isPublishedEntity).length,
+    ...atlasInventory.metrics,
     events: events.length,
   };
   const partialData = Boolean(
