@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
-import { EDITORIAL_PULSE_ITEMS, PULSE_CATEGORIES } from "@/lib/pulse";
 import { unstable_cache } from "next/cache";
 import { buildEventIntelFallback } from "@/lib/intelFallbacks";
 import { normalizeVenueIntel } from "@/lib/venueIntel";
@@ -9,6 +8,7 @@ import { cityCoreConfig } from "@/lib/cityCore";
 import { fetchEventRows } from "@/features/events/fetchEventRows";
 import { upcomingPublicEvents } from "@/features/events/eventScope";
 import { getAtlasInventory } from "@/lib/atlasMetrics";
+import { getPublishedNews } from "@/lib/publicNewsData";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
@@ -142,38 +142,6 @@ function compareNewsRecency(a, b) {
   return String(b.id || "").localeCompare(String(a.id || ""));
 }
 
-async function fetchWorldNews() {
-  const { data, error } = await supabase
-    .from("qa_world_news")
-    .select("*")
-    .order("date", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return {
-      data: EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, isFallback: true })).sort(compareNewsRecency),
-      partialData: true,
-      fallback: true,
-    };
-  }
-
-  const withCategoryLabel = (data || []).map((item) => ({
-    ...item,
-    createdAt: item.created_at || "",
-    categoryLabel: PULSE_CATEGORIES.find((option) => option.key === item.category)?.label || "News",
-  }));
-
-  if (withCategoryLabel.length > 0) {
-    return { data: withCategoryLabel.sort(compareNewsRecency), partialData: false, fallback: false };
-  }
-
-  return {
-    data: EDITORIAL_PULSE_ITEMS.map((item) => ({ ...item, isFallback: true })).sort(compareNewsRecency),
-    partialData: false,
-    fallback: true,
-  };
-}
-
 export async function fetchHomeDataPayload() {
   const [eventsRes, globalRes, placesRes, newsRes, atlasInventory] = await Promise.all([
     fetchEventRows(supabase),
@@ -183,7 +151,7 @@ export async function fetchHomeDataPayload() {
       .order("date", { ascending: true })
       .order("created_at", { ascending: false }),
     fetchPlacesForAtlas(),
-    fetchWorldNews(),
+    getPublishedNews(),
     getAtlasInventory(),
   ]);
 
@@ -194,7 +162,7 @@ export async function fetchHomeDataPayload() {
 
   const events = upcomingPublicEvents([...mergedEvents, ...globalEvents]);
   const places = Array.isArray(placesRes?.data) ? placesRes.data : [];
-  const worldNews = Array.isArray(newsRes?.data) ? newsRes.data : [];
+  const worldNews = Array.isArray(newsRes?.items) ? newsRes.items : [];
   const featuredVenue = pickFeaturedVenue(places);
   const metrics = {
     ...atlasInventory.metrics,
@@ -204,7 +172,7 @@ export async function fetchHomeDataPayload() {
     eventsRes?.error ||
       globalRes?.error ||
       placesRes?.error ||
-      newsRes?.partialData
+      !newsRes?.available
   );
 
   return {
@@ -212,7 +180,7 @@ export async function fetchHomeDataPayload() {
     places,
     featuredVenue,
     worldNews,
-    worldNewsFallback: Boolean(newsRes?.fallback),
+    worldNewsFallback: !newsRes?.available,
     metrics,
     partialData,
   };

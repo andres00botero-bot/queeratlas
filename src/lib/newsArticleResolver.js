@@ -1,11 +1,11 @@
 import "server-only";
 
 import { supabase } from "@/lib/supabase";
-import { EDITORIAL_PULSE_ITEMS } from "@/lib/pulse";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { cityPath } from "@/lib/cityRouting";
 import { buildEventPath, buildVenuePath } from "@/lib/seo/entitySlug";
+import { getPublishedNewsArticle } from "@/lib/publicNewsData";
 
 const NEWS_CATEGORY_LABELS = {
   rights_safety: "Politics & policy",
@@ -39,44 +39,18 @@ function normalizeDatabaseArticle(row) {
     city: displayCity(row.city),
     country: clean(row.country),
     category: clean(row.category) || "culture_tip",
-    date: row.date || row.created_at || "",
-    publishedAt: row.created_at || row.date || "",
-    updatedAt: row.updated_at || row.created_at || row.date || "",
+    date: row.date || row.createdAt || row.created_at || "",
+    publishedAt: row.createdAt || row.created_at || row.date || "",
+    updatedAt: row.updatedAt || row.updated_at || row.createdAt || row.created_at || row.date || "",
     summary: clean(row.summary),
-    whyItMatters: clean(row.why_it_matters),
-    sourceName: clean(row.source_name) || "Queer Atlas editorial desk",
-    sourceUrl: clean(row.source_url || row.link),
-    imageUrl: clean(row.image_url),
-    imageAlt: clean(row.image_alt) || clean(row.title),
-    imageCredit: clean(row.image_credit),
+    whyItMatters: clean(row.whyItMatters || row.why_it_matters),
+    sourceName: clean(row.sourceName || row.source_name) || "Queer Atlas editorial desk",
+    sourceUrl: clean(row.sourceUrl || row.source_url || row.link),
+    imageUrl: clean(row.imageUrl || row.image_url),
+    imageAlt: clean(row.imageAlt || row.image_alt) || clean(row.title),
+    imageCredit: clean(row.imageCredit || row.image_credit),
     verificationLabel: "Published by the Queer Atlas editorial desk",
     commentsEnabled: true,
-    entityHref: "",
-    entityLabel: "",
-  };
-}
-
-function normalizeEditorialArticle(item) {
-  return {
-    id: clean(item.id),
-    kind: "editorial",
-    storyType: NEWS_CATEGORY_LABELS[item.category] || "Queer news",
-    title: clean(item.title),
-    city: displayCity(item.city),
-    country: clean(item.country),
-    category: clean(item.category) || "culture_tip",
-    date: item.date || "",
-    publishedAt: item.date || "",
-    updatedAt: item.updatedAt || item.date || "",
-    summary: clean(item.summary),
-    whyItMatters: clean(item.whyItMatters),
-    sourceName: clean(item.sourceName) || "Queer Atlas editorial",
-    sourceUrl: clean(item.sourceUrl),
-    imageUrl: clean(item.imageUrl),
-    imageAlt: clean(item.imageAlt) || clean(item.title),
-    imageCredit: clean(item.imageCredit),
-    verificationLabel: "Curated and reviewed by Queer Atlas",
-    commentsEnabled: false,
     entityHref: "",
     entityLabel: "",
   };
@@ -160,28 +134,14 @@ async function resolveMajorEvent(articleId) {
 }
 
 async function resolveDatabaseArticle(articleId) {
-  const { data, error } = await supabase
-    .from("qa_world_news")
-    .select("*")
-    .eq("id", String(articleId))
-    .maybeSingle();
-  if (error) {
-    console.error("[news-article] Supabase lookup failed", {
-      articleId: String(articleId),
-      errorCode: String(error.code || ""),
-      errorMessage: String(error.message || ""),
-    });
-    return null;
-  }
-  return data ? normalizeDatabaseArticle(data) : null;
+  const article = await getPublishedNewsArticle(articleId);
+  return article ? normalizeDatabaseArticle(article) : null;
 }
 
 export async function resolveNewsArticle(articleId) {
   const id = clean(articleId);
   if (!id) return null;
 
-  const editorial = EDITORIAL_PULSE_ITEMS.find((item) => String(item.id) === id);
-  if (editorial) return normalizeEditorialArticle(editorial);
   if (id.startsWith("rising-")) return resolveRisingSpot(id);
   if (id.startsWith("major-")) return resolveMajorEvent(id);
   return resolveDatabaseArticle(id);

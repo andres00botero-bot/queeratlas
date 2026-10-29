@@ -20,7 +20,7 @@ import { normalizeCitySlug } from "@/lib/seo/entitySlug";
 import { ATLAS_COLLECTIONS } from "@/lib/atlasCollections";
 import { QARI_PUBLIC_PROFILES } from "@/lib/qariPublicProfiles";
 import { qariCountryPath } from "@/lib/qariRoutes";
-import { supabase } from "@/lib/supabase";
+import { getPublishedNews } from "@/lib/publicNewsData";
 
 const CLUSTER_INTENT_PRIORITY = {
   events: 0.88,
@@ -80,10 +80,7 @@ function withLanguageAlternates(entries = []) {
 export async function getPageSitemapEntries() {
   const [inventory, newsResponse, registryCities] = await Promise.all([
     loadSeoEntityInventory(),
-    supabase
-      .from("qa_world_news")
-      .select("id,date,created_at")
-      .order("created_at", { ascending: false }),
+    getPublishedNews(),
     listCityRegistry({ indexableOnly: true }),
   ]);
   const cityKeys = registryCities.map((city) => city.key);
@@ -198,14 +195,14 @@ export async function getPageSitemapEntries() {
     priority: 0.82,
   }));
 
-  const newsArticleEntries = (newsResponse?.error ? [] : newsResponse?.data || []).map((article) =>
+  const newsArticleEntries = (newsResponse?.items || []).map((article) =>
     entryWithDate(
       {
         url: `${QA_SITE_URL}/now/news/${encodeURIComponent(String(article.id))}`,
         changeFrequency: "monthly",
         priority: 0.8,
       },
-      article.created_at || article.date ? new Date(article.created_at || article.date) : null
+      article.createdAt || article.date ? new Date(article.createdAt || article.date) : null
     )
   );
 
