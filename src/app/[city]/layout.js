@@ -9,7 +9,7 @@ import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
 import { getLocalizedCityGuide } from "@/lib/cityGuideTranslations";
 import { getPublicQariProfileForCountry } from "@/lib/qariPublicProfiles";
 import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
@@ -37,11 +37,12 @@ export async function generateMetadata({ params }) {
   const ownership = getCityKeywordOwnership(cityName);
   const isSpanish = locale === "es";
   const isGerman = locale === "de";
+  const isFrench = locale === "fr";
   const defaultTitle = isSpanish
     ? `Guía queer de ${cityName} 2026: bares, eventos y seguridad`
-    : isGerman ? `Queerer Guide für ${cityName} 2026: Bars, Events & Sicherheit` : `Queer ${cityName} Guide 2026: Bars, Events & Safety`;
+    : isGerman ? `Queerer Guide für ${cityName} 2026: Bars, Events & Sicherheit` : isFrench ? `Guide queer de ${cityName} 2026 : bars, événements et sécurité` : `Queer ${cityName} Guide 2026: Bars, Events & Safety`;
   const title = venueAccessRestricted
-    ? (isSpanish ? `${cityName}: contexto de viaje y seguridad LGBTQ+` : isGerman ? `${cityName}: LGBTQ+ Reisekontext & Sicherheit` : `${cityName}: LGBTQ+ Travel Context & Safety`)
+    ? (isSpanish ? `${cityName}: contexto de viaje y seguridad LGBTQ+` : isGerman ? `${cityName}: LGBTQ+ Reisekontext & Sicherheit` : isFrench ? `${cityName} : contexte de voyage et sécurité LGBTQ+` : `${cityName}: LGBTQ+ Travel Context & Safety`)
     : defaultTitle;
   const isMiamiRegionalGuide = city === "miami";
   const detailedDescription = isSpanish
@@ -52,6 +53,10 @@ export async function generateMetadata({ params }) {
       ? isMiamiRegionalGuide
         ? "Queerer Guide für Miami und Südflorida: Miami Beach, Fort Lauderdale Beach und Wilton Manors – mit geprüften Orten, Events und praktischem Kontext für deine Route."
         : `${cityName}, ${country}: entdecke geprüfte queere Orte, aktuelle Events, Nachtleben und praktischen Sicherheitskontext. Aktualisiert für 2026.`
+    : isFrench
+      ? isMiamiRegionalGuide
+        ? "Guide queer de Miami et du sud de la Floride : Miami Beach, Fort Lauderdale Beach et Wilton Manors, avec des lieux fiables, événements et contexte pratique pour votre itinéraire."
+        : `${cityName}, ${country} : découvrez des lieux queer fiables, des événements actuels, la vie nocturne et un contexte de sécurité pratique. Mis à jour en 2026.`
     : isMiamiRegionalGuide
       ? "Queer Miami and South Florida guide: Miami Beach, Fort Lauderdale Beach and Wilton Manors, with trusted venues, live events and practical route context."
       : `${cityName}, ${country}: ${ownership.primary}, trusted queer venues, live events, and route-smart safety context${vibe ? ` with a ${vibe} city vibe` : ""}. Updated for 2026.`;
@@ -61,12 +66,16 @@ export async function generateMetadata({ params }) {
       ? `${cityName}, ${country}: descubre lugares queer verificados, eventos en directo, vida nocturna y contexto práctico de seguridad. Actualizado para 2026.`
       : isGerman
         ? `${cityName}, ${country}: geprüfte queere Orte, aktuelle Events, Nachtleben und praktischer Sicherheitskontext. Aktualisiert für 2026.`
+      : isFrench
+        ? `${cityName}, ${country} : lieux queer fiables, événements actuels, vie nocturne et contexte de sécurité pratique. Mis à jour en 2026.`
       : `${cityName}, ${country}: discover trusted queer venues, live events, nightlife and practical safety context. Updated for 2026.`;
   const description = venueAccessRestricted
     ? (isSpanish
       ? `${cityName}, ${country}: contexto de viaje LGBTQ+, información de seguridad actualizada y detalles locales protegidos.`
       : isGerman
         ? `${cityName}, ${country}: LGBTQ+ Reisekontext, aktuelle Sicherheitsinformationen und geschützte lokale Details.`
+      : isFrench
+        ? `${cityName}, ${country} : contexte de voyage LGBTQ+, informations de sécurité actuelles et détails locaux protégés.`
       : `${cityName}, ${country}: LGBTQ+ travel context, current safety information and protected local details.`)
     : defaultDescription;
 
@@ -116,7 +125,7 @@ export async function generateMetadata({ params }) {
       title: title,
       description: description,
       url: localizedOpenGraphUrl(canonical, locale),
-      locale: locale === "es" ? "es_ES" : locale === "de" ? "de_DE" : "en_US",
+      locale: openGraphLocale(locale),
       type: "website",
     },
   };

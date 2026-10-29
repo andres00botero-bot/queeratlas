@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
 
 const metadata = {
   title: "Queer News, Rankings & Atlas Collections",
@@ -76,7 +76,7 @@ export async function generateMetadata() {
       alternates: localizedAlternates("/now", locale),
       title: "Queere News, Rankings & Atlas-Kollektionen",
       description: "Tägliche queere News, der Queer Safety Index, Rankings zu Reisezielen und Atlas-Kollektionen für LGBTQ+ Nachtleben, Strände, Drag, lesbische Bars und queere Cafés.",
-      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: "de_DE", title: "Queere News, Rankings & Atlas-Kollektionen | Queer Atlas", description: "Verfolge queere Weltnews, Rankings zu Reisezielen und Sicherheit sowie kuratierte Atlas-Kollektionen für LGBTQ+ Reisen." },
+      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: openGraphLocale(locale), title: "Queere News, Rankings & Atlas-Kollektionen | Queer Atlas", description: "Verfolge queere Weltnews, Rankings zu Reisezielen und Sicherheit sowie kuratierte Atlas-Kollektionen für LGBTQ+ Reisen." },
       twitter: { ...metadata.twitter, title: "Queere News, Rankings & Atlas-Kollektionen | Queer Atlas", description: "Tägliche queere News mit Rankings und kuratierten Atlas-Kollektionen für Nachtleben, Strände, Drag, lesbische Bars und Cafés." },
     };
   }
@@ -90,7 +90,7 @@ export async function generateMetadata() {
       twitter: { ...metadata.twitter, title: "Actualités queer, classements et collections Atlas | Queer Atlas", description: "Actualités queer quotidiennes avec classements et collections Atlas sélectionnées pour la vie nocturne, les plages, le drag, les bars lesbiens et les cafés." },
     };
   }
-  if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: "en_US" } };
+  if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now", locale), locale: openGraphLocale(locale) } };
 
   return {
     ...metadata,
@@ -100,7 +100,7 @@ export async function generateMetadata() {
     openGraph: {
       ...metadata.openGraph,
       url: localizedOpenGraphUrl("/now", locale),
-      locale: "es_ES",
+      locale: openGraphLocale(locale),
       title: "Noticias queer, clasificaciones y colecciones Atlas | Queer Atlas",
       description: "Sigue las noticias queer del mundo, las clasificaciones de destinos y seguridad, y las colecciones Atlas seleccionadas para descubrir viajes LGBTQ.",
       images: metadata.openGraph.images.map((image) => ({ ...image, alt: "Queer Atlas Now - noticias queer" })),

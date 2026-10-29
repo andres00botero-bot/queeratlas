@@ -18,7 +18,7 @@ import {
 } from "@/lib/seo/entitySlug";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
 import { evaluateEventSeoQuality } from "@/lib/seo/entityIndexing";
 import { getEntitySearchCopy } from "@/lib/seo/entitySearchCopy";
 import EntityPracticalIntel from "@/components/city/EntityPracticalIntel";
@@ -230,7 +230,7 @@ export async function generateMetadata({ params }) {
       title,
       description,
       url: localizedOpenGraphUrl(canonicalPath, locale),
-      locale: locale === "es" ? "es_ES" : "en_US",
+      locale: openGraphLocale(locale),
       type: "article",
     },
     twitter: {

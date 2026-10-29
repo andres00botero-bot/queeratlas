@@ -6,7 +6,7 @@ import { getLocalizedAtlasCollection } from "@/lib/atlasCollectionTranslations";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getMessage } from "@/lib/i18n/messages";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath, localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
 
 const metadata = {
   title: "Atlas Collections | Best Queer Travel, Stays, Events & Culture",
@@ -31,7 +31,7 @@ export async function generateMetadata() {
       alternates: localizedAlternates("/now/collections", locale),
       title: "Atlas-Kollektionen | Queere Reisen, Aufenthalte, Events & Kultur",
       description: "Entdecke recherchierte LGBTQ+ Reisekollektionen zu queergeführten Unterkünften, Flitterwochen, bezahlbaren Städtereisen, sapphischen Reisen, Events, Wellness, Essen, Nachtleben und Stränden.",
-      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: "de_DE", title: "Atlas-Kollektionen | Queer Atlas", description: "Queere Orte, Aufenthalte, Events und Stadtrouten – ausgewählt danach, wie sie auf einer Reise wirklich funktionieren." },
+      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: openGraphLocale(locale), title: "Atlas-Kollektionen | Queer Atlas", description: "Queere Orte, Aufenthalte, Events und Stadtrouten – ausgewählt danach, wie sie auf einer Reise wirklich funktionieren." },
     };
   }
   if (locale === "fr") {
@@ -40,10 +40,10 @@ export async function generateMetadata() {
       alternates: localizedAlternates("/now/collections", locale),
       title: "Collections Atlas | Voyages, séjours, événements et culture queer",
       description: "Explorez des collections de voyage LGBTQ+ documentées : hébergements queer, lunes de miel, escapades urbaines à petit budget, voyages saphiques, événements, bien-être, gastronomie, vie nocturne et plages.",
-      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: "fr_FR", title: "Collections Atlas | Queer Atlas", description: "Lieux, séjours, événements et itinéraires queer sélectionnés selon leur véritable intérêt pour un voyage." },
+      openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: openGraphLocale(locale), title: "Collections Atlas | Queer Atlas", description: "Lieux, séjours, événements et itinéraires queer sélectionnés selon leur véritable intérêt pour un voyage." },
     };
   }
-  if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now/collections", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: "en_US" } };
+  if (locale !== "es") return { ...metadata, alternates: localizedAlternates("/now/collections", locale), openGraph: { ...metadata.openGraph, url: localizedOpenGraphUrl("/now/collections", locale), locale: openGraphLocale(locale) } };
 
   return {
     ...metadata,
@@ -53,7 +53,7 @@ export async function generateMetadata() {
     openGraph: {
       ...metadata.openGraph,
       url: localizedOpenGraphUrl("/now/collections", locale),
-      locale: "es_ES",
+      locale: openGraphLocale(locale),
       title: "Colecciones Atlas | Queer Atlas",
       description: "Lugares queer, estancias, eventos y rutas urbanas seleccionados por cómo funcionan realmente como viaje.",
     },

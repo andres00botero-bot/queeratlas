@@ -65,13 +65,13 @@ function withLanguageAlternates(entries = []) {
     const englishUrl = String(entry.url || "");
     if (!englishUrl.startsWith(QA_SITE_URL)) return [];
     const path = englishUrl.slice(QA_SITE_URL.length) || "/";
-    const spanishUrl = `${QA_SITE_URL}${localePath(path, "es")}`;
-    const languages = { en: englishUrl, es: spanishUrl, "x-default": englishUrl };
-    const variants = [{ ...entry, languages }, { ...entry, url: spanishUrl, languages }];
-    if (searchReadyLocales.has("de")) {
-      const germanUrl = `${QA_SITE_URL}${localePath(path, "de")}`;
-      languages.de = germanUrl;
-      variants.push({ ...entry, url: germanUrl, languages });
+    const languages = { en: englishUrl, "x-default": englishUrl };
+    const variants = [{ ...entry, languages }];
+    for (const language of ["es", "fr", "de"]) {
+      if (!searchReadyLocales.has(language)) continue;
+      const localizedUrl = `${QA_SITE_URL}${localePath(path, language)}`;
+      languages[language] = localizedUrl;
+      variants.push({ ...entry, url: localizedUrl, languages });
     }
     return variants;
   });
