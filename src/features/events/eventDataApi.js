@@ -4,6 +4,7 @@ import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
 import { mapGlobalEventRow } from "@/features/events/eventViewUtils";
 import { fetchEventRows } from "./fetchEventRows.js";
+import { upcomingPublicEvents } from "./eventScope.js";
 
 const LEGACY_GLOBAL_EVENTS_KEY = "qa_global_events";
 
@@ -36,7 +37,7 @@ export async function fetchEventsData() {
   const { data, error } = await fetchEventRows(supabase);
 
   return {
-    data: (await mergeSeedEventsAsync(data || [])).map((event) => normalizeEventRange(event)),
+    data: upcomingPublicEvents((await mergeSeedEventsAsync(data || [])).map((event) => normalizeEventRange(event))),
     error,
   };
 }
@@ -49,7 +50,7 @@ export async function fetchGlobalEventsData() {
     .order("created_at", { ascending: false });
 
   return {
-    data: (data || []).map(mapGlobalEventRow),
+    data: upcomingPublicEvents((data || []).map(mapGlobalEventRow)),
     error,
   };
 }

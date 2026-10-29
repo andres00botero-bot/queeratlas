@@ -3,25 +3,11 @@ import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
-import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { mapGlobalEventRow } from "@/features/events/eventViewUtils";
+import { isUpcomingPublicEvent } from "@/features/events/eventScope";
 
 export const PUBLIC_EVENTS_CACHE_TAG = "qa-public-events";
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function isCurrentDiscoverableEvent(event, today = todayIso()) {
-  const normalized = normalizeEventRange(event || {});
-  const endDate = String(normalized.endDate || normalized.startDate || "");
-  return Boolean(
-    normalized.name &&
-      normalized.startDate &&
-      endDate >= today &&
-      isEventStatusDiscoverable(normalized),
-  );
-}
 
 function toCalendarEvent(event = {}) {
   const normalized = normalizeEventRange(event);
@@ -72,11 +58,11 @@ async function loadPublicEventData() {
 
   const events = (await mergeSeedEventsAsync(eventsResult.data || []))
     .map((event) => normalizeEventRange(event))
-    .filter((event) => isCurrentDiscoverableEvent(event))
+    .filter((event) => isUpcomingPublicEvent(event))
     .map(toCalendarEvent);
   const globalEvents = (globalResult.data || [])
     .map(mapGlobalEventRow)
-    .filter((event) => isCurrentDiscoverableEvent(event))
+    .filter((event) => isUpcomingPublicEvent(event))
     .map(toCalendarEvent);
 
   return {

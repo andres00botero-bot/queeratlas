@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import Link from "next/link";
-import EventsPage from "../page";
+import EventsPageClient from "../EventsPageClient";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { fetchPublicEventData } from "@/lib/publicEventData";
 import { buildEventPath } from "@/lib/seo/entitySlug";
@@ -151,7 +151,7 @@ export default async function EventSectionPage({ params }) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <EventsPage
+      <EventsPageClient
         initialSection={config.sectionId}
         initialEvents={initialEventData?.events}
         initialGlobalEvents={initialEventData?.globalEvents}

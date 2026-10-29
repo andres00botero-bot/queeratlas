@@ -7,9 +7,9 @@ import { buildEventIntelFallback } from "@/lib/intelFallbacks";
 import { normalizeVenueIntel } from "@/lib/venueIntel";
 import { cityCoreConfig } from "@/lib/cityCore";
 import { listCityRegistry } from "@/lib/server/cityRegistry";
-import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { fetchEventRows } from "@/features/events/fetchEventRows";
 import { isPublishedEntity } from "@/lib/publicInventory";
+import { upcomingPublicEvents } from "@/features/events/eventScope";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
@@ -176,17 +176,13 @@ async function fetchWorldNews() {
 }
 
 export async function fetchHomeDataPayload() {
-  const [eventsRes, globalRes, eventCountRes, globalEventCountRes, placesRes, newsRes, registryCities] = await Promise.all([
+  const [eventsRes, globalRes, placesRes, newsRes, registryCities] = await Promise.all([
     fetchEventRows(supabase),
     supabase
       .from("global_events")
       .select("*")
       .order("date", { ascending: true })
       .order("created_at", { ascending: false }),
-    // The homepage total is deliberately the complete database inventory, not
-    // only upcoming, indexable, supported-city, or de-duplicated events.
-    supabase.from("events").select("id", { count: "exact", head: true }),
-    supabase.from("global_events").select("id", { count: "exact", head: true }),
     fetchPlacesForAtlas(),
     fetchWorldNews(),
     listCityRegistry().catch(() => Object.values(cityCoreConfig)),
@@ -197,7 +193,7 @@ export async function fetchHomeDataPayload() {
     ? globalRes.data.map(mapGlobalEventForSearch).filter((event) => event.name)
     : [];
 
-  const events = [...mergedEvents, ...globalEvents].filter((event) => isEventStatusDiscoverable(event));
+  const events = upcomingPublicEvents([...mergedEvents, ...globalEvents]);
   const places = Array.isArray(placesRes?.data) ? placesRes.data : [];
   const worldNews = Array.isArray(newsRes?.data) ? newsRes.data : [];
   const featuredVenue = pickFeaturedVenue(places);
@@ -205,13 +201,11 @@ export async function fetchHomeDataPayload() {
     countries: new Set(registryCities.map((city) => city?.country).filter(Boolean)).size,
     cities: new Set(places.map((place) => place?.city).filter(Boolean)).size,
     places: places.filter(isPublishedEntity).length,
-    events: Number(eventCountRes?.count || 0) + Number(globalEventCountRes?.count || 0),
+    events: events.length,
   };
   const partialData = Boolean(
     eventsRes?.error ||
       globalRes?.error ||
-      eventCountRes?.error ||
-      globalEventCountRes?.error ||
       placesRes?.error ||
       newsRes?.partialData
   );
