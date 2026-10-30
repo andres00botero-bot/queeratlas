@@ -1396,6 +1396,10 @@ export const cityCoreConfig = {
       -8.3068,
       37.2445
     ],
+    "overviewBounds": [
+      [-9.02, 36.9],
+      [-7.28, 37.56]
+    ],
     "title": "Queer Algarve",
     "country": "Portugal",
     "vibe": "sunny coast region route"

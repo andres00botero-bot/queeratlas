@@ -551,13 +551,23 @@ export default function CityPageClient() {
   const resetMapToCityOverview = useCallback(() => {
     const map = mapRef.current;
     if (!map || !Array.isArray(config?.center) || config.center.length < 2) return;
+    const overviewBounds = Array.isArray(config?.overviewBounds) ? config.overviewBounds : null;
+    if (overviewBounds?.length === 2) {
+      map.fitBounds(overviewBounds, {
+        padding: { top: 48, right: 48, bottom: 48, left: 48 },
+        maxZoom: config.zoom ?? 11,
+        essential: true,
+        duration: 900,
+      });
+      return;
+    }
     map.flyTo({
       center: config.center,
       zoom: config.zoom ?? 11,
       essential: true,
       duration: 900,
     });
-  }, [config?.center, config?.zoom]);
+  }, [config?.center, config?.overviewBounds, config?.zoom]);
 
   const handleGoHomeDesktop = useCallback(() => {
     setAddMode(false);
@@ -2443,6 +2453,15 @@ export default function CityPageClient() {
       } catch {
         // Fog may be absent depending on style/runtime.
       }
+      const overviewBounds = Array.isArray(config?.overviewBounds) ? config.overviewBounds : null;
+      if (overviewBounds?.length === 2) {
+        map.fitBounds(overviewBounds, {
+          padding: { top: 40, right: 40, bottom: 40, left: 40 },
+          maxZoom: config.zoom ?? 11,
+          duration: 0,
+          essential: true,
+        });
+      }
     };
 
     const handleResize = () => mapRef.current?.resize();
@@ -2486,7 +2505,7 @@ export default function CityPageClient() {
       hoverPopupRef.current?.remove();
       hoverPopupRef.current = null;
     };
-  }, [config.center, config.zoom, isMapboxStylesReady]);
+  }, [config.center, config.overviewBounds, config.zoom, isMapboxStylesReady]);
 
   useEffect(() => {
     const mapboxgl = mapboxGlRef.current;
@@ -2882,9 +2901,8 @@ export default function CityPageClient() {
     let mounted = true;
 
     const syncDomMarkerVisibility = () => {
-      const showDetailedMarkers = map.getZoom() >= clusterZoomThreshold;
       markersRef.current.forEach((marker) => {
-        marker.getElement().style.display = showDetailedMarkers ? "flex" : "none";
+        marker.getElement().style.display = "flex";
       });
     };
 
