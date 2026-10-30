@@ -6,7 +6,7 @@ import { normalizeLocale } from "@/lib/i18n/locales";
 import { localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
 
 const metadata = {
-  title: "Gay Friendly Cities & LGBTQ Safety Map 2026",
+  title: "LGBTQ-Friendly Cities & Travel Context 2026",
   description:
     "Compare gay friendly cities, queer-safe areas, and LGBTQ nightlife signal with legal-rights-safety context for smarter travel decisions.",
   keywords: [
@@ -26,7 +26,7 @@ const metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Gay Friendly Cities & LGBTQ Safety Map 2026 | Queer Atlas",
+    title: "LGBTQ-Friendly Cities & Travel Context 2026 | Queer Atlas",
     description:
       "Compare queer city safety context, nightlife signal, and trusted local routes in one city-by-city atlas.",
     url: "/cities",
@@ -34,7 +34,7 @@ const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Gay Friendly Cities & LGBTQ Safety Map 2026 | Queer Atlas",
+    title: "LGBTQ-Friendly Cities & Travel Context 2026 | Queer Atlas",
     description:
       "Explore safer queer travel cities, local nightlife context, and trusted venue signal.",
   },

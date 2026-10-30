@@ -4,14 +4,15 @@ import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
   title: "HBTQ Guide 2026",
   description:
     "Global HBTQ guide for queer-friendly cities, LGBTQ events, safer nightlife, and trusted community signal.",
   keywords: [
-    keywordOwnership.hbtqGuide.primary,
-    ...keywordOwnership.hbtqGuide.secondary,
+    keywordOwnership.lgbtqGuide.primary,
+    ...keywordOwnership.lgbtqGuide.secondary,
   ],
   alternates: {
     canonical: "/hbtq-guide",
@@ -72,6 +73,7 @@ const faqs = [
 ];
 
 export default async function HbtqGuidePage() {
+  permanentRedirect("/lgbtq-travel-guide");
   const editorial = await getPublishedEditorialRecord("guide:hbtq-guide", {
     ...GUIDE_EDITORIAL_META.hbtqGuide,
     author: EDITORIAL_TEAM,

@@ -11,7 +11,7 @@ const QA_PRIMARY_HUB_PATHS = [
   "/now",
   "/gay-guide",
   "/queer-guide",
-  "/hbtq-guide",
+  "/lgbtq-travel-guide",
   "/dictionary",
   "/about",
   "/editorial-policy",

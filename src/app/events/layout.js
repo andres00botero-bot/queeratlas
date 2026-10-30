@@ -4,7 +4,7 @@ import { normalizeLocale } from "@/lib/i18n/locales";
 import { localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
 
 const metadata = {
-  title: "Queer Events Calendar",
+  title: "LGBTQ+ Events & Pride Calendar 2026",
   description:
     "Track LGBTQ events, queer nightlife events, and curated city-level happenings with live community signal.",
   keywords: [
@@ -17,7 +17,7 @@ const metadata = {
     canonical: "/events",
   },
   openGraph: {
-    title: "Queer Events | Queer Atlas",
+    title: "LGBTQ+ Events & Pride Calendar | Queer Atlas",
     description:
       "Find LGBTQ events, queer nightlife calendars, and city-by-city event momentum.",
     url: "/events",
@@ -25,7 +25,7 @@ const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LGBTQ Events Calendar | Queer Atlas",
+    title: "LGBTQ+ Events & Pride Calendar | Queer Atlas",
     description:
       "Track queer nightlife events, city highlights, and inclusive event signal.",
   },

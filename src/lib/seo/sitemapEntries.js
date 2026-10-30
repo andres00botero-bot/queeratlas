@@ -106,7 +106,7 @@ export async function getPageSitemapEntries() {
     "/events/happening-soon",
     "/gay-guide",
     "/queer-guide",
-    "/hbtq-guide",
+    "/lgbtq-travel-guide",
     "/dictionary",
     "/topics",
     "/reports",

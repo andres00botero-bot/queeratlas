@@ -1,9 +1,16 @@
 export const TOPIC_HUBS = {
   nightlife: {
     key: "nightlife",
-    title: "Queer Nightlife Hubs",
+    title: "Queer Nightlife Guide",
     description:
-      "Global nightlife-focused queer route intelligence across major cities with high-signal cluster links.",
+      "Plan a queer night with clearer city context: where to start, what kind of room to expect, and how to keep a credible backup nearby.",
+    eyebrow: "Queer Atlas nightlife field guide",
+    decisionTitle: "Build a night that fits",
+    decisionSteps: [
+      "Choose a city route by the kind of night you want — bars, clubs, techno, rooftops, or sauna culture.",
+      "Open the city guide before you go for neighbourhood context, venue details, and current event dates.",
+      "Keep one lower-friction backup in the same area in case a door policy, queue, or schedule changes.",
+    ],
     clusterKeys: [
       "queer-techno-clubs",
       "queer-bars",
@@ -16,9 +23,16 @@ export const TOPIC_HUBS = {
   },
   safety: {
     key: "safety",
-    title: "Safest Queer Bars Hubs",
+    title: "LGBTQ+ Travel Safety Guide",
     description:
-      "Safety-first city routing hubs with practical fallback choices and lower-friction venue paths.",
+      "Plan with city-level rights context, local venue signal, and practical fallback choices — without treating any destination as risk-free.",
+    eyebrow: "Queer Atlas practical travel guide",
+    decisionTitle: "Plan with context, not assumptions",
+    decisionSteps: [
+      "Start with the city and country context, then use it to frame — not replace — your own current travel advice and judgement.",
+      "Choose venues with clear, current information and save a second option before you leave your accommodation.",
+      "Check event dates, transport, entry rules, and the latest local updates close to your visit.",
+    ],
     clusterKeys: ["safest-queer-bars", "queer-safe-areas", "queer-travel-safety"],
     cities: ["copenhagen", "amsterdam", "toronto", "lisbon", "sydney", "san_francisco", "paris", "new_york"],
   },

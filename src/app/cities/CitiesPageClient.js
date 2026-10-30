@@ -1081,7 +1081,7 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
         "@type": "CollectionPage",
         "@id": `${CITIES_CANONICAL_URL}#collection`,
         url: CITIES_CANONICAL_URL,
-        name: "Gay Friendly Cities & LGBTQ Safety Map 2026",
+        name: "LGBTQ-Friendly Cities & Travel Context 2026",
         description:
           "Compare queer city safety context, nightlife signal, and trusted local routes in one city-by-city atlas.",
         mainEntity: {
@@ -1157,6 +1157,13 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
             <p className="mt-4 max-w-xl text-sm leading-6 text-white/64 sm:mt-5 sm:text-base sm:leading-7">
               {t("cities.intro", "Find the places, scenes and local signal that fit your trip.")}
             </p>
+
+            <div className="mt-5 flex flex-wrap gap-2 text-xs sm:mt-6">
+              <Link href="/qari" className="rounded-full border border-cyan-100/28 bg-cyan-100/[0.09] px-3 py-2 font-semibold text-cyan-50 transition hover:border-cyan-100/46">Compare country context</Link>
+              <Link href="/events" className="rounded-full border border-fuchsia-100/24 bg-fuchsia-100/[0.08] px-3 py-2 font-semibold text-fuchsia-50 transition hover:border-fuchsia-100/42">Find LGBTQ+ events</Link>
+              <Link href="/topics/nightlife" className="rounded-full border border-white/16 bg-black/20 px-3 py-2 font-semibold text-white/78 transition hover:border-white/30 hover:text-white">Explore queer nightlife</Link>
+              <Link href="/topics/safety" className="rounded-full border border-white/16 bg-black/20 px-3 py-2 font-semibold text-white/78 transition hover:border-white/30 hover:text-white">Read travel safety context</Link>
+            </div>
 
             <div className="mt-6 flex flex-col gap-2.5 sm:mt-7 sm:flex-row sm:items-start">
               <label htmlFor="hero-city-search" className="sr-only">{t("cities.search", "Search city or country")}</label>

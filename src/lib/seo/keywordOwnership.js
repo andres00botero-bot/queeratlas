@@ -36,12 +36,12 @@ export const keywordOwnership = {
     searchIntent: "informational travel guide",
     ownerPage: "/queer-guide",
   },
-  hbtqGuide: {
-    path: "/hbtq-guide",
-    primary: "hbtq guide",
-    secondary: ["hbtq travel", "hbtq stader"],
-    searchIntent: "regional-language guide intent",
-    ownerPage: "/hbtq-guide",
+  lgbtqGuide: {
+    path: "/lgbtq-travel-guide",
+    primary: "lgbtq travel guide",
+    secondary: ["lgbt travel guide", "lgbtq friendly travel", "lgbtq friendly cities", "lgbtq travel safety"],
+    searchIntent: "inclusive travel planning",
+    ownerPage: "/lgbtq-travel-guide",
   },
   compass: {
     path: "/dictionary",

@@ -190,8 +190,8 @@ export default async function QueerGuidePage() {
             <Link href="/gay-guide" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
               Compare gay guide
             </Link>
-            <Link href="/hbtq-guide" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
-              Compare HBTQ guide
+            <Link href="/lgbtq-travel-guide" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
+              Compare LGBTQ+ travel guide
             </Link>
             <Link href="/now" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
               Read world news

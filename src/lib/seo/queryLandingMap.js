@@ -13,13 +13,20 @@ export const queryLandingMap = {
     landing: "/gay-guide",
     queries: [
       "gay travel guide",
-      "queer traveler guide",
       "queer friendly places",
       "gay bars near me",
     ],
   },
+  lgbtqTravelIntent: {
+    landing: "/lgbtq-travel-guide",
+    queries: [
+      "lgbtq travel guide",
+      "lgbt travel guide",
+      "lgbtq friendly travel",
+    ],
+  },
   queerSafetyIntent: {
-    landing: "/queer-guide",
+    landing: "/topics/safety",
     queries: [
       "safe queer nightlife",
       "queer safe spaces",
@@ -42,6 +49,10 @@ export const queryLandingMap = {
       "lgbtq nightlife",
       "inclusive nightlife events",
     ],
+  },
+  nightlifeIntent: {
+    landing: "/topics/nightlife",
+    queries: ["queer nightlife", "gay nightlife", "queer bars", "queer clubs"],
   },
   compassIntent: {
     landing: "/dictionary",

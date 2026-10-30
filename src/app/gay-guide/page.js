@@ -4,6 +4,7 @@ import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
+import JourneyDeck from "@/components/seo/JourneyDeck";
 
 export const metadata = {
   title: "Gay Travel Guide 2026",
@@ -148,6 +149,12 @@ export default async function GayGuidePage() {
             <Link href="/" className="rounded-full border border-lime-100/40 bg-gradient-to-r from-lime-300/24 via-cyan-300/22 to-white/12 px-4 py-2.5 text-sm font-bold text-lime-50 shadow-[0_0_28px_rgba(190,242,100,0.14)] transition hover:-translate-y-[1px] hover:border-lime-100/58 hover:from-lime-200/32 hover:via-cyan-200/28 hover:to-white/18 hover:shadow-[0_0_38px_rgba(190,242,100,0.22)]">
               Start from homepage
             </Link>
+            <Link href="/topics/nightlife" className="rounded-full border border-fuchsia-100/28 bg-fuchsia-100/[0.08] px-4 py-2.5 text-sm font-bold text-fuchsia-50 transition hover:border-fuchsia-100/48">
+              Explore queer nightlife
+            </Link>
+            <Link href="/topics/safety" className="rounded-full border border-cyan-100/26 bg-cyan-100/[0.08] px-4 py-2.5 text-sm font-bold text-cyan-50 transition hover:border-cyan-100/46">
+              Read travel safety context
+            </Link>
           </div>
         </section>
 
@@ -160,6 +167,18 @@ export default async function GayGuidePage() {
           researchScope={editorial.researchScope}
           changeLog={editorial.changeLog}
           sources={editorial.sources}
+        />
+
+        <JourneyDeck
+          className="mt-8"
+          eyebrow="Build a better night out"
+          title="Choose the route that fits your trip"
+          intro="Move from a city decision to venues and date-specific events without losing the local context."
+          cards={[
+            { href: "/cities", kicker: "Destination", title: "Compare gay-friendly cities", description: "Open a city guide for neighbourhoods, places and scene depth.", accent: "cyan" },
+            { href: "/topics/nightlife", kicker: "Nightlife", title: "Find your kind of night", description: "Explore bars, clubs, techno, rooftops and sauna routes.", accent: "fuchsia" },
+            { href: "/events", kicker: "Dates", title: "Check events before you go", description: "Find what is on tonight, this weekend, or during your trip.", accent: "amber" },
+          ]}
         />
 
         <section className="mt-8 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(22,22,22,0.94),rgba(10,10,10,0.98))] p-6">
@@ -198,8 +217,8 @@ export default async function GayGuidePage() {
             <Link href="/queer-guide" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
               Compare with queer guide
             </Link>
-            <Link href="/hbtq-guide" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
-              Read HBTQ guide
+            <Link href="/lgbtq-travel-guide" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
+              Read LGBTQ+ travel guide
             </Link>
             <Link href="/now" className="rounded-full border border-white/14 bg-white/6 px-3 py-1 transition hover:border-white/30 hover:text-white">
               Live world news signal
