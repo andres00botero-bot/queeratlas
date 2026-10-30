@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { listSeoReports } from "@/lib/seo/reportsIndex";
@@ -70,7 +71,7 @@ export default async function ReportsIndexPage() {
     <main className="min-h-screen bg-[radial-gradient(circle_at_50%_-10%,rgba(91,33,182,0.12),transparent_34%),#050505] px-4 py-8 text-white sm:px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(collectionJsonLd) }}
       />
       <div className="mx-auto max-w-6xl space-y-6">
         <section className="relative isolate overflow-hidden rounded-[36px] border border-violet-100/22 bg-[radial-gradient(circle_at_85%_0%,rgba(244,114,182,0.22),transparent_34%),radial-gradient(circle_at_12%_100%,rgba(34,211,238,0.18),transparent_38%),linear-gradient(135deg,#3a1e4d_0%,#202d55_52%,#16454b_100%)] p-6 shadow-[0_32px_100px_rgba(8,5,24,0.38)] sm:p-9 lg:p-11">

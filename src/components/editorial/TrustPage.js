@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -94,7 +95,7 @@ export default function TrustPage({ pageKey, children = null }) {
 
   return (
     <main className="qa-page min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_12%_2%,rgba(34,211,238,0.11),transparent_25%),radial-gradient(circle_at_88%_6%,rgba(244,114,182,0.10),transparent_25%),linear-gradient(180deg,#03040a_0%,#080812_48%,#040406_100%)] px-4 py-7 text-white sm:px-6 sm:py-10">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
 
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-white/48">

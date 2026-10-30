@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -80,8 +81,8 @@ export default async function QariCountryPage({ params }) {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_86%_0%,rgba(34,211,238,0.15),transparent_30%),radial-gradient(circle_at_10%_8%,rgba(251,191,36,0.11),transparent_30%),#050505] px-4 py-8 text-white sm:px-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(datasetJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
       <div className="mx-auto max-w-5xl space-y-6">
         <Link href="/qari" className="inline-flex min-h-11 items-center text-xs font-semibold text-cyan-100 transition hover:text-white">← All QARI country profiles</Link>
         <section className="rounded-[34px] border border-cyan-100/22 bg-[linear-gradient(135deg,rgba(13,48,66,0.94),rgba(29,25,64,0.94))] p-6 shadow-[0_28px_90px_rgba(5,15,28,0.4)] sm:p-9">

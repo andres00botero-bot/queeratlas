@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { headers } from "next/headers";
 import CityPanelButton from "@/components/city/CityPanelButton";
@@ -393,7 +394,7 @@ export default async function CityClusterTopicPage({ params }) {
     <main className="min-h-screen bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,0.12),transparent_30%),radial-gradient(circle_at_92%_8%,rgba(244,114,182,0.10),transparent_30%),linear-gradient(180deg,#05070d_0%,#07070b_48%,#030305_100%)] px-4 py-8 text-white sm:px-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(graphJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(graphJsonLd) }}
       />
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="relative overflow-hidden rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_8%_0%,rgba(34,211,238,0.18),transparent_32%),radial-gradient(circle_at_90%_8%,rgba(244,114,182,0.16),transparent_30%),linear-gradient(160deg,rgba(18,24,38,0.96),rgba(8,9,15,0.99))] p-6 shadow-[0_32px_100px_rgba(0,0,0,0.40)] sm:p-7">

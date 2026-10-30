@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -187,7 +188,7 @@ export default async function AtlasCollectionDetailPage({ params }) {
 
   return (
     <main className="qa-page min-h-screen overflow-hidden bg-[radial-gradient(circle_at_8%_3%,rgba(103,232,249,0.20),transparent_28%),radial-gradient(circle_at_92%_5%,rgba(244,114,182,0.16),transparent_26%),radial-gradient(circle_at_58%_48%,rgba(167,139,250,0.09),transparent_34%),linear-gradient(180deg,#0a1020_0%,#101225_48%,#080b16_100%)] px-4 py-6 text-white sm:px-6 sm:py-9">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <div className="mx-auto max-w-7xl">
         <nav aria-label={t("now.breadcrumb", "Breadcrumb")} className="flex flex-wrap gap-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/44 sm:text-xs">
           <Link href={localePath("/now/news", locale)} className="transition hover:text-white">{t("now.now", "Now")}</Link>

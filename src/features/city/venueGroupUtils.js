@@ -16,3 +16,4 @@ export function buildVenueJumpGroups(groupedPlaces = []) {
       count: Array.isArray(group?.items) ? group.items.length : 0,
     }));
 }
+

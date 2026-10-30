@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import NowPage from "../page";
@@ -126,7 +127,7 @@ export default async function NowSectionPage({ params, searchParams }) {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <NowPage
         initialSection={config.sectionId}
         initialDataQuery={section === "data" ? {

@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -138,8 +139,8 @@ export default async function CityServiceDetailPage({ params }) {
 
   return (
     <main className="min-h-screen bg-[#050505] px-3.5 py-4 text-white sm:px-6 sm:py-8">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(serviceJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }} />
       <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-6">
         <header className="rounded-[22px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[28px] sm:p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-emerald-100/78">Service detail</p>

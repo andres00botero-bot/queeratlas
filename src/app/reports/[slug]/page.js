@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -326,10 +327,10 @@ export default async function ReportDetailPage({ params }) {
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }} />
-      {datasetJsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetJsonLd) }} /> : null}
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleJsonLd) }} />
+      {datasetJsonLd ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(datasetJsonLd) }} /> : null}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
       <div className={`mx-auto space-y-6 ${evidenceIndex || isGlobalMethodology || isGlobalEventReport ? "max-w-6xl" : "max-w-4xl"}`}>
         <nav aria-label="Report navigation" className="flex flex-wrap items-center gap-2">
           <Link href="/now/data" className="inline-flex min-h-11 items-center rounded-full border border-cyan-100/24 bg-cyan-100/[0.09] px-4 py-2.5 text-xs font-semibold text-cyan-50 shadow-[0_10px_28px_rgba(34,211,238,0.08)] transition hover:-translate-y-0.5 hover:border-cyan-100/42 hover:bg-cyan-100/[0.15]">← Data &amp; Reports</Link>

@@ -1,4 +1,5 @@
 "use client";
+import { serializeJsonLd } from "@/lib/jsonLd";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -1097,7 +1098,7 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
     <main className="qa-page min-h-screen bg-[#050505] text-white">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(citiesSeoJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(citiesSeoJsonLd) }}
       />
       <nav aria-label="Internal city links" className="sr-only">
         <Link href="/cities">Cities</Link>

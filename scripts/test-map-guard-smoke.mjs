@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
 const targets = [
-  "../src/app/cities/page.js",
-  "../src/app/[city]/page.js",
+  "../src/app/cities/CitiesPageClient.js",
+  "../src/app/[city]/CityPageClient.js",
   "../src/app/favorites/page.js",
 ];
 
@@ -26,10 +26,10 @@ for (const relativePath of targets) {
   }
 }
 
-const cityMapSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+const cityMapSource = readFileSync(new URL("../src/app/[city]/CityPageClient.js", import.meta.url), "utf8");
 const anchoredCustomMarkers = cityMapSource.match(/new mapboxgl\.Marker\(\{\s*element[^}]*anchor:\s*["']bottom["']/g) || [];
 if (anchoredCustomMarkers.length < 3) {
-  failures.push("../src/app/[city]/page.js: all custom city markers must use a bottom anchor");
+  failures.push("../src/app/[city]/CityPageClient.js: all custom city markers must use a bottom anchor");
 }
 
 if (failures.length > 0) {

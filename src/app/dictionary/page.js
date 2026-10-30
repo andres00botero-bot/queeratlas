@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import CompassClient from "../compass/CompassClient";
 import { COMPASS_TERMS } from "@/lib/compassTerms";
 import { keywordOwnership } from "@/lib/seo/keywordOwnership";
@@ -94,9 +95,9 @@ export default function CompassPage() {
 
   return (
     <>
-      <script id="compass-defined-terms" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(definedTermJsonLd) }} />
-      <script id="compass-webpage" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }} />
-      <script id="compass-breadcrumbs" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script id="compass-defined-terms" type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(definedTermJsonLd) }} />
+      <script id="compass-webpage" type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(webPageJsonLd) }} />
+      <script id="compass-breadcrumbs" type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }} />
       <CompassClient />
     </>
   );

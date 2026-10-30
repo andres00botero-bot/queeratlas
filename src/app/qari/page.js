@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { QARI_PUBLIC_PROFILES } from "@/lib/qariPublicProfiles";
@@ -48,7 +49,7 @@ export default async function QariIndexPage() {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_86%_0%,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_8%_12%,rgba(167,139,250,0.16),transparent_31%),#050505] px-4 py-8 text-white sm:px-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(datasetJsonLd) }} />
       <div className="mx-auto max-w-6xl space-y-6">
         <section className="overflow-hidden rounded-[34px] border border-cyan-100/20 bg-[linear-gradient(135deg,rgba(14,45,63,0.94),rgba(31,27,66,0.92))] p-6 shadow-[0_28px_90px_rgba(5,15,28,0.4)] sm:p-9">
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-100/70">Queer Atlas trust layer</p>

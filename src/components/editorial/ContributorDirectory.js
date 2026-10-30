@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import { Languages, MapPin, Sparkles } from "lucide-react";
 import { listPublishedEditorialPeople } from "@/lib/editorialData";
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
@@ -40,7 +41,7 @@ export default async function ContributorDirectory() {
 
   return (
     <section className="rounded-[26px] border border-violet-200/16 bg-[radial-gradient(circle_at_0%_0%,rgba(167,139,250,0.13),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.24)] sm:p-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <div className="flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-violet-200/24 bg-violet-200/10 text-violet-100">
           <Sparkles size={18} aria-hidden="true" />

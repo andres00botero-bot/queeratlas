@@ -1,4 +1,5 @@
 "use client";
+import { serializeJsonLd } from "@/lib/jsonLd";
 
 export default function CityJsonLdScripts({
   cityBreadcrumbJsonLd,
@@ -10,20 +11,20 @@ export default function CityJsonLdScripts({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityBreadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(cityBreadcrumbJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityPlacesItemListJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(cityPlacesItemListJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(cityEventsItemListJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(cityEventsItemListJsonLd) }}
       />
       {cityFaqJsonLd ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(cityFaqJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(cityFaqJsonLd) }}
         />
       ) : null}
     </>

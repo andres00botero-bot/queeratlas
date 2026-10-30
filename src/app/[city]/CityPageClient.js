@@ -1159,7 +1159,13 @@ export default function CityPageClient() {
         .find(Boolean);
 
       if (targetNode) {
-        targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (isDesktop && centerColumnScrollRef.current) {
+          const container = centerColumnScrollRef.current;
+          const top = container.scrollTop + targetNode.getBoundingClientRect().top - container.getBoundingClientRect().top;
+          container.scrollTo({ top, behavior: "smooth" });
+        } else {
+          targetNode.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
       } else {
         scrollToSection(placesSectionRef);
       }

@@ -1,3 +1,4 @@
+import { serializeJsonLd } from "@/lib/jsonLd";
 import "./globals.css"; // 
 import { AuthProvider } from "@/lib/auth";
 import { Analytics } from "@vercel/analytics/react";
@@ -142,7 +143,7 @@ export default async function RootLayout({ children }) {
       <body>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
         <AuthProvider>
           <LocaleProvider locale={locale} messages={getClientMessages(locale)}>
