@@ -1046,9 +1046,8 @@ export default function HomePageClient({ initialHomeData = null }) {
                   type="image/png"
                 />
                 <img
-                  src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
-                  alt=""
-                  aria-hidden="true"
+                  src="/home/queer-atlas-contour-globe-v1.png"
+                  alt="Stylized globe showing queer destinations worldwide"
                   width="2560"
                   height="1088"
                   loading="eager"
