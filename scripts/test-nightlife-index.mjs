@@ -18,7 +18,7 @@ assert(index.entries.every((entry) => entry.score >= 0 && entry.score <= 100), "
 assert(index.entries.every((entry) => Math.abs(Object.values(entry.scores).reduce((sum, value) => sum + value, 0) - entry.score) <= 0.2), "rounded component totals must reconcile with total scores");
 assert(isEvidenceBackedRankingYear(2026) && !isEvidenceBackedRankingYear(2025), "only the 2026 ranking is evidence locked");
 
-const nowSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+const nowSource = readFileSync(new URL("../src/app/now/NowPageClient.js", import.meta.url), "utf8");
 const reportSource = readFileSync(new URL("../src/app/reports/[slug]/page.js", import.meta.url), "utf8");
 const csvSource = readFileSync(new URL("../src/app/api/reports/nightlife-index-2026/route.js", import.meta.url), "utf8");
 const reportComponent = readFileSync(new URL("../src/components/reports/NightlifeIndexReport.js", import.meta.url), "utf8");

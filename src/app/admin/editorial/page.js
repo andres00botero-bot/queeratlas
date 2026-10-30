@@ -193,6 +193,7 @@ export default function EditorialAdminPage() {
   const [search, setSearch] = useState("");
   const [people, setPeople] = useState([]);
   const [entries, setEntries] = useState([]);
+  const [editorialCheckedAt, setEditorialCheckedAt] = useState(0);
   const [sources, setSources] = useState([]);
   const [revisions, setRevisions] = useState([]);
   const [personForm, setPersonForm] = useState(EMPTY_PERSON);
@@ -225,6 +226,7 @@ export default function EditorialAdminPage() {
       const nextEntries = (entriesRes.data || []).map(mapEntry);
       setPeople(nextPeople);
       setEntries(nextEntries);
+      setEditorialCheckedAt(Date.now());
       setSources(sourcesRes.data || []);
       setRevisions(revisionsRes.data || []);
       setSetupRequired(false);
@@ -292,7 +294,7 @@ export default function EditorialAdminPage() {
   const selectedSources = sources.filter((source) => String(source.entry_id) === String(selectedEvidenceEntryId));
   const selectedRevisions = revisions.filter((revision) => String(revision.entry_id) === String(selectedEvidenceEntryId));
   const editorialHealth = useMemo(() => {
-    const today = Date.now();
+    const today = editorialCheckedAt;
     const ageLimit = 180 * 24 * 60 * 60 * 1000;
     const published = entries.filter((entry) => entry.status === "published");
     const sourceCountByEntry = new Map();
@@ -310,7 +312,7 @@ export default function EditorialAdminPage() {
       needsEvidence: published.filter((entry) => !sourceCountByEntry.get(String(entry.id))).length,
       staleEvidence: published.filter((entry) => sourceCountByEntry.get(String(entry.id)) && !hasFreshSourceByEntry.get(String(entry.id))).length,
     };
-  }, [entries, sources]);
+  }, [editorialCheckedAt, entries, sources]);
 
   const revalidateEditorialPaths = async (paths = []) => {
     const token = String(session?.access_token || "").trim();

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -76,7 +77,6 @@ function isValidEmail(value) {
 
 export default function HomeContactSection({
   isMember = false,
-  userId = "",
   defaultName = "",
   pageContext = "/home",
   className = "mt-12",
@@ -173,9 +173,18 @@ export default function HomeContactSection({
     const messageSummary = message.trim().replace(/\s+/g, " ").slice(0, 96);
 
     try {
+      const anonymousSubmission = canUseAnonymous ? isAnonymous : false;
+      let accessToken = "";
+      if (isMember && !anonymousSubmission) {
+        const { data, error } = await supabase.auth.getSession();
+        if (error || !data?.session?.access_token) {
+          throw new Error(t("contact.sessionExpired", "Your session has expired. Please sign in again."));
+        }
+        accessToken = data.session.access_token;
+      }
       const response = await fetch("/api/contact", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
         body: JSON.stringify({
           category,
           subject: `${categoryLabel}: ${messageSummary}`.slice(0, 140),
@@ -183,7 +192,6 @@ export default function HomeContactSection({
           senderEmail: isAnonymous ? "" : senderEmail,
           senderName: isAnonymous ? "" : senderName,
           isAnonymous: canUseAnonymous ? isAnonymous : false,
-          userId: isMember ? userId : "",
           cityContext,
           pageContext,
         }),

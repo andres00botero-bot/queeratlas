@@ -253,7 +253,7 @@ function testPlacesWithStatsMissingLocationGuard() {
 }
 
 function testNowNewsAdminControls() {
-  const source = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../src/app/now/NowPageClient.js", import.meta.url), "utf8");
   assert(
     source.includes('import { resolveAdminAccess } from "@/lib/adminAccess";'),
     "now news admin: now page should use shared admin access helper"
@@ -277,7 +277,7 @@ function testNowNewsAdminControls() {
 }
 
 function testNowRankingAdminControls() {
-  const source = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../src/app/now/NowPageClient.js", import.meta.url), "utf8");
   assert(
     source.includes("moveRankingDraftItem"),
     "now ranking admin: ranking editor should support moving rows"
@@ -295,7 +295,7 @@ function testNowRankingAdminControls() {
 function testPlacesAtlasNormalizesRatingFields() {
   const source = readFileSync(new URL("../src/lib/placesDataApi.js", import.meta.url), "utf8");
   const usePlacesSource = readFileSync(new URL("../src/lib/usePlaces.js", import.meta.url), "utf8");
-  const citiesSource = readFileSync(new URL("../src/app/cities/page.js", import.meta.url), "utf8");
+  const citiesSource = readFileSync(new URL("../src/app/cities/CitiesPageClient.js", import.meta.url), "utf8");
   assert(
     source.includes("reviewCount,"),
     "places atlas stats: data layer should expose reviewCount on place rows"
@@ -403,8 +403,8 @@ function testMapInitGuardFallbackContract() {
 }
 
 function testMapPagesUseSharedReadinessGuard() {
-  const citiesSource = readFileSync(new URL("../src/app/cities/page.js", import.meta.url), "utf8");
-  const citySource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const citiesSource = readFileSync(new URL("../src/app/cities/CitiesPageClient.js", import.meta.url), "utf8");
+  const citySource = readFileSync(new URL("../src/app/[city]/CityPageClient.js", import.meta.url), "utf8");
   const favoritesSource = readFileSync(new URL("../src/app/favorites/page.js", import.meta.url), "utf8");
 
   assert(
@@ -430,9 +430,9 @@ function testSharedAdminAccessResolverUsage() {
   const homeClientSource = readFileSync(new URL("../src/components/home/HomePageClient.js", import.meta.url), "utf8");
   const homeSource = `${homePageSource}\n${homeClientSource}`;
   const contributeSource = readFileSync(new URL("../src/app/contribute/page.js", import.meta.url), "utf8");
-  const eventsSource = readFileSync(new URL("../src/app/events/page.js", import.meta.url), "utf8");
+  const eventsSource = readFileSync(new URL("../src/app/events/EventsPageClient.js", import.meta.url), "utf8");
   const communitySource = readFileSync(new URL("../src/app/community/page.js", import.meta.url), "utf8");
-  const citySource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const citySource = readFileSync(new URL("../src/app/[city]/CityPageClient.js", import.meta.url), "utf8");
   const adminSource = readFileSync(new URL("../src/app/admin/page.js", import.meta.url), "utf8");
 
   assert(
@@ -471,7 +471,7 @@ function testSharedAdminAccessResolverUsage() {
 
 function testSharedDateDisplayUsage() {
   const dateDisplaySource = readFileSync(new URL("../src/lib/dateDisplay.js", import.meta.url), "utf8");
-  const nowSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+  const nowSource = readFileSync(new URL("../src/app/now/NowPageClient.js", import.meta.url), "utf8");
   const homePageSource = readFileSync(new URL("../src/app/page.js", import.meta.url), "utf8");
   const homeClientSource = readFileSync(new URL("../src/components/home/HomePageClient.js", import.meta.url), "utf8");
   const homeSource = `${homePageSource}\n${homeClientSource}`;
@@ -600,9 +600,9 @@ function testVibeTagsDualWriteWiring() {
   const cityEventsApiSource = readFileSync(new URL("../src/features/events/eventCityApiUtils.js", import.meta.url), "utf8");
   const globalEventsApiSource = readFileSync(new URL("../src/features/events/eventGlobalApiUtils.js", import.meta.url), "utf8");
   const usePlacesSource = readFileSync(new URL("../src/lib/usePlaces.js", import.meta.url), "utf8");
-  const cityPageSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const cityPageSource = readFileSync(new URL("../src/app/[city]/CityPageClient.js", import.meta.url), "utf8");
   const addEventInlineFormSource = readFileSync(new URL("../src/components/city/AddEventInlineForm.js", import.meta.url), "utf8");
-  const eventsPageSource = readFileSync(new URL("../src/app/events/page.js", import.meta.url), "utf8");
+  const eventsPageSource = readFileSync(new URL("../src/app/events/EventsPageClient.js", import.meta.url), "utf8");
   const cityEventEditModalSource = readFileSync(new URL("../src/components/events/CityEventEditModal.js", import.meta.url), "utf8");
   const globalEventFormSource = readFileSync(new URL("../src/components/events/GlobalEventForm.js", import.meta.url), "utf8");
   const globalFormUtilsSource = readFileSync(new URL("../src/features/events/eventGlobalFormUtils.js", import.meta.url), "utf8");
@@ -694,10 +694,11 @@ function testVibeTagChipsRenderingWiring() {
   const vibeDisplaySource = readFileSync(new URL("../src/lib/vibeDisplay.js", import.meta.url), "utf8");
   const vibeTagChipsSource = readFileSync(new URL("../src/components/ui/VibeTagChips.js", import.meta.url), "utf8");
   const searchPageSource = readFileSync(new URL("../src/app/search/page.js", import.meta.url), "utf8");
-  const nowPageSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
-  const cityPageSource = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+  const nowPageSource = readFileSync(new URL("../src/app/now/NowPageClient.js", import.meta.url), "utf8");
+  const cityPageSource = readFileSync(new URL("../src/app/[city]/CityPageClient.js", import.meta.url), "utf8");
   const cityEventsRailSource = readFileSync(new URL("../src/components/city/CityEventsRailSection.js", import.meta.url), "utf8");
-  const placeGuideCardSource = readFileSync(new URL("../src/components/city/PlaceGuideCard.js", import.meta.url), "utf8");
+  const placePanelSource = readFileSync(new URL("../src/components/city/SelectedPlacePanel.js", import.meta.url), "utf8");
+  const placeSummarySource = readFileSync(new URL("../src/components/city/SelectedPlaceSummary.js", import.meta.url), "utf8");
   const favoritesProfileSource = readFileSync(new URL("../src/components/favorites/FavoritesProfileHome.js", import.meta.url), "utf8");
 
   assert(
@@ -722,7 +723,9 @@ function testVibeTagChipsRenderingWiring() {
     ) &&
       (
         cityPageSource.includes("<VibeTagChips")
-        || placeGuideCardSource.includes("<VibeTagChips")
+        || (cityPageSource.includes("<SelectedPlacePanel") &&
+          placePanelSource.includes("<SelectedPlaceSummary") &&
+          placeSummarySource.includes("<VibeTagChips"))
       ),
     "vibe chips: city experience should render vibe chips for both events and places"
   );
@@ -764,7 +767,7 @@ function testServicePriceTierOptionsNormalization() {
 
 function testCitiesAreSortedAlphabetically() {
   const citiesPageSource = readFileSync(
-    new URL("../src/app/cities/page.js", import.meta.url),
+    new URL("../src/app/cities/CitiesPageClient.js", import.meta.url),
     "utf8",
   );
   const filteredCitiesBlock = citiesPageSource.match(
@@ -781,7 +784,7 @@ function testCitiesAreSortedAlphabetically() {
 
 function testNowRankingsAreServerDiscoverable() {
   const nowPageSource = readFileSync(
-    new URL("../src/app/now/page.js", import.meta.url),
+    new URL("../src/app/now/NowPageClient.js", import.meta.url),
     "utf8",
   );
   const loadingStart = nowPageSource.indexOf("if ((!ready || !today) && !isDataSection) {");
@@ -824,7 +827,7 @@ function testNowRankingsAreServerDiscoverable() {
 
 function testNowNewsFeedFitsMobileViewport() {
   const nowPageSource = readFileSync(
-    new URL("../src/app/now/page.js", import.meta.url),
+    new URL("../src/app/now/NowPageClient.js", import.meta.url),
     "utf8",
   );
 
@@ -846,7 +849,7 @@ function testNowNewsFeedFitsMobileViewport() {
 
 function testCityTopicsRemainCrawlableWithoutVisualNoise() {
   const cityPageSource = readFileSync(
-    new URL("../src/app/[city]/page.js", import.meta.url),
+    new URL("../src/app/[city]/CityPageClient.js", import.meta.url),
     "utf8",
   );
   const topicRoutesSource = readFileSync(

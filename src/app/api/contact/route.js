@@ -57,7 +57,6 @@ export async function POST(request) {
     const cityContext = trimString(body?.cityContext, 120);
     const pageContext = trimString(body?.pageContext, 180) || "/home";
     const isAnonymous = Boolean(body?.isAnonymous);
-    const userId = trimString(body?.userId, 80) || null;
 
     if (!VALID_CATEGORIES.has(category)) {
       return NextResponse.json(
@@ -81,6 +80,17 @@ export async function POST(request) {
     }
 
     const supabase = getSupabaseServerClient();
+    const authorization = String(request.headers.get("authorization") || "");
+    const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
+    let userId = null;
+    if (!isAnonymous && authorization) {
+      if (!accessToken) return NextResponse.json({ ok: false, error: "Invalid session." }, { status: 401 });
+      const { data: identity, error: identityError } = await supabase.auth.getUser(accessToken);
+      if (identityError || !identity?.user?.id) {
+        return NextResponse.json({ ok: false, error: "Invalid session." }, { status: 401 });
+      }
+      userId = identity.user.id;
+    }
     const payload = {
       status: "new",
       priority: mapPriority(category),

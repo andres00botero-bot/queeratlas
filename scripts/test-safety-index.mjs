@@ -17,7 +17,7 @@ assert(index.entries.every((entry) => Math.abs(Object.values(entry.scores).reduc
 assert(isEvidenceBackedSafetyYear(2026) && !isEvidenceBackedSafetyYear(2025), "only 2026 safety ranking is evidence locked");
 assert(index.eligibility.populatedSafetyReviewsExcluded === 4, "thin safety-review sample must remain disclosed and excluded");
 
-const nowSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+const nowSource = readFileSync(new URL("../src/app/now/NowPageClient.js", import.meta.url), "utf8");
 const reportSource = readFileSync(new URL("../src/app/reports/[slug]/page.js", import.meta.url), "utf8");
 const csvSource = readFileSync(new URL("../src/app/api/reports/safety-index-2026/route.js", import.meta.url), "utf8");
 const componentSource = readFileSync(new URL("../src/components/reports/SafetyIndexReport.js", import.meta.url), "utf8");

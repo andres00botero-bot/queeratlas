@@ -236,6 +236,18 @@ export async function fetchPlacesForAtlas({ client = supabase, filters } = {}) {
   };
 }
 
+// The atlas counter only needs publication and city fields. Do not fetch venue
+// descriptions, intelligence, coordinates and review statistics for a count.
+export async function fetchPlacesForAtlasMetrics({ client = supabase } = {}) {
+  let result = await fetchAllPages(() =>
+    selectPlaces(client, "places", "id, name, city, seo_indexable, seo_quality_status")
+  );
+  if (result?.error && isMissingColumnSelectionError(result.error)) {
+    result = await fetchAllPages(() => selectPlaces(client, "places", "id, name, city"));
+  }
+  return result;
+}
+
 export async function fetchTrendingPlacesForNews({ client = supabase, limit = 6 } = {}) {
   const boundedLimit = Math.min(Math.max(Number(limit) || 6, 1), 12);
 

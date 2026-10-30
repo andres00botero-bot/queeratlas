@@ -106,7 +106,7 @@ function testEventsOpenFlow() {
   const noIntent = resolveEventOpenIntent({ id: "", isGlobal: false, city: "berlin" });
   assert(noIntent.kind === "none", "events flow: missing id should not produce open intent");
 
-  const source = readSource("src/app/events/page.js");
+  const source = readSource("src/app/events/EventsPageClient.js");
   const openEventBlock = source.match(/const openEvent = \(event\) => \{[\s\S]*?\n  \};/);
   assert(Boolean(openEventBlock), "events flow: openEvent handler should exist");
   if (openEventBlock) {
@@ -122,7 +122,7 @@ function testEventsOpenFlow() {
 }
 
 function testNowAdminFlowWiring() {
-  const source = readSource("src/app/now/page.js");
+  const source = readSource("src/app/now/NowPageClient.js");
   assert(
     source.includes("openEditNewsComposer"),
     "now admin flow: news edit entry point should exist"

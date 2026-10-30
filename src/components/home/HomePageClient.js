@@ -1377,7 +1377,6 @@ export default function HomePageClient({ initialHomeData = null }) {
                   className="h-full"
                   embedded
                   isMember={isMember}
-                  userId={String(user?.id || "")}
                   defaultName={String(memberProfile?.displayName || memberName || "")}
                   onAnalyticsEvent={(action, meta) => trackKpiEvent(`home_${action}`, { meta })}
                 />

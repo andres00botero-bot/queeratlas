@@ -105,7 +105,7 @@ function checkCountryToCityRedirects() {
 
 function checkIslandGuideCatalogLabels() {
   const cityCore = readText("src/lib/cityCore.js");
-  const citiesPage = readText("src/app/cities/page.js");
+  const citiesPage = readText("src/app/cities/CitiesPageClient.js");
 
   assert(
     cityCore.includes('"title": "Queer Cyprus Island Guide"') &&
@@ -119,7 +119,7 @@ function checkIslandGuideCatalogLabels() {
   );
   assert(
     citiesPage.includes("{city.coverageLabel}") && citiesPage.includes("coverageLabel"),
-    "src/app/cities/page.js: city catalog must render destination coverage labels"
+    "src/app/cities/CitiesPageClient.js: city catalog must render destination coverage labels"
   );
 }
 

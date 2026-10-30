@@ -276,16 +276,45 @@ export function inferSearchIntent(query = "") {
   };
 }
 
-export function getIntentSignalBoost({ targetType = "", entity = {}, intent = null }) {
-  if (!intent?.hasIntent) return 0;
-  const type = String(targetType || "").toLowerCase();
-  const text = normalizeText(
+const INTENT_EVIDENCE_PATTERNS = [
+  ["nightlife", "bar", "club", "party"],
+  ["cafe", "cafes", "coffee"],
+  ["drag", "cabaret"],
+  ["community", "meetup", "collective", "workshop"],
+  ["service", "support", "clinic", "health", "legal", "helpline"],
+  ["guide", "report", "ranking", "index", "methodology"],
+  ["safe", "safer", "trusted", "inclusive", "friendly", "trans", "lesbian", "sapphic", "nonbinary", "non-binary", "bisexual", "flinta"],
+  ["quiet", "calm", "lounge", "chill", "low-key", "wine"],
+  ["party", "festival", "crowded"],
+];
+
+function getIntentEvidenceText(entity = {}) {
+  return normalizeText(
     `${entity?.name || ""} ${entity?.title || ""} ${entity?.type || ""} ${entity?.description || ""} ${
       entity?.vibe || ""
     } ${entity?.city || ""} ${entity?.country || ""} ${JSON.stringify(
       entity?.venue_intel || entity?.service_intel || entity?.event_intel || {}
     )}`
   );
+}
+
+export function getIntentEvidenceBits(entity = {}) {
+  const text = getIntentEvidenceText(entity);
+  return INTENT_EVIDENCE_PATTERNS.reduce(
+    (bits, patterns, index) => bits | (includesAny(text, patterns) ? 1 << index : 0), 0,
+  );
+}
+
+export function getIntentSignalBoost({ targetType = "", entity = {}, intent = null }) {
+  if (!intent?.hasIntent) return 0;
+  const type = String(targetType || "").toLowerCase();
+  const evidence = Number.isInteger(entity?.home_intent_evidence) ? entity.home_intent_evidence : null;
+  let evidenceText;
+  const hasEvidence = (index) => {
+    if (evidence !== null) return Boolean(evidence & (1 << index));
+    if (evidenceText === undefined) evidenceText = getIntentEvidenceText(entity);
+    return includesAny(evidenceText, INTENT_EVIDENCE_PATTERNS[index]);
+  };
 
   let score = 0;
 
@@ -312,32 +341,32 @@ export function getIntentSignalBoost({ targetType = "", entity = {}, intent = nu
 
   if (intent.flags.nightlife) {
     if (type === "place" || type === "event") score += 10;
-    if (includesAny(text, ["nightlife", "bar", "club", "party"])) score += 12;
+    if (hasEvidence(0)) score += 12;
   }
 
   if (intent.flags.cafes) {
     if (type === "place") score += 10;
-    if (includesAny(text, ["cafe", "cafes", "coffee"])) score += 14;
+    if (hasEvidence(1)) score += 14;
   }
 
   if (intent.flags.drag) {
     if (type === "event") score += 12;
-    if (includesAny(text, ["drag", "cabaret"])) score += 16;
+    if (hasEvidence(2)) score += 16;
   }
 
   if (intent.flags.community) {
     if (type === "event") score += 10;
-    if (includesAny(text, ["community", "meetup", "collective", "workshop"])) score += 12;
+    if (hasEvidence(3)) score += 12;
   }
 
   if (intent.flags.services) {
     if (type === "service") score += 38;
-    if (includesAny(text, ["service", "support", "clinic", "health", "legal", "helpline"])) score += 16;
+    if (hasEvidence(4)) score += 16;
   }
 
   if (intent.flags.guides) {
     if (type === "guide") score += 38;
-    if (includesAny(text, ["guide", "report", "ranking", "index", "methodology"])) score += 16;
+    if (hasEvidence(5)) score += 16;
   }
 
   if (
@@ -351,12 +380,12 @@ export function getIntentSignalBoost({ targetType = "", entity = {}, intent = nu
   ) {
     if (type === "place" || type === "service") score += 8;
     if (intent.flags.safe && type === "guide") score += 24;
-    if (includesAny(text, ["safe", "safer", "trusted", "inclusive", "friendly", "trans", "lesbian", "sapphic", "nonbinary", "non-binary", "bisexual", "flinta"])) score += 18;
+    if (hasEvidence(6)) score += 18;
   }
 
   if (intent.flags.quiet) {
-    if (includesAny(text, ["quiet", "calm", "lounge", "chill", "low-key", "wine"])) score += 12;
-    if (includesAny(text, ["party", "festival", "crowded"])) score -= 8;
+    if (hasEvidence(7)) score += 12;
+    if (hasEvidence(8)) score -= 8;
   }
 
   if (intent.flags.travel && type === "city") {

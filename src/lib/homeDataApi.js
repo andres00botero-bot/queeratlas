@@ -9,6 +9,7 @@ import { fetchEventRows } from "@/features/events/fetchEventRows";
 import { upcomingPublicEvents } from "@/features/events/eventScope";
 import { getAtlasInventory } from "@/lib/atlasMetrics";
 import { getPublishedNews } from "@/lib/publicNewsData";
+import { getIntentEvidenceBits } from "@/lib/searchIntent";
 
 const HOME_DATA_REVALIDATE_SECONDS = 60;
 const INITIAL_EVENT_LIMIT = 80;
@@ -177,7 +178,11 @@ export async function fetchHomeDataPayload() {
 
   return {
     events,
-    places,
+    places: places.map((place) => {
+      const result = { ...place, home_intent_evidence: getIntentEvidenceBits(place) };
+      delete result.venue_intel;
+      return result;
+    }),
     featuredVenue,
     worldNews,
     worldNewsFallback: !newsRes?.available,

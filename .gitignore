@@ -19,6 +19,7 @@
 # next.js
 /.next/
 /.next-analyze/
+/.next-codex-review/
 /out/
 
 # production

@@ -10,26 +10,22 @@ npm run verify:release
 ```
 
 ## Current Gate Pipeline
-1. `npm run lint`
-2. `npm run build`
-3. `npm run test:smoke`
-4. `npm run test:e2e-smoke`
-5. `npm run test:regressions`
-6. `npm run test:map-guard-smoke`
-7. `npm run test:internal-link-depth`
-8. `npm run test:entity-consistency`
-9. `npm run analyze:bundle`
-10. `node scripts/verify-bundle-budget.mjs`
-11. `node scripts/verify-seo-gate.mjs`
-12. `npm run seo:health-report`
-13. `npm run seo:health-weekly-report`
+The authoritative command is `verify:release` in `package.json`. It runs lint,
+search, data, security-serialization, regression and SEO checks, followed by an
+analyzed production build and the bundle and SEO gates. Run the isolated database
+security test separately after `npm run setup:member-privacy-tests`:
+
+```bash
+npm run test:contact-cron-security
+```
 
 ## Performance Budgets (client analyzer)
 Defined in `scripts/verify-bundle-budget.mjs`.
 
-- `assetCount <= 90`
-- `initialParsed <= 2_600_000`
-- `initialGzip <= 750_000`
+- `maxTotalAssets <= 150`
+- `maxEntrypointAssets <= 16`
+- `maxEntrypointParsed <= 850_000`
+- `maxEntrypointGzip <= 240_000`
 - `maxAssetParsed <= 1_100_000`
 - `maxAssetGzip <= 300_000`
 

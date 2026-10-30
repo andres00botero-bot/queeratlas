@@ -33,7 +33,7 @@ assert.match(
 );
 assert.match(entityInventory, /supportedCityKeys/);
 
-const cityPage = source("src/app/[city]/page.js");
+const cityPage = source("src/app/[city]/CityPageClient.js");
 assert.match(cityPage, /String\(place\.legacy_seed_id \|\| ""\) === String\(placeId\)/);
 assert.match(cityPage, /\.delete\(\)[\s\S]*\.select\("id"\)[\s\S]*\.maybeSingle\(\)/);
 assert.match(cityPage, /if \(!deleted\?\.id\)/);

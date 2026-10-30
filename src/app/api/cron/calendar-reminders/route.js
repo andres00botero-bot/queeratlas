@@ -3,8 +3,7 @@ import { NextResponse } from "next/server";
 function isAuthorized(request) {
   const secret = String(process.env.CRON_SECRET || "").trim();
   const authorization = String(request.headers.get("authorization") || "");
-  const isVercelCron = request.headers.get("x-vercel-cron") === "1";
-  return secret ? authorization === `Bearer ${secret}` || isVercelCron : isVercelCron;
+  return Boolean(secret) && authorization === `Bearer ${secret}`;
 }
 
 export async function GET(request) {

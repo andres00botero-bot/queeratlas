@@ -25,11 +25,7 @@ function getSupabaseServerClient() {
 function isAuthorized(request) {
   const secret = String(process.env.CRON_SECRET || "").trim();
   const authHeader = String(request.headers.get("authorization") || "");
-  const expected = secret ? `Bearer ${secret}` : "";
-  const isVercelCron = request.headers.get("x-vercel-cron") === "1";
-
-  if (secret) return authHeader === expected;
-  return isVercelCron;
+  return Boolean(secret) && authHeader === `Bearer ${secret}`;
 }
 
 function toTodayIso() {

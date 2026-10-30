@@ -143,7 +143,7 @@ const invalidLegalLevel = validateGlobalQueerCitySourceRecord({ ...{
 }}, "legal-rights");
 assert(!invalidLegalLevel.valid, "a venue source must not establish legal-rights scoring");
 
-const nowSource = readFileSync(new URL("../src/app/now/page.js", import.meta.url), "utf8");
+const nowSource = readFileSync(new URL("../src/app/now/NowPageClient.js", import.meta.url), "utf8");
 const sectionSource = readFileSync(new URL("../src/app/now/[section]/page.js", import.meta.url), "utf8");
 const componentSource = readFileSync(new URL("../src/components/reports/DataReportsNowSection.js", import.meta.url), "utf8");
 const sitemapSource = readFileSync(new URL("../src/lib/seo/sitemapEntries.js", import.meta.url), "utf8");
@@ -151,7 +151,7 @@ const reportsIndexSource = readFileSync(new URL("../src/lib/seo/reportsIndex.js"
 const reportPageSource = readFileSync(new URL("../src/app/reports/[slug]/page.js", import.meta.url), "utf8");
 const methodologyReportSource = readFileSync(new URL("../src/components/reports/GlobalQueerCityIndexMethodologyReport.js", import.meta.url), "utf8");
 
-assert(nowSource.includes('href: "/now/data"'), "Now navigation must expose Data & Reports");
+assert(nowSource.includes('href: toLocalePath("/now/data", locale)'), "Now navigation must expose the localized Data & Reports route");
 assert(nowSource.includes("<DataReportsNowSection"), "the Data & Reports section must render");
 assert(nowSource.includes("if ((!ready || !today) && !isDataSection)"), "static research content must render without waiting for client data");
 assert(sectionSource.includes('title: "Global Queer Safety & Culture Index 2026 | Queer Atlas"'), "the flagship section needs index-first SEO metadata");
