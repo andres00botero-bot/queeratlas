@@ -14,6 +14,9 @@ assert.match(sql, /qa_is_admin_user\(a\).*qa_admin_message_member_active\(b\)/s)
 assert.match(sql, /qa_is_admin_user\(b\).*qa_admin_message_member_active\(a\)/s);
 assert.match(sql, /qa_privacy_contacts\(a, b\)/);
 assert.match(sql, /qa_privacy_message_peers/);
+assert.match(sql, /member_email/);
+assert.match(sql, /member_city/);
+assert.match(sql, /public\.qa_is_admin\(\) and not c\.is_admin/);
 assert.match(sql, /qa_privacy_dm_read_gate/);
 assert.match(sql, /qa_privacy_messages_read_gate/);
 assert.match(sql, /grant execute on function public\.qa_privacy_send/);
@@ -25,6 +28,7 @@ assert.match(messages, /Start a new message/);
 assert.match(messages, /Queer Atlas Admin/);
 assert.match(messages, /Start a private conversation/);
 assert.match(messages, /qa_mark_thread_read/);
+assert.match(messages, /memberDetail/);
 assert.match(adminMembers, /\/messages\?user=/);
 assert.match(adminNavigation, /href: "\/messages", label: "Messages", hint: "Admin inbox"/);
 assert.match(quickNavigation, /href: "\/messages"[\s\S]*icon: MessageCircle[\s\S]*mobile: true/);

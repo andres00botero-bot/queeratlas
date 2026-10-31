@@ -71,14 +71,21 @@ as $$
   with viewer as (select auth.uid() as id),
   candidates as (
     select u.id as user_id,
-      coalesce(nullif(trim(p.alias), ''), 'Member') as alias,
+      coalesce(nullif(trim(p.alias), ''), nullif(trim(mp.display_name), ''), 'Member') as alias,
+      nullif(trim(mp.display_name), '') as member_name,
+      u.email as member_email,
+      nullif(trim(mp.home_city), '') as member_city,
       public.qa_is_admin_user(u.id) as is_admin
     from auth.users u
     left join public.qa_member_privacy p on p.user_id = u.id
+    left join public.member_profiles mp on mp.user_id = u.id
     where u.id <> (select id from viewer)
       and public.qa_admin_message_member_active(u.id)
   )
   select jsonb_build_object('user_id', c.user_id, 'alias', case when c.is_admin then 'Admin' else c.alias end, 'is_admin', c.is_admin)
+    || case when public.qa_is_admin() and not c.is_admin then jsonb_build_object(
+      'member_name', c.member_name, 'member_email', c.member_email, 'member_city', c.member_city
+    ) else '{}'::jsonb end
   from candidates c
   where (
       public.qa_is_admin()
@@ -99,12 +106,16 @@ as $$
   select jsonb_build_object(
     'id', t.id,
     'user_id', u.id,
-    'alias', case when public.qa_is_admin_user(u.id) then 'Admin' else coalesce(nullif(trim(p.alias), ''), 'Member') end,
+    'alias', case when public.qa_is_admin_user(u.id) then 'Admin' else coalesce(nullif(trim(p.alias), ''), nullif(trim(mp.display_name), ''), 'Member') end,
+    'member_name', case when public.qa_is_admin() and not public.qa_is_admin_user(u.id) then nullif(trim(mp.display_name), '') else null end,
+    'member_email', case when public.qa_is_admin() and not public.qa_is_admin_user(u.id) then u.email else null end,
+    'member_city', case when public.qa_is_admin() and not public.qa_is_admin_user(u.id) then nullif(trim(mp.home_city), '') else null end,
     'is_admin', public.qa_is_admin_user(u.id)
   )
   from public.qa_dm_threads t
   join auth.users u on u.id = case when t.user_a = auth.uid() then t.user_b else t.user_a end
   left join public.qa_member_privacy p on p.user_id = u.id
+  left join public.member_profiles mp on mp.user_id = u.id
   where auth.uid() in (t.user_a, t.user_b)
     and public.qa_privacy_message_pair_allowed(auth.uid(), u.id)
   order by t.updated_at desc
