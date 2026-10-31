@@ -7,6 +7,8 @@
     "test:admin-members": "node scripts/test-admin-members.mjs",
     "setup:member-privacy-tests": "node scripts/setup-member-privacy-tests.mjs",
     "test:member-privacy": "node scripts/test-member-privacy.mjs",
+    "test:admin-direct-messaging": "node scripts/test-admin-direct-messaging.mjs",
+    "test:member-directory-friends": "node scripts/test-member-directory-friends.mjs",
     "dev": "node --use-system-ca node_modules/next/dist/bin/next dev",
     "build": "next build --webpack",
     "start": "node --use-system-ca node_modules/next/dist/bin/next start",

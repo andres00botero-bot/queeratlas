@@ -5,6 +5,7 @@ export function normalizeSharedProfile(value = {}) {
   const text = (key, limit) => String(value?.[key] || "").trim().slice(0, limit);
   return {
     audience: PROFILE_AUDIENCES.includes(value.audience) ? value.audience : "hidden",
+    directory_listed: value.directory_listed !== false,
     alias: text("alias", 40),
     bio: text("bio", 160),
     discovery_city: text("discovery_city", 80),

@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "#data-quality", label: "Data quality", hint: "Cities & sources" },
   { href: "#traffic", label: "Traffic intelligence", hint: "Demand & acquisition" },
   { href: "#members", label: "Members & privacy", hint: "Access" },
+  { href: "/messages", label: "Messages", hint: "Admin inbox" },
   { href: "#community", label: "Community signal", hint: "Ideas & contact" },
 ];
 

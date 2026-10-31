@@ -229,15 +229,16 @@ export default function FloatingHomeButton() {
             icon: Users,
             accent: "violet",
           },
-          {
-            href: "/messages",
-            label: t("global.messages", "Messages"),
-            icon: MessageCircle,
-            accent: "sky",
-            mobile: true,
-          },
         ]
       : []),
+    {
+      href: "/messages",
+      label: t("global.messages", "Messages"),
+      icon: MessageCircle,
+      accent: "sky",
+      mobile: true,
+      isActive: (route) => route === "/messages" || route.startsWith("/messages/"),
+    },
   ];
 
   return (

@@ -151,6 +151,7 @@ function MemberPrivacySettingsContent({ previewState = null }) {
             </label>)}
           </fieldset>
           <label className="block text-sm">{copy.alias}<input className={field} value={draft.alias} maxLength={40} onChange={e => change("alias", e.target.value)} disabled={pendingDeletion} autoComplete="off" /><span className="mt-2 block text-xs leading-5 text-[#BCC7D2]">{copy.aliasHelp}</span></label>
+          <label className="flex min-h-11 items-start gap-3 text-sm leading-6"><input type="checkbox" checked={draft.directory_listed} onChange={e => change("directory_listed", e.target.checked)} disabled={pendingDeletion} className="mt-1 h-5 w-5 accent-[#80D4C4]" /><span><span className="font-semibold">Show my alias in People</span><span className="block text-xs text-[#BCC7D2]">Others can send a friend request. Your profile details stay private until you accept.</span></span></label>
           <label className="block text-sm">{copy.bio}<textarea className={field} value={draft.bio} maxLength={160} onChange={e => change("bio", e.target.value)} disabled={pendingDeletion} /></label>
           <details><summary className="min-h-11 cursor-pointer text-sm font-semibold text-[#B9AAF0]">{copy.moreFields}</summary><div className="mt-3 space-y-3">
           <label className="block text-sm">{copy.city}<input className={field} value={draft.discovery_city} maxLength={80} onChange={e => change("discovery_city", e.target.value)} disabled={pendingDeletion} /><span className="mt-2 block text-xs leading-5 text-[#BCC7D2]">{copy.cityHelp}</span></label>
@@ -244,15 +245,17 @@ export function PrivateMemberDirectory() {
   const [loading,setLoading] = useState(false);
   const [failed,setFailed] = useState(false);
   const [selected,setSelected] = useState("");
+  const [requesting,setRequesting] = useState("");
   const sequence=useRef(0);
   const visibleIds=useRef([]);
   const search=useCallback(async(text,offset)=>{
     const n=++sequence.current;setRows([]);setLoading(true);setFailed(false);
-    try{const data=await privacyCall('search',{query_text:text,city:'',page:offset});if(n===sequence.current){const next=Array.isArray(data)?data.filter(Boolean):[];visibleIds.current=next.map(r=>r.user_id);setRows(next);setPage(offset);}}
+    try{const data=await privacyCall('search',{query_text:text,city:'',page:offset});if(n===sequence.current){const next=Array.isArray(data)?data.filter(Boolean):[];visibleIds.current=next.map(r=>r.user_id).filter(Boolean);setRows(next);setPage(offset);}}
     catch{if(n===sequence.current){setRows([]);setFailed(true);}}
     finally{if(n===sequence.current)setLoading(false);}
   },[]);
   const eligible=Boolean(state?.eligible);
+  const requestFriend=async(target)=>{setRequesting(target);try{await privacyCall('contact',{target,action:'request'});privacyChanged();await refresh();await search(query,page);}finally{setRequesting('');}};
   useEffect(()=>{
     let active=true;
     // No cached or ranking fallback. Re-fetch every access-sensitive result.
@@ -271,11 +274,11 @@ export function PrivateMemberDirectory() {
     return()=>{active=false;clear();clearInterval(timer);window.removeEventListener('offline',clear);document.removeEventListener('visibilitychange',recheck);};
   },[eligible,search]);
   if(selected)return <PrivateMemberProfile target={selected} onBack={()=>{setSelected('');void refresh();}} />;
-  return <section className="space-y-4 text-[#F5F1E8]"><header className={panel}><p className="text-xs font-semibold uppercase tracking-wider text-[#B9AAF0]">{copy.eyebrow}</p><h2 className="mt-2 text-2xl font-semibold">{copy.directory}</h2><p className="mt-3 text-sm leading-6 text-[#BCC7D2]">{copy.directoryIntro}</p><Link href="/privacy-settings" className={`${secondary} mt-4`}><Shield size={16} />{copy.settings}</Link></header>
+  return <section className="space-y-4 text-[#F5F1E8]"><header className={panel}><p className="text-xs font-semibold uppercase tracking-wider text-[#B9AAF0]">{copy.eyebrow}</p><h2 className="mt-2 text-2xl font-semibold">{copy.directory}</h2><p className="mt-3 text-sm leading-6 text-[#BCC7D2]">{copy.directoryIntro}</p><p className="mt-3 rounded-xl border border-[#2B3949] bg-[#0B1220]/55 px-3 py-2 text-xs leading-5 text-[#BCC7D2]">Members who have not opened their profile for contact are shown without a name or information.</p><Link href="/privacy-settings" className={`${secondary} mt-4`}><Shield size={16} />{copy.settings}</Link></header>
     {!state?<PrivacyStatus copy={copy} error={error} retry={refresh} />:!state.eligible?<div className={panel}><p className="text-sm leading-6 text-[#BCC7D2]">{state.directory_open?copy.joinHelp:copy.staged}</p><Link href="/privacy-settings" className={`${primary} mt-3`}>{copy.settings}</Link></div>:<>
       <form onSubmit={e=>{e.preventDefault();void search(query,0);}} className="flex items-end gap-3"><label className="min-w-0 flex-1 text-sm">{copy.search}<input className={field} value={query} maxLength={80} onChange={e=>setQuery(e.target.value)} autoComplete="off" /></label><button className={primary} disabled={loading}>{copy.searchButton}</button></form>
-      <div className="divide-y divide-[#2B3949] rounded-[22px] bg-[#141E2C] px-4 sm:px-6">{rows.map(row=><button key={row.user_id} onClick={()=>setSelected(row.user_id)} className="flex min-h-20 w-full items-center gap-3 py-4 text-left focus-visible:outline-2 focus-visible:outline-[#80D4C4]"><Avatar path={row.avatar_path} revision={state} /><span className="min-w-0 flex-1"><span className="block truncate text-base font-semibold">{row.alias}</span><span className="mt-1 block line-clamp-2 text-sm text-[#BCC7D2]">{row.bio}</span>{row.discovery_city && <span className="mt-1 block text-xs text-[#BCC7D2]">{row.discovery_city}</span>}</span><ArrowUpRight size={16} className="shrink-0 text-[#B9AAF0]" aria-hidden="true" /></button>)}</div>
-      <p role="status" className="text-sm leading-6 text-[#BCC7D2]">{loading?copy.loading:failed?copy.unavailable:!rows.length?copy.empty:''}</p>{rows.length===20 && page<4 && <button className={secondary} onClick={()=>search(query,page+1)} disabled={loading}>{copy.more}</button>}
+      <div className="divide-y divide-[#2B3949] rounded-[22px] bg-[#141E2C] px-4 sm:px-6">{rows.map((row,index)=><div key={row.user_id||`private-${page}-${index}`} className="flex min-h-20 items-center gap-3 py-4"><Avatar label={row.relationship==='private'?'Private':row.alias} revision={state} /><span className="min-w-0 flex-1">{row.relationship==='private'?<><span className="block text-base font-semibold">Private member</span><span className="mt-1 block text-xs text-[#BCC7D2]">This member has not opened their profile for contact.</span></>:<><span className="block truncate text-base font-semibold">{row.alias}</span><span className="mt-1 block text-xs text-[#BCC7D2]">{row.relationship==='friend'?'Friends · profile and messages available':row.relationship==='pending_sent'?'Friend request sent':row.relationship==='pending_received'?'Friend request waiting in Your contacts':'Profile details unlock after both members are friends.'}</span></>}</span>{row.relationship==='friend'?<span className="flex shrink-0 items-center gap-2"><span className="rounded-full border border-[#80D4C4]/35 bg-[#80D4C4]/10 px-3 py-2 text-xs font-semibold text-[#80D4C4]">Friends</span><button onClick={()=>setSelected(row.user_id)} className={secondary}>Open profile</button></span>:row.relationship==='none'?<button disabled={requesting===row.user_id} onClick={()=>void requestFriend(row.user_id)} className={primary}>{requesting===row.user_id?'Sending…':'Add friend'}</button>:row.relationship==='pending_sent'?<button disabled className={secondary}>Request sent</button>:row.relationship==='pending_received'?<button disabled className={secondary}>Respond in contacts</button>:null}</div>)}</div>
+      <p role="status" className="text-sm leading-6 text-[#BCC7D2]">{loading?copy.loading:failed?copy.unavailable:!rows.length?copy.empty:''}</p>{rows.length===50 && page<4 && <button className={secondary} onClick={()=>search(query,page+1)} disabled={loading}>{copy.more}</button>}
       <ContactControls state={state} refresh={refresh} copy={copy} />
     </>}
   </section>;
