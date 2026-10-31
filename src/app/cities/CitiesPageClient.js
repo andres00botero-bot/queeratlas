@@ -412,6 +412,7 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
     return ["All", ...new Set(Object.values(registryConfig).map((city) => city.country || "Other"))].sort();
   }, [registryConfig]);
   const availableCountries = useMemo(() => countries.filter((country) => country !== "All"), [countries]);
+  const isAtlasLoading = !isCountryMapReady || isLoading || isCountryRightsLoading;
   const countriesForSelectedRegion = useMemo(
     () => selectedRegion === "All regions"
       ? availableCountries
@@ -1365,6 +1366,15 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
             </div>
             <div className="relative">
               <div ref={countryMapContainerRef} className="h-[340px] w-full sm:h-[400px]" />
+              {isAtlasLoading && !mapError && (
+                <div role="status" aria-live="polite" className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                  <div className="rounded-2xl border border-cyan-100/25 bg-[#09111b]/92 px-5 py-4 text-center shadow-[0_18px_48px_rgba(0,0,0,0.48)] backdrop-blur-md">
+                    <span className="mx-auto mb-2 block h-5 w-5 animate-spin rounded-full border-2 border-cyan-100/25 border-t-cyan-100" aria-hidden="true" />
+                    <p className="text-sm font-semibold text-cyan-50">Loading countries…</p>
+                    <p className="mt-1 text-xs text-cyan-100/65">Preparing the map and city collection</p>
+                  </div>
+                </div>
+              )}
               <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-14 bg-gradient-to-b from-[#070a10]/38 to-transparent" aria-hidden="true" />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-20 bg-gradient-to-t from-[#07090e]/52 to-transparent" aria-hidden="true" />
               <div className="absolute bottom-3 right-3 z-10 flex flex-col items-end gap-2 sm:bottom-4 sm:right-4 sm:flex-row">
