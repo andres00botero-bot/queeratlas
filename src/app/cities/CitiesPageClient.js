@@ -316,6 +316,7 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
   const [selectedRegion, setSelectedRegion] = useState("All regions");
   const [selectedCountry, setSelectedCountry] = useState("All");
   const [mapError, setMapError] = useState("");
+  const [isCountryMapReady, setIsCountryMapReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingCountry, setEditingCountry] = useState("");
   const [countryEditorDraft, setCountryEditorDraft] = useState(null);
@@ -617,6 +618,7 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
           });
 
           updateCountryMapStyles(selectedCountry);
+          setIsCountryMapReady(true);
         });
 
         map.on("mouseenter", "qa-countries-fill", () => {
@@ -650,12 +652,14 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
 
         map.on("error", () => {
           setMapError("Could not load world map right now.");
+          setIsCountryMapReady(false);
         });
       } catch (error) {
         console.warn("Map initialization skipped:", error);
         if (!isCancelled) {
           queueMicrotask(() => {
             setMapError("Could not start world map on this device right now.");
+            setIsCountryMapReady(false);
           });
         }
       }
@@ -1339,6 +1343,11 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
                   {t("cities.safetyAtlas", "Safety atlas")}
                 </p>
                 <p className="mt-0.5 hidden text-[11px] text-white/35 sm:block">{t("cities.selectCountry", "Select a country to explore its cities")}</p>
+                {(!isCountryMapReady || isLoading || isCountryRightsLoading) && (
+                  <p role="status" aria-live="polite" className="mt-1 text-[11px] text-cyan-100/78">
+                    {!isCountryMapReady ? "Preparing interactive country map…" : "Loading country and city details…"}
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 {Object.entries(MAP_RISK_PALETTE)
