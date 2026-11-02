@@ -213,18 +213,22 @@ export async function generateMetadata({ params }) {
   const canonicalPath = buildEventPath(city, event);
   const normalizedEvent = normalizeEventRange(event);
   const searchCopy = getEntitySearchCopy({ kind: "event", city, cityName, entity: normalizedEvent });
-  const title = searchCopy?.title || `${event.name} (${cityName}) | Queer Atlas Event Guide`;
-  const description =
-    searchCopy?.description ||
-    String(event?.description || "").trim() ||
-    `${event.name} in ${cityName}: date, location, vibe and safer queer nightlife context.`;
+  const isFrench = locale === "fr";
+  const title = searchCopy?.title || (isFrench
+    ? `${event.name} à ${cityName} | Guide des événements Queer Atlas`
+    : `${event.name} (${cityName}) | Queer Atlas Event Guide`);
+  const description = isFrench
+    ? `${event.name} à ${cityName} : date, lieu, ambiance et contexte queer pratique.`
+    : searchCopy?.description ||
+      String(event?.description || "").trim() ||
+      `${event.name} in ${cityName}: date, location, vibe and safer queer nightlife context.`;
   const quality = evaluateEventSeoQuality(event);
 
   return {
     title: searchCopy ? { absolute: title } : title,
     description,
     alternates: localizedAlternates(canonicalPath, locale),
-    robots: quality.indexable && coreConfig.seoIndexable !== false
+    robots: !isFrench && quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {

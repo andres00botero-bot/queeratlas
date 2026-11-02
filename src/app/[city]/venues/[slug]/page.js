@@ -220,18 +220,22 @@ export async function generateMetadata({ params }) {
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildVenuePath(city, place);
   const searchCopy = getEntitySearchCopy({ kind: "venue", city, cityName, entity: place });
-  const title = searchCopy?.title || `${place.name} (${cityName}) | Queer Atlas Venue Guide`;
-  const description =
-    searchCopy?.description ||
-    String(place?.description || "").trim() ||
-    `${place.name} in ${cityName}: opening hours, vibe, location, and trusted queer nightlife context.`;
+  const isFrench = locale === "fr";
+  const title = searchCopy?.title || (isFrench
+    ? `${place.name} à ${cityName} | Guide des lieux Queer Atlas`
+    : `${place.name} (${cityName}) | Queer Atlas Venue Guide`);
+  const description = isFrench
+    ? `${place.name} à ${cityName} : horaires, ambiance, localisation et contexte queer pratique.`
+    : searchCopy?.description ||
+      String(place?.description || "").trim() ||
+      `${place.name} in ${cityName}: opening hours, vibe, location, and trusted queer nightlife context.`;
   const quality = evaluateVenueSeoQuality(place);
 
   return {
     title: searchCopy ? { absolute: title } : title,
     description,
     alternates: localizedAlternates(canonicalPath, locale),
-    robots: quality.indexable && coreConfig.seoIndexable !== false
+    robots: !isFrench && quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {

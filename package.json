@@ -16,6 +16,8 @@
     "test:smoke": "node scripts/test-smoke.mjs",
     "test:i18n-foundation": "node scripts/test-i18n-foundation.mjs",
     "test:city-hero-i18n": "node scripts/test-city-hero-i18n.mjs",
+    "audit:french-editorial-coverage": "node scripts/audit-french-editorial-coverage.mjs",
+    "audit:locale-coverage": "node scripts/audit-locale-coverage.mjs",
     "test:collection-i18n": "node scripts/test-collection-i18n.mjs",
     "test:e2e-smoke": "node scripts/test-e2e-smoke.mjs",
     "test:event-entity-e2e": "node scripts/test-event-entity-e2e.mjs",

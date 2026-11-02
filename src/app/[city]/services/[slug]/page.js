@@ -65,15 +65,21 @@ export async function generateMetadata({ params }) {
 
   const cityName = cityNameFromConfig(coreConfig, city);
   const canonicalPath = buildServicePath(city, service);
-  const title = `${service.name} (${cityName}) | Queer Atlas Service Guide`;
-  const description = String(service?.description || "").trim();
+  const isFrench = locale === "fr";
+  const title = isFrench
+    ? `${service.name} à ${cityName} | Guide des services Queer Atlas`
+    : `${service.name} (${cityName}) | Queer Atlas Service Guide`;
+  const description = isFrench
+    ? `${service.name} à ${cityName} : informations pratiques et contexte local.`
+    : String(service?.description || "").trim() ||
+      `${service.name} in ${cityName}: practical information and local context.`;
   const quality = evaluateServiceSeoQuality(service);
 
   return {
     title,
     description,
     alternates: localizedAlternates(canonicalPath, locale),
-    robots: quality.indexable && coreConfig.seoIndexable !== false
+    robots: !isFrench && quality.indexable && coreConfig.seoIndexable !== false
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {

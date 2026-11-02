@@ -5,6 +5,8 @@ import { fetchPlacesForAtlas } from "@/lib/placesDataApi";
 import { fetchEventsData } from "@/features/events/eventDataApi";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { cityGuideConfig } from "@/lib/cityGuides";
+import { hasLocalizedCityGuide, getLocalizedCityGuide } from "@/lib/cityGuideTranslations";
+import { getLocalizedCityClusterTopic } from "@/lib/seo/cityClusters";
 import { normalizeCityKey } from "@/features/city/checkinFeature";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { buildEventPath, buildServicePath, buildVenuePath } from "@/lib/seo/entitySlug";
@@ -295,22 +297,25 @@ function scoreCandidate(candidate, rule, todayIso) {
   };
 }
 
-function formatTypeLabel(type = "", kind = "place") {
-  if (kind === "event") return "Event";
-  if (kind === "service") return "Service";
+function formatTypeLabel(type = "", kind = "place", locale = "en") {
+  const isFrench = locale === "fr";
+  if (kind === "event") return isFrench ? "Événement" : "Event";
+  if (kind === "service") return isFrench ? "Service" : "Service";
+  if (isFrench) return String(type || "").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Lieu";
   return cleanText(type).replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Place";
 }
 
-function buildReason(candidate) {
-  const pieces = [formatTypeLabel(candidate.type, candidate.kind)];
+function buildReason(candidate, locale = "en") {
+  const isFrench = locale === "fr";
+  const pieces = [formatTypeLabel(candidate.type, candidate.kind, locale)];
   const location = cleanText(candidate.entity?.location);
   if (location) pieces.push(location);
   if (candidate.kind !== "place" && candidate.reviews.rating > 0) {
-    pieces.push(`${candidate.reviews.rating.toFixed(1)} community rating${candidate.reviews.count ? ` · ${candidate.reviews.count} reviews` : ""}`);
+    pieces.push(isFrench ? `${candidate.reviews.rating.toFixed(1)} note de la communauté${candidate.reviews.count ? ` · ${candidate.reviews.count} avis` : ""}` : `${candidate.reviews.rating.toFixed(1)} community rating${candidate.reviews.count ? ` · ${candidate.reviews.count} reviews` : ""}`);
   } else if (candidate.sources > 0) {
-    pieces.push(`${candidate.sources} saved source${candidate.sources === 1 ? "" : "s"}`);
+    pieces.push(isFrench ? `${candidate.sources} source${candidate.sources === 1 ? "" : "s"} enregistrée${candidate.sources === 1 ? "" : "s"}` : `${candidate.sources} saved source${candidate.sources === 1 ? "" : "s"}`);
   } else if (candidate.hasOfficialLink) {
-    pieces.push("official link available");
+    pieces.push(isFrench ? "lien officiel disponible" : "official link available");
   }
   return pieces.join(" · ");
 }
@@ -327,7 +332,7 @@ function isEntityIndexable(entity, kind) {
   return evaluateVenueSeoQuality(entity).indexable;
 }
 
-export function selectCityDiscoveryResults({ city, topic, places = [], events = [], services = [], todayIso }) {
+export function selectCityDiscoveryResults({ city, topic, places = [], events = [], services = [], todayIso, locale = "en" }) {
   const rule = TOPIC_RULES[topic];
   if (!rule) return { rule: null, results: [], exactCount: 0, fallbackUsed: false };
 
@@ -371,8 +376,8 @@ export function selectCityDiscoveryResults({ city, topic, places = [], events = 
       officialUrl: cleanText(candidate.entity?.link || candidate.entity?.booking_link || candidate.entity?.bookingLink),
       description: cleanText(candidate.entity?.description),
       location: cleanText(candidate.entity?.location),
-      reason: buildReason(candidate),
-      matchLabel: candidate.exact ? rule.exactLabel : rule.relatedLabel,
+      reason: buildReason(candidate, locale),
+      matchLabel: locale === "fr" ? (candidate.exact ? "Résultat correspondant" : "Alternative associée") : (candidate.exact ? rule.exactLabel : rule.relatedLabel),
       exact: candidate.exact,
       rating: candidate.reviews.rating,
       reviewCount: candidate.reviews.count,
@@ -383,8 +388,10 @@ export function selectCityDiscoveryResults({ city, topic, places = [], events = 
   };
 }
 
-function getGuideText(city, title) {
-  const guide = Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : [];
+function getGuideText(city, title, locale = "en") {
+  const guide = locale === "fr" && hasLocalizedCityGuide(city, locale)
+    ? getLocalizedCityGuide(city, locale, [])
+    : Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : [];
   return cleanText(guide.find((entry) => cleanText(entry?.title).toLowerCase() === title.toLowerCase())?.text);
 }
 
@@ -395,13 +402,20 @@ function firstSentence(value = "") {
   return cleanText(match?.[1] || text);
 }
 
-function buildNarrative({ city, cityName, topic, results, exactCount }) {
-  const nightlife = firstSentence(getGuideText(city, "Nightlife"));
-  const districts = firstSentence(getGuideText(city, "Districts"));
-  const safety = firstSentence(getGuideText(city, "Safety"));
-  const about = firstSentence(getGuideText(city, "About"));
+function buildNarrative({ city, cityName, topic, results, exactCount, locale = "en" }) {
+  const isFrench = locale === "fr";
+  const nightlife = firstSentence(getGuideText(city, isFrench ? "Vie nocturne" : "Nightlife", locale));
+  const districts = firstSentence(getGuideText(city, isFrench ? "Quartiers" : "Districts", locale));
+  const safety = firstSentence(getGuideText(city, isFrench ? "Sécurité" : "Safety", locale));
+  const about = firstSentence(getGuideText(city, isFrench ? "Panorama" : "About", locale));
   const names = results.slice(0, 3).map((entry) => entry.name);
   const shortlist = names.length > 0 ? names.join(names.length > 1 ? ", " : "") : "the current local listings";
+
+  if (isFrench) {
+    const topicCopy = getLocalizedCityClusterTopic(topic, "fr");
+    const shortlistText = names.length > 0 ? ` La sélection actuelle commence par ${shortlist}.` : " Les données locales ne proposent pas encore de résultat exact vérifié.";
+    return { intro: `${topicCopy?.summary || `Une sélection locale pour ${cityName}.`}${shortlistText}`, districtRead: districts, safetyRead: safety, exactCount };
+  }
 
   const copyByTopic = {
     "queer-techno-clubs": `${nightlife || about} The current electronic shortlist starts with ${shortlist}. Exact techno signals are prioritised over general club popularity, so broader nightlife options are labelled rather than passed off as dedicated techno rooms.`,
@@ -430,7 +444,7 @@ function buildNarrative({ city, cityName, topic, results, exactCount }) {
   };
 }
 
-export const loadCityDiscoveryData = cache(async (city = "", topic = "") => {
+export const loadCityDiscoveryData = cache(async (city = "", topic = "", locale = "en") => {
   const cityKey = normalizeCityKey(city);
   const todayIso = new Date().toISOString().slice(0, 10);
   const [placesResponse, eventsResponse, servicesResponse] = await Promise.all([
@@ -443,7 +457,7 @@ export const loadCityDiscoveryData = cache(async (city = "", topic = "") => {
   const places = (Array.isArray(placesResponse?.data) ? placesResponse.data : []).filter(belongsToCity);
   const events = (Array.isArray(eventsResponse?.data) ? eventsResponse.data : []).filter(belongsToCity);
   const services = (Array.isArray(servicesResponse?.data) ? servicesResponse.data : []).filter(belongsToCity);
-  const selection = selectCityDiscoveryResults({ city: cityKey, topic, places, events, services, todayIso });
+  const selection = selectCityDiscoveryResults({ city: cityKey, topic, places, events, services, todayIso, locale });
 
   return {
     ...selection,
@@ -459,6 +473,7 @@ export const loadCityDiscoveryData = cache(async (city = "", topic = "") => {
       topic,
       results: selection.results,
       exactCount: selection.exactCount,
+      locale,
     }),
   };
 });

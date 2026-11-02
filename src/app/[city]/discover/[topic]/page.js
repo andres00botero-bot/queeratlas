@@ -11,13 +11,14 @@ import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
-import { getCityClusterTopic, listCityClusterTopics } from "@/lib/seo/cityClusters";
+import { getLocalizedCityClusterTopic, listLocalizedCityClusterTopics } from "@/lib/seo/cityClusters";
 import {
   loadCityDiscoveryData,
 } from "@/lib/seo/cityDiscoveryData";
 import { evaluateCityDiscoveryIndexability } from "@/lib/seo/cityDiscoveryQuality";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { hasLocalizedCityGuide } from "@/lib/cityGuideTranslations";
 
 export const revalidate = 600;
 
@@ -45,7 +46,7 @@ function buildClusterJsonLd({ city, cityName, topicConfig, editorial, canonicalU
     "@context": "https://schema.org",
     "@type": "WebPage",
     "@id": `${canonicalUrl}#cluster`,
-    name: `${topicConfig.title} ${cityName}`,
+    name: `${topicConfig.title} ${locale === "fr" ? "à" : "in"} ${cityName}`,
     url: canonicalUrl,
     about: topicConfig.keyphrases.map((phrase) => `${phrase} ${cityName}`),
     isPartOf: {
@@ -66,6 +67,7 @@ function buildClusterJsonLd({ city, cityName, topicConfig, editorial, canonicalU
 
 function buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig, locale }) {
   const canonicalPath = buildCanonicalPath(city, topic);
+  const isFrench = locale === "fr";
 
   return {
     "@context": "https://schema.org",
@@ -74,13 +76,13 @@ function buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig, locale }) {
       {
         "@type": "ListItem",
         position: 1,
-        name: "Home",
+        name: isFrench ? "Accueil" : "Home",
         item: toAbsoluteUrl(localePath("/", locale)),
       },
       {
         "@type": "ListItem",
         position: 2,
-        name: "Cities",
+        name: isFrench ? "Villes" : "Cities",
         item: toAbsoluteUrl(localePath("/cities", locale)),
       },
       {
@@ -92,7 +94,7 @@ function buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig, locale }) {
       {
         "@type": "ListItem",
         position: 4,
-        name: `${topicConfig.title} in ${cityName}`,
+        name: `${topicConfig.title} ${isFrench ? "à" : "in"} ${cityName}`,
         item: toAbsoluteUrl(localePath(canonicalPath, locale)),
       },
     ],
@@ -103,14 +105,14 @@ function buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics = [], 
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `Related ${cityName} queer topic guides`,
+    name: locale === "fr" ? `Guides queer associés à ${cityName}` : `Related ${cityName} queer topic guides`,
     itemListOrder: "https://schema.org/ItemListOrderAscending",
     numberOfItems: relatedTopics.length,
     itemListElement: relatedTopics.map((entry, index) => ({
       "@type": "ListItem",
       position: index + 1,
       url: toAbsoluteUrl(localePath(buildCanonicalPath(city, entry.key), locale)),
-      name: `${entry.title} in ${cityName}`,
+      name: `${entry.title} ${locale === "fr" ? "à" : "in"} ${cityName}`,
     })),
   };
 }
@@ -119,7 +121,7 @@ function buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results = 
   return {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `${topicConfig.title} in ${cityName}`,
+    name: `${topicConfig.title} ${locale === "fr" ? "à" : "in"} ${cityName}`,
     itemListOrder: "https://schema.org/ItemListOrderDescending",
     numberOfItems: results.length,
     itemListElement: results.map((entry, index) => ({
@@ -140,8 +142,33 @@ function buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results = 
   };
 }
 
-function buildIntentBlueprint({ cityName, topicConfig }) {
+function buildIntentBlueprint({ cityName, topicConfig, locale }) {
   const intent = String(topicConfig?.intent || "").trim().toLowerCase();
+  const isFrench = locale === "fr";
+  if (isFrench) {
+    const defaults = {
+      headerLine: `Cette sélection aide à décider plus facilement à ${cityName}, avec des repères locaux concrets plutôt qu’une simple succession d’adresses.`,
+      solvingPoints: [
+        `Un itinéraire plus clair selon l’intention de recherche à ${cityName}.`,
+        "Des alternatives utiles lorsqu’un premier lieu ne convient pas.",
+        "Un passage plus simple entre la découverte et les déplacements réels.",
+      ],
+      frameworkTitle: "Repères pour choisir",
+      frameworkSteps: [
+        "Choisissez la première étape selon votre confort social, pas seulement selon la réputation.",
+        "Gardez une alternative proche avant de partir.",
+        "Vérifiez les horaires des lieux et des événements pour éviter les temps morts.",
+      ],
+    };
+    const byIntent = {
+      nightlife: { frameworkTitle: "Construire sa soirée", frameworkSteps: ["Commencez par une adresse sociale et accessible avant les lieux de pointe.", "Choisissez le moment de votre étape principale selon l’affluence attendue.", "Gardez une option tardive pour ne pas casser le rythme de la soirée."] },
+      safety: { frameworkTitle: "Se déplacer avec davantage de contexte", frameworkSteps: ["Commencez dans un secteur bien relié et connu du programme du soir.", "Préférez les lieux dont l’accueil et les possibilités de départ sont clairs.", "Gardez une alternative dans le même quartier pour limiter les déplacements inutiles."] },
+      events: { frameworkTitle: "Organiser une soirée d’événement", frameworkSteps: ["Ancrez la soirée autour d’un événement confirmé.", "Ajoutez une étape avant et après à distance simple.", "Gardez une autre option si l’événement est complet ou si la file est trop longue."] },
+      community: { frameworkTitle: "Trouver une ambiance qui vous ressemble", frameworkSteps: ["Privilégiez les espaces dont l’identité et l’accueil correspondent à votre groupe.", "Passez d’un premier verre tranquille à une salle plus animée si l’envie est là.", "Gardez un lieu plus calme pour faire une pause ou changer de rythme."] },
+      daylife: { frameworkTitle: "Du jour à la soirée", frameworkSteps: ["Commencez dans un lieu de journée proche de votre zone du soir.", "Servez-vous de cette base pour choisir deux options selon l’ambiance recherchée.", "Confirmez transports et horaires avant le passage à la nuit."] },
+    };
+    return { ...defaults, ...(byIntent[intent] || {}) };
+  }
   const defaults = {
     headerLine: `This page is tuned for high-intent local search in ${cityName}, with practical decision points that reduce guesswork and improve safer queer city navigation.`,
     solvingPoints: [
@@ -224,14 +251,21 @@ function buildIntentBlueprint({ cityName, topicConfig }) {
   };
 }
 
-function buildFaqEntries({ cityName, topicConfig, discovery, narrative }) {
+function buildFaqEntries({ cityName, topicConfig, discovery, narrative, locale }) {
+  const isFrench = locale === "fr";
   const questionBase = topicConfig?.title || "Queer city guide";
   const names = (discovery?.results || []).slice(0, 3).map((entry) => entry.name);
-  const shortlist = names.length > 0 ? names.join(", ") : "No exact local listing is published yet";
+  const shortlist = names.length > 0 ? names.join(", ") : (isFrench ? "Aucune adresse locale exacte n’est encore publiée" : "No exact local listing is published yet");
   const exactCount = Number(discovery?.exactCount || 0);
   const districtAnswer = String(narrative?.districtRead || "").trim();
   const safetyAnswer = String(narrative?.safetyRead || "").trim();
 
+  if (isFrench) return [
+    { question: `Quels lieux de « ${questionBase.toLowerCase()} » sont actuellement sélectionnés à ${cityName} ?`, answer: `${shortlist}. La page compte actuellement ${exactCount} résultat${exactCount === 1 ? "" : "s"} correspondant exactement au sujet ; les alternatives sont clairement signalées.` },
+    { question: `Par où commencer cet itinéraire à ${cityName} ?`, answer: districtAnswer || "Commencez par le résultat le plus pertinent, puis gardez l’adresse suivante dans le même secteur comme alternative pratique." },
+    { question: `Que vérifier avant d’utiliser cette sélection à ${cityName} ?`, answer: safetyAnswer || "Confirmez les horaires, les informations officielles, les conditions d’entrée, l’accessibilité et votre trajet de retour avant de partir." },
+    { question: `Comment les résultats de ${cityName} sont-ils classés ?`, answer: "La correspondance exacte avec le sujet passe d’abord. Queer Atlas prend ensuite en compte le niveau de détail, les liens officiels, les sources enregistrées, les retours de la communauté, la date des événements et les informations pratiques de localisation. Une place élevée est une sélection éditoriale, pas une garantie de sécurité ni d’affinité personnelle." },
+  ];
   return [
     {
       question: `Which ${questionBase.toLowerCase()} are currently shortlisted in ${cityName}?`,
@@ -267,8 +301,19 @@ function buildFaqJsonLd({ faqEntries = [] }) {
   };
 }
 
-function buildClusterMetaCopy({ topicConfig, cityName }) {
+function buildClusterMetaCopy({ topicConfig, cityName, locale }) {
   const intent = String(topicConfig?.intent || "").trim().toLowerCase();
+  const isFrench = locale === "fr";
+  if (isFrench) {
+    const intentLines = {
+      nightlife: `Préparez votre soirée à ${cityName}, du premier verre aux lieux les plus animés.`,
+      safety: `Comparez les options de quartier, les alternatives et les repères utiles avant de vous déplacer.`,
+      community: "Trouvez des repères communautaires plus adaptés aux sorties lesbiennes et sapphiques.",
+      daylife: "Choisissez des lieux calmes pour se retrouver, préparer la soirée et découvrir la ville.",
+      events: "Repérez les événements à venir et les alternatives utiles pour organiser votre sortie.",
+    };
+    return { title: `${topicConfig.title} à ${cityName} (2026) | Queer Atlas`, description: `${topicConfig.summary} ${intentLines[intent] || `Préparez votre parcours à ${cityName} avec davantage de contexte local.`}` };
+  }
   const intentLines = {
     nightlife: `Map stronger nightlife sequencing in ${cityName}, from low-friction starts to peak energy stops.`,
     safety: `Compare safer neighborhood options, fallback route choices, and confidence signals before you move.`,
@@ -297,7 +342,7 @@ export async function generateMetadata({ params }) {
   const city = normalizeCityKey(resolved?.city || "");
   const topic = String(resolved?.topic || "").trim().toLowerCase();
   const config = await getCityRegistryEntry(city);
-  const topicConfig = getCityClusterTopic(topic);
+  const topicConfig = getLocalizedCityClusterTopic(topic, locale);
 
   if (!config || !topicConfig) {
     return {
@@ -310,12 +355,13 @@ export async function generateMetadata({ params }) {
   const canonical = buildCanonicalPath(city, topic);
   const canonicalUrl = toAbsoluteUrl(localePath(canonical, locale));
   const ownership = getCityKeywordOwnership(cityName);
-  const { title, description } = buildClusterMetaCopy({ topicConfig, cityName });
-  const relatedTopicCount = listCityClusterTopics().filter((entry) => entry.key !== topic).length;
-  const discovery = await loadCityDiscoveryData(city, topic);
+  const { title, description } = buildClusterMetaCopy({ topicConfig, cityName, locale });
+  const relatedTopicCount = listLocalizedCityClusterTopics(locale).filter((entry) => entry.key !== topic).length;
+  const discovery = await loadCityDiscoveryData(city, topic, locale);
   const copyReady = shouldIndexCityTopicPage({ topicConfig, cityName, relatedTopicCount });
   const contentQuality = evaluateCityDiscoveryIndexability({ topic, discovery });
-  const shouldIndex = config.seoIndexable !== false && copyReady && contentQuality.indexable;
+  const frenchEditorialReady = locale !== "fr" || hasLocalizedCityGuide(city, locale);
+  const shouldIndex = config.seoIndexable !== false && copyReady && contentQuality.indexable && frenchEditorialReady;
 
   return {
     title,
@@ -353,22 +399,24 @@ export default async function CityClusterTopicPage({ params }) {
   const city = normalizeCityKey(resolved?.city || "");
   const topic = String(resolved?.topic || "").trim().toLowerCase();
   const config = await getCityRegistryEntry(city);
-  const topicConfig = getCityClusterTopic(topic);
+  const topicConfig = getLocalizedCityClusterTopic(topic, locale);
 
   if (!config || !topicConfig) {
     notFound();
   }
 
   const cityName = cityNameFromConfig(config, city);
-  const relatedTopics = listCityClusterTopics().filter((entry) => entry.key !== topic).slice(0, 4);
-  const researchScope = `This route applies the ${topicConfig.intent} discovery framework to ${cityName} using Queer Atlas city configuration, topic taxonomy, and linked place and event routes. It is a planning framework, not a claim that every linked operation was independently checked on the same day.`;
+  const relatedTopics = listLocalizedCityClusterTopics(locale).filter((entry) => entry.key !== topic).slice(0, 4);
+  const researchScope = locale === "fr"
+    ? `Cette sélection applique le cadre de découverte « ${topicConfig.intent} » à ${cityName}, à partir de la configuration de la ville, de la taxonomie thématique et des pages de lieux et d’événements liées. Elle aide à préparer un parcours ; elle ne prétend pas que chaque activité liée a été vérifiée le même jour.`
+    : `This route applies the ${topicConfig.intent} discovery framework to ${cityName} using Queer Atlas city configuration, topic taxonomy, and linked place and event routes. It is a planning framework, not a claim that every linked operation was independently checked on the same day.`;
   const [editorial, discovery] = await Promise.all([
     getPublishedEditorialRecord(`city-discovery:${city}:${topic}`, {
       ...GUIDE_EDITORIAL_META.cityDiscovery,
       researchScope,
       author: EDITORIAL_TEAM,
     }),
-    loadCityDiscoveryData(city, topic),
+    loadCityDiscoveryData(city, topic, locale),
   ]);
   const narrative = discovery.buildNarrative(cityName);
   const canonicalUrl = toAbsoluteUrl(localePath(buildCanonicalPath(city, topic), locale));
@@ -376,17 +424,18 @@ export default async function CityClusterTopicPage({ params }) {
   const breadcrumbJsonLd = buildBreadcrumbJsonLd({ city, cityName, topic, topicConfig, locale });
   const relatedTopicsItemListJsonLd = buildRelatedTopicsItemListJsonLd({ city, cityName, relatedTopics, locale });
   const discoveryResultsJsonLd = buildDiscoveryResultsItemListJsonLd({ cityName, topicConfig, results: discovery.results, locale });
-  const faqEntries = buildFaqEntries({ cityName, topicConfig, discovery, narrative });
+  const faqEntries = buildFaqEntries({ cityName, topicConfig, discovery, narrative, locale });
   const faqJsonLd = buildFaqJsonLd({ faqEntries });
-  const intentBlueprint = buildIntentBlueprint({ cityName, topicConfig });
+  const intentBlueprint = buildIntentBlueprint({ cityName, topicConfig, locale });
+  const isFrench = locale === "fr";
   const localProofPoints = [
-    `${discovery.exactCount} exact ${topicConfig.title.toLowerCase()} match${discovery.exactCount === 1 ? "" : "es"} currently published for ${cityName}.`,
-    `${discovery.counts.places} places, ${discovery.counts.events} upcoming events, and ${discovery.counts.services} services checked in the local Atlas dataset.`,
+    isFrench ? `${discovery.exactCount} résultat${discovery.exactCount === 1 ? "" : "s"} correspondant exactement à « ${topicConfig.title.toLowerCase()} » est actuellement publié à ${cityName}.` : `${discovery.exactCount} exact ${topicConfig.title.toLowerCase()} match${discovery.exactCount === 1 ? "" : "es"} currently published for ${cityName}.`,
+    isFrench ? `${discovery.counts.places} lieux, ${discovery.counts.events} événements à venir et ${discovery.counts.services} services vérifiés dans les données locales d’Atlas.` : `${discovery.counts.places} places, ${discovery.counts.events} upcoming events, and ${discovery.counts.services} services checked in the local Atlas dataset.`,
     discovery.results.length === 0
-      ? "No specialist result is invented when the current local dataset has no verified match."
+      ? (isFrench ? "Aucun résultat spécialisé n’est inventé lorsque les données locales ne fournissent pas de correspondance vérifiée." : "No specialist result is invented when the current local dataset has no verified match.")
       : discovery.fallbackUsed
-        ? "Related alternatives are visible but clearly separated from exact category matches."
-        : "Every displayed result matches the primary category used by this edit.",
+        ? (isFrench ? "Les alternatives sont visibles, mais clairement séparées des résultats correspondant exactement au sujet." : "Related alternatives are visible but clearly separated from exact category matches.")
+        : (isFrench ? "Chaque résultat affiché correspond à la catégorie principale de cette sélection." : "Every displayed result matches the primary category used by this edit."),
   ];
   const graphJsonLd = [clusterJsonLd, breadcrumbJsonLd, relatedTopicsItemListJsonLd, discoveryResultsJsonLd, faqJsonLd];
 
@@ -401,8 +450,8 @@ export default async function CityClusterTopicPage({ params }) {
           <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-cyan-300/10 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-20 h-56 w-56 rounded-full bg-fuchsia-300/10 blur-3xl" />
           <div className="relative">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-100/78">Discover path</p>
-            <h1 className="mt-2 max-w-3xl text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{topicConfig.title} in {cityName}</h1>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-cyan-100/78">{isFrench ? "Parcours de découverte" : "Discover path"}</p>
+            <h1 className="mt-2 max-w-3xl text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">{topicConfig.title} {isFrench ? "à" : "in"} {cityName}</h1>
             <p className="mt-3 text-sm leading-7 text-white/82">
               {narrative.intro}
             </p>
@@ -411,26 +460,26 @@ export default async function CityClusterTopicPage({ params }) {
                 href={`/${city}`}
                 className="rounded-2xl border border-white/16 bg-white/[0.07] px-4 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:-translate-y-[1px] hover:border-white/32 hover:bg-white/[0.10]"
               >
-                Open {cityName} guide
+                {isFrench ? `Ouvrir le guide de ${cityName}` : `Open ${cityName} guide`}
               </Link>
               <CityPanelButton
                 city={city}
                 section="events"
                 className="rounded-2xl border border-fuchsia-100/34 bg-gradient-to-r from-fuchsia-400/22 via-rose-300/16 to-cyan-300/12 px-4 py-3 text-sm font-bold text-fuchsia-50 shadow-[0_0_28px_rgba(244,114,182,0.14)] transition hover:-translate-y-[1px] hover:border-fuchsia-100/54 hover:shadow-[0_0_36px_rgba(244,114,182,0.22)]"
               >
-                Open city events
+                {isFrench ? "Voir les événements de la ville" : "Open city events"}
               </CityPanelButton>
               <Link
                 href="/cities"
                 className="rounded-2xl border border-cyan-100/42 bg-gradient-to-r from-cyan-300/24 via-sky-300/18 to-fuchsia-300/18 px-4 py-3 text-sm font-bold text-cyan-50 shadow-[0_0_28px_rgba(34,211,238,0.16)] transition hover:-translate-y-[1px] hover:border-cyan-100/62 hover:shadow-[0_0_38px_rgba(34,211,238,0.24)]"
               >
-                Explore all cities
+                {isFrench ? "Explorer toutes les villes" : "Explore all cities"}
               </Link>
               <Link
                 href="/"
                 className="rounded-2xl border border-lime-100/40 bg-gradient-to-r from-lime-300/22 via-emerald-300/16 to-cyan-300/16 px-4 py-3 text-sm font-bold text-lime-50 shadow-[0_0_28px_rgba(190,242,100,0.13)] transition hover:-translate-y-[1px] hover:border-lime-100/58 hover:shadow-[0_0_38px_rgba(190,242,100,0.21)]"
               >
-                Start from homepage
+                {isFrench ? "Revenir à l’accueil" : "Start from homepage"}
               </Link>
             </div>
           </div>
@@ -451,10 +500,12 @@ export default async function CityClusterTopicPage({ params }) {
           cityName={cityName}
           discovery={discovery}
           narrative={narrative}
+            locale={locale}
+            topicTitle={topicConfig.title}
         />
 
         <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.055),rgba(255,255,255,0.025))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
-          <h2 className="text-lg font-semibold">What this local edit contains</h2>
+          <h2 className="text-lg font-semibold">{isFrench ? "Ce que contient cette sélection locale" : "What this local edit contains"}</h2>
           <ul className="mt-3 grid gap-3 text-sm leading-7 text-white/82 sm:grid-cols-3">
             {localProofPoints.map((item) => (
               <li key={item} className="rounded-2xl border border-white/10 bg-black/22 p-3">{item}</li>
@@ -472,7 +523,7 @@ export default async function CityClusterTopicPage({ params }) {
         </section>
 
         <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(244,114,182,0.065),rgba(255,255,255,0.025))] p-6 shadow-[0_18px_60px_rgba(0,0,0,0.20)]">
-          <h2 className="text-lg font-semibold">Related cluster pages</h2>
+          <h2 className="text-lg font-semibold">{isFrench ? "Parcours associés" : "Related cluster pages"}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {relatedTopics.map((entry) => (
               <Link
@@ -480,7 +531,7 @@ export default async function CityClusterTopicPage({ params }) {
                 href={buildCanonicalPath(city, entry.key)}
                 className="rounded-2xl border border-white/12 bg-black/30 px-4 py-3 text-sm text-white/84 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition hover:-translate-y-[1px] hover:border-cyan-200/34 hover:bg-white/[0.06] hover:text-white"
               >
-                {entry.title} in {cityName}
+                {entry.title} {isFrench ? "à" : "in"} {cityName}
               </Link>
             ))}
           </div>
@@ -503,14 +554,14 @@ export default async function CityClusterTopicPage({ params }) {
             href={`/${city}`}
             className="rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/84"
           >
-            Back to {cityName}
+            {isFrench ? `Retour à ${cityName}` : `Back to ${cityName}`}
           </Link>
           <CityPanelButton
             city={city}
             section="events"
             className="rounded-full border border-fuchsia-200/26 bg-fuchsia-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-fuchsia-100"
           >
-            Open Events in City
+            {isFrench ? "Voir les événements de la ville" : "Open Events in City"}
           </CityPanelButton>
         </nav>
       </div>

@@ -10,6 +10,7 @@ import { headers } from "next/headers";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
 import { getLocalizedCityGuide } from "@/lib/cityGuideTranslations";
+import { hasLocalizedCityGuide } from "@/lib/cityGuideTranslations";
 import { getPublicQariProfileForCountry } from "@/lib/qariPublicProfiles";
 import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
 
@@ -32,6 +33,7 @@ export async function generateMetadata({ params }) {
   const country = String(config.country || "").trim();
   const vibe = String(config.vibe || "").trim();
   const venueAccessRestricted = isVenueAccessRestricted(city);
+  const frenchEditorialReady = locale !== "fr" || hasLocalizedCityGuide(city, locale);
   const canonical = `/${city}`;
   const ownership = getCityKeywordOwnership(cityName);
   const isSpanish = locale === "es";
@@ -84,7 +86,9 @@ export async function generateMetadata({ params }) {
     keywords: venueAccessRestricted ? (
       isSpanish
         ? [`contexto LGBTQ+ ${cityName}`, `seguridad LGBTQ+ ${cityName}`, `viaje LGBTQ+ ${cityName}`]
-        : [`LGBTQ+ travel context ${cityName}`, `LGBTQ+ safety context ${cityName}`, `queer travel ${cityName}`]
+        : isFrench
+          ? [`contexte de voyage LGBTQ+ ${cityName}`, `sécurité LGBTQ+ ${cityName}`, `voyage queer ${cityName}`]
+          : [`LGBTQ+ travel context ${cityName}`, `LGBTQ+ safety context ${cityName}`, `queer travel ${cityName}`]
     ) : [
       ...(isSpanish
         ? [
@@ -104,6 +108,15 @@ export async function generateMetadata({ params }) {
             `queere Reise ${cityName}`,
             `queere sichere Orte ${cityName}`,
           ]
+        : isFrench
+          ? [
+            `guide queer ${cityName}`,
+            `bars LGBTQ+ ${cityName}`,
+            `vie nocturne queer ${cityName}`,
+            `événements LGBTQ+ ${cityName}`,
+            `voyage queer ${cityName}`,
+            `lieux queer inclusifs ${cityName}`,
+          ]
         : [
           ownership.primary,
           ...ownership.secondary,
@@ -117,7 +130,7 @@ export async function generateMetadata({ params }) {
     ],
     alternates: localizedAlternates(canonical, locale),
     robots: {
-      index: venueAccessRestricted ? false : config.seoIndexable !== false,
+      index: venueAccessRestricted ? false : config.seoIndexable !== false && frenchEditorialReady,
       follow: !venueAccessRestricted,
     },
     openGraph: {
