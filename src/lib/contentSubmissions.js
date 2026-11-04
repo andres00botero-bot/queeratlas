@@ -24,7 +24,29 @@ function parseMissingColumnName(error) {
   if (matchPrimary?.[1]) return String(matchPrimary[1]).toLowerCase();
   const matchSchemaCache = text.match(/'([a-z0-9_]+)'\s+column/i);
   if (matchSchemaCache?.[1]) return String(matchSchemaCache[1]).toLowerCase();
+  const matchPostgrest = text.match(/could not find(?: the)?\s+["']([a-z0-9_]+)["']\s+column/i);
+  if (matchPostgrest?.[1]) return String(matchPostgrest[1]).toLowerCase();
   return "";
+}
+
+function normalizeEventSubmissionPayload(payload = {}) {
+  const next = { ...(payload || {}) };
+  const startDate = normalizeText(next.start_date || next.startDate || next.date);
+  const endDate = normalizeText(next.end_date || next.endDate || startDate);
+  const ticketUrl = normalizeText(next.ticket_url || next.ticketUrl);
+
+  delete next.startDate;
+  delete next.endDate;
+  delete next.ticketUrl;
+
+  if (startDate) {
+    next.date = startDate;
+    next.start_date = startDate;
+  }
+  if (endDate) next.end_date = endDate;
+  if (ticketUrl) next.ticket_url = ticketUrl;
+
+  return next;
 }
 
 export function isMissingTableError(error) {
@@ -270,6 +292,9 @@ export async function publishContentSubmission({
   }
 
   let payload = submission?.payload && typeof submission.payload === "object" ? { ...submission.payload } : {};
+  if (targetTable === "events") {
+    payload = normalizeEventSubmissionPayload(payload);
+  }
   if (["places", "events", "global_events", "services"].includes(targetTable) && !payload.created_by) {
     payload.created_by = normalizeText(submission?.submitted_by || "") || null;
   }
