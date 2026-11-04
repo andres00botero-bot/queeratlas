@@ -1134,6 +1134,36 @@ function getByPath(source, path) {
     .reduce((value, segment) => (value && typeof value === "object" ? value[segment] : undefined), source);
 }
 
+Object.assign(messages.de.home, {
+  indexesTitle: "Queer-Atlas-Indizes",
+  flagship2026: "Leitindex 2026",
+  safetyCultureIndex: "Globaler Queer-Sicherheits- und Kulturindex 2026",
+});
+Object.assign(messages.de.favorites, {
+  calendarEyebrow: "Mein Kalender",
+  calendarTitle: "Deine Pläne, ganz entspannt im Einklang.",
+  calendarIntro: "Gespeicherte Events, Reisepläne und persönliche Momente – rund um dein nächstes Ziel organisiert.",
+  agenda: "Agenda", month: "Monat", comingUp: "Als Nächstes", yourAgenda: "Deine Agenda", remindersOn: "Erinnerungen aktiviert", enablingReminders: "Wird aktiviert…", enableReminders: "Erinnerungen aktivieren", browseEvents: "Events entdecken", tomorrow: "Morgen", plan: "Plan", plans: "Pläne", openTrip: "Reise öffnen", nextPlanTitle: "Dein nächster Plan beginnt hier", nextPlanDescription: "Speichere ein Event – es erscheint automatisch hier.", exploreEvents: "Events entdecken",
+});
+Object.assign(messages.de.now, {
+  travelRankingNote: "Redaktionelles Ranking von Queer Atlas. Jährlich aktualisiert, damit es eine verlässliche Orientierung bleibt.",
+  safetyRankingNote: "Redaktionelles Sicherheitsranking von Queer Atlas. Jährlich aktualisiert, damit du Städte mit weniger Reibung planen kannst.",
+  globalIcon: "Weltweites Symbol", highSignal: "Starkes Signal", risingElite: "Deutlich im Aufwind", cityTba: "Folgt", countryTba: "Land folgt", signalPending: "Redaktionelle Aktualisierung steht noch aus.", safetyIcon: "Sicherheitsreferenz", highConfidence: "Hohe Zuverlässigkeit", trustedRoute: "Verlässliche Route", categoryCruising: "Cruising",
+});
+Object.assign(messages.de.contact, { sessionExpired: "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an." });
+Object.assign(messages.de.search, { guides: "Guides" });
+messages.de.nav = { ...(messages.de.nav || {}), home: "Startseite" };
+messages.de.community = {
+  ...(messages.de.community || {}),
+  heroTitle: "Community,",
+  homeBuild: "Gemeinsam gestalten", homeBuildTitle: "Gestalte mit, was als Nächstes kommt.", homeBuildIntro: "Schlage Ideen vor, unterstütze sie und verfolge, was daraus für Queer Atlas wird.", openIdeas: "Ideen öffnen",
+  memberStory: "Story eines Mitglieds", showMoreJobs: "Mehr Jobs anzeigen · noch {count}", safetyJobNotice: "Zahle niemals, um bezahlt zu werden. Sei vorsichtig, wenn beim Recruiting vor einem seriösen Einstellungsschritt Geld, Kryptowährung, Bankdaten oder Ausweisdokumente verlangt werden. Melde verdächtige Anzeigen an Queer Atlas.",
+  feed: "Community-Feed", feedTitle: "Stories und Guides in einem Feed", feedIntro: "Wechsle zwischen allen Beiträgen, Stories und Guides, ohne den Lesefluss zu unterbrechen.", stories: "Stories", guides: "Guides",
+  onlyRoomHint: "Dies ist der einzige Raum in dieser Ansicht. Starte ein Gespräch oder wähle einen anderen Filter.", noRooms: "In dieser Ansicht gibt es noch keine Räume.", noRoomsHint: "Starte das erste fokussierte Gespräch.",
+  noIdeas: "In diesem Bereich gibt es noch keine Ideen.", noIdeasHint: "Wähle eine andere Kategorie oder schlage die erste durchdachte Verbesserung vor.", voteContext: "Stimmen aus der Community sind ein Signal neben Sicherheit, Barrierefreiheit, redaktioneller Qualität, technischem Aufwand und Nutzen für Mitglieder. Eine beliebte Idee wird nicht automatisch eingeplant.",
+  improveAtlas: "Queer Atlas verbessern", improveIntro: "Schlage vor, was wir als Nächstes gemeinsam bauen sollten.", safetyReport: "Sicherheitsmeldung", reportContent: "Inhalt melden", reason: "Grund",
+};
+
 export function getMessage(locale, key, fallback = key) {
   const language = normalizeLocale(locale);
   const nowExtraKey = String(key || "").startsWith("now.") ? String(key).slice(4) : "";

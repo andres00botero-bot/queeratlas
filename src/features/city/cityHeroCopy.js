@@ -1,4 +1,5 @@
 import { cityCoreConfig } from "../../lib/cityCore.js";
+import { getLocalizedCityGuide } from "../../lib/cityGuideTranslations.js";
 
 const hero = (hook, status, crowd, intro = "") => Object.freeze({ hook, status, crowd, intro });
 
@@ -17,6 +18,27 @@ function spanishHeroFallback(citySlug) {
     `La experiencia queer de ${city} se descubre entre lugares de confianza, eventos y redes locales.`,
     "Locales, visitantes y comunidad queer comparten una escena con ritmos y espacios propios.",
     `Empieza en ${city} con un lugar de confianza, consulta la agenda actual y deja que el ritmo local marque tu ruta.`,
+  );
+}
+
+function germanHeroFallback(citySlug) {
+  const city = cityLabel(citySlug);
+  return hero(
+    `${city} verbindet queeres Leben vor Ort, Community und Abende, die sich mit dem aktuellen Kalender verändern.`,
+    `Die queere Seite von ${city} erschließt sich über verlässliche Orte, aktuelle Events und lokale Netzwerke.`,
+    "Menschen aus der Stadt, Besucher*innen und die queere Community prägen eine Szene mit eigenem Rhythmus.",
+    `Starte in ${city} mit einem verlässlichen Ort, schau in den aktuellen Kalender und lass den lokalen Rhythmus deine Route bestimmen.`,
+  );
+}
+
+function germanHeroFromGuide(citySlug) {
+  const sections = getLocalizedCityGuide(citySlug, "de", []);
+  if (!Array.isArray(sections) || sections.length < 4) return null;
+  return hero(
+    String(sections[0]?.text || "").trim(),
+    String(sections[1]?.text || "").trim(),
+    String(sections[3]?.text || "").trim(),
+    String(sections[2]?.text || "").trim(),
   );
 }
 
@@ -441,6 +463,9 @@ export function getCityHeroCopy(citySlug, locale = "en") {
   const language = String(locale || "en").toLowerCase().split("-")[0];
   if (language === "es") {
     return LOCALIZED_CITY_HERO_COPY.es?.[city] || (CITY_HERO_COPY[city] ? spanishHeroFallback(city) : null);
+  }
+  if (language === "de") {
+    return LOCALIZED_CITY_HERO_COPY.de?.[city] || germanHeroFromGuide(city) || (CITY_HERO_COPY[city] ? germanHeroFallback(city) : null);
   }
   if (language === "fr") return LOCALIZED_CITY_HERO_COPY.fr?.[city] || null;
   return CITY_HERO_COPY[city] || null;
