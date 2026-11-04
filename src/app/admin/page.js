@@ -357,6 +357,28 @@ function AdminPageContent() {
     [showToast]
   );
 
+  const deleteContactThread = useCallback(
+    async (thread) => {
+      const id = String(thread?.id || "").trim();
+      if (!id) return;
+      const label = String(thread?.subject || "this contact case").trim();
+      if (!window.confirm(`Delete “${label}”? This permanently removes the contact case and any replies. It cannot be undone.`)) return;
+      setBusyMap((current) => ({ ...current, [`contact:${id}`]: true }));
+      try {
+        const { error } = await supabase.from("contact_threads").delete().eq("id", id);
+        if (error) {
+          showToast(error.message || "Could not delete contact case.", { tone: "warn", duration: 2600 });
+          return;
+        }
+        setContactThreads((current) => current.filter((item) => item.id !== id));
+        showToast("Contact case permanently deleted.", { tone: "ok", duration: 1800 });
+      } finally {
+        setBusyMap((current) => ({ ...current, [`contact:${id}`]: false }));
+      }
+    },
+    [showToast]
+  );
+
   const markNewsCommentRead = useCallback(async (commentId) => {
     const id = String(commentId || "").trim();
     if (!id || !user?.id) return;
@@ -1503,6 +1525,14 @@ function AdminPageContent() {
                         className="rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40 disabled:opacity-60"
                       >
                         Resolve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={Boolean(busyMap[`contact:${thread.id}`])}
+                        onClick={() => deleteContactThread(thread)}
+                        className="rounded-full border border-rose-200/24 bg-rose-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-rose-100 transition hover:border-rose-200/40 disabled:opacity-60"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>
