@@ -134,6 +134,36 @@ export async function updateContentSubmissionStatus({
   };
 }
 
+export async function updateContentSubmissionDraft({
+  submissionId,
+  title = "",
+  city = "",
+  payload = {},
+  client = supabase,
+} = {}) {
+  if (!normalizeText(submissionId)) {
+    return { data: null, error: new Error("Missing submission id."), tableMissing: false };
+  }
+
+  const { data, error } = await client
+    .from(SUBMISSIONS_TABLE)
+    .update({
+      title: normalizeText(title) || null,
+      city: normalizeText(city) || null,
+      payload: payload && typeof payload === "object" ? payload : {},
+    })
+    .eq("id", submissionId)
+    .eq("status", "pending")
+    .select("*")
+    .single();
+
+  return {
+    data: data || null,
+    error: error || null,
+    tableMissing: isMissingTableError(error),
+  };
+}
+
 async function insertWithFallback(table, payload, client = supabase) {
   let workingPayload = { ...(payload || {}) };
   let lastError = null;

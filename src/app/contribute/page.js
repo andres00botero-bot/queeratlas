@@ -17,6 +17,7 @@ import {
   createContentSubmission,
   listContentSubmissions,
   publishContentSubmission,
+  updateContentSubmissionDraft,
   updateContentSubmissionStatus,
 } from "@/lib/contentSubmissions";
 import {
@@ -272,6 +273,8 @@ export default function ContributePage() {
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
   const [isLoadingPendingSubmissions, setIsLoadingPendingSubmissions] = useState(false);
   const [isProcessingSubmissionId, setIsProcessingSubmissionId] = useState("");
+  const [editingPendingSubmissionId, setEditingPendingSubmissionId] = useState("");
+  const [pendingSubmissionDraft, setPendingSubmissionDraft] = useState({});
   const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
   const [qaSnapshot, setQaSnapshot] = useState({
     places: [],
@@ -1503,6 +1506,59 @@ export default function ContributePage() {
     }
   };
 
+  const openPendingSubmissionEditor = (submission) => {
+    const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
+    setEditingPendingSubmissionId(String(submission?.id || ""));
+    setPendingSubmissionDraft({
+      ...payload,
+      name: String(payload.name || submission?.title || ""),
+      city: String(payload.city || submission?.city || ""),
+      description: String(payload.description || ""),
+      location: String(payload.location || payload.address || ""),
+      startDate: String(payload.startDate || payload.start_date || payload.date || ""),
+      endDate: String(payload.endDate || payload.end_date || ""),
+      link: String(payload.link || ""),
+      ticket_url: String(payload.ticket_url || payload.ticketUrl || ""),
+      vibe: String(payload.vibe || ""),
+    });
+  };
+
+  const savePendingSubmissionDraft = async (submission) => {
+    if (!isAdmin || !submission?.id) return;
+    const name = String(pendingSubmissionDraft.name || "").trim();
+    const city = String(pendingSubmissionDraft.city || "").trim();
+    if (!name || !city) {
+      showToast("Event name and city are required before publishing.", { tone: "warn", duration: 2400 });
+      return;
+    }
+    setIsProcessingSubmissionId(String(submission.id));
+    try {
+      const payload = { ...pendingSubmissionDraft, name, city };
+      if (payload.location) payload.address = payload.location;
+      if (payload.startDate) payload.start_date = payload.startDate;
+      if (payload.endDate) payload.end_date = payload.endDate;
+      const result = await updateContentSubmissionDraft({
+        submissionId: submission.id,
+        title: name,
+        city,
+        payload,
+      });
+      if (result.tableMissing) {
+        showToast("Moderation queue is not configured yet.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      if (result.error) {
+        showToast(result.error.message || "Could not save the review draft.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      showToast("Review draft saved. It is still pending publication.", { tone: "ok", duration: 2200 });
+      setEditingPendingSubmissionId("");
+      await refreshPendingSubmissions();
+    } finally {
+      setIsProcessingSubmissionId("");
+    }
+  };
+
   const rejectPendingSubmission = async (submission) => {
     if (!isAdmin || !submission?.id) return;
     setIsProcessingSubmissionId(String(submission.id));
@@ -2531,7 +2587,38 @@ export default function ContributePage() {
                       {payload?.description && (
                         <p className="mt-2 line-clamp-3 text-sm text-white/70">{String(payload.description)}</p>
                       )}
+                      {editingPendingSubmissionId === String(submission.id) ? (
+                        <div className="mt-4 space-y-3 rounded-xl border border-indigo-200/20 bg-indigo-200/[0.06] p-3">
+                          <div>
+                            <p className="text-xs font-semibold text-indigo-100">Review and edit before publishing</p>
+                            <p className="mt-1 text-xs text-white/55">These changes stay in the pending submission until you approve it.</p>
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field value={String(pendingSubmissionDraft.name || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, name: event.target.value }))} placeholder="Event name" />
+                            <Field value={String(pendingSubmissionDraft.city || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, city: event.target.value }))} placeholder="City" />
+                            <Field value={String(pendingSubmissionDraft.startDate || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, startDate: event.target.value }))} placeholder="Start date (YYYY-MM-DD)" />
+                            <Field value={String(pendingSubmissionDraft.endDate || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, endDate: event.target.value }))} placeholder="End date (optional)" />
+                            <Field value={String(pendingSubmissionDraft.location || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, location: event.target.value }))} placeholder="Venue or address" />
+                            <Field value={String(pendingSubmissionDraft.vibe || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, vibe: event.target.value }))} placeholder="Vibe" />
+                            <Field value={String(pendingSubmissionDraft.link || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, link: event.target.value }))} placeholder="Official link" />
+                            <Field value={String(pendingSubmissionDraft.ticket_url || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, ticket_url: event.target.value }))} placeholder="Ticket link" />
+                          </div>
+                          <Field value={String(pendingSubmissionDraft.description || "")} onChange={(event) => setPendingSubmissionDraft((current) => ({ ...current, description: event.target.value }))} placeholder="Description" area />
+                          <div className="flex flex-wrap gap-2">
+                            <button type="button" onClick={() => savePendingSubmissionDraft(submission)} disabled={statusBusy} className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/60 disabled:opacity-60">{statusBusy ? "Saving..." : "Save review draft"}</button>
+                            <button type="button" onClick={() => setEditingPendingSubmissionId("")} disabled={statusBusy} className="rounded-full border border-white/16 bg-white/7 px-3 py-1.5 text-xs text-white/75 transition hover:text-white disabled:opacity-60">Cancel</button>
+                          </div>
+                        </div>
+                      ) : null}
                       <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => openPendingSubmissionEditor(submission)}
+                          disabled={statusBusy}
+                          className="rounded-full border border-cyan-200/26 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100 transition hover:border-cyan-200/45 disabled:opacity-60"
+                        >
+                          Open & edit
+                        </button>
                         <button
                           type="button"
                           onClick={() => approvePendingSubmission(submission)}
