@@ -20,6 +20,7 @@ import { resolveAdminAccess } from "@/lib/adminAccess";
 import {
   listContentSubmissions,
   publishContentSubmission,
+  updateContentSubmissionDraft,
   updateContentSubmissionStatus,
 } from "@/lib/contentSubmissions";
 import PageOpeningState from "@/components/ui/PageOpeningState";
@@ -162,6 +163,8 @@ function AdminPageContent() {
   const [submissionTypeFilter, setSubmissionTypeFilter] = useState("all");
   const [submissionSyncNotice, setSubmissionSyncNotice] = useState("");
   const [isProcessingSubmissionId, setIsProcessingSubmissionId] = useState("");
+  const [editingSubmissionId, setEditingSubmissionId] = useState("");
+  const [submissionDraft, setSubmissionDraft] = useState({});
   const [contactThreads, setContactThreads] = useState([]);
   const [contactQuery, setContactQuery] = useState("");
   const [contactView, setContactView] = useState("open");
@@ -588,6 +591,62 @@ function AdminPageContent() {
       showToast("Submission approved and published.", { tone: "ok", duration: 2200 });
       await refreshPendingSubmissions();
       await loadAdminState();
+    } finally {
+      setIsProcessingSubmissionId("");
+    }
+  };
+
+  const openSubmissionEditor = (submission) => {
+    const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
+    setEditingSubmissionId(String(submission?.id || ""));
+    setSubmissionDraft({
+      ...payload,
+      name: String(payload.name || submission?.title || ""),
+      city: String(payload.city || submission?.city || ""),
+      description: String(payload.description || ""),
+      location: String(payload.location || payload.address || ""),
+      startDate: String(payload.startDate || payload.start_date || payload.date || ""),
+      endDate: String(payload.endDate || payload.end_date || ""),
+      vibe: String(payload.vibe || ""),
+      link: String(payload.link || ""),
+      ticket_url: String(payload.ticket_url || payload.ticketUrl || ""),
+      event_intel: {
+        ...(payload.event_intel && typeof payload.event_intel === "object" ? payload.event_intel : {}),
+        entry_wait: String(payload?.event_intel?.entry_wait || payload?.event_intel?.entryWait || ""),
+        best_arrival: String(payload?.event_intel?.best_arrival || payload?.event_intel?.bestArrival || ""),
+        crowd_mix: String(payload?.event_intel?.crowd_mix || payload?.event_intel?.crowdMix || ""),
+        dress_code: String(payload?.event_intel?.dress_code || payload?.event_intel?.dressCode || ""),
+        host_inclusivity: String(payload?.event_intel?.host_inclusivity || payload?.event_intel?.hostInclusivity || ""),
+      },
+    });
+  };
+
+  const saveSubmissionDraft = async (submission) => {
+    if (!isAdmin || !submission?.id) return;
+    const name = String(submissionDraft.name || "").trim();
+    const city = String(submissionDraft.city || "").trim();
+    if (!name || !city) {
+      showToast("Event name and city are required before publishing.", { tone: "warn", duration: 2400 });
+      return;
+    }
+    setIsProcessingSubmissionId(String(submission.id));
+    try {
+      const payload = { ...submissionDraft, name, city };
+      if (payload.location) payload.address = payload.location;
+      if (payload.startDate) payload.start_date = payload.startDate;
+      if (payload.endDate) payload.end_date = payload.endDate;
+      const result = await updateContentSubmissionDraft({ submissionId: submission.id, title: name, city, payload });
+      if (result.tableMissing) {
+        showToast("Moderation queue is not configured yet.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      if (result.error) {
+        showToast(result.error.message || "Could not save the review draft.", { tone: "warn", duration: 2600 });
+        return;
+      }
+      showToast("Review draft saved. It is still pending publication.", { tone: "ok", duration: 2200 });
+      setEditingSubmissionId("");
+      await refreshPendingSubmissions();
     } finally {
       setIsProcessingSubmissionId("");
     }
@@ -1042,9 +1101,68 @@ function AdminPageContent() {
                     {payload?.description ? (
                       <p className="mt-3 line-clamp-3 text-sm leading-6 text-white/70">{String(payload.description)}</p>
                     ) : null}
+                    {editingSubmissionId === String(submission.id) ? (
+                      <div className="mt-4 space-y-3 rounded-xl border border-indigo-200/22 bg-indigo-200/[.07] p-3">
+                        <div>
+                          <p className="text-xs font-semibold text-indigo-100">Open review draft</p>
+                          <p className="mt-1 text-xs text-white/55">Save changes first. The event stays pending until you approve and publish it.</p>
+                        </div>
+                        <div className="rounded-lg border border-white/10 bg-black/25 p-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Preview before decision</p>
+                          <dl className="mt-2 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                            {[
+                              ["Event", submissionDraft.name], ["City", submissionDraft.city], ["Start", submissionDraft.startDate], ["End", submissionDraft.endDate || "Not supplied"],
+                              ["Venue", submissionDraft.location || "Not supplied"], ["Vibe", submissionDraft.vibe || "Not supplied"], ["Coordinates", submissionDraft.lat !== undefined && submissionDraft.lng !== undefined ? `${submissionDraft.lat}, ${submissionDraft.lng}` : "Not supplied"],
+                            ].map(([label, value]) => <div key={label}><dt className="text-white/42">{label}</dt><dd className="mt-0.5 break-words text-white/82">{String(value || "Not supplied")}</dd></div>)}
+                          </dl>
+                          <p className="mt-3 whitespace-pre-wrap border-t border-white/8 pt-3 text-sm leading-6 text-white/78">{String(submissionDraft.description || "No description supplied")}</p>
+                          <div className="mt-3 flex flex-wrap gap-3 text-xs">
+                            {submissionDraft.link ? <a href={String(submissionDraft.link)} target="_blank" rel="noreferrer" className="text-cyan-100 underline underline-offset-2">Open official link</a> : null}
+                            {submissionDraft.ticket_url ? <a href={String(submissionDraft.ticket_url)} target="_blank" rel="noreferrer" className="text-cyan-100 underline underline-offset-2">Open ticket link</a> : null}
+                          </div>
+                          <div className="mt-3 border-t border-white/8 pt-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Event intelligence</p>
+                            <dl className="mt-2 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                              {[["Queue / entry", submissionDraft.event_intel?.entry_wait], ["Best arrival", submissionDraft.event_intel?.best_arrival], ["Crowd mix", submissionDraft.event_intel?.crowd_mix], ["Dress code", submissionDraft.event_intel?.dress_code], ["Host inclusion", submissionDraft.event_intel?.host_inclusivity]].map(([label, value]) => <div key={label}><dt className="text-white/42">{label}</dt><dd className="mt-0.5 break-words text-white/82">{String(value || "Not supplied")}</dd></div>)}
+                            </dl>
+                          </div>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {[
+                            ["name", "Event name"], ["city", "City"], ["startDate", "Start date (YYYY-MM-DD)"], ["endDate", "End date (optional)"],
+                            ["location", "Venue or address"], ["vibe", "Vibe"], ["link", "Official link"], ["ticket_url", "Ticket link"], ["lat", "Latitude"], ["lng", "Longitude"],
+                          ].map(([field, label]) => (
+                            <label key={field} className="grid gap-1 text-[11px] text-white/60">
+                              {label}
+                              <input value={String(submissionDraft[field] || "")} onChange={(event) => setSubmissionDraft((current) => ({ ...current, [field]: event.target.value }))} className="min-h-10 rounded-lg border border-white/12 bg-black/30 px-3 text-sm text-white outline-none focus:border-indigo-200/55" />
+                            </label>
+                          ))}
+                        </div>
+                        <label className="grid gap-1 text-[11px] text-white/60">
+                          Description
+                          <textarea value={String(submissionDraft.description || "")} onChange={(event) => setSubmissionDraft((current) => ({ ...current, description: event.target.value }))} className="min-h-28 rounded-lg border border-white/12 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-indigo-200/55" />
+                        </label>
+                        <div className="grid gap-2 border-t border-white/8 pt-3 sm:grid-cols-2">
+                          <p className="sm:col-span-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-100/75">Edit event intelligence</p>
+                          {[["entry_wait", "Queue / entry"], ["best_arrival", "Best arrival"], ["crowd_mix", "Crowd mix"], ["dress_code", "Dress code"], ["host_inclusivity", "Host inclusion"]].map(([field, label]) => <label key={field} className="grid gap-1 text-[11px] text-white/60">{label}<input value={String(submissionDraft.event_intel?.[field] || "")} onChange={(event) => setSubmissionDraft((current) => ({ ...current, event_intel: { ...(current.event_intel || {}), [field]: event.target.value } }))} className="min-h-10 rounded-lg border border-white/12 bg-black/30 px-3 text-sm text-white outline-none focus:border-indigo-200/55" /></label>)}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={() => saveSubmissionDraft(submission)} disabled={statusBusy} className="rounded-full border border-cyan-200/30 bg-cyan-200/12 px-3 py-1.5 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/60 disabled:opacity-60">{statusBusy ? "Saving..." : "Save review draft"}</button>
+                          <button type="button" onClick={() => setEditingSubmissionId("")} disabled={statusBusy} className="rounded-full border border-white/16 bg-white/7 px-3 py-1.5 text-xs text-white/75 transition hover:text-white disabled:opacity-60">Cancel</button>
+                        </div>
+                      </div>
+                    ) : null}
                     <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/8 pt-3">
                       <p className="text-[10px] leading-4 text-white/38">{payload?.description ? "Description included" : "No description supplied"} · {submission.is_trusted_contributor ? "Trusted contributor" : "Standard contributor"}</p>
                       <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openSubmissionEditor(submission)}
+                        disabled={statusBusy}
+                        className="rounded-full border border-cyan-200/26 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100 transition hover:border-cyan-200/45 disabled:opacity-60"
+                      >
+                        Open & edit
+                      </button>
                       <button
                         type="button"
                         onClick={() => approvePendingSubmission(submission)}
