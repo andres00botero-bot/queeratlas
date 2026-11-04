@@ -932,7 +932,7 @@ function testSearchRanksExplicitCityAndVenueTypeFirst() {
     "search ranking: bathhouse should resolve to the sauna venue type",
   );
   assert(
-    homeSource.includes("setResults(merged.all);") &&
+    homeSource.includes("setResults(payload.results);") &&
       !homeSource.includes("const orderedResults = [...merged.cities, ...merged.events, ...merged.places];"),
     "home search: dropdown should preserve the global relevance order",
   );

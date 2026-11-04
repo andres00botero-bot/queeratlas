@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { getPublishedLocales } from "@/lib/i18n/locales";
 import { toLocalePath } from "@/lib/i18n/localeRouting";
+import { fetchHomeSearch } from "@/lib/homeSearch";
 import { privacyCall, privacyChanged } from "@/lib/memberPrivacy";
 import MemberWelcomeModal from "@/components/home/MemberWelcomeModal";
 
@@ -163,13 +164,11 @@ export default function HomePageClient({ initialHomeData = null }) {
     [initialHomeData]
   );
   const initialMetrics = initialHomeData?.metrics || null;
-  const hasCompleteInitialHomeData = initialHomeData?.complete !== false;
   const hasInitialHomeData =
     initialEvents.length > 0 || initialPlaces.length > 0 || initialWorldNews.length > 0;
   const [events, setEvents] = useState(initialEvents);
   const [places, setPlaces] = useState(initialPlaces);
   const [homeMetrics, setHomeMetrics] = useState(initialMetrics);
-  const [hasCompleteHomeData, setHasCompleteHomeData] = useState(hasCompleteInitialHomeData);
   const [query, setQuery] = useState("");
   const [showSignup, setShowSignup] = useState(false);
   const [showMemberWelcome, setShowMemberWelcome] = useState(false);
@@ -178,6 +177,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [isDataLoading, setIsDataLoading] = useState(!hasInitialHomeData);
   const [dataError, setDataError] = useState("");
   const [results, setResults] = useState([]);
+  const [searchState, setSearchState] = useState("idle");
   const [showResults, setShowResults] = useState(false);
   const [worldNews, setWorldNews] = useState(initialWorldNews);
   const [worldNewsFallback, setWorldNewsFallback] = useState(initialWorldNewsFallback);
@@ -212,8 +212,6 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [homeFocusCity, setHomeFocusCity] = useState("");
   const [homeFocusSource, setHomeFocusSource] = useState("");
   const viewedHomeSectionsRef = useRef(new Set());
-  const fullHomeDataLoadRef = useRef(null);
-  const deferredQuery = useDeferredValue(query);
   const {
     isMember,
     memberName,
@@ -399,7 +397,6 @@ export default function HomePageClient({ initialHomeData = null }) {
     setWorldNewsFallback(nextWorldNewsFallback);
     if (nextFeaturedVenue) setFeaturedVenue(nextFeaturedVenue);
     if (nextMetrics) setHomeMetrics(nextMetrics);
-    setHasCompleteHomeData(true);
     writeRuntimeCache(HOME_DATA_CACHE_KEY, {
       events: nextEvents,
       places: nextPlaces,
@@ -437,7 +434,6 @@ export default function HomePageClient({ initialHomeData = null }) {
       });
     }, 450);
   }, [
-    hasCompleteInitialHomeData,
     hasInitialHomeData,
     initialEvents,
     initialFeaturedVenue,
@@ -604,61 +600,38 @@ export default function HomePageClient({ initialHomeData = null }) {
   }, [currentEmail, isAuthLoading, isMember]);
 
   useEffect(() => {
-    if (!deferredQuery) {
-      queueMicrotask(() => {
-        setResults([]);
-      });
-      return;
-    }
+    const normalizedQuery = query.trim();
+    const controller = new AbortController();
+    queueMicrotask(() => {
+      if (controller.signal.aborted) return;
+      setResults([]);
+      setSearchState(normalizedQuery.length < 2 ? "idle" : "loading");
+    });
+    if (normalizedQuery.length < 2) return () => controller.abort();
 
-    const normalizedQuery = String(deferredQuery || "").trim();
-    if (normalizedQuery.length < 2) {
-      queueMicrotask(() => {
-        setResults([]);
-        setShowResults(true);
-      });
-      return;
-    }
-
-    if (!hasCompleteHomeData) {
-      if (!fullHomeDataLoadRef.current) {
-        fullHomeDataLoadRef.current = loadHomeData({ forceRefresh: true })
-          .finally(() => {
-            fullHomeDataLoadRef.current = null;
-          });
-      }
-      return;
-    }
-
-    let cancelled = false;
     const timeout = setTimeout(async () => {
-      const [{ buildAtlasSearchResults }, { getQualityMap }] = await Promise.all([
-        import("@/lib/search"),
-        import("@/lib/quality"),
-      ]);
-      if (cancelled) return;
-      const merged = buildAtlasSearchResults({
-        query: normalizedQuery,
-        places,
-        events,
-        cityLimit: 4,
-        placeLimit: 4,
-        eventLimit: 4,
-        favoriteIds: favorites,
-        qualityMap: getQualityMap(),
-      });
-
-      startTransition(() => {
-        setResults(merged.all);
+      try {
+        const payload = await fetchHomeSearch(normalizedQuery, {
+          signal: controller.signal,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+        });
+        if (controller.signal.aborted) return;
+        setResults(payload.results);
+        setSearchState(payload.partialData ? "partial" : "ready");
         setShowResults(true);
-      });
+      } catch {
+        if (controller.signal.aborted) return;
+        setResults([]);
+        setSearchState("error");
+        setShowResults(true);
+      }
     }, 300);
 
     return () => {
-      cancelled = true;
+      controller.abort();
       clearTimeout(timeout);
     };
-  }, [deferredQuery, events, favorites, hasCompleteHomeData, loadHomeData, places]);
+  }, [query]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1266,7 +1239,9 @@ export default function HomePageClient({ initialHomeData = null }) {
                       value={query}
                       onChange={(event) => {
                         setQuery(event.target.value);
-                        setShowResults(false);
+                        setResults([]);
+                        setSearchState(event.target.value.trim().length < 2 ? "idle" : "loading");
+                        setShowResults(true);
                       }}
                       onKeyDown={(event) => {
                         if (event.key !== "Enter") return;
@@ -1339,9 +1314,15 @@ export default function HomePageClient({ initialHomeData = null }) {
                       ))}
                     </div>
                   )}
-                  {showResults && query.trim().length > 0 && results.length === 0 && (
+                  {showResults && query.trim().length >= 2 && results.length === 0 && (
                     <div role="status" aria-live="polite" className="absolute top-full z-50 mt-3 w-full rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl">
-                      No instant matches yet. Press Explore for full search.
+                      {searchState === "loading"
+                        ? ({ en: "Searching…", de: "Suche läuft…", fr: "Recherche en cours…", es: "Buscando…" }[locale] || "Searching…")
+                        : searchState === "error"
+                          ? ({ en: "Search is temporarily unavailable. Press Explore to try full search.", de: "Die Suche ist vorübergehend nicht verfügbar. Öffne die vollständige Suche.", fr: "La recherche est temporairement indisponible. Ouvrez la recherche complète.", es: "La búsqueda no está disponible temporalmente. Abre la búsqueda completa." }[locale])
+                          : searchState === "partial"
+                            ? ({ en: "Some listings could not load. Press Explore to try again.", de: "Einige Einträge konnten nicht geladen werden. Versuche die vollständige Suche.", fr: "Certaines annonces sont indisponibles. Ouvrez la recherche complète.", es: "Algunos resultados no se han cargado. Abre la búsqueda completa." }[locale])
+                            : ({ en: "No instant matches yet. Press Explore for full search.", de: "Keine direkten Treffer. Öffne die vollständige Suche.", fr: "Aucun résultat immédiat. Ouvrez la recherche complète.", es: "Sin coincidencias inmediatas. Abre la búsqueda completa." }[locale])}
                     </div>
                   )}
 

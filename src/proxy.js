@@ -59,6 +59,10 @@ function geoLocaleRedirect(request, pathname, locale) {
 
 export function proxy(request) {
   const { pathname } = request.nextUrl;
+  // Locale routing applies to pages only, never API calls or static resources.
+  if (/^\/(?:api|_next|monitoring)(?:\/|$)/.test(pathname) || /\.[^/]+$/.test(pathname)) {
+    return NextResponse.next();
+  }
   const segments = pathname.split("/").filter(Boolean);
   const urlLocale = isSupportedLocale(segments[0]) ? normalizeLocale(segments[0]) : null;
 
