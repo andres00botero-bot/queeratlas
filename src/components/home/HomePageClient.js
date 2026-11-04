@@ -19,6 +19,8 @@ import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { getPublishedLocales } from "@/lib/i18n/locales";
 import { toLocalePath } from "@/lib/i18n/localeRouting";
+import { privacyCall, privacyChanged } from "@/lib/memberPrivacy";
+import MemberWelcomeModal from "@/components/home/MemberWelcomeModal";
 
 const PENDING_SIGNUP_PROFILE_KEY = "qa_pending_signup_profile";
 const HOME_DATA_CACHE_KEY = "qa_home_data_v2";
@@ -170,6 +172,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [hasCompleteHomeData, setHasCompleteHomeData] = useState(hasCompleteInitialHomeData);
   const [query, setQuery] = useState("");
   const [showSignup, setShowSignup] = useState(false);
+  const [showMemberWelcome, setShowMemberWelcome] = useState(false);
   const [authReturnTarget, setAuthReturnTarget] = useState("/");
   const [showSaved, setShowSaved] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(!hasInitialHomeData);
@@ -539,6 +542,32 @@ export default function HomePageClient({ initialHomeData = null }) {
       }
     });
   }, [isAuthLoading, isMember, updateMemberProfile]);
+
+  useEffect(() => {
+    if (isAuthLoading || !isMember) { queueMicrotask(() => setShowMemberWelcome(false)); return; }
+    let active = true;
+    queueMicrotask(async () => {
+      try {
+        const state = await privacyCall("state");
+        const profile = state?.profile || {};
+        if (active) setShowMemberWelcome(Boolean(Object.hasOwn(profile, "welcome_seen_at") && profile.joined_at && !profile.welcome_seen_at && !profile.deletion_requested_at));
+      } catch {
+        if (active) setShowMemberWelcome(false);
+      }
+    });
+    return () => { active = false; };
+  }, [isAuthLoading, isMember]);
+
+  const completeMemberWelcome = useCallback(async (destination) => {
+    try {
+      await privacyCall("dismiss_welcome");
+      privacyChanged();
+    } catch {
+      return;
+    }
+    setShowMemberWelcome(false);
+    router.push(destination);
+  }, [router]);
 
   useEffect(() => {
     if (typeof window === "undefined" || isMember) return;
@@ -1449,6 +1478,11 @@ export default function HomePageClient({ initialHomeData = null }) {
           </div>
         </div>
       )}
+      {showMemberWelcome ? <MemberWelcomeModal
+        onExplore={() => completeMemberWelcome("/cities")}
+        onProfile={() => completeMemberWelcome("/favorites?tab=about")}
+        onLater={() => completeMemberWelcome("/")}
+      /> : null}
     </main>
   );
 }

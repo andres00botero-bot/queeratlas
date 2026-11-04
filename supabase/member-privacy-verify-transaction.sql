@@ -9,9 +9,9 @@ begin
   end if;
   begin
     insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data)
-    values(a,'privacy-a-'||a||'@example.invalid',now(),'{}'),
-      (b,'privacy-b-'||b||'@example.invalid',now(),'{}'),
-      (c,'privacy-c-'||c||'@example.invalid',now(),'{}');
+    values(a,'privacy-a-'||a||'@example.invalid',now(),'{"qa_alias":"Synthetic A"}'),
+      (b,'privacy-b-'||b||'@example.invalid',now(),'{"qa_alias":"Synthetic B"}'),
+      (c,'privacy-c-'||c||'@example.invalid',now(),'{"qa_alias":"Synthetic C"}');
     insert into public.member_profiles(user_id,display_name,avatar_path)
     values(a,'Synthetic A',a||'/avatar.webp'),(b,'Synthetic B',b||'/avatar.webp'),(c,'Synthetic C',c||'/avatar.webp')
     on conflict(user_id) do update set avatar_path=excluded.avatar_path;

@@ -116,6 +116,24 @@ function MemberPrivacySettingsContent({ previewState = null }) {
     if (draft.audience !== "hidden" && !validSharedAlias(draft.alias)) { setNotice(copy.invalidAlias); return; }
     await act("save", { settings: normalizeSharedProfile(draft) });
   };
+  const completeOnboarding = async () => {
+    if (!validSharedAlias(draft.alias)) { setNotice(copy.invalidAlias); return; }
+    if (previewState) return;
+    setBusy(true); setNotice("");
+    try {
+      const settings = normalizeSharedProfile(draft);
+      // Store the private profile first; the privacy RPC correctly refuses a
+      // shared audience until the person has confirmed email, age and rules.
+      await privacyCall("save", { settings: { ...settings, audience: "hidden" } });
+      await privacyCall("join", { adult_confirmed: adult, rules_accepted: rules });
+      // Apply the visibility choice made in this same onboarding step only
+      // after consent has made the member eligible.
+      if (settings.audience !== "hidden") await privacyCall("save", { settings });
+      dirty.current = false; privacyChanged(); await refresh();
+      router.replace("/?welcome=1");
+    } catch { setNotice(copy.error); }
+    finally { setBusy(false); }
+  };
   const removeAccount = async () => {
     if (!deleteConfirm || previewState) return;
     setBusy(true); setNotice("");
@@ -139,14 +157,14 @@ function MemberPrivacySettingsContent({ previewState = null }) {
         <p className="text-sm leading-6 text-[#BCC7D2]">{copy.joinHelp}</p>
         <label className="mt-3 flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={adult} onChange={e => setAdult(e.target.checked)} className="h-5 w-5 accent-[#80D4C4]" />{copy.adult}</label>
         <label className="flex min-h-11 items-center gap-3 text-sm leading-6"><input type="checkbox" checked={rules} onChange={e => setRules(e.target.checked)} className="h-5 w-5 shrink-0 accent-[#80D4C4]" />{copy.rules}</label>
-        <button disabled={!adult || !rules || busy} className={`${primary} mt-3`} onClick={() => act("join", { adult_confirmed: adult, rules_accepted: rules })}>{copy.join}</button>
+        <button disabled={!adult || !rules || busy} className={`${primary} mt-3`} onClick={completeOnboarding}>{copy.join}</button>
       </div>}
       <form onSubmit={save} className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
         <div className={`${panel} space-y-4`}>
           {!state.eligible && state.directory_open && <p className="text-sm leading-6 text-[#F2B38B]">{copy.unlockSharing}</p>}
           <fieldset disabled={busy || pendingDeletion}><legend className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#B9AAF0]"><LockKeyhole size={18} />{copy.eyebrow}</legend>
             {[ ["hidden", EyeOff], ["contacts", LockKeyhole], ["community", Eye] ].map(([audience, Icon]) => <label key={audience} className={`mb-2 flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${draft.audience === audience ? "border-[#B9AAF0]/60 bg-[#B9AAF0]/[0.08]" : "border-[#2B3949]"}`}>
-              <input type="radio" name="profile-audience" value={audience} checked={draft.audience === audience} onChange={() => change("audience", audience)} disabled={audience !== "hidden" && !state.eligible} className="mt-1 h-4 w-4 shrink-0 accent-[#B9AAF0]" />
+            <input type="radio" name="profile-audience" value={audience} checked={draft.audience === audience} onChange={() => change("audience", audience)} disabled={audience !== "hidden" && !state.eligible && !(state.directory_open && !state.profile.joined_at)} className="mt-1 h-4 w-4 shrink-0 accent-[#B9AAF0]" />
               <span><span className="flex items-center gap-2 text-sm font-semibold"><Icon size={16} aria-hidden="true" />{copy[audience]}</span><span className="mt-1 block text-xs leading-5 text-[#BCC7D2]">{copy[`${audience}Help`]}</span></span>
             </label>)}
           </fieldset>
@@ -169,7 +187,7 @@ function MemberPrivacySettingsContent({ previewState = null }) {
           </div><PrivacyHelp copy={copy} />
         </aside>
         <div className="flex flex-wrap gap-3 lg:col-span-2">
-          <button className={primary} disabled={busy || pendingDeletion}>{copy.save}</button>
+          <button className={primary} disabled={busy || pendingDeletion || !state.profile.joined_at}>{copy.save}</button>
           <button type="button" className={secondary} disabled={busy || pendingDeletion} onClick={() => act("save", { settings: { ...normalizeSharedProfile(state.profile), audience: "hidden" } })}><EyeOff size={16} />{copy.hide}</button>
         </div>
       </form>

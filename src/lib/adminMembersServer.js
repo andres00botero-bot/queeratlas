@@ -24,7 +24,7 @@ export function createAdminMembersHandlers({ authorize, getService }) {
         if (ids.length) {
           const [profileResult, privacyResult] = await Promise.all([
             service.from("member_profiles").select("user_id,display_name,home_city,resident_country,trusted_contributor,updated_at").in("user_id", ids),
-            service.from("qa_member_privacy").select("user_id,audience,deletion_requested_at").in("user_id", ids),
+            service.from("qa_member_privacy").select("user_id,alias,audience,joined_at,deletion_requested_at").in("user_id", ids),
           ]);
           if (profileResult.error || privacyResult.error) throw new Error("profiles_unavailable");
           profiles = profileResult.data || []; privacy = privacyResult.data || [];
@@ -37,9 +37,9 @@ export function createAdminMembersHandlers({ authorize, getService }) {
           return {
             user_id: account.id, email: account.email || "", created_at: account.created_at || "",
             email_confirmed: Boolean(account.email_confirmed_at), has_profile: Boolean(profile),
-            display_name: profile?.display_name || "", home_city: profile?.home_city || "",
+            display_name: profile?.display_name || "", alias: sharing?.alias || "", home_city: profile?.home_city || "",
             resident_country: profile?.resident_country || "", trusted_contributor: Boolean(profile?.trusted_contributor),
-            audience: sharing?.audience || "hidden", deletion_pending: Boolean(sharing?.deletion_requested_at),
+            audience: sharing?.audience || "hidden", onboarding_complete: Boolean(sharing?.joined_at), deletion_pending: Boolean(sharing?.deletion_requested_at),
           };
         });
         // Do not rely on SDK nextPage parsing: some versions truncate 2-digit pages.

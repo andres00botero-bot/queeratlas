@@ -385,13 +385,18 @@ export function AuthProvider({ children }) {
       }
     };
 
-    const signUpWithPassword = async (email, password) => {
+    const signUpWithPassword = async (email, password, profile = {}) => {
       try {
+        const alias = String(profile?.displayName || "").trim().slice(0, 40);
         const result = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            // The database trigger creates the private profile from this
+            // metadata. The confirmation link lands in the explicit privacy
+            // onboarding rather than treating an account as public by default.
+            data: { qa_alias: alias },
+            emailRedirectTo: `${window.location.origin}/privacy-settings?onboarding=1`,
           },
         });
         if (result?.error) {

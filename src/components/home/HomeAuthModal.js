@@ -102,7 +102,10 @@ export default function HomeAuthModal({
   const handleGoogleAuth = async () => {
     setAuthMessage("");
     setAuthLoading(true);
-    writeLocalValue("qa_post_login_target", safePostLoginTarget);
+    // OAuth may create a new account before we know whether it is new. Sending
+    // signup-mode users to the privacy step is safe for both cases and prevents
+    // an identity provider name from being treated as a public member profile.
+    writeLocalValue("qa_post_login_target", authMode === "signup" ? "/privacy-settings?onboarding=1" : safePostLoginTarget);
     const { error } = await signInWithGoogle();
     if (error) setAuthMessage(error.message);
     setAuthLoading(false);
@@ -177,8 +180,8 @@ export default function HomeAuthModal({
 
     setAuthMessage("");
     setAuthLoading(true);
-    writeLocalValue("qa_post_login_target", safePostLoginTarget);
-    const { data, error } = await signUpWithPassword(email, password);
+    writeLocalValue("qa_post_login_target", "/privacy-settings?onboarding=1");
+    const { data, error } = await signUpWithPassword(email, password, profilePayload);
     if (error) {
       setAuthMessage(error.message);
       setPendingEmailConfirmation("");
