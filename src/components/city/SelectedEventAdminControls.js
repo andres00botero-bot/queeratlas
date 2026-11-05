@@ -71,6 +71,7 @@ export default function SelectedEventAdminControls({
           <VenueLocationPicker
             entityLabel="Event"
             inputId="admin-event-location-address"
+            allowOutsideCity
             address={draft.location}
             city={city}
             location={normalizeConfirmedCoordinates(draft) ? {

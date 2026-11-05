@@ -43,18 +43,20 @@ function mergeSuggestions(primary, secondary, context) {
     .slice(0, 12);
 }
 
-async function searchGeocodingV6({ accessToken, context, query }) {
-  const contextualQuery = [query, context.city, context.country].filter(Boolean).join(", ");
+async function searchGeocodingV6({ accessToken, context, query, allowOutsideCity }) {
+  const contextualQuery = allowOutsideCity
+    ? [query, context.country].filter(Boolean).join(", ")
+    : [query, context.city, context.country].filter(Boolean).join(", ");
   const params = new URLSearchParams({
     access_token: accessToken,
     autocomplete: "true",
-    bbox: formatBounds(context.bounds),
     language: "en",
     limit: "8",
     proximity: context.center.join(","),
     q: contextualQuery,
     types: "address,street",
   });
+  if (!allowOutsideCity && context.bounds) params.set("bbox", formatBounds(context.bounds));
   const response = await fetch(`https://api.mapbox.com/search/geocode/v6/forward?${params}`, {
     cache: "no-store",
   });
@@ -84,6 +86,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const query = String(searchParams.get("q") || "").trim();
   const sessionToken = String(searchParams.get("sessionToken") || "").trim();
+  const allowOutsideCity = searchParams.get("allowOutsideCity") === "true";
   const context = await resolveServerCityGeocodingContext(searchParams.get("city"));
   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || "";
 
@@ -100,7 +103,7 @@ export async function GET(request) {
     session_token: sessionToken,
     types: "poi,address,street",
   });
-  if (context.bounds) {
+  if (!allowOutsideCity && context.bounds) {
     params.set("bbox", formatBounds(context.bounds));
   }
 
@@ -109,7 +112,7 @@ export async function GET(request) {
       fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`, {
         cache: "no-store",
       }),
-      context.bounds ? searchGeocodingV6({ accessToken, context, query }) : Promise.resolve([]),
+      context.bounds ? searchGeocodingV6({ accessToken, context, query, allowOutsideCity }) : Promise.resolve([]),
     ]);
     if (searchboxResponse.status === 402) {
       console.error("[api/geocode/suggest] Mapbox Search Box payment required");

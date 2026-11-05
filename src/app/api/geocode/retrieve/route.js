@@ -9,6 +9,7 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const mapboxId = String(searchParams.get("id") || "").trim();
   const sessionToken = String(searchParams.get("sessionToken") || "").trim();
+  const allowOutsideCity = searchParams.get("allowOutsideCity") === "true";
   const context = await resolveServerCityGeocodingContext(searchParams.get("city"));
   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || process.env.MAPBOX_TOKEN || "";
 
@@ -39,7 +40,7 @@ export async function GET(request) {
     const feature = payload?.features?.[0];
     const lng = Number(feature?.geometry?.coordinates?.[0]);
     const lat = Number(feature?.geometry?.coordinates?.[1]);
-    if (!isCoordinateInsideBounds({ lat, lng }, context.bounds)) {
+    if (!allowOutsideCity && !isCoordinateInsideBounds({ lat, lng }, context.bounds)) {
       return Response.json(
         { error: `The selected result is outside ${context.city}. Choose another result or place the pin manually.` },
         { status: 422 },

@@ -41,6 +41,7 @@ export default function VenueLocationPicker({
   onLocationChange,
   entityLabel = "Venue",
   inputId = "venue-location-address",
+  allowOutsideCity = false,
 }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
@@ -75,7 +76,7 @@ export default function VenueLocationPicker({
     const latitude = Number(lat);
     const longitude = Number(lng);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
-    if (!isCoordinateInsideBounds({ lat: latitude, lng: longitude }, boundsRef.current)) {
+    if (!allowOutsideCity && !isCoordinateInsideBounds({ lat: latitude, lng: longitude }, boundsRef.current)) {
       setMessage("The pin is outside the selected city area. Place it closer to the venue's city.");
       return;
     }
@@ -87,7 +88,7 @@ export default function VenueLocationPicker({
       source,
     });
     setMessage(source === "manual" ? "Pin position confirmed." : "Address and pin confirmed.");
-  }, []);
+  }, [allowOutsideCity]);
 
   useEffect(() => {
     const currentCity = String(city || "");
@@ -116,6 +117,7 @@ export default function VenueLocationPicker({
           q: query,
           sessionToken: sessionTokenRef.current,
         });
+        if (allowOutsideCity) params.set("allowOutsideCity", "true");
         const response = await fetch(`/api/geocode/suggest?${params}`, { signal: controller.signal });
         const payload = await readJsonResponse(response, "Address search failed.");
         if (!response.ok) throw new Error(payload?.error || "Address search failed.");
@@ -137,7 +139,7 @@ export default function VenueLocationPicker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [address, cityContext.city, location]);
+  }, [address, allowOutsideCity, cityContext.city, location]);
 
   useEffect(() => {
     if (!showMap || !mapboxReady || !mapboxToken || !mapContainerRef.current || !cityContext.center) {
@@ -223,7 +225,7 @@ export default function VenueLocationPicker({
           lng: Number(suggestion.lng),
           source: suggestion.provider,
         };
-        if (!isCoordinateInsideBounds(nextLocation, cityContext.bounds)) {
+        if (!allowOutsideCity && !isCoordinateInsideBounds(nextLocation, cityContext.bounds)) {
           setMessage(`That result is outside ${cityContext.city}. Choose a closer address or place the pin manually.`);
           return;
         }
@@ -239,10 +241,11 @@ export default function VenueLocationPicker({
         id: suggestion.id,
         sessionToken: sessionTokenRef.current,
       });
+      if (allowOutsideCity) params.set("allowOutsideCity", "true");
       const response = await fetch(`/api/geocode/retrieve?${params}`);
       const payload = await readJsonResponse(response, "Could not retrieve the selected address.");
       if (!response.ok) throw new Error(payload?.error || "Could not retrieve the selected address.");
-      if (!isCoordinateInsideBounds(payload, cityContext.bounds)) {
+      if (!allowOutsideCity && !isCoordinateInsideBounds(payload, cityContext.bounds)) {
         setMessage(`That result is outside ${cityContext.city}. Choose a closer address or place the pin manually.`);
         return;
       }
@@ -273,7 +276,7 @@ export default function VenueLocationPicker({
           id={inputId}
           value={address}
           onChange={handleAddressInput}
-          placeholder={cityContext.city ? `Search an address in ${cityContext.city}` : "Enter city first, then search address"}
+          placeholder={cityContext.city ? `Search an address${allowOutsideCity ? ` in or beyond ${cityContext.city}` : ` in ${cityContext.city}`}` : "Enter city first, then search address"}
           autoComplete="off"
           disabled={!cityContext.center}
           className="min-h-12 w-full rounded-xl border border-white/14 bg-black/42 py-3 pl-10 pr-3.5 text-base text-white outline-none transition placeholder:text-white/30 focus:border-cyan-200/48 focus:ring-2 focus:ring-cyan-200/14 sm:text-sm"
