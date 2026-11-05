@@ -32,6 +32,38 @@ function toTodayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getExpiredEventIds(rows, todayIso) {
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => {
+      const endDate =
+        String(row?.end_date || "").trim() ||
+        String(row?.start_date || "").trim() ||
+        String(row?.date || "").trim();
+      return Boolean(endDate) && endDate < todayIso;
+    })
+    .map((row) => String(row?.id || "").trim())
+    .filter(Boolean);
+}
+
+async function pruneExpiredEvents(supabase, table, todayIso) {
+  const { data, error } = await supabase
+    .from(table)
+    .select("id,date,start_date,end_date");
+
+  if (error) throw new Error(`Could not load ${table}: ${error.message || "unknown error"}`);
+
+  const expiredIds = getExpiredEventIds(data, todayIso);
+  if (expiredIds.length === 0) return 0;
+
+  const { error: deleteError } = await supabase
+    .from(table)
+    .delete()
+    .in("id", expiredIds);
+
+  if (deleteError) throw new Error(`Could not delete expired ${table}: ${deleteError.message || "unknown error"}`);
+  return expiredIds.length;
+}
+
 export async function GET(request) {
   try {
     if (!isAuthorized(request)) {
@@ -41,44 +73,16 @@ export async function GET(request) {
     const supabase = getSupabaseServerClient();
     const todayIso = toTodayIso();
 
-    const { data, error } = await supabase
-      .from("global_events")
-      .select("id,date,start_date,end_date");
-
-    if (error) {
-      return NextResponse.json({ ok: false, error: error.message || "Could not load events." }, { status: 500 });
-    }
-
-    const expiredIds = (Array.isArray(data) ? data : [])
-      .filter((row) => {
-        const endDate =
-          String(row?.end_date || "").trim() ||
-          String(row?.start_date || "").trim() ||
-          String(row?.date || "").trim();
-        return Boolean(endDate) && endDate < todayIso;
-      })
-      .map((row) => String(row?.id || "").trim())
-      .filter(Boolean);
-
-    if (expiredIds.length === 0) {
-      return NextResponse.json({ ok: true, deleted: 0, todayIso });
-    }
-
-    const { error: deleteError } = await supabase
-      .from("global_events")
-      .delete()
-      .in("id", expiredIds);
-
-    if (deleteError) {
-      return NextResponse.json(
-        { ok: false, error: deleteError.message || "Delete failed.", matched: expiredIds.length, todayIso },
-        { status: 500 }
-      );
-    }
+    const [globalEventsDeleted, cityEventsDeleted] = await Promise.all([
+      pruneExpiredEvents(supabase, "global_events", todayIso),
+      pruneExpiredEvents(supabase, "events", todayIso),
+    ]);
 
     return NextResponse.json({
       ok: true,
-      deleted: expiredIds.length,
+      deleted: globalEventsDeleted + cityEventsDeleted,
+      globalEventsDeleted,
+      cityEventsDeleted,
       todayIso,
     });
   } catch (error) {
