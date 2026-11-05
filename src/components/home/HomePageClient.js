@@ -12,9 +12,9 @@ import { readLocalJson, writeLocalJson, writeLocalValue } from "@/lib/storage";
 import { readRuntimeCache, writeRuntimeCache } from "@/lib/runtimeCache";
 import { resolveAdminAccess } from "@/lib/adminAccess";
 import { formatDateShort } from "@/lib/dateDisplay";
-import { ChevronDown, Globe2, Search } from "lucide-react";
+import { ChevronDown, Globe2, Heart, Search } from "lucide-react";
 import HomeVenueIntelligence from "@/components/home/HomeVenueIntelligence";
-import { HomeDiscoverySection, MembershipPreview } from "@/components/home/HomeDeferredSections";
+import { DonationCallout, HomeDiscoverySection, MembershipPreview } from "@/components/home/HomeDeferredSections";
 import { isEventStatusDiscoverable } from "@/features/events/eventStatus";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { getPublishedLocales } from "@/lib/i18n/locales";
@@ -1105,6 +1105,14 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 h-3.5 w-3.5 text-white/60" aria-hidden="true" />
               </div>
+              <a
+                href="#support-queeratlas"
+                onClick={() => trackHomeAction("donate_anchor", "support-queeratlas", { placement: "header" })}
+                className="qa-action hidden h-10 items-center gap-1.5 rounded-full border border-fuchsia-200/22 bg-fuchsia-200/[0.08] px-3.5 text-xs font-semibold text-fuchsia-100/88 transition hover:border-fuchsia-200/45 hover:bg-fuchsia-200/[0.14] hover:text-fuchsia-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/55 xl:inline-flex"
+              >
+                <Heart size={13} aria-hidden="true" />
+                {t("home.support", "Support")}
+              </a>
               {isMember && (
                 <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
                   {heroIdentityLabel}
@@ -1348,6 +1356,18 @@ export default function HomePageClient({ initialHomeData = null }) {
 
               </div>
 
+              <div className="mt-3 flex justify-center sm:justify-start">
+                <a
+                  href="#support-queeratlas"
+                  onClick={() => trackHomeAction("donate_anchor", "support-queeratlas", { placement: "hero" })}
+                  className="qa-action inline-flex min-h-10 items-center gap-2 rounded-full px-2 py-2 text-xs font-semibold text-fuchsia-100/78 transition hover:text-fuchsia-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-200/55"
+                >
+                  <Heart size={13} aria-hidden="true" />
+                  {t("home.supportIndependent", "Help keep QueerAtlas independent")}
+                  <span aria-hidden="true">→</span>
+                </a>
+              </div>
+
             </section>
           </div>
             </div>
@@ -1364,6 +1384,12 @@ export default function HomePageClient({ initialHomeData = null }) {
                 return;
               }
               openSignup("/favorites", "signup", "membership_preview");
+            }}
+          />
+
+          <DonationCallout
+            onDonate={() => {
+              trackHomeAction("donate", "paypal", { currency: "EUR", provider: "paypal" });
             }}
           />
 

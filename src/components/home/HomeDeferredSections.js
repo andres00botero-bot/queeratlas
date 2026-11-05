@@ -10,6 +10,7 @@ import {
   CalendarDays,
   ClipboardCheck,
   Compass,
+  Heart,
   History,
   Map,
   Megaphone,
@@ -359,6 +360,40 @@ export function MembershipPreview({ isMember = false, onAction }) {
 
               <div className="ml-[7%] mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.2)]"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f5d99a]/70">Coming up</p><p className="mt-1 text-sm font-medium text-white">Berlin · 4 places ready to shape</p></div><span className="h-2.5 w-2.5 rounded-full bg-[#f5d99a] shadow-[0_0_18px_rgba(245,217,154,0.7)]" /></div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function DonationCallout({ onDonate }) {
+  const { t } = useLocale();
+
+  return (
+    <section id="support-queeratlas" data-home-section="donate" className="qa-defer-render mt-8 scroll-mt-20 sm:mt-10" aria-labelledby="support-queeratlas-title">
+      <div className="py-8 sm:py-10">
+        <div className="grid items-center gap-6 lg:grid-cols-[minmax(0,34rem)_auto] lg:gap-14">
+          <div className="max-w-2xl">
+            <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-fuchsia-100/74">
+              <Heart size={13} fill="#ef4444" strokeWidth={2} aria-hidden="true" />
+              {t("home.donateEyebrow", "Keep the atlas independent")}
+            </p>
+            <h2 id="support-queeratlas-title" className="qa-display mt-3 max-w-[30rem] !text-left text-2xl font-semibold leading-[1.05] tracking-[-0.045em] text-white sm:text-[2rem]">
+              {t("home.donateTitle", "Help keep QueerAtlas independent and growing.")}
+            </h2>
+            <p className="mt-3 max-w-xl !text-left text-sm leading-6 text-white/66 [hyphens:manual] sm:text-base">
+              {t("home.donateDescription", "Every donation helps us keep researching, updating and caring for QueerAtlas—so queer people can rely on it wherever they go.")}
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            <a href="https://www.paypal.com/donate/?hosted_button_id=ELEXGHXWXCWJA&locale.x=en_US" onClick={onDonate} className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[#ffc439] px-6 py-3.5 text-sm font-bold text-[#171421] shadow-[0_14px_30px_rgba(255,196,57,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd35a] hover:shadow-[0_18px_38px_rgba(255,196,57,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe08a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#171421] sm:w-auto">
+              <Heart size={17} fill="currentColor" aria-hidden="true" />
+              {t("home.donateAction", "Support QueerAtlas")}
+              <ArrowUpRight size={16} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
+            </a>
+            <p className="mt-2 text-center text-[11px] font-medium text-white/52">{t("home.donateReassurance", "Secure donation via PayPal · Give any amount in EUR")}</p>
           </div>
         </div>
       </div>
