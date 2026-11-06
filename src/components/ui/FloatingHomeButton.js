@@ -167,7 +167,7 @@ export default function FloatingHomeButton() {
       label: t("global.search", "Search"),
       icon: Search,
       accent: "violet",
-      mobile: true,
+      desktopOnly: true,
       isActive: (route) => route === "/search" || route.startsWith("/search/"),
     },
     {
@@ -192,6 +192,7 @@ export default function FloatingHomeButton() {
       label: t("global.cities", "Cities"),
       icon: MapPinned,
       accent: "emerald",
+      mobile: true,
       isActive: (route) => {
         if (route === "/cities" || route.startsWith("/cities/")) return true;
         const reservedRoots = new Set([
@@ -208,7 +209,7 @@ export default function FloatingHomeButton() {
     },
     {
       href: "/favorites",
-      label: t("global.saved", "Saved"),
+      label: t("global.atlas", "Atlas"),
       icon: Star,
       accent: "amber",
       mobile: true,
@@ -235,13 +236,14 @@ export default function FloatingHomeButton() {
       label: t("global.messages", "Messages"),
       icon: MessageCircle,
       accent: "sky",
+      mobile: true,
       isActive: (route) => route === "/messages" || route.startsWith("/messages/"),
     },
   ];
 
   return (
     <div className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-1/2 z-[90] w-[min(96vw,30rem)] -translate-x-1/2 px-2 md:bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] md:left-auto md:w-auto md:translate-x-0 md:px-0 md:right-[calc(1.25rem+env(safe-area-inset-right,0px))]">
-      <div className="mb-1.5 hidden items-center justify-end gap-2 md:mb-2 md:flex">
+      <div className="mb-1.5 flex items-center justify-center gap-2 md:mb-2 md:justify-end">
         <span className="inline-flex h-5 items-center rounded-full border border-cyan-100/34 bg-[linear-gradient(135deg,rgba(34,211,238,0.18),rgba(244,114,182,0.14),rgba(0,0,0,0.72))] px-2.5 text-[10px] font-bold uppercase text-white shadow-[0_8px_22px_rgba(34,211,238,0.16),0_8px_20px_rgba(0,0,0,0.34)] ring-1 ring-white/10">
           {t("global.navigate", "Navigate")}
         </span>
