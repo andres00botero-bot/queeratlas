@@ -1272,7 +1272,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
 
                   {showResults && results.length > 0 && (
-                    <div aria-label={t("home.instantResults", "Instant search results")} className="absolute top-full z-50 mt-3 w-full max-h-[360px] overflow-y-auto overflow-x-hidden rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl lg:max-h-[560px]">
+                    <div aria-label={t("home.instantResults", "Instant search results")} className="absolute inset-x-3 top-[3.75rem] z-[70] mt-2 w-auto max-h-[55vh] overflow-y-auto overflow-x-hidden rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:inset-x-auto sm:top-full sm:mt-3 sm:w-full sm:max-h-[360px] sm:rounded-[24px] lg:max-h-[560px]">
                       {results.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}
@@ -1323,7 +1323,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                     </div>
                   )}
                   {showResults && query.trim().length >= 2 && results.length === 0 && (
-                    <div role="status" aria-live="polite" className="absolute top-full z-50 mt-3 w-full rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl">
+                    <div role="status" aria-live="polite" className="absolute inset-x-3 top-[3.75rem] z-[70] mt-2 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:inset-x-auto sm:top-full sm:mt-3 sm:w-full sm:rounded-[24px]">
                       {searchState === "loading"
                         ? ({ en: "Searching…", de: "Suche läuft…", fr: "Recherche en cours…", es: "Buscando…" }[locale] || "Searching…")
                         : searchState === "error"
