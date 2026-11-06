@@ -53,10 +53,8 @@ function DiscoveryCard({ item }) {
     <button
       type="button"
       onClick={item.onClick}
-      className={`qa-premium-card group relative min-h-[6.75rem] overflow-hidden rounded-[22px] border p-3.5 text-left shadow-[0_18px_50px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.055)] ring-1 ring-inset ring-white/[0.025] transition duration-300 hover:-translate-y-0.5 hover:border-white/26 hover:shadow-[0_22px_58px_rgba(0,0,0,0.36),inset_0_1px_0_rgba(255,255,255,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[8rem] sm:p-4 ${item.surface}`}
+      className={`group relative min-h-[6.75rem] rounded-[18px] border p-3.5 text-left transition-colors duration-200 hover:border-white/30 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 sm:min-h-[8rem] sm:p-4 ${item.surface}`}
     >
-      <div className={`pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full blur-2xl transition duration-500 group-hover:scale-125 ${item.glow}`} />
-      <div className={`absolute inset-x-5 top-0 h-px bg-gradient-to-r ${item.accentLine}`} />
       <div className="relative flex h-full min-h-[4.75rem] flex-col sm:min-h-[6rem]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -70,7 +68,7 @@ function DiscoveryCard({ item }) {
           </span>
         </div>
         <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-          <span className={`truncate text-[9px] font-semibold uppercase tracking-[0.13em] ${item.metricClass}`}>{item.metric}</span>
+          <span className={`truncate text-[11px] font-semibold uppercase tracking-[0.1em] ${item.metricClass}`}>{item.metric}</span>
           <span className="hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/10 text-white/46 transition duration-300 group-hover:border-white/24 group-hover:bg-white/10 group-hover:text-white sm:flex">
             <ArrowUpRight size={12} aria-hidden="true" />
           </span>
@@ -282,10 +280,9 @@ export function HomeDiscoverySection({ discoveryCards = [] }) {
   const { t } = useLocale();
   return (
     <section id="home-discovery" data-home-section="discovery" className="mt-8 scroll-mt-20">
-      <div className="relative overflow-hidden rounded-[30px] border border-white/14 bg-[radial-gradient(circle_at_7%_0%,rgba(56,189,248,0.14),transparent_32%),radial-gradient(circle_at_94%_8%,rgba(217,70,239,0.14),transparent_30%),radial-gradient(circle_at_52%_110%,rgba(139,92,246,0.1),transparent_38%),linear-gradient(155deg,rgba(16,19,33,0.98),rgba(7,9,17,0.99))] p-4 shadow-[0_28px_78px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.075)] ring-1 ring-inset ring-white/[0.035] sm:p-6">
-        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-cyan-100/46 to-transparent" />
+      <div className="relative rounded-[24px] border border-white/10 bg-[#10131c] p-4 sm:p-6">
         <div className="relative mb-6 sm:mb-7">
-          <p className="!text-left text-[9px] font-semibold uppercase tracking-[0.22em] text-cyan-100/68 sm:text-[10px]">{t("home.exploreQueerAtlas", "Explore Queer Atlas")}</p>
+          <p className="!text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/76">{t("home.exploreQueerAtlas", "Explore Queer Atlas")}</p>
           <h2 className="qa-display mt-2.5 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2.1rem]">
             {t("home.findPrompt", "What do you want to find?")}
           </h2>
@@ -304,41 +301,28 @@ export function MembershipPreview({ isMember = false, onAction }) {
   const { t } = useLocale();
 
   return (
-    <section data-home-section="membership-preview" className="qa-defer-render mt-6 py-3 sm:py-4">
-      <div className="relative isolate overflow-hidden rounded-[30px] bg-[#e6d7be] text-[#171421] shadow-[0_30px_84px_rgba(0,0,0,0.34)]">
+    <section data-home-section="membership-preview" className="qa-defer-render mt-5 py-2 sm:mt-6 sm:py-4">
+      <div className="relative isolate overflow-hidden rounded-[24px] bg-[#e6d7be] text-[#171421] shadow-[0_18px_46px_rgba(0,0,0,0.24)] sm:rounded-[30px] sm:shadow-[0_30px_84px_rgba(0,0,0,0.34)]">
         <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] bg-[radial-gradient(circle_at_80%_15%,rgba(48,208,204,0.9),transparent_18%),radial-gradient(circle_at_18%_88%,rgba(229,113,174,0.72),transparent_28%),linear-gradient(135deg,#131b35_4%,#19294a_58%,#101826)] lg:block" />
         <div className="pointer-events-none absolute -right-20 top-20 hidden h-72 w-72 rounded-full border border-white/15 lg:block" />
         <div className="pointer-events-none absolute -right-4 top-36 hidden h-48 w-48 rounded-full border border-white/10 lg:block" />
         <div className="relative grid lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="flex min-h-0 flex-col justify-between p-5 sm:min-h-[330px] sm:p-6 lg:p-7">
+          <div className="flex min-h-0 flex-col justify-between p-4 sm:min-h-[330px] sm:p-6 lg:p-7">
             <div>
               <p className="!text-left text-[10px] font-bold uppercase tracking-[0.24em] text-[#645b70]">{t("home.memberEyebrow", "Your personal Atlas")}</p>
-              <h2 className="qa-display mt-3 max-w-md !text-left text-[1.85rem] font-semibold leading-[1.05] tracking-[-0.065em] text-[#171421] sm:mt-3 sm:text-[2.5rem]">
+              <h2 className="qa-display mt-2 max-w-md !text-left text-[1.7rem] font-semibold leading-[1.05] tracking-[-0.05em] text-[#171421] sm:mt-3 sm:text-[2.5rem]">
                 {t("home.memberTitle", "Save places. Plan your trip.")}
               </h2>
-              <p className="mt-3 max-w-sm !text-left text-sm leading-6 text-[#4f4858] sm:mt-3 sm:text-sm">
+              <p className="mt-2 max-w-sm !text-left text-sm leading-6 text-[#4f4858] sm:mt-3 sm:text-sm">
                 {t("home.memberShortDescription", "Keep your favourite places and organise your next trip—all in your own Atlas.")}
               </p>
             </div>
-            <div className="mt-5 sm:mt-6">
+            <div className="mt-4 sm:mt-6">
               <button type="button" onClick={onAction} className="qa-action inline-flex min-h-12 items-center gap-2 rounded-full bg-[#171421] px-5 py-3 text-sm font-semibold text-[#fff8ef] shadow-[0_12px_24px_rgba(23,20,33,0.2)] transition hover:-translate-y-0.5 hover:bg-[#2b2438] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#171421] focus-visible:ring-offset-2 focus-visible:ring-offset-[#e6d7be]">
                 {isMember ? t("home.openYourAtlas", "Open your Atlas") : t("home.createFreeAtlas", "Create your free Atlas")}
                 <ArrowRight size={16} aria-hidden="true" />
               </button>
               <p className="mt-2 text-xs font-medium text-[#665d6d]">{t("home.memberReassurance", "Free to join. Private by default.")}</p>
-            </div>
-          </div>
-
-          <div className="relative overflow-hidden bg-[#121b32] p-3 lg:hidden">
-            <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-cyan-300/25 blur-3xl" />
-            <div className="relative rounded-[20px] border border-white/[0.17] bg-[#0d1528]/80 p-3 shadow-[0_16px_32px_rgba(0,0,0,0.24)]">
-              <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-50/58">
-                <span>{t("home.memberPreviewLabel", "Preview · My Atlas")}</span>
-                <span>{t("home.memberPreviewStatus", "Private")}</span>
-              </div>
-              <div className="mt-2 flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-cyan-100/18 bg-cyan-100/10 text-xs font-bold text-cyan-50">QA</span><span><span className="block text-sm font-semibold text-white">My Atlas</span><span className="mt-0.5 block text-[11px] text-white/48">Places, plans and memories</span></span></div>
-              <div className="mt-2 grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/[0.06] px-2.5 py-2"><span className="block text-sm font-semibold text-white">14</span><span className="text-[9px] uppercase tracking-[0.1em] text-white/46">Saved</span></div><div className="rounded-xl bg-white/[0.06] px-2.5 py-2"><span className="block text-sm font-semibold text-white">3</span><span className="text-[9px] uppercase tracking-[0.1em] text-white/46">Visited</span></div><div className="rounded-xl bg-white/[0.06] px-2.5 py-2"><span className="block text-sm font-semibold text-white">4</span><span className="text-[9px] uppercase tracking-[0.1em] text-white/46">Cities</span></div></div>
-              <div className="hidden sm:block mt-3 rounded-xl border border-cyan-100/14 bg-cyan-100/[0.06] px-3 py-2.5"><p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-cyan-100/66">Coming up</p><p className="mt-1 text-xs font-medium text-white">Berlin · 4 places ready to shape</p></div>
             </div>
           </div>
 
@@ -354,7 +338,7 @@ export function MembershipPreview({ isMember = false, onAction }) {
 
               <div className="mt-3 rounded-[22px] border border-white/[0.18] bg-[#0e162a]/70 p-4 shadow-[0_18px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-cyan-100/18 bg-cyan-100/10 text-xs font-bold text-cyan-50">QA</span><div><p className="text-sm font-semibold text-white">My Atlas</p><p className="mt-0.5 text-[11px] text-white/48">Private by default</p></div></div><span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-50">Growing</span></div>
-                <div className="mt-2 grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">14</p><p className="text-[9px] uppercase tracking-[0.12em] text-white/46">Saved</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">3</p><p className="text-[9px] uppercase tracking-[0.12em] text-white/46">Visited</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">4</p><p className="text-[9px] uppercase tracking-[0.12em] text-white/46">Cities</p></div></div>
+                <div className="mt-2 grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">14</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Saved</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">3</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Visited</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">4</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Cities</p></div></div>
                 <div className="mt-4 border-t border-white/10 pt-3"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/66">Your cities</p><div className="mt-2 flex flex-wrap gap-2"><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Berlin · 6</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Stockholm · 5</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Brussels · 3</span></div></div>
               </div>
 

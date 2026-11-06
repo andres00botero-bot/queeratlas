@@ -835,11 +835,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.citiesShortDescription", "Places, safety and queer life."),
       icon: "Cities",
       metric: `${cityCountDisplay} ${t("home.cities", "cities").toLowerCase()}`,
-      surface: "border-[#88d9d4]/22 bg-[radial-gradient(circle_at_95%_0%,rgba(136,217,212,0.14),transparent_40%),linear-gradient(150deg,rgba(16,36,49,0.94),rgba(11,16,32,0.97))] hover:border-[#88d9d4]/45",
+      surface: "border-[#88d9d4]/22 bg-[#11212b] hover:border-[#88d9d4]/45",
       glow: "bg-[#88d9d4]/18",
       accentLine: "from-transparent via-[#88d9d4]/75 to-transparent",
-      iconSurface: "border-[#88d9d4]/25 bg-[linear-gradient(145deg,rgba(136,217,212,0.22),rgba(183,160,247,0.16))] text-[#d7fbf8]",
-      metricClass: "text-[#b8f0ed]/62",
+      iconSurface: "border-[#88d9d4]/25 bg-[#88d9d4]/12 text-[#d7fbf8]",
+      metricClass: "text-[#b8f0ed]/82",
       onClick: () => {
         trackHomeAction("cities", "/cities");
         router.push("/cities");
@@ -851,11 +851,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.eventsShortDescription", "What’s on tonight and later."),
       icon: "Events",
       metric: `${eventCountDisplay} ${t("home.events", "events").toLowerCase()}`,
-      surface: "border-[#f1ba98]/20 bg-[radial-gradient(circle_at_95%_0%,rgba(241,186,152,0.13),transparent_40%),linear-gradient(150deg,rgba(59,38,39,0.94),rgba(29,22,32,0.97))] hover:border-[#f1ba98]/42",
+      surface: "border-[#f1ba98]/20 bg-[#261d24] hover:border-[#f1ba98]/42",
       glow: "bg-[#f1ba98]/18",
       accentLine: "from-transparent via-[#d8b678]/75 to-transparent",
-      iconSurface: "border-[#f1ba98]/24 bg-[linear-gradient(145deg,rgba(241,186,152,0.2),rgba(216,182,120,0.14))] text-[#fff8fc]",
-      metricClass: "text-[#f1ba98]/65",
+      iconSurface: "border-[#f1ba98]/24 bg-[#f1ba98]/12 text-[#fff8fc]",
+      metricClass: "text-[#f1ba98]/82",
       onClick: () => {
         trackHomeAction("events", "/events");
         router.push("/events");
@@ -867,11 +867,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.newsDescription", "Queer news from around the world."),
       icon: "News",
       metric: `${homeNewsItems.length || 0} ${t("home.freshStories", "fresh stories")}`,
-      surface: "border-[#88d9d4]/20 bg-[radial-gradient(circle_at_95%_0%,rgba(136,217,212,0.13),transparent_40%),linear-gradient(150deg,rgba(17,41,49,0.94),rgba(12,22,35,0.97))] hover:border-[#88d9d4]/42",
+      surface: "border-[#88d9d4]/20 bg-[#14252e] hover:border-[#88d9d4]/42",
       glow: "bg-[#88d9d4]/16",
       accentLine: "from-transparent via-[#88d9d4]/72 to-transparent",
-      iconSurface: "border-[#88d9d4]/22 bg-[linear-gradient(145deg,rgba(136,217,212,0.19),rgba(183,160,247,0.14))] text-[#d7fbf8]",
-      metricClass: "text-[#b8f0ed]/62",
+      iconSurface: "border-[#88d9d4]/22 bg-[#88d9d4]/12 text-[#d7fbf8]",
+      metricClass: "text-[#b8f0ed]/82",
       onClick: () => {
         trackHomeAction("news", "/now");
         router.push("/now");
@@ -883,11 +883,11 @@ export default function HomePageClient({ initialHomeData = null }) {
       shortDescription: t("home.collectionsShortDescription", "Handpicked places and trips."),
       icon: "Collections",
       metric: t("home.editorialPicks", "Editorial picks"),
-      surface: "border-[#d7c0ff]/22 bg-[radial-gradient(circle_at_95%_0%,rgba(215,192,255,0.14),transparent_40%),linear-gradient(150deg,rgba(40,32,62,0.95),rgba(20,18,34,0.98))] hover:border-[#d7c0ff]/44",
+      surface: "border-[#d7c0ff]/22 bg-[#201d32] hover:border-[#d7c0ff]/44",
       glow: "bg-[#d7c0ff]/18",
       accentLine: "from-transparent via-[#d7c0ff]/75 to-transparent",
-      iconSurface: "border-[#d7c0ff]/25 bg-[linear-gradient(145deg,rgba(215,192,255,0.2),rgba(245,169,198,0.14))] text-[#f7f2f7]",
-      metricClass: "text-[#e5d9ff]/65",
+      iconSurface: "border-[#d7c0ff]/25 bg-[#d7c0ff]/12 text-[#f7f2f7]",
+      metricClass: "text-[#e5d9ff]/82",
       onClick: () => {
         trackHomeAction("collections", "/now/collections");
         router.push("/now/collections");
@@ -1337,19 +1337,19 @@ export default function HomePageClient({ initialHomeData = null }) {
                 <div className="mt-3 flex items-center divide-x divide-white/10 border-t border-white/10 px-1 pt-3">
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{countryCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.countries", "Countries")}</p>
+                    <p className="mt-1 !text-center text-[11px] uppercase tracking-[0.03em] whitespace-nowrap text-white/58">{t("home.countries", "Countries")}</p>
                   </div>
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{cityCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.cities", "Cities")}</p>
+                    <p className="mt-1 !text-center text-[11px] uppercase tracking-[0.03em] whitespace-nowrap text-white/58">{t("home.cities", "Cities")}</p>
                   </div>
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{placeCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.places", "Places")}</p>
+                    <p className="mt-1 !text-center text-[11px] uppercase tracking-[0.03em] whitespace-nowrap text-white/58">{t("home.places", "Places")}</p>
                   </div>
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{eventCountDisplay}</p>
-                    <p className="mt-1 !text-center text-[8px] uppercase tracking-[0.15em] text-white/38 sm:text-[9px]">{t("home.events", "Events")}</p>
+                    <p className="mt-1 !text-center text-[11px] uppercase tracking-[0.03em] whitespace-nowrap text-white/58">{t("home.events", "Events")}</p>
                   </div>
                 </div>
                 </div>
