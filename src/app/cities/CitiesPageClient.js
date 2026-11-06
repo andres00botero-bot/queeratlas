@@ -1159,18 +1159,18 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
               <BrandMark iconOnly className="h-9 w-9 shrink-0 sm:h-14 sm:w-14" />
               {t("cities.title", "Cities")}
             </h1>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-white/64 sm:mt-5 sm:text-base sm:leading-7">
+            <p className="mt-3 max-w-xl text-sm leading-5 text-white/72 sm:mt-5 sm:text-base sm:leading-7">
               {t("cities.intro", "Find the places, scenes and local signal that fit your trip.")}
             </p>
 
-            <div className="mt-5 flex flex-wrap gap-2 text-xs sm:mt-6">
+            <div className="mt-5 hidden flex-wrap gap-2 text-xs sm:mt-6 sm:flex">
               <Link href="/qari" className="rounded-full border border-cyan-100/28 bg-cyan-100/[0.09] px-3 py-2 font-semibold text-cyan-50 transition hover:border-cyan-100/46">Compare country context</Link>
               <Link href="/events" className="rounded-full border border-fuchsia-100/24 bg-fuchsia-100/[0.08] px-3 py-2 font-semibold text-fuchsia-50 transition hover:border-fuchsia-100/42">Find LGBTQ+ events</Link>
               <Link href="/topics/nightlife" className="rounded-full border border-white/16 bg-black/20 px-3 py-2 font-semibold text-white/78 transition hover:border-white/30 hover:text-white">Explore queer nightlife</Link>
               <Link href="/topics/safety" className="rounded-full border border-white/16 bg-black/20 px-3 py-2 font-semibold text-white/78 transition hover:border-white/30 hover:text-white">Read travel safety context</Link>
             </div>
 
-            <div className="mt-6 flex flex-col gap-2.5 sm:mt-7 sm:flex-row sm:items-start">
+            <div className="mt-5 flex flex-col gap-2.5 sm:mt-7 sm:flex-row sm:items-start">
               <label htmlFor="hero-city-search" className="sr-only">{t("cities.search", "Search city or country")}</label>
               <div ref={citySearchRef} className="group min-w-0 flex-1">
                 <div className="relative">
