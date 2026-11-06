@@ -92,7 +92,7 @@ export default function CityHeroCard({
             {introCopy}
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-2 sm:mt-6">
+          <div className="mt-5 hidden flex-wrap gap-2 sm:mt-6 sm:flex">
             {stats.map((stat) => (
               <div
                 key={stat.label}

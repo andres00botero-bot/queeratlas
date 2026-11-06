@@ -93,7 +93,7 @@ export default function CityQuickNavigation({
         }
         setShowVenuePicker((current) => !current);
       },
-      label: t("city.venues", "Venues"),
+      label: isPhoneVariant ? t("cities.places", "Places") : t("city.venues", "Venues"),
       eyebrow: "Choose a category",
       Icon: MapPin,
       className:
@@ -101,7 +101,7 @@ export default function CityQuickNavigation({
     },
   ];
   const visibleItems = isPhoneVariant
-    ? [items[3], items[2], items[4], items[5]]
+    ? [items[3], items[5], items[2], items[4]]
     : isDesktopVariant
       ? [items[0], items[3], items[2], items[4], items[5]]
       : items.slice(1);
@@ -268,13 +268,13 @@ export default function CityQuickNavigation({
       }`}
       style={{ animationDelay: "170ms" }}
     >
-      <div className={`items-center justify-between gap-2 ${isPhoneVariant ? "hidden" : "flex"}`}>
-        <p className="qa-city-explorer-title text-[11px] font-semibold uppercase tracking-[0.16em] sm:tracking-[0.18em]">Explore this city</p>
+      <div className={`items-center justify-between gap-2 ${isPhoneVariant ? "flex" : "flex"}`}>
+        <p className="qa-city-explorer-title text-[11px] font-semibold uppercase tracking-[0.16em] sm:tracking-[0.18em]">{isPhoneVariant ? "Choose what to explore" : "Explore this city"}</p>
         <p className="qa-city-explorer-current hidden rounded-full px-2 py-1 text-[11px] sm:block">
           Current: {activeSection || "overview"}
         </p>
       </div>
-      <div className={`grid gap-1.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5 ${isPhoneVariant ? "grid-cols-4" : "mt-2 grid-cols-5"}`}>
+      <div className={`grid gap-1.5 sm:mt-3 sm:grid-cols-2 sm:gap-3 xl:grid-cols-5 ${isPhoneVariant ? "mt-2 grid-cols-4" : "mt-2 grid-cols-5"}`}>
         {visibleItems.map((item) => {
           const Icon = item.Icon;
           const isActive =

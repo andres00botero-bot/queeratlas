@@ -5246,17 +5246,6 @@ export default function CityPageClient() {
                 regionalGuideNote={regionalGuideNote}
                 mobileDiscovery={
                   <>
-                    <CityMapSection
-                      mapWrapperRef={phoneMapWrapperRef}
-                      mapContainerRef={phoneMapContainerRef}
-                      mapError={mapError}
-                      isMapReady={isMapReady}
-                      compactWhileLoading
-                      showSearchArea={showSearchArea}
-                      searchAreaLabel={mapAreaResult || "Search this area"}
-                      onSearchThisArea={handleSearchThisArea}
-                      onContinueInListMode={() => goToMobileSection("guide", guideSectionRef)}
-                    />
                     <CityNavigationCluster
                       cityPlacesCount={cityPlaceCount}
                       cityEventCount={cityEventCount}
@@ -5277,6 +5266,17 @@ export default function CityPageClient() {
                       activeVenueFilter={activeVenueFilter}
                       venueAccessRestricted={venueAccessRestricted}
                       variant="phone"
+                    />
+                    <CityMapSection
+                      mapWrapperRef={phoneMapWrapperRef}
+                      mapContainerRef={phoneMapContainerRef}
+                      mapError={mapError}
+                      isMapReady={isMapReady}
+                      compactWhileLoading
+                      showSearchArea={showSearchArea}
+                      searchAreaLabel={mapAreaResult || "Search this area"}
+                      onSearchThisArea={handleSearchThisArea}
+                      onContinueInListMode={() => goToMobileSection("guide", guideSectionRef)}
                     />
                   </>
                 }
