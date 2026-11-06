@@ -264,11 +264,13 @@ export default function CityQuickNavigation({
   return (
     <div
       className={`qa-city-panel-cq qa-city-explorer animate-cinematic-in z-30 sm:top-3 sm:mb-8 sm:rounded-[24px] sm:p-4 ${
-        isPhoneVariant ? "relative mb-0 mt-[-0.25rem]" : "sticky top-2 mb-4 rounded-[20px] p-2.5"
+        isPhoneVariant
+          ? "relative mb-0 mt-[-0.25rem] rounded-[20px] border border-cyan-100/16 p-3 shadow-[0_14px_34px_rgba(5,6,18,0.22)]"
+          : "sticky top-2 mb-4 rounded-[20px] p-2.5"
       }`}
       style={{ animationDelay: "170ms" }}
     >
-      <div className={`items-center justify-between gap-2 ${isPhoneVariant ? "flex" : "flex"}`}>
+      <div className={`items-center justify-between gap-2 ${isPhoneVariant ? "flex border-b border-cyan-100/10 pb-2" : "flex"}`}>
         <p className="qa-city-explorer-title text-[11px] font-semibold uppercase tracking-[0.16em] sm:tracking-[0.18em]">{isPhoneVariant ? "Choose what to explore" : "Explore this city"}</p>
         <p className="qa-city-explorer-current hidden rounded-full px-2 py-1 text-[11px] sm:block">
           Current: {activeSection || "overview"}
