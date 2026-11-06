@@ -1039,7 +1039,7 @@ export default function HomePageClient({ initialHomeData = null }) {
         <div className="pointer-events-none absolute right-[-7%] top-24 h-72 w-72 rounded-full bg-[#88d9d4]/[0.055] blur-3xl" />
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
-          <section data-home-section="hero" className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden rounded-none bg-[#0b1020] px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] lg:overflow-visible xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
+          <section data-home-section="hero" className="relative left-1/2 z-[60] w-screen -translate-x-1/2 overflow-visible rounded-none bg-[#0b1020] px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
             <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <picture>
                 <source
