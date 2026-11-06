@@ -105,7 +105,7 @@ export default function QuickGuideSection({
                 </div>
 
                 <div>
-                  <p className="qa-city-guide-copy qa-city-guide-copy-mobile text-[15px] leading-8 text-white/82 sm:text-base sm:leading-8">
+                  <p className="qa-city-guide-copy max-sm:!text-justify text-[15px] leading-8 text-white/82 sm:text-base sm:leading-8">
                     {polishGuideText(item.text, {
                       sectionTitle: item.title,
                       cityName,

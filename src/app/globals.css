@@ -1337,15 +1337,6 @@ body > div:first-child {
     overflow-wrap: normal;
   }
 
-  /* Guide copy needs a clean, even edge inside the mobile card. Keep the
-     last line natural so short endings do not gain oversized word gaps. */
-  .qa-city .qa-city-guide-copy-mobile {
-    text-align: justify !important;
-    text-align-last: left;
-    text-justify: inter-word !important;
-    hyphens: auto !important;
-    overflow-wrap: normal;
-  }
 }
 /* Compact mobile trust rail: keep swipe behavior without a utilitarian scrollbar. */
 .qa-trust-rail {
