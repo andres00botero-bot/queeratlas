@@ -371,8 +371,8 @@ export function DonationCallout({ onDonate }) {
             </p>
           </div>
 
-          <div className="shrink-0">
-            <a href="https://www.paypal.com/donate/?hosted_button_id=ELEXGHXWXCWJA&locale.x=en_US" onClick={onDonate} className="group inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-full bg-[#ffc439] px-6 py-3.5 text-sm font-bold text-[#171421] shadow-[0_14px_30px_rgba(255,196,57,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd35a] hover:shadow-[0_18px_38px_rgba(255,196,57,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe08a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#171421] sm:w-auto">
+          <div className="flex shrink-0 flex-col items-center sm:block">
+            <a href="https://www.paypal.com/donate/?hosted_button_id=ELEXGHXWXCWJA&locale.x=en_US" onClick={onDonate} className="group inline-flex min-h-14 w-[calc(100%-1cm)] items-center justify-center gap-3 rounded-full bg-[#ffc439] px-6 py-3.5 text-sm font-bold text-[#171421] shadow-[0_14px_30px_rgba(255,196,57,0.24)] transition hover:-translate-y-0.5 hover:bg-[#ffd35a] hover:shadow-[0_18px_38px_rgba(255,196,57,0.34)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ffe08a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#171421] sm:w-auto">
               <Heart size={17} fill="currentColor" aria-hidden="true" />
               {t("home.donateAction", "Support QueerAtlas")}
               <ArrowUpRight size={16} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden="true" />
