@@ -13,6 +13,7 @@ import { getLocalizedCityGuide } from "@/lib/cityGuideTranslations";
 import { hasLocalizedCityGuide } from "@/lib/cityGuideTranslations";
 import { getPublicQariProfileForCountry } from "@/lib/qariPublicProfiles";
 import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
+import { cityPath } from "@/lib/cityRouting";
 
 export async function generateMetadata({ params }) {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }) {
   const vibe = String(config.vibe || "").trim();
   const venueAccessRestricted = isVenueAccessRestricted(city);
   const frenchEditorialReady = locale !== "fr" || hasLocalizedCityGuide(city, locale);
-  const canonical = `/${city}`;
+  const canonical = cityPath(city);
   const ownership = getCityKeywordOwnership(cityName);
   const isSpanish = locale === "es";
   const isGerman = locale === "de";

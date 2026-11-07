@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { cityPath } from "@/lib/cityRouting";
 
 function cityName(city) {
   return String(city?.title || city?.name || city?.key || "")
@@ -84,7 +85,7 @@ export function CityRelatedGuides({ currentCity, cities = [] }) {
           {relatedCities.map((city) => (
             <Link
               key={city.key}
-              href={`/${city.key}`}
+              href={cityPath(city.key)}
               className="group rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 transition hover:border-cyan-100/25 hover:bg-cyan-100/[0.07]"
             >
               <span className="block font-medium text-white/90 transition group-hover:text-cyan-50">
@@ -135,7 +136,7 @@ export function CityIndexDirectory({ cities = [] }) {
                   {letterCities.map((city) => (
                     <li key={city.key}>
                       <Link
-                        href={`/${city.key}`}
+                        href={cityPath(city.key)}
                         prefetch={false}
                         className="text-sm text-white/65 transition hover:text-white hover:underline hover:underline-offset-4"
                       >

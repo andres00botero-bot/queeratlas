@@ -101,7 +101,9 @@ function collectionTimestamp(collection) {
 
 function CollectionCover({ collection, index, lead = false, t }) {
   const style = COLLECTION_STYLES[collection.accent] || COLLECTION_STYLES.cyan;
-  const cityLine = collection.cities.slice(0, lead ? 4 : 3).join(" · ");
+  // Cities intentionally repeat internally when several picks share a city.
+  // Deduplicate only the cover label so it never reads as a data error.
+  const cityLine = [...new Set(collection.cities.map((city) => String(city).trim()).filter(Boolean))].slice(0, lead ? 4 : 3).join(" · ");
 
   return (
     <div className={`relative overflow-hidden border-b border-white/10 bg-[#0b0e15] ${lead ? "min-h-64 sm:min-h-72" : "min-h-40"}`} aria-hidden="true">

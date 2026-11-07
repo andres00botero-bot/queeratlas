@@ -2,13 +2,16 @@ function normalizeSlugPiece(value) {
   return String(value || "")
     .trim()
     .toLowerCase()
-    .replace(/[-\s]+/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_+|_+$/g, "");
+    .replace(/[_\s-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export function citySlug(city) {
+  return normalizeSlugPiece(city);
 }
 
 export function cityPath(city, fallback = "/cities") {
-  const slug = normalizeSlugPiece(city);
+  const slug = citySlug(city);
   return slug ? `/${slug}` : fallback;
 }
 

@@ -9,6 +9,7 @@ import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getPublishedEditorialRecord } from "@/lib/editorialData";
 import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from "@/lib/editorialTrust";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
+import { cityPath } from "@/lib/cityRouting";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { getCityKeywordOwnership } from "@/lib/seo/keywordOwnership";
 import { getLocalizedCityClusterTopic, listLocalizedCityClusterTopics } from "@/lib/seo/cityClusters";
@@ -457,7 +458,7 @@ export default async function CityClusterTopicPage({ params }) {
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Link
-                href={`/${city}`}
+                href={cityPath(city)}
                 className="rounded-2xl border border-white/16 bg-white/[0.07] px-4 py-3 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:-translate-y-[1px] hover:border-white/32 hover:bg-white/[0.10]"
               >
                 {isFrench ? `Ouvrir le guide de ${cityName}` : `Open ${cityName} guide`}
@@ -551,7 +552,7 @@ export default async function CityClusterTopicPage({ params }) {
 
         <nav className="flex flex-wrap gap-2">
           <Link
-            href={`/${city}`}
+            href={cityPath(city)}
             className="rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/84"
           >
             {isFrench ? `Retour à ${cityName}` : `Back to ${cityName}`}

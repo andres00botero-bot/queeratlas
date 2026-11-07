@@ -9,6 +9,7 @@ import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 import { getCityRegistryEntry } from "@/lib/server/cityRegistry";
 import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityLifecycle";
 import { cityNameFromConfig } from "@/features/city/checkinFeature";
+import { cityPath } from "@/lib/cityRouting";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localePath, localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
@@ -181,7 +182,7 @@ export default async function CityServiceDetailPage({ params }) {
         <EntityPracticalIntel entity={service} kind="service" compact={false} />
 
         <nav className="flex flex-wrap gap-2">
-          <Link href={`/${city}`} className="rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/84">
+          <Link href={cityPath(city)} className="rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/84">
             Back to {cityName}
           </Link>
           <CityPanelButton city={city} entityKind="service" entityId={String(service.id)} className="rounded-full border border-emerald-200/26 bg-emerald-200/12 px-4 py-2 text-xs uppercase tracking-[0.12em] text-emerald-100">

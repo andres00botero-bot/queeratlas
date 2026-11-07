@@ -11,6 +11,7 @@ import { buildEditorialAuthorJsonLd, EDITORIAL_TEAM, GUIDE_EDITORIAL_META } from
 import { getMessage } from "@/lib/i18n/messages";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { cityPath } from "@/lib/cityRouting";
 import {
   QA_LOGO_URL,
   QA_ORGANIZATION_ID,
@@ -18,10 +19,6 @@ import {
   QA_SITE_URL,
   QA_WEBSITE_ID,
 } from "@/lib/seo/entityAuthority";
-
-function formatCitySlug(value = "") {
-  return String(value || "").trim().toLowerCase().replace(/\s+/g, "_");
-}
 
 function formatCollectionDescription(collection) {
   return String(collection?.summary || "").replace(/\s+/g, " ").trim().slice(0, 155);
@@ -251,8 +248,8 @@ export default async function AtlasCollectionDetailPage({ params }) {
             <ol className="mt-4 space-y-3">
               {collection.items.map((item, index) => {
                 const city = collection.cities[index] || collection.cities[0] || "";
-                const citySlug = formatCitySlug(city);
-                const hasCity = Boolean(citySlug && cityCoreConfig[citySlug]);
+                const cityKey = String(city || "").trim().toLowerCase().replace(/[-\s]+/g, "_");
+                const hasCity = Boolean(cityKey && cityCoreConfig[cityKey]);
                 return (
                   <li key={`${collection.id}-${item}`} className="group rounded-[22px] border border-white/14 bg-[radial-gradient(circle_at_100%_0%,rgba(244,114,182,0.10),transparent_28%),linear-gradient(145deg,rgba(255,255,255,0.09),rgba(255,255,255,0.025))] p-4 shadow-[0_12px_35px_rgba(0,0,0,0.10)] transition hover:-translate-y-0.5 hover:border-fuchsia-100/32 hover:bg-white/[0.10] sm:p-5">
                     <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
@@ -263,7 +260,7 @@ export default async function AtlasCollectionDetailPage({ params }) {
                         <p className="mt-3 max-w-3xl text-sm leading-6 text-white/72">{collection.itemNotes?.[index] || t("now.collectionPickFallback", "Selected for its relevance to this collection and its usefulness within the wider city route.")}</p>
                       </div>
                       {hasCity && (
-                        <Link href={localePath(`/${citySlug}`, locale)} className="group/city inline-flex items-center gap-2 rounded-full border border-fuchsia-100/38 bg-[linear-gradient(135deg,rgba(244,114,182,0.24),rgba(167,139,250,0.22))] px-3.5 py-2 text-xs font-bold text-fuchsia-50 shadow-[0_10px_26px_rgba(217,70,239,0.13)] transition hover:-translate-y-0.5 hover:border-fuchsia-50/65 hover:brightness-110">
+                        <Link href={localePath(cityPath(city), locale)} className="group/city inline-flex items-center gap-2 rounded-full border border-fuchsia-100/38 bg-[linear-gradient(135deg,rgba(244,114,182,0.24),rgba(167,139,250,0.22))] px-3.5 py-2 text-xs font-bold text-fuchsia-50 shadow-[0_10px_26px_rgba(217,70,239,0.13)] transition hover:-translate-y-0.5 hover:border-fuchsia-50/65 hover:brightness-110">
                           <span>{t("now.cityGuide", "City guide")}</span>
                           <span className="flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[10px] transition-transform group-hover/city:translate-x-0.5 group-hover/city:-translate-y-0.5" aria-hidden="true">↗</span>
                         </Link>

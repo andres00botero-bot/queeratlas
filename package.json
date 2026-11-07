@@ -54,6 +54,7 @@
     "test:regressions": "node scripts/test-regressions.mjs",
     "test:map-guard-smoke": "node scripts/test-map-guard-smoke.mjs",
     "test:json-ld-serialization": "node scripts/test-json-ld-serialization.mjs",
+    "test:metadata-and-city-routes": "node scripts/test-metadata-and-city-routes.mjs",
     "test:contact-cron-security": "node scripts/test-contact-cron-security.mjs",
     "test:home-search-payload": "node scripts/test-home-search-payload.mjs",
     "test:city-entity-counts": "node scripts/test-city-entity-counts.mjs",

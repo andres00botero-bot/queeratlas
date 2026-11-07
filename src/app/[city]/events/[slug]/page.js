@@ -8,6 +8,7 @@ import { getEntityLifecycle, normalizeLifecyclePath } from "@/lib/server/entityL
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
+import { cityPath } from "@/lib/cityRouting";
 import { normalizeEventRange } from "@/features/city/eventRailFeature";
 import { eventStatusLabel, eventStatusSchemaUrl } from "@/features/events/eventStatus";
 import {
@@ -308,7 +309,7 @@ export default async function CityEventDetailPage({ params }) {
       />
       <div className="mx-auto max-w-4xl space-y-3.5 sm:space-y-6">
         <nav className="sticky top-2 z-40 flex min-h-12 items-center justify-between gap-2 rounded-2xl border border-white/14 bg-[#090a0ee8] px-2.5 shadow-[0_14px_38px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:static sm:hidden">
-          <Link href={`/${city}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2.5 text-sm font-semibold text-white/88">
+          <Link href={cityPath(city)} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2.5 text-sm font-semibold text-white/88">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             {cityName}
           </Link>
@@ -421,7 +422,7 @@ export default async function CityEventDetailPage({ params }) {
 
         <nav className="flex flex-wrap gap-2">
           <Link
-            href={`/${city}`}
+            href={cityPath(city)}
             className="rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.12em] text-white/84"
           >
             Back to {cityName}

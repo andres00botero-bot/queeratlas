@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays, ExternalLink, MapPin, Star } from "lucide-react";
+import { cityPath } from "@/lib/cityRouting";
 
 function formatEventDate(startDate = "", endDate = "", locale = "en") {
   if (!startDate) return locale === "fr" ? "Date à confirmer" : "Date to be confirmed";
@@ -111,7 +112,7 @@ export default function CityDiscoveryResults({ city, cityName, discovery, narrat
           <p className="mt-2 max-w-2xl text-sm leading-7 text-white/62">
             {isFrench ? "Nous préférons laisser cette sélection honnête plutôt que de présenter un lieu généraliste comme une recommandation spécialisée. Le guide de ville et les parcours associés apportent tout de même du contexte pendant la vérification des données." : "We leave this edit honest instead of turning a general venue into a specialist recommendation. The city guide and related paths below still provide local context while the listing is researched."}
           </p>
-          <Link href={`/${city}`} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-white/[0.05] px-3 py-2 text-xs text-white/72">
+          <Link href={cityPath(city)} className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-white/14 bg-white/[0.05] px-3 py-2 text-xs text-white/72">
             {isFrench ? `Ouvrir le guide complet de ${cityName}` : `Open the full ${cityName} guide`}
             <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>

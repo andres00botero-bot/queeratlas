@@ -4,7 +4,8 @@ import { headers } from "next/headers";
 import NowPage from "../page";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
+import { localePath } from "@/lib/seo/localizedSeo";
+import { createPageMetadata } from "@/lib/seo/pageMetadata";
 
 // /now/news shares the Now page below. Make the section route dynamic too so
 // its server-rendered feed cannot diverge from the browser's live public feed.
@@ -79,22 +80,8 @@ export async function generateMetadata({ params }) {
   const canonical = `/now/${section}`;
 
   return {
-    title: config.title,
-    description: config.description,
-    alternates: localizedAlternates(canonical, locale),
+    ...createPageMetadata({ path: canonical, locale, title: config.title, description: config.description }),
     robots: { index: true, follow: true },
-    openGraph: {
-      title: config.title,
-      description: config.description,
-      url: localizedOpenGraphUrl(canonical, locale),
-      locale: locale === "es" ? "es_ES" : locale === "de" ? "de_DE" : locale === "fr" ? "fr_FR" : "en_US",
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: config.title,
-      description: config.description,
-    },
   };
 }
 
