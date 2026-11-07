@@ -30,7 +30,6 @@ export default function CityDiscoveryResults({ city, cityName, discovery, narrat
         <div className="max-w-3xl">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-cyan-100/70">{isFrench ? "Sélection locale Atlas" : "Local Atlas edit"}</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.025em] text-white">{topicTitle || rule.listTitle || (isFrench ? `Sélection locale à ${cityName}` : `Local picks in ${cityName}`)}</h2>
-          <p className="mt-3 text-sm leading-7 text-white/72">{narrative?.intro}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-[0.14em]">
           <span className="rounded-full border border-cyan-100/24 bg-cyan-200/[0.08] px-3 py-1.5 text-cyan-50/82">

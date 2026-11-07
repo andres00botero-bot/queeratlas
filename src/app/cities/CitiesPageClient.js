@@ -22,13 +22,8 @@ import { isPublishedEntity, isUpcomingPublishedEvent } from "@/lib/publicInvento
 import { useCountryRightsProfiles } from "@/lib/useCountryRightsProfiles";
 import { useQariProfiles } from "@/lib/useQariProfiles";
 import { QARI_MAP_PALETTE } from "@/lib/qari";
-import { listCityClusterTopics } from "@/lib/seo/cityClusters";
-import { listTopicHubs } from "@/lib/seo/topicHubs";
-import {
-  isIndexableTopicHub,
-  TIER1_CITY_SLUGS,
-  TIER1_TOPIC_KEYS,
-} from "@/lib/seo/indexingTier";
+import { cityPath } from "@/lib/cityRouting";
+import { TIER1_CITY_SLUGS } from "@/lib/seo/indexingTier";
 import CityRightsSignals from "@/components/cities/CityRightsSignals";
 import CountryRightsAdminEditor from "@/components/cities/CountryRightsAdminEditor";
 import EmptyState from "@/components/ui/EmptyState";
@@ -927,15 +922,6 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
     () => TIER1_CITY_SLUGS.filter((cityKey) => Boolean(registryConfig[cityKey])),
     [registryConfig]
   );
-  const crawlClusterTopics = useMemo(
-    () => TIER1_TOPIC_KEYS.filter((topicKey) => Boolean(listCityClusterTopics().find((topic) => topic.key === topicKey))),
-    []
-  );
-  const crawlClusterCities = useMemo(() => crawlPathCities.slice(0, 12), [crawlPathCities]);
-  const topicHubKeys = useMemo(
-    () => listTopicHubs().map((hub) => hub.key).filter((key) => isIndexableTopicHub(key)),
-    []
-  );
   const totalCities = Object.keys(registryConfig).length;
   const totalCountries = countries.length - 1;
   const totalPlaces = Number.isFinite(Number(initialMetrics?.places))
@@ -1067,7 +1053,7 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
       return {
         "@type": "ListItem",
         position: index + 1,
-        url: `https://www.queeratlas.app/${cityKey}`,
+        url: `https://www.queeratlas.app${cityPath(cityKey)}`,
         name: cityTitle,
       };
     });
@@ -1105,31 +1091,6 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(citiesSeoJsonLd) }}
       />
-      <nav aria-label="Internal city links" className="sr-only">
-        <Link href="/cities">Cities</Link>
-        <Link href="/events">Events</Link>
-        <Link href="/now">Now</Link>
-        <Link href="/topics">Topics</Link>
-        <Link href="/gay-guide">Gay Travel Guide</Link>
-        <Link href="/queer-guide">Queer Travel Guide</Link>
-        {topicHubKeys.map((topicKey) => (
-          <Link key={`crawl-topic-hub-${topicKey}`} href={`/topics/${topicKey}`}>
-            {topicKey}
-          </Link>
-        ))}
-        {crawlPathCities.map((cityKey) => (
-          <Link key={`crawl-city-${cityKey}`} href={`/${cityKey}`}>
-            {cityKey}
-          </Link>
-        ))}
-        {crawlClusterCities.flatMap((cityKey) =>
-          crawlClusterTopics.map((topicKey) => (
-            <Link key={`crawl-city-cluster-${cityKey}-${topicKey}`} href={`/${cityKey}/discover/${topicKey}`}>
-              {cityKey} {topicKey}
-            </Link>
-          ))
-        )}
-      </nav>
       <div className="qa-shell relative">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.08),transparent_20%),radial-gradient(circle_at_76%_14%,rgba(96,165,250,0.08),transparent_20%),radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.06),transparent_18%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:44px_44px]" />

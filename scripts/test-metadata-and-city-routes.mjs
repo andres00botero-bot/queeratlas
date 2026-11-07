@@ -25,6 +25,14 @@ assert(eventsPage.includes('dynamic = "force-dynamic"') && eventsPage.includes("
 assert(eventSections.includes('dynamic = "force-dynamic"') && eventSections.includes("revalidate = 0"), "event sections must render a fresh server snapshot");
 assert(eventClient.includes("setCurrentDate(new Date())") && eventClient.includes("setSelectedDate(getLocalDateKey())"), "event client must refresh the calendar date after hydration");
 
+const citiesClient = readFileSync(new URL("../src/app/cities/CitiesPageClient.js", import.meta.url), "utf8");
+const discoveryResults = readFileSync(new URL("../src/components/city/CityDiscoveryResults.js", import.meta.url), "utf8");
+const homeClient = readFileSync(new URL("../src/components/home/HomePageClient.js", import.meta.url), "utf8");
+assert(!citiesClient.includes('aria-label="Internal city links"'), "cities page must not emit a hidden cluster-navigation block");
+assert(citiesClient.includes("cityPath(cityKey)"), "cities structured data must use canonical city URLs");
+assert(!discoveryResults.includes("narrative?.intro"), "discover results must not repeat the page introduction");
+assert(homeClient.includes('t("home.latestStories", "latest stories")'), "homepage news count must describe the latest displayed stories");
+
 if (failures.length) {
   console.error("Metadata and city-route test failed:");
   failures.forEach((failure) => console.error(`- ${failure}`));

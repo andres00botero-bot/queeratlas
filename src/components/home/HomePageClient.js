@@ -866,7 +866,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       description: t("home.newsDescription", "Queer news from around the world."),
       shortDescription: t("home.newsDescription", "Queer news from around the world."),
       icon: "News",
-      metric: `${homeNewsItems.length || 0} ${t("home.freshStories", "fresh stories")}`,
+      metric: `${homeNewsItems.length || 0} ${t("home.latestStories", "latest stories")}`,
       surface: "border-[#88d9d4]/20 bg-[#14252e] hover:border-[#88d9d4]/42",
       glow: "bg-[#88d9d4]/16",
       accentLine: "from-transparent via-[#88d9d4]/72 to-transparent",
@@ -985,7 +985,7 @@ export default function HomePageClient({ initialHomeData = null }) {
       description: `${formatCityLabel(latestPulseNews?.city)} - Global queer news, verified and fresh.`,
       meta: latestPulseNews?.city ? `${formatCityLabel(latestPulseNews.city)} signal` : t("home.editorialDesk", "Editorial desk"),
       signalLabel: t("home.news", "News"),
-      signalValue: homeNewsItems.length ? `${homeNewsItems.length} ${t("home.freshStories", "fresh stories")}` : t("home.newsDescription", "Open queer world news"),
+      signalValue: homeNewsItems.length ? `${homeNewsItems.length} ${t("home.latestStories", "latest stories")}` : t("home.newsDescription", "Open queer world news"),
       badge: latestPulseNews ? (worldNewsFallback ? (locale === "fr" ? "Relais éditorial" : "Editorial fallback") : (locale === "fr" ? "Récent" : "Fresh")) : (locale === "fr" ? "En attente" : "Pending"),
       badgeClass: "border-cyan-200/30 bg-cyan-200/12 text-cyan-100/90",
       cardClass:
