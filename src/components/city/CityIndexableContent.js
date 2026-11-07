@@ -3,6 +3,7 @@ import { buildEventPath, buildVenuePath, normalizeCitySlug } from "@/lib/seo/ent
 import { localePath } from "@/lib/seo/localizedSeo";
 import { isUpcomingPublishedEvent } from "@/lib/publicInventory";
 import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
+import { evaluateEventSeoQuality, evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 
 const COPY = {
   en: { guide: "City guide", venues: "Trusted queer venues", events: "Upcoming queer events", moreVenues: "Explore all venues", moreEvents: "Explore all events", noVenues: "Venue details are protected for this destination.", noEvents: "No upcoming published events yet." },
@@ -22,8 +23,8 @@ function preview(items, count = 12) {
 export default function CityIndexableContent({ city, cityName, locale = "en", guide = [], venues = [], events = [] }) {
   const copy = text(locale);
   const restricted = isVenueAccessRestricted(city);
-  const cityVenues = preview(venues.filter((venue) => normalizeCitySlug(venue?.city) === city));
-  const cityEvents = preview(events.filter((event) => normalizeCitySlug(event?.city) === city && isUpcomingPublishedEvent(event)));
+  const cityVenues = preview(venues.filter((venue) => normalizeCitySlug(venue?.city) === city && evaluateVenueSeoQuality(venue).indexable));
+  const cityEvents = preview(events.filter((event) => normalizeCitySlug(event?.city) === city && isUpcomingPublishedEvent(event) && evaluateEventSeoQuality(event).indexable));
   const cityPath = localePath(`/${city}`, locale);
 
   return (

@@ -28,10 +28,15 @@ assert(eventClient.includes("setCurrentDate(new Date())") && eventClient.include
 const citiesClient = readFileSync(new URL("../src/app/cities/CitiesPageClient.js", import.meta.url), "utf8");
 const discoveryResults = readFileSync(new URL("../src/components/city/CityDiscoveryResults.js", import.meta.url), "utf8");
 const homeClient = readFileSync(new URL("../src/components/home/HomePageClient.js", import.meta.url), "utf8");
+const cityPage = readFileSync(new URL("../src/app/[city]/page.js", import.meta.url), "utf8");
+const cityDirectory = readFileSync(new URL("../src/app/[city]/directory/page.js", import.meta.url), "utf8");
 assert(!citiesClient.includes('aria-label="Internal city links"'), "cities page must not emit a hidden cluster-navigation block");
 assert(citiesClient.includes("cityPath(cityKey)"), "cities structured data must use canonical city URLs");
 assert(!discoveryResults.includes("narrative?.intro"), "discover results must not repeat the page introduction");
 assert(homeClient.includes('t("home.latestStories", "latest stories")'), "homepage news count must describe the latest displayed stories");
+assert(cityPage.includes("CityIndexableContent") && cityPage.includes("loadCitySearchPreview"), "city pages must server-render a quality-filtered venue and event preview");
+assert(cityDirectory.includes("PAGE_SIZE = 24") && cityDirectory.includes("evaluateVenueSeoQuality"), "venue directories must paginate quality-filtered venue guides");
+assert(cityDirectory.includes("index: false, follow: true"), "directory pages after page one must be crawlable but not indexable");
 
 if (failures.length) {
   console.error("Metadata and city-route test failed:");
