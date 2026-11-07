@@ -1,5 +1,4 @@
 import "server-only";
-import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
@@ -72,12 +71,9 @@ async function loadPublicEventData() {
   };
 }
 
-const getCachedPublicEventData = unstable_cache(
-  loadPublicEventData,
-  ["qa-public-event-data-v2"],
-  { revalidate: 60, tags: [PUBLIC_EVENTS_CACHE_TAG] },
-);
-
 export async function fetchPublicEventData() {
-  return getCachedPublicEventData();
+  // The calendar's month and “today” labels are rendered in public HTML.
+  // Keep this query uncached so crawlers and browsers start from the same
+  // current event set rather than a stale ISR snapshot.
+  return loadPublicEventData();
 }

@@ -515,11 +515,14 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
   }, [isAdmin]);
 
   useEffect(() => {
-    if (hasInitialEventData) return;
+    // A cached HTML response must never leave the calendar frozen on the
+    // server's old “today” or month. Refresh the public rows after hydration.
+    setCurrentDate(new Date());
+    setSelectedDate(getLocalDateKey());
     queueMicrotask(() => {
       loadAllEvents();
     });
-  }, [hasInitialEventData, loadAllEvents]);
+  }, [loadAllEvents]);
 
   useEffect(() => {
     if (!isAdmin) return;

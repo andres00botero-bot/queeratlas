@@ -9,7 +9,8 @@ import { buildEventPath } from "@/lib/seo/entitySlug";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const EVENT_SECTIONS = {
   calendar: {

@@ -18,6 +18,13 @@ for (const route of ["../src/app/cities/layout.js", "../src/app/events/layout.js
   assert(!source.includes("keywords:"), `${route} must not emit obsolete meta keywords`);
 }
 
+const eventsPage = readFileSync(new URL("../src/app/events/page.js", import.meta.url), "utf8");
+const eventSections = readFileSync(new URL("../src/app/events/[section]/page.js", import.meta.url), "utf8");
+const eventClient = readFileSync(new URL("../src/app/events/EventsPageClient.js", import.meta.url), "utf8");
+assert(eventsPage.includes('dynamic = "force-dynamic"') && eventsPage.includes("revalidate = 0"), "events root must render a fresh server snapshot");
+assert(eventSections.includes('dynamic = "force-dynamic"') && eventSections.includes("revalidate = 0"), "event sections must render a fresh server snapshot");
+assert(eventClient.includes("setCurrentDate(new Date())") && eventClient.includes("setSelectedDate(getLocalDateKey())"), "event client must refresh the calendar date after hydration");
+
 if (failures.length) {
   console.error("Metadata and city-route test failed:");
   failures.forEach((failure) => console.error(`- ${failure}`));
