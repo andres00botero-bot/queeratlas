@@ -1,6 +1,5 @@
 import "server-only";
 
-import { unstable_cache } from "next/cache";
 import { supabase } from "@/lib/supabase";
 
 export const PUBLIC_NEWS_CACHE_TAG = "qa-world-news";
@@ -43,9 +42,10 @@ async function loadPublishedNews() {
   };
 }
 
-const getCachedPublishedNews = unstable_cache(loadPublishedNews, ["qa-published-news-v1"], { revalidate: 60, tags: [PUBLIC_NEWS_CACHE_TAG] });
-
-export async function getPublishedNews() { return getCachedPublishedNews(); }
+// This feed is rendered into the public HTML for /now/news and its article
+// pages. Do not keep a separate server-side copy here: it can drift from the
+// browser's public Supabase query and leave crawlers with an old, partial feed.
+export async function getPublishedNews() { return loadPublishedNews(); }
 
 export async function getPublishedNewsArticle(articleId) {
   const id = String(articleId || "").trim();

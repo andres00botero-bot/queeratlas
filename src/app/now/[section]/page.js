@@ -6,6 +6,11 @@ import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entity
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 
+// /now/news shares the Now page below. Make the section route dynamic too so
+// its server-rendered feed cannot diverge from the browser's live public feed.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const NOW_SECTIONS = {
   news: {
     sectionId: "mixed",
